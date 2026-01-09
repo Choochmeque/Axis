@@ -5,6 +5,10 @@ mod file_status;
 mod diff;
 mod remote;
 mod graph;
+mod merge;
+mod stash;
+mod tag;
+mod submodule;
 
 pub use repository::*;
 pub use commit::*;
@@ -13,3 +17,7 @@ pub use file_status::*;
 pub use diff::*;
 pub use remote::*;
 pub use graph::*;
+pub use merge::*;
+pub use stash::*;
+pub use tag::*;
+pub use submodule::*;

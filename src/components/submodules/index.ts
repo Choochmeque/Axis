@@ -1,0 +1,1 @@
+export { SubmoduleView } from './SubmoduleView';

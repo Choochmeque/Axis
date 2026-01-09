@@ -90,6 +90,57 @@ pub fn run() {
             commands::search_commits,
             commands::blame_file,
             commands::get_commit_count,
+            // Merge commands
+            commands::merge_branch,
+            commands::merge_abort,
+            commands::merge_continue,
+            // Rebase commands
+            commands::rebase_branch,
+            commands::rebase_abort,
+            commands::rebase_continue,
+            commands::rebase_skip,
+            // Cherry-pick commands
+            commands::cherry_pick,
+            commands::cherry_pick_abort,
+            commands::cherry_pick_continue,
+            // Revert commands
+            commands::revert_commits,
+            commands::revert_abort,
+            commands::revert_continue,
+            // Conflict resolution commands
+            commands::get_conflicted_files,
+            commands::get_conflict_content,
+            commands::resolve_conflict,
+            commands::mark_conflict_resolved,
+            // Operation state
+            commands::get_operation_state,
+            // Reset commands
+            commands::reset_to_commit,
+            // Stash commands
+            commands::stash_list,
+            commands::stash_save,
+            commands::stash_apply,
+            commands::stash_pop,
+            commands::stash_drop,
+            commands::stash_clear,
+            commands::stash_show,
+            commands::stash_branch,
+            // Tag commands
+            commands::tag_list,
+            commands::tag_create,
+            commands::tag_delete,
+            commands::tag_push,
+            commands::tag_push_all,
+            commands::tag_delete_remote,
+            // Submodule commands
+            commands::submodule_list,
+            commands::submodule_add,
+            commands::submodule_init,
+            commands::submodule_update,
+            commands::submodule_sync,
+            commands::submodule_deinit,
+            commands::submodule_remove,
+            commands::submodule_summary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

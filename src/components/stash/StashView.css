@@ -1,0 +1,169 @@
+.stash-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-primary);
+}
+
+.stash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.stash-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stash-count {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: var(--bg-secondary);
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+
+.stash-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.stash-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--error-bg);
+  border-bottom: 1px solid var(--error-border);
+  color: var(--error-color);
+  font-size: 12px;
+}
+
+.stash-error button {
+  margin-left: auto;
+  padding: 2px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.stash-error button:hover {
+  opacity: 1;
+}
+
+.stash-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.stash-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.stash-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.stash-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.stash-item.selected {
+  background-color: var(--bg-active);
+}
+
+.stash-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.stash-ref {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.stash-branch {
+  font-size: 11px;
+  padding: 1px 6px;
+  background-color: var(--bg-secondary);
+  border-radius: 3px;
+  color: var(--text-secondary);
+}
+
+.stash-message {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stash-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.stash-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.stash-dialog .dialog-content {
+  min-width: 400px;
+}
+
+.stash-dialog input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.stash-dialog input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -17,6 +17,31 @@ import type {
   SearchOptions,
   SearchResult,
   BlameResult,
+  MergeOptions,
+  MergeResult,
+  RebaseOptions,
+  RebaseResult,
+  CherryPickOptions,
+  CherryPickResult,
+  RevertOptions,
+  RevertResult,
+  ConflictedFile,
+  ConflictContent,
+  ConflictResolution,
+  OperationState,
+  ResetOptions,
+  StashEntry,
+  StashSaveOptions,
+  StashApplyOptions,
+  StashResult,
+  Tag,
+  CreateTagOptions,
+  TagResult,
+  Submodule,
+  AddSubmoduleOptions,
+  UpdateSubmoduleOptions,
+  SyncSubmoduleOptions,
+  SubmoduleResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -248,4 +273,149 @@ export const searchApi = {
 export const blameApi = {
   file: (path: string, commitOid?: string) =>
     invoke<BlameResult>('blame_file', { path, commitOid }),
+};
+
+export const mergeApi = {
+  merge: (options: MergeOptions) =>
+    invoke<MergeResult>('merge_branch', { options }),
+
+  abort: () =>
+    invoke<void>('merge_abort'),
+
+  continue: () =>
+    invoke<MergeResult>('merge_continue'),
+};
+
+export const rebaseApi = {
+  rebase: (options: RebaseOptions) =>
+    invoke<RebaseResult>('rebase_branch', { options }),
+
+  abort: () =>
+    invoke<void>('rebase_abort'),
+
+  continue: () =>
+    invoke<RebaseResult>('rebase_continue'),
+
+  skip: () =>
+    invoke<RebaseResult>('rebase_skip'),
+};
+
+export const cherryPickApi = {
+  cherryPick: (options: CherryPickOptions) =>
+    invoke<CherryPickResult>('cherry_pick', { options }),
+
+  abort: () =>
+    invoke<void>('cherry_pick_abort'),
+
+  continue: () =>
+    invoke<CherryPickResult>('cherry_pick_continue'),
+};
+
+export const revertApi = {
+  revert: (options: RevertOptions) =>
+    invoke<RevertResult>('revert_commits', { options }),
+
+  abort: () =>
+    invoke<void>('revert_abort'),
+
+  continue: () =>
+    invoke<RevertResult>('revert_continue'),
+};
+
+export const conflictApi = {
+  getConflictedFiles: () =>
+    invoke<ConflictedFile[]>('get_conflicted_files'),
+
+  getConflictContent: (path: string) =>
+    invoke<ConflictContent>('get_conflict_content', { path }),
+
+  resolveConflict: (
+    path: string,
+    resolution: ConflictResolution,
+    customContent?: string
+  ) =>
+    invoke<void>('resolve_conflict', { path, resolution, customContent }),
+
+  markResolved: (path: string) =>
+    invoke<void>('mark_conflict_resolved', { path }),
+};
+
+export const operationApi = {
+  getState: () =>
+    invoke<OperationState>('get_operation_state'),
+
+  reset: (options: ResetOptions) =>
+    invoke<void>('reset_to_commit', { options }),
+};
+
+export const stashApi = {
+  list: () =>
+    invoke<StashEntry[]>('stash_list'),
+
+  save: (options?: StashSaveOptions) =>
+    invoke<StashResult>('stash_save', { options: options ?? {} }),
+
+  apply: (options?: StashApplyOptions) =>
+    invoke<StashResult>('stash_apply', { options: options ?? {} }),
+
+  pop: (options?: StashApplyOptions) =>
+    invoke<StashResult>('stash_pop', { options: options ?? {} }),
+
+  drop: (index?: number) =>
+    invoke<StashResult>('stash_drop', { index }),
+
+  clear: () =>
+    invoke<StashResult>('stash_clear'),
+
+  show: (index?: number, statOnly: boolean = false) =>
+    invoke<string>('stash_show', { index, statOnly }),
+
+  branch: (branchName: string, index?: number) =>
+    invoke<StashResult>('stash_branch', { branchName, index }),
+};
+
+export const tagApi = {
+  list: () =>
+    invoke<Tag[]>('tag_list'),
+
+  create: (name: string, options?: CreateTagOptions) =>
+    invoke<TagResult>('tag_create', { name, options: options ?? {} }),
+
+  delete: (name: string) =>
+    invoke<TagResult>('tag_delete', { name }),
+
+  push: (name: string, remote: string) =>
+    invoke<TagResult>('tag_push', { name, remote }),
+
+  pushAll: (remote: string) =>
+    invoke<TagResult>('tag_push_all', { remote }),
+
+  deleteRemote: (name: string, remote: string) =>
+    invoke<TagResult>('tag_delete_remote', { name, remote }),
+};
+
+export const submoduleApi = {
+  list: () =>
+    invoke<Submodule[]>('submodule_list'),
+
+  add: (options: AddSubmoduleOptions) =>
+    invoke<SubmoduleResult>('submodule_add', { options }),
+
+  init: (paths: string[] = []) =>
+    invoke<SubmoduleResult>('submodule_init', { paths }),
+
+  update: (options?: UpdateSubmoduleOptions) =>
+    invoke<SubmoduleResult>('submodule_update', { options: options ?? {} }),
+
+  sync: (options?: SyncSubmoduleOptions) =>
+    invoke<SubmoduleResult>('submodule_sync', { options: options ?? {} }),
+
+  deinit: (paths: string[], force: boolean = false) =>
+    invoke<SubmoduleResult>('submodule_deinit', { paths, force }),
+
+  remove: (path: string) =>
+    invoke<SubmoduleResult>('submodule_remove', { path }),
+
+  summary: () =>
+    invoke<string>('submodule_summary'),
 };

@@ -4,6 +4,10 @@ mod diff;
 mod branches;
 mod remotes;
 mod graph;
+mod merge;
+mod stash;
+mod tags;
+mod submodules;
 
 pub use repository::*;
 pub use staging::*;
@@ -11,3 +15,7 @@ pub use diff::*;
 pub use branches::*;
 pub use remotes::*;
 pub use graph::*;
+pub use merge::*;
+pub use stash::*;
+pub use tags::*;
+pub use submodules::*;

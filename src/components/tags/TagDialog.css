@@ -1,0 +1,215 @@
+.tag-dialog .dialog-content {
+  min-width: 400px;
+}
+
+.tag-dialog input[type="text"],
+.tag-dialog textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.tag-dialog input[type="text"]:focus,
+.tag-dialog textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.tag-dialog textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.target-commit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.target-commit .commit-oid {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.target-commit .commit-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tag List Styles */
+.tag-list-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-primary);
+}
+
+.tag-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tag-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag-count {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: var(--bg-secondary);
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+
+.tag-list-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.tag-list-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--error-bg);
+  border-bottom: 1px solid var(--error-border);
+  color: var(--error-color);
+  font-size: 12px;
+}
+
+.tag-list-error button {
+  margin-left: auto;
+  padding: 2px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.tag-list-error button:hover {
+  opacity: 1;
+}
+
+.tag-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tag-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.tag-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.tag-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.tag-item.selected {
+  background-color: var(--bg-active);
+}
+
+.tag-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tag-item-header svg {
+  color: var(--text-muted);
+}
+
+.tag-item-header svg.annotated {
+  color: var(--accent-color);
+}
+
+.tag-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag-type-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  background-color: var(--accent-color);
+  border-radius: 3px;
+  color: white;
+  text-transform: uppercase;
+}
+
+.tag-item-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.tag-oid {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.tag-message {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

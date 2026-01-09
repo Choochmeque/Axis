@@ -301,3 +301,220 @@ export interface BlameLine {
   original_line: number;
   is_group_start: boolean;
 }
+
+// Merge types
+export interface MergeOptions {
+  branch: string;
+  message?: string;
+  no_ff?: boolean;
+  squash?: boolean;
+  ff_only?: boolean;
+}
+
+export interface MergeResult {
+  success: boolean;
+  merge_type: MergeType;
+  commit_oid: string | null;
+  conflicts: ConflictedFile[];
+  message: string;
+}
+
+export type MergeType = 'up_to_date' | 'fast_forward' | 'normal' | 'conflicted';
+
+// Rebase types
+export interface RebaseOptions {
+  onto: string;
+  interactive?: boolean;
+  preserve_merges?: boolean;
+  autosquash?: boolean;
+}
+
+export interface RebaseResult {
+  success: boolean;
+  commits_rebased: number;
+  current_commit: string | null;
+  total_commits: number | null;
+  conflicts: ConflictedFile[];
+  message: string;
+}
+
+// Cherry-pick types
+export interface CherryPickOptions {
+  commits: string[];
+  no_commit?: boolean;
+  allow_empty?: boolean;
+}
+
+export interface CherryPickResult {
+  success: boolean;
+  commit_oids: string[];
+  conflicts: ConflictedFile[];
+  message: string;
+}
+
+// Revert types
+export interface RevertOptions {
+  commits: string[];
+  no_commit?: boolean;
+}
+
+export interface RevertResult {
+  success: boolean;
+  commit_oids: string[];
+  conflicts: ConflictedFile[];
+  message: string;
+}
+
+// Conflict types
+export interface ConflictedFile {
+  path: string;
+  conflict_type: ConflictType;
+  is_resolved: boolean;
+}
+
+export type ConflictType =
+  | 'content'
+  | 'delete_modify'
+  | 'add_add'
+  | 'rename_rename'
+  | 'rename_modify'
+  | 'binary';
+
+export interface ConflictContent {
+  path: string;
+  base: string | null;
+  ours: string | null;
+  theirs: string | null;
+  merged: string;
+}
+
+export type ConflictResolution = 'ours' | 'theirs' | 'merged';
+
+// Operation state
+export type OperationState =
+  | { type: 'none' }
+  | { type: 'merging'; branch: string | null }
+  | { type: 'rebasing'; onto: string | null; current: number | null; total: number | null }
+  | { type: 'cherry_picking'; commit: string | null }
+  | { type: 'reverting'; commit: string | null };
+
+// Reset types
+export type ResetMode = 'soft' | 'mixed' | 'hard';
+
+export interface ResetOptions {
+  target: string;
+  mode: ResetMode;
+}
+
+// Stash types
+export interface StashEntry {
+  index: number;
+  stash_ref: string;
+  message: string;
+  commit_oid: string;
+  short_oid: string;
+  branch: string | null;
+  author: string;
+  timestamp: string;
+}
+
+export interface StashSaveOptions {
+  message?: string;
+  include_untracked?: boolean;
+  keep_index?: boolean;
+  include_ignored?: boolean;
+}
+
+export interface StashApplyOptions {
+  index?: number;
+  reinstate_index?: boolean;
+}
+
+export interface StashResult {
+  success: boolean;
+  message: string;
+  files_affected: number;
+  conflicts: string[];
+}
+
+// Tag types
+export interface Tag {
+  name: string;
+  full_name: string;
+  target_oid: string;
+  short_oid: string;
+  is_annotated: boolean;
+  message: string | null;
+  tagger: TagSignature | null;
+  target_summary: string | null;
+  target_time: string | null;
+}
+
+export interface TagSignature {
+  name: string;
+  email: string;
+  timestamp: string;
+}
+
+export interface CreateTagOptions {
+  target?: string;
+  annotated?: boolean;
+  message?: string;
+  force?: boolean;
+}
+
+export interface TagResult {
+  success: boolean;
+  message: string;
+  tag: Tag | null;
+}
+
+// Submodule types
+export interface Submodule {
+  name: string;
+  path: string;
+  url: string | null;
+  head_oid: string | null;
+  short_oid: string | null;
+  indexed_oid: string | null;
+  branch: string | null;
+  status: SubmoduleStatus;
+}
+
+export type SubmoduleStatus =
+  | 'current'
+  | 'modified'
+  | 'uninitialized'
+  | 'missing'
+  | 'conflict'
+  | 'dirty'
+  | 'unknown';
+
+export interface AddSubmoduleOptions {
+  url: string;
+  path: string;
+  branch?: string;
+  name?: string;
+  depth?: number;
+}
+
+export interface UpdateSubmoduleOptions {
+  paths?: string[];
+  init?: boolean;
+  recursive?: boolean;
+  force?: boolean;
+  remote?: boolean;
+  rebase?: boolean;
+  merge?: boolean;
+}
+
+export interface SyncSubmoduleOptions {
+  paths?: string[];
+  recursive?: boolean;
+}
+
+export interface SubmoduleResult {
+  success: boolean;
+  message: string;
+  submodules: string[];
+}

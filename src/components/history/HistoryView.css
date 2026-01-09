@@ -1,0 +1,147 @@
+.history-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.history-loading,
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  gap: 12px;
+}
+
+.history-header {
+  display: flex;
+  padding: 8px 12px;
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.15s;
+}
+
+.history-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.history-row.is-merge {
+  background-color: var(--bg-merge);
+}
+
+.history-col {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-col-graph {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.history-col-description {
+  flex: 1;
+  min-width: 200px;
+}
+
+.history-col-date {
+  width: 120px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 16px;
+}
+
+.history-col-author {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.history-col-sha {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.commit-graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  height: 100%;
+}
+
+.graph-line {
+  position: absolute;
+  width: 2px;
+  background-color: var(--accent-color);
+}
+
+.graph-line-top {
+  top: 0;
+  height: 50%;
+}
+
+.graph-line-bottom {
+  bottom: 0;
+  height: 50%;
+}
+
+.graph-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--accent-color);
+}
+
+.graph-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  border: 2px solid var(--bg-secondary);
+}
+
+.commit-summary {
+  font-size: 13px;
+}
+
+.commit-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.commit-author {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.commit-sha {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background-color: var(--bg-code);
+  padding: 2px 6px;
+  border-radius: 3px;
+}

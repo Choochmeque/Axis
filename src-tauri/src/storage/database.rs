@@ -1,0 +1,152 @@
+use crate::error::Result;
+use crate::models::RecentRepository;
+use chrono::Utc;
+use rusqlite::{params, Connection};
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+
+pub struct Database {
+    conn: Mutex<Connection>,
+}
+
+impl Database {
+    pub fn new(app_data_dir: &Path) -> Result<Self> {
+        std::fs::create_dir_all(app_data_dir)?;
+        let db_path = app_data_dir.join("axis.db");
+        let conn = Connection::open(db_path)?;
+
+        let db = Database {
+            conn: Mutex::new(conn),
+        };
+        db.init_schema()?;
+
+        Ok(db)
+    }
+
+    fn init_schema(&self) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS recent_repositories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                path TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                last_opened TEXT NOT NULL
+            )",
+            [],
+        )?;
+        Ok(())
+    }
+
+    pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let now = Utc::now().to_rfc3339();
+        let path_str = path.to_string_lossy();
+
+        conn.execute(
+            "INSERT INTO recent_repositories (path, name, last_opened)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(path) DO UPDATE SET
+                name = excluded.name,
+                last_opened = excluded.last_opened",
+            params![path_str, name, now],
+        )?;
+
+        // Keep only the last 20 recent repositories
+        conn.execute(
+            "DELETE FROM recent_repositories
+             WHERE id NOT IN (
+                SELECT id FROM recent_repositories
+                ORDER BY last_opened DESC
+                LIMIT 20
+             )",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepository>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT path, name, last_opened
+             FROM recent_repositories
+             ORDER BY last_opened DESC",
+        )?;
+
+        let repos = stmt
+            .query_map([], |row| {
+                let path: String = row.get(0)?;
+                let name: String = row.get(1)?;
+                let last_opened: String = row.get(2)?;
+
+                Ok(RecentRepository {
+                    path: PathBuf::from(path),
+                    name,
+                    last_opened: chrono::DateTime::parse_from_rfc3339(&last_opened)
+                        .map(|dt| dt.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(repos)
+    }
+
+    pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let path_str = path.to_string_lossy();
+        conn.execute(
+            "DELETE FROM recent_repositories WHERE path = ?1",
+            params![path_str],
+        )?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_add_and_get_recent_repositories() {
+        let tmp = TempDir::new().unwrap();
+        let db = Database::new(tmp.path()).unwrap();
+
+        let repo_path = PathBuf::from("/test/repo");
+        db.add_recent_repository(&repo_path, "test-repo").unwrap();
+
+        let repos = db.get_recent_repositories().unwrap();
+        assert_eq!(repos.len(), 1);
+        assert_eq!(repos[0].name, "test-repo");
+        assert_eq!(repos[0].path, repo_path);
+    }
+
+    #[test]
+    fn test_update_recent_repository() {
+        let tmp = TempDir::new().unwrap();
+        let db = Database::new(tmp.path()).unwrap();
+
+        let repo_path = PathBuf::from("/test/repo");
+        db.add_recent_repository(&repo_path, "old-name").unwrap();
+        db.add_recent_repository(&repo_path, "new-name").unwrap();
+
+        let repos = db.get_recent_repositories().unwrap();
+        assert_eq!(repos.len(), 1);
+        assert_eq!(repos[0].name, "new-name");
+    }
+
+    #[test]
+    fn test_remove_recent_repository() {
+        let tmp = TempDir::new().unwrap();
+        let db = Database::new(tmp.path()).unwrap();
+
+        let repo_path = PathBuf::from("/test/repo");
+        db.add_recent_repository(&repo_path, "test-repo").unwrap();
+        db.remove_recent_repository(&repo_path).unwrap();
+
+        let repos = db.get_recent_repositories().unwrap();
+        assert!(repos.is_empty());
+    }
+}

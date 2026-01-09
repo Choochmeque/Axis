@@ -64,6 +64,27 @@ pub fn run() {
             commands::start_file_watcher,
             commands::stop_file_watcher,
             commands::is_file_watcher_active,
+            // Branch commands
+            commands::create_branch,
+            commands::delete_branch,
+            commands::rename_branch,
+            commands::checkout_branch,
+            commands::checkout_remote_branch,
+            commands::get_branch,
+            commands::set_branch_upstream,
+            // Remote commands
+            commands::list_remotes,
+            commands::get_remote,
+            commands::add_remote,
+            commands::remove_remote,
+            commands::rename_remote,
+            commands::set_remote_url,
+            commands::set_remote_push_url,
+            commands::fetch_remote,
+            commands::push_remote,
+            commands::push_current_branch,
+            commands::pull_remote,
+            commands::fetch_all,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

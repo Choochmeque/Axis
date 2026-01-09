@@ -30,6 +30,27 @@ pub enum AxisError {
     #[error("No repository is currently open")]
     NoRepositoryOpen,
 
+    #[error("Branch not found: {0}")]
+    BranchNotFound(String),
+
+    #[error("Branch not fully merged: {0}")]
+    BranchNotMerged(String),
+
+    #[error("Remote not found: {0}")]
+    RemoteNotFound(String),
+
+    #[error("Cannot fast-forward, merge or rebase required")]
+    CannotFastForward,
+
+    #[error("Rebase required - use Git CLI for interactive rebase")]
+    RebaseRequired,
+
+    #[error("Merge conflict detected")]
+    MergeConflict,
+
+    #[error("Authentication failed: {0}")]
+    AuthenticationFailed(String),
+
     #[error("{0}")]
     Other(String),
 }

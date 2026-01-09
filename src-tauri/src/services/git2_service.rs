@@ -509,6 +509,526 @@ impl Git2Service {
         }
     }
 
+    // ==================== Branch Operations ====================
+
+    /// Create a new branch
+    pub fn create_branch(
+        &self,
+        name: &str,
+        options: &crate::models::CreateBranchOptions,
+    ) -> Result<Branch> {
+        let target = if let Some(ref start_point) = options.start_point {
+            let obj = self.repo.revparse_single(start_point)?;
+            self.repo.find_commit(obj.id())?
+        } else {
+            self.repo.head()?.peel_to_commit()?
+        };
+
+        let mut branch = self.repo.branch(name, &target, options.force)?;
+
+        // Set up tracking if specified
+        if let Some(ref upstream) = options.track {
+            branch.set_upstream(Some(upstream))?;
+        }
+
+        self.branch_to_model(&branch, git2::BranchType::Local)
+    }
+
+    /// Delete a branch
+    pub fn delete_branch(&self, name: &str, force: bool) -> Result<()> {
+        let mut branch = self.repo.find_branch(name, git2::BranchType::Local)?;
+
+        if !force {
+            // Check if branch is fully merged
+            let head = self.repo.head()?;
+            if let Ok(head_commit) = head.peel_to_commit() {
+                let branch_commit = branch.get().peel_to_commit()?;
+                let merge_base = self.repo.merge_base(head_commit.id(), branch_commit.id())?;
+                if merge_base != branch_commit.id() {
+                    return Err(AxisError::BranchNotMerged(name.to_string()));
+                }
+            }
+        }
+
+        branch.delete()?;
+        Ok(())
+    }
+
+    /// Rename a branch
+    pub fn rename_branch(&self, old_name: &str, new_name: &str, force: bool) -> Result<Branch> {
+        let mut branch = self.repo.find_branch(old_name, git2::BranchType::Local)?;
+        let new_branch = branch.rename(new_name, force)?;
+        self.branch_to_model(&new_branch, git2::BranchType::Local)
+    }
+
+    /// Checkout a branch
+    pub fn checkout_branch(&self, name: &str, options: &crate::models::CheckoutOptions) -> Result<()> {
+        // If create is true and branch doesn't exist, create it first
+        let branch = if options.create {
+            match self.repo.find_branch(name, git2::BranchType::Local) {
+                Ok(b) => b,
+                Err(_) => {
+                    let head = self.repo.head()?.peel_to_commit()?;
+                    let mut new_branch = self.repo.branch(name, &head, false)?;
+
+                    // Set up tracking if specified
+                    if let Some(ref upstream) = options.track {
+                        new_branch.set_upstream(Some(upstream))?;
+                    }
+
+                    new_branch
+                }
+            }
+        } else {
+            self.repo.find_branch(name, git2::BranchType::Local)?
+        };
+
+        let refname = branch.get().name().ok_or_else(|| {
+            AxisError::InvalidReference(name.to_string())
+        })?;
+
+        let obj = self.repo.revparse_single(refname)?;
+
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        if options.force {
+            checkout_builder.force();
+        } else {
+            checkout_builder.safe();
+        }
+
+        self.repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
+        self.repo.set_head(refname)?;
+
+        Ok(())
+    }
+
+    /// Checkout a remote branch (creates local tracking branch)
+    pub fn checkout_remote_branch(
+        &self,
+        remote_name: &str,
+        branch_name: &str,
+        local_name: Option<&str>,
+    ) -> Result<()> {
+        let local_branch_name = local_name.unwrap_or(branch_name);
+        let remote_ref = format!("{}/{}", remote_name, branch_name);
+
+        // Find the remote branch
+        let remote_branch = self.repo.find_branch(&remote_ref, git2::BranchType::Remote)?;
+        let target = remote_branch.get().peel_to_commit()?;
+
+        // Create local branch
+        let mut local_branch = self.repo.branch(local_branch_name, &target, false)?;
+
+        // Set upstream
+        local_branch.set_upstream(Some(&remote_ref))?;
+
+        // Checkout the new branch
+        self.checkout_branch(local_branch_name, &crate::models::CheckoutOptions::default())
+    }
+
+    /// Get branch details
+    pub fn get_branch(&self, name: &str, branch_type: BranchType) -> Result<Branch> {
+        let git_branch_type = match branch_type {
+            BranchType::Local => git2::BranchType::Local,
+            BranchType::Remote => git2::BranchType::Remote,
+        };
+        let branch = self.repo.find_branch(name, git_branch_type)?;
+        self.branch_to_model(&branch, git_branch_type)
+    }
+
+    /// Convert a git2 Branch to our Branch model
+    fn branch_to_model(&self, branch: &git2::Branch, branch_type: git2::BranchType) -> Result<Branch> {
+        let name = branch.name()?.unwrap_or("").to_string();
+        let reference = branch.get();
+        let oid = reference.target().ok_or_else(|| {
+            AxisError::InvalidReference(name.clone())
+        })?;
+
+        let commit = self.repo.find_commit(oid)?;
+        // Use branch.is_head() to check if this branch is currently checked out
+        let is_head = branch.is_head();
+
+        let (ahead, behind) = self.get_ahead_behind(branch)?;
+        let upstream = branch
+            .upstream()
+            .ok()
+            .and_then(|u| u.name().ok().flatten().map(|s| s.to_string()));
+
+        Ok(Branch {
+            name: name.clone(),
+            full_name: reference.name().unwrap_or(&name).to_string(),
+            branch_type: match branch_type {
+                git2::BranchType::Local => BranchType::Local,
+                git2::BranchType::Remote => BranchType::Remote,
+            },
+            is_head,
+            upstream,
+            ahead,
+            behind,
+            target_oid: oid.to_string(),
+            last_commit_summary: commit.summary().unwrap_or("").to_string(),
+            last_commit_time: DateTime::from_timestamp(commit.time().seconds(), 0)
+                .unwrap_or_default()
+                .with_timezone(&Utc),
+        })
+    }
+
+    // ==================== Remote Operations ====================
+
+    /// List all remotes
+    pub fn list_remotes(&self) -> Result<Vec<crate::models::Remote>> {
+        let remote_names = self.repo.remotes()?;
+        let mut remotes = Vec::new();
+
+        for name in remote_names.iter().flatten() {
+            if let Ok(remote) = self.repo.find_remote(name) {
+                remotes.push(crate::models::Remote {
+                    name: name.to_string(),
+                    url: remote.url().map(|s| s.to_string()),
+                    push_url: remote.pushurl().map(|s| s.to_string()),
+                    fetch_refspecs: remote
+                        .fetch_refspecs()?
+                        .iter()
+                        .flatten()
+                        .map(|s| s.to_string())
+                        .collect(),
+                    push_refspecs: remote
+                        .push_refspecs()?
+                        .iter()
+                        .flatten()
+                        .map(|s| s.to_string())
+                        .collect(),
+                });
+            }
+        }
+
+        Ok(remotes)
+    }
+
+    /// Get a single remote by name
+    pub fn get_remote(&self, name: &str) -> Result<crate::models::Remote> {
+        let remote = self.repo.find_remote(name)?;
+        Ok(crate::models::Remote {
+            name: name.to_string(),
+            url: remote.url().map(|s| s.to_string()),
+            push_url: remote.pushurl().map(|s| s.to_string()),
+            fetch_refspecs: remote
+                .fetch_refspecs()?
+                .iter()
+                .flatten()
+                .map(|s| s.to_string())
+                .collect(),
+            push_refspecs: remote
+                .push_refspecs()?
+                .iter()
+                .flatten()
+                .map(|s| s.to_string())
+                .collect(),
+        })
+    }
+
+    /// Add a new remote
+    pub fn add_remote(&self, name: &str, url: &str) -> Result<crate::models::Remote> {
+        let remote = self.repo.remote(name, url)?;
+        Ok(crate::models::Remote {
+            name: name.to_string(),
+            url: remote.url().map(|s| s.to_string()),
+            push_url: remote.pushurl().map(|s| s.to_string()),
+            fetch_refspecs: remote
+                .fetch_refspecs()?
+                .iter()
+                .flatten()
+                .map(|s| s.to_string())
+                .collect(),
+            push_refspecs: remote
+                .push_refspecs()?
+                .iter()
+                .flatten()
+                .map(|s| s.to_string())
+                .collect(),
+        })
+    }
+
+    /// Remove a remote
+    pub fn remove_remote(&self, name: &str) -> Result<()> {
+        self.repo.remote_delete(name)?;
+        Ok(())
+    }
+
+    /// Rename a remote
+    pub fn rename_remote(&self, old_name: &str, new_name: &str) -> Result<Vec<String>> {
+        let problems = self.repo.remote_rename(old_name, new_name)?;
+        Ok(problems.iter().flatten().map(|s| s.to_string()).collect())
+    }
+
+    /// Set the URL for a remote
+    pub fn set_remote_url(&self, name: &str, url: &str) -> Result<()> {
+        self.repo.remote_set_url(name, url)?;
+        Ok(())
+    }
+
+    /// Set the push URL for a remote
+    pub fn set_remote_push_url(&self, name: &str, url: &str) -> Result<()> {
+        self.repo.remote_set_pushurl(name, Some(url))?;
+        Ok(())
+    }
+
+    /// Fetch from a remote
+    pub fn fetch(
+        &self,
+        remote_name: &str,
+        options: &crate::models::FetchOptions,
+        refspecs: Option<&[&str]>,
+    ) -> Result<crate::models::FetchResult> {
+        let mut remote = self.repo.find_remote(remote_name)?;
+
+        let mut fetch_opts = git2::FetchOptions::new();
+
+        // Set up callbacks for progress and credentials
+        let mut callbacks = git2::RemoteCallbacks::new();
+        callbacks.credentials(|_url, username_from_url, allowed_types| {
+            // Try SSH agent first
+            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
+                if let Some(username) = username_from_url {
+                    return git2::Cred::ssh_key_from_agent(username);
+                }
+            }
+
+            // Try default credentials
+            if allowed_types.contains(git2::CredentialType::DEFAULT) {
+                return git2::Cred::default();
+            }
+
+            Err(git2::Error::from_str("no valid credentials found"))
+        });
+
+        fetch_opts.remote_callbacks(callbacks);
+
+        if options.prune {
+            fetch_opts.prune(git2::FetchPrune::On);
+        }
+
+        if options.tags {
+            fetch_opts.download_tags(git2::AutotagOption::All);
+        }
+
+        if let Some(depth) = options.depth {
+            fetch_opts.depth(depth as i32);
+        }
+
+        // Perform fetch
+        let default_refspecs: Vec<&str> = vec![];
+        let specs = refspecs.unwrap_or(&default_refspecs);
+        remote.fetch(specs, Some(&mut fetch_opts), None)?;
+
+        // Get fetch stats
+        let stats = remote.stats();
+
+        Ok(crate::models::FetchResult {
+            remote: remote_name.to_string(),
+            updated_refs: Vec::new(), // TODO: track updated refs
+            stats: crate::models::FetchProgress {
+                total_objects: stats.total_objects(),
+                indexed_objects: stats.indexed_objects(),
+                received_objects: stats.received_objects(),
+                local_objects: stats.local_objects(),
+                total_deltas: stats.total_deltas(),
+                indexed_deltas: stats.indexed_deltas(),
+                received_bytes: stats.received_bytes(),
+            },
+        })
+    }
+
+    /// Push to a remote
+    pub fn push(
+        &self,
+        remote_name: &str,
+        refspecs: &[String],
+        options: &crate::models::PushOptions,
+    ) -> Result<crate::models::PushResult> {
+        let mut remote = self.repo.find_remote(remote_name)?;
+
+        let mut push_opts = git2::PushOptions::new();
+
+        // Set up callbacks for credentials
+        let mut callbacks = git2::RemoteCallbacks::new();
+        callbacks.credentials(|_url, username_from_url, allowed_types| {
+            // Try SSH agent first
+            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
+                if let Some(username) = username_from_url {
+                    return git2::Cred::ssh_key_from_agent(username);
+                }
+            }
+
+            // Try default credentials
+            if allowed_types.contains(git2::CredentialType::DEFAULT) {
+                return git2::Cred::default();
+            }
+
+            Err(git2::Error::from_str("no valid credentials found"))
+        });
+
+        push_opts.remote_callbacks(callbacks);
+
+        // Build refspecs with force prefix if needed
+        let refspecs: Vec<String> = if options.force {
+            refspecs.iter().map(|r| {
+                if r.starts_with('+') {
+                    r.clone()
+                } else {
+                    format!("+{}", r)
+                }
+            }).collect()
+        } else {
+            refspecs.to_vec()
+        };
+
+        let refspec_strs: Vec<&str> = refspecs.iter().map(|s| s.as_str()).collect();
+
+        remote.push(&refspec_strs, Some(&mut push_opts))?;
+
+        Ok(crate::models::PushResult {
+            remote: remote_name.to_string(),
+            pushed_refs: Vec::new(), // TODO: track pushed refs
+        })
+    }
+
+    /// Push the current branch to its upstream
+    pub fn push_current_branch(
+        &self,
+        remote_name: &str,
+        options: &crate::models::PushOptions,
+    ) -> Result<crate::models::PushResult> {
+        let head = self.repo.head()?;
+        let branch_name = head.shorthand().ok_or_else(|| {
+            AxisError::BranchNotFound("HEAD".to_string())
+        })?;
+
+        let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
+        self.push(remote_name, &[refspec], options)
+    }
+
+    /// Pull from a remote (fetch + merge/rebase)
+    /// Note: Full merge/rebase requires CLI for complex cases
+    pub fn pull(
+        &self,
+        remote_name: &str,
+        branch_name: &str,
+        options: &crate::models::PullOptions,
+    ) -> Result<()> {
+        // First, fetch
+        self.fetch(remote_name, &crate::models::FetchOptions::default(), None)?;
+
+        // Get the remote tracking branch
+        let remote_ref = format!("{}/{}", remote_name, branch_name);
+        let fetch_head = self.repo.find_reference(&format!("refs/remotes/{}", remote_ref))?;
+        let fetch_commit = fetch_head.peel_to_commit()?;
+
+        // Get local branch commit
+        let local_ref = self.repo.head()?;
+        let local_commit = local_ref.peel_to_commit()?;
+
+        // Check if we can fast-forward
+        let (ahead, behind) = self.repo.graph_ahead_behind(local_commit.id(), fetch_commit.id())?;
+
+        if behind == 0 {
+            // Already up to date
+            return Ok(());
+        }
+
+        if ahead == 0 {
+            // Can fast-forward
+            let refname = local_ref.name().ok_or_else(|| {
+                AxisError::InvalidReference("HEAD".to_string())
+            })?;
+
+            self.repo.reference(
+                refname,
+                fetch_commit.id(),
+                true,
+                &format!("pull: fast-forward {} from {}", branch_name, remote_ref),
+            )?;
+
+            // Update working directory
+            let mut checkout_opts = git2::build::CheckoutBuilder::new();
+            checkout_opts.force();
+            self.repo.checkout_head(Some(&mut checkout_opts))?;
+
+            return Ok(());
+        }
+
+        if options.ff_only {
+            return Err(AxisError::CannotFastForward);
+        }
+
+        // For non-fast-forward cases, we need to merge or rebase
+        // This is complex and better handled by Git CLI for now
+        if options.rebase {
+            return Err(AxisError::RebaseRequired);
+        }
+
+        // Perform merge using git2
+        let annotated = self.repo.find_annotated_commit(fetch_commit.id())?;
+        let (analysis, _preference) = self.repo.merge_analysis(&[&annotated])?;
+
+        if analysis.is_up_to_date() {
+            return Ok(());
+        }
+
+        if analysis.is_fast_forward() {
+            // Already handled above, but just in case
+            let refname = local_ref.name().ok_or_else(|| {
+                AxisError::InvalidReference("HEAD".to_string())
+            })?;
+
+            self.repo.reference(
+                refname,
+                fetch_commit.id(),
+                true,
+                "fast-forward merge",
+            )?;
+            self.repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
+            return Ok(());
+        }
+
+        if analysis.is_normal() {
+            // Perform merge
+            self.repo.merge(&[&annotated], None, None)?;
+
+            // Check for conflicts
+            if self.repo.index()?.has_conflicts() {
+                return Err(AxisError::MergeConflict);
+            }
+
+            // Create merge commit
+            let tree_id = self.repo.index()?.write_tree()?;
+            let tree = self.repo.find_tree(tree_id)?;
+            let sig = self.repo.signature()?;
+            let message = format!("Merge branch '{}' of {}", branch_name, remote_name);
+
+            self.repo.commit(
+                Some("HEAD"),
+                &sig,
+                &sig,
+                &message,
+                &tree,
+                &[&local_commit, &fetch_commit],
+            )?;
+
+            // Clean up merge state
+            self.repo.cleanup_state()?;
+        }
+
+        Ok(())
+    }
+
+    /// Set upstream tracking branch for a local branch
+    pub fn set_branch_upstream(&self, branch_name: &str, upstream: Option<&str>) -> Result<()> {
+        let mut branch = self.repo.find_branch(branch_name, git2::BranchType::Local)?;
+        branch.set_upstream(upstream)?;
+        Ok(())
+    }
+
     /// Parse a git2 Diff into our FileDiff model
     fn parse_diff(&self, diff: &git2::Diff) -> Result<Vec<crate::models::FileDiff>> {
         use crate::models::{DiffHunk, DiffLine, DiffLineType, DiffStatus, FileDiff};
@@ -963,5 +1483,215 @@ mod tests {
         assert!(diff.is_some());
         let diff = diff.unwrap();
         assert_eq!(diff.new_path.as_ref().unwrap(), "README.md");
+    }
+
+    // ==================== Phase 3 Tests: Branch Operations ====================
+
+    #[test]
+    fn test_create_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let options = crate::models::CreateBranchOptions::default();
+        let branch = service.create_branch("feature/test", &options).unwrap();
+
+        assert_eq!(branch.name, "feature/test");
+        assert_eq!(branch.branch_type, BranchType::Local);
+        assert!(!branch.is_head); // Not checked out yet
+    }
+
+    #[test]
+    fn test_create_branch_from_specific_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Get the initial commit OID
+        let commits = service.log(LogOptions::default()).unwrap();
+        let initial_oid = &commits[0].oid;
+
+        let options = crate::models::CreateBranchOptions {
+            start_point: Some(initial_oid.clone()),
+            force: false,
+            track: None,
+        };
+        let branch = service.create_branch("branch-from-commit", &options).unwrap();
+
+        assert_eq!(branch.name, "branch-from-commit");
+        assert_eq!(branch.target_oid, *initial_oid);
+    }
+
+    #[test]
+    fn test_checkout_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a new branch
+        let options = crate::models::CreateBranchOptions::default();
+        service.create_branch("feature/checkout-test", &options).unwrap();
+
+        // Checkout the branch
+        let checkout_opts = crate::models::CheckoutOptions::default();
+        service.checkout_branch("feature/checkout-test", &checkout_opts).unwrap();
+
+        // Verify we're on the new branch
+        let current = service.get_current_branch_name();
+        assert_eq!(current, Some("feature/checkout-test".to_string()));
+    }
+
+    #[test]
+    fn test_checkout_branch_with_create() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Checkout with create flag - should create and checkout in one operation
+        let checkout_opts = crate::models::CheckoutOptions {
+            create: true,
+            force: false,
+            track: None,
+        };
+        service.checkout_branch("feature/new-branch", &checkout_opts).unwrap();
+
+        // Verify we're on the new branch
+        let current = service.get_current_branch_name();
+        assert_eq!(current, Some("feature/new-branch".to_string()));
+    }
+
+    #[test]
+    fn test_rename_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a branch
+        let options = crate::models::CreateBranchOptions::default();
+        service.create_branch("old-name", &options).unwrap();
+
+        // Rename it
+        let renamed = service.rename_branch("old-name", "new-name", false).unwrap();
+
+        assert_eq!(renamed.name, "new-name");
+
+        // Verify old name doesn't exist
+        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        assert!(!branches.iter().any(|b| b.name == "old-name"));
+        assert!(branches.iter().any(|b| b.name == "new-name"));
+    }
+
+    #[test]
+    fn test_delete_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a branch
+        let options = crate::models::CreateBranchOptions::default();
+        service.create_branch("to-delete", &options).unwrap();
+
+        // Verify it exists
+        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        assert!(branches.iter().any(|b| b.name == "to-delete"));
+
+        // Delete it (force=true to avoid merge check)
+        service.delete_branch("to-delete", true).unwrap();
+
+        // Verify it's gone
+        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        assert!(!branches.iter().any(|b| b.name == "to-delete"));
+    }
+
+    #[test]
+    fn test_get_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a branch
+        let options = crate::models::CreateBranchOptions::default();
+        service.create_branch("test-get", &options).unwrap();
+
+        // Get it by name
+        let branch = service.get_branch("test-get", BranchType::Local).unwrap();
+        assert_eq!(branch.name, "test-get");
+        assert_eq!(branch.branch_type, BranchType::Local);
+    }
+
+    // ==================== Phase 3 Tests: Remote Operations ====================
+
+    #[test]
+    fn test_add_remote() {
+        let (_tmp, service) = setup_test_repo();
+
+        let remote = service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+
+        assert_eq!(remote.name, "origin");
+        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/repo.git"));
+    }
+
+    #[test]
+    fn test_list_remotes() {
+        let (_tmp, service) = setup_test_repo();
+
+        // Add some remotes
+        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+        service.add_remote("upstream", "https://github.com/other/repo.git").unwrap();
+
+        let remotes = service.list_remotes().unwrap();
+        assert_eq!(remotes.len(), 2);
+        assert!(remotes.iter().any(|r| r.name == "origin"));
+        assert!(remotes.iter().any(|r| r.name == "upstream"));
+    }
+
+    #[test]
+    fn test_get_remote() {
+        let (_tmp, service) = setup_test_repo();
+
+        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+
+        let remote = service.get_remote("origin").unwrap();
+        assert_eq!(remote.name, "origin");
+        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/repo.git"));
+    }
+
+    #[test]
+    fn test_remove_remote() {
+        let (_tmp, service) = setup_test_repo();
+
+        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+
+        // Verify it exists
+        let remotes = service.list_remotes().unwrap();
+        assert_eq!(remotes.len(), 1);
+
+        // Remove it
+        service.remove_remote("origin").unwrap();
+
+        // Verify it's gone
+        let remotes = service.list_remotes().unwrap();
+        assert!(remotes.is_empty());
+    }
+
+    #[test]
+    fn test_rename_remote() {
+        let (_tmp, service) = setup_test_repo();
+
+        service.add_remote("old-remote", "https://github.com/user/repo.git").unwrap();
+
+        // Rename it
+        service.rename_remote("old-remote", "new-remote").unwrap();
+
+        // Verify the rename
+        let remotes = service.list_remotes().unwrap();
+        assert!(!remotes.iter().any(|r| r.name == "old-remote"));
+        assert!(remotes.iter().any(|r| r.name == "new-remote"));
+    }
+
+    #[test]
+    fn test_set_remote_url() {
+        let (_tmp, service) = setup_test_repo();
+
+        service.add_remote("origin", "https://github.com/user/old-repo.git").unwrap();
+
+        // Change the URL
+        service.set_remote_url("origin", "https://github.com/user/new-repo.git").unwrap();
+
+        let remote = service.get_remote("origin").unwrap();
+        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/new-repo.git"));
     }
 }

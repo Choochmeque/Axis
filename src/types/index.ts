@@ -149,3 +149,87 @@ export type FileWatchEvent =
   | { type: 'ref_changed'; ref_name: string }
   | { type: 'head_changed' }
   | { type: 'watch_error'; message: string };
+
+// Remote types
+export interface Remote {
+  name: string;
+  url: string | null;
+  push_url: string | null;
+  fetch_refspecs: string[];
+  push_refspecs: string[];
+}
+
+export interface FetchProgress {
+  total_objects: number;
+  indexed_objects: number;
+  received_objects: number;
+  local_objects: number;
+  total_deltas: number;
+  indexed_deltas: number;
+  received_bytes: number;
+}
+
+export interface FetchResult {
+  remote: string;
+  updated_refs: UpdatedRef[];
+  stats: FetchProgress;
+}
+
+export interface UpdatedRef {
+  ref_name: string;
+  old_oid: string | null;
+  new_oid: string | null;
+  status: RefUpdateStatus;
+}
+
+export type RefUpdateStatus =
+  | 'fast_forward'
+  | 'forced'
+  | 'new'
+  | 'deleted'
+  | 'rejected'
+  | 'up_to_date';
+
+export interface PushResult {
+  remote: string;
+  pushed_refs: PushedRef[];
+}
+
+export interface PushedRef {
+  ref_name: string;
+  status: PushStatus;
+  message: string | null;
+}
+
+export type PushStatus = 'ok' | 'rejected' | 'up_to_date' | 'remote_rejected';
+
+// Branch operation options
+export interface CreateBranchOptions {
+  start_point?: string;
+  force?: boolean;
+  track?: string;
+}
+
+export interface CheckoutOptions {
+  create?: boolean;
+  force?: boolean;
+  track?: string;
+}
+
+// Remote operation options
+export interface FetchOptions {
+  prune?: boolean;
+  tags?: boolean;
+  depth?: number;
+}
+
+export interface PushOptions {
+  force?: boolean;
+  set_upstream?: boolean;
+  tags?: boolean;
+}
+
+export interface PullOptions {
+  rebase?: boolean;
+  ff_only?: boolean;
+}

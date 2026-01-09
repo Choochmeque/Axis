@@ -4,10 +4,14 @@ import type {
   RepositoryStatus,
   Commit,
   Branch,
+  BranchType,
   RecentRepository,
   LogOptions,
   FileDiff,
   DiffOptions,
+  Remote,
+  FetchResult,
+  PushResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -67,6 +71,114 @@ export const branchApi = {
       includeLocal,
       includeRemote,
     }),
+
+  create: (
+    name: string,
+    startPoint?: string,
+    force?: boolean,
+    track?: string
+  ) =>
+    invoke<Branch>('create_branch', {
+      name,
+      startPoint,
+      force,
+      track,
+    }),
+
+  delete: (name: string, force?: boolean) =>
+    invoke<void>('delete_branch', { name, force }),
+
+  rename: (oldName: string, newName: string, force?: boolean) =>
+    invoke<Branch>('rename_branch', { oldName, newName, force }),
+
+  checkout: (
+    name: string,
+    create?: boolean,
+    force?: boolean,
+    track?: string
+  ) =>
+    invoke<void>('checkout_branch', { name, create, force, track }),
+
+  checkoutRemote: (
+    remoteName: string,
+    branchName: string,
+    localName?: string
+  ) =>
+    invoke<void>('checkout_remote_branch', { remoteName, branchName, localName }),
+
+  get: (name: string, branchType: BranchType) =>
+    invoke<Branch>('get_branch', { name, branchType }),
+
+  setUpstream: (branchName: string, upstream?: string) =>
+    invoke<void>('set_branch_upstream', { branchName, upstream }),
+};
+
+export const remoteApi = {
+  list: () =>
+    invoke<Remote[]>('list_remotes'),
+
+  get: (name: string) =>
+    invoke<Remote>('get_remote', { name }),
+
+  add: (name: string, url: string) =>
+    invoke<Remote>('add_remote', { name, url }),
+
+  remove: (name: string) =>
+    invoke<void>('remove_remote', { name }),
+
+  rename: (oldName: string, newName: string) =>
+    invoke<string[]>('rename_remote', { oldName, newName }),
+
+  setUrl: (name: string, url: string) =>
+    invoke<void>('set_remote_url', { name, url }),
+
+  setPushUrl: (name: string, url: string) =>
+    invoke<void>('set_remote_push_url', { name, url }),
+
+  fetch: (
+    remoteName: string,
+    prune?: boolean,
+    tags?: boolean,
+    depth?: number
+  ) =>
+    invoke<FetchResult>('fetch_remote', { remoteName, prune, tags, depth }),
+
+  fetchAll: () =>
+    invoke<FetchResult[]>('fetch_all'),
+
+  push: (
+    remoteName: string,
+    refspecs: string[],
+    force?: boolean,
+    setUpstream?: boolean,
+    tags?: boolean
+  ) =>
+    invoke<PushResult>('push_remote', {
+      remoteName,
+      refspecs,
+      force,
+      setUpstream,
+      tags,
+    }),
+
+  pushCurrentBranch: (
+    remoteName: string,
+    force?: boolean,
+    setUpstream?: boolean
+  ) =>
+    invoke<PushResult>('push_current_branch', {
+      remoteName,
+      force,
+      setUpstream,
+    }),
+
+  pull: (
+    remoteName: string,
+    branchName: string,
+    rebase?: boolean,
+    ffOnly?: boolean
+  ) =>
+    invoke<void>('pull_remote', { remoteName, branchName, rebase, ffOnly }),
 };
 
 export const stagingApi = {

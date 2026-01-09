@@ -1,0 +1,125 @@
+.file-status-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-status-list-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.file-status-list-count {
+  background-color: var(--bg-badge);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.file-status-list-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.1s;
+}
+
+.file-status-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.file-status-item.selected {
+  background-color: var(--bg-active);
+}
+
+.file-status-icon {
+  flex-shrink: 0;
+}
+
+.file-status-icon.status-added {
+  color: var(--color-success);
+}
+
+.file-status-icon.status-modified {
+  color: var(--color-warning);
+}
+
+.file-status-icon.status-deleted {
+  color: var(--color-error);
+}
+
+.file-status-icon.status-conflicted {
+  color: var(--color-error);
+}
+
+.file-status-path {
+  flex: 1;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.file-status-old-path {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.file-status-dir {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-status-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.file-status-item:hover .file-status-actions {
+  opacity: 1;
+}
+
+.file-status-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.file-status-action:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.file-status-action.danger:hover {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--color-error);
+}

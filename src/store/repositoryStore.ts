@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { Repository, Commit, Branch, RepositoryStatus, RecentRepository } from '../types';
 import { repositoryApi, commitApi, branchApi } from '../services/api';
 
+export type ViewType = 'file-status' | 'history' | 'search';
+
 interface RepositoryState {
   // Data
   repository: Repository | null;
@@ -9,6 +11,9 @@ interface RepositoryState {
   branches: Branch[];
   status: RepositoryStatus | null;
   recentRepositories: RecentRepository[];
+
+  // UI State
+  currentView: ViewType;
 
   // Loading states
   isLoading: boolean;
@@ -23,6 +28,7 @@ interface RepositoryState {
   loadBranches: () => Promise<void>;
   loadStatus: () => Promise<void>;
   loadRecentRepositories: () => Promise<void>;
+  setCurrentView: (view: ViewType) => void;
   clearError: () => void;
 }
 
@@ -33,6 +39,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   branches: [],
   status: null,
   recentRepositories: [],
+  currentView: 'file-status',
   isLoading: false,
   isLoadingCommits: false,
   error: null,
@@ -123,6 +130,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       set({ error: String(err) });
     }
   },
+
+  setCurrentView: (view: ViewType) => set({ currentView: view }),
 
   clearError: () => set({ error: null }),
 }));

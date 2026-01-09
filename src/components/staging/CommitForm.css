@@ -1,0 +1,133 @@
+.commit-form {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.commit-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.commit-form-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.commit-form-amend-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.commit-form-amend-toggle:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.commit-form-amend-toggle.active {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.commit-form-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commit-message-wrapper {
+  position: relative;
+}
+
+.commit-message-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.commit-message-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.commit-message-input.warning {
+  border-color: var(--color-warning);
+}
+
+.commit-message-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.commit-message-hints {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.char-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.char-count.warning {
+  color: var(--color-warning);
+}
+
+.commit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.commit-button:hover:not(:disabled) {
+  background-color: #0066b8;
+}
+
+.commit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commit-count {
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+.commit-shortcut-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}

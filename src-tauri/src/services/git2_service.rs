@@ -233,6 +233,424 @@ impl Git2Service {
         let commit = self.repo.find_commit(oid)?;
         Ok(Commit::from_git2_commit(&commit))
     }
+
+    // ==================== Staging Operations ====================
+
+    /// Stage a file (add to index)
+    pub fn stage_file(&self, path: &str) -> Result<()> {
+        let mut index = self.repo.index()?;
+        index.add_path(Path::new(path))?;
+        index.write()?;
+        Ok(())
+    }
+
+    /// Stage multiple files
+    pub fn stage_files(&self, paths: &[String]) -> Result<()> {
+        let mut index = self.repo.index()?;
+        for path in paths {
+            index.add_path(Path::new(path))?;
+        }
+        index.write()?;
+        Ok(())
+    }
+
+    /// Stage all changes (equivalent to git add -A)
+    pub fn stage_all(&self) -> Result<()> {
+        let mut index = self.repo.index()?;
+        index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+        index.write()?;
+        Ok(())
+    }
+
+    /// Unstage a file (remove from index, keeping workdir changes)
+    pub fn unstage_file(&self, path: &str) -> Result<()> {
+        let head = self.repo.head()?;
+        let head_commit = head.peel_to_commit()?;
+        let head_tree = head_commit.tree()?;
+
+        let mut index = self.repo.index()?;
+
+        // Check if file exists in HEAD
+        if let Some(entry) = head_tree.get_path(Path::new(path)).ok() {
+            // File exists in HEAD - reset to HEAD version
+            let obj = entry.to_object(&self.repo)?;
+            if let Some(blob) = obj.as_blob() {
+                index.add(&git2::IndexEntry {
+                    ctime: git2::IndexTime::new(0, 0),
+                    mtime: git2::IndexTime::new(0, 0),
+                    dev: 0,
+                    ino: 0,
+                    mode: entry.filemode() as u32,
+                    uid: 0,
+                    gid: 0,
+                    file_size: blob.size() as u32,
+                    id: entry.id(),
+                    flags: 0,
+                    flags_extended: 0,
+                    path: path.as_bytes().to_vec(),
+                })?;
+            }
+        } else {
+            // File is new (not in HEAD) - remove from index entirely
+            index.remove_path(Path::new(path))?;
+        }
+
+        index.write()?;
+        Ok(())
+    }
+
+    /// Unstage multiple files
+    pub fn unstage_files(&self, paths: &[String]) -> Result<()> {
+        for path in paths {
+            self.unstage_file(path)?;
+        }
+        Ok(())
+    }
+
+    /// Unstage all files (reset index to HEAD)
+    pub fn unstage_all(&self) -> Result<()> {
+        let head = self.repo.head()?;
+        let head_commit = head.peel_to_commit()?;
+        self.repo.reset(
+            head_commit.as_object(),
+            git2::ResetType::Mixed,
+            None,
+        )?;
+        Ok(())
+    }
+
+    /// Discard changes in a file (revert to index or HEAD)
+    pub fn discard_file(&self, path: &str) -> Result<()> {
+        let mut checkout_opts = git2::build::CheckoutBuilder::new();
+        checkout_opts.force();
+        checkout_opts.path(path);
+
+        self.repo.checkout_index(None, Some(&mut checkout_opts))?;
+        Ok(())
+    }
+
+    /// Discard all unstaged changes
+    pub fn discard_all(&self) -> Result<()> {
+        let mut checkout_opts = git2::build::CheckoutBuilder::new();
+        checkout_opts.force();
+
+        self.repo.checkout_index(None, Some(&mut checkout_opts))?;
+        Ok(())
+    }
+
+    // ==================== Commit Operations ====================
+
+    /// Create a new commit
+    pub fn create_commit(&self, message: &str, author_name: Option<&str>, author_email: Option<&str>) -> Result<String> {
+        let mut index = self.repo.index()?;
+        let tree_id = index.write_tree()?;
+        let tree = self.repo.find_tree(tree_id)?;
+
+        // Get signature
+        let sig = if let (Some(name), Some(email)) = (author_name, author_email) {
+            git2::Signature::now(name, email)?
+        } else {
+            self.repo.signature()?
+        };
+
+        // Get parent commit(s)
+        let parents = if let Ok(head) = self.repo.head() {
+            if let Ok(commit) = head.peel_to_commit() {
+                vec![commit]
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        };
+
+        let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
+
+        let oid = self.repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            message,
+            &tree,
+            &parent_refs,
+        )?;
+
+        Ok(oid.to_string())
+    }
+
+    /// Amend the last commit
+    pub fn amend_commit(&self, message: Option<&str>) -> Result<String> {
+        let head = self.repo.head()?;
+        let head_commit = head.peel_to_commit()?;
+
+        let mut index = self.repo.index()?;
+        let tree_id = index.write_tree()?;
+        let tree = self.repo.find_tree(tree_id)?;
+
+        let message = message.unwrap_or_else(|| head_commit.message().unwrap_or(""));
+
+        let oid = head_commit.amend(
+            Some("HEAD"),
+            None,  // Keep original author
+            None,  // Keep original committer
+            None,  // Keep original message encoding
+            Some(message),
+            Some(&tree),
+        )?;
+
+        Ok(oid.to_string())
+    }
+
+    // ==================== Diff Operations ====================
+
+    /// Generate diff for unstaged changes (workdir vs index)
+    pub fn diff_workdir(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+
+        let diff = self.repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
+        self.parse_diff(&diff)
+    }
+
+    /// Generate diff for staged changes (index vs HEAD)
+    pub fn diff_staged(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+
+        let head = self.repo.head()?.peel_to_tree()?;
+        let diff = self.repo.diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
+        self.parse_diff(&diff)
+    }
+
+    /// Generate diff for all uncommitted changes (workdir vs HEAD)
+    pub fn diff_head(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+
+        let head = self.repo.head()?.peel_to_tree()?;
+        let diff = self.repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
+        self.parse_diff(&diff)
+    }
+
+    /// Generate diff for a specific commit (commit vs its parent)
+    pub fn diff_commit(&self, oid_str: &str, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+        let oid = git2::Oid::from_str(oid_str)
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
+        let commit = self.repo.find_commit(oid)?;
+        let tree = commit.tree()?;
+
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+
+        let parent_tree = if commit.parent_count() > 0 {
+            Some(commit.parent(0)?.tree()?)
+        } else {
+            None
+        };
+
+        let diff = self.repo.diff_tree_to_tree(
+            parent_tree.as_ref(),
+            Some(&tree),
+            Some(&mut diff_opts),
+        )?;
+
+        self.parse_diff(&diff)
+    }
+
+    /// Generate diff between two commits
+    pub fn diff_commits(&self, from_oid: &str, to_oid: &str, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+        let from = git2::Oid::from_str(from_oid)
+            .map_err(|_| AxisError::InvalidReference(from_oid.to_string()))?;
+        let to = git2::Oid::from_str(to_oid)
+            .map_err(|_| AxisError::InvalidReference(to_oid.to_string()))?;
+
+        let from_commit = self.repo.find_commit(from)?;
+        let to_commit = self.repo.find_commit(to)?;
+
+        let from_tree = from_commit.tree()?;
+        let to_tree = to_commit.tree()?;
+
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+
+        let diff = self.repo.diff_tree_to_tree(
+            Some(&from_tree),
+            Some(&to_tree),
+            Some(&mut diff_opts),
+        )?;
+
+        self.parse_diff(&diff)
+    }
+
+    /// Get diff for a single file (staged or unstaged)
+    pub fn diff_file(&self, path: &str, staged: bool, options: &crate::models::DiffOptions) -> Result<Option<crate::models::FileDiff>> {
+        let diffs = if staged {
+            self.diff_staged(options)?
+        } else {
+            self.diff_workdir(options)?
+        };
+
+        Ok(diffs.into_iter().find(|d| {
+            d.new_path.as_ref().map(|p| p == path).unwrap_or(false) ||
+            d.old_path.as_ref().map(|p| p == path).unwrap_or(false)
+        }))
+    }
+
+    /// Apply diff options to git2 DiffOptions
+    fn apply_diff_options(&self, opts: &mut git2::DiffOptions, custom: &crate::models::DiffOptions) {
+        if let Some(context) = custom.context_lines {
+            opts.context_lines(context);
+        }
+        if let Some(true) = custom.ignore_whitespace {
+            opts.ignore_whitespace(true);
+        }
+        if let Some(true) = custom.ignore_whitespace_eol {
+            opts.ignore_whitespace_eol(true);
+        }
+    }
+
+    /// Parse a git2 Diff into our FileDiff model
+    fn parse_diff(&self, diff: &git2::Diff) -> Result<Vec<crate::models::FileDiff>> {
+        use crate::models::{DiffHunk, DiffLine, DiffLineType, DiffStatus, FileDiff};
+        use std::cell::RefCell;
+
+        let files: RefCell<Vec<FileDiff>> = RefCell::new(Vec::new());
+        let current_hunks: RefCell<Vec<DiffHunk>> = RefCell::new(Vec::new());
+        let current_lines: RefCell<Vec<DiffLine>> = RefCell::new(Vec::new());
+
+        diff.foreach(
+            &mut |delta, _progress| {
+                // Finalize previous file's hunks
+                {
+                    let mut files = files.borrow_mut();
+                    let mut hunks = current_hunks.borrow_mut();
+                    let lines = current_lines.borrow_mut();
+
+                    if let Some(last_hunk) = hunks.last_mut() {
+                        last_hunk.lines = lines.clone();
+                    }
+
+                    if let Some(last_file) = files.last_mut() {
+                        last_file.hunks = hunks.clone();
+                    }
+
+                    hunks.clear();
+                }
+                current_lines.borrow_mut().clear();
+
+                let status = match delta.status() {
+                    git2::Delta::Added => DiffStatus::Added,
+                    git2::Delta::Deleted => DiffStatus::Deleted,
+                    git2::Delta::Modified => DiffStatus::Modified,
+                    git2::Delta::Renamed => DiffStatus::Renamed,
+                    git2::Delta::Copied => DiffStatus::Copied,
+                    git2::Delta::Typechange => DiffStatus::TypeChanged,
+                    git2::Delta::Untracked => DiffStatus::Untracked,
+                    git2::Delta::Conflicted => DiffStatus::Conflicted,
+                    _ => DiffStatus::Modified,
+                };
+
+                let old_file = delta.old_file();
+                let new_file = delta.new_file();
+
+                files.borrow_mut().push(FileDiff {
+                    old_path: old_file.path().map(|p| p.to_string_lossy().to_string()),
+                    new_path: new_file.path().map(|p| p.to_string_lossy().to_string()),
+                    old_oid: if old_file.id().is_zero() {
+                        None
+                    } else {
+                        Some(old_file.id().to_string())
+                    },
+                    new_oid: if new_file.id().is_zero() {
+                        None
+                    } else {
+                        Some(new_file.id().to_string())
+                    },
+                    status,
+                    binary: delta.flags().is_binary(),
+                    hunks: Vec::new(),
+                    additions: 0,
+                    deletions: 0,
+                });
+
+                true
+            },
+            None, // Binary callback
+            Some(&mut |_delta, hunk| {
+                // Finalize previous hunk's lines
+                {
+                    let mut hunks = current_hunks.borrow_mut();
+                    let lines = current_lines.borrow_mut();
+
+                    if let Some(last_hunk) = hunks.last_mut() {
+                        last_hunk.lines = lines.clone();
+                    }
+                }
+                current_lines.borrow_mut().clear();
+
+                let header = String::from_utf8_lossy(hunk.header()).to_string();
+
+                current_hunks.borrow_mut().push(DiffHunk {
+                    header,
+                    old_start: hunk.old_start(),
+                    old_lines: hunk.old_lines(),
+                    new_start: hunk.new_start(),
+                    new_lines: hunk.new_lines(),
+                    lines: Vec::new(),
+                });
+
+                true
+            }),
+            Some(&mut |_delta, _hunk, line| {
+                let line_type = match line.origin() {
+                    '+' => DiffLineType::Addition,
+                    '-' => DiffLineType::Deletion,
+                    ' ' => DiffLineType::Context,
+                    '=' | '>' | '<' => DiffLineType::Header,
+                    'B' => DiffLineType::Binary,
+                    _ => DiffLineType::Context,
+                };
+
+                let content = String::from_utf8_lossy(line.content()).to_string();
+
+                current_lines.borrow_mut().push(DiffLine {
+                    line_type,
+                    content,
+                    old_line_no: line.old_lineno(),
+                    new_line_no: line.new_lineno(),
+                });
+
+                // Update stats in the current file
+                let mut files = files.borrow_mut();
+                if let Some(file) = files.last_mut() {
+                    match line.origin() {
+                        '+' => file.additions += 1,
+                        '-' => file.deletions += 1,
+                        _ => {}
+                    }
+                }
+
+                true
+            }),
+        )?;
+
+        // Finalize the last file and hunk
+        {
+            let mut files = files.borrow_mut();
+            let mut hunks = current_hunks.borrow_mut();
+            let lines = current_lines.borrow();
+
+            if let Some(last_hunk) = hunks.last_mut() {
+                last_hunk.lines = lines.clone();
+            }
+
+            if let Some(last_file) = files.last_mut() {
+                last_file.hunks = hunks.clone();
+            }
+        }
+
+        Ok(files.into_inner())
+    }
 }
 
 #[cfg(test)]
@@ -350,5 +768,200 @@ mod tests {
 
         let branch = service.get_current_branch_name();
         assert!(branch.is_some());
+    }
+
+    // ==================== Phase 2 Tests ====================
+
+    #[test]
+    fn test_stage_file() {
+        let (tmp, service) = setup_test_repo();
+
+        // Create an untracked file
+        let file_path = tmp.path().join("test.txt");
+        fs::write(&file_path, "test content").unwrap();
+
+        // Stage the file
+        service.stage_file("test.txt").unwrap();
+
+        let status = service.status().unwrap();
+        assert_eq!(status.staged.len(), 1);
+        assert_eq!(status.staged[0].path, "test.txt");
+        assert!(status.untracked.is_empty());
+    }
+
+    #[test]
+    fn test_stage_multiple_files() {
+        let (tmp, service) = setup_test_repo();
+
+        // Create multiple files
+        fs::write(tmp.path().join("file1.txt"), "content 1").unwrap();
+        fs::write(tmp.path().join("file2.txt"), "content 2").unwrap();
+
+        // Stage multiple files
+        service.stage_files(&["file1.txt".to_string(), "file2.txt".to_string()]).unwrap();
+
+        let status = service.status().unwrap();
+        assert_eq!(status.staged.len(), 2);
+    }
+
+    #[test]
+    fn test_stage_all() {
+        let (tmp, service) = setup_test_repo();
+
+        // Create multiple files
+        fs::write(tmp.path().join("file1.txt"), "content 1").unwrap();
+        fs::write(tmp.path().join("file2.txt"), "content 2").unwrap();
+        fs::write(tmp.path().join("file3.txt"), "content 3").unwrap();
+
+        // Stage all
+        service.stage_all().unwrap();
+
+        let status = service.status().unwrap();
+        assert_eq!(status.staged.len(), 3);
+        assert!(status.untracked.is_empty());
+    }
+
+    #[test]
+    fn test_unstage_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create and stage a new file
+        let file_path = tmp.path().join("new_file.txt");
+        fs::write(&file_path, "new content").unwrap();
+        service.stage_file("new_file.txt").unwrap();
+
+        let status = service.status().unwrap();
+        assert_eq!(status.staged.len(), 1);
+
+        // Unstage the file
+        service.unstage_file("new_file.txt").unwrap();
+
+        let status = service.status().unwrap();
+        assert!(status.staged.is_empty());
+        assert_eq!(status.untracked.len(), 1);
+    }
+
+    #[test]
+    fn test_discard_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify the README
+        let file_path = tmp.path().join("README.md");
+        fs::write(&file_path, "Modified content").unwrap();
+
+        let status = service.status().unwrap();
+        assert_eq!(status.unstaged.len(), 1);
+
+        // Discard changes
+        service.discard_file("README.md").unwrap();
+
+        let status = service.status().unwrap();
+        assert!(status.unstaged.is_empty());
+
+        // Verify content is restored
+        let content = fs::read_to_string(&file_path).unwrap();
+        assert_eq!(content, "# Test Repository");
+    }
+
+    #[test]
+    fn test_create_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create and stage a new file
+        fs::write(tmp.path().join("new_file.txt"), "new content").unwrap();
+        service.stage_file("new_file.txt").unwrap();
+
+        // Create commit
+        let oid = service.create_commit(
+            "Add new file",
+            Some("Test User"),
+            Some("test@example.com"),
+        ).unwrap();
+
+        assert!(!oid.is_empty());
+
+        // Verify commit is in history
+        let commits = service.log(LogOptions::default()).unwrap();
+        assert_eq!(commits.len(), 2);
+        assert_eq!(commits[0].summary, "Add new file");
+    }
+
+    #[test]
+    fn test_amend_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Amend the commit with a new message
+        let oid = service.amend_commit(Some("Amended initial commit")).unwrap();
+        assert!(!oid.is_empty());
+
+        // Verify commit message was updated
+        let commits = service.log(LogOptions::default()).unwrap();
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].summary, "Amended initial commit");
+    }
+
+    #[test]
+    fn test_diff_workdir() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify the README
+        let file_path = tmp.path().join("README.md");
+        fs::write(&file_path, "# Modified Test Repository").unwrap();
+
+        let diffs = service.diff_workdir(&crate::models::DiffOptions::default()).unwrap();
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
+        assert_eq!(diffs[0].status, crate::models::DiffStatus::Modified);
+        assert!(diffs[0].additions > 0 || diffs[0].deletions > 0);
+    }
+
+    #[test]
+    fn test_diff_staged() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create and stage a new file
+        fs::write(tmp.path().join("new_file.txt"), "new content").unwrap();
+        service.stage_file("new_file.txt").unwrap();
+
+        let diffs = service.diff_staged(&crate::models::DiffOptions::default()).unwrap();
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "new_file.txt");
+        assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
+    }
+
+    #[test]
+    fn test_diff_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Get the commit OID
+        let commits = service.log(LogOptions::default()).unwrap();
+        let oid = &commits[0].oid;
+
+        let diffs = service.diff_commit(oid, &crate::models::DiffOptions::default()).unwrap();
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
+        assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
+    }
+
+    #[test]
+    fn test_diff_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify the README
+        fs::write(tmp.path().join("README.md"), "# Modified Content").unwrap();
+
+        // Get diff for specific file
+        let diff = service.diff_file("README.md", false, &crate::models::DiffOptions::default()).unwrap();
+        assert!(diff.is_some());
+        let diff = diff.unwrap();
+        assert_eq!(diff.new_path.as_ref().unwrap(), "README.md");
     }
 }

@@ -7,9 +7,11 @@ import {
   Cloud,
   Archive,
   FileCode,
+  History,
+  Search,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { clsx } from 'clsx';
 import './Sidebar.css';
 
@@ -39,7 +41,7 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
 }
 
 export function Sidebar() {
-  const { repository, branches, status } = useRepositoryStore();
+  const { repository, branches, status, currentView, setCurrentView } = useRepositoryStore();
 
   const localBranches = branches.filter((b) => b.branch_type === 'local');
   const remoteBranches = branches.filter((b) => b.branch_type === 'remote');
@@ -58,6 +60,10 @@ export function Sidebar() {
     );
   }
 
+  const handleViewClick = (view: ViewType) => {
+    setCurrentView(view);
+  };
+
   return (
     <ScrollArea className="sidebar">
       <Section
@@ -65,14 +71,30 @@ export function Sidebar() {
         icon={<FileCode size={14} />}
         defaultExpanded={true}
       >
-        <div className="sidebar-item">
+        <button
+          className={clsx('sidebar-item', { 'is-active': currentView === 'file-status' })}
+          onClick={() => handleViewClick('file-status')}
+        >
+          <FileCode size={12} />
           <span>File Status</span>
           {changesCount > 0 && (
             <span className="badge">{changesCount}</span>
           )}
-        </div>
-        <div className="sidebar-item">History</div>
-        <div className="sidebar-item">Search</div>
+        </button>
+        <button
+          className={clsx('sidebar-item', { 'is-active': currentView === 'history' })}
+          onClick={() => handleViewClick('history')}
+        >
+          <History size={12} />
+          <span>History</span>
+        </button>
+        <button
+          className={clsx('sidebar-item', { 'is-active': currentView === 'search' })}
+          onClick={() => handleViewClick('search')}
+        >
+          <Search size={12} />
+          <span>Search</span>
+        </button>
       </Section>
 
       <Section

@@ -89,3 +89,63 @@ export interface LogOptions {
   skip?: number;
   from_ref?: string;
 }
+
+// Diff types
+export interface FileDiff {
+  old_path: string | null;
+  new_path: string | null;
+  old_oid: string | null;
+  new_oid: string | null;
+  status: DiffStatus;
+  binary: boolean;
+  hunks: DiffHunk[];
+  additions: number;
+  deletions: number;
+}
+
+export type DiffStatus =
+  | 'added'
+  | 'deleted'
+  | 'modified'
+  | 'renamed'
+  | 'copied'
+  | 'type_changed'
+  | 'untracked'
+  | 'conflicted';
+
+export interface DiffHunk {
+  header: string;
+  old_start: number;
+  old_lines: number;
+  new_start: number;
+  new_lines: number;
+  lines: DiffLine[];
+}
+
+export interface DiffLine {
+  line_type: DiffLineType;
+  content: string;
+  old_line_no: number | null;
+  new_line_no: number | null;
+}
+
+export type DiffLineType =
+  | 'context'
+  | 'addition'
+  | 'deletion'
+  | 'header'
+  | 'binary';
+
+export interface DiffOptions {
+  context_lines?: number;
+  ignore_whitespace?: boolean;
+  ignore_whitespace_eol?: boolean;
+}
+
+// File watcher events
+export type FileWatchEvent =
+  | { type: 'files_changed'; paths: string[] }
+  | { type: 'index_changed' }
+  | { type: 'ref_changed'; ref_name: string }
+  | { type: 'head_changed' }
+  | { type: 'watch_error'; message: string };

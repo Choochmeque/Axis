@@ -61,10 +61,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 6px 12px 6px 24px;
   font-size: 13px;
   cursor: pointer;
   transition: background-color 0.15s;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
 }
 
 .sidebar-item:hover {
@@ -74,6 +79,11 @@
 .sidebar-item.is-current {
   font-weight: 600;
   color: var(--accent-color);
+}
+
+.sidebar-item.is-active {
+  background-color: var(--bg-active);
+  font-weight: 500;
 }
 
 .sidebar-empty-item {

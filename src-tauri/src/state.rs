@@ -1,13 +1,16 @@
 use crate::error::{AxisError, Result};
 use crate::models::RecentRepository;
+use crate::services::FileWatcherService;
 use crate::storage::Database;
 use parking_lot::RwLock;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tauri::AppHandle;
 
 pub struct AppState {
     current_repository_path: RwLock<Option<PathBuf>>,
     database: Arc<Database>,
+    file_watcher: FileWatcherService,
 }
 
 impl AppState {
@@ -15,6 +18,7 @@ impl AppState {
         AppState {
             current_repository_path: RwLock::new(None),
             database: Arc::new(database),
+            file_watcher: FileWatcherService::new(),
         }
     }
 
@@ -29,6 +33,9 @@ impl AppState {
     }
 
     pub fn close_current_repository(&self) {
+        // Stop the file watcher
+        self.file_watcher.stop_watching();
+
         let mut repo_path = self.current_repository_path.write();
         *repo_path = None;
     }
@@ -44,5 +51,22 @@ impl AppState {
 
     pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepository>> {
         self.database.get_recent_repositories()
+    }
+
+    /// Start watching the current repository for file changes
+    pub fn start_file_watcher(&self, app_handle: AppHandle) -> Result<()> {
+        let path = self.ensure_repository_open()?;
+        self.file_watcher.start_watching(path, app_handle)
+            .map_err(|e| AxisError::Other(format!("Failed to start file watcher: {}", e)))
+    }
+
+    /// Stop watching for file changes
+    pub fn stop_file_watcher(&self) {
+        self.file_watcher.stop_watching();
+    }
+
+    /// Check if file watcher is active
+    pub fn is_watching(&self) -> bool {
+        self.file_watcher.is_watching()
     }
 }

@@ -46,6 +46,9 @@ parking_lot = "0.12"
 log = "0.4"
 env_logger = "0.11"
 
+# File watching
+notify = "6"
+
 [dev-dependencies]
 tempfile = "3"
 

@@ -233,3 +233,71 @@ export interface PullOptions {
   rebase?: boolean;
   ff_only?: boolean;
 }
+
+// Graph types
+export interface GraphCommit extends Commit {
+  lane: number;
+  parent_edges: GraphEdge[];
+  refs: CommitRef[];
+}
+
+export interface GraphEdge {
+  parent_oid: string;
+  parent_lane: number;
+  edge_type: EdgeType;
+}
+
+export type EdgeType = 'straight' | 'merge' | 'branch';
+
+export interface CommitRef {
+  name: string;
+  ref_type: RefType;
+  is_head: boolean;
+}
+
+export type RefType = 'local_branch' | 'remote_branch' | 'tag';
+
+export interface GraphOptions {
+  limit?: number;
+  skip?: number;
+  from_ref?: string;
+  all_branches?: boolean;
+}
+
+export interface GraphResult {
+  commits: GraphCommit[];
+  total_count: number;
+  max_lane: number;
+  has_more: boolean;
+}
+
+// Search types
+export interface SearchOptions {
+  query: string;
+  search_message?: boolean;
+  search_author?: boolean;
+  search_hash?: boolean;
+  limit?: number;
+}
+
+export interface SearchResult {
+  commits: Commit[];
+  total_matches: number;
+}
+
+// Blame types
+export interface BlameResult {
+  path: string;
+  lines: BlameLine[];
+}
+
+export interface BlameLine {
+  line_number: number;
+  commit_oid: string;
+  short_oid: string;
+  author: string;
+  timestamp: string;
+  content: string;
+  original_line: number;
+  is_group_start: boolean;
+}

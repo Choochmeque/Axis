@@ -1171,6 +1171,333 @@ impl Git2Service {
 
         Ok(files.into_inner())
     }
+
+    // ==================== Graph Operations ====================
+
+    /// Build a commit graph with lane assignments for visualization
+    pub fn build_graph(&self, options: crate::models::GraphOptions) -> Result<crate::models::GraphResult> {
+        use crate::models::{
+            CommitRef, EdgeType, GraphCommit, GraphEdge, GraphResult, LaneState, RefType,
+        };
+
+        let mut revwalk = self.repo.revwalk()?;
+
+        // Configure revwalk
+        if options.all_branches {
+            // Add all branches
+            for branch_result in self.repo.branches(None)? {
+                let (branch, _) = branch_result?;
+                if let Some(oid) = branch.get().target() {
+                    let _ = revwalk.push(oid);
+                }
+            }
+        } else if let Some(ref from_ref) = options.from_ref {
+            let obj = self.repo.revparse_single(from_ref)?;
+            revwalk.push(obj.id())?;
+        } else {
+            revwalk.push_head()?;
+        }
+
+        // Sort topologically with time as secondary
+        revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::TIME)?;
+
+        // Collect refs for each commit
+        let commit_refs = self.collect_commit_refs()?;
+
+        // Process commits and build graph
+        let mut lane_state = LaneState::new();
+        let mut graph_commits = Vec::new();
+        let skip = options.skip.unwrap_or(0);
+        let limit = options.limit.unwrap_or(100);
+        let mut total_count = 0;
+
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            total_count += 1;
+
+            if total_count <= skip {
+                continue;
+            }
+
+            if graph_commits.len() >= limit {
+                continue; // Keep counting for total
+            }
+
+            let commit = self.repo.find_commit(oid)?;
+            let oid_str = oid.to_string();
+
+            // Get lane for this commit
+            let lane = lane_state.get_lane_for_commit(&oid_str);
+
+            // Build parent edges
+            let parent_oids: Vec<String> = commit.parent_ids().map(|id| id.to_string()).collect();
+            let mut parent_edges = Vec::new();
+
+            for (i, parent_oid) in parent_oids.iter().enumerate() {
+                let parent_lane = lane_state.get_parent_lane(parent_oid);
+                let edge_type = if i == 0 && parent_lane == lane {
+                    EdgeType::Straight
+                } else if i == 0 {
+                    EdgeType::Branch
+                } else {
+                    EdgeType::Merge
+                };
+
+                parent_edges.push(GraphEdge {
+                    parent_oid: parent_oid.clone(),
+                    parent_lane,
+                    edge_type,
+                });
+            }
+
+            // Update lane state
+            lane_state.process_commit(&oid_str, lane, &parent_oids);
+
+            // Get refs for this commit
+            let refs = commit_refs
+                .get(&oid_str)
+                .cloned()
+                .unwrap_or_default();
+
+            graph_commits.push(GraphCommit {
+                commit: Commit::from_git2_commit(&commit),
+                lane,
+                parent_edges,
+                refs,
+            });
+        }
+
+        let max_lane = graph_commits.iter().map(|c| c.lane).max().unwrap_or(0);
+        let has_more = total_count > skip + graph_commits.len();
+
+        Ok(GraphResult {
+            commits: graph_commits,
+            total_count,
+            max_lane,
+            has_more,
+        })
+    }
+
+    /// Collect all refs (branches and tags) and map them to commit OIDs
+    fn collect_commit_refs(&self) -> Result<std::collections::HashMap<String, Vec<crate::models::CommitRef>>> {
+        use crate::models::{CommitRef, RefType};
+        use std::collections::HashMap;
+
+        let mut commit_refs: HashMap<String, Vec<CommitRef>> = HashMap::new();
+
+        // Get HEAD for is_head check
+        let head_oid = self.repo.head().ok().and_then(|h| h.target());
+
+        // Collect branches
+        for branch_result in self.repo.branches(None)? {
+            let (branch, branch_type) = branch_result?;
+            if let (Some(name), Some(oid)) = (branch.name()?, branch.get().target()) {
+                let oid_str = oid.to_string();
+                let ref_type = match branch_type {
+                    git2::BranchType::Local => RefType::LocalBranch,
+                    git2::BranchType::Remote => RefType::RemoteBranch,
+                };
+                let is_head = head_oid.map(|h| h == oid).unwrap_or(false) && branch.is_head();
+
+                commit_refs.entry(oid_str).or_default().push(CommitRef {
+                    name: name.to_string(),
+                    ref_type,
+                    is_head,
+                });
+            }
+        }
+
+        // Collect tags
+        self.repo.tag_foreach(|oid, name| {
+            let name_str = String::from_utf8_lossy(name);
+            // Remove "refs/tags/" prefix
+            let short_name = name_str.strip_prefix("refs/tags/").unwrap_or(&name_str);
+
+            // Resolve annotated tags to their target commit
+            let target_oid = if let Ok(tag) = self.repo.find_tag(oid) {
+                tag.target_id()
+            } else {
+                oid
+            };
+
+            commit_refs
+                .entry(target_oid.to_string())
+                .or_default()
+                .push(CommitRef {
+                    name: short_name.to_string(),
+                    ref_type: RefType::Tag,
+                    is_head: false,
+                });
+            true
+        })?;
+
+        Ok(commit_refs)
+    }
+
+    // ==================== Search Operations ====================
+
+    /// Search commits by message, author, or hash
+    pub fn search_commits(&self, options: crate::models::SearchOptions) -> Result<crate::models::SearchResult> {
+        use crate::models::SearchResult;
+
+        let query = options.query.to_lowercase();
+        let limit = options.limit.unwrap_or(50);
+
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push_head()?;
+        revwalk.set_sorting(git2::Sort::TIME)?;
+
+        let mut matches = Vec::new();
+        let mut total_matches = 0;
+
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+
+            let mut is_match = false;
+
+            // Search in hash
+            if options.search_hash {
+                let oid_str = oid.to_string().to_lowercase();
+                if oid_str.starts_with(&query) || oid_str.contains(&query) {
+                    is_match = true;
+                }
+            }
+
+            // Search in message
+            if !is_match && options.search_message {
+                if let Some(message) = commit.message() {
+                    if message.to_lowercase().contains(&query) {
+                        is_match = true;
+                    }
+                }
+            }
+
+            // Search in author
+            if !is_match && options.search_author {
+                let author = commit.author();
+                if let Some(name) = author.name() {
+                    if name.to_lowercase().contains(&query) {
+                        is_match = true;
+                    }
+                }
+                if !is_match {
+                    if let Some(email) = author.email() {
+                        if email.to_lowercase().contains(&query) {
+                            is_match = true;
+                        }
+                    }
+                }
+            }
+
+            if is_match {
+                total_matches += 1;
+                if matches.len() < limit {
+                    matches.push(Commit::from_git2_commit(&commit));
+                }
+            }
+        }
+
+        Ok(SearchResult {
+            commits: matches,
+            total_matches,
+        })
+    }
+
+    // ==================== Blame Operations ====================
+
+    /// Get blame information for a file
+    pub fn blame_file(&self, path: &str, commit_oid: Option<&str>) -> Result<crate::models::BlameResult> {
+        use crate::models::{BlameLine, BlameResult};
+
+        let mut blame_opts = git2::BlameOptions::new();
+
+        // If a specific commit is provided, blame up to that commit
+        if let Some(oid_str) = commit_oid {
+            let oid = git2::Oid::from_str(oid_str)
+                .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
+            blame_opts.newest_commit(oid);
+        }
+
+        let blame = self.repo.blame_file(Path::new(path), Some(&mut blame_opts))?;
+
+        // Read file content to get line contents
+        let file_content = if let Some(oid_str) = commit_oid {
+            let oid = git2::Oid::from_str(oid_str)?;
+            let commit = self.repo.find_commit(oid)?;
+            let tree = commit.tree()?;
+            let entry = tree.get_path(Path::new(path))?;
+            let blob = entry.to_object(&self.repo)?.peel_to_blob()?;
+            String::from_utf8_lossy(blob.content()).to_string()
+        } else {
+            // Read from workdir
+            let workdir = self.repo.workdir().ok_or_else(|| {
+                AxisError::GitError(git2::Error::from_str("No working directory"))
+            })?;
+            std::fs::read_to_string(workdir.join(path))?
+        };
+
+        let lines: Vec<&str> = file_content.lines().collect();
+        let mut blame_lines = Vec::new();
+        let mut last_oid: Option<git2::Oid> = None;
+
+        for (i, line_content) in lines.iter().enumerate() {
+            let line_num = i + 1;
+
+            if let Some(hunk) = blame.get_line(line_num) {
+                let commit_oid = hunk.final_commit_id();
+                let is_group_start = last_oid != Some(commit_oid);
+                last_oid = Some(commit_oid);
+
+                let (author, timestamp) = if let Ok(commit) = self.repo.find_commit(commit_oid) {
+                    let sig = commit.author();
+                    (
+                        sig.name().unwrap_or("Unknown").to_string(),
+                        chrono::DateTime::from_timestamp(sig.when().seconds(), 0)
+                            .unwrap_or_default()
+                            .with_timezone(&chrono::Utc),
+                    )
+                } else {
+                    (
+                        "Unknown".to_string(),
+                        chrono::DateTime::from_timestamp(0, 0)
+                            .unwrap_or_default()
+                            .with_timezone(&chrono::Utc),
+                    )
+                };
+
+                blame_lines.push(BlameLine {
+                    line_number: line_num,
+                    commit_oid: commit_oid.to_string(),
+                    short_oid: commit_oid.to_string()[..7].to_string(),
+                    author,
+                    timestamp,
+                    content: line_content.to_string(),
+                    original_line: hunk.orig_start_line(),
+                    is_group_start,
+                });
+            }
+        }
+
+        Ok(BlameResult {
+            path: path.to_string(),
+            lines: blame_lines,
+        })
+    }
+
+    /// Get commit count for a reference (for pagination info)
+    pub fn get_commit_count(&self, from_ref: Option<&str>) -> Result<usize> {
+        let mut revwalk = self.repo.revwalk()?;
+
+        if let Some(ref_name) = from_ref {
+            let obj = self.repo.revparse_single(ref_name)?;
+            revwalk.push(obj.id())?;
+        } else {
+            revwalk.push_head()?;
+        }
+
+        Ok(revwalk.count())
+    }
 }
 
 #[cfg(test)]
@@ -1693,5 +2020,187 @@ mod tests {
 
         let remote = service.get_remote("origin").unwrap();
         assert_eq!(remote.url.as_deref(), Some("https://github.com/user/new-repo.git"));
+    }
+
+    // ==================== Phase 4 Tests: Graph, Search, Blame ====================
+
+    #[test]
+    fn test_build_graph() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Add another commit
+        fs::write(tmp.path().join("file2.txt"), "content").unwrap();
+        service.stage_file("file2.txt").unwrap();
+        service.create_commit("Second commit", None, None).unwrap();
+
+        let options = crate::models::GraphOptions::default();
+        let result = service.build_graph(options).unwrap();
+
+        assert_eq!(result.commits.len(), 2);
+        assert_eq!(result.total_count, 2);
+        assert!(!result.has_more);
+    }
+
+    #[test]
+    fn test_build_graph_with_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a branch and add a commit
+        let branch_opts = crate::models::CreateBranchOptions::default();
+        service.create_branch("feature", &branch_opts).unwrap();
+
+        let checkout_opts = crate::models::CheckoutOptions::default();
+        service.checkout_branch("feature", &checkout_opts).unwrap();
+
+        fs::write(tmp.path().join("feature.txt"), "feature content").unwrap();
+        service.stage_file("feature.txt").unwrap();
+        service.create_commit("Feature commit", None, None).unwrap();
+
+        let options = crate::models::GraphOptions {
+            all_branches: true,
+            ..Default::default()
+        };
+        let result = service.build_graph(options).unwrap();
+
+        assert_eq!(result.commits.len(), 2);
+        // Both commits should have refs
+        let has_feature_ref = result.commits.iter().any(|c|
+            c.refs.iter().any(|r| r.name == "feature")
+        );
+        assert!(has_feature_ref);
+    }
+
+    #[test]
+    fn test_build_graph_pagination() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Add more commits
+        for i in 2..=5 {
+            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
+            service.stage_file(&format!("file{}.txt", i)).unwrap();
+            service.create_commit(&format!("Commit {}", i), None, None).unwrap();
+        }
+
+        // Get first page
+        let options = crate::models::GraphOptions {
+            limit: Some(2),
+            ..Default::default()
+        };
+        let result = service.build_graph(options).unwrap();
+
+        assert_eq!(result.commits.len(), 2);
+        assert_eq!(result.total_count, 5);
+        assert!(result.has_more);
+
+        // Get second page
+        let options = crate::models::GraphOptions {
+            limit: Some(2),
+            skip: Some(2),
+            ..Default::default()
+        };
+        let result = service.build_graph(options).unwrap();
+
+        assert_eq!(result.commits.len(), 2);
+    }
+
+    #[test]
+    fn test_search_commits_by_message() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        fs::write(tmp.path().join("feature.txt"), "content").unwrap();
+        service.stage_file("feature.txt").unwrap();
+        service.create_commit("Add amazing feature", None, None).unwrap();
+
+        fs::write(tmp.path().join("bugfix.txt"), "content").unwrap();
+        service.stage_file("bugfix.txt").unwrap();
+        service.create_commit("Fix critical bug", None, None).unwrap();
+
+        let options = crate::models::SearchOptions {
+            query: "amazing".to_string(),
+            search_message: true,
+            search_author: false,
+            search_hash: false,
+            limit: Some(10),
+        };
+        let result = service.search_commits(options).unwrap();
+
+        assert_eq!(result.total_matches, 1);
+        assert!(result.commits[0].summary.contains("amazing"));
+    }
+
+    #[test]
+    fn test_search_commits_by_hash() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let commits = service.log(LogOptions::default()).unwrap();
+        let first_commit_oid = &commits[0].oid;
+        let short_oid = &first_commit_oid[..7];
+
+        let options = crate::models::SearchOptions {
+            query: short_oid.to_string(),
+            search_message: false,
+            search_author: false,
+            search_hash: true,
+            limit: Some(10),
+        };
+        let result = service.search_commits(options).unwrap();
+
+        assert_eq!(result.total_matches, 1);
+        assert!(result.commits[0].oid.starts_with(short_oid));
+    }
+
+    #[test]
+    fn test_blame_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.blame_file("README.md", None).unwrap();
+
+        assert_eq!(result.path, "README.md");
+        assert!(!result.lines.is_empty());
+        assert_eq!(result.lines[0].line_number, 1);
+        assert!(result.lines[0].content.contains("Test Repository"));
+    }
+
+    #[test]
+    fn test_blame_file_at_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify the file and create another commit
+        fs::write(tmp.path().join("README.md"), "# Updated Title\nNew line").unwrap();
+        service.stage_file("README.md").unwrap();
+        service.create_commit("Update README", None, None).unwrap();
+
+        // Get the first commit OID
+        let commits = service.log(LogOptions { limit: Some(10), ..Default::default() }).unwrap();
+        let first_commit_oid = &commits[1].oid; // Second in list (older)
+
+        // Blame at the first commit
+        let result = service.blame_file("README.md", Some(first_commit_oid)).unwrap();
+
+        assert_eq!(result.lines.len(), 1);
+        assert!(result.lines[0].content.contains("Test Repository"));
+    }
+
+    #[test]
+    fn test_get_commit_count() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Add more commits
+        for i in 2..=3 {
+            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
+            service.stage_file(&format!("file{}.txt", i)).unwrap();
+            service.create_commit(&format!("Commit {}", i), None, None).unwrap();
+        }
+
+        let count = service.get_commit_count(None).unwrap();
+        assert_eq!(count, 3);
     }
 }

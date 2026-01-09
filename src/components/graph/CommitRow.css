@@ -1,0 +1,102 @@
+.commit-row {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.1s;
+}
+
+.commit-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.commit-row.is-selected {
+  background-color: var(--bg-active);
+}
+
+.commit-row-graph {
+  flex-shrink: 0;
+}
+
+.commit-row-refs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 120px;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.commit-row-message {
+  flex: 1;
+  min-width: 200px;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 12px;
+}
+
+.commit-row-author {
+  width: 120px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commit-row-date {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.commit-row-oid {
+  width: 70px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* Ref badges */
+.ref-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ref-local-branch {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.ref-local-branch.ref-head {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.ref-remote-branch {
+  background-color: var(--color-info);
+  color: white;
+}
+
+.ref-tag {
+  background-color: var(--color-warning);
+  color: white;
+}

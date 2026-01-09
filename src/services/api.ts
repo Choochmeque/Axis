@@ -12,6 +12,11 @@ import type {
   Remote,
   FetchResult,
   PushResult,
+  GraphOptions,
+  GraphResult,
+  SearchOptions,
+  SearchResult,
+  BlameResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -225,4 +230,22 @@ export const diffApi = {
 
   getFile: (path: string, staged: boolean, options?: DiffOptions) =>
     invoke<FileDiff | null>('get_file_diff', { path, staged, options }),
+};
+
+export const graphApi = {
+  build: (options?: GraphOptions) =>
+    invoke<GraphResult>('build_graph', { options }),
+
+  getCommitCount: (fromRef?: string) =>
+    invoke<number>('get_commit_count', { fromRef }),
+};
+
+export const searchApi = {
+  commits: (options: SearchOptions) =>
+    invoke<SearchResult>('search_commits', { options }),
+};
+
+export const blameApi = {
+  file: (path: string, commitOid?: string) =>
+    invoke<BlameResult>('blame_file', { path, commitOid }),
 };

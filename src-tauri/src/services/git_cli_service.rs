@@ -1677,7 +1677,9 @@ mod tests {
 
         // Go back to default branch and merge
         checkout_branch(&tmp, &default_branch);
-        let result = service.merge("feature", None, false, false).expect("should merge feature branch");
+        let result = service
+            .merge("feature", None, false, false)
+            .expect("should merge feature branch");
 
         assert!(result.success);
     }
@@ -1725,7 +1727,9 @@ mod tests {
 
         // Go back to default branch and cherry-pick
         checkout_branch(&tmp, &default_branch);
-        let result = service.cherry_pick(&commit_hash, false).expect("should cherry-pick commit");
+        let result = service
+            .cherry_pick(&commit_hash, false)
+            .expect("should cherry-pick commit");
 
         assert!(
             result.success,
@@ -1754,7 +1758,9 @@ mod tests {
         add_commit(&tmp, "feature.txt", "feature content", "Feature commit");
 
         // Rebase feature onto default branch
-        let result = service.rebase(&default_branch, false).expect("should rebase onto default branch");
+        let result = service
+            .rebase(&default_branch, false)
+            .expect("should rebase onto default branch");
 
         assert!(
             result.success,
@@ -1787,7 +1793,9 @@ mod tests {
         create_initial_commit(&tmp);
 
         // No operation in progress
-        let op = service.get_operation_in_progress().expect("should get operation in progress");
+        let op = service
+            .get_operation_in_progress()
+            .expect("should get operation in progress");
         assert!(op.is_none());
     }
 
@@ -1797,7 +1805,9 @@ mod tests {
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Second commit");
 
-        let result = service.reset("HEAD~1", ResetMode::Soft).expect("should reset soft");
+        let result = service
+            .reset("HEAD~1", ResetMode::Soft)
+            .expect("should reset soft");
 
         assert!(result.success);
         // File should still exist and be staged
@@ -1810,7 +1820,9 @@ mod tests {
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Second commit");
 
-        let result = service.reset("HEAD~1", ResetMode::Hard).expect("should reset hard");
+        let result = service
+            .reset("HEAD~1", ResetMode::Hard)
+            .expect("should reset hard");
 
         assert!(result.success);
         // File should be gone
@@ -1831,7 +1843,9 @@ mod tests {
             .expect("should get HEAD commit hash");
         let commit_hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        let result = service.revert(&commit_hash, false).expect("should revert commit");
+        let result = service
+            .revert(&commit_hash, false)
+            .expect("should revert commit");
 
         assert!(result.success);
         // File should be removed by revert
@@ -1855,7 +1869,8 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create an uncommitted change
-        fs::write(tmp.path().join("uncommitted.txt"), "uncommitted content").expect("should write uncommitted.txt");
+        fs::write(tmp.path().join("uncommitted.txt"), "uncommitted content")
+            .expect("should write uncommitted.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
@@ -1884,20 +1899,25 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("stash_test.txt"), "stash content").expect("should write stash_test.txt");
+        fs::write(tmp.path().join("stash_test.txt"), "stash content")
+            .expect("should write stash_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
             .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
+        service
+            .stash_save(&StashSaveOptions::default())
+            .expect("should save stash");
 
         // Verify file is gone
         assert!(!tmp.path().join("stash_test.txt").exists());
 
         // Pop the stash
-        let result = service.stash_pop(&StashApplyOptions::default()).expect("should pop stash");
+        let result = service
+            .stash_pop(&StashApplyOptions::default())
+            .expect("should pop stash");
         assert!(result.success);
 
         // Verify file is back
@@ -1914,24 +1934,31 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("apply_test.txt"), "apply content").expect("should write apply_test.txt");
+        fs::write(tmp.path().join("apply_test.txt"), "apply content")
+            .expect("should write apply_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
             .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
+        service
+            .stash_save(&StashSaveOptions::default())
+            .expect("should save stash");
 
         // Apply the stash
-        let result = service.stash_apply(&StashApplyOptions::default()).expect("should apply stash");
+        let result = service
+            .stash_apply(&StashApplyOptions::default())
+            .expect("should apply stash");
         assert!(result.success);
 
         // Verify file is back
         assert!(tmp.path().join("apply_test.txt").exists());
 
         // Verify stash is still there (apply doesn't drop)
-        let stashes = service.stash_list().expect("should list stashes after apply");
+        let stashes = service
+            .stash_list()
+            .expect("should list stashes after apply");
         assert_eq!(stashes.len(), 1);
     }
 
@@ -1941,14 +1968,17 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("drop_test.txt"), "drop content").expect("should write drop_test.txt");
+        fs::write(tmp.path().join("drop_test.txt"), "drop content")
+            .expect("should write drop_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
             .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
+        service
+            .stash_save(&StashSaveOptions::default())
+            .expect("should save stash");
         assert_eq!(service.stash_list().expect("should list stashes").len(), 1);
 
         // Drop the stash
@@ -1956,7 +1986,10 @@ mod tests {
         assert!(result.success);
 
         // Verify stash is gone
-        assert!(service.stash_list().expect("should list stashes after drop").is_empty());
+        assert!(service
+            .stash_list()
+            .expect("should list stashes after drop")
+            .is_empty());
     }
 
     #[test]
@@ -1966,13 +1999,16 @@ mod tests {
 
         // Create multiple stashes
         for i in 0..3 {
-            fs::write(tmp.path().join(format!("clear_test_{}.txt", i)), "content").expect("should write file");
+            fs::write(tmp.path().join(format!("clear_test_{}.txt", i)), "content")
+                .expect("should write file");
             Command::new("git")
                 .args(["add", "."])
                 .current_dir(tmp.path())
                 .output()
                 .expect("should add files to staging");
-            service.stash_save(&StashSaveOptions::default()).expect("should save stash");
+            service
+                .stash_save(&StashSaveOptions::default())
+                .expect("should save stash");
         }
 
         assert_eq!(service.stash_list().expect("should list stashes").len(), 3);
@@ -1981,7 +2017,10 @@ mod tests {
         let result = service.stash_clear().expect("should clear all stashes");
         assert!(result.success);
 
-        assert!(service.stash_list().expect("should list stashes after clear").is_empty());
+        assert!(service
+            .stash_list()
+            .expect("should list stashes after clear")
+            .is_empty());
     }
 
     // ==================== Submodule Tests ====================
@@ -2021,7 +2060,9 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Should return empty string for repo with no submodules
-        let summary = service.submodule_summary().expect("should get submodule summary");
+        let summary = service
+            .submodule_summary()
+            .expect("should get submodule summary");
         assert!(summary.is_empty());
     }
 
@@ -2032,7 +2073,9 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let is_initialized = service.gitflow_is_initialized().expect("should check gitflow initialized");
+        let is_initialized = service
+            .gitflow_is_initialized()
+            .expect("should check gitflow initialized");
         assert!(!is_initialized);
 
         let config = service.gitflow_config().expect("should get gitflow config");
@@ -2056,7 +2099,9 @@ mod tests {
 
         assert!(result.success, "gitflow init failed: {}", result.message);
 
-        let is_initialized = service.gitflow_is_initialized().expect("should check gitflow initialized");
+        let is_initialized = service
+            .gitflow_is_initialized()
+            .expect("should check gitflow initialized");
         assert!(is_initialized);
 
         let config = service.gitflow_config().expect("should get gitflow config");
@@ -2094,7 +2139,9 @@ mod tests {
         assert_eq!(result.branch, Some("feature/test-feature".to_string()));
 
         // Verify the feature is in the list
-        let features = service.gitflow_list(GitFlowBranchType::Feature).expect("should list features");
+        let features = service
+            .gitflow_list(GitFlowBranchType::Feature)
+            .expect("should list features");
         assert!(features.contains(&"test-feature".to_string()));
     }
 
@@ -2114,7 +2161,9 @@ mod tests {
             })
             .expect("should init gitflow");
 
-        let features = service.gitflow_list(GitFlowBranchType::Feature).expect("should list features");
+        let features = service
+            .gitflow_list(GitFlowBranchType::Feature)
+            .expect("should list features");
         assert!(features.is_empty());
     }
 
@@ -2229,7 +2278,8 @@ mod tests {
             .expect("should commit test.txt");
 
         // Now modify the file to create a diff
-        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").expect("should modify test.txt");
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n")
+            .expect("should modify test.txt");
 
         // Get the actual diff from git
         let diff_output = Command::new("git")
@@ -2272,7 +2322,8 @@ mod tests {
             .expect("should commit test.txt");
 
         // Modify and stage the file
-        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").expect("should modify test.txt");
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n")
+            .expect("should modify test.txt");
         Command::new("git")
             .args(["add", "test.txt"])
             .current_dir(tmp.path())

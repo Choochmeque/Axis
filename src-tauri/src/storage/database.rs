@@ -152,9 +152,12 @@ mod tests {
         let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "test-repo").expect("should add recent repository");
+        db.add_recent_repository(&repo_path, "test-repo")
+            .expect("should add recent repository");
 
-        let repos = db.get_recent_repositories().expect("should get recent repositories");
+        let repos = db
+            .get_recent_repositories()
+            .expect("should get recent repositories");
         assert_eq!(repos.len(), 1);
         assert_eq!(repos[0].name, "test-repo");
         assert_eq!(repos[0].path, repo_path);
@@ -166,10 +169,14 @@ mod tests {
         let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "old-name").expect("should add with old name");
-        db.add_recent_repository(&repo_path, "new-name").expect("should update with new name");
+        db.add_recent_repository(&repo_path, "old-name")
+            .expect("should add with old name");
+        db.add_recent_repository(&repo_path, "new-name")
+            .expect("should update with new name");
 
-        let repos = db.get_recent_repositories().expect("should get recent repositories");
+        let repos = db
+            .get_recent_repositories()
+            .expect("should get recent repositories");
         assert_eq!(repos.len(), 1);
         assert_eq!(repos[0].name, "new-name");
     }
@@ -180,10 +187,14 @@ mod tests {
         let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "test-repo").expect("should add recent repository");
-        db.remove_recent_repository(&repo_path).expect("should remove recent repository");
+        db.add_recent_repository(&repo_path, "test-repo")
+            .expect("should add recent repository");
+        db.remove_recent_repository(&repo_path)
+            .expect("should remove recent repository");
 
-        let repos = db.get_recent_repositories().expect("should get recent repositories");
+        let repos = db
+            .get_recent_repositories()
+            .expect("should get recent repositories");
         assert!(repos.is_empty());
     }
 

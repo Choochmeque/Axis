@@ -1,12 +1,25 @@
-import { useEffect } from 'react';
-import { FolderOpen, FolderPlus, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { FolderOpen, FolderPlus, GitBranchPlus, Clock } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useRepositoryStore } from '../store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
+import { CloneDialog } from './repository/CloneDialog';
+import { InitDialog } from './repository/InitDialog';
+
+// Get the tab-aware open function from window
+const openInTab = (path: string) => {
+  const fn = (window as unknown as { openRepositoryInTab?: (path: string) => Promise<void> }).openRepositoryInTab;
+  if (fn) {
+    return fn(path);
+  }
+  // Fallback to direct open
+  return useRepositoryStore.getState().openRepository(path);
+};
 
 export function WelcomeView() {
-  const { recentRepositories, loadRecentRepositories, openRepository } =
-    useRepositoryStore();
+  const { recentRepositories, loadRecentRepositories } = useRepositoryStore();
+  const [showCloneDialog, setShowCloneDialog] = useState(false);
+  const [showInitDialog, setShowInitDialog] = useState(false);
 
   useEffect(() => {
     loadRecentRepositories();
@@ -20,12 +33,12 @@ export function WelcomeView() {
     });
 
     if (selected && typeof selected === 'string') {
-      await openRepository(selected);
+      await openInTab(selected);
     }
   };
 
   const handleOpenRecent = async (path: string) => {
-    await openRepository(path);
+    await openInTab(path);
   };
 
   return (
@@ -37,6 +50,13 @@ export function WelcomeView() {
         <div className="flex justify-center gap-4 mb-12">
           <button
             className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setShowInitDialog(true)}
+          >
+            <GitBranchPlus size={24} />
+            <span>New Repository</span>
+          </button>
+          <button
+            className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleOpenRepository}
           >
             <FolderOpen size={24} />
@@ -44,12 +64,15 @@ export function WelcomeView() {
           </button>
           <button
             className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled
+            onClick={() => setShowCloneDialog(true)}
           >
             <FolderPlus size={24} />
             <span>Clone Repository</span>
           </button>
         </div>
+
+        <InitDialog open={showInitDialog} onOpenChange={setShowInitDialog} />
+        <CloneDialog open={showCloneDialog} onOpenChange={setShowCloneDialog} />
 
         {recentRepositories.length > 0 && (
           <div className="text-left">

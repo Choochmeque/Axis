@@ -42,6 +42,7 @@ pub fn run() {
             // Repository commands
             commands::open_repository,
             commands::init_repository,
+            commands::clone_repository,
             commands::close_repository,
             commands::get_repository_info,
             commands::get_repository_status,

@@ -54,6 +54,33 @@ pub async fn init_repository(
 }
 
 #[tauri::command]
+pub async fn clone_repository(
+    state: State<'_, AppState>,
+    url: String,
+    path: String,
+) -> Result<Repository> {
+    let path = PathBuf::from(&path);
+
+    // Ensure target directory doesn't exist or is empty
+    if path.exists() && path.read_dir().map(|mut i| i.next().is_some()).unwrap_or(false) {
+        return Err(AxisError::InvalidRepositoryPath(
+            "Target directory is not empty".to_string(),
+        ));
+    }
+
+    let service = Git2Service::clone(&url, &path)?;
+    let repo_info = service.get_repository_info()?;
+
+    // Store the path in app state
+    state.set_current_repository_path(path.clone());
+
+    // Add to recent repositories
+    state.add_recent_repository(&path, &repo_info.name)?;
+
+    Ok(repo_info)
+}
+
+#[tauri::command]
 pub async fn close_repository(state: State<'_, AppState>) -> Result<()> {
     state.close_current_repository();
     Ok(())

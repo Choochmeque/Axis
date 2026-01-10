@@ -58,6 +58,9 @@ export const repositoryApi = {
   init: (path: string, bare: boolean = false) =>
     invoke<Repository>('init_repository', { path, bare }),
 
+  clone: (url: string, path: string) =>
+    invoke<Repository>('clone_repository', { url, path }),
+
   close: () =>
     invoke<void>('close_repository'),
 

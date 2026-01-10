@@ -28,6 +28,80 @@ impl Git2Service {
         Ok(Git2Service { repo })
     }
 
+    /// Clone a repository from a URL
+    pub fn clone(url: &str, path: &Path) -> Result<Self> {
+        use git2::{build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks};
+
+        let mut callbacks = RemoteCallbacks::new();
+
+        // Set up authentication callback
+        callbacks.credentials(|_url, username_from_url, allowed_types| {
+            // Try SSH agent first
+            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
+                if let Some(username) = username_from_url {
+                    // Try SSH agent
+                    if let Ok(cred) = Cred::ssh_key_from_agent(username) {
+                        return Ok(cred);
+                    }
+
+                    // Try default SSH key locations
+                    let home = std::env::var("HOME").unwrap_or_default();
+                    let ssh_dir = std::path::Path::new(&home).join(".ssh");
+
+                    // Try ed25519 key first, then RSA
+                    for key_name in &["id_ed25519", "id_rsa"] {
+                        let private_key = ssh_dir.join(key_name);
+                        if private_key.exists() {
+                            let public_key = ssh_dir.join(format!("{}.pub", key_name));
+                            let public_key_opt = if public_key.exists() {
+                                Some(public_key.as_path())
+                            } else {
+                                None
+                            };
+
+                            if let Ok(cred) =
+                                Cred::ssh_key(username, public_key_opt, &private_key, None)
+                            {
+                                return Ok(cred);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Try credential helper for HTTPS
+            if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
+                if let Ok(cred) = Cred::credential_helper(
+                    &git2::Config::open_default().unwrap_or_else(|_| {
+                        git2::Config::new().expect("should create empty config")
+                    }),
+                    _url,
+                    username_from_url,
+                ) {
+                    return Ok(cred);
+                }
+            }
+
+            // Default credentials (for public repos)
+            if allowed_types.contains(git2::CredentialType::DEFAULT) {
+                return Cred::default();
+            }
+
+            Err(git2::Error::from_str("No valid credentials found"))
+        });
+
+        // Set up fetch options with callbacks
+        let mut fetch_options = FetchOptions::new();
+        fetch_options.remote_callbacks(callbacks);
+
+        // Build and execute clone
+        let repo = RepoBuilder::new()
+            .fetch_options(fetch_options)
+            .clone(url, path)?;
+
+        Ok(Git2Service { repo })
+    }
+
     /// Get repository information
     pub fn get_repository_info(&self) -> Result<Repository> {
         let path = self

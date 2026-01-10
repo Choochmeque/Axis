@@ -6,6 +6,7 @@ import { GitCommit, Loader2, GitBranch, Tag } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { GraphCommit, GraphEdge } from '../../types';
 import { CommitDetailPanel } from './CommitDetailPanel';
+import { CommitContextMenu } from './CommitContextMenu';
 import './HistoryView.css';
 
 const LANE_WIDTH = 18;
@@ -316,59 +317,60 @@ export function HistoryView() {
       </div>
       <div className="history-list" ref={listRef} onScroll={handleScroll}>
         {commits.map((commit, index) => (
-          <div
-            key={commit.oid}
-            data-commit-oid={commit.oid}
-            className={clsx('history-row', {
-              'is-merge': commit.is_merge,
-              'is-selected': selectedCommitOid === commit.oid,
-            })}
-            onClick={() => handleRowClick(commit)}
-          >
-            <div className="history-col history-col-graph" style={{ width: graphWidth }}>
-              <GraphCell
-                commit={commit}
-                width={graphWidth}
-                index={index}
-                activeLanes={activeLanesPerRow[index]}
-              />
-            </div>
-            <div className="history-col history-col-description">
-              {commit.refs && commit.refs.length > 0 && (
-                <span className="commit-refs">
-                  {commit.refs.map((ref, idx) => (
-                    <span
-                      key={idx}
-                      className={clsx('commit-ref', `ref-${ref.ref_type}`, {
-                        'is-head': ref.is_head,
-                      })}
-                    >
-                      {ref.ref_type === 'tag' ? (
-                        <Tag size={10} />
-                      ) : (
-                        <GitBranch size={10} />
-                      )}
-                      {ref.name}
-                    </span>
-                  ))}
+          <CommitContextMenu key={commit.oid} commit={commit}>
+            <div
+              data-commit-oid={commit.oid}
+              className={clsx('history-row', {
+                'is-merge': commit.is_merge,
+                'is-selected': selectedCommitOid === commit.oid,
+              })}
+              onClick={() => handleRowClick(commit)}
+            >
+              <div className="history-col history-col-graph" style={{ width: graphWidth }}>
+                <GraphCell
+                  commit={commit}
+                  width={graphWidth}
+                  index={index}
+                  activeLanes={activeLanesPerRow[index]}
+                />
+              </div>
+              <div className="history-col history-col-description">
+                {commit.refs && commit.refs.length > 0 && (
+                  <span className="commit-refs">
+                    {commit.refs.map((ref, idx) => (
+                      <span
+                        key={idx}
+                        className={clsx('commit-ref', `ref-${ref.ref_type}`, {
+                          'is-head': ref.is_head,
+                        })}
+                      >
+                        {ref.ref_type === 'tag' ? (
+                          <Tag size={10} />
+                        ) : (
+                          <GitBranch size={10} />
+                        )}
+                        {ref.name}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                <span className="commit-summary">{commit.summary}</span>
+              </div>
+              <div className="history-col history-col-date">
+                <span className="commit-date">
+                  {formatDistanceToNow(new Date(commit.timestamp), {
+                    addSuffix: true,
+                  })}
                 </span>
-              )}
-              <span className="commit-summary">{commit.summary}</span>
+              </div>
+              <div className="history-col history-col-author">
+                <span className="commit-author">{commit.author.name}</span>
+              </div>
+              <div className="history-col history-col-sha">
+                <code className="commit-sha">{commit.short_oid}</code>
+              </div>
             </div>
-            <div className="history-col history-col-date">
-              <span className="commit-date">
-                {formatDistanceToNow(new Date(commit.timestamp), {
-                  addSuffix: true,
-                })}
-              </span>
-            </div>
-            <div className="history-col history-col-author">
-              <span className="commit-author">{commit.author.name}</span>
-            </div>
-            <div className="history-col history-col-sha">
-              <code className="commit-sha">{commit.short_oid}</code>
-            </div>
-          </div>
+          </CommitContextMenu>
         ))}
         {isLoadingMoreCommits && (
           <div className="history-loading-more">

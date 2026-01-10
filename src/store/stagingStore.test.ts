@@ -11,6 +11,8 @@ vi.mock('../services/api', () => ({
     unstageFile: vi.fn(),
     unstageFiles: vi.fn(),
     unstageAll: vi.fn(),
+    stageHunk: vi.fn(),
+    unstageHunk: vi.fn(),
     discardFile: vi.fn(),
     discardAll: vi.fn(),
   },
@@ -34,6 +36,7 @@ describe('stagingStore', () => {
       isLoadingStatus: false,
       selectedFile: null,
       selectedFileDiff: null,
+      isSelectedFileStaged: false,
       isLoadingDiff: false,
       commitMessage: '',
       isAmending: false,
@@ -170,6 +173,86 @@ describe('stagingStore', () => {
 
       const state = useStagingStore.getState();
       expect(state.selectedFile).toBeNull();
+    });
+  });
+
+  describe('stageHunk', () => {
+    it('should stage a hunk and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageHunk).mockResolvedValue(undefined);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().stageHunk(patch);
+
+      expect(stagingApi.stageHunk).toHaveBeenCalledWith(patch);
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should refresh diff for selected file after staging hunk', async () => {
+      const mockFile = { path: 'test.txt', status: 'modified' as const, staged_status: null, unstaged_status: 'modified' as const, is_conflict: false, old_path: null };
+      const mockDiff = { old_path: 'test.txt', new_path: 'test.txt', old_oid: null, new_oid: null, status: 'modified' as const, binary: false, hunks: [], additions: 0, deletions: 0 };
+      useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: false });
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageHunk).mockResolvedValue(undefined);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+      vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().stageHunk(patch);
+
+      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', false);
+      expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.stageHunk).mockRejectedValue(new Error('Failed to stage hunk'));
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().stageHunk(patch);
+
+      expect(useStagingStore.getState().error).toBe('Error: Failed to stage hunk');
+    });
+  });
+
+  describe('unstageHunk', () => {
+    it('should unstage a hunk and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(undefined);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().unstageHunk(patch);
+
+      expect(stagingApi.unstageHunk).toHaveBeenCalledWith(patch);
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should refresh diff for selected file after unstaging hunk', async () => {
+      const mockFile = { path: 'test.txt', status: 'modified' as const, staged_status: 'modified' as const, unstaged_status: null, is_conflict: false, old_path: null };
+      const mockDiff = { old_path: 'test.txt', new_path: 'test.txt', old_oid: null, new_oid: null, status: 'modified' as const, binary: false, hunks: [], additions: 0, deletions: 0 };
+      useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: true });
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(undefined);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+      vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().unstageHunk(patch);
+
+      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', true);
+      expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.unstageHunk).mockRejectedValue(new Error('Failed to unstage hunk'));
+
+      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      await useStagingStore.getState().unstageHunk(patch);
+
+      expect(useStagingStore.getState().error).toBe('Error: Failed to unstage hunk');
     });
   });
 

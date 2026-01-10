@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Check, Edit3 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useStagingStore } from '../../store/stagingStore';
+import { useRepositoryStore } from '../../store/repositoryStore';
+import { remoteApi, commitApi } from '../../services/api';
 import './CommitForm.css';
 
 export function CommitForm() {
@@ -14,12 +17,30 @@ export function CommitForm() {
     createCommit,
     amendCommit,
   } = useStagingStore();
+  const { repository } = useRepositoryStore();
 
   const [localMessage, setLocalMessage] = useState(commitMessage);
+  const [pushAfterCommit, setPushAfterCommit] = useState(false);
+  const [bypassHooks, setBypassHooks] = useState(false);
+  const [signCommit, setSignCommit] = useState(false);
+  const [signOff, setSignOff] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setLocalMessage(commitMessage);
   }, [commitMessage]);
+
+  // Listen for menu focus event
+  useEffect(() => {
+    const handleFocusCommitForm = () => {
+      textareaRef.current?.focus();
+    };
+
+    document.addEventListener('focus-commit-form', handleFocusCommitForm);
+    return () => {
+      document.removeEventListener('focus-commit-form', handleFocusCommitForm);
+    };
+  }, []);
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -29,12 +50,40 @@ export function CommitForm() {
 
   const handleCommit = async () => {
     try {
+      let finalMessage = localMessage;
+
+      // Handle sign-off by appending to message
+      if (signOff && !isAmending) {
+        try {
+          const [name, email] = await commitApi.getUserSignature();
+          const signOffLine = `\n\nSigned-off-by: ${name} <${email}>`;
+          // Only add if not already present
+          if (!finalMessage.includes('Signed-off-by:')) {
+            finalMessage = finalMessage + signOffLine;
+            setCommitMessage(finalMessage);
+          }
+        } catch (err) {
+          console.error('Failed to get user signature:', err);
+        }
+      }
+
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 10));
+
       if (isAmending) {
         await amendCommit();
       } else {
         await createCommit();
       }
       setLocalMessage('');
+
+      if (pushAfterCommit) {
+        try {
+          await remoteApi.pushCurrentBranch('origin');
+        } catch (err) {
+          console.error('Push failed:', err);
+        }
+      }
     } catch (error) {
       // Error is already handled in the store
     }
@@ -62,18 +111,68 @@ export function CommitForm() {
         <span className="commit-form-title">
           {isAmending ? 'Amend Commit' : 'Commit'}
         </span>
-        <button
-          className={`commit-form-amend-toggle ${isAmending ? 'active' : ''}`}
-          onClick={() => setIsAmending(!isAmending)}
-          title={isAmending ? 'Cancel amend' : 'Amend last commit'}
-        >
-          <Edit3 size={14} />
-        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button className="commit-options-trigger">
+              <span>Commit Options...</span>
+              <ChevronDown size={12} />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="commit-options-content" align="end" sideOffset={4}>
+              <DropdownMenu.CheckboxItem
+                className="commit-options-item"
+                checked={isAmending}
+                onCheckedChange={setIsAmending}
+              >
+                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                  ✓
+                </DropdownMenu.ItemIndicator>
+                Amend last commit
+              </DropdownMenu.CheckboxItem>
+              <DropdownMenu.CheckboxItem
+                className="commit-options-item"
+                checked={bypassHooks}
+                onCheckedChange={setBypassHooks}
+              >
+                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                  ✓
+                </DropdownMenu.ItemIndicator>
+                Bypass commit hooks
+              </DropdownMenu.CheckboxItem>
+              <DropdownMenu.CheckboxItem
+                className="commit-options-item"
+                checked={signCommit}
+                onCheckedChange={setSignCommit}
+              >
+                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                  ✓
+                </DropdownMenu.ItemIndicator>
+                Sign commit
+              </DropdownMenu.CheckboxItem>
+              <DropdownMenu.CheckboxItem
+                className="commit-options-item"
+                checked={signOff}
+                onCheckedChange={setSignOff}
+              >
+                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                  ✓
+                </DropdownMenu.ItemIndicator>
+                Sign off
+              </DropdownMenu.CheckboxItem>
+              <DropdownMenu.Separator className="commit-options-separator" />
+              <DropdownMenu.Item className="commit-options-item disabled" disabled>
+                Create pull request
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
 
       <div className="commit-form-body">
         <div className="commit-message-wrapper">
           <textarea
+            ref={textareaRef}
             className={`commit-message-input ${isSummaryTooLong ? 'warning' : ''}`}
             placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
             value={localMessage}
@@ -89,20 +188,25 @@ export function CommitForm() {
           </div>
         </div>
 
-        <button
-          className="commit-button"
-          onClick={handleCommit}
-          disabled={!canCommit || isCommitting}
-        >
-          <Check size={16} />
-          {isCommitting ? 'Committing...' : isAmending ? 'Amend' : 'Commit'}
-          {stagedCount > 0 && (
-            <span className="commit-count">({stagedCount} file{stagedCount !== 1 ? 's' : ''})</span>
-          )}
-        </button>
-
-        <div className="commit-shortcut-hint">
-          Press Ctrl+Enter to commit
+        <div className="commit-form-footer">
+          <label className="commit-push-checkbox">
+            <input
+              type="checkbox"
+              checked={pushAfterCommit}
+              onChange={(e) => setPushAfterCommit(e.target.checked)}
+            />
+            <span>Push to origin/{repository?.current_branch || 'main'}</span>
+          </label>
+          <button
+            className="commit-button"
+            onClick={handleCommit}
+            disabled={!canCommit || isCommitting}
+          >
+            {isCommitting ? 'Committing...' : isAmending ? 'Amend' : 'Commit'}
+            {stagedCount > 0 && (
+              <span className="commit-count">({stagedCount})</span>
+            )}
+          </button>
         </div>
       </div>
     </div>

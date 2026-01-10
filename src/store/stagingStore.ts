@@ -10,6 +10,7 @@ interface StagingState {
   // Selected file for diff viewing
   selectedFile: FileStatus | null;
   selectedFileDiff: FileDiff | null;
+  isSelectedFileStaged: boolean;
   isLoadingDiff: boolean;
 
   // Commit form
@@ -29,6 +30,8 @@ interface StagingState {
   unstageFile: (path: string) => Promise<void>;
   unstageFiles: (paths: string[]) => Promise<void>;
   unstageAll: () => Promise<void>;
+  stageHunk: (patch: string) => Promise<void>;
+  unstageHunk: (patch: string) => Promise<void>;
   discardFile: (path: string) => Promise<void>;
   discardAll: () => Promise<void>;
   setCommitMessage: (message: string) => void;
@@ -44,6 +47,7 @@ const initialState = {
   isLoadingStatus: false,
   selectedFile: null,
   selectedFileDiff: null,
+  isSelectedFileStaged: false,
   isLoadingDiff: false,
   commitMessage: '',
   isAmending: false,
@@ -69,11 +73,11 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   selectFile: async (file: FileStatus | null, staged: boolean) => {
     if (!file) {
-      set({ selectedFile: null, selectedFileDiff: null });
+      set({ selectedFile: null, selectedFileDiff: null, isSelectedFileStaged: false });
       return;
     }
 
-    set({ selectedFile: file, isLoadingDiff: true, error: null });
+    set({ selectedFile: file, isSelectedFileStaged: staged, isLoadingDiff: true, error: null });
     try {
       const diff = await diffApi.getFile(file.path, staged);
       set({ selectedFileDiff: diff, isLoadingDiff: false });
@@ -135,6 +139,36 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     try {
       await stagingApi.unstageAll();
       await get().loadStatus();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  stageHunk: async (patch: string) => {
+    try {
+      await stagingApi.stageHunk(patch);
+      await get().loadStatus();
+      // Refresh the diff for the currently selected file
+      const { selectedFile, isSelectedFileStaged } = get();
+      if (selectedFile) {
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged);
+        set({ selectedFileDiff: diff });
+      }
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  unstageHunk: async (patch: string) => {
+    try {
+      await stagingApi.unstageHunk(patch);
+      await get().loadStatus();
+      // Refresh the diff for the currently selected file
+      const { selectedFile, isSelectedFileStaged } = get();
+      if (selectedFile) {
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged);
+        set({ selectedFileDiff: diff });
+      }
     } catch (error) {
       set({ error: String(error) });
     }

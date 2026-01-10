@@ -1,12 +1,20 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { StagingView } from '../staging';
 import { CommitForm } from '../staging/CommitForm';
-import { DiffView } from '../diff';
+import { DiffView, type DiffMode } from '../diff';
 import { useStagingStore } from '../../store/stagingStore';
 import './WorkspaceView.css';
 
 export function WorkspaceView() {
-  const { selectedFileDiff, isLoadingDiff } = useStagingStore();
+  const {
+    selectedFileDiff,
+    isLoadingDiff,
+    isSelectedFileStaged,
+    stageHunk,
+    unstageHunk,
+  } = useStagingStore();
+
+  const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
 
   return (
     <div className="workspace-view">
@@ -17,7 +25,13 @@ export function WorkspaceView() {
           </Panel>
           <PanelResizeHandle className="resize-handle" />
           <Panel minSize={50}>
-            <DiffView diff={selectedFileDiff} isLoading={isLoadingDiff} />
+            <DiffView
+              diff={selectedFileDiff}
+              isLoading={isLoadingDiff}
+              mode={diffMode}
+              onStageHunk={stageHunk}
+              onUnstageHunk={unstageHunk}
+            />
           </Panel>
         </PanelGroup>
       </div>

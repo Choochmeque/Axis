@@ -55,6 +55,14 @@ impl Git2Service {
         })
     }
 
+    /// Get git user signature (name and email from config)
+    pub fn get_user_signature(&self) -> Result<(String, String)> {
+        let sig = self.repo.signature()?;
+        let name = sig.name().unwrap_or("Unknown").to_string();
+        let email = sig.email().unwrap_or("unknown@example.com").to_string();
+        Ok((name, email))
+    }
+
     /// Get the current branch name
     pub fn get_current_branch_name(&self) -> Option<String> {
         self.repo

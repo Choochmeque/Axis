@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Repository, GraphCommit, Commit, Branch, RepositoryStatus, RecentRepository, Tag, StashEntry, FileDiff } from '../types';
-import { repositoryApi, graphApi, branchApi, tagApi, stashApi, diffApi, commitApi } from '../services/api';
+import type { Repository, GraphCommit, Commit, Branch, RepositoryStatus, RecentRepository, Tag, StashEntry, FileDiff, Submodule } from '../types';
+import { repositoryApi, graphApi, branchApi, tagApi, stashApi, diffApi, commitApi, submoduleApi } from '../services/api';
 
 export type ViewType = 'file-status' | 'history' | 'search';
 
@@ -12,6 +12,7 @@ interface RepositoryState {
   branches: Branch[];
   tags: Tag[];
   stashes: StashEntry[];
+  submodules: Submodule[];
   status: RepositoryStatus | null;
   recentRepositories: RecentRepository[];
 
@@ -41,6 +42,7 @@ interface RepositoryState {
   loadBranches: () => Promise<void>;
   loadTags: () => Promise<void>;
   loadStashes: () => Promise<void>;
+  loadSubmodules: () => Promise<void>;
   loadStatus: () => Promise<void>;
   loadRecentRepositories: () => Promise<void>;
   setCurrentView: (view: ViewType) => void;
@@ -60,6 +62,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   branches: [],
   tags: [],
   stashes: [],
+  submodules: [],
   status: null,
   recentRepositories: [],
   currentView: 'file-status',
@@ -86,6 +89,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadBranches(),
         get().loadTags(),
         get().loadStashes(),
+        get().loadSubmodules(),
         get().loadStatus(),
       ]);
     } catch (err) {
@@ -104,6 +108,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         branches: [],
         tags: [],
         stashes: [],
+        submodules: [],
         status: null,
         error: null,
         selectedCommitOid: null,
@@ -126,6 +131,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadBranches(),
         get().loadTags(),
         get().loadStashes(),
+        get().loadSubmodules(),
         get().loadStatus(),
       ]);
       set({ repository: updatedRepo });
@@ -195,6 +201,16 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       set({ stashes });
     } catch (err) {
       set({ error: String(err) });
+    }
+  },
+
+  loadSubmodules: async () => {
+    try {
+      const submodules = await submoduleApi.list();
+      set({ submodules });
+    } catch (err) {
+      // Silently ignore - repo may not have submodules
+      set({ submodules: [] });
     }
   },
 

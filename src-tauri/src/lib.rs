@@ -1,5 +1,6 @@
 mod commands;
 mod error;
+mod menu;
 mod models;
 mod services;
 mod state;
@@ -29,7 +30,16 @@ pub fn run() {
             let app_state = AppState::new(database);
             app.manage(app_state);
 
+            // Create and set the application menu
+            let menu = menu::create_menu(app.handle())
+                .expect("Failed to create menu");
+            app.set_menu(menu)
+                .expect("Failed to set menu");
+
             Ok(())
+        })
+        .on_menu_event(|app, event| {
+            menu::handle_menu_event(app, event.id());
         })
         .invoke_handler(tauri::generate_handler![
             // Repository commands
@@ -53,6 +63,9 @@ pub fn run() {
             commands::discard_all,
             commands::create_commit,
             commands::amend_commit,
+            commands::get_user_signature,
+            commands::stage_hunk,
+            commands::unstage_hunk,
             // Diff commands
             commands::get_diff_workdir,
             commands::get_diff_staged,

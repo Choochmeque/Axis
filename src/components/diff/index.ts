@@ -1,1 +1,1 @@
-export { DiffView } from './DiffView';
+export { DiffView, type DiffMode } from './DiffView';

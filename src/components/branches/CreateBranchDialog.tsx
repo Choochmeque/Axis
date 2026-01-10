@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, GitBranch } from 'lucide-react';
 import { branchApi } from '../../services/api';
@@ -24,6 +24,13 @@ export function CreateBranchDialog({
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
   const localBranches = branches.filter((b) => b.branch_type === 'local');
+
+  // Update baseBranch when startPoint changes (e.g., dialog reopens with different commit)
+  useEffect(() => {
+    if (open && startPoint) {
+      setBaseBranch(startPoint);
+    }
+  }, [open, startPoint]);
 
   const handleCreate = async () => {
     if (!branchName.trim()) {
@@ -96,6 +103,11 @@ export function CreateBranchDialog({
                 onChange={(e) => setBaseBranch(e.target.value)}
               >
                 <option value="">Current HEAD</option>
+                {startPoint && !localBranches.some(b => b.name === startPoint) && (
+                  <option value={startPoint}>
+                    {startPoint.length > 8 ? startPoint.slice(0, 8) : startPoint} (commit)
+                  </option>
+                )}
                 {localBranches.map((branch) => (
                   <option key={branch.name} value={branch.name}>
                     {branch.name} {branch.is_head && '(current)'}

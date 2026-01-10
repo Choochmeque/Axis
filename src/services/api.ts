@@ -100,6 +100,9 @@ export const commitApi = {
 
   amend: (message?: string) =>
     invoke<string>('amend_commit', { message }),
+
+  getUserSignature: () =>
+    invoke<[string, string]>('get_user_signature'),
 };
 
 export const branchApi = {
@@ -242,6 +245,12 @@ export const stagingApi = {
 
   discardAll: () =>
     invoke<void>('discard_all'),
+
+  stageHunk: (patch: string) =>
+    invoke<void>('stage_hunk', { patch }),
+
+  unstageHunk: (patch: string) =>
+    invoke<void>('unstage_hunk', { patch }),
 };
 
 export const diffApi = {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -10,11 +10,17 @@ import {
   History,
   Search,
   Folder,
+  FolderGit2,
 } from 'lucide-react';
+import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { clsx } from 'clsx';
 import type { Branch } from '../../types';
+import { CreateBranchDialog } from '../branches/CreateBranchDialog';
+import { TagDialog } from '../tags/TagDialog';
+import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
+import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import './Sidebar.css';
 
 // Tree node for hierarchical display
@@ -179,7 +185,25 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
 }
 
 export function Sidebar() {
-  const { repository, branches, tags, stashes, status, currentView, setCurrentView, selectCommit } = useRepositoryStore();
+  const { repository, branches, tags, stashes, submodules, status, currentView, setCurrentView, selectCommit, loadTags } = useRepositoryStore();
+  const [showBranchDialog, setShowBranchDialog] = useState(false);
+  const [showTagDialog, setShowTagDialog] = useState(false);
+  const [showRemoteDialog, setShowRemoteDialog] = useState(false);
+  const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
+
+  // Listen for menu events
+  useEffect(() => {
+    const handleOpenBranchDialog = () => setShowBranchDialog(true);
+    const handleOpenTagDialog = () => setShowTagDialog(true);
+
+    document.addEventListener('open-new-branch-dialog', handleOpenBranchDialog);
+    document.addEventListener('open-new-tag-dialog', handleOpenTagDialog);
+
+    return () => {
+      document.removeEventListener('open-new-branch-dialog', handleOpenBranchDialog);
+      document.removeEventListener('open-new-tag-dialog', handleOpenTagDialog);
+    };
+  }, []);
 
   const localBranches = branches.filter((b) => b.branch_type === 'local');
   const remoteBranches = branches.filter((b) => b.branch_type === 'remote');
@@ -207,7 +231,15 @@ export function Sidebar() {
     selectCommit(targetOid);
   };
 
+  const handleTagCreated = async () => {
+    await loadTags();
+    setShowTagDialog(false);
+  };
+
   return (
+    <>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
     <ScrollArea className="sidebar">
       <Section
         title="WORKSPACE"
@@ -304,6 +336,70 @@ export function Sidebar() {
           <div className="sidebar-item sidebar-empty-item">No stashes</div>
         )}
       </Section>
+
+      <Section title="SUBMODULES" icon={<FolderGit2 size={14} />} defaultExpanded={false}>
+        {submodules.length > 0 ? (
+          submodules.map((submodule) => (
+            <div key={submodule.path} className="sidebar-item">
+              <FolderGit2 size={12} />
+              <span className="branch-name">{submodule.name}</span>
+              {submodule.status !== 'current' && (
+                <span className={`badge badge-${submodule.status}`}>{submodule.status}</span>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="sidebar-item sidebar-empty-item">No submodules</div>
+        )}
+      </Section>
     </ScrollArea>
+      </ContextMenu.Trigger>
+
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="context-menu-content">
+          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowBranchDialog(true)}>
+            <GitBranch size={14} />
+            <span>New Branch...</span>
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowTagDialog(true)}>
+            <Tag size={14} />
+            <span>New Tag...</span>
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowRemoteDialog(true)}>
+            <Cloud size={14} />
+            <span>New Remote...</span>
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowSubmoduleDialog(true)}>
+            <FolderGit2 size={14} />
+            <span>Add Submodule...</span>
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+
+    <CreateBranchDialog
+      open={showBranchDialog}
+      onOpenChange={setShowBranchDialog}
+    />
+
+    <TagDialog
+      isOpen={showTagDialog}
+      onClose={() => setShowTagDialog(false)}
+      onTagCreated={handleTagCreated}
+    />
+
+    <AddRemoteDialog
+      open={showRemoteDialog}
+      onOpenChange={setShowRemoteDialog}
+    />
+
+    <AddSubmoduleDialog
+      open={showSubmoduleDialog}
+      onOpenChange={setShowSubmoduleDialog}
+    />
+    </>
   );
 }

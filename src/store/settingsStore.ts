@@ -6,11 +6,13 @@ interface SettingsState {
   settings: AppSettings | null;
   isLoading: boolean;
   error: string | null;
+  showSettings: boolean;
 
   loadSettings: () => Promise<void>;
   updateSettings: (settings: AppSettings) => Promise<void>;
   setTheme: (theme: Theme) => void;
   getEffectiveTheme: () => 'light' | 'dark';
+  setShowSettings: (show: boolean) => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -34,6 +36,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
   isLoading: false,
   error: null,
+  showSettings: false,
 
   loadSettings: async () => {
     set({ isLoading: true, error: null });
@@ -76,6 +79,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
     return theme;
   },
+
+  setShowSettings: (show: boolean) => set({ showSettings: show }),
 }));
 
 function applyTheme(theme: Theme) {

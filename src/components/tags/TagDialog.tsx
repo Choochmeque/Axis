@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Tag as TagIcon, X, AlertCircle, Check } from 'lucide-react';
-import { tagApi } from '../../services/api';
-import type { TagResult } from '../../types';
+import { useState, useEffect } from 'react';
+import { Tag as TagIcon, X, AlertCircle, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { tagApi, remoteApi } from '../../services/api';
+import type { TagResult, Remote } from '../../types';
 import './TagDialog.css';
 
 interface TagDialogProps {
@@ -12,6 +12,8 @@ interface TagDialogProps {
   targetCommitSummary?: string;
 }
 
+type CommitTarget = 'head' | 'specified';
+
 export function TagDialog({
   isOpen,
   onClose,
@@ -20,11 +22,37 @@ export function TagDialog({
   targetCommitSummary,
 }: TagDialogProps) {
   const [tagName, setTagName] = useState('');
+  const [commitTarget, setCommitTarget] = useState<CommitTarget>(targetCommit ? 'specified' : 'head');
+  const [specifiedCommit, setSpecifiedCommit] = useState(targetCommit || '');
+  const [pushTag, setPushTag] = useState(false);
+  const [selectedRemote, setSelectedRemote] = useState('origin');
+  const [remotes, setRemotes] = useState<Remote[]>([]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [forceMove, setForceMove] = useState(false);
+  const [isLightweight, setIsLightweight] = useState(false);
   const [message, setMessage] = useState('');
-  const [isAnnotated, setIsAnnotated] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TagResult | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Reset form when opening
+      setTagName('');
+      setCommitTarget(targetCommit ? 'specified' : 'head');
+      setSpecifiedCommit(targetCommit || '');
+      setPushTag(false);
+      setShowAdvanced(false);
+      setForceMove(false);
+      setIsLightweight(false);
+      setMessage('');
+      setError(null);
+      setResult(null);
+
+      // Load remotes
+      remoteApi.list().then(setRemotes).catch(console.error);
+    }
+  }, [isOpen, targetCommit]);
 
   const handleCreate = async () => {
     if (!tagName.trim()) {
@@ -36,15 +64,25 @@ export function TagDialog({
     setError(null);
 
     try {
+      const target = commitTarget === 'specified' ? specifiedCommit : undefined;
       const tagResult = await tagApi.create(tagName, {
-        target: targetCommit,
-        annotated: isAnnotated,
-        message: isAnnotated ? message || undefined : undefined,
+        target,
+        annotated: !isLightweight,
+        message: !isLightweight ? message || undefined : undefined,
+        force: forceMove,
       });
 
-      setResult(tagResult);
-
       if (tagResult.success) {
+        // Push tag if requested
+        if (pushTag && selectedRemote) {
+          try {
+            await tagApi.push(tagName, selectedRemote);
+          } catch (pushErr) {
+            console.error('Failed to push tag:', pushErr);
+          }
+        }
+
+        setResult(tagResult);
         onTagCreated?.(tagResult);
       } else {
         setError(tagResult.message);
@@ -58,23 +96,18 @@ export function TagDialog({
   };
 
   const handleClose = () => {
-    setTagName('');
-    setMessage('');
-    setIsAnnotated(true);
-    setError(null);
-    setResult(null);
     onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="dialog-overlay" onClick={handleClose}>
+    <div className="tag-dialog-overlay" onClick={handleClose}>
       <div className="dialog tag-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
           <div className="dialog-title">
             <TagIcon size={20} />
-            <span>Create Tag</span>
+            <span>Add Tag</span>
           </div>
           <button className="dialog-close" onClick={handleClose}>
             <X size={18} />
@@ -96,20 +129,8 @@ export function TagDialog({
             </div>
           ) : (
             <>
-              {targetCommit && (
-                <div className="form-group">
-                  <label>Target Commit</label>
-                  <div className="target-commit">
-                    <span className="commit-oid">{targetCommit.substring(0, 7)}</span>
-                    {targetCommitSummary && (
-                      <span className="commit-summary">{targetCommitSummary}</span>
-                    )}
-                  </div>
-                </div>
-              )}
-
               <div className="form-group">
-                <label htmlFor="tag-name">Tag Name</label>
+                <label htmlFor="tag-name">Tag Name:</label>
                 <input
                   id="tag-name"
                   type="text"
@@ -121,34 +142,119 @@ export function TagDialog({
                 />
               </div>
 
-              <div className="form-group checkbox-group">
+              <div className="form-group">
+                <label>Commit:</label>
+                <div className="commit-options">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="commit-target"
+                      checked={commitTarget === 'head'}
+                      onChange={() => setCommitTarget('head')}
+                      disabled={isLoading}
+                    />
+                    <span>Working copy parent</span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="commit-target"
+                      checked={commitTarget === 'specified'}
+                      onChange={() => setCommitTarget('specified')}
+                      disabled={isLoading}
+                    />
+                    <span>Specified commit:</span>
+                  </label>
+                  {commitTarget === 'specified' && (
+                    <div className="specified-commit-input">
+                      <input
+                        type="text"
+                        value={specifiedCommit}
+                        onChange={(e) => setSpecifiedCommit(e.target.value)}
+                        placeholder="Commit SHA"
+                        disabled={isLoading}
+                      />
+                      {targetCommitSummary && (
+                        <span className="commit-summary-hint">{targetCommitSummary}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group checkbox-inline">
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
-                    checked={isAnnotated}
-                    onChange={(e) => setIsAnnotated(e.target.checked)}
+                    checked={pushTag}
+                    onChange={(e) => setPushTag(e.target.checked)}
                     disabled={isLoading}
                   />
-                  <span>Annotated tag</span>
+                  <span>Push tag:</span>
                 </label>
-                <p className="checkbox-description">
-                  Annotated tags include a message and tagger information
-                </p>
+                <select
+                  value={selectedRemote}
+                  onChange={(e) => setSelectedRemote(e.target.value)}
+                  disabled={isLoading || !pushTag}
+                  className="remote-select"
+                >
+                  {remotes.map((remote) => (
+                    <option key={remote.name} value={remote.name}>
+                      {remote.name}
+                    </option>
+                  ))}
+                  {remotes.length === 0 && <option value="origin">origin</option>}
+                </select>
               </div>
 
-              {isAnnotated && (
-                <div className="form-group">
-                  <label htmlFor="tag-message">Message</label>
-                  <textarea
-                    id="tag-message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Tag message..."
-                    rows={3}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
+              <div className="advanced-section">
+                <button
+                  type="button"
+                  className="advanced-toggle"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <span>Advanced Options</span>
+                </button>
+
+                {showAdvanced && (
+                  <div className="advanced-content">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={forceMove}
+                        onChange={(e) => setForceMove(e.target.checked)}
+                        disabled={isLoading}
+                      />
+                      <span>Move existing tag</span>
+                    </label>
+
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={isLightweight}
+                        onChange={(e) => setIsLightweight(e.target.checked)}
+                        disabled={isLoading}
+                      />
+                      <span>Lightweight tag (not recommended)</span>
+                    </label>
+
+                    {!isLightweight && (
+                      <div className="form-group message-group">
+                        <label htmlFor="tag-message">Message:</label>
+                        <textarea
+                          id="tag-message"
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          placeholder="Tag message..."
+                          rows={3}
+                          disabled={isLoading}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -172,7 +278,7 @@ export function TagDialog({
                 onClick={handleCreate}
                 disabled={isLoading || !tagName.trim()}
               >
-                {isLoading ? 'Creating...' : 'Create Tag'}
+                {isLoading ? 'Creating...' : 'Add'}
               </button>
             </>
           )}

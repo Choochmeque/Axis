@@ -1,17 +1,68 @@
 import { useState } from 'react';
-import { Columns, Rows, FileCode, Binary } from 'lucide-react';
+import { Columns, Rows, FileCode, Binary, Plus, Minus } from 'lucide-react';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
 import './DiffView.css';
+
+export type DiffMode = 'workdir' | 'staged' | 'commit';
 
 interface DiffViewProps {
   diff: FileDiff | null;
   isLoading?: boolean;
+  mode?: DiffMode;
+  onStageHunk?: (patch: string) => Promise<void>;
+  onUnstageHunk?: (patch: string) => Promise<void>;
 }
 
 type DiffViewMode = 'unified' | 'split';
 
-export function DiffView({ diff, isLoading }: DiffViewProps) {
+// Generate a patch string for a specific hunk
+function generateHunkPatch(diff: FileDiff, hunk: DiffHunk): string {
+  const oldPath = diff.old_path || diff.new_path || '';
+  const newPath = diff.new_path || diff.old_path || '';
+
+  let patch = `diff --git a/${oldPath} b/${newPath}\n`;
+  patch += `--- a/${oldPath}\n`;
+  patch += `+++ b/${newPath}\n`;
+  patch += hunk.header;
+  if (!hunk.header.endsWith('\n')) {
+    patch += '\n';
+  }
+
+  for (const line of hunk.lines) {
+    const prefix = getLinePrefix(line.line_type);
+    patch += `${prefix}${line.content}\n`;
+  }
+
+  return patch;
+}
+
+export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnstageHunk }: DiffViewProps) {
   const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
+  const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
+
+  const handleStageHunk = async (hunkIndex: number) => {
+    if (!diff || !onStageHunk) return;
+    const hunk = diff.hunks[hunkIndex];
+    const patch = generateHunkPatch(diff, hunk);
+    setLoadingHunk(hunkIndex);
+    try {
+      await onStageHunk(patch);
+    } finally {
+      setLoadingHunk(null);
+    }
+  };
+
+  const handleUnstageHunk = async (hunkIndex: number) => {
+    if (!diff || !onUnstageHunk) return;
+    const hunk = diff.hunks[hunkIndex];
+    const patch = generateHunkPatch(diff, hunk);
+    setLoadingHunk(hunkIndex);
+    try {
+      await onUnstageHunk(patch);
+    } finally {
+      setLoadingHunk(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -51,9 +102,21 @@ export function DiffView({ diff, isLoading }: DiffViewProps) {
         {diff.hunks.length === 0 ? (
           <div className="diff-no-changes">No changes in this file</div>
         ) : viewMode === 'unified' ? (
-          <UnifiedDiff hunks={diff.hunks} />
+          <UnifiedDiff
+            hunks={diff.hunks}
+            mode={mode}
+            loadingHunk={loadingHunk}
+            onStageHunk={onStageHunk ? handleStageHunk : undefined}
+            onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
+          />
         ) : (
-          <SplitDiff hunks={diff.hunks} />
+          <SplitDiff
+            hunks={diff.hunks}
+            mode={mode}
+            loadingHunk={loadingHunk}
+            onStageHunk={onStageHunk ? handleStageHunk : undefined}
+            onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
+          />
         )}
       </div>
     </div>
@@ -109,14 +172,42 @@ function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
 
 interface UnifiedDiffProps {
   hunks: DiffHunk[];
+  mode: DiffMode;
+  loadingHunk: number | null;
+  onStageHunk?: (hunkIndex: number) => Promise<void>;
+  onUnstageHunk?: (hunkIndex: number) => Promise<void>;
 }
 
-function UnifiedDiff({ hunks }: UnifiedDiffProps) {
+function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk }: UnifiedDiffProps) {
   return (
     <div className="diff-unified">
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="diff-hunk">
-          <div className="diff-hunk-header">{hunk.header.trim()}</div>
+          <div className="diff-hunk-header">
+            <span className="diff-hunk-header-text">{hunk.header.trim()}</span>
+            {mode === 'workdir' && onStageHunk && (
+              <button
+                className="diff-hunk-action"
+                onClick={() => onStageHunk(hunkIndex)}
+                disabled={loadingHunk !== null}
+                title="Stage hunk"
+              >
+                <Plus size={14} />
+                <span>Stage</span>
+              </button>
+            )}
+            {mode === 'staged' && onUnstageHunk && (
+              <button
+                className="diff-hunk-action"
+                onClick={() => onUnstageHunk(hunkIndex)}
+                disabled={loadingHunk !== null}
+                title="Unstage hunk"
+              >
+                <Minus size={14} />
+                <span>Unstage</span>
+              </button>
+            )}
+          </div>
           <div className="diff-hunk-lines">
             {hunk.lines.map((line, lineIndex) => (
               <UnifiedDiffLine key={lineIndex} line={line} />
@@ -154,15 +245,41 @@ function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
 
 interface SplitDiffProps {
   hunks: DiffHunk[];
+  mode: DiffMode;
+  loadingHunk: number | null;
+  onStageHunk?: (hunkIndex: number) => Promise<void>;
+  onUnstageHunk?: (hunkIndex: number) => Promise<void>;
 }
 
-function SplitDiff({ hunks }: SplitDiffProps) {
+function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk }: SplitDiffProps) {
   return (
     <div className="diff-split">
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="diff-hunk">
           <div className="diff-hunk-header diff-split-header">
-            <span>{hunk.header.trim()}</span>
+            <span className="diff-hunk-header-text">{hunk.header.trim()}</span>
+            {mode === 'workdir' && onStageHunk && (
+              <button
+                className="diff-hunk-action"
+                onClick={() => onStageHunk(hunkIndex)}
+                disabled={loadingHunk !== null}
+                title="Stage hunk"
+              >
+                <Plus size={14} />
+                <span>Stage</span>
+              </button>
+            )}
+            {mode === 'staged' && onUnstageHunk && (
+              <button
+                className="diff-hunk-action"
+                onClick={() => onUnstageHunk(hunkIndex)}
+                disabled={loadingHunk !== null}
+                title="Unstage hunk"
+              >
+                <Minus size={14} />
+                <span>Unstage</span>
+              </button>
+            )}
           </div>
           <div className="diff-hunk-lines diff-split-lines">
             <SplitHunkLines lines={hunk.lines} />

@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::services::Git2Service;
+use crate::services::{Git2Service, GitCliService};
 use crate::state::AppState;
 use tauri::State;
 
@@ -100,4 +100,42 @@ pub async fn amend_commit(
 ) -> Result<String> {
     let service = get_service(&state)?;
     service.amend_commit(message.as_deref())
+}
+
+#[tauri::command]
+pub async fn get_user_signature(
+    state: State<'_, AppState>,
+) -> Result<(String, String)> {
+    let service = get_service(&state)?;
+    service.get_user_signature()
+}
+
+#[tauri::command]
+pub async fn stage_hunk(
+    state: State<'_, AppState>,
+    patch: String,
+) -> Result<()> {
+    let path = state.ensure_repository_open()?;
+    let service = GitCliService::new(&path);
+    service.stage_hunk(&patch)
+}
+
+#[tauri::command]
+pub async fn unstage_hunk(
+    state: State<'_, AppState>,
+    patch: String,
+) -> Result<()> {
+    let path = state.ensure_repository_open()?;
+    let service = GitCliService::new(&path);
+    service.unstage_hunk(&patch)
+}
+
+#[tauri::command]
+pub async fn discard_hunk(
+    state: State<'_, AppState>,
+    patch: String,
+) -> Result<()> {
+    let path = state.ensure_repository_open()?;
+    let service = GitCliService::new(&path);
+    service.discard_hunk(&patch)
 }

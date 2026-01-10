@@ -6,11 +6,15 @@ import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
+import { useMenuActions } from './hooks';
 import './index.css';
 
 function App() {
   const { repository, currentView } = useRepositoryStore();
   const { loadSettings } = useSettingsStore();
+
+  // Handle menu actions from native menu
+  useMenuActions();
 
   useEffect(() => {
     loadSettings();

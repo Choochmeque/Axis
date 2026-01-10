@@ -1376,6 +1376,110 @@ impl GitCliService {
             total_matches: total,
         })
     }
+
+    // ==================== Hunk Staging Operations ====================
+
+    /// Stage a specific hunk from a file using git apply
+    /// The patch parameter should be a valid unified diff patch for the hunk
+    pub fn stage_hunk(&self, patch: &str) -> Result<()> {
+        use std::io::Write;
+        use std::process::Stdio;
+
+        let mut child = Command::new("git")
+            .args(["apply", "--cached", "--unidiff-zero", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .current_dir(&self.repo_path)
+            .spawn()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(patch.as_bytes())
+                .map_err(|e| AxisError::IoError(e))?;
+        }
+
+        let output = child.wait_with_output()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AxisError::Other(format!(
+                "Failed to stage hunk: {}",
+                stderr.trim()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Unstage a specific hunk from the index using git apply -R
+    /// The patch parameter should be a valid unified diff patch for the hunk
+    pub fn unstage_hunk(&self, patch: &str) -> Result<()> {
+        use std::io::Write;
+        use std::process::Stdio;
+
+        let mut child = Command::new("git")
+            .args(["apply", "--cached", "--unidiff-zero", "-R", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .current_dir(&self.repo_path)
+            .spawn()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(patch.as_bytes())
+                .map_err(|e| AxisError::IoError(e))?;
+        }
+
+        let output = child.wait_with_output()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AxisError::Other(format!(
+                "Failed to unstage hunk: {}",
+                stderr.trim()
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Discard a specific hunk from the working directory using git apply -R
+    /// The patch parameter should be a valid unified diff patch for the hunk
+    pub fn discard_hunk(&self, patch: &str) -> Result<()> {
+        use std::io::Write;
+        use std::process::Stdio;
+
+        let mut child = Command::new("git")
+            .args(["apply", "--unidiff-zero", "-R", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .current_dir(&self.repo_path)
+            .spawn()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(patch.as_bytes())
+                .map_err(|e| AxisError::IoError(e))?;
+        }
+
+        let output = child.wait_with_output()
+            .map_err(|e| AxisError::IoError(e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AxisError::Other(format!(
+                "Failed to discard hunk: {}",
+                stderr.trim()
+            )));
+        }
+
+        Ok(())
+    }
 }
 
 impl From<Output> for GitCommandResult {
@@ -2024,5 +2128,116 @@ mod tests {
 
         assert_eq!(result.total_matches, 0);
         assert!(result.matches.is_empty());
+    }
+
+    #[test]
+    fn test_stage_hunk() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create and commit a file first so we can get a proper diff
+        fs::write(tmp.path().join("test.txt"), "line1\n").unwrap();
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "Add test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+
+        // Now modify the file to create a diff
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").unwrap();
+
+        // Get the actual diff from git
+        let diff_output = Command::new("git")
+            .args(["diff", "test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        let patch = String::from_utf8_lossy(&diff_output.stdout);
+
+        // Stage the hunk using the real patch
+        let result = service.stage_hunk(&patch);
+        assert!(result.is_ok(), "Failed to stage hunk: {:?}", result);
+
+        // Verify the file is staged
+        let status = Command::new("git")
+            .args(["diff", "--cached", "--name-only"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        let staged_files = String::from_utf8_lossy(&status.stdout);
+        assert!(staged_files.contains("test.txt"));
+    }
+
+    #[test]
+    fn test_unstage_hunk() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create and commit a file first so we can get a proper diff
+        fs::write(tmp.path().join("test.txt"), "line1\n").unwrap();
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "Add test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+
+        // Modify and stage the file
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").unwrap();
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+
+        // Verify it's staged
+        let status = Command::new("git")
+            .args(["diff", "--cached", "--name-only"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        assert!(String::from_utf8_lossy(&status.stdout).contains("test.txt"));
+
+        // Get the staged diff from git
+        let diff_output = Command::new("git")
+            .args(["diff", "--cached", "test.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        let patch = String::from_utf8_lossy(&diff_output.stdout);
+
+        // Unstage the hunk using the real patch
+        let result = service.unstage_hunk(&patch);
+        assert!(result.is_ok(), "Failed to unstage hunk: {:?}", result);
+
+        // Verify the file is no longer staged
+        let status = Command::new("git")
+            .args(["diff", "--cached", "--name-only"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        let staged_files = String::from_utf8_lossy(&status.stdout);
+        assert!(!staged_files.contains("test.txt") || staged_files.trim().is_empty());
+    }
+
+    #[test]
+    fn test_stage_hunk_invalid_patch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Try to stage an invalid patch
+        let invalid_patch = "this is not a valid patch";
+        let result = service.stage_hunk(invalid_patch);
+
+        assert!(result.is_err());
     }
 }

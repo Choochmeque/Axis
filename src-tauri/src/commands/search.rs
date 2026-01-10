@@ -14,10 +14,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 
 /// Search for content in the repository working tree
 #[tauri::command]
-pub async fn grep_content(
-    state: State<'_, AppState>,
-    options: GrepOptions,
-) -> Result<GrepResult> {
+pub async fn grep_content(state: State<'_, AppState>, options: GrepOptions) -> Result<GrepResult> {
     let cli = get_cli_service(&state)?;
     cli.grep(&options)
 }

@@ -1,6 +1,6 @@
 use crate::error::Result;
 use crate::models::{
-    GitFlowConfig, GitFlowInitOptions, GitFlowFinishOptions, GitFlowResult, GitFlowBranchType,
+    GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult,
 };
 use crate::services::GitCliService;
 use crate::state::AppState;

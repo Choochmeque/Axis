@@ -1,11 +1,9 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    StashEntry, StashSaveOptions, StashApplyOptions, StashResult,
-    TagResult,
-    Submodule, SubmoduleStatus, AddSubmoduleOptions, UpdateSubmoduleOptions,
-    SyncSubmoduleOptions, SubmoduleResult,
-    GitFlowConfig, GitFlowInitOptions, GitFlowFinishOptions, GitFlowResult,
-    GitFlowBranchType, GrepOptions, GrepMatch, GrepResult,
+    AddSubmoduleOptions, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
+    GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, StashApplyOptions,
+    StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult, SubmoduleStatus,
+    SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
 };
 use chrono::{DateTime, Utc};
 use std::path::Path;
@@ -274,7 +272,11 @@ impl GitCliService {
     }
 
     /// Choose a specific version for a conflicted file
-    pub fn resolve_with_version(&self, path: &str, version: ConflictVersion) -> Result<GitCommandResult> {
+    pub fn resolve_with_version(
+        &self,
+        path: &str,
+        version: ConflictVersion,
+    ) -> Result<GitCommandResult> {
         let version_arg = match version {
             ConflictVersion::Ours => "--ours",
             ConflictVersion::Theirs => "--theirs",
@@ -332,11 +334,7 @@ impl GitCliService {
     pub fn get_conflicted_files(&self) -> Result<Vec<String>> {
         let result = self.execute(&["diff", "--name-only", "--diff-filter=U"])?;
         if result.success {
-            Ok(result
-                .stdout
-                .lines()
-                .map(|s| s.to_string())
-                .collect())
+            Ok(result.stdout.lines().map(|s| s.to_string()).collect())
         } else {
             Ok(Vec::new())
         }
@@ -360,9 +358,10 @@ impl GitCliService {
     /// List all stash entries
     pub fn stash_list(&self) -> Result<Vec<StashEntry>> {
         let result = self.execute(&[
-            "stash", "list",
+            "stash",
+            "list",
             "--format=%gd|%H|%s|%an|%ad",
-            "--date=iso-strict"
+            "--date=iso-strict",
         ])?;
 
         if !result.success || result.stdout.trim().is_empty() {
@@ -381,7 +380,9 @@ impl GitCliService {
 
                 // Parse branch from message (format: "WIP on branch: message" or "On branch: message")
                 let branch = if message.contains(" on ") {
-                    message.split(" on ").nth(1)
+                    message
+                        .split(" on ")
+                        .nth(1)
                         .and_then(|s| s.split(':').next())
                         .map(|s| s.to_string())
                 } else {
@@ -692,7 +693,11 @@ impl GitCliService {
             // Format: " HEAD_OID path (branch)" or "+HEAD_OID path" (+ = modified, - = not init, U = conflict)
             let line = line.trim();
             let status_char = line.chars().next().unwrap_or(' ');
-            let rest = if status_char == ' ' || status_char == '+' || status_char == '-' || status_char == 'U' {
+            let rest = if status_char == ' '
+                || status_char == '+'
+                || status_char == '-'
+                || status_char == 'U'
+            {
                 &line[1..]
             } else {
                 line
@@ -707,7 +712,7 @@ impl GitCliService {
                 let branch = if parts.len() >= 3 {
                     let branch_part = parts[2].trim();
                     if branch_part.starts_with('(') && branch_part.ends_with(')') {
-                        Some(branch_part[1..branch_part.len()-1].to_string())
+                        Some(branch_part[1..branch_part.len() - 1].to_string())
                     } else {
                         None
                     }
@@ -731,8 +736,16 @@ impl GitCliService {
                     name: path.clone(),
                     path: path.clone(),
                     url,
-                    head_oid: if head_oid.is_empty() { None } else { Some(head_oid.clone()) },
-                    short_oid: if head_oid.is_empty() { None } else { Some(head_oid.chars().take(7).collect()) },
+                    head_oid: if head_oid.is_empty() {
+                        None
+                    } else {
+                        Some(head_oid.clone())
+                    },
+                    short_oid: if head_oid.is_empty() {
+                        None
+                    } else {
+                        Some(head_oid.chars().take(7).collect())
+                    },
                     indexed_oid: None, // Would need additional parsing
                     branch,
                     status,
@@ -986,11 +999,26 @@ impl GitCliService {
     pub fn gitflow_init(&self, options: &GitFlowInitOptions) -> Result<GitFlowResult> {
         let config = GitFlowConfig {
             master: options.master.clone().unwrap_or_else(|| "main".to_string()),
-            develop: options.develop.clone().unwrap_or_else(|| "develop".to_string()),
-            feature_prefix: options.feature_prefix.clone().unwrap_or_else(|| "feature/".to_string()),
-            release_prefix: options.release_prefix.clone().unwrap_or_else(|| "release/".to_string()),
-            hotfix_prefix: options.hotfix_prefix.clone().unwrap_or_else(|| "hotfix/".to_string()),
-            support_prefix: options.support_prefix.clone().unwrap_or_else(|| "support/".to_string()),
+            develop: options
+                .develop
+                .clone()
+                .unwrap_or_else(|| "develop".to_string()),
+            feature_prefix: options
+                .feature_prefix
+                .clone()
+                .unwrap_or_else(|| "feature/".to_string()),
+            release_prefix: options
+                .release_prefix
+                .clone()
+                .unwrap_or_else(|| "release/".to_string()),
+            hotfix_prefix: options
+                .hotfix_prefix
+                .clone()
+                .unwrap_or_else(|| "hotfix/".to_string()),
+            support_prefix: options
+                .support_prefix
+                .clone()
+                .unwrap_or_else(|| "support/".to_string()),
             version_tag_prefix: options.version_tag_prefix.clone().unwrap_or_default(),
         };
 
@@ -1001,7 +1029,11 @@ impl GitCliService {
         self.execute_checked(&["config", "gitflow.prefix.release", &config.release_prefix])?;
         self.execute_checked(&["config", "gitflow.prefix.hotfix", &config.hotfix_prefix])?;
         self.execute_checked(&["config", "gitflow.prefix.support", &config.support_prefix])?;
-        self.execute_checked(&["config", "gitflow.prefix.versiontag", &config.version_tag_prefix])?;
+        self.execute_checked(&[
+            "config",
+            "gitflow.prefix.versiontag",
+            &config.version_tag_prefix,
+        ])?;
 
         // Check if develop branch exists, create it if not
         let branch_exists = self.execute(&["rev-parse", "--verify", &config.develop])?;
@@ -1031,9 +1063,9 @@ impl GitCliService {
         name: &str,
         base: Option<&str>,
     ) -> Result<GitFlowResult> {
-        let config = self.gitflow_config()?.ok_or_else(|| {
-            AxisError::Other("Git-flow is not initialized".to_string())
-        })?;
+        let config = self
+            .gitflow_config()?
+            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1043,14 +1075,14 @@ impl GitCliService {
         };
 
         let branch_name = format!("{}{}", prefix, name);
-        let base_branch = base.map(|s| s.to_string()).unwrap_or_else(|| {
-            match branch_type {
+        let base_branch = base
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| match branch_type {
                 GitFlowBranchType::Feature => config.develop.clone(),
                 GitFlowBranchType::Release => config.develop.clone(),
                 GitFlowBranchType::Hotfix => config.master.clone(),
                 GitFlowBranchType::Support => config.master.clone(),
-            }
-        });
+            });
 
         // Create and checkout the new branch
         let result = self.execute(&["checkout", "-b", &branch_name, &base_branch])?;
@@ -1076,9 +1108,9 @@ impl GitCliService {
         name: &str,
         options: &GitFlowFinishOptions,
     ) -> Result<GitFlowResult> {
-        let config = self.gitflow_config()?.ok_or_else(|| {
-            AxisError::Other("Git-flow is not initialized".to_string())
-        })?;
+        let config = self
+            .gitflow_config()?
+            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1099,7 +1131,11 @@ impl GitCliService {
         if !checkout.success {
             return Ok(GitFlowResult {
                 success: false,
-                message: format!("Failed to checkout {}: {}", target_branch, checkout.stderr.trim()),
+                message: format!(
+                    "Failed to checkout {}: {}",
+                    target_branch,
+                    checkout.stderr.trim()
+                ),
                 branch: None,
             });
         }
@@ -1128,11 +1164,17 @@ impl GitCliService {
         }
 
         // For release/hotfix, also merge to develop and create tag
-        if matches!(branch_type, GitFlowBranchType::Release | GitFlowBranchType::Hotfix) {
+        if matches!(
+            branch_type,
+            GitFlowBranchType::Release | GitFlowBranchType::Hotfix
+        ) {
             // Create tag
             let tag_name = format!("{}{}", config.version_tag_prefix, name);
             let mut tag_args = vec!["tag", "-a", &tag_name];
-            let tag_msg = options.tag_message.clone().unwrap_or_else(|| format!("Release {}", name));
+            let tag_msg = options
+                .tag_message
+                .clone()
+                .unwrap_or_else(|| format!("Release {}", name));
             tag_args.push("-m");
             tag_args.push(&tag_msg);
 
@@ -1152,7 +1194,10 @@ impl GitCliService {
                 if !merge_develop.success {
                     return Ok(GitFlowResult {
                         success: false,
-                        message: format!("Failed to merge to develop: {}", merge_develop.stderr.trim()),
+                        message: format!(
+                            "Failed to merge to develop: {}",
+                            merge_develop.stderr.trim()
+                        ),
                         branch: None,
                     });
                 }
@@ -1178,9 +1223,9 @@ impl GitCliService {
         branch_type: GitFlowBranchType,
         name: &str,
     ) -> Result<GitFlowResult> {
-        let config = self.gitflow_config()?.ok_or_else(|| {
-            AxisError::Other("Git-flow is not initialized".to_string())
-        })?;
+        let config = self
+            .gitflow_config()?
+            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1209,9 +1254,9 @@ impl GitCliService {
 
     /// List branches of a specific type
     pub fn gitflow_list(&self, branch_type: GitFlowBranchType) -> Result<Vec<String>> {
-        let config = self.gitflow_config()?.ok_or_else(|| {
-            AxisError::Other("Git-flow is not initialized".to_string())
-        })?;
+        let config = self
+            .gitflow_config()?
+            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1225,7 +1270,8 @@ impl GitCliService {
             return Ok(Vec::new());
         }
 
-        let branches: Vec<String> = result.stdout
+        let branches: Vec<String> = result
+            .stdout
             .lines()
             .map(|line| line.trim().trim_start_matches("* ").to_string())
             .filter(|name| !name.is_empty())
@@ -1395,11 +1441,13 @@ impl GitCliService {
             .map_err(|e| AxisError::IoError(e))?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(patch.as_bytes())
+            stdin
+                .write_all(patch.as_bytes())
                 .map_err(|e| AxisError::IoError(e))?;
         }
 
-        let output = child.wait_with_output()
+        let output = child
+            .wait_with_output()
             .map_err(|e| AxisError::IoError(e))?;
 
         if !output.status.success() {
@@ -1429,11 +1477,13 @@ impl GitCliService {
             .map_err(|e| AxisError::IoError(e))?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(patch.as_bytes())
+            stdin
+                .write_all(patch.as_bytes())
                 .map_err(|e| AxisError::IoError(e))?;
         }
 
-        let output = child.wait_with_output()
+        let output = child
+            .wait_with_output()
             .map_err(|e| AxisError::IoError(e))?;
 
         if !output.status.success() {
@@ -1463,11 +1513,13 @@ impl GitCliService {
             .map_err(|e| AxisError::IoError(e))?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(patch.as_bytes())
+            stdin
+                .write_all(patch.as_bytes())
                 .map_err(|e| AxisError::IoError(e))?;
         }
 
-        let output = child.wait_with_output()
+        let output = child
+            .wait_with_output()
             .map_err(|e| AxisError::IoError(e))?;
 
         if !output.status.success() {
@@ -1517,9 +1569,9 @@ pub enum ResetMode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
     use std::process::Command;
+    use tempfile::TempDir;
 
     fn setup_test_repo() -> (TempDir, GitCliService) {
         let tmp = TempDir::new().unwrap();
@@ -1643,7 +1695,9 @@ mod tests {
         add_commit(&tmp, "feature.txt", "feature content", "Add feature");
 
         checkout_branch(&tmp, &default_branch);
-        let result = service.merge("feature", Some("Merge feature branch"), true, false).unwrap();
+        let result = service
+            .merge("feature", Some("Merge feature branch"), true, false)
+            .unwrap();
 
         assert!(result.success);
     }
@@ -1676,8 +1730,7 @@ mod tests {
         assert!(
             result.success,
             "cherry-pick failed: stdout={}, stderr={}",
-            result.stdout,
-            result.stderr
+            result.stdout, result.stderr
         );
         assert!(tmp.path().join("feature.txt").exists());
     }
@@ -1706,8 +1759,7 @@ mod tests {
         assert!(
             result.success,
             "rebase failed: stdout={}, stderr={}",
-            result.stdout,
-            result.stderr
+            result.stdout, result.stderr
         );
     }
 
@@ -1811,10 +1863,12 @@ mod tests {
             .unwrap();
 
         // Stash the changes
-        let result = service.stash_save(&StashSaveOptions {
-            message: Some("Test stash".to_string()),
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .stash_save(&StashSaveOptions {
+                message: Some("Test stash".to_string()),
+                ..Default::default()
+            })
+            .unwrap();
 
         assert!(result.success);
 
@@ -1951,11 +2005,13 @@ mod tests {
         assert!(result.success);
 
         // Update submodules (should succeed even with no submodules)
-        let result = service.submodule_update(&UpdateSubmoduleOptions {
-            init: true,
-            recursive: true,
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .submodule_update(&UpdateSubmoduleOptions {
+                init: true,
+                recursive: true,
+                ..Default::default()
+            })
+            .unwrap();
         assert!(result.success);
     }
 
@@ -1990,11 +2046,13 @@ mod tests {
 
         let default_branch = get_default_branch(&tmp);
 
-        let result = service.gitflow_init(&GitFlowInitOptions {
-            master: Some(default_branch.clone()),
-            develop: Some("develop".to_string()),
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .gitflow_init(&GitFlowInitOptions {
+                master: Some(default_branch.clone()),
+                develop: Some("develop".to_string()),
+                ..Default::default()
+            })
+            .unwrap();
 
         assert!(result.success, "gitflow init failed: {}", result.message);
 
@@ -2016,21 +2074,21 @@ mod tests {
         let default_branch = get_default_branch(&tmp);
 
         // Initialize git-flow first
-        service.gitflow_init(&GitFlowInitOptions {
-            master: Some(default_branch.clone()),
-            develop: Some("develop".to_string()),
-            ..Default::default()
-        }).unwrap();
+        service
+            .gitflow_init(&GitFlowInitOptions {
+                master: Some(default_branch.clone()),
+                develop: Some("develop".to_string()),
+                ..Default::default()
+            })
+            .unwrap();
 
         // Checkout develop branch
         checkout_branch(&tmp, "develop");
 
         // Start a feature
-        let result = service.gitflow_start(
-            GitFlowBranchType::Feature,
-            "test-feature",
-            None,
-        ).unwrap();
+        let result = service
+            .gitflow_start(GitFlowBranchType::Feature, "test-feature", None)
+            .unwrap();
 
         assert!(result.success, "feature start failed: {}", result.message);
         assert_eq!(result.branch, Some("feature/test-feature".to_string()));
@@ -2048,11 +2106,13 @@ mod tests {
         let default_branch = get_default_branch(&tmp);
 
         // Initialize git-flow
-        service.gitflow_init(&GitFlowInitOptions {
-            master: Some(default_branch),
-            develop: Some("develop".to_string()),
-            ..Default::default()
-        }).unwrap();
+        service
+            .gitflow_init(&GitFlowInitOptions {
+                master: Some(default_branch),
+                develop: Some("develop".to_string()),
+                ..Default::default()
+            })
+            .unwrap();
 
         let features = service.gitflow_list(GitFlowBranchType::Feature).unwrap();
         assert!(features.is_empty());
@@ -2066,7 +2126,11 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create a file with searchable content
-        fs::write(tmp.path().join("search.txt"), "hello world\ntest line\nhello again").unwrap();
+        fs::write(
+            tmp.path().join("search.txt"),
+            "hello world\ntest line\nhello again",
+        )
+        .unwrap();
         Command::new("git")
             .args(["add", "search.txt"])
             .current_dir(tmp.path())
@@ -2078,15 +2142,23 @@ mod tests {
             .output()
             .unwrap();
 
-        let result = service.grep(&GrepOptions {
-            pattern: "hello".to_string(),
-            show_line_numbers: true,
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .grep(&GrepOptions {
+                pattern: "hello".to_string(),
+                show_line_numbers: true,
+                ..Default::default()
+            })
+            .unwrap();
 
         assert_eq!(result.total_matches, 2);
-        assert!(result.matches.iter().any(|m| m.content.contains("hello world")));
-        assert!(result.matches.iter().any(|m| m.content.contains("hello again")));
+        assert!(result
+            .matches
+            .iter()
+            .any(|m| m.content.contains("hello world")));
+        assert!(result
+            .matches
+            .iter()
+            .any(|m| m.content.contains("hello again")));
     }
 
     #[test]
@@ -2094,7 +2166,11 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        fs::write(tmp.path().join("case.txt"), "Hello World\nHELLO CAPS\nhello lower").unwrap();
+        fs::write(
+            tmp.path().join("case.txt"),
+            "Hello World\nHELLO CAPS\nhello lower",
+        )
+        .unwrap();
         Command::new("git")
             .args(["add", "case.txt"])
             .current_dir(tmp.path())
@@ -2106,12 +2182,14 @@ mod tests {
             .output()
             .unwrap();
 
-        let result = service.grep(&GrepOptions {
-            pattern: "hello".to_string(),
-            ignore_case: true,
-            show_line_numbers: true,
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .grep(&GrepOptions {
+                pattern: "hello".to_string(),
+                ignore_case: true,
+                show_line_numbers: true,
+                ..Default::default()
+            })
+            .unwrap();
 
         assert_eq!(result.total_matches, 3);
     }
@@ -2121,10 +2199,12 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let result = service.grep(&GrepOptions {
-            pattern: "nonexistent_pattern_xyz".to_string(),
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .grep(&GrepOptions {
+                pattern: "nonexistent_pattern_xyz".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
 
         assert_eq!(result.total_matches, 0);
         assert!(result.matches.is_empty());

@@ -24,17 +24,14 @@ pub fn run() {
                 .app_data_dir()
                 .expect("Failed to get app data directory");
 
-            let database = Database::new(&app_data_dir)
-                .expect("Failed to initialize database");
+            let database = Database::new(&app_data_dir).expect("Failed to initialize database");
 
             let app_state = AppState::new(database);
             app.manage(app_state);
 
             // Create and set the application menu
-            let menu = menu::create_menu(app.handle())
-                .expect("Failed to create menu");
-            app.set_menu(menu)
-                .expect("Failed to set menu");
+            let menu = menu::create_menu(app.handle()).expect("Failed to create menu");
+            app.set_menu(menu).expect("Failed to set menu");
 
             Ok(())
         })

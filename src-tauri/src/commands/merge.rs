@@ -60,7 +60,8 @@ pub async fn merge_branch(
             conflicts: Vec::new(),
             message: result.stdout.trim().to_string(),
         })
-    } else if result.stderr.contains("CONFLICT") || result.stderr.contains("Automatic merge failed") {
+    } else if result.stderr.contains("CONFLICT") || result.stderr.contains("Automatic merge failed")
+    {
         // Merge has conflicts
         let conflicts = get_conflicted_files_internal(&cli)?;
 
@@ -72,7 +73,10 @@ pub async fn merge_branch(
             message: "Merge conflicts detected. Please resolve conflicts and commit.".to_string(),
         })
     } else {
-        Err(AxisError::Other(format!("Merge failed: {}", result.stderr.trim())))
+        Err(AxisError::Other(format!(
+            "Merge failed: {}",
+            result.stderr.trim()
+        )))
     }
 }
 
@@ -133,10 +137,14 @@ pub async fn rebase_branch(
             current_commit: None,
             total_commits: None,
             conflicts,
-            message: "Rebase conflicts detected. Please resolve conflicts and continue.".to_string(),
+            message: "Rebase conflicts detected. Please resolve conflicts and continue."
+                .to_string(),
         })
     } else {
-        Err(AxisError::Other(format!("Rebase failed: {}", result.stderr.trim())))
+        Err(AxisError::Other(format!(
+            "Rebase failed: {}",
+            result.stderr.trim()
+        )))
     }
 }
 
@@ -238,7 +246,10 @@ pub async fn cherry_pick(
         commit_oids,
         conflicts: all_conflicts,
         message: if all_success {
-            format!("Successfully cherry-picked {} commit(s).", options.commits.len())
+            format!(
+                "Successfully cherry-picked {} commit(s).",
+                options.commits.len()
+            )
         } else {
             "Cherry-pick has conflicts. Please resolve and continue.".to_string()
         },

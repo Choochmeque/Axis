@@ -1,8 +1,7 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, BranchType, Commit, FileStatus, LogOptions, Repository,
-    RepositoryState, RepositoryStatus,
-    Tag, TagSignature, CreateTagOptions, TagResult,
+    Branch, BranchFilter, BranchType, Commit, CreateTagOptions, FileStatus, LogOptions, Repository,
+    RepositoryState, RepositoryStatus, Tag, TagResult, TagSignature,
 };
 use chrono::{DateTime, Utc};
 use git2::{Repository as Git2Repository, StatusOptions};
@@ -65,17 +64,14 @@ impl Git2Service {
 
     /// Get the current branch name
     pub fn get_current_branch_name(&self) -> Option<String> {
-        self.repo
-            .head()
-            .ok()
-            .and_then(|head| {
-                if head.is_branch() {
-                    head.shorthand().map(|s| s.to_string())
-                } else {
-                    // Detached HEAD - return short commit hash
-                    head.target().map(|oid| oid.to_string()[..7].to_string())
-                }
-            })
+        self.repo.head().ok().and_then(|head| {
+            if head.is_branch() {
+                head.shorthand().map(|s| s.to_string())
+            } else {
+                // Detached HEAD - return short commit hash
+                head.target().map(|oid| oid.to_string()[..7].to_string())
+            }
+        })
     }
 
     /// Get repository status (staged, unstaged, untracked, conflicted files)
@@ -320,11 +316,8 @@ impl Git2Service {
     pub fn unstage_all(&self) -> Result<()> {
         let head = self.repo.head()?;
         let head_commit = head.peel_to_commit()?;
-        self.repo.reset(
-            head_commit.as_object(),
-            git2::ResetType::Mixed,
-            None,
-        )?;
+        self.repo
+            .reset(head_commit.as_object(), git2::ResetType::Mixed, None)?;
         Ok(())
     }
 
@@ -350,7 +343,12 @@ impl Git2Service {
     // ==================== Commit Operations ====================
 
     /// Create a new commit
-    pub fn create_commit(&self, message: &str, author_name: Option<&str>, author_email: Option<&str>) -> Result<String> {
+    pub fn create_commit(
+        &self,
+        message: &str,
+        author_name: Option<&str>,
+        author_email: Option<&str>,
+    ) -> Result<String> {
         let mut index = self.repo.index()?;
         let tree_id = index.write_tree()?;
         let tree = self.repo.find_tree(tree_id)?;
@@ -375,14 +373,9 @@ impl Git2Service {
 
         let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
-        let oid = self.repo.commit(
-            Some("HEAD"),
-            &sig,
-            &sig,
-            message,
-            &tree,
-            &parent_refs,
-        )?;
+        let oid = self
+            .repo
+            .commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)?;
 
         Ok(oid.to_string())
     }
@@ -400,9 +393,9 @@ impl Git2Service {
 
         let oid = head_commit.amend(
             Some("HEAD"),
-            None,  // Keep original author
-            None,  // Keep original committer
-            None,  // Keep original message encoding
+            None, // Keep original author
+            None, // Keep original committer
+            None, // Keep original message encoding
             Some(message),
             Some(&tree),
         )?;
@@ -413,29 +406,42 @@ impl Git2Service {
     // ==================== Diff Operations ====================
 
     /// Generate diff for unstaged changes (workdir vs index)
-    pub fn diff_workdir(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+    pub fn diff_workdir(
+        &self,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
         // Include untracked files in the diff with their content
         diff_opts.include_untracked(true);
         diff_opts.show_untracked_content(true);
 
-        let diff = self.repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
+        let diff = self
+            .repo
+            .diff_index_to_workdir(None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
     /// Generate diff for staged changes (index vs HEAD)
-    pub fn diff_staged(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+    pub fn diff_staged(
+        &self,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
 
         let head = self.repo.head()?.peel_to_tree()?;
-        let diff = self.repo.diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
+        let diff = self
+            .repo
+            .diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
     /// Generate diff for all uncommitted changes (workdir vs HEAD)
-    pub fn diff_head(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+    pub fn diff_head(
+        &self,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
         // Include untracked files in the diff with their content
@@ -443,12 +449,18 @@ impl Git2Service {
         diff_opts.show_untracked_content(true);
 
         let head = self.repo.head()?.peel_to_tree()?;
-        let diff = self.repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
+        let diff = self
+            .repo
+            .diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
     /// Generate diff for a specific commit (commit vs its parent)
-    pub fn diff_commit(&self, oid_str: &str, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+    pub fn diff_commit(
+        &self,
+        oid_str: &str,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Vec<crate::models::FileDiff>> {
         let oid = git2::Oid::from_str(oid_str)
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         let commit = self.repo.find_commit(oid)?;
@@ -463,17 +475,20 @@ impl Git2Service {
             None
         };
 
-        let diff = self.repo.diff_tree_to_tree(
-            parent_tree.as_ref(),
-            Some(&tree),
-            Some(&mut diff_opts),
-        )?;
+        let diff =
+            self.repo
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
 
         self.parse_diff(&diff)
     }
 
     /// Generate diff between two commits
-    pub fn diff_commits(&self, from_oid: &str, to_oid: &str, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
+    pub fn diff_commits(
+        &self,
+        from_oid: &str,
+        to_oid: &str,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Vec<crate::models::FileDiff>> {
         let from = git2::Oid::from_str(from_oid)
             .map_err(|_| AxisError::InvalidReference(from_oid.to_string()))?;
         let to = git2::Oid::from_str(to_oid)
@@ -488,17 +503,20 @@ impl Git2Service {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
 
-        let diff = self.repo.diff_tree_to_tree(
-            Some(&from_tree),
-            Some(&to_tree),
-            Some(&mut diff_opts),
-        )?;
+        let diff =
+            self.repo
+                .diff_tree_to_tree(Some(&from_tree), Some(&to_tree), Some(&mut diff_opts))?;
 
         self.parse_diff(&diff)
     }
 
     /// Get diff for a single file (staged or unstaged)
-    pub fn diff_file(&self, path: &str, staged: bool, options: &crate::models::DiffOptions) -> Result<Option<crate::models::FileDiff>> {
+    pub fn diff_file(
+        &self,
+        path: &str,
+        staged: bool,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Option<crate::models::FileDiff>> {
         let diffs = if staged {
             self.diff_staged(options)?
         } else {
@@ -506,13 +524,17 @@ impl Git2Service {
         };
 
         Ok(diffs.into_iter().find(|d| {
-            d.new_path.as_ref().map(|p| p == path).unwrap_or(false) ||
-            d.old_path.as_ref().map(|p| p == path).unwrap_or(false)
+            d.new_path.as_ref().map(|p| p == path).unwrap_or(false)
+                || d.old_path.as_ref().map(|p| p == path).unwrap_or(false)
         }))
     }
 
     /// Apply diff options to git2 DiffOptions
-    fn apply_diff_options(&self, opts: &mut git2::DiffOptions, custom: &crate::models::DiffOptions) {
+    fn apply_diff_options(
+        &self,
+        opts: &mut git2::DiffOptions,
+        custom: &crate::models::DiffOptions,
+    ) {
         if let Some(context) = custom.context_lines {
             opts.context_lines(context);
         }
@@ -577,7 +599,11 @@ impl Git2Service {
     }
 
     /// Checkout a branch
-    pub fn checkout_branch(&self, name: &str, options: &crate::models::CheckoutOptions) -> Result<()> {
+    pub fn checkout_branch(
+        &self,
+        name: &str,
+        options: &crate::models::CheckoutOptions,
+    ) -> Result<()> {
         // If create is true and branch doesn't exist, create it first
         let branch = if options.create {
             match self.repo.find_branch(name, git2::BranchType::Local) {
@@ -598,9 +624,10 @@ impl Git2Service {
             self.repo.find_branch(name, git2::BranchType::Local)?
         };
 
-        let refname = branch.get().name().ok_or_else(|| {
-            AxisError::InvalidReference(name.to_string())
-        })?;
+        let refname = branch
+            .get()
+            .name()
+            .ok_or_else(|| AxisError::InvalidReference(name.to_string()))?;
 
         let obj = self.repo.revparse_single(refname)?;
 
@@ -628,7 +655,9 @@ impl Git2Service {
         let remote_ref = format!("{}/{}", remote_name, branch_name);
 
         // Find the remote branch
-        let remote_branch = self.repo.find_branch(&remote_ref, git2::BranchType::Remote)?;
+        let remote_branch = self
+            .repo
+            .find_branch(&remote_ref, git2::BranchType::Remote)?;
         let target = remote_branch.get().peel_to_commit()?;
 
         // Create local branch
@@ -638,7 +667,10 @@ impl Git2Service {
         local_branch.set_upstream(Some(&remote_ref))?;
 
         // Checkout the new branch
-        self.checkout_branch(local_branch_name, &crate::models::CheckoutOptions::default())
+        self.checkout_branch(
+            local_branch_name,
+            &crate::models::CheckoutOptions::default(),
+        )
     }
 
     /// Get branch details
@@ -652,12 +684,16 @@ impl Git2Service {
     }
 
     /// Convert a git2 Branch to our Branch model
-    fn branch_to_model(&self, branch: &git2::Branch, branch_type: git2::BranchType) -> Result<Branch> {
+    fn branch_to_model(
+        &self,
+        branch: &git2::Branch,
+        branch_type: git2::BranchType,
+    ) -> Result<Branch> {
         let name = branch.name()?.unwrap_or("").to_string();
         let reference = branch.get();
-        let oid = reference.target().ok_or_else(|| {
-            AxisError::InvalidReference(name.clone())
-        })?;
+        let oid = reference
+            .target()
+            .ok_or_else(|| AxisError::InvalidReference(name.clone()))?;
 
         let commit = self.repo.find_commit(oid)?;
         // Use branch.is_head() to check if this branch is currently checked out
@@ -887,13 +923,16 @@ impl Git2Service {
 
         // Build refspecs with force prefix if needed
         let refspecs: Vec<String> = if options.force {
-            refspecs.iter().map(|r| {
-                if r.starts_with('+') {
-                    r.clone()
-                } else {
-                    format!("+{}", r)
-                }
-            }).collect()
+            refspecs
+                .iter()
+                .map(|r| {
+                    if r.starts_with('+') {
+                        r.clone()
+                    } else {
+                        format!("+{}", r)
+                    }
+                })
+                .collect()
         } else {
             refspecs.to_vec()
         };
@@ -915,9 +954,9 @@ impl Git2Service {
         options: &crate::models::PushOptions,
     ) -> Result<crate::models::PushResult> {
         let head = self.repo.head()?;
-        let branch_name = head.shorthand().ok_or_else(|| {
-            AxisError::BranchNotFound("HEAD".to_string())
-        })?;
+        let branch_name = head
+            .shorthand()
+            .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
         self.push(remote_name, &[refspec], options)
@@ -936,7 +975,9 @@ impl Git2Service {
 
         // Get the remote tracking branch
         let remote_ref = format!("{}/{}", remote_name, branch_name);
-        let fetch_head = self.repo.find_reference(&format!("refs/remotes/{}", remote_ref))?;
+        let fetch_head = self
+            .repo
+            .find_reference(&format!("refs/remotes/{}", remote_ref))?;
         let fetch_commit = fetch_head.peel_to_commit()?;
 
         // Get local branch commit
@@ -944,7 +985,9 @@ impl Git2Service {
         let local_commit = local_ref.peel_to_commit()?;
 
         // Check if we can fast-forward
-        let (ahead, behind) = self.repo.graph_ahead_behind(local_commit.id(), fetch_commit.id())?;
+        let (ahead, behind) = self
+            .repo
+            .graph_ahead_behind(local_commit.id(), fetch_commit.id())?;
 
         if behind == 0 {
             // Already up to date
@@ -953,9 +996,9 @@ impl Git2Service {
 
         if ahead == 0 {
             // Can fast-forward
-            let refname = local_ref.name().ok_or_else(|| {
-                AxisError::InvalidReference("HEAD".to_string())
-            })?;
+            let refname = local_ref
+                .name()
+                .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
             self.repo.reference(
                 refname,
@@ -992,17 +1035,14 @@ impl Git2Service {
 
         if analysis.is_fast_forward() {
             // Already handled above, but just in case
-            let refname = local_ref.name().ok_or_else(|| {
-                AxisError::InvalidReference("HEAD".to_string())
-            })?;
+            let refname = local_ref
+                .name()
+                .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
-            self.repo.reference(
-                refname,
-                fetch_commit.id(),
-                true,
-                "fast-forward merge",
-            )?;
-            self.repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
+            self.repo
+                .reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
+            self.repo
+                .checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
             return Ok(());
         }
 
@@ -1039,7 +1079,9 @@ impl Git2Service {
 
     /// Set upstream tracking branch for a local branch
     pub fn set_branch_upstream(&self, branch_name: &str, upstream: Option<&str>) -> Result<()> {
-        let mut branch = self.repo.find_branch(branch_name, git2::BranchType::Local)?;
+        let mut branch = self
+            .repo
+            .find_branch(branch_name, git2::BranchType::Local)?;
         branch.set_upstream(upstream)?;
         Ok(())
     }
@@ -1190,7 +1232,10 @@ impl Git2Service {
     // ==================== Graph Operations ====================
 
     /// Build a commit graph with lane assignments for visualization
-    pub fn build_graph(&self, options: crate::models::GraphOptions) -> Result<crate::models::GraphResult> {
+    pub fn build_graph(
+        &self,
+        options: crate::models::GraphOptions,
+    ) -> Result<crate::models::GraphResult> {
         use crate::models::{
             CommitRef, EdgeType, GraphCommit, GraphEdge, GraphResult, LaneState, RefType,
         };
@@ -1277,10 +1322,7 @@ impl Git2Service {
             lane_state.process_commit(&oid_str, lane, &parent_oids);
 
             // Get refs for this commit
-            let refs = commit_refs
-                .get(&oid_str)
-                .cloned()
-                .unwrap_or_default();
+            let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();
 
             graph_commits.push(GraphCommit {
                 commit: Commit::from_git2_commit(&commit),
@@ -1302,7 +1344,9 @@ impl Git2Service {
     }
 
     /// Collect all refs (branches and tags) and map them to commit OIDs
-    fn collect_commit_refs(&self) -> Result<std::collections::HashMap<String, Vec<crate::models::CommitRef>>> {
+    fn collect_commit_refs(
+        &self,
+    ) -> Result<std::collections::HashMap<String, Vec<crate::models::CommitRef>>> {
         use crate::models::{CommitRef, RefType};
         use std::collections::HashMap;
 
@@ -1360,7 +1404,10 @@ impl Git2Service {
     // ==================== Search Operations ====================
 
     /// Search commits by message, author, or hash
-    pub fn search_commits(&self, options: crate::models::SearchOptions) -> Result<crate::models::SearchResult> {
+    pub fn search_commits(
+        &self,
+        options: crate::models::SearchOptions,
+    ) -> Result<crate::models::SearchResult> {
         use crate::models::SearchResult;
 
         let query = options.query.to_lowercase();
@@ -1430,7 +1477,11 @@ impl Git2Service {
     // ==================== Blame Operations ====================
 
     /// Get blame information for a file
-    pub fn blame_file(&self, path: &str, commit_oid: Option<&str>) -> Result<crate::models::BlameResult> {
+    pub fn blame_file(
+        &self,
+        path: &str,
+        commit_oid: Option<&str>,
+    ) -> Result<crate::models::BlameResult> {
         use crate::models::{BlameLine, BlameResult};
 
         let mut blame_opts = git2::BlameOptions::new();
@@ -1442,7 +1493,9 @@ impl Git2Service {
             blame_opts.newest_commit(oid);
         }
 
-        let blame = self.repo.blame_file(Path::new(path), Some(&mut blame_opts))?;
+        let blame = self
+            .repo
+            .blame_file(Path::new(path), Some(&mut blame_opts))?;
 
         // Read file content to get line contents
         let file_content = if let Some(oid_str) = commit_oid {
@@ -1613,10 +1666,12 @@ impl Git2Service {
             // Create annotated tag
             let sig = self.repo.signature()?;
             let message = options.message.as_deref().unwrap_or("");
-            self.repo.tag(name, commit.as_object(), &sig, message, options.force)?;
+            self.repo
+                .tag(name, commit.as_object(), &sig, message, options.force)?;
         } else {
             // Create lightweight tag
-            self.repo.tag_lightweight(name, commit.as_object(), options.force)?;
+            self.repo
+                .tag_lightweight(name, commit.as_object(), options.force)?;
         }
 
         // Return the created tag
@@ -1655,8 +1710,8 @@ impl Git2Service {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     fn setup_test_repo() -> (TempDir, Git2Service) {
         let tmp = TempDir::new().unwrap();
@@ -1797,7 +1852,9 @@ mod tests {
         fs::write(tmp.path().join("file2.txt"), "content 2").unwrap();
 
         // Stage multiple files
-        service.stage_files(&["file1.txt".to_string(), "file2.txt".to_string()]).unwrap();
+        service
+            .stage_files(&["file1.txt".to_string(), "file2.txt".to_string()])
+            .unwrap();
 
         let status = service.status().unwrap();
         assert_eq!(status.staged.len(), 2);
@@ -1874,11 +1931,9 @@ mod tests {
         service.stage_file("new_file.txt").unwrap();
 
         // Create commit
-        let oid = service.create_commit(
-            "Add new file",
-            Some("Test User"),
-            Some("test@example.com"),
-        ).unwrap();
+        let oid = service
+            .create_commit("Add new file", Some("Test User"), Some("test@example.com"))
+            .unwrap();
 
         assert!(!oid.is_empty());
 
@@ -1894,7 +1949,9 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Amend the commit with a new message
-        let oid = service.amend_commit(Some("Amended initial commit")).unwrap();
+        let oid = service
+            .amend_commit(Some("Amended initial commit"))
+            .unwrap();
         assert!(!oid.is_empty());
 
         // Verify commit message was updated
@@ -1912,7 +1969,9 @@ mod tests {
         let file_path = tmp.path().join("README.md");
         fs::write(&file_path, "# Modified Test Repository").unwrap();
 
-        let diffs = service.diff_workdir(&crate::models::DiffOptions::default()).unwrap();
+        let diffs = service
+            .diff_workdir(&crate::models::DiffOptions::default())
+            .unwrap();
         assert_eq!(diffs.len(), 1);
         assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Modified);
@@ -1928,7 +1987,9 @@ mod tests {
         fs::write(tmp.path().join("new_file.txt"), "new content").unwrap();
         service.stage_file("new_file.txt").unwrap();
 
-        let diffs = service.diff_staged(&crate::models::DiffOptions::default()).unwrap();
+        let diffs = service
+            .diff_staged(&crate::models::DiffOptions::default())
+            .unwrap();
         assert_eq!(diffs.len(), 1);
         assert_eq!(diffs[0].new_path.as_ref().unwrap(), "new_file.txt");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
@@ -1943,7 +2004,9 @@ mod tests {
         let commits = service.log(LogOptions::default()).unwrap();
         let oid = &commits[0].oid;
 
-        let diffs = service.diff_commit(oid, &crate::models::DiffOptions::default()).unwrap();
+        let diffs = service
+            .diff_commit(oid, &crate::models::DiffOptions::default())
+            .unwrap();
         assert_eq!(diffs.len(), 1);
         assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
@@ -1958,7 +2021,9 @@ mod tests {
         fs::write(tmp.path().join("README.md"), "# Modified Content").unwrap();
 
         // Get diff for specific file
-        let diff = service.diff_file("README.md", false, &crate::models::DiffOptions::default()).unwrap();
+        let diff = service
+            .diff_file("README.md", false, &crate::models::DiffOptions::default())
+            .unwrap();
         assert!(diff.is_some());
         let diff = diff.unwrap();
         assert_eq!(diff.new_path.as_ref().unwrap(), "README.md");
@@ -1993,7 +2058,9 @@ mod tests {
             force: false,
             track: None,
         };
-        let branch = service.create_branch("branch-from-commit", &options).unwrap();
+        let branch = service
+            .create_branch("branch-from-commit", &options)
+            .unwrap();
 
         assert_eq!(branch.name, "branch-from-commit");
         assert_eq!(branch.target_oid, *initial_oid);
@@ -2006,11 +2073,15 @@ mod tests {
 
         // Create a new branch
         let options = crate::models::CreateBranchOptions::default();
-        service.create_branch("feature/checkout-test", &options).unwrap();
+        service
+            .create_branch("feature/checkout-test", &options)
+            .unwrap();
 
         // Checkout the branch
         let checkout_opts = crate::models::CheckoutOptions::default();
-        service.checkout_branch("feature/checkout-test", &checkout_opts).unwrap();
+        service
+            .checkout_branch("feature/checkout-test", &checkout_opts)
+            .unwrap();
 
         // Verify we're on the new branch
         let current = service.get_current_branch_name();
@@ -2028,7 +2099,9 @@ mod tests {
             force: false,
             track: None,
         };
-        service.checkout_branch("feature/new-branch", &checkout_opts).unwrap();
+        service
+            .checkout_branch("feature/new-branch", &checkout_opts)
+            .unwrap();
 
         // Verify we're on the new branch
         let current = service.get_current_branch_name();
@@ -2045,7 +2118,9 @@ mod tests {
         service.create_branch("old-name", &options).unwrap();
 
         // Rename it
-        let renamed = service.rename_branch("old-name", "new-name", false).unwrap();
+        let renamed = service
+            .rename_branch("old-name", "new-name", false)
+            .unwrap();
 
         assert_eq!(renamed.name, "new-name");
 
@@ -2097,10 +2172,15 @@ mod tests {
     fn test_add_remote() {
         let (_tmp, service) = setup_test_repo();
 
-        let remote = service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+        let remote = service
+            .add_remote("origin", "https://github.com/user/repo.git")
+            .unwrap();
 
         assert_eq!(remote.name, "origin");
-        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/repo.git"));
+        assert_eq!(
+            remote.url.as_deref(),
+            Some("https://github.com/user/repo.git")
+        );
     }
 
     #[test]
@@ -2108,8 +2188,12 @@ mod tests {
         let (_tmp, service) = setup_test_repo();
 
         // Add some remotes
-        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
-        service.add_remote("upstream", "https://github.com/other/repo.git").unwrap();
+        service
+            .add_remote("origin", "https://github.com/user/repo.git")
+            .unwrap();
+        service
+            .add_remote("upstream", "https://github.com/other/repo.git")
+            .unwrap();
 
         let remotes = service.list_remotes().unwrap();
         assert_eq!(remotes.len(), 2);
@@ -2121,18 +2205,25 @@ mod tests {
     fn test_get_remote() {
         let (_tmp, service) = setup_test_repo();
 
-        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+        service
+            .add_remote("origin", "https://github.com/user/repo.git")
+            .unwrap();
 
         let remote = service.get_remote("origin").unwrap();
         assert_eq!(remote.name, "origin");
-        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/repo.git"));
+        assert_eq!(
+            remote.url.as_deref(),
+            Some("https://github.com/user/repo.git")
+        );
     }
 
     #[test]
     fn test_remove_remote() {
         let (_tmp, service) = setup_test_repo();
 
-        service.add_remote("origin", "https://github.com/user/repo.git").unwrap();
+        service
+            .add_remote("origin", "https://github.com/user/repo.git")
+            .unwrap();
 
         // Verify it exists
         let remotes = service.list_remotes().unwrap();
@@ -2150,7 +2241,9 @@ mod tests {
     fn test_rename_remote() {
         let (_tmp, service) = setup_test_repo();
 
-        service.add_remote("old-remote", "https://github.com/user/repo.git").unwrap();
+        service
+            .add_remote("old-remote", "https://github.com/user/repo.git")
+            .unwrap();
 
         // Rename it
         service.rename_remote("old-remote", "new-remote").unwrap();
@@ -2165,13 +2258,20 @@ mod tests {
     fn test_set_remote_url() {
         let (_tmp, service) = setup_test_repo();
 
-        service.add_remote("origin", "https://github.com/user/old-repo.git").unwrap();
+        service
+            .add_remote("origin", "https://github.com/user/old-repo.git")
+            .unwrap();
 
         // Change the URL
-        service.set_remote_url("origin", "https://github.com/user/new-repo.git").unwrap();
+        service
+            .set_remote_url("origin", "https://github.com/user/new-repo.git")
+            .unwrap();
 
         let remote = service.get_remote("origin").unwrap();
-        assert_eq!(remote.url.as_deref(), Some("https://github.com/user/new-repo.git"));
+        assert_eq!(
+            remote.url.as_deref(),
+            Some("https://github.com/user/new-repo.git")
+        );
     }
 
     // ==================== Phase 4 Tests: Graph, Search, Blame ====================
@@ -2218,9 +2318,10 @@ mod tests {
 
         assert_eq!(result.commits.len(), 2);
         // Both commits should have refs
-        let has_feature_ref = result.commits.iter().any(|c|
-            c.refs.iter().any(|r| r.name == "feature")
-        );
+        let has_feature_ref = result
+            .commits
+            .iter()
+            .any(|c| c.refs.iter().any(|r| r.name == "feature"));
         assert!(has_feature_ref);
     }
 
@@ -2233,7 +2334,9 @@ mod tests {
         for i in 2..=5 {
             fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
             service.stage_file(&format!("file{}.txt", i)).unwrap();
-            service.create_commit(&format!("Commit {}", i), None, None).unwrap();
+            service
+                .create_commit(&format!("Commit {}", i), None, None)
+                .unwrap();
         }
 
         // Get first page
@@ -2265,11 +2368,15 @@ mod tests {
 
         fs::write(tmp.path().join("feature.txt"), "content").unwrap();
         service.stage_file("feature.txt").unwrap();
-        service.create_commit("Add amazing feature", None, None).unwrap();
+        service
+            .create_commit("Add amazing feature", None, None)
+            .unwrap();
 
         fs::write(tmp.path().join("bugfix.txt"), "content").unwrap();
         service.stage_file("bugfix.txt").unwrap();
-        service.create_commit("Fix critical bug", None, None).unwrap();
+        service
+            .create_commit("Fix critical bug", None, None)
+            .unwrap();
 
         let options = crate::models::SearchOptions {
             query: "amazing".to_string(),
@@ -2330,11 +2437,18 @@ mod tests {
         service.create_commit("Update README", None, None).unwrap();
 
         // Get the first commit OID
-        let commits = service.log(LogOptions { limit: Some(10), ..Default::default() }).unwrap();
+        let commits = service
+            .log(LogOptions {
+                limit: Some(10),
+                ..Default::default()
+            })
+            .unwrap();
         let first_commit_oid = &commits[1].oid; // Second in list (older)
 
         // Blame at the first commit
-        let result = service.blame_file("README.md", Some(first_commit_oid)).unwrap();
+        let result = service
+            .blame_file("README.md", Some(first_commit_oid))
+            .unwrap();
 
         assert_eq!(result.lines.len(), 1);
         assert!(result.lines[0].content.contains("Test Repository"));
@@ -2349,7 +2463,9 @@ mod tests {
         for i in 2..=3 {
             fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
             service.stage_file(&format!("file{}.txt", i)).unwrap();
-            service.create_commit(&format!("Commit {}", i), None, None).unwrap();
+            service
+                .create_commit(&format!("Commit {}", i), None, None)
+                .unwrap();
         }
 
         let count = service.get_commit_count(None).unwrap();
@@ -2372,7 +2488,9 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let result = service.tag_create("v1.0.0", &CreateTagOptions::default()).unwrap();
+        let result = service
+            .tag_create("v1.0.0", &CreateTagOptions::default())
+            .unwrap();
         assert!(result.success);
 
         let tags = service.tag_list().unwrap();
@@ -2386,11 +2504,16 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let result = service.tag_create("v2.0.0", &CreateTagOptions {
-            annotated: true,
-            message: Some("Release version 2.0.0".to_string()),
-            ..Default::default()
-        }).unwrap();
+        let result = service
+            .tag_create(
+                "v2.0.0",
+                &CreateTagOptions {
+                    annotated: true,
+                    message: Some("Release version 2.0.0".to_string()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
 
         assert!(result.success);
 
@@ -2406,7 +2529,9 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create a tag
-        service.tag_create("v1.0.0", &CreateTagOptions::default()).unwrap();
+        service
+            .tag_create("v1.0.0", &CreateTagOptions::default())
+            .unwrap();
         assert_eq!(service.tag_list().unwrap().len(), 1);
 
         // Delete the tag

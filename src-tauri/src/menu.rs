@@ -214,13 +214,7 @@ fn create_edit_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
 }
 
 fn create_view_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
-    let refresh = MenuItem::with_id(
-        app,
-        menu_ids::REFRESH,
-        "Refresh",
-        true,
-        Some("CmdOrCtrl+R"),
-    )?;
+    let refresh = MenuItem::with_id(app, menu_ids::REFRESH, "Refresh", true, Some("CmdOrCtrl+R"))?;
     let separator1 = PredefinedMenuItem::separator(app)?;
     let toggle_sidebar = MenuItem::with_id(
         app,
@@ -256,20 +250,8 @@ fn create_repository_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
         true,
         Some("CmdOrCtrl+Shift+F"),
     )?;
-    let pull = MenuItem::with_id(
-        app,
-        menu_ids::PULL,
-        "Pull",
-        true,
-        Some("CmdOrCtrl+Shift+P"),
-    )?;
-    let push = MenuItem::with_id(
-        app,
-        menu_ids::PUSH,
-        "Push",
-        true,
-        Some("CmdOrCtrl+Shift+U"),
-    )?;
+    let pull = MenuItem::with_id(app, menu_ids::PULL, "Pull", true, Some("CmdOrCtrl+Shift+P"))?;
+    let push = MenuItem::with_id(app, menu_ids::PUSH, "Push", true, Some("CmdOrCtrl+Shift+U"))?;
     let separator1 = PredefinedMenuItem::separator(app)?;
     let stage_all = MenuItem::with_id(
         app,
@@ -348,12 +330,7 @@ fn create_branch_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
         Some("CmdOrCtrl+Shift+T"),
     )?;
 
-    let submenu = Submenu::with_items(
-        app,
-        "Branch",
-        true,
-        &[&new_branch, &separator1, &new_tag],
-    )?;
+    let submenu = Submenu::with_items(app, "Branch", true, &[&new_branch, &separator1, &new_tag])?;
 
     Ok(submenu)
 }
@@ -362,12 +339,7 @@ fn create_window_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let minimize = PredefinedMenuItem::minimize(app, Some("Minimize"))?;
     let zoom = PredefinedMenuItem::maximize(app, Some("Zoom"))?;
 
-    let submenu = Submenu::with_items(
-        app,
-        "Window",
-        true,
-        &[&minimize, &zoom],
-    )?;
+    let submenu = Submenu::with_items(app, "Window", true, &[&minimize, &zoom])?;
 
     Ok(submenu)
 }

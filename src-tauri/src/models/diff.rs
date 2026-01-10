@@ -90,8 +90,8 @@ pub enum DiffTarget {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PatchRequest {
     pub file_path: String,
-    pub hunks: Option<Vec<usize>>,  // Indices of hunks to stage/unstage
-    pub lines: Option<Vec<LineRange>>,  // Specific line ranges
+    pub hunks: Option<Vec<usize>>, // Indices of hunks to stage/unstage
+    pub lines: Option<Vec<LineRange>>, // Specific line ranges
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

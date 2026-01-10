@@ -262,7 +262,10 @@ impl LaneState {
         // Other parents get new lanes (merge commits)
         for parent_oid in parent_oids.iter().skip(1) {
             // Check if parent already has a lane
-            let parent_has_lane = self.active_lanes.iter().any(|l| l.as_deref() == Some(parent_oid));
+            let parent_has_lane = self
+                .active_lanes
+                .iter()
+                .any(|l| l.as_deref() == Some(parent_oid));
             if !parent_has_lane {
                 let new_lane = self.allocate_new_lane();
                 if new_lane < self.active_lanes.len() {

@@ -28,9 +28,9 @@ impl FileStatus {
     pub fn from_git2_status(entry: &git2::StatusEntry) -> Self {
         let status = entry.status();
         let path = entry.path().unwrap_or("").to_string();
-        let old_path = entry.head_to_index().and_then(|d| {
-            d.old_file().path().map(|p| p.to_string_lossy().to_string())
-        });
+        let old_path = entry
+            .head_to_index()
+            .and_then(|d| d.old_file().path().map(|p| p.to_string_lossy().to_string()));
 
         let staged_status = Self::get_staged_status(status);
         let unstaged_status = Self::get_unstaged_status(status);

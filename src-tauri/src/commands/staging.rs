@@ -10,70 +10,49 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 }
 
 #[tauri::command]
-pub async fn stage_file(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<()> {
+pub async fn stage_file(state: State<'_, AppState>, path: String) -> Result<()> {
     let service = get_service(&state)?;
     service.stage_file(&path)
 }
 
 #[tauri::command]
-pub async fn stage_files(
-    state: State<'_, AppState>,
-    paths: Vec<String>,
-) -> Result<()> {
+pub async fn stage_files(state: State<'_, AppState>, paths: Vec<String>) -> Result<()> {
     let service = get_service(&state)?;
     service.stage_files(&paths)
 }
 
 #[tauri::command]
-pub async fn stage_all(
-    state: State<'_, AppState>,
-) -> Result<()> {
+pub async fn stage_all(state: State<'_, AppState>) -> Result<()> {
     let service = get_service(&state)?;
     service.stage_all()
 }
 
 #[tauri::command]
-pub async fn unstage_file(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<()> {
+pub async fn unstage_file(state: State<'_, AppState>, path: String) -> Result<()> {
     let service = get_service(&state)?;
     service.unstage_file(&path)
 }
 
 #[tauri::command]
-pub async fn unstage_files(
-    state: State<'_, AppState>,
-    paths: Vec<String>,
-) -> Result<()> {
+pub async fn unstage_files(state: State<'_, AppState>, paths: Vec<String>) -> Result<()> {
     let service = get_service(&state)?;
     service.unstage_files(&paths)
 }
 
 #[tauri::command]
-pub async fn unstage_all(
-    state: State<'_, AppState>,
-) -> Result<()> {
+pub async fn unstage_all(state: State<'_, AppState>) -> Result<()> {
     let service = get_service(&state)?;
     service.unstage_all()
 }
 
 #[tauri::command]
-pub async fn discard_file(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<()> {
+pub async fn discard_file(state: State<'_, AppState>, path: String) -> Result<()> {
     let service = get_service(&state)?;
     service.discard_file(&path)
 }
 
 #[tauri::command]
-pub async fn discard_all(
-    state: State<'_, AppState>,
-) -> Result<()> {
+pub async fn discard_all(state: State<'_, AppState>) -> Result<()> {
     let service = get_service(&state)?;
     service.discard_all()
 }
@@ -86,55 +65,37 @@ pub async fn create_commit(
     author_email: Option<String>,
 ) -> Result<String> {
     let service = get_service(&state)?;
-    service.create_commit(
-        &message,
-        author_name.as_deref(),
-        author_email.as_deref(),
-    )
+    service.create_commit(&message, author_name.as_deref(), author_email.as_deref())
 }
 
 #[tauri::command]
-pub async fn amend_commit(
-    state: State<'_, AppState>,
-    message: Option<String>,
-) -> Result<String> {
+pub async fn amend_commit(state: State<'_, AppState>, message: Option<String>) -> Result<String> {
     let service = get_service(&state)?;
     service.amend_commit(message.as_deref())
 }
 
 #[tauri::command]
-pub async fn get_user_signature(
-    state: State<'_, AppState>,
-) -> Result<(String, String)> {
+pub async fn get_user_signature(state: State<'_, AppState>) -> Result<(String, String)> {
     let service = get_service(&state)?;
     service.get_user_signature()
 }
 
 #[tauri::command]
-pub async fn stage_hunk(
-    state: State<'_, AppState>,
-    patch: String,
-) -> Result<()> {
+pub async fn stage_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
     let path = state.ensure_repository_open()?;
     let service = GitCliService::new(&path);
     service.stage_hunk(&patch)
 }
 
 #[tauri::command]
-pub async fn unstage_hunk(
-    state: State<'_, AppState>,
-    patch: String,
-) -> Result<()> {
+pub async fn unstage_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
     let path = state.ensure_repository_open()?;
     let service = GitCliService::new(&path);
     service.unstage_hunk(&patch)
 }
 
 #[tauri::command]
-pub async fn discard_hunk(
-    state: State<'_, AppState>,
-    patch: String,
-) -> Result<()> {
+pub async fn discard_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
     let path = state.ensure_repository_open()?;
     let service = GitCliService::new(&path);
     service.discard_hunk(&patch)

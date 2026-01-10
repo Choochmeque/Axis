@@ -23,11 +23,7 @@ pub async fn get_remote(state: State<'_, AppState>, name: String) -> Result<Remo
 }
 
 #[tauri::command]
-pub async fn add_remote(
-    state: State<'_, AppState>,
-    name: String,
-    url: String,
-) -> Result<Remote> {
+pub async fn add_remote(state: State<'_, AppState>, name: String, url: String) -> Result<Remote> {
     let service = get_service(&state)?;
     service.add_remote(&name, &url)
 }
@@ -49,11 +45,7 @@ pub async fn rename_remote(
 }
 
 #[tauri::command]
-pub async fn set_remote_url(
-    state: State<'_, AppState>,
-    name: String,
-    url: String,
-) -> Result<()> {
+pub async fn set_remote_url(state: State<'_, AppState>, name: String, url: String) -> Result<()> {
     let service = get_service(&state)?;
     service.set_remote_url(&name, &url)
 }

@@ -64,7 +64,8 @@ impl AppState {
     /// Start watching the current repository for file changes
     pub fn start_file_watcher(&self, app_handle: AppHandle) -> Result<()> {
         let path = self.ensure_repository_open()?;
-        self.file_watcher.start_watching(path, app_handle)
+        self.file_watcher
+            .start_watching(path, app_handle)
             .map_err(|e| AxisError::Other(format!("Failed to start file watcher: {}", e)))
     }
 

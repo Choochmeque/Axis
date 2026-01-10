@@ -1,11 +1,11 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use parking_lot::Mutex;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
-use parking_lot::Mutex;
 
 /// Events emitted by the file watcher
 #[derive(Clone, serde::Serialize)]
@@ -44,8 +44,7 @@ impl FileWatcherService {
         let (tx, rx) = channel::<notify::Result<Event>>();
 
         // Create watcher with debouncing
-        let config = Config::default()
-            .with_poll_interval(Duration::from_millis(500));
+        let config = Config::default().with_poll_interval(Duration::from_millis(500));
 
         let mut watcher = RecommendedWatcher::new(tx, config)?;
 
@@ -105,12 +104,21 @@ impl FileWatcherService {
                                 let relative_str = relative.to_string_lossy();
 
                                 if relative_str == "index" || relative_str == "index.lock" {
-                                    let _ = app_handle.emit("repository:index_changed", FileWatchEvent::IndexChanged);
+                                    let _ = app_handle.emit(
+                                        "repository:index_changed",
+                                        FileWatchEvent::IndexChanged,
+                                    );
                                 } else if relative_str == "HEAD" || relative_str == "HEAD.lock" {
-                                    let _ = app_handle.emit("repository:head_changed", FileWatchEvent::HeadChanged);
+                                    let _ = app_handle.emit(
+                                        "repository:head_changed",
+                                        FileWatchEvent::HeadChanged,
+                                    );
                                 } else if relative_str.starts_with("refs/") {
                                     let ref_name = relative_str.to_string();
-                                    let _ = app_handle.emit("repository:ref_changed", FileWatchEvent::RefChanged { ref_name });
+                                    let _ = app_handle.emit(
+                                        "repository:ref_changed",
+                                        FileWatchEvent::RefChanged { ref_name },
+                                    );
                                 }
                                 // Ignore other .git internal files
                             } else {
@@ -120,9 +128,12 @@ impl FileWatcherService {
                         }
                     }
                     Ok(Err(e)) => {
-                        let _ = app_handle.emit("repository:watch_error", FileWatchEvent::WatchError {
-                            message: e.to_string(),
-                        });
+                        let _ = app_handle.emit(
+                            "repository:watch_error",
+                            FileWatchEvent::WatchError {
+                                message: e.to_string(),
+                            },
+                        );
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                         // Timeout - flush pending changes if any
@@ -145,7 +156,10 @@ impl FileWatcherService {
                         .collect();
 
                     if !paths.is_empty() {
-                        let _ = app_handle.emit("repository:files_changed", FileWatchEvent::FilesChanged { paths });
+                        let _ = app_handle.emit(
+                            "repository:files_changed",
+                            FileWatchEvent::FilesChanged { paths },
+                        );
                     }
                     last_emit = std::time::Instant::now();
                 }

@@ -1,5 +1,7 @@
 use crate::error::{AxisError, Result};
-use crate::models::{Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus};
+use crate::models::{
+    Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
+};
 use crate::services::Git2Service;
 use crate::state::AppState;
 use std::path::PathBuf;
@@ -12,10 +14,7 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 }
 
 #[tauri::command]
-pub async fn open_repository(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<Repository> {
+pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result<Repository> {
     let path = PathBuf::from(&path);
 
     if !path.exists() {
@@ -103,40 +102,28 @@ pub async fn get_branches(
 }
 
 #[tauri::command]
-pub async fn get_commit(
-    state: State<'_, AppState>,
-    oid: String,
-) -> Result<Commit> {
+pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
     let service = get_service(&state)?;
     service.get_commit(&oid)
 }
 
 #[tauri::command]
-pub async fn get_recent_repositories(
-    state: State<'_, AppState>,
-) -> Result<Vec<RecentRepository>> {
+pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<RecentRepository>> {
     state.get_recent_repositories()
 }
 
 #[tauri::command]
-pub async fn start_file_watcher(
-    state: State<'_, AppState>,
-    app_handle: AppHandle,
-) -> Result<()> {
+pub async fn start_file_watcher(state: State<'_, AppState>, app_handle: AppHandle) -> Result<()> {
     state.start_file_watcher(app_handle)
 }
 
 #[tauri::command]
-pub async fn stop_file_watcher(
-    state: State<'_, AppState>,
-) -> Result<()> {
+pub async fn stop_file_watcher(state: State<'_, AppState>) -> Result<()> {
     state.stop_file_watcher();
     Ok(())
 }
 
 #[tauri::command]
-pub async fn is_file_watcher_active(
-    state: State<'_, AppState>,
-) -> Result<bool> {
+pub async fn is_file_watcher_active(state: State<'_, AppState>) -> Result<bool> {
     Ok(state.is_watching())
 }

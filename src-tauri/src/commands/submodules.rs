@@ -74,10 +74,7 @@ pub async fn submodule_deinit(
 
 /// Remove a submodule completely
 #[tauri::command]
-pub async fn submodule_remove(
-    state: State<'_, AppState>,
-    path: String,
-) -> Result<SubmoduleResult> {
+pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Result<SubmoduleResult> {
     let cli = get_cli_service(&state)?;
     cli.submodule_remove(&path)
 }

@@ -251,6 +251,9 @@ export const stagingApi = {
 
   unstageHunk: (patch: string) =>
     invoke<void>('unstage_hunk', { patch }),
+
+  discardHunk: (patch: string) =>
+    invoke<void>('discard_hunk', { patch }),
 };
 
 export const diffApi = {

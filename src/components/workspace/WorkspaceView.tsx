@@ -12,6 +12,7 @@ export function WorkspaceView() {
     isSelectedFileStaged,
     stageHunk,
     unstageHunk,
+    discardHunk,
   } = useStagingStore();
 
   const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
@@ -31,6 +32,7 @@ export function WorkspaceView() {
               mode={diffMode}
               onStageHunk={stageHunk}
               onUnstageHunk={unstageHunk}
+              onDiscardHunk={discardHunk}
             />
           </Panel>
         </PanelGroup>

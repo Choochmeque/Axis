@@ -63,6 +63,7 @@ pub fn run() {
             commands::get_user_signature,
             commands::stage_hunk,
             commands::unstage_hunk,
+            commands::discard_hunk,
             // Diff commands
             commands::get_diff_workdir,
             commands::get_diff_staged,

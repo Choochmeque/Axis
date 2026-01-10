@@ -204,6 +204,11 @@
   cursor: not-allowed;
 }
 
+.diff-hunk-action-discard:hover:not(:disabled) {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
 .diff-hunk-lines {
   display: flex;
   flex-direction: column;

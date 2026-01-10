@@ -55,95 +55,107 @@ export function StagingView() {
 
   return (
     <div className="staging-view">
-      {/* Unstaged changes section */}
-      <div className="staging-section">
-        <div className="staging-section-header">
-          <span className="staging-section-title">Unstaged Changes</span>
-          <div className="staging-section-actions">
-            {hasUnstaged && (
-              <>
+      <div className="staging-sections">
+        {/* Unstaged changes section */}
+        <div className="staging-section">
+          <div className="staging-section-header">
+            <div className="staging-section-title-row">
+              <span className="staging-section-title">Unstaged Changes</span>
+              {hasUnstaged && (
+                <span className="staging-section-count">{unstagedFiles.length}</span>
+              )}
+            </div>
+            <div className="staging-section-actions">
+              {hasUnstaged && (
+                <>
+                  <button
+                    className="staging-action-btn"
+                    onClick={stageAll}
+                    title="Stage all"
+                  >
+                    <Plus size={14} />
+                    Stage All
+                  </button>
+                  <button
+                    className="staging-action-btn danger"
+                    onClick={discardAll}
+                    title="Discard all changes"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {hasUnstaged ? (
+            <FileStatusList
+              files={unstagedFiles}
+              selectedFile={selectedFile}
+              onSelectFile={(file) => selectFile(file, false)}
+              onStage={stageFile}
+              onDiscard={discardFile}
+              showStageButton
+              showDiscardButton
+            />
+          ) : (
+            <div className="staging-empty">No unstaged changes</div>
+          )}
+        </div>
+
+        {/* Staged changes section */}
+        <div className="staging-section">
+          <div className="staging-section-header">
+            <div className="staging-section-title-row">
+              <span className="staging-section-title">Staged Changes</span>
+              {hasStaged && (
+                <span className="staging-section-count">{stagedFiles.length}</span>
+              )}
+            </div>
+            <div className="staging-section-actions">
+              {hasStaged && (
                 <button
                   className="staging-action-btn"
-                  onClick={stageAll}
-                  title="Stage all"
+                  onClick={unstageAll}
+                  title="Unstage all"
                 >
-                  <Plus size={14} />
-                  Stage All
+                  <Minus size={14} />
+                  Unstage All
                 </button>
-                <button
-                  className="staging-action-btn danger"
-                  onClick={discardAll}
-                  title="Discard all changes"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </>
-            )}
+              )}
+            </div>
           </div>
+
+          {hasStaged ? (
+            <FileStatusList
+              files={stagedFiles}
+              selectedFile={selectedFile}
+              onSelectFile={(file) => selectFile(file, true)}
+              onUnstage={unstageFile}
+              showUnstageButton
+            />
+          ) : (
+            <div className="staging-empty">No staged changes</div>
+          )}
         </div>
 
-        {hasUnstaged ? (
-          <FileStatusList
-            files={unstagedFiles}
-            title=""
-            selectedFile={selectedFile}
-            onSelectFile={(file) => selectFile(file, false)}
-            onStage={stageFile}
-            onDiscard={discardFile}
-            showStageButton
-            showDiscardButton
-          />
-        ) : (
-          <div className="staging-empty">No unstaged changes</div>
+        {/* Conflicts section */}
+        {hasConflicts && (
+          <div className="staging-section conflicts">
+            <div className="staging-section-header">
+              <div className="staging-section-title-row">
+                <span className="staging-section-title">Conflicts</span>
+                <span className="staging-section-count">{conflictedFiles.length}</span>
+              </div>
+            </div>
+            <FileStatusList
+              files={conflictedFiles}
+              selectedFile={selectedFile}
+              onSelectFile={(file) => selectFile(file, false)}
+            />
+          </div>
         )}
       </div>
-
-      {/* Staged changes section */}
-      <div className="staging-section">
-        <div className="staging-section-header">
-          <span className="staging-section-title">Staged Changes</span>
-          <div className="staging-section-actions">
-            {hasStaged && (
-              <button
-                className="staging-action-btn"
-                onClick={unstageAll}
-                title="Unstage all"
-              >
-                <Minus size={14} />
-                Unstage All
-              </button>
-            )}
-          </div>
-        </div>
-
-        {hasStaged ? (
-          <FileStatusList
-            files={stagedFiles}
-            title=""
-            selectedFile={selectedFile}
-            onSelectFile={(file) => selectFile(file, true)}
-            onUnstage={unstageFile}
-            showUnstageButton
-          />
-        ) : (
-          <div className="staging-empty">No staged changes</div>
-        )}
-      </div>
-
-      {/* Conflicts section */}
-      {hasConflicts && (
-        <div className="staging-section conflicts">
-          <div className="staging-section-header">
-            <span className="staging-section-title">Conflicts</span>
-          </div>
-          <FileStatusList
-            files={conflictedFiles}
-            title=""
-            selectedFile={selectedFile}
-            onSelectFile={(file) => selectFile(file, false)}
-          />
-        </div>
-      )}
 
       {/* Commit form */}
       <CommitForm />

@@ -1,5 +1,5 @@
 use crate::error::{AxisError, Result};
-use crate::models::RecentRepository;
+use crate::models::{AppSettings, RecentRepository};
 use crate::services::FileWatcherService;
 use crate::storage::Database;
 use parking_lot::RwLock;
@@ -51,6 +51,14 @@ impl AppState {
 
     pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepository>> {
         self.database.get_recent_repositories()
+    }
+
+    pub fn get_settings(&self) -> Result<AppSettings> {
+        self.database.get_settings()
+    }
+
+    pub fn save_settings(&self, settings: &AppSettings) -> Result<()> {
+        self.database.save_settings(settings)
     }
 
     /// Start watching the current repository for file changes

@@ -48,6 +48,7 @@ import type {
   GitFlowResult,
   GrepOptions,
   GrepResult,
+  AppSettings,
 } from '../types';
 
 export const repositoryApi = {
@@ -485,4 +486,12 @@ export const grepApi = {
 
   searchCommit: (commitOid: string, options: GrepOptions) =>
     invoke<GrepResult>('grep_commit', { commitOid, options }),
+};
+
+export const settingsApi = {
+  get: () =>
+    invoke<AppSettings>('get_settings'),
+
+  save: (settings: AppSettings) =>
+    invoke<void>('save_settings', { settings }),
 };

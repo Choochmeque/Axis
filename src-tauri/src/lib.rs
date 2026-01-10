@@ -160,6 +160,9 @@ pub fn run() {
             // Search commands
             commands::grep_content,
             commands::grep_commit,
+            // Settings commands
+            commands::get_settings,
+            commands::save_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -102,21 +102,25 @@ export function Sidebar() {
         icon={<GitBranch size={14} />}
         defaultExpanded={true}
       >
-        {localBranches.map((branch) => (
-          <div
-            key={branch.name}
-            className={clsx('sidebar-item', { 'is-current': branch.is_head })}
-          >
-            <GitBranch size={12} />
-            <span className="branch-name">{branch.name}</span>
-            {branch.ahead !== null && branch.ahead > 0 && (
-              <span className="badge badge-ahead">↑{branch.ahead}</span>
-            )}
-            {branch.behind !== null && branch.behind > 0 && (
-              <span className="badge badge-behind">↓{branch.behind}</span>
-            )}
-          </div>
-        ))}
+        {localBranches.length > 0 ? (
+          localBranches.map((branch) => (
+            <div
+              key={branch.name}
+              className={clsx('sidebar-item', { 'is-current': branch.is_head })}
+            >
+              <GitBranch size={12} />
+              <span className="branch-name">{branch.name}</span>
+              {branch.ahead !== null && branch.ahead > 0 && (
+                <span className="badge badge-ahead">↑{branch.ahead}</span>
+              )}
+              {branch.behind !== null && branch.behind > 0 && (
+                <span className="badge badge-behind">↓{branch.behind}</span>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="sidebar-item sidebar-empty-item">No branches</div>
+        )}
       </Section>
 
       <Section title="TAGS" icon={<Tag size={14} />} defaultExpanded={false}>

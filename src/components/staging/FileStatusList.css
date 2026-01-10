@@ -1,6 +1,9 @@
 .file-status-list {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .file-status-list-header {
@@ -14,6 +17,7 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .file-status-list-count {
@@ -26,6 +30,8 @@
 .file-status-list-items {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .file-status-item {

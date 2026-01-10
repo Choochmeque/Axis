@@ -584,3 +584,32 @@ export interface GrepResult {
   matches: GrepMatch[];
   total_matches: number;
 }
+
+// Settings types
+export type Theme = 'light' | 'dark' | 'system';
+
+export interface AppSettings {
+  // Appearance
+  theme: Theme;
+  font_size: number;
+  show_line_numbers: boolean;
+
+  // Git
+  default_branch_name: string;
+  auto_fetch_interval: number;
+  confirm_before_discard: boolean;
+  sign_commits: boolean;
+
+  // Diff
+  diff_context_lines: number;
+  diff_word_wrap: boolean;
+  diff_side_by_side: boolean;
+
+  // Commit
+  commit_message_width: number;
+  spell_check_commit_messages: boolean;
+
+  // Terminal
+  terminal_font_family: string;
+  terminal_font_size: number;
+}

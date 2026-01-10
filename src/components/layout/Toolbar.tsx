@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   GitCommit,
   ArrowDownToLine,
@@ -8,15 +8,18 @@ import {
   GitMerge,
   Archive,
   FolderOpen,
+  Settings,
 } from 'lucide-react';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
+import { SettingsDialog } from '../settings/SettingsDialog';
+import { useKeyboardShortcuts } from '../../hooks';
 import './Toolbar.css';
 
 export function Toolbar() {
-  const { repository, openRepository, setCurrentView } = useRepositoryStore();
+  const { repository, openRepository, setCurrentView, refreshRepository } = useRepositoryStore();
 
   // Dialog states
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
@@ -24,8 +27,9 @@ export function Toolbar() {
   const [fetchOpen, setFetchOpen] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
   const [pullOpen, setPullOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const handleOpenRepository = async () => {
+  const handleOpenRepository = useCallback(async () => {
     const selected = await open({
       directory: true,
       multiple: false,
@@ -35,11 +39,28 @@ export function Toolbar() {
     if (selected && typeof selected === 'string') {
       await openRepository(selected);
     }
-  };
+  }, [openRepository]);
 
-  const handleCommitClick = () => {
+  const handleCommitClick = useCallback(() => {
     setCurrentView('file-status');
-  };
+  }, [setCurrentView]);
+
+  const handleRefresh = useCallback(() => {
+    refreshRepository?.();
+  }, [refreshRepository]);
+
+  // Register keyboard shortcuts
+  useKeyboardShortcuts({
+    onOpenSettings: () => setSettingsOpen(true),
+    onOpenRepository: handleOpenRepository,
+    onRefresh: handleRefresh,
+    onCommit: handleCommitClick,
+    onPush: () => repository && setPushOpen(true),
+    onPull: () => repository && setPullOpen(true),
+    onFetch: () => repository && setFetchOpen(true),
+    onCreateBranch: () => repository && setCreateBranchOpen(true),
+    onSearch: () => setCurrentView('search'),
+  });
 
   return (
     <div className="toolbar">
@@ -132,6 +153,23 @@ export function Toolbar() {
           <PullDialog open={pullOpen} onOpenChange={setPullOpen} />
         </>
       )}
+
+      <div className="toolbar-spacer" />
+
+      <div className="toolbar-group">
+        <button
+          className="toolbar-button"
+          onClick={() => setSettingsOpen(true)}
+          title="Settings"
+        >
+          <Settings size={18} />
+        </button>
+      </div>
+
+      <SettingsDialog
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ mod tags;
 mod submodules;
 mod gitflow;
 mod search;
+mod settings;
 
 pub use repository::*;
 pub use staging::*;
@@ -23,3 +24,4 @@ pub use tags::*;
 pub use submodules::*;
 pub use gitflow::*;
 pub use search::*;
+pub use settings::*;

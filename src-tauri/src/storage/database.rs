@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::models::RecentRepository;
+use crate::models::{AppSettings, RecentRepository};
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use std::path::{Path, PathBuf};
@@ -34,6 +34,43 @@ impl Database {
             )",
             [],
         )?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn get_settings(&self) -> Result<AppSettings> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = 'app_settings'")?;
+
+        let result: std::result::Result<String, _> = stmt.query_row([], |row| row.get(0));
+
+        match result {
+            Ok(json) => {
+                let settings: AppSettings = serde_json::from_str(&json).unwrap_or_default();
+                Ok(settings)
+            }
+            Err(_) => Ok(AppSettings::default()),
+        }
+    }
+
+    pub fn save_settings(&self, settings: &AppSettings) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let json = serde_json::to_string(settings)?;
+
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('app_settings', ?1)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![json],
+        )?;
+
         Ok(())
     }
 
@@ -148,5 +185,33 @@ mod tests {
 
         let repos = db.get_recent_repositories().unwrap();
         assert!(repos.is_empty());
+    }
+
+    #[test]
+    fn test_get_default_settings() {
+        let tmp = TempDir::new().unwrap();
+        let db = Database::new(tmp.path()).unwrap();
+
+        let settings = db.get_settings().unwrap();
+        assert_eq!(settings.font_size, 13);
+        assert_eq!(settings.default_branch_name, "main");
+    }
+
+    #[test]
+    fn test_save_and_get_settings() {
+        use crate::models::Theme;
+
+        let tmp = TempDir::new().unwrap();
+        let db = Database::new(tmp.path()).unwrap();
+
+        let mut settings = AppSettings::default();
+        settings.theme = Theme::Dark;
+        settings.font_size = 16;
+
+        db.save_settings(&settings).unwrap();
+
+        let loaded = db.get_settings().unwrap();
+        assert_eq!(loaded.theme, Theme::Dark);
+        assert_eq!(loaded.font_size, 16);
     }
 }

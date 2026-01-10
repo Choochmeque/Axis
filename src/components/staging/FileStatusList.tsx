@@ -13,7 +13,7 @@ import './FileStatusList.css';
 
 interface FileStatusListProps {
   files: FileStatus[];
-  title: string;
+  title?: string;
   selectedFile: FileStatus | null;
   onSelectFile: (file: FileStatus) => void;
   onStage?: (path: string) => void;
@@ -42,10 +42,12 @@ export function FileStatusList({
 
   return (
     <div className="file-status-list">
-      <div className="file-status-list-header">
-        <span className="file-status-list-title">{title}</span>
-        <span className="file-status-list-count">{files.length}</span>
-      </div>
+      {title && (
+        <div className="file-status-list-header">
+          <span className="file-status-list-title">{title}</span>
+          <span className="file-status-list-count">{files.length}</span>
+        </div>
+      )}
       <div className="file-status-list-items">
         {files.map((file) => (
           <FileStatusItem

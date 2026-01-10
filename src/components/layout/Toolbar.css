@@ -47,3 +47,7 @@
   margin: 0 8px;
   background-color: var(--border-color);
 }
+
+.toolbar-spacer {
+  flex: 1;
+}

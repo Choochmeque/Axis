@@ -288,10 +288,20 @@ export function Sidebar() {
               className={cn(sidebarItemClass, branch.is_head && "font-semibold")}
               onClick={() => handleRefClick(branch.target_oid)}
             >
-              <span className={cn(
-                "w-2 h-2 rounded-full shrink-0",
-                branch.is_head ? "border-2 border-(--accent-color)" : "opacity-0"
-              )} />
+              {branch.is_head ? (
+                <svg width={12} height={12} className="shrink-0">
+                  <circle
+                    cx={6}
+                    cy={6}
+                    r={4}
+                    fill="var(--bg-sidebar)"
+                    stroke="var(--accent-color)"
+                    strokeWidth={2}
+                  />
+                </svg>
+              ) : (
+                <span className="w-3 shrink-0" />
+              )}
               <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{branch.name}</span>
               {branch.ahead !== null && branch.ahead > 0 && (
                 <span className={cn(badgeClass, "bg-(--bg-tertiary) text-(--text-secondary)")}>{branch.ahead}↑</span>

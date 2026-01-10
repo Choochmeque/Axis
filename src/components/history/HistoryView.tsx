@@ -230,7 +230,21 @@ export function HistoryView() {
     selectCommit,
     clearCommitSelection,
     loadMoreCommits,
+    status,
+    setCurrentView,
   } = useRepositoryStore();
+
+  // Check if there are uncommitted changes
+  const hasUncommittedChanges = status && (
+    status.staged.length > 0 ||
+    status.unstaged.length > 0 ||
+    status.untracked.length > 0 ||
+    status.conflicted.length > 0
+  );
+
+  const uncommittedChangeCount = status
+    ? status.staged.length + status.unstaged.length + status.untracked.length + status.conflicted.length
+    : 0;
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -319,6 +333,52 @@ export function HistoryView() {
         <div className={cn(colClass, "w-18 shrink-0")}>SHA</div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
+        {hasUncommittedChanges && (
+          <div
+            className="flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover) bg-(--bg-uncommitted)"
+            onClick={() => setCurrentView('file-status')}
+          >
+            <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
+              <svg width={graphWidth} height={ROW_HEIGHT} className="graph-svg">
+                {/* Uncommitted changes node - hollow circle */}
+                <circle
+                  cx={LANE_WIDTH / 2}
+                  cy={ROW_HEIGHT / 2}
+                  r={NODE_RADIUS + 1}
+                  fill="var(--bg-secondary)"
+                  stroke={LANE_COLORS[0]}
+                  strokeWidth={2}
+                />
+                {/* Line going down to first commit */}
+                <line
+                  x1={LANE_WIDTH / 2}
+                  y1={ROW_HEIGHT / 2 + NODE_RADIUS + 1}
+                  x2={LANE_WIDTH / 2}
+                  y2={ROW_HEIGHT}
+                  stroke={LANE_COLORS[0]}
+                  strokeWidth={2}
+                />
+              </svg>
+            </div>
+            <div className={cn(colClass, "flex-1 min-w-50")}>
+              <span className="text-[13px] font-medium text-(--text-uncommitted)">
+                Uncommitted changes
+              </span>
+              <span className="ml-2 text-xs text-(--text-secondary)">
+                ({uncommittedChangeCount} {uncommittedChangeCount === 1 ? 'file' : 'files'})
+              </span>
+            </div>
+            <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>
+              <span className="text-xs text-(--text-secondary)">–</span>
+            </div>
+            <div className={cn(colClass, "w-37 shrink-0")}>
+              <span className="text-xs text-(--text-secondary)">–</span>
+            </div>
+            <div className={cn(colClass, "w-18 shrink-0")}>
+              <code className="font-mono text-[11px] text-(--text-secondary)">*</code>
+            </div>
+          </div>
+        )}
         {commits.map((commit, index) => (
           <CommitContextMenu key={commit.oid} commit={commit}>
             <div

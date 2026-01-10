@@ -121,3 +121,42 @@
   background-color: var(--color-warning);
   color: white;
 }
+
+/* Tree view styles */
+.tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-folder {
+  padding-left: 24px;
+}
+
+.tree-folder svg:first-child {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.tree-leaf {
+  padding-left: 24px;
+}
+
+.tree-leaf svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.tree-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-count {
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  background-color: var(--bg-badge);
+  color: var(--text-secondary);
+  margin-left: auto;
+}

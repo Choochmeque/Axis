@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
 import { stashApi } from '../../services/api';
-import type { StashEntry, StashResult } from '../../types';
+import type { StashEntry } from '../../types';
 import './StashView.css';
 
 interface StashViewProps {

@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 import { useStagingStore } from '../../store/stagingStore';
 import { FileStatusList } from './FileStatusList';
-import { CommitForm } from './CommitForm';
 import './StagingView.css';
 
 export function StagingView() {
@@ -56,6 +55,42 @@ export function StagingView() {
   return (
     <div className="staging-view">
       <div className="staging-sections">
+        {/* Staged changes section */}
+        <div className="staging-section">
+          <div className="staging-section-header">
+            <div className="staging-section-title-row">
+              <span className="staging-section-title">Staged Changes</span>
+              {hasStaged && (
+                <span className="staging-section-count">{stagedFiles.length}</span>
+              )}
+            </div>
+            <div className="staging-section-actions">
+              {hasStaged && (
+                <button
+                  className="staging-action-btn"
+                  onClick={unstageAll}
+                  title="Unstage all"
+                >
+                  <Minus size={14} />
+                  Unstage All
+                </button>
+              )}
+            </div>
+          </div>
+
+          {hasStaged ? (
+            <FileStatusList
+              files={stagedFiles}
+              selectedFile={selectedFile}
+              onSelectFile={(file) => selectFile(file, true)}
+              onUnstage={unstageFile}
+              showUnstageButton
+            />
+          ) : (
+            <div className="staging-empty">No staged changes</div>
+          )}
+        </div>
+
         {/* Unstaged changes section */}
         <div className="staging-section">
           <div className="staging-section-header">
@@ -103,42 +138,6 @@ export function StagingView() {
           )}
         </div>
 
-        {/* Staged changes section */}
-        <div className="staging-section">
-          <div className="staging-section-header">
-            <div className="staging-section-title-row">
-              <span className="staging-section-title">Staged Changes</span>
-              {hasStaged && (
-                <span className="staging-section-count">{stagedFiles.length}</span>
-              )}
-            </div>
-            <div className="staging-section-actions">
-              {hasStaged && (
-                <button
-                  className="staging-action-btn"
-                  onClick={unstageAll}
-                  title="Unstage all"
-                >
-                  <Minus size={14} />
-                  Unstage All
-                </button>
-              )}
-            </div>
-          </div>
-
-          {hasStaged ? (
-            <FileStatusList
-              files={stagedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, true)}
-              onUnstage={unstageFile}
-              showUnstageButton
-            />
-          ) : (
-            <div className="staging-empty">No staged changes</div>
-          )}
-        </div>
-
         {/* Conflicts section */}
         {hasConflicts && (
           <div className="staging-section conflicts">
@@ -156,9 +155,6 @@ export function StagingView() {
           </div>
         )}
       </div>
-
-      {/* Commit form */}
-      <CommitForm />
     </div>
   );
 }

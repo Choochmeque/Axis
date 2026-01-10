@@ -3,6 +3,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { StatusBar } from './StatusBar';
+import { useFileWatcher } from '../../hooks';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -10,6 +11,9 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  // Start file watcher and listen for changes
+  useFileWatcher();
+
   return (
     <div className="app-layout">
       <Toolbar />

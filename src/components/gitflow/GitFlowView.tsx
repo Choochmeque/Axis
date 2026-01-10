@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch,
-  Play,
   Check,
   Upload,
   Plus,

@@ -14,6 +14,7 @@ import { useRepositoryStore } from '../../store/repositoryStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
+import { StashDialog } from '../stash';
 import { SettingsDialog } from '../settings/SettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
 import './Toolbar.css';
@@ -27,6 +28,7 @@ export function Toolbar() {
   const [fetchOpen, setFetchOpen] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
   const [pullOpen, setPullOpen] = useState(false);
+  const [stashOpen, setStashOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleOpenRepository = useCallback(async () => {
@@ -131,7 +133,11 @@ export function Toolbar() {
               <GitMerge size={18} />
               <span>Checkout</span>
             </button>
-            <button className="toolbar-button" title="Stash" disabled>
+            <button
+              className="toolbar-button"
+              title="Stash"
+              onClick={() => setStashOpen(true)}
+            >
               <Archive size={18} />
               <span>Stash</span>
             </button>
@@ -151,6 +157,9 @@ export function Toolbar() {
           <FetchDialog open={fetchOpen} onOpenChange={setFetchOpen} />
           <PushDialog open={pushOpen} onOpenChange={setPushOpen} />
           <PullDialog open={pullOpen} onOpenChange={setPullOpen} />
+
+          {/* Stash Dialog */}
+          <StashDialog open={stashOpen} onOpenChange={setStashOpen} />
         </>
       )}
 

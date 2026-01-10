@@ -3,6 +3,8 @@
   flex-direction: column;
   border-top: 1px solid var(--border-color);
   background-color: var(--bg-secondary);
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .commit-form-header {

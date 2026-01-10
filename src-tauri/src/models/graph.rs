@@ -67,6 +67,7 @@ pub struct GraphOptions {
     /// Start from a specific ref
     pub from_ref: Option<String>,
     /// Include all branches (not just current)
+    #[serde(default)]
     pub all_branches: bool,
 }
 
@@ -173,25 +174,43 @@ impl LaneState {
         }
     }
 
+    fn find_active_lane(&self, oid: &str) -> Option<usize> {
+        self.active_lanes
+            .iter()
+            .enumerate()
+            .find_map(|(lane, active)| {
+                if active.as_deref() == Some(oid) {
+                    Some(lane)
+                } else {
+                    None
+                }
+            })
+    }
+
+    pub fn find_lane(&self, oid: &str) -> Option<usize> {
+        self.commit_lanes
+            .get(oid)
+            .copied()
+            .or_else(|| self.find_active_lane(oid))
+    }
+
     /// Find or allocate a lane for a commit
-    pub fn get_lane_for_commit(&mut self, oid: &str) -> usize {
+    pub fn get_lane_for_commit(&mut self, oid: &str) -> (usize, bool) {
         // Check if this commit already has an assigned lane
         if let Some(&lane) = self.commit_lanes.get(oid) {
-            return lane;
+            return (lane, false);
         }
 
         // Look for this commit in active lanes
-        for (lane, active) in self.active_lanes.iter().enumerate() {
-            if active.as_deref() == Some(oid) {
-                self.commit_lanes.insert(oid.to_string(), lane);
-                return lane;
-            }
+        if let Some(lane) = self.find_active_lane(oid) {
+            self.commit_lanes.insert(oid.to_string(), lane);
+            return (lane, false);
         }
 
         // Allocate a new lane
         let lane = self.allocate_new_lane();
         self.commit_lanes.insert(oid.to_string(), lane);
-        lane
+        (lane, true)
     }
 
     /// Allocate a new lane, reusing an empty slot if available
@@ -220,15 +239,23 @@ impl LaneState {
             return;
         }
 
-        // First parent takes the current lane (main line)
+        // First parent takes the current lane unless it already belongs to another lane
         if let Some(first_parent) = parent_oids.first() {
-            if lane < self.active_lanes.len() {
-                self.active_lanes[lane] = Some(first_parent.clone());
-            } else {
-                while self.active_lanes.len() <= lane {
-                    self.active_lanes.push(None);
+            let parent_lane = self.find_lane(first_parent);
+            if parent_lane.is_some() && parent_lane != Some(lane) {
+                // Parent already tracked on another lane, don't hijack it
+                if lane < self.active_lanes.len() {
+                    self.active_lanes[lane] = None;
                 }
-                self.active_lanes[lane] = Some(first_parent.clone());
+            } else {
+                if lane < self.active_lanes.len() {
+                    self.active_lanes[lane] = Some(first_parent.clone());
+                } else {
+                    while self.active_lanes.len() <= lane {
+                        self.active_lanes.push(None);
+                    }
+                    self.active_lanes[lane] = Some(first_parent.clone());
+                }
             }
         }
 
@@ -253,10 +280,8 @@ impl LaneState {
         }
 
         // Look for parent in active lanes
-        for (lane, active) in self.active_lanes.iter().enumerate() {
-            if active.as_deref() == Some(parent_oid) {
-                return lane;
-            }
+        if let Some(lane) = self.find_active_lane(parent_oid) {
+            return lane;
         }
 
         // Allocate new lane for parent

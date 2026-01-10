@@ -2,6 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchType, Commit, FileStatus, LogOptions, Repository,
     RepositoryState, RepositoryStatus,
+    Tag, TagSignature, CreateTagOptions, TagResult,
 };
 use chrono::{DateTime, Utc};
 use git2::{Repository as Git2Repository, StatusOptions};
@@ -407,6 +408,9 @@ impl Git2Service {
     pub fn diff_workdir(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
+        // Include untracked files in the diff with their content
+        diff_opts.include_untracked(true);
+        diff_opts.show_untracked_content(true);
 
         let diff = self.repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
@@ -426,6 +430,9 @@ impl Git2Service {
     pub fn diff_head(&self, options: &crate::models::DiffOptions) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
+        // Include untracked files in the diff with their content
+        diff_opts.include_untracked(true);
+        diff_opts.show_untracked_content(true);
 
         let head = self.repo.head()?.peel_to_tree()?;
         let diff = self.repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
@@ -1227,18 +1234,26 @@ impl Git2Service {
             let oid_str = oid.to_string();
 
             // Get lane for this commit
-            let lane = lane_state.get_lane_for_commit(&oid_str);
+            let (lane, is_new_lane) = lane_state.get_lane_for_commit(&oid_str);
 
             // Build parent edges
             let parent_oids: Vec<String> = commit.parent_ids().map(|id| id.to_string()).collect();
             let mut parent_edges = Vec::new();
 
             for (i, parent_oid) in parent_oids.iter().enumerate() {
-                let parent_lane = lane_state.get_parent_lane(parent_oid);
-                let edge_type = if i == 0 && parent_lane == lane {
-                    EdgeType::Straight
-                } else if i == 0 {
-                    EdgeType::Branch
+                // First parent continues on the same lane unless this is a branch boundary.
+                let parent_lane = if i == 0 {
+                    lane_state.find_lane(parent_oid).unwrap_or(lane)
+                } else {
+                    lane_state.get_parent_lane(parent_oid)
+                };
+
+                let edge_type = if i == 0 {
+                    if parent_lane == lane && !is_new_lane {
+                        EdgeType::Straight
+                    } else {
+                        EdgeType::Branch
+                    }
                 } else {
                     EdgeType::Merge
                 };
@@ -1497,6 +1512,135 @@ impl Git2Service {
         }
 
         Ok(revwalk.count())
+    }
+
+    // ==================== Tag Operations ====================
+
+    /// List all tags
+    pub fn tag_list(&self) -> Result<Vec<Tag>> {
+        let tag_names = self.repo.tag_names(None)?;
+        let mut tags = Vec::new();
+
+        for name in tag_names.iter().flatten() {
+            let full_name = format!("refs/tags/{}", name);
+            let reference = self.repo.find_reference(&full_name)?;
+
+            // Peel to get the target (works for both lightweight and annotated)
+            let target_obj = reference.peel(git2::ObjectType::Commit)?;
+            let target_oid = target_obj.id().to_string();
+
+            // Check if this is an annotated tag
+            let tag_obj = reference.peel(git2::ObjectType::Tag).ok();
+
+            let (is_annotated, message, tagger) = if let Some(obj) = tag_obj {
+                if let Some(tag) = obj.as_tag() {
+                    let tagger_sig = tag.tagger().map(|sig| {
+                        let timestamp = DateTime::from_timestamp(sig.when().seconds(), 0)
+                            .unwrap_or_else(|| Utc::now())
+                            .with_timezone(&Utc);
+                        TagSignature {
+                            name: sig.name().unwrap_or("Unknown").to_string(),
+                            email: sig.email().unwrap_or("").to_string(),
+                            timestamp,
+                        }
+                    });
+                    (true, tag.message().map(|m| m.to_string()), tagger_sig)
+                } else {
+                    (false, None, None)
+                }
+            } else {
+                (false, None, None)
+            };
+
+            // Get target commit info
+            let (target_summary, target_time) = if let Ok(commit) = target_obj.peel_to_commit() {
+                let summary = commit.summary().map(|s| s.to_string());
+                let time = DateTime::from_timestamp(commit.time().seconds(), 0)
+                    .map(|dt| dt.with_timezone(&Utc));
+                (summary, time)
+            } else {
+                (None, None)
+            };
+
+            tags.push(Tag {
+                name: name.to_string(),
+                full_name,
+                target_oid: target_oid.clone(),
+                short_oid: target_oid.chars().take(7).collect(),
+                is_annotated,
+                message,
+                tagger,
+                target_summary,
+                target_time,
+            });
+        }
+
+        // Sort alphabetically by name
+        tags.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(tags)
+    }
+
+    /// Create a new tag
+    pub fn tag_create(&self, name: &str, options: &CreateTagOptions) -> Result<TagResult> {
+        // Get target commit
+        let target_ref = options.target.as_deref().unwrap_or("HEAD");
+        let obj = self.repo.revparse_single(target_ref)?;
+        let commit = obj.peel_to_commit()?;
+
+        // Check if tag exists
+        let tag_ref = format!("refs/tags/{}", name);
+        if self.repo.find_reference(&tag_ref).is_ok() {
+            if !options.force {
+                return Ok(TagResult {
+                    success: false,
+                    message: format!("Tag '{}' already exists", name),
+                    tag: None,
+                });
+            }
+            // Delete existing tag if force is set
+            self.repo.find_reference(&tag_ref)?.delete()?;
+        }
+
+        if options.annotated {
+            // Create annotated tag
+            let sig = self.repo.signature()?;
+            let message = options.message.as_deref().unwrap_or("");
+            self.repo.tag(name, commit.as_object(), &sig, message, options.force)?;
+        } else {
+            // Create lightweight tag
+            self.repo.tag_lightweight(name, commit.as_object(), options.force)?;
+        }
+
+        // Return the created tag
+        let tags = self.tag_list()?;
+        let created_tag = tags.into_iter().find(|t| t.name == name);
+
+        Ok(TagResult {
+            success: true,
+            message: format!("Tag '{}' created successfully", name),
+            tag: created_tag,
+        })
+    }
+
+    /// Delete a tag
+    pub fn tag_delete(&self, name: &str) -> Result<TagResult> {
+        let tag_ref = format!("refs/tags/{}", name);
+
+        match self.repo.find_reference(&tag_ref) {
+            Ok(mut reference) => {
+                reference.delete()?;
+                Ok(TagResult {
+                    success: true,
+                    message: format!("Tag '{}' deleted successfully", name),
+                    tag: None,
+                })
+            }
+            Err(_) => Ok(TagResult {
+                success: false,
+                message: format!("Tag '{}' not found", name),
+                tag: None,
+            }),
+        }
     }
 }
 
@@ -2202,5 +2346,65 @@ mod tests {
 
         let count = service.get_commit_count(None).unwrap();
         assert_eq!(count, 3);
+    }
+
+    // ==================== Tag Tests ====================
+
+    #[test]
+    fn test_tag_list_empty() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let tags = service.tag_list().unwrap();
+        assert!(tags.is_empty());
+    }
+
+    #[test]
+    fn test_tag_create_lightweight() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.tag_create("v1.0.0", &CreateTagOptions::default()).unwrap();
+        assert!(result.success);
+
+        let tags = service.tag_list().unwrap();
+        assert_eq!(tags.len(), 1);
+        assert_eq!(tags[0].name, "v1.0.0");
+        assert!(!tags[0].is_annotated);
+    }
+
+    #[test]
+    fn test_tag_create_annotated() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.tag_create("v2.0.0", &CreateTagOptions {
+            annotated: true,
+            message: Some("Release version 2.0.0".to_string()),
+            ..Default::default()
+        }).unwrap();
+
+        assert!(result.success);
+
+        let tags = service.tag_list().unwrap();
+        assert_eq!(tags.len(), 1);
+        assert_eq!(tags[0].name, "v2.0.0");
+        assert!(tags[0].is_annotated);
+    }
+
+    #[test]
+    fn test_tag_delete() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a tag
+        service.tag_create("v1.0.0", &CreateTagOptions::default()).unwrap();
+        assert_eq!(service.tag_list().unwrap().len(), 1);
+
+        // Delete the tag
+        let result = service.tag_delete("v1.0.0").unwrap();
+        assert!(result.success);
+
+        assert!(service.tag_list().unwrap().is_empty());
     }
 }

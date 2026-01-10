@@ -1,7 +1,19 @@
 .history-view {
   display: flex;
   flex-direction: column;
+  flex: 1;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.history-view-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .history-loading,
@@ -10,6 +22,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex: 1;
   height: 100%;
   color: var(--text-secondary);
   gap: 12px;
@@ -28,23 +41,38 @@
 
 .history-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
 .history-row {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  height: 28px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--border-color);
   transition: background-color 0.15s;
+  cursor: pointer;
 }
 
 .history-row:hover {
   background-color: var(--bg-hover);
 }
 
+.history-row.is-selected {
+  background-color: var(--bg-active);
+}
+
+.history-row.is-selected:hover {
+  background-color: var(--bg-active);
+}
+
 .history-row.is-merge {
   background-color: var(--bg-merge);
+}
+
+.history-row.is-merge.is-selected {
+  background-color: var(--bg-active);
 }
 
 .history-col {
@@ -54,7 +82,6 @@
 }
 
 .history-col-graph {
-  width: 60px;
   flex-shrink: 0;
 }
 
@@ -123,6 +150,45 @@
   border: 2px solid var(--bg-secondary);
 }
 
+.commit-refs {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.commit-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.commit-ref svg {
+  flex-shrink: 0;
+}
+
+.commit-ref.ref-local_branch {
+  background-color: #107c10;
+  color: white;
+}
+
+.commit-ref.ref-remote_branch {
+  background-color: #5c2d91;
+  color: white;
+}
+
+.commit-ref.ref-tag {
+  background-color: #d83b01;
+  color: white;
+}
+
+.commit-ref.is-head {
+  font-weight: 700;
+}
+
 .commit-summary {
   font-size: 13px;
 }
@@ -144,4 +210,40 @@
   background-color: var(--bg-code);
   padding: 2px 6px;
   border-radius: 3px;
+}
+
+.resize-handle-horizontal {
+  height: 4px;
+  background-color: var(--border-color);
+  cursor: row-resize;
+  transition: background-color 0.15s;
+}
+
+.resize-handle-horizontal:hover,
+.resize-handle-horizontal[data-resize-handle-state="hover"],
+.resize-handle-horizontal[data-resize-handle-state="drag"] {
+  background-color: var(--accent-color);
+}
+
+.history-loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.history-loading-more .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

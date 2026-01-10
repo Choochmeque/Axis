@@ -22,7 +22,7 @@ pub struct Submodule {
 }
 
 /// Status of a submodule
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum SubmoduleStatus {
     /// Submodule is up to date
     Current,
@@ -37,13 +37,8 @@ pub enum SubmoduleStatus {
     /// Submodule workdir is dirty
     Dirty,
     /// Unknown status
+    #[default]
     Unknown,
-}
-
-impl Default for SubmoduleStatus {
-    fn default() -> Self {
-        SubmoduleStatus::Unknown
-    }
 }
 
 /// Options for adding a submodule

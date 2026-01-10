@@ -11,7 +11,7 @@ pub struct Remote {
 }
 
 /// Progress information for fetch operations
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct FetchProgress {
     pub total_objects: usize,
     pub indexed_objects: usize,
@@ -22,36 +22,12 @@ pub struct FetchProgress {
     pub received_bytes: usize,
 }
 
-impl Default for FetchProgress {
-    fn default() -> Self {
-        FetchProgress {
-            total_objects: 0,
-            indexed_objects: 0,
-            received_objects: 0,
-            local_objects: 0,
-            total_deltas: 0,
-            indexed_deltas: 0,
-            received_bytes: 0,
-        }
-    }
-}
-
 /// Progress information for push operations
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PushProgress {
     pub current: usize,
     pub total: usize,
     pub bytes: usize,
-}
-
-impl Default for PushProgress {
-    fn default() -> Self {
-        PushProgress {
-            current: 0,
-            total: 0,
-            bytes: 0,
-        }
-    }
 }
 
 /// Result of a fetch operation

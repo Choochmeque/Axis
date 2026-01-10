@@ -40,7 +40,7 @@ impl GitCliService {
             .args(args)
             .current_dir(&self.repo_path)
             .output()
-            .map_err(|e| AxisError::IoError(e))?;
+            .map_err(AxisError::IoError)?;
 
         Ok(GitCommandResult::from(output))
     }
@@ -1438,17 +1438,15 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(|e| AxisError::IoError(e))?;
+            .map_err(AxisError::IoError)?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
                 .write_all(patch.as_bytes())
-                .map_err(|e| AxisError::IoError(e))?;
+                .map_err(AxisError::IoError)?;
         }
 
-        let output = child
-            .wait_with_output()
-            .map_err(|e| AxisError::IoError(e))?;
+        let output = child.wait_with_output().map_err(AxisError::IoError)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1474,17 +1472,15 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(|e| AxisError::IoError(e))?;
+            .map_err(AxisError::IoError)?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
                 .write_all(patch.as_bytes())
-                .map_err(|e| AxisError::IoError(e))?;
+                .map_err(AxisError::IoError)?;
         }
 
-        let output = child
-            .wait_with_output()
-            .map_err(|e| AxisError::IoError(e))?;
+        let output = child.wait_with_output().map_err(AxisError::IoError)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1510,17 +1506,15 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(|e| AxisError::IoError(e))?;
+            .map_err(AxisError::IoError)?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
                 .write_all(patch.as_bytes())
-                .map_err(|e| AxisError::IoError(e))?;
+                .map_err(AxisError::IoError)?;
         }
 
-        let output = child
-            .wait_with_output()
-            .map_err(|e| AxisError::IoError(e))?;
+        let output = child.wait_with_output().map_err(AxisError::IoError)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);

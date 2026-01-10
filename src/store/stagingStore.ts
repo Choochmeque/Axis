@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
 import type { RepositoryStatus, FileDiff, FileStatus } from '../types';
+import { useRepositoryStore } from './repositoryStore';
 
 interface StagingState {
   // Status
@@ -235,7 +236,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         commitMessage: '',
         isCommitting: false,
       });
+      // Refresh status and commit history
       await get().loadStatus();
+      const repoStore = useRepositoryStore.getState();
+      await Promise.all([repoStore.loadCommits(), repoStore.loadBranches()]);
       return oid;
     } catch (error) {
       set({
@@ -257,7 +261,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         isAmending: false,
         isCommitting: false,
       });
+      // Refresh status and commit history
       await get().loadStatus();
+      const repoStore = useRepositoryStore.getState();
+      await Promise.all([repoStore.loadCommits(), repoStore.loadBranches()]);
       return oid;
     } catch (error) {
       set({

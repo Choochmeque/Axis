@@ -242,7 +242,7 @@ impl Git2Service {
     /// Stage a file (add to index)
     pub fn stage_file(&self, path: &str) -> Result<()> {
         let mut index = self.repo.index()?;
-        let full_path = self.repo.workdir().unwrap().join(path);
+        let full_path = self.repo.workdir().ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?.join(path);
         if full_path.exists() {
             index.add_path(Path::new(path))?;
         } else {
@@ -255,7 +255,7 @@ impl Git2Service {
     /// Stage multiple files
     pub fn stage_files(&self, paths: &[String]) -> Result<()> {
         let mut index = self.repo.index()?;
-        let workdir = self.repo.workdir().unwrap();
+        let workdir = self.repo.workdir().ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
         for path in paths {
             let full_path = workdir.join(path);
             if full_path.exists() {
@@ -285,7 +285,7 @@ impl Git2Service {
         let mut index = self.repo.index()?;
 
         // Check if file exists in HEAD
-        if let Some(entry) = head_tree.get_path(Path::new(path)).ok() {
+        if let Ok(entry) = head_tree.get_path(Path::new(path)) {
             // File exists in HEAD - reset to HEAD version
             let obj = entry.to_object(&self.repo)?;
             if let Some(blob) = obj.as_blob() {
@@ -1606,7 +1606,7 @@ impl Git2Service {
                 if let Some(tag) = obj.as_tag() {
                     let tagger_sig = tag.tagger().map(|sig| {
                         let timestamp = DateTime::from_timestamp(sig.when().seconds(), 0)
-                            .unwrap_or_else(|| Utc::now())
+                            .unwrap_or_else(Utc::now)
                             .with_timezone(&Utc);
                         TagSignature {
                             name: sig.name().unwrap_or("Unknown").to_string(),

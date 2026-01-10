@@ -74,7 +74,7 @@ pub struct RebaseResult {
 }
 
 /// Options for cherry-pick operations
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CherryPickOptions {
     /// Commit(s) to cherry-pick
     pub commits: Vec<String>,
@@ -82,16 +82,6 @@ pub struct CherryPickOptions {
     pub no_commit: bool,
     /// If true, allow empty commits
     pub allow_empty: bool,
-}
-
-impl Default for CherryPickOptions {
-    fn default() -> Self {
-        Self {
-            commits: Vec::new(),
-            no_commit: false,
-            allow_empty: false,
-        }
-    }
 }
 
 /// Result of a cherry-pick operation
@@ -108,21 +98,12 @@ pub struct CherryPickResult {
 }
 
 /// Options for revert operations
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RevertOptions {
     /// Commit(s) to revert
     pub commits: Vec<String>,
     /// If true, don't create commits (stage changes only)
     pub no_commit: bool,
-}
-
-impl Default for RevertOptions {
-    fn default() -> Self {
-        Self {
-            commits: Vec::new(),
-            no_commit: false,
-        }
-    }
 }
 
 /// Result of a revert operation
@@ -193,9 +174,10 @@ pub enum ConflictResolution {
 }
 
 /// Operation currently in progress
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum OperationState {
     /// No operation in progress
+    #[default]
     None,
     /// Merge in progress
     Merging {
@@ -223,27 +205,16 @@ pub enum OperationState {
     },
 }
 
-impl Default for OperationState {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
 /// Reset mode for reset operations
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum ResetMode {
     /// Keep changes staged
     Soft,
     /// Keep changes unstaged
+    #[default]
     Mixed,
     /// Discard all changes
     Hard,
-}
-
-impl Default for ResetMode {
-    fn default() -> Self {
-        Self::Mixed
-    }
 }
 
 /// Options for reset operations

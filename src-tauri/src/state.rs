@@ -3,7 +3,7 @@ use crate::models::{AppSettings, RecentRepository};
 use crate::services::FileWatcherService;
 use crate::storage::Database;
 use parking_lot::RwLock;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::AppHandle;
 
@@ -45,7 +45,7 @@ impl AppState {
             .ok_or(AxisError::NoRepositoryOpen)
     }
 
-    pub fn add_recent_repository(&self, path: &PathBuf, name: &str) -> Result<()> {
+    pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
         self.database.add_recent_repository(path, name)
     }
 

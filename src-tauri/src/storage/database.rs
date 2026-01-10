@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository};
 use chrono::Utc;
 use rusqlite::{params, Connection};
@@ -24,7 +24,10 @@ impl Database {
     }
 
     fn init_schema(&self) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS recent_repositories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +50,10 @@ impl Database {
     }
 
     pub fn get_settings(&self) -> Result<AppSettings> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = 'app_settings'")?;
 
         let result: std::result::Result<String, _> = stmt.query_row([], |row| row.get(0));
@@ -62,7 +68,10 @@ impl Database {
     }
 
     pub fn save_settings(&self, settings: &AppSettings) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         let json = serde_json::to_string(settings)?;
 
         conn.execute(
@@ -75,7 +84,10 @@ impl Database {
     }
 
     pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         let now = Utc::now().to_rfc3339();
         let path_str = path.to_string_lossy();
 
@@ -103,7 +115,10 @@ impl Database {
     }
 
     pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepository>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         let mut stmt = conn.prepare(
             "SELECT path, name, last_opened
              FROM recent_repositories
@@ -131,7 +146,10 @@ impl Database {
     }
 
     pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
         let path_str = path.to_string_lossy();
         conn.execute(
             "DELETE FROM recent_repositories WHERE path = ?1",
@@ -215,9 +233,11 @@ mod tests {
         let tmp = TempDir::new().expect("should create temp directory");
         let db = Database::new(tmp.path()).expect("should create database");
 
-        let mut settings = AppSettings::default();
-        settings.theme = Theme::Dark;
-        settings.font_size = 16;
+        let settings = AppSettings {
+            theme: Theme::Dark,
+            font_size: 16,
+            ..Default::default()
+        };
 
         db.save_settings(&settings).expect("should save settings");
 

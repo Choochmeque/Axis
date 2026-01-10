@@ -84,21 +84,10 @@ impl FileStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RepositoryStatus {
     pub staged: Vec<FileStatus>,
     pub unstaged: Vec<FileStatus>,
     pub untracked: Vec<FileStatus>,
     pub conflicted: Vec<FileStatus>,
-}
-
-impl Default for RepositoryStatus {
-    fn default() -> Self {
-        RepositoryStatus {
-            staged: Vec::new(),
-            unstaged: Vec::new(),
-            untracked: Vec::new(),
-            conflicted: Vec::new(),
-        }
-    }
 }

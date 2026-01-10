@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Tag as TagIcon, X, AlertCircle, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { tagApi, remoteApi } from '../../services/api';
 import type { TagResult, Remote } from '../../types';
-import './TagDialog.css';
+import { cn } from '../../lib/utils';
 
 interface TagDialogProps {
   isOpen: boolean;
@@ -101,36 +101,46 @@ export function TagDialog({
 
   if (!isOpen) return null;
 
+  const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) font-inherit focus:outline-none focus:border-(--accent-color)";
+  const checkboxLabelClass = "flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer";
+  const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
+
   return (
-    <div className="tag-dialog-overlay" onClick={handleClose}>
-      <div className="dialog tag-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="dialog-header">
-          <div className="dialog-title">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999" onClick={handleClose}>
+      <div
+        className="bg-(--bg-primary) rounded-lg shadow-xl min-w-112.5 max-w-125 max-h-[80vh] overflow-hidden flex flex-col z-10000"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-(--border-color) shrink-0 bg-(--bg-primary)">
+          <div className="flex items-center gap-2 text-base font-semibold text-(--text-primary)">
             <TagIcon size={20} />
             <span>Add Tag</span>
           </div>
-          <button className="dialog-close" onClick={handleClose}>
+          <button
+            className="flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)"
+            onClick={handleClose}
+          >
             <X size={18} />
           </button>
         </div>
 
-        <div className="dialog-content">
+        <div className="p-4 overflow-y-auto flex-1 min-h-0">
           {error && (
-            <div className="dialog-error">
+            <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/30 rounded-md text-error text-[13px] mb-4">
               <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
 
           {result && result.success ? (
-            <div className="dialog-result success">
+            <div className="flex items-start gap-2 p-3 bg-success/10 border border-success/30 rounded-md text-success text-[13px] mb-4">
               <Check size={16} />
               <span>Tag '{result.tag?.name}' created successfully</span>
             </div>
           ) : (
             <>
-              <div className="form-group">
-                <label htmlFor="tag-name">Tag Name:</label>
+              <div className="mb-4">
+                <label htmlFor="tag-name" className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Tag Name:</label>
                 <input
                   id="tag-name"
                   type="text"
@@ -139,56 +149,61 @@ export function TagDialog({
                   placeholder="v1.0.0"
                   disabled={isLoading}
                   autoFocus
+                  className={inputClass}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Commit:</label>
-                <div className="commit-options">
-                  <label className="radio-label">
+              <div className="mb-4">
+                <label className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Commit:</label>
+                <div className="flex flex-col gap-2.5 mt-1">
+                  <label className={checkboxLabelClass}>
                     <input
                       type="radio"
                       name="commit-target"
                       checked={commitTarget === 'head'}
                       onChange={() => setCommitTarget('head')}
                       disabled={isLoading}
+                      className="w-auto m-0 accent-(--accent-color) shrink-0"
                     />
-                    <span>Working copy parent</span>
+                    <span className="flex-1">Working copy parent</span>
                   </label>
-                  <label className="radio-label">
+                  <label className={checkboxLabelClass}>
                     <input
                       type="radio"
                       name="commit-target"
                       checked={commitTarget === 'specified'}
                       onChange={() => setCommitTarget('specified')}
                       disabled={isLoading}
+                      className="w-auto m-0 accent-(--accent-color) shrink-0"
                     />
-                    <span>Specified commit:</span>
+                    <span className="flex-1">Specified commit:</span>
                   </label>
                   {commitTarget === 'specified' && (
-                    <div className="specified-commit-input">
+                    <div className="flex flex-col gap-1 ml-6">
                       <input
                         type="text"
                         value={specifiedCommit}
                         onChange={(e) => setSpecifiedCommit(e.target.value)}
                         placeholder="Commit SHA"
                         disabled={isLoading}
+                        className={cn(inputClass, "font-mono text-[13px]")}
                       />
                       {targetCommitSummary && (
-                        <span className="commit-summary-hint">{targetCommitSummary}</span>
+                        <span className="text-xs text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">{targetCommitSummary}</span>
                       )}
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="form-group checkbox-inline">
-                <label className="checkbox-label">
+              <div className="flex items-center gap-3 mb-4">
+                <label className={cn(checkboxLabelClass, "whitespace-nowrap")}>
                   <input
                     type="checkbox"
                     checked={pushTag}
                     onChange={(e) => setPushTag(e.target.checked)}
                     disabled={isLoading}
+                    className="w-auto m-0 accent-(--accent-color)"
                   />
                   <span>Push tag:</span>
                 </label>
@@ -196,7 +211,7 @@ export function TagDialog({
                   value={selectedRemote}
                   onChange={(e) => setSelectedRemote(e.target.value)}
                   disabled={isLoading || !pushTag}
-                  className="remote-select"
+                  className="flex-1 py-1.5 px-2.5 text-[13px] bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) focus:outline-none focus:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {remotes.map((remote) => (
                     <option key={remote.name} value={remote.name}>
@@ -207,10 +222,10 @@ export function TagDialog({
                 </select>
               </div>
 
-              <div className="advanced-section">
+              <div className="mt-2 border-t border-(--border-color) pt-3">
                 <button
                   type="button"
-                  className="advanced-toggle"
+                  className="flex items-center gap-1 p-0 bg-transparent border-none text-(--text-secondary) text-[13px] cursor-pointer hover:text-(--text-primary)"
                   onClick={() => setShowAdvanced(!showAdvanced)}
                 >
                   {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -218,30 +233,32 @@ export function TagDialog({
                 </button>
 
                 {showAdvanced && (
-                  <div className="advanced-content">
-                    <label className="checkbox-label">
+                  <div className="flex flex-col gap-3 mt-3 pl-4.5">
+                    <label className={checkboxLabelClass}>
                       <input
                         type="checkbox"
                         checked={forceMove}
                         onChange={(e) => setForceMove(e.target.checked)}
                         disabled={isLoading}
+                        className="w-auto m-0 accent-(--accent-color)"
                       />
                       <span>Move existing tag</span>
                     </label>
 
-                    <label className="checkbox-label">
+                    <label className={checkboxLabelClass}>
                       <input
                         type="checkbox"
                         checked={isLightweight}
                         onChange={(e) => setIsLightweight(e.target.checked)}
                         disabled={isLoading}
+                        className="w-auto m-0 accent-(--accent-color)"
                       />
                       <span>Lightweight tag (not recommended)</span>
                     </label>
 
                     {!isLightweight && (
-                      <div className="form-group message-group">
-                        <label htmlFor="tag-message">Message:</label>
+                      <div className="mt-1">
+                        <label htmlFor="tag-message" className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Message:</label>
                         <textarea
                           id="tag-message"
                           value={message}
@@ -249,6 +266,7 @@ export function TagDialog({
                           placeholder="Tag message..."
                           rows={3}
                           disabled={isLoading}
+                          className={cn(inputClass, "resize-y min-h-15")}
                         />
                       </div>
                     )}
@@ -259,22 +277,22 @@ export function TagDialog({
           )}
         </div>
 
-        <div className="dialog-footer">
+        <div className="flex justify-end gap-2 p-4 border-t border-(--border-color) shrink-0 bg-(--bg-primary)">
           {result && result.success ? (
-            <button className="btn btn-primary" onClick={handleClose}>
+            <button className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)")} onClick={handleClose}>
               Close
             </button>
           ) : (
             <>
               <button
-                className="btn btn-secondary"
+                className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
                 onClick={handleClose}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-primary"
+                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
                 onClick={handleCreate}
                 disabled={isLoading || !tagName.trim()}
               >

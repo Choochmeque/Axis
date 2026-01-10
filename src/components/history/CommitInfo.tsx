@@ -1,9 +1,8 @@
 import { Copy, GitCommit, User, Calendar, GitBranch, Tag } from 'lucide-react';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
 import type { Commit, GraphCommit } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import './CommitInfo.css';
+import { cn } from '../../lib/utils';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;
@@ -24,20 +23,24 @@ export function CommitInfo({ commit }: CommitInfoProps) {
     selectCommit(parentOid);
   };
 
+  const rowClass = "flex items-start gap-3 text-[13px]";
+  const labelClass = "flex items-center gap-1 min-w-17.5 text-(--text-secondary) text-xs shrink-0";
+  const valueClass = "flex items-center gap-2 flex-wrap text-(--text-primary) min-w-0";
+
   return (
-    <div className="commit-info">
-      <div className="commit-info-header">
+    <div className="flex flex-col border-b border-(--border-color) bg-(--bg-primary) shrink-0">
+      <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary)">
         <GitCommit size={16} />
-        <span className="commit-info-title">Commit Details</span>
+        <span>Commit Details</span>
       </div>
 
-      <div className="commit-info-content">
-        <div className="commit-info-row">
-          <span className="commit-info-label">SHA</span>
-          <div className="commit-info-value">
-            <code className="commit-sha-full">{commit.oid}</code>
+      <div className="flex flex-col p-3 gap-2">
+        <div className={rowClass}>
+          <span className={labelClass}>SHA</span>
+          <div className={valueClass}>
+            <code className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded break-all">{commit.oid}</code>
             <button
-              className="commit-info-copy"
+              className="flex items-center justify-center w-5 h-5 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors shrink-0 hover:bg-(--bg-hover) hover:text-(--text-primary)"
               onClick={() => copyToClipboard(commit.oid)}
               title="Copy SHA"
             >
@@ -47,15 +50,15 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         </div>
 
         {commit.parent_oids.length > 0 && (
-          <div className="commit-info-row">
-            <span className="commit-info-label">
+          <div className={rowClass}>
+            <span className={labelClass}>
               {commit.parent_oids.length === 1 ? 'Parent' : 'Parents'}
             </span>
-            <div className="commit-info-value commit-parents">
+            <div className={cn(valueClass, "gap-1")}>
               {commit.parent_oids.map((parentOid) => (
                 <button
                   key={parentOid}
-                  className="commit-parent-link"
+                  className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded border-none text-(--accent-color) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:underline"
                   onClick={() => handleParentClick(parentOid)}
                   title="Go to parent commit"
                 >
@@ -66,37 +69,41 @@ export function CommitInfo({ commit }: CommitInfoProps) {
           </div>
         )}
 
-        <div className="commit-info-row">
-          <span className="commit-info-label">
+        <div className={rowClass}>
+          <span className={labelClass}>
             <User size={12} />
             Author
           </span>
-          <div className="commit-info-value">
-            <span className="commit-author-name">{commit.author.name}</span>
-            <span className="commit-author-email">&lt;{commit.author.email}&gt;</span>
+          <div className={valueClass}>
+            <span className="font-medium">{commit.author.name}</span>
+            <span className="text-(--text-secondary) text-xs">&lt;{commit.author.email}&gt;</span>
           </div>
         </div>
 
-        <div className="commit-info-row">
-          <span className="commit-info-label">
+        <div className={rowClass}>
+          <span className={labelClass}>
             <Calendar size={12} />
             Date
           </span>
-          <div className="commit-info-value">
+          <div className={valueClass}>
             {format(new Date(commit.timestamp), 'PPpp')}
           </div>
         </div>
 
         {'refs' in commit && commit.refs.length > 0 && (
-          <div className="commit-info-row">
-            <span className="commit-info-label">Refs</span>
-            <div className="commit-info-value commit-info-refs">
+          <div className={rowClass}>
+            <span className={labelClass}>Refs</span>
+            <div className={cn(valueClass, "gap-1")}>
               {commit.refs.map((ref: GraphCommit['refs'][0], idx: number) => (
                 <span
                   key={idx}
-                  className={clsx('commit-info-ref', `ref-${ref.ref_type}`, {
-                    'is-head': ref.is_head,
-                  })}
+                  className={cn(
+                    "inline-flex items-center gap-1 py-0.5 px-2 rounded text-[11px] font-medium",
+                    ref.ref_type === 'local_branch' && "bg-[#107c10] text-white",
+                    ref.ref_type === 'remote_branch' && "bg-[#5c2d91] text-white",
+                    ref.ref_type === 'tag' && "bg-[#d83b01] text-white",
+                    ref.is_head && "font-semibold"
+                  )}
                 >
                   {ref.ref_type === 'tag' ? (
                     <Tag size={10} />
@@ -110,9 +117,9 @@ export function CommitInfo({ commit }: CommitInfoProps) {
           </div>
         )}
 
-        <div className="commit-info-message-section">
-          <span className="commit-info-label">Message</span>
-          <div className="commit-info-message">{commit.message}</div>
+        <div className="flex flex-col gap-1 mt-1">
+          <span className={labelClass}>Message</span>
+          <div className="font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-tertiary) p-2 rounded max-h-30 overflow-y-auto">{commit.message}</div>
         </div>
       </div>
     </div>

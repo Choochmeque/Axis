@@ -148,13 +148,13 @@ mod tests {
 
     #[test]
     fn test_add_and_get_recent_repositories() {
-        let tmp = TempDir::new().unwrap();
-        let db = Database::new(tmp.path()).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "test-repo").unwrap();
+        db.add_recent_repository(&repo_path, "test-repo").expect("should add recent repository");
 
-        let repos = db.get_recent_repositories().unwrap();
+        let repos = db.get_recent_repositories().expect("should get recent repositories");
         assert_eq!(repos.len(), 1);
         assert_eq!(repos[0].name, "test-repo");
         assert_eq!(repos[0].path, repo_path);
@@ -162,37 +162,37 @@ mod tests {
 
     #[test]
     fn test_update_recent_repository() {
-        let tmp = TempDir::new().unwrap();
-        let db = Database::new(tmp.path()).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "old-name").unwrap();
-        db.add_recent_repository(&repo_path, "new-name").unwrap();
+        db.add_recent_repository(&repo_path, "old-name").expect("should add with old name");
+        db.add_recent_repository(&repo_path, "new-name").expect("should update with new name");
 
-        let repos = db.get_recent_repositories().unwrap();
+        let repos = db.get_recent_repositories().expect("should get recent repositories");
         assert_eq!(repos.len(), 1);
         assert_eq!(repos[0].name, "new-name");
     }
 
     #[test]
     fn test_remove_recent_repository() {
-        let tmp = TempDir::new().unwrap();
-        let db = Database::new(tmp.path()).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let db = Database::new(tmp.path()).expect("should create database");
 
         let repo_path = PathBuf::from("/test/repo");
-        db.add_recent_repository(&repo_path, "test-repo").unwrap();
-        db.remove_recent_repository(&repo_path).unwrap();
+        db.add_recent_repository(&repo_path, "test-repo").expect("should add recent repository");
+        db.remove_recent_repository(&repo_path).expect("should remove recent repository");
 
-        let repos = db.get_recent_repositories().unwrap();
+        let repos = db.get_recent_repositories().expect("should get recent repositories");
         assert!(repos.is_empty());
     }
 
     #[test]
     fn test_get_default_settings() {
-        let tmp = TempDir::new().unwrap();
-        let db = Database::new(tmp.path()).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let db = Database::new(tmp.path()).expect("should create database");
 
-        let settings = db.get_settings().unwrap();
+        let settings = db.get_settings().expect("should get settings");
         assert_eq!(settings.font_size, 13);
         assert_eq!(settings.default_branch_name, "main");
     }
@@ -201,16 +201,16 @@ mod tests {
     fn test_save_and_get_settings() {
         use crate::models::Theme;
 
-        let tmp = TempDir::new().unwrap();
-        let db = Database::new(tmp.path()).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let db = Database::new(tmp.path()).expect("should create database");
 
         let mut settings = AppSettings::default();
         settings.theme = Theme::Dark;
         settings.font_size = 16;
 
-        db.save_settings(&settings).unwrap();
+        db.save_settings(&settings).expect("should save settings");
 
-        let loaded = db.get_settings().unwrap();
+        let loaded = db.get_settings().expect("should load settings");
         assert_eq!(loaded.theme, Theme::Dark);
         assert_eq!(loaded.font_size, 16);
     }

@@ -19,10 +19,12 @@
     "@radix-ui/react-scroll-area": "^1.1.0",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.0",
+    "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-virtual": "^3.13.18",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "immer": "^10.0.0",
@@ -33,6 +35,8 @@
     "react-hotkeys-hook": "^5.2.1",
     "react-konva": "^19.2.1",
     "react-resizable-panels": "^2.0.0",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import type { FileDiff, DiffStatus } from '../../types';
-import './CommitFileList.css';
+import { cn } from '../../lib/utils';
 
 interface CommitFileListProps {
   files: FileDiff[];
@@ -7,6 +7,10 @@ interface CommitFileListProps {
   onSelectFile: (file: FileDiff) => void;
   isLoading?: boolean;
 }
+
+const listClass = "flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)";
+const headerClass = "flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0";
+const emptyClass = "p-6 text-center text-(--text-secondary) text-[13px]";
 
 export function CommitFileList({
   files,
@@ -19,37 +23,37 @@ export function CommitFileList({
 
   if (isLoading) {
     return (
-      <div className="commit-file-list">
-        <div className="commit-file-list-header">
-          <span className="commit-file-list-title">Changed Files</span>
+      <div className={listClass}>
+        <div className={headerClass}>
+          <span className="flex-1">Changed Files</span>
         </div>
-        <div className="commit-file-list-loading">Loading...</div>
+        <div className={emptyClass}>Loading...</div>
       </div>
     );
   }
 
   if (files.length === 0) {
     return (
-      <div className="commit-file-list">
-        <div className="commit-file-list-header">
-          <span className="commit-file-list-title">Changed Files</span>
+      <div className={listClass}>
+        <div className={headerClass}>
+          <span className="flex-1">Changed Files</span>
         </div>
-        <div className="commit-file-list-empty">No files changed</div>
+        <div className={emptyClass}>No files changed</div>
       </div>
     );
   }
 
   return (
-    <div className="commit-file-list">
-      <div className="commit-file-list-header">
-        <span className="commit-file-list-title">Changed Files</span>
-        <span className="commit-file-list-count">{files.length}</span>
-        <span className="commit-file-list-stats">
-          <span className="stat-additions">+{totalAdditions}</span>
-          <span className="stat-deletions">-{totalDeletions}</span>
+    <div className={listClass}>
+      <div className={headerClass}>
+        <span className="flex-1">Changed Files</span>
+        <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">{files.length}</span>
+        <span className="flex gap-1.5 text-[11px] font-medium">
+          <span className="text-success">+{totalAdditions}</span>
+          <span className="text-error">-{totalDeletions}</span>
         </span>
       </div>
-      <div className="commit-file-list-items">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {files.map((file) => (
           <CommitFileItem
             key={file.new_path || file.old_path}
@@ -74,32 +78,42 @@ interface CommitFileItemProps {
 
 function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
   const path = file.new_path || file.old_path || '';
-  const statusClass = getStatusClass(file.status);
+  const statusColors = getStatusColors(file.status);
   const statusChar = getStatusChar(file.status);
 
   return (
     <div
-      className={`commit-file-item ${isSelected ? 'selected' : ''}`}
+      className={cn(
+        "flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)",
+        isSelected && "bg-(--bg-active)"
+      )}
       onClick={onSelect}
     >
-      <span className={`commit-file-status ${statusClass}`} title={file.status}>
+      <span
+        className={cn(
+          "flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0",
+          statusColors.bg,
+          statusColors.text
+        )}
+        title={file.status}
+      >
         {statusChar}
       </span>
-      <span className="commit-file-path" title={path}>
+      <span className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)" title={path}>
         {getFileName(path)}
         {file.old_path && file.new_path && file.old_path !== file.new_path && (
-          <span className="commit-file-old-path"> ({getFileName(file.old_path)})</span>
+          <span className="text-(--text-secondary) text-xs"> ({getFileName(file.old_path)})</span>
         )}
       </span>
-      <span className="commit-file-dir" title={path}>
+      <span className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5" title={path}>
         {getDirectory(path)}
       </span>
-      <span className="commit-file-stats">
+      <span className="flex gap-1 text-[11px] font-medium shrink-0">
         {file.additions > 0 && (
-          <span className="stat-additions">+{file.additions}</span>
+          <span className="text-success">+{file.additions}</span>
         )}
         {file.deletions > 0 && (
-          <span className="stat-deletions">-{file.deletions}</span>
+          <span className="text-error">-{file.deletions}</span>
         )}
       </span>
     </div>
@@ -129,21 +143,20 @@ function getStatusChar(status: DiffStatus): string {
   }
 }
 
-function getStatusClass(status: DiffStatus): string {
+function getStatusColors(status: DiffStatus): { bg: string; text: string } {
   switch (status) {
     case 'added':
-      return 'status-added';
+      return { bg: 'bg-success/15', text: 'text-success' };
     case 'modified':
     case 'renamed':
     case 'copied':
     case 'type_changed':
-      return 'status-modified';
+      return { bg: 'bg-warning/15', text: 'text-warning' };
     case 'deleted':
-      return 'status-deleted';
     case 'conflicted':
-      return 'status-conflicted';
+      return { bg: 'bg-error/15', text: 'text-error' };
     default:
-      return '';
+      return { bg: '', text: '' };
   }
 }
 

@@ -15,13 +15,17 @@ import {
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
-import { clsx } from 'clsx';
+import { cn } from '../../lib/utils';
 import type { Branch } from '../../types';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { TagDialog } from '../tags/TagDialog';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
-import './Sidebar.css';
+
+// Tailwind class constants
+const sidebarItemClass = "flex items-center gap-2 w-full py-1.5 px-3 pl-6 text-[13px] cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)";
+const sectionHeaderClass = "flex items-center gap-1.5 w-full py-2 px-3 bg-transparent border-none text-(--text-secondary) text-[11px] font-semibold uppercase tracking-wide cursor-pointer transition-colors hover:bg-(--bg-hover)";
+const badgeClass = "py-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-(--bg-badge) text-(--text-primary)";
 
 // Tree node for hierarchical display
 interface TreeNode {
@@ -80,12 +84,12 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
   if (node.isLeaf && !hasChildren) {
     return (
       <button
-        className="sidebar-item tree-leaf"
+        className={cn(sidebarItemClass, "[&>svg]:shrink-0 [&>svg]:opacity-70")}
         style={{ paddingLeft }}
         onClick={() => node.branch && onBranchClick?.(node.branch.target_oid)}
       >
         <GitBranch size={12} />
-        <span className="branch-name">{node.name}</span>
+        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
       </button>
     );
   }
@@ -100,21 +104,21 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
   });
 
   return (
-    <div className="tree-node">
+    <div className="flex flex-col">
       <button
-        className="sidebar-item tree-folder"
+        className={cn(sidebarItemClass, "[&>svg:first-child]:shrink-0 [&>svg:first-child]:opacity-70")}
         style={{ paddingLeft }}
         onClick={() => setExpanded(!expanded)}
       >
         {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <Folder size={12} />
-        <span className="branch-name">{node.name}</span>
+        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
         {!expanded && node.children.size > 0 && (
-          <span className="tree-count">{node.children.size}</span>
+          <span className="py-0.5 px-1.5 rounded-lg text-[10px] font-medium bg-(--bg-badge) text-(--text-secondary) ml-auto">{node.children.size}</span>
         )}
       </button>
       {expanded && (
-        <div className="tree-children">
+        <div className="flex flex-col">
           {sortedChildren.map((child) => (
             <TreeNodeView
               key={child.fullPath}
@@ -170,16 +174,16 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="sidebar-section">
+    <div className="border-b border-(--border-color)">
       <button
-        className="section-header"
+        className={sectionHeaderClass}
         onClick={() => setExpanded(!expanded)}
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         {icon}
-        <span className="section-title">{title}</span>
+        <span className="flex-1 text-left">{title}</span>
       </button>
-      {expanded && <div className="section-content">{children}</div>}
+      {expanded && <div className="pb-2">{children}</div>}
     </div>
   );
 }
@@ -215,9 +219,9 @@ export function Sidebar() {
 
   if (!repository) {
     return (
-      <div className="sidebar sidebar-empty">
+      <div className="flex flex-col h-full items-center justify-center bg-(--bg-sidebar) border-r border-(--border-color) text-(--text-secondary) text-center p-6">
         <p>No repository open</p>
-        <p className="sidebar-hint">Open a repository to get started</p>
+        <p className="text-xs mt-2 opacity-70">Open a repository to get started</p>
       </div>
     );
   }
@@ -240,31 +244,31 @@ export function Sidebar() {
     <>
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
-    <ScrollArea className="sidebar">
+    <ScrollArea className="flex flex-col h-full bg-(--bg-sidebar) border-r border-(--border-color) overflow-y-auto">
       <Section
         title="WORKSPACE"
         icon={<FileCode size={14} />}
         defaultExpanded={true}
       >
         <button
-          className={clsx('sidebar-item', { 'is-active': currentView === 'file-status' })}
+          className={cn(sidebarItemClass, currentView === 'file-status' && "bg-(--bg-active) font-medium")}
           onClick={() => handleViewClick('file-status')}
         >
           <FileCode size={12} />
           <span>File Status</span>
           {changesCount > 0 && (
-            <span className="badge">{changesCount}</span>
+            <span className={badgeClass}>{changesCount}</span>
           )}
         </button>
         <button
-          className={clsx('sidebar-item', { 'is-active': currentView === 'history' })}
+          className={cn(sidebarItemClass, currentView === 'history' && "bg-(--bg-active) font-medium")}
           onClick={() => handleViewClick('history')}
         >
           <History size={12} />
           <span>History</span>
         </button>
         <button
-          className={clsx('sidebar-item', { 'is-active': currentView === 'search' })}
+          className={cn(sidebarItemClass, currentView === 'search' && "bg-(--bg-active) font-medium")}
           onClick={() => handleViewClick('search')}
         >
           <Search size={12} />
@@ -281,21 +285,24 @@ export function Sidebar() {
           localBranches.map((branch) => (
             <button
               key={branch.name}
-              className={clsx('sidebar-item', { 'is-current': branch.is_head })}
+              className={cn(sidebarItemClass, branch.is_head && "font-semibold")}
               onClick={() => handleRefClick(branch.target_oid)}
             >
-              <GitBranch size={12} />
-              <span className="branch-name">{branch.name}</span>
+              <span className={cn(
+                "w-2 h-2 rounded-full shrink-0",
+                branch.is_head ? "border-2 border-(--accent-color)" : "opacity-0"
+              )} />
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{branch.name}</span>
               {branch.ahead !== null && branch.ahead > 0 && (
-                <span className="badge badge-ahead">↑{branch.ahead}</span>
+                <span className={cn(badgeClass, "bg-(--bg-tertiary) text-(--text-secondary)")}>{branch.ahead}↑</span>
               )}
               {branch.behind !== null && branch.behind > 0 && (
-                <span className="badge badge-behind">↓{branch.behind}</span>
+                <span className={cn(badgeClass, "bg-(--bg-tertiary) text-(--text-secondary)")}>{branch.behind}↓</span>
               )}
             </button>
           ))
         ) : (
-          <div className="sidebar-item sidebar-empty-item">No branches</div>
+          <div className={cn(sidebarItemClass, "text-(--text-secondary) italic cursor-default hover:bg-transparent")}>No branches</div>
         )}
       </Section>
 
@@ -304,15 +311,15 @@ export function Sidebar() {
           tags.map((tag) => (
             <button
               key={tag.name}
-              className="sidebar-item"
+              className={sidebarItemClass}
               onClick={() => handleRefClick(tag.target_oid)}
             >
               <Tag size={12} />
-              <span className="branch-name">{tag.name}</span>
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{tag.name}</span>
             </button>
           ))
         ) : (
-          <div className="sidebar-item sidebar-empty-item">No tags</div>
+          <div className={cn(sidebarItemClass, "text-(--text-secondary) italic cursor-default hover:bg-transparent")}>No tags</div>
         )}
       </Section>
 
@@ -320,59 +327,59 @@ export function Sidebar() {
         {remoteBranches.length > 0 ? (
           <RemoteTree branches={remoteBranches} onBranchClick={handleRefClick} />
         ) : (
-          <div className="sidebar-item sidebar-empty-item">No remotes</div>
+          <div className={cn(sidebarItemClass, "text-(--text-secondary) italic cursor-default hover:bg-transparent")}>No remotes</div>
         )}
       </Section>
 
       <Section title="STASHES" icon={<Archive size={14} />} defaultExpanded={false}>
         {stashes.length > 0 ? (
           stashes.map((stash) => (
-            <div key={stash.stash_ref} className="sidebar-item">
+            <div key={stash.stash_ref} className={sidebarItemClass}>
               <Archive size={12} />
-              <span className="branch-name">{stash.message || `stash@{${stash.index}}`}</span>
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{stash.message || `stash@{${stash.index}}`}</span>
             </div>
           ))
         ) : (
-          <div className="sidebar-item sidebar-empty-item">No stashes</div>
+          <div className={cn(sidebarItemClass, "text-(--text-secondary) italic cursor-default hover:bg-transparent")}>No stashes</div>
         )}
       </Section>
 
       <Section title="SUBMODULES" icon={<FolderGit2 size={14} />} defaultExpanded={false}>
         {submodules.length > 0 ? (
           submodules.map((submodule) => (
-            <div key={submodule.path} className="sidebar-item">
+            <div key={submodule.path} className={sidebarItemClass}>
               <FolderGit2 size={12} />
-              <span className="branch-name">{submodule.name}</span>
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{submodule.name}</span>
               {submodule.status !== 'current' && (
-                <span className={`badge badge-${submodule.status}`}>{submodule.status}</span>
+                <span className={cn(badgeClass, submodule.status === 'modified' && "bg-warning text-white")}>{submodule.status}</span>
               )}
             </div>
           ))
         ) : (
-          <div className="sidebar-item sidebar-empty-item">No submodules</div>
+          <div className={cn(sidebarItemClass, "text-(--text-secondary) italic cursor-default hover:bg-transparent")}>No submodules</div>
         )}
       </Section>
     </ScrollArea>
       </ContextMenu.Trigger>
 
       <ContextMenu.Portal>
-        <ContextMenu.Content className="context-menu-content">
-          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowBranchDialog(true)}>
+        <ContextMenu.Content className="min-w-48 bg-(--bg-secondary) border border-(--border-color) rounded-md shadow-lg py-1 z-50">
+          <ContextMenu.Item className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)" onSelect={() => setShowBranchDialog(true)}>
             <GitBranch size={14} />
             <span>New Branch...</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowTagDialog(true)}>
+          <ContextMenu.Item className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)" onSelect={() => setShowTagDialog(true)}>
             <Tag size={14} />
             <span>New Tag...</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowRemoteDialog(true)}>
+          <ContextMenu.Item className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)" onSelect={() => setShowRemoteDialog(true)}>
             <Cloud size={14} />
             <span>New Remote...</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Item className="context-menu-item" onSelect={() => setShowSubmoduleDialog(true)}>
+          <ContextMenu.Item className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)" onSelect={() => setShowSubmoduleDialog(true)}>
             <FolderGit2 size={14} />
             <span>Add Submodule...</span>
           </ContextMenu.Item>

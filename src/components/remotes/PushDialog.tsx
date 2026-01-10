@@ -4,12 +4,25 @@ import { X, ArrowUpFromLine, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote, PushResult } from '../../types';
-import './RemoteDialog.css';
+import { cn } from '../../lib/utils';
 
 interface PushDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const overlayClass = "fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150";
+const contentClass = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-120 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150";
+const titleClass = "flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)";
+const bodyClass = "p-5";
+const footerClass = "flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)";
+const closeClass = "absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
+const fieldClass = "mb-4 last:mb-0";
+const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
+const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)";
+const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
+const checkboxFieldClass = "flex items-center gap-2 mb-4 last:mb-0";
+const infoBoxClass = "p-3 bg-(--bg-secondary) rounded mb-4";
 
 export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [remotes, setRemotes] = useState<Remote[]>([]);
@@ -86,23 +99,23 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={handleClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content">
-          <Dialog.Title className="dialog-title">
+        <Dialog.Overlay className={overlayClass} />
+        <Dialog.Content className={contentClass}>
+          <Dialog.Title className={titleClass}>
             <ArrowUpFromLine size={18} />
             Push to Remote
           </Dialog.Title>
 
-          <div className="dialog-body">
+          <div className={bodyClass}>
             {result ? (
-              <div className="result-section">
-                <div className="success-message">
+              <div>
+                <div className="flex items-center gap-2 p-3 mb-4 bg-success/10 border border-success rounded text-success text-sm">
                   <Check size={16} />
                   Push completed successfully
                 </div>
-                <div className="result-item">
-                  <strong>Pushed to {result.remote}</strong>
-                  <div className="result-stats">
+                <div className="p-3 bg-(--bg-secondary) rounded">
+                  <strong className="block mb-1 text-(--text-primary)">Pushed to {result.remote}</strong>
+                  <div className="text-xs text-(--text-secondary)">
                     Branch: {currentBranch?.name}
                   </div>
                 </div>
@@ -110,33 +123,34 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
             ) : (
               <>
                 {currentBranch && (
-                  <div className="info-section">
-                    <div className="info-row">
-                      <span className="info-label">Current branch:</span>
-                      <span className="info-value">{currentBranch.name}</span>
+                  <div className={infoBoxClass}>
+                    <div className="flex justify-between text-[13px] py-1">
+                      <span className="text-(--text-secondary)">Current branch:</span>
+                      <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
                     </div>
                     {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
-                      <div className="info-row">
-                        <span className="info-label">Commits ahead:</span>
-                        <span className="info-value">{currentBranch.ahead}</span>
+                      <div className="flex justify-between text-[13px] py-1">
+                        <span className="text-(--text-secondary)">Commits ahead:</span>
+                        <span className="text-(--text-primary) font-medium">{currentBranch.ahead}</span>
                       </div>
                     )}
                     {currentBranch.upstream && (
-                      <div className="info-row">
-                        <span className="info-label">Upstream:</span>
-                        <span className="info-value">{currentBranch.upstream}</span>
+                      <div className="flex justify-between text-[13px] py-1">
+                        <span className="text-(--text-secondary)">Upstream:</span>
+                        <span className="text-(--text-primary) font-medium">{currentBranch.upstream}</span>
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="form-field">
-                  <label htmlFor="remote-select">Push to Remote</label>
+                <div className={fieldClass}>
+                  <label htmlFor="remote-select" className={labelClass}>Push to Remote</label>
                   <select
                     id="remote-select"
                     value={selectedRemote}
                     onChange={(e) => setSelectedRemote(e.target.value)}
                     disabled={remotes.length === 0}
+                    className={inputClass}
                   >
                     {remotes.map((remote) => (
                       <option key={remote.name} value={remote.name}>
@@ -146,47 +160,49 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
                   </select>
                 </div>
 
-                <div className="form-field checkbox-field">
+                <div className={checkboxFieldClass}>
                   <input
                     id="set-upstream"
                     type="checkbox"
                     checked={setUpstream}
                     onChange={(e) => setSetUpstream(e.target.checked)}
+                    className="w-4 h-4 accent-(--accent-color)"
                   />
-                  <label htmlFor="set-upstream">
+                  <label htmlFor="set-upstream" className="text-(--text-primary)">
                     Set as upstream tracking branch
                   </label>
                 </div>
 
-                <div className="form-field checkbox-field">
+                <div className={checkboxFieldClass}>
                   <input
                     id="force-push"
                     type="checkbox"
                     checked={force}
                     onChange={(e) => setForce(e.target.checked)}
+                    className="w-4 h-4 accent-(--accent-color)"
                   />
-                  <label htmlFor="force-push">
+                  <label htmlFor="force-push" className="text-(--text-primary)">
                     Force push (overwrites remote changes)
                   </label>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                {error && <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">{error}</div>}
               </>
             )}
           </div>
 
-          <div className="dialog-footer">
+          <div className={footerClass}>
             {result ? (
-              <button className="dialog-button primary" onClick={handleClose}>
+              <button className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)")} onClick={handleClose}>
                 Done
               </button>
             ) : (
               <>
                 <Dialog.Close asChild>
-                  <button className="dialog-button secondary">Cancel</button>
+                  <button className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}>Cancel</button>
                 </Dialog.Close>
                 <button
-                  className="dialog-button primary"
+                  className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
                   onClick={handlePush}
                   disabled={isLoading || !selectedRemote || !currentBranch}
                 >
@@ -197,7 +213,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
           </div>
 
           <Dialog.Close asChild>
-            <button className="dialog-close" aria-label="Close">
+            <button className={closeClass} aria-label="Close">
               <X size={16} />
             </button>
           </Dialog.Close>

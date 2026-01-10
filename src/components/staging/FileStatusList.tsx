@@ -9,7 +9,10 @@ import {
   FileType,
 } from 'lucide-react';
 import type { FileStatus, StatusType } from '../../types';
-import './FileStatusList.css';
+import { cn } from '../../lib/utils';
+
+const fileItemClass = "flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)";
+const fileActionClass = "flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
 
 interface FileStatusListProps {
   files: FileStatus[];
@@ -41,14 +44,14 @@ export function FileStatusList({
   }
 
   return (
-    <div className="file-status-list">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {title && (
-        <div className="file-status-list-header">
-          <span className="file-status-list-title">{title}</span>
-          <span className="file-status-list-count">{files.length}</span>
+        <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
+          <span>{title}</span>
+          <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">{files.length}</span>
         </div>
       )}
-      <div className="file-status-list-items">
+      <div className="flex flex-col flex-1 overflow-y-auto">
         {files.map((file) => (
           <FileStatusItem
             key={file.path}
@@ -84,7 +87,7 @@ function FileStatusItem({
 }: FileStatusItemProps) {
   const status = file.staged_status || file.unstaged_status || file.status;
   const StatusIcon = getStatusIcon(status);
-  const statusClass = getStatusClass(status);
+  const statusColorClass = getStatusColorClass(status);
 
   const handleAction = (
     e: React.MouseEvent,
@@ -96,23 +99,23 @@ function FileStatusItem({
 
   return (
     <div
-      className={`file-status-item ${isSelected ? 'selected' : ''}`}
+      className={cn(fileItemClass, isSelected && "bg-(--bg-active)")}
       onClick={onSelect}
     >
-      <StatusIcon className={`file-status-icon ${statusClass}`} size={14} />
-      <span className="file-status-path" title={file.path}>
+      <StatusIcon className={cn("shrink-0", statusColorClass)} size={14} />
+      <span className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)" title={file.path}>
         {getFileName(file.path)}
         {file.old_path && (
-          <span className="file-status-old-path"> ({file.old_path})</span>
+          <span className="text-(--text-secondary) text-xs"> ({file.old_path})</span>
         )}
       </span>
-      <span className="file-status-dir" title={file.path}>
+      <span className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-50" title={file.path}>
         {getDirectory(file.path)}
       </span>
-      <div className="file-status-actions">
+      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
         {onStage && (
           <button
-            className="file-status-action"
+            className={fileActionClass}
             onClick={(e) => handleAction(e, onStage)}
             title="Stage"
           >
@@ -121,7 +124,7 @@ function FileStatusItem({
         )}
         {onUnstage && (
           <button
-            className="file-status-action"
+            className={fileActionClass}
             onClick={(e) => handleAction(e, onUnstage)}
             title="Unstage"
           >
@@ -130,7 +133,7 @@ function FileStatusItem({
         )}
         {onDiscard && (
           <button
-            className="file-status-action danger"
+            className={cn(fileActionClass, "hover:bg-error/10 hover:text-error")}
             onClick={(e) => handleAction(e, onDiscard)}
             title="Discard changes"
           >
@@ -165,20 +168,19 @@ function getStatusIcon(status: StatusType) {
   }
 }
 
-function getStatusClass(status: StatusType): string {
+function getStatusColorClass(status: StatusType): string {
   switch (status) {
     case 'added':
     case 'untracked':
-      return 'status-added';
+      return 'text-success';
     case 'modified':
     case 'renamed':
     case 'copied':
     case 'type_changed':
-      return 'status-modified';
+      return 'text-warning';
     case 'deleted':
-      return 'status-deleted';
     case 'conflicted':
-      return 'status-conflicted';
+      return 'text-error';
     default:
       return '';
   }

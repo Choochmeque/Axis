@@ -1,6 +1,5 @@
 import { GitBranch } from 'lucide-react';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import './StatusBar.css';
 
 export function StatusBar() {
   const { repository, status, isLoading } = useRepositoryStore();
@@ -11,28 +10,28 @@ export function StatusBar() {
     (status?.untracked.length ?? 0);
 
   return (
-    <div className="status-bar">
-      <div className="status-bar-left">
+    <div className="flex items-center justify-between px-3 py-1 bg-(--bg-statusbar) border-t border-(--border-color) text-xs text-white">
+      <div className="flex items-center gap-4">
         {repository && (
           <>
-            <div className="status-item">
+            <div className="flex items-center gap-1">
               <GitBranch size={14} />
               <span>{repository.current_branch ?? 'detached'}</span>
             </div>
             {changesCount > 0 ? (
-              <span className="status-item status-changes">
+              <span className="flex items-center gap-1 text-warning">
                 {changesCount} changes
               </span>
             ) : (
-              <span className="status-item status-clean">Clean</span>
+              <span className="flex items-center gap-1 text-success">Clean</span>
             )}
           </>
         )}
       </div>
-      <div className="status-bar-right">
-        {isLoading && <span className="status-item">Loading...</span>}
+      <div className="flex items-center gap-4">
+        {isLoading && <span className="flex items-center gap-1">Loading...</span>}
         {repository && (
-          <span className="status-item status-path" title={repository.path}>
+          <span className="flex items-center gap-1 max-w-75 overflow-hidden text-ellipsis whitespace-nowrap" title={repository.path}>
             {repository.path}
           </span>
         )}

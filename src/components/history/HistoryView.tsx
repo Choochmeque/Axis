@@ -3,11 +3,10 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
 import { GitCommit, Loader2, GitBranch, Tag } from 'lucide-react';
-import { clsx } from 'clsx';
+import { cn } from '../../lib/utils';
 import type { GraphCommit, GraphEdge } from '../../types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
-import './HistoryView.css';
 
 const LANE_WIDTH = 18;
 const ROW_HEIGHT = 28;
@@ -269,9 +268,11 @@ export function HistoryView() {
     }
   }, [selectedCommitOid]);
 
+  const emptyStateClass = "flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3";
+
   if (isLoadingCommits) {
     return (
-      <div className="history-loading">
+      <div className={emptyStateClass}>
         <p>Loading commits...</p>
       </div>
     );
@@ -279,17 +280,17 @@ export function HistoryView() {
 
   if (error) {
     return (
-      <div className="history-empty">
+      <div className={emptyStateClass}>
         <GitCommit size={48} strokeWidth={1} />
         <p>Error loading commits</p>
-        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{error}</p>
+        <p className="text-xs text-(--text-tertiary)">{error}</p>
       </div>
     );
   }
 
   if (commits.length === 0) {
     return (
-      <div className="history-empty">
+      <div className={emptyStateClass}>
         <GitCommit size={48} strokeWidth={1} />
         <p>No commits yet</p>
       </div>
@@ -304,29 +305,32 @@ export function HistoryView() {
   );
   const graphWidth = (computedMaxLane + 1) * LANE_WIDTH + 6;
 
+  const colClass = "overflow-hidden text-ellipsis whitespace-nowrap";
+
   const commitListContent = (
-    <div className="history-view-list">
-      <div className="history-header">
-        <div className="history-col history-col-graph" style={{ width: graphWidth }}>
+    <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      <div className="flex py-2 px-3 bg-(--bg-header) border-b border-(--border-color) text-[11px] font-semibold uppercase text-(--text-secondary)">
+        <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
           Graph
         </div>
-        <div className="history-col history-col-description">Description</div>
-        <div className="history-col history-col-date">Date</div>
-        <div className="history-col history-col-author">Author</div>
-        <div className="history-col history-col-sha">SHA</div>
+        <div className={cn(colClass, "flex-1 min-w-50")}>Description</div>
+        <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>Date</div>
+        <div className={cn(colClass, "w-37 shrink-0")}>Author</div>
+        <div className={cn(colClass, "w-18 shrink-0")}>SHA</div>
       </div>
-      <div className="history-list" ref={listRef} onScroll={handleScroll}>
+      <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
         {commits.map((commit, index) => (
           <CommitContextMenu key={commit.oid} commit={commit}>
             <div
               data-commit-oid={commit.oid}
-              className={clsx('history-row', {
-                'is-merge': commit.is_merge,
-                'is-selected': selectedCommitOid === commit.oid,
-              })}
+              className={cn(
+                "flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover)",
+                commit.is_merge && "bg-(--bg-merge)",
+                selectedCommitOid === commit.oid && "bg-(--bg-active) hover:bg-(--bg-active)"
+              )}
               onClick={() => handleRowClick(commit)}
             >
-              <div className="history-col history-col-graph" style={{ width: graphWidth }}>
+              <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
                 <GraphCell
                   commit={commit}
                   width={graphWidth}
@@ -334,15 +338,19 @@ export function HistoryView() {
                   activeLanes={activeLanesPerRow[index]}
                 />
               </div>
-              <div className="history-col history-col-description">
+              <div className={cn(colClass, "flex-1 min-w-50")}>
                 {commit.refs && commit.refs.length > 0 && (
-                  <span className="commit-refs">
+                  <span className="inline-flex gap-1 mr-2">
                     {commit.refs.map((ref, idx) => (
                       <span
                         key={idx}
-                        className={clsx('commit-ref', `ref-${ref.ref_type}`, {
-                          'is-head': ref.is_head,
-                        })}
+                        className={cn(
+                          "inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0",
+                          ref.ref_type === 'local_branch' && "bg-[#107c10] text-white",
+                          ref.ref_type === 'remote_branch' && "bg-[#5c2d91] text-white",
+                          ref.ref_type === 'tag' && "bg-[#d83b01] text-white",
+                          ref.is_head && "font-bold"
+                        )}
                       >
                         {ref.ref_type === 'tag' ? (
                           <Tag size={10} />
@@ -354,27 +362,27 @@ export function HistoryView() {
                     ))}
                   </span>
                 )}
-                <span className="commit-summary">{commit.summary}</span>
+                <span className="text-[13px]">{commit.summary}</span>
               </div>
-              <div className="history-col history-col-date">
-                <span className="commit-date">
+              <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>
+                <span className="text-xs text-(--text-secondary)">
                   {formatDistanceToNow(new Date(commit.timestamp), {
                     addSuffix: true,
                   })}
                 </span>
               </div>
-              <div className="history-col history-col-author">
-                <span className="commit-author">{commit.author.name}</span>
+              <div className={cn(colClass, "w-37 shrink-0")}>
+                <span className="text-xs text-(--text-secondary)">{commit.author.name}</span>
               </div>
-              <div className="history-col history-col-sha">
-                <code className="commit-sha">{commit.short_oid}</code>
+              <div className={cn(colClass, "w-18 shrink-0")}>
+                <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">{commit.short_oid}</code>
               </div>
             </div>
           </CommitContextMenu>
         ))}
         {isLoadingMoreCommits && (
-          <div className="history-loading-more">
-            <Loader2 size={16} className="spinner" />
+          <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
+            <Loader2 size={16} className="animate-spin" />
             <span>Loading more commits...</span>
           </div>
         )}
@@ -382,17 +390,19 @@ export function HistoryView() {
     </div>
   );
 
+  const viewClass = "flex flex-col flex-1 h-full min-h-0 overflow-hidden";
+
   if (!selectedCommit) {
-    return <div className="history-view">{commitListContent}</div>;
+    return <div className={viewClass}>{commitListContent}</div>;
   }
 
   return (
-    <div className="history-view">
+    <div className={viewClass}>
       <PanelGroup direction="vertical" autoSaveId="history-layout">
         <Panel defaultSize={50} minSize={20}>
           {commitListContent}
         </Panel>
-        <PanelResizeHandle className="resize-handle-horizontal" />
+        <PanelResizeHandle className="h-1 bg-(--border-color) cursor-row-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
         <Panel defaultSize={50} minSize={30}>
           <CommitDetailPanel
             commit={selectedCommit}

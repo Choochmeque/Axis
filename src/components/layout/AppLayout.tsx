@@ -4,7 +4,6 @@ import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { StatusBar } from './StatusBar';
 import { useFileWatcher } from '../../hooks';
-import './AppLayout.css';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,16 +14,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   useFileWatcher();
 
   return (
-    <div className="app-layout">
+    <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
       <Toolbar />
-      <div className="app-content">
+      <div className="flex-1 flex overflow-hidden">
         <PanelGroup direction="horizontal" autoSaveId="main-layout">
           <Panel defaultSize={20} minSize={15} maxSize={40}>
             <Sidebar />
           </Panel>
           <PanelResizeHandle className="resize-handle" />
           <Panel minSize={50}>
-            <main className="main-content">{children}</main>
+            <main className="flex-1 h-full flex flex-col overflow-hidden bg-(--bg-secondary)">
+              {children}
+            </main>
           </Panel>
         </PanelGroup>
       </div>

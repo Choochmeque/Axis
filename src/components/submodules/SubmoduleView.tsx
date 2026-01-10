@@ -13,7 +13,21 @@ import {
 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import type { Submodule, SubmoduleStatus } from '../../types';
-import './SubmoduleView.css';
+import { cn } from '../../lib/utils';
+
+const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
+const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
+const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col";
+const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
+const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
+const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
+const contentClass = "flex-1 p-4 overflow-y-auto";
+const footerClass = "flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)";
+const formGroupClass = "mb-4";
+const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
+const inputClass = "w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)";
+const btnClass = "flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+const btnSmallClass = "flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border";
 
 interface SubmoduleViewProps {
   onRefresh?: () => void;
@@ -148,19 +162,19 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   const getStatusIcon = (status: SubmoduleStatus) => {
     switch (status) {
       case 'current':
-        return <Check size={14} className="status-icon current" />;
+        return <Check size={14} className="text-success" />;
       case 'modified':
-        return <AlertTriangle size={14} className="status-icon modified" />;
+        return <AlertTriangle size={14} className="text-warning" />;
       case 'uninitialized':
-        return <Circle size={14} className="status-icon uninitialized" />;
+        return <Circle size={14} className="text-(--text-muted)" />;
       case 'missing':
-        return <AlertCircle size={14} className="status-icon missing" />;
+        return <AlertCircle size={14} className="text-error" />;
       case 'conflict':
-        return <AlertCircle size={14} className="status-icon conflict" />;
+        return <AlertCircle size={14} className="text-error" />;
       case 'dirty':
-        return <AlertTriangle size={14} className="status-icon dirty" />;
+        return <AlertTriangle size={14} className="text-warning" />;
       default:
-        return <Circle size={14} className="status-icon unknown" />;
+        return <Circle size={14} className="text-(--text-muted)" />;
     }
   };
 
@@ -183,24 +197,39 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
     }
   };
 
+  const getStatusClass = (status: SubmoduleStatus) => {
+    switch (status) {
+      case 'current':
+        return 'text-success';
+      case 'modified':
+      case 'dirty':
+        return 'text-warning';
+      case 'missing':
+      case 'conflict':
+        return 'text-error';
+      default:
+        return 'text-(--text-muted)';
+    }
+  };
+
   return (
-    <div className="submodule-view">
-      <div className="submodule-header">
-        <div className="submodule-title">
+    <div className="flex flex-col h-full bg-(--bg-secondary)">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
+        <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <FolderGit2 size={16} />
           <span>Submodules</span>
-          <span className="submodule-count">{submodules.length}</span>
+          <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">{submodules.length}</span>
         </div>
-        <div className="submodule-actions">
+        <div className="flex gap-1">
           <button
-            className="btn-icon"
+            className={btnIconClass}
             onClick={() => setShowAddDialog(true)}
             title="Add submodule"
           >
             <Plus size={16} />
           </button>
           <button
-            className="btn-icon"
+            className={btnIconClass}
             onClick={() => handleUpdate()}
             title="Update all submodules"
             disabled={isLoading || submodules.length === 0}
@@ -208,59 +237,64 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             <Download size={16} />
           </button>
           <button
-            className="btn-icon"
+            className={btnIconClass}
             onClick={loadSubmodules}
             title="Refresh"
             disabled={isLoading}
           >
-            <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="submodule-error">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-xs">
           <AlertCircle size={14} />
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>
+          <span className="flex-1">{error}</span>
+          <button className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100" onClick={() => setError(null)}>
             <X size={14} />
           </button>
         </div>
       )}
 
-      <div className="submodule-list">
+      <div className="flex-1 overflow-y-auto p-2">
         {submodules.length === 0 ? (
-          <div className="submodule-empty">No submodules</div>
+          <div className="py-6 text-center text-(--text-muted) text-sm">No submodules</div>
         ) : (
           submodules.map((submodule) => (
             <div
               key={submodule.path}
-              className={`submodule-item ${selectedPath === submodule.path ? 'selected' : ''}`}
+              className={cn(
+                "p-3 mb-2 rounded-md cursor-pointer transition-colors border",
+                selectedPath === submodule.path
+                  ? "bg-(--bg-active) border-(--accent-color)"
+                  : "bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)"
+              )}
               onClick={() => setSelectedPath(submodule.path)}
             >
-              <div className="submodule-item-header">
+              <div className="flex items-center gap-2 mb-1">
                 {getStatusIcon(submodule.status)}
-                <span className="submodule-path">{submodule.path}</span>
+                <span className="font-mono text-sm text-(--text-primary) font-medium">{submodule.path}</span>
               </div>
-              <div className="submodule-item-meta">
+              <div className="flex items-center gap-3 text-xs text-(--text-muted) mb-1">
                 {submodule.short_oid && (
-                  <span className="submodule-oid">{submodule.short_oid}</span>
+                  <span className="font-mono text-(--accent-color)">{submodule.short_oid}</span>
                 )}
                 {submodule.branch && (
-                  <span className="submodule-branch">{submodule.branch}</span>
+                  <span className="px-1.5 py-0.5 bg-(--bg-tertiary) rounded">{submodule.branch}</span>
                 )}
-                <span className={`submodule-status ${submodule.status}`}>
+                <span className={getStatusClass(submodule.status)}>
                   {getStatusLabel(submodule.status)}
                 </span>
               </div>
               {submodule.url && (
-                <div className="submodule-url">{submodule.url}</div>
+                <div className="text-xs text-(--text-muted) truncate">{submodule.url}</div>
               )}
               {selectedPath === submodule.path && (
-                <div className="submodule-item-actions">
+                <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
                   {submodule.status === 'uninitialized' && (
                     <button
-                      className="btn btn-small btn-primary"
+                      className={cn(btnSmallClass, "bg-(--accent-color) border-(--accent-color) text-white hover:opacity-90")}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleInit(submodule.path);
@@ -270,7 +304,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     </button>
                   )}
                   <button
-                    className="btn btn-small"
+                    className={cn(btnSmallClass, "bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover) disabled:opacity-50")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUpdate(submodule.path);
@@ -281,7 +315,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     Update
                   </button>
                   <button
-                    className="btn btn-small btn-danger"
+                    className={cn(btnSmallClass, "bg-error/10 border-error text-error hover:bg-error/20")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemove(submodule.path);
@@ -297,59 +331,62 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       </div>
 
       {showAddDialog && (
-        <div className="dialog-overlay" onClick={() => setShowAddDialog(false)}>
-          <div className="dialog submodule-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
-              <div className="dialog-title">
+        <div className={overlayClass} onClick={() => setShowAddDialog(false)}>
+          <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
+            <div className={headerClass}>
+              <div className={titleClass}>
                 <FolderGit2 size={20} />
                 <span>Add Submodule</span>
               </div>
-              <button className="dialog-close" onClick={() => setShowAddDialog(false)}>
+              <button className={closeClass} onClick={() => setShowAddDialog(false)}>
                 <X size={18} />
               </button>
             </div>
-            <div className="dialog-content">
-              <div className="form-group">
-                <label htmlFor="submodule-url">Repository URL</label>
+            <div className={contentClass}>
+              <div className={formGroupClass}>
+                <label htmlFor="submodule-url" className={labelClass}>Repository URL</label>
                 <input
                   id="submodule-url"
                   type="text"
                   value={addUrl}
                   onChange={(e) => setAddUrl(e.target.value)}
                   placeholder="https://github.com/user/repo.git"
+                  className={inputClass}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="submodule-path">Path</label>
+              <div className={formGroupClass}>
+                <label htmlFor="submodule-path" className={labelClass}>Path</label>
                 <input
                   id="submodule-path"
                   type="text"
                   value={addPath}
                   onChange={(e) => setAddPath(e.target.value)}
                   placeholder="lib/submodule"
+                  className={inputClass}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="submodule-branch">Branch (optional)</label>
+              <div className={formGroupClass}>
+                <label htmlFor="submodule-branch" className={labelClass}>Branch (optional)</label>
                 <input
                   id="submodule-branch"
                   type="text"
                   value={addBranch}
                   onChange={(e) => setAddBranch(e.target.value)}
                   placeholder="main"
+                  className={inputClass}
                 />
               </div>
             </div>
-            <div className="dialog-footer">
+            <div className={footerClass}>
               <button
-                className="btn btn-secondary"
+                className={cn(btnClass, "bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
                 onClick={() => setShowAddDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-primary"
+                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90")}
                 onClick={handleAdd}
                 disabled={isLoading || !addUrl.trim() || !addPath.trim()}
               >

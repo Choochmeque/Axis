@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useStagingStore } from '../../store/stagingStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { remoteApi, commitApi } from '../../services/api';
-import './CommitForm.css';
+import { cn } from '../../lib/utils';
 
 export function CommitForm() {
   const {
@@ -106,62 +106,62 @@ export function CommitForm() {
   const isSummaryTooLong = summary.length > 72;
 
   return (
-    <div className="commit-form">
-      <div className="commit-form-header">
-        <span className="commit-form-title">
+    <div className="flex flex-col border-t border-(--border-color) bg-(--bg-secondary) shrink-0 mt-auto">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
+        <span className="text-xs font-semibold uppercase text-(--text-secondary)">
           {isAmending ? 'Amend Commit' : 'Commit'}
         </span>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="commit-options-trigger">
+            <button className="flex items-center gap-1 py-1 px-2 border-none bg-transparent text-(--text-secondary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)">
               <span>Commit Options...</span>
               <ChevronDown size={12} />
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
-            <DropdownMenu.Content className="commit-options-content" align="end" sideOffset={4}>
+            <DropdownMenu.Content className="min-w-45 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50" align="end" sideOffset={4}>
               <DropdownMenu.CheckboxItem
-                className="commit-options-item"
+                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
                 checked={isAmending}
                 onCheckedChange={setIsAmending}
               >
-                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
                   ✓
                 </DropdownMenu.ItemIndicator>
                 Amend last commit
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="commit-options-item"
+                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
                 checked={bypassHooks}
                 onCheckedChange={setBypassHooks}
               >
-                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
                   ✓
                 </DropdownMenu.ItemIndicator>
                 Bypass commit hooks
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="commit-options-item"
+                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
                 checked={signCommit}
                 onCheckedChange={setSignCommit}
               >
-                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
                   ✓
                 </DropdownMenu.ItemIndicator>
                 Sign commit
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="commit-options-item"
+                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
                 checked={signOff}
                 onCheckedChange={setSignOff}
               >
-                <DropdownMenu.ItemIndicator className="commit-options-indicator">
+                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
                   ✓
                 </DropdownMenu.ItemIndicator>
                 Sign off
               </DropdownMenu.CheckboxItem>
-              <DropdownMenu.Separator className="commit-options-separator" />
-              <DropdownMenu.Item className="commit-options-item disabled" disabled>
+              <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
+              <DropdownMenu.Item className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-tertiary) rounded cursor-default outline-none relative" disabled>
                 Create pull request
               </DropdownMenu.Item>
             </DropdownMenu.Content>
@@ -169,11 +169,14 @@ export function CommitForm() {
         </DropdownMenu.Root>
       </div>
 
-      <div className="commit-form-body">
-        <div className="commit-message-wrapper">
+      <div className="p-3 flex flex-col gap-2">
+        <div className="relative">
           <textarea
             ref={textareaRef}
-            className={`commit-message-input ${isSummaryTooLong ? 'warning' : ''}`}
+            className={cn(
+              "w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-y min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)",
+              isSummaryTooLong && "border-warning"
+            )}
             placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
             value={localMessage}
             onChange={handleMessageChange}
@@ -181,30 +184,31 @@ export function CommitForm() {
             rows={3}
             disabled={isCommitting}
           />
-          <div className="commit-message-hints">
-            <span className={`char-count ${isSummaryTooLong ? 'warning' : ''}`}>
+          <div className="flex justify-end mt-1">
+            <span className={cn("text-[11px] text-(--text-tertiary)", isSummaryTooLong && "text-warning")}>
               {summary.length}/72
             </span>
           </div>
         </div>
 
-        <div className="commit-form-footer">
-          <label className="commit-push-checkbox">
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-1.5 text-xs text-(--text-secondary) cursor-pointer">
             <input
               type="checkbox"
+              className="w-3.5 h-3.5 cursor-pointer accent-(--accent-color)"
               checked={pushAfterCommit}
               onChange={(e) => setPushAfterCommit(e.target.checked)}
             />
-            <span>Push to origin/{repository?.current_branch || 'main'}</span>
+            <span className="select-none">Push to origin/{repository?.current_branch || 'main'}</span>
           </label>
           <button
-            className="commit-button"
+            className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-none rounded bg-(--accent-color) text-white text-xs font-medium cursor-pointer transition-colors hover:not-disabled:bg-[#0066b8] disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCommit}
             disabled={!canCommit || isCommitting}
           >
             {isCommitting ? 'Committing...' : isAmending ? 'Amend' : 'Commit'}
             {stagedCount > 0 && (
-              <span className="commit-count">({stagedCount})</span>
+              <span className="opacity-80 font-normal">({stagedCount})</span>
             )}
           </button>
         </div>

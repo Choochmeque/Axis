@@ -17,7 +17,8 @@ import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
 import { SettingsDialog } from '../settings/SettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
-import './Toolbar.css';
+
+const toolbarButtonClass = "flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed";
 
 export function Toolbar() {
   const { repository, openRepository, setCurrentView, refreshRepository } = useRepositoryStore();
@@ -65,10 +66,10 @@ export function Toolbar() {
   });
 
   return (
-    <div className="toolbar">
-      <div className="toolbar-group">
+    <div className="flex items-center gap-1 px-3 py-2 bg-(--bg-toolbar) border-b border-(--border-color)">
+      <div className="flex items-center gap-0.5">
         <button
-          className="toolbar-button"
+          className={toolbarButtonClass}
           onClick={handleOpenRepository}
           title="Open Repository"
         >
@@ -79,10 +80,10 @@ export function Toolbar() {
 
       {repository && (
         <>
-          <div className="toolbar-separator" />
-          <div className="toolbar-group">
+          <div className="w-px h-8 mx-2 bg-(--border-color)" />
+          <div className="flex items-center gap-0.5">
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Commit"
               onClick={handleCommitClick}
             >
@@ -90,7 +91,7 @@ export function Toolbar() {
               <span>Commit</span>
             </button>
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Pull"
               onClick={() => setPullOpen(true)}
             >
@@ -98,7 +99,7 @@ export function Toolbar() {
               <span>Pull</span>
             </button>
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Push"
               onClick={() => setPushOpen(true)}
             >
@@ -106,7 +107,7 @@ export function Toolbar() {
               <span>Push</span>
             </button>
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               onClick={() => setFetchOpen(true)}
               title="Fetch"
             >
@@ -115,10 +116,10 @@ export function Toolbar() {
             </button>
           </div>
 
-          <div className="toolbar-separator" />
-          <div className="toolbar-group">
+          <div className="w-px h-8 mx-2 bg-(--border-color)" />
+          <div className="flex items-center gap-0.5">
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Create Branch"
               onClick={() => setCreateBranchOpen(true)}
             >
@@ -126,7 +127,7 @@ export function Toolbar() {
               <span>Branch</span>
             </button>
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Checkout Branch"
               onClick={() => setCheckoutBranchOpen(true)}
             >
@@ -134,7 +135,7 @@ export function Toolbar() {
               <span>Checkout</span>
             </button>
             <button
-              className="toolbar-button"
+              className={toolbarButtonClass}
               title="Stash"
               onClick={() => setStashOpen(true)}
             >
@@ -163,11 +164,11 @@ export function Toolbar() {
         </>
       )}
 
-      <div className="toolbar-spacer" />
+      <div className="flex-1" />
 
-      <div className="toolbar-group">
+      <div className="flex items-center gap-0.5">
         <button
-          className="toolbar-button"
+          className={toolbarButtonClass}
           onClick={() => setSettingsOpen(true)}
           title="Settings"
         >

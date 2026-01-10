@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Columns, Rows, FileCode, Binary, Plus, Minus, X } from 'lucide-react';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
-import './DiffView.css';
+import { cn } from '../../lib/utils';
 
 export type DiffMode = 'workdir' | 'staged' | 'commit';
 
@@ -77,26 +77,29 @@ export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnst
     }
   };
 
+  const diffViewClass = "flex flex-col h-full bg-(--bg-primary) overflow-hidden";
+  const emptyStateClass = "flex flex-col items-center justify-center h-full gap-4 text-(--text-tertiary) text-sm";
+
   if (isLoading) {
     return (
-      <div className="diff-view">
-        <div className="diff-loading">Loading diff...</div>
+      <div className={diffViewClass}>
+        <div className={emptyStateClass}>Loading diff...</div>
       </div>
     );
   }
 
   if (!diff) {
     return (
-      <div className="diff-view">
-        <div className="diff-empty">Select a file to view changes</div>
+      <div className={diffViewClass}>
+        <div className={emptyStateClass}>Select a file to view changes</div>
       </div>
     );
   }
 
   if (diff.binary) {
     return (
-      <div className="diff-view">
-        <div className="diff-binary">
+      <div className={diffViewClass}>
+        <div className={cn(emptyStateClass, "[&>svg]:opacity-50")}>
           <Binary size={48} />
           <span>Binary file</span>
         </div>
@@ -105,15 +108,15 @@ export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnst
   }
 
   return (
-    <div className="diff-view">
+    <div className={diffViewClass}>
       <DiffHeader
         diff={diff}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
       />
-      <div className="diff-content">
+      <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
-          <div className="diff-no-changes">No changes in this file</div>
+          <div className={emptyStateClass}>No changes in this file</div>
         ) : viewMode === 'unified' ? (
           <UnifiedDiff
             hunks={diff.hunks}
@@ -147,34 +150,41 @@ interface DiffHeaderProps {
 function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
   const fileName = diff.new_path || diff.old_path || 'Unknown file';
   const statusText = getStatusText(diff.status);
+  const statusColorClass = getStatusColorClass(diff.status);
 
   return (
-    <div className="diff-header">
-      <div className="diff-file-info">
-        <FileCode size={16} className="diff-file-icon" />
-        <span className="diff-file-name">{fileName}</span>
-        <span className={`diff-status diff-status-${diff.status}`}>
+    <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <FileCode size={16} className="text-(--text-secondary) shrink-0" />
+        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">{fileName}</span>
+        <span className={cn("text-[11px] py-0.5 px-1.5 rounded uppercase font-medium", statusColorClass)}>
           {statusText}
         </span>
       </div>
-      <div className="diff-stats">
+      <div className="flex gap-2">
         {diff.additions > 0 && (
-          <span className="diff-stat additions">+{diff.additions}</span>
+          <span className="text-xs font-medium font-mono text-success">+{diff.additions}</span>
         )}
         {diff.deletions > 0 && (
-          <span className="diff-stat deletions">-{diff.deletions}</span>
+          <span className="text-xs font-medium font-mono text-error">-{diff.deletions}</span>
         )}
       </div>
-      <div className="diff-view-toggle">
+      <div className="flex border border-(--border-color) rounded overflow-hidden">
         <button
-          className={`diff-view-btn ${viewMode === 'unified' ? 'active' : ''}`}
+          className={cn(
+            "flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) border-r border-(--border-color) last:border-r-0",
+            viewMode === 'unified' && "bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white"
+          )}
           onClick={() => onViewModeChange('unified')}
           title="Unified view"
         >
           <Rows size={14} />
         </button>
         <button
-          className={`diff-view-btn ${viewMode === 'split' ? 'active' : ''}`}
+          className={cn(
+            "flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)",
+            viewMode === 'split' && "bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white"
+          )}
           onClick={() => onViewModeChange('split')}
           title="Side-by-side view"
         >
@@ -194,16 +204,18 @@ interface UnifiedDiffProps {
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
 }
 
+const hunkActionClass = "flex items-center gap-1 py-0.5 px-2 border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-secondary) text-[11px] font-sans cursor-pointer transition-colors shrink-0 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) hover:not-disabled:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
+
 function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDiscardHunk }: UnifiedDiffProps) {
   return (
-    <div className="diff-unified">
+    <div className="min-w-fit">
       {hunks.map((hunk, hunkIndex) => (
-        <div key={hunkIndex} className="diff-hunk">
-          <div className="diff-hunk-header">
-            <span className="diff-hunk-header-text">{hunk.header.trim()}</span>
+        <div key={hunkIndex} className="mb-1">
+          <div className="flex items-center justify-between gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{hunk.header.trim()}</span>
             {mode === 'workdir' && onStageHunk && (
               <button
-                className="diff-hunk-action"
+                className={hunkActionClass}
                 onClick={() => onStageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Stage hunk"
@@ -214,7 +226,7 @@ function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onD
             )}
             {mode === 'workdir' && onDiscardHunk && (
               <button
-                className="diff-hunk-action diff-hunk-action-discard"
+                className={cn(hunkActionClass, "hover:not-disabled:border-error hover:not-disabled:text-error")}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Discard hunk"
@@ -225,7 +237,7 @@ function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onD
             )}
             {mode === 'staged' && onUnstageHunk && (
               <button
-                className="diff-hunk-action"
+                className={hunkActionClass}
                 onClick={() => onUnstageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Unstage hunk"
@@ -235,7 +247,7 @@ function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onD
               </button>
             )}
           </div>
-          <div className="diff-hunk-lines">
+          <div className="flex flex-col">
             {hunk.lines.map((line, lineIndex) => (
               <UnifiedDiffLine key={lineIndex} line={line} />
             ))}
@@ -250,21 +262,23 @@ interface UnifiedDiffLineProps {
   line: DiffLine;
 }
 
+const lineNoClass = "shrink-0 w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none";
+
 function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
-  const lineClass = getLineClass(line.line_type);
+  const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.line_type);
   const prefix = getLinePrefix(line.line_type);
 
   return (
-    <div className={`diff-line ${lineClass}`}>
-      <span className="diff-line-no diff-line-no-old">
+    <div className={cn("flex leading-5 font-mono text-xs", bgClass)}>
+      <span className={cn(lineNoClass, lineNoBgClass)}>
         {line.old_line_no ?? ''}
       </span>
-      <span className="diff-line-no diff-line-no-new">
+      <span className={cn(lineNoClass, lineNoBgClass)}>
         {line.new_line_no ?? ''}
       </span>
-      <span className="diff-line-prefix">{prefix}</span>
-      <span className="diff-line-content">
-        <code>{line.content}</code>
+      <span className={cn("shrink-0 w-4 py-0 px-1 text-center select-none", prefixColorClass)}>{prefix}</span>
+      <span className="flex-1 py-0 px-2 whitespace-pre overflow-x-auto">
+        <code className="font-inherit">{line.content}</code>
       </span>
     </div>
   );
@@ -281,14 +295,14 @@ interface SplitDiffProps {
 
 function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDiscardHunk }: SplitDiffProps) {
   return (
-    <div className="diff-split">
+    <div>
       {hunks.map((hunk, hunkIndex) => (
-        <div key={hunkIndex} className="diff-hunk">
-          <div className="diff-hunk-header diff-split-header">
-            <span className="diff-hunk-header-text">{hunk.header.trim()}</span>
+        <div key={hunkIndex} className="mb-1">
+          <div className="flex items-center justify-center gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{hunk.header.trim()}</span>
             {mode === 'workdir' && onStageHunk && (
               <button
-                className="diff-hunk-action"
+                className={hunkActionClass}
                 onClick={() => onStageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Stage hunk"
@@ -299,7 +313,7 @@ function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDis
             )}
             {mode === 'workdir' && onDiscardHunk && (
               <button
-                className="diff-hunk-action diff-hunk-action-discard"
+                className={cn(hunkActionClass, "hover:not-disabled:border-error hover:not-disabled:text-error")}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Discard hunk"
@@ -310,7 +324,7 @@ function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDis
             )}
             {mode === 'staged' && onUnstageHunk && (
               <button
-                className="diff-hunk-action"
+                className={hunkActionClass}
                 onClick={() => onUnstageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Unstage hunk"
@@ -320,7 +334,7 @@ function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDis
               </button>
             )}
           </div>
-          <div className="diff-hunk-lines diff-split-lines">
+          <div className="flex flex-col">
             <SplitHunkLines lines={hunk.lines} />
           </div>
         </div>
@@ -338,22 +352,26 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
 
   return (
     <>
-      {pairs.map((pair, index) => (
-        <div key={index} className="diff-split-row">
-          <div className={`diff-split-side left ${getLineClass(pair.left?.line_type || 'context')}`}>
-            <span className="diff-line-no">{pair.left?.old_line_no ?? ''}</span>
-            <span className="diff-line-content">
-              <code>{pair.left?.content ?? ''}</code>
-            </span>
+      {pairs.map((pair, index) => {
+        const leftClasses = getLineClasses(pair.left?.line_type || 'context');
+        const rightClasses = getLineClasses(pair.right?.line_type || 'context');
+        return (
+          <div key={index} className="flex">
+            <div className={cn("flex-1 flex leading-5 font-mono text-xs border-r-2 border-(--border-color)", leftClasses.bgClass)}>
+              <span className={cn("w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none", leftClasses.lineNoBgClass)}>{pair.left?.old_line_no ?? ''}</span>
+              <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
+                <code>{pair.left?.content ?? ''}</code>
+              </span>
+            </div>
+            <div className={cn("flex-1 flex leading-5 font-mono text-xs", rightClasses.bgClass)}>
+              <span className={cn("w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none", rightClasses.lineNoBgClass)}>{pair.right?.new_line_no ?? ''}</span>
+              <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
+                <code>{pair.right?.content ?? ''}</code>
+              </span>
+            </div>
           </div>
-          <div className={`diff-split-side right ${getLineClass(pair.right?.line_type || 'context')}`}>
-            <span className="diff-line-no">{pair.right?.new_line_no ?? ''}</span>
-            <span className="diff-line-content">
-              <code>{pair.right?.content ?? ''}</code>
-            </span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
@@ -407,16 +425,26 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
   return pairs;
 }
 
-function getLineClass(lineType: DiffLineType): string {
+function getLineClasses(lineType: DiffLineType): { bgClass: string; lineNoBgClass: string; prefixColorClass: string } {
   switch (lineType) {
     case 'addition':
-      return 'diff-addition';
+      return {
+        bgClass: 'bg-success/15',
+        lineNoBgClass: 'bg-success/20',
+        prefixColorClass: 'text-success',
+      };
     case 'deletion':
-      return 'diff-deletion';
-    case 'header':
-      return 'diff-header-line';
+      return {
+        bgClass: 'bg-error/15',
+        lineNoBgClass: 'bg-error/20',
+        prefixColorClass: 'text-error',
+      };
     default:
-      return 'diff-context';
+      return {
+        bgClass: 'bg-transparent',
+        lineNoBgClass: '',
+        prefixColorClass: '',
+      };
   }
 }
 
@@ -451,5 +479,23 @@ function getStatusText(status: string): string {
       return 'Conflicted';
     default:
       return status;
+  }
+}
+
+function getStatusColorClass(status: string): string {
+  switch (status) {
+    case 'added':
+    case 'untracked':
+      return 'bg-success/20 text-success';
+    case 'deleted':
+    case 'conflicted':
+      return 'bg-error/20 text-error';
+    case 'modified':
+      return 'bg-warning/20 text-warning';
+    case 'renamed':
+    case 'copied':
+      return 'bg-(--accent-color)/20 text-(--accent-color)';
+    default:
+      return '';
   }
 }

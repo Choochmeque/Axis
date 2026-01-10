@@ -1574,46 +1574,46 @@ mod tests {
     use tempfile::TempDir;
 
     fn setup_test_repo() -> (TempDir, GitCliService) {
-        let tmp = TempDir::new().unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
 
         // Initialize git repo using CLI
         Command::new("git")
             .args(["init"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should initialize git repo");
 
         // Configure user for commits
         Command::new("git")
             .args(["config", "user.email", "test@example.com"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should configure git user email");
 
         Command::new("git")
             .args(["config", "user.name", "Test User"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should configure git user name");
 
         let service = GitCliService::new(tmp.path());
         (tmp, service)
     }
 
     fn create_initial_commit(tmp: &TempDir) {
-        fs::write(tmp.path().join("README.md"), "# Test").unwrap();
+        fs::write(tmp.path().join("README.md"), "# Test").expect("should write README.md");
 
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
         Command::new("git")
             .args(["commit", "-m", "Initial commit"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should create initial commit");
     }
 
     fn create_branch(tmp: &TempDir, name: &str) {
@@ -1621,7 +1621,7 @@ mod tests {
             .args(["branch", name])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should create branch");
     }
 
     fn checkout_branch(tmp: &TempDir, name: &str) {
@@ -1629,7 +1629,7 @@ mod tests {
             .args(["checkout", name])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should execute git checkout");
         assert!(
             output.status.success(),
             "checkout failed: {}",
@@ -1642,24 +1642,24 @@ mod tests {
             .args(["branch", "--show-current"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get current branch name");
         String::from_utf8_lossy(&output.stdout).trim().to_string()
     }
 
     fn add_commit(tmp: &TempDir, filename: &str, content: &str, message: &str) {
-        fs::write(tmp.path().join(filename), content).unwrap();
+        fs::write(tmp.path().join(filename), content).expect("should write file");
 
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
         Command::new("git")
             .args(["commit", "-m", message])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should create commit");
     }
 
     #[test]
@@ -1677,7 +1677,7 @@ mod tests {
 
         // Go back to default branch and merge
         checkout_branch(&tmp, &default_branch);
-        let result = service.merge("feature", None, false, false).unwrap();
+        let result = service.merge("feature", None, false, false).expect("should merge feature branch");
 
         assert!(result.success);
     }
@@ -1697,7 +1697,7 @@ mod tests {
         checkout_branch(&tmp, &default_branch);
         let result = service
             .merge("feature", Some("Merge feature branch"), true, false)
-            .unwrap();
+            .expect("should merge with no-ff");
 
         assert!(result.success);
     }
@@ -1720,12 +1720,12 @@ mod tests {
             .args(["rev-parse", "HEAD"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get HEAD commit hash");
         let commit_hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
         // Go back to default branch and cherry-pick
         checkout_branch(&tmp, &default_branch);
-        let result = service.cherry_pick(&commit_hash, false).unwrap();
+        let result = service.cherry_pick(&commit_hash, false).expect("should cherry-pick commit");
 
         assert!(
             result.success,
@@ -1754,7 +1754,7 @@ mod tests {
         add_commit(&tmp, "feature.txt", "feature content", "Feature commit");
 
         // Rebase feature onto default branch
-        let result = service.rebase(&default_branch, false).unwrap();
+        let result = service.rebase(&default_branch, false).expect("should rebase onto default branch");
 
         assert!(
             result.success,
@@ -1769,7 +1769,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Initially not merging
-        assert!(!service.is_merging().unwrap());
+        assert!(!service.is_merging().expect("should check if merging"));
     }
 
     #[test]
@@ -1778,7 +1778,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Initially not rebasing
-        assert!(!service.is_rebasing().unwrap());
+        assert!(!service.is_rebasing().expect("should check if rebasing"));
     }
 
     #[test]
@@ -1787,7 +1787,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         // No operation in progress
-        let op = service.get_operation_in_progress().unwrap();
+        let op = service.get_operation_in_progress().expect("should get operation in progress");
         assert!(op.is_none());
     }
 
@@ -1797,7 +1797,7 @@ mod tests {
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Second commit");
 
-        let result = service.reset("HEAD~1", ResetMode::Soft).unwrap();
+        let result = service.reset("HEAD~1", ResetMode::Soft).expect("should reset soft");
 
         assert!(result.success);
         // File should still exist and be staged
@@ -1810,7 +1810,7 @@ mod tests {
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Second commit");
 
-        let result = service.reset("HEAD~1", ResetMode::Hard).unwrap();
+        let result = service.reset("HEAD~1", ResetMode::Hard).expect("should reset hard");
 
         assert!(result.success);
         // File should be gone
@@ -1828,10 +1828,10 @@ mod tests {
             .args(["rev-parse", "HEAD"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get HEAD commit hash");
         let commit_hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        let result = service.revert(&commit_hash, false).unwrap();
+        let result = service.revert(&commit_hash, false).expect("should revert commit");
 
         assert!(result.success);
         // File should be removed by revert
@@ -1845,7 +1845,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let stashes = service.stash_list().unwrap();
+        let stashes = service.stash_list().expect("should list stashes");
         assert!(stashes.is_empty());
     }
 
@@ -1855,12 +1855,12 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create an uncommitted change
-        fs::write(tmp.path().join("uncommitted.txt"), "uncommitted content").unwrap();
+        fs::write(tmp.path().join("uncommitted.txt"), "uncommitted content").expect("should write uncommitted.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
         // Stash the changes
         let result = service
@@ -1868,12 +1868,12 @@ mod tests {
                 message: Some("Test stash".to_string()),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should save stash");
 
         assert!(result.success);
 
         // Verify stash exists
-        let stashes = service.stash_list().unwrap();
+        let stashes = service.stash_list().expect("should list stashes");
         assert_eq!(stashes.len(), 1);
         assert!(stashes[0].message.contains("Test stash"));
     }
@@ -1884,27 +1884,27 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("stash_test.txt"), "stash content").unwrap();
+        fs::write(tmp.path().join("stash_test.txt"), "stash content").expect("should write stash_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).unwrap();
+        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
 
         // Verify file is gone
         assert!(!tmp.path().join("stash_test.txt").exists());
 
         // Pop the stash
-        let result = service.stash_pop(&StashApplyOptions::default()).unwrap();
+        let result = service.stash_pop(&StashApplyOptions::default()).expect("should pop stash");
         assert!(result.success);
 
         // Verify file is back
         assert!(tmp.path().join("stash_test.txt").exists());
 
         // Verify stash is gone
-        let stashes = service.stash_list().unwrap();
+        let stashes = service.stash_list().expect("should list stashes after pop");
         assert!(stashes.is_empty());
     }
 
@@ -1914,24 +1914,24 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("apply_test.txt"), "apply content").unwrap();
+        fs::write(tmp.path().join("apply_test.txt"), "apply content").expect("should write apply_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).unwrap();
+        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
 
         // Apply the stash
-        let result = service.stash_apply(&StashApplyOptions::default()).unwrap();
+        let result = service.stash_apply(&StashApplyOptions::default()).expect("should apply stash");
         assert!(result.success);
 
         // Verify file is back
         assert!(tmp.path().join("apply_test.txt").exists());
 
         // Verify stash is still there (apply doesn't drop)
-        let stashes = service.stash_list().unwrap();
+        let stashes = service.stash_list().expect("should list stashes after apply");
         assert_eq!(stashes.len(), 1);
     }
 
@@ -1941,22 +1941,22 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and stash a change
-        fs::write(tmp.path().join("drop_test.txt"), "drop content").unwrap();
+        fs::write(tmp.path().join("drop_test.txt"), "drop content").expect("should write drop_test.txt");
         Command::new("git")
             .args(["add", "."])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add files to staging");
 
-        service.stash_save(&StashSaveOptions::default()).unwrap();
-        assert_eq!(service.stash_list().unwrap().len(), 1);
+        service.stash_save(&StashSaveOptions::default()).expect("should save stash");
+        assert_eq!(service.stash_list().expect("should list stashes").len(), 1);
 
         // Drop the stash
-        let result = service.stash_drop(None).unwrap();
+        let result = service.stash_drop(None).expect("should drop stash");
         assert!(result.success);
 
         // Verify stash is gone
-        assert!(service.stash_list().unwrap().is_empty());
+        assert!(service.stash_list().expect("should list stashes after drop").is_empty());
     }
 
     #[test]
@@ -1966,22 +1966,22 @@ mod tests {
 
         // Create multiple stashes
         for i in 0..3 {
-            fs::write(tmp.path().join(format!("clear_test_{}.txt", i)), "content").unwrap();
+            fs::write(tmp.path().join(format!("clear_test_{}.txt", i)), "content").expect("should write file");
             Command::new("git")
                 .args(["add", "."])
                 .current_dir(tmp.path())
                 .output()
-                .unwrap();
-            service.stash_save(&StashSaveOptions::default()).unwrap();
+                .expect("should add files to staging");
+            service.stash_save(&StashSaveOptions::default()).expect("should save stash");
         }
 
-        assert_eq!(service.stash_list().unwrap().len(), 3);
+        assert_eq!(service.stash_list().expect("should list stashes").len(), 3);
 
         // Clear all stashes
-        let result = service.stash_clear().unwrap();
+        let result = service.stash_clear().expect("should clear all stashes");
         assert!(result.success);
 
-        assert!(service.stash_list().unwrap().is_empty());
+        assert!(service.stash_list().expect("should list stashes after clear").is_empty());
     }
 
     // ==================== Submodule Tests ====================
@@ -1991,7 +1991,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let submodules = service.submodule_list().unwrap();
+        let submodules = service.submodule_list().expect("should list submodules");
         assert!(submodules.is_empty());
     }
 
@@ -2001,7 +2001,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Initialize submodules (should succeed even with no submodules)
-        let result = service.submodule_init(&[]).unwrap();
+        let result = service.submodule_init(&[]).expect("should init submodules");
         assert!(result.success);
 
         // Update submodules (should succeed even with no submodules)
@@ -2011,7 +2011,7 @@ mod tests {
                 recursive: true,
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should update submodules");
         assert!(result.success);
     }
 
@@ -2021,7 +2021,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Should return empty string for repo with no submodules
-        let summary = service.submodule_summary().unwrap();
+        let summary = service.submodule_summary().expect("should get submodule summary");
         assert!(summary.is_empty());
     }
 
@@ -2032,10 +2032,10 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let is_initialized = service.gitflow_is_initialized().unwrap();
+        let is_initialized = service.gitflow_is_initialized().expect("should check gitflow initialized");
         assert!(!is_initialized);
 
-        let config = service.gitflow_config().unwrap();
+        let config = service.gitflow_config().expect("should get gitflow config");
         assert!(config.is_none());
     }
 
@@ -2052,16 +2052,16 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should init gitflow");
 
         assert!(result.success, "gitflow init failed: {}", result.message);
 
-        let is_initialized = service.gitflow_is_initialized().unwrap();
+        let is_initialized = service.gitflow_is_initialized().expect("should check gitflow initialized");
         assert!(is_initialized);
 
-        let config = service.gitflow_config().unwrap();
+        let config = service.gitflow_config().expect("should get gitflow config");
         assert!(config.is_some());
-        let config = config.unwrap();
+        let config = config.expect("config should be present");
         assert_eq!(config.master, default_branch);
         assert_eq!(config.develop, "develop");
     }
@@ -2080,7 +2080,7 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should init gitflow");
 
         // Checkout develop branch
         checkout_branch(&tmp, "develop");
@@ -2088,13 +2088,13 @@ mod tests {
         // Start a feature
         let result = service
             .gitflow_start(GitFlowBranchType::Feature, "test-feature", None)
-            .unwrap();
+            .expect("should start feature");
 
         assert!(result.success, "feature start failed: {}", result.message);
         assert_eq!(result.branch, Some("feature/test-feature".to_string()));
 
         // Verify the feature is in the list
-        let features = service.gitflow_list(GitFlowBranchType::Feature).unwrap();
+        let features = service.gitflow_list(GitFlowBranchType::Feature).expect("should list features");
         assert!(features.contains(&"test-feature".to_string()));
     }
 
@@ -2112,9 +2112,9 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should init gitflow");
 
-        let features = service.gitflow_list(GitFlowBranchType::Feature).unwrap();
+        let features = service.gitflow_list(GitFlowBranchType::Feature).expect("should list features");
         assert!(features.is_empty());
     }
 
@@ -2130,17 +2130,17 @@ mod tests {
             tmp.path().join("search.txt"),
             "hello world\ntest line\nhello again",
         )
-        .unwrap();
+        .expect("should write search.txt");
         Command::new("git")
             .args(["add", "search.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add search.txt");
         Command::new("git")
             .args(["commit", "-m", "Add search file"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should commit search file");
 
         let result = service
             .grep(&GrepOptions {
@@ -2148,7 +2148,7 @@ mod tests {
                 show_line_numbers: true,
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should grep for pattern");
 
         assert_eq!(result.total_matches, 2);
         assert!(result
@@ -2170,17 +2170,17 @@ mod tests {
             tmp.path().join("case.txt"),
             "Hello World\nHELLO CAPS\nhello lower",
         )
-        .unwrap();
+        .expect("should write case.txt");
         Command::new("git")
             .args(["add", "case.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add case.txt");
         Command::new("git")
             .args(["commit", "-m", "Add case file"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should commit case file");
 
         let result = service
             .grep(&GrepOptions {
@@ -2189,7 +2189,7 @@ mod tests {
                 show_line_numbers: true,
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should grep case insensitive");
 
         assert_eq!(result.total_matches, 3);
     }
@@ -2204,7 +2204,7 @@ mod tests {
                 pattern: "nonexistent_pattern_xyz".to_string(),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should grep for nonexistent pattern");
 
         assert_eq!(result.total_matches, 0);
         assert!(result.matches.is_empty());
@@ -2216,27 +2216,27 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and commit a file first so we can get a proper diff
-        fs::write(tmp.path().join("test.txt"), "line1\n").unwrap();
+        fs::write(tmp.path().join("test.txt"), "line1\n").expect("should write test.txt");
         Command::new("git")
             .args(["add", "test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add test.txt");
         Command::new("git")
             .args(["commit", "-m", "Add test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should commit test.txt");
 
         // Now modify the file to create a diff
-        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").unwrap();
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").expect("should modify test.txt");
 
         // Get the actual diff from git
         let diff_output = Command::new("git")
             .args(["diff", "test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get diff output");
         let patch = String::from_utf8_lossy(&diff_output.stdout);
 
         // Stage the hunk using the real patch
@@ -2248,7 +2248,7 @@ mod tests {
             .args(["diff", "--cached", "--name-only"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get cached diff");
         let staged_files = String::from_utf8_lossy(&status.stdout);
         assert!(staged_files.contains("test.txt"));
     }
@@ -2259,32 +2259,32 @@ mod tests {
         create_initial_commit(&tmp);
 
         // Create and commit a file first so we can get a proper diff
-        fs::write(tmp.path().join("test.txt"), "line1\n").unwrap();
+        fs::write(tmp.path().join("test.txt"), "line1\n").expect("should write test.txt");
         Command::new("git")
             .args(["add", "test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should add test.txt");
         Command::new("git")
             .args(["commit", "-m", "Add test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should commit test.txt");
 
         // Modify and stage the file
-        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").unwrap();
+        fs::write(tmp.path().join("test.txt"), "line1\nline2\nline3\n").expect("should modify test.txt");
         Command::new("git")
             .args(["add", "test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should stage modified test.txt");
 
         // Verify it's staged
         let status = Command::new("git")
             .args(["diff", "--cached", "--name-only"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get cached diff");
         assert!(String::from_utf8_lossy(&status.stdout).contains("test.txt"));
 
         // Get the staged diff from git
@@ -2292,7 +2292,7 @@ mod tests {
             .args(["diff", "--cached", "test.txt"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get cached diff for test.txt");
         let patch = String::from_utf8_lossy(&diff_output.stdout);
 
         // Unstage the hunk using the real patch
@@ -2304,7 +2304,7 @@ mod tests {
             .args(["diff", "--cached", "--name-only"])
             .current_dir(tmp.path())
             .output()
-            .unwrap();
+            .expect("should get cached diff after unstage");
         let staged_files = String::from_utf8_lossy(&status.stdout);
         assert!(!staged_files.contains("test.txt") || staged_files.trim().is_empty());
     }

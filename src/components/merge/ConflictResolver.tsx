@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
 import { conflictApi, operationApi } from '../../services/api';
 import type { ConflictedFile, ConflictContent, OperationState } from '../../types';
-import './ConflictResolver.css';
+import { cn } from '../../lib/utils';
+
+const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
+const btnSmallClass = "py-1 px-2.5 text-[11px] font-medium border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)";
+const btnPrimarySmallClass = "py-1 px-2.5 text-[11px] font-medium border-none rounded bg-(--accent-color) text-white cursor-pointer hover:opacity-90";
 
 interface ConflictResolverProps {
   onAllResolved?: () => void;
@@ -127,17 +131,19 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
   }
 
   return (
-    <div className="conflict-resolver">
-      <div className="conflict-resolver-header">
-        <div className="conflict-resolver-title">
-          <AlertTriangle size={18} className="warning-icon" />
+    <div className="flex flex-col h-full bg-(--bg-primary) border border-(--border-color) rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between py-3 px-4 bg-warning/10 border-b border-warning/30">
+        <div className="flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
+          <AlertTriangle size={18} className="text-warning" />
           <span>Resolve Conflicts</span>
           {operationState && operationState.type !== 'none' && (
-            <span className="operation-badge">{getOperationLabel()}</span>
+            <span className="py-0.5 px-2 text-[11px] font-medium bg-(--bg-secondary) rounded text-(--text-secondary)">
+              {getOperationLabel()}
+            </span>
           )}
         </div>
         <button
-          className="btn-icon"
+          className={btnIconClass}
           onClick={loadConflicts}
           title="Refresh conflicts"
         >
@@ -146,83 +152,90 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       </div>
 
       {error && (
-        <div className="conflict-error">
+        <div className="flex items-center gap-2 py-2 px-4 bg-error/10 border-b border-error/30 text-error text-xs">
           <AlertTriangle size={14} />
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>
+          <span className="flex-1">{error}</span>
+          <button
+            className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100"
+            onClick={() => setError(null)}
+          >
             <X size={14} />
           </button>
         </div>
       )}
 
-      <div className="conflict-resolver-body">
-        <div className="conflict-file-list">
-          <div className="conflict-file-list-header">
+      <div className="flex flex-1 min-h-0">
+        <div className="w-62.5 border-r border-(--border-color) bg-(--bg-secondary) overflow-y-auto">
+          <div className="py-2 px-3 text-[11px] font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color)">
             {conflicts.length} conflicted file{conflicts.length !== 1 ? 's' : ''}
           </div>
           {conflicts.map((conflict) => (
             <div
               key={conflict.path}
-              className={`conflict-file-item ${selectedFile === conflict.path ? 'selected' : ''} ${conflict.is_resolved ? 'resolved' : ''}`}
+              className={cn(
+                "flex items-center justify-between py-2 px-3 text-[13px] cursor-pointer transition-colors border-b border-(--border-color)",
+                selectedFile === conflict.path
+                  ? "bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5"
+                  : "hover:bg-(--bg-hover)",
+                conflict.is_resolved && "opacity-60"
+              )}
               onClick={() => setSelectedFile(conflict.path)}
             >
-              <span className="conflict-file-path">{conflict.path}</span>
+              <span className={cn(
+                "font-mono overflow-hidden text-ellipsis whitespace-nowrap",
+                conflict.is_resolved ? "text-success" : "text-warning"
+              )}>
+                {conflict.path}
+              </span>
               {conflict.is_resolved && (
-                <Check size={14} className="resolved-icon" />
+                <Check size={14} className="text-success shrink-0" />
               )}
             </div>
           ))}
         </div>
 
-        <div className="conflict-content-area">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {isLoading ? (
-            <div className="conflict-loading">Loading...</div>
+            <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
+              Loading...
+            </div>
           ) : conflictContent ? (
             <>
-              <div className="conflict-versions">
-                <div className="conflict-version ours">
-                  <div className="version-header">
+              <div className="flex flex-1 min-h-0 border-b border-(--border-color)">
+                <div className="flex-1 flex flex-col min-w-0 border-r border-(--border-color)">
+                  <div className="flex items-center justify-between py-2 px-3 bg-blue-500/10 border-b border-(--border-color) text-xs font-semibold text-blue-500">
                     <span>Ours (Current)</span>
-                    <button
-                      className="btn btn-small"
-                      onClick={handleResolveOurs}
-                    >
+                    <button className={btnSmallClass} onClick={handleResolveOurs}>
                       Use This
                     </button>
                   </div>
-                  <pre className="version-content">
+                  <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
                     {conflictContent.ours || '(deleted)'}
                   </pre>
                 </div>
 
-                <div className="conflict-version theirs">
-                  <div className="version-header">
+                <div className="flex-1 flex flex-col min-w-0">
+                  <div className="flex items-center justify-between py-2 px-3 bg-purple-500/10 border-b border-(--border-color) text-xs font-semibold text-purple-500">
                     <span>Theirs (Incoming)</span>
-                    <button
-                      className="btn btn-small"
-                      onClick={handleResolveTheirs}
-                    >
+                    <button className={btnSmallClass} onClick={handleResolveTheirs}>
                       Use This
                     </button>
                   </div>
-                  <pre className="version-content">
+                  <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
                     {conflictContent.theirs || '(deleted)'}
                   </pre>
                 </div>
               </div>
 
-              <div className="conflict-merged">
-                <div className="version-header">
+              <div className="flex flex-col h-[40%] min-h-37.5">
+                <div className="flex items-center justify-between py-2 px-3 bg-green-500/10 border-b border-(--border-color) text-xs font-semibold text-green-500">
                   <span>Merged Result</span>
-                  <button
-                    className="btn btn-primary btn-small"
-                    onClick={handleResolveMerged}
-                  >
+                  <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
                     Mark Resolved
                   </button>
                 </div>
                 <textarea
-                  className="merged-editor"
+                  className="flex-1 m-0 p-3 font-mono text-xs leading-relaxed bg-(--bg-input) text-(--text-primary) border-none resize-none outline-none focus:bg-(--bg-primary)"
                   value={mergedContent}
                   onChange={(e) => setMergedContent(e.target.value)}
                   spellCheck={false}
@@ -230,7 +243,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
               </div>
             </>
           ) : (
-            <div className="conflict-placeholder">
+            <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
               Select a file to resolve conflicts
             </div>
           )}

@@ -156,8 +156,6 @@ impl Git2Service {
         };
 
         let git_branches = self.repo.branches(branch_type)?;
-        let head = self.repo.head().ok();
-        let head_oid = head.as_ref().and_then(|h| h.target());
 
         for branch_result in git_branches {
             let (branch, branch_type) = branch_result?;
@@ -168,7 +166,7 @@ impl Git2Service {
 
                 if let Some(oid) = target_oid {
                     let commit = self.repo.find_commit(oid)?;
-                    let is_head = head_oid.map(|h| h == oid).unwrap_or(false);
+                    let is_head = branch.is_head();
 
                     let (ahead, behind) = self.get_ahead_behind(&branch)?;
 
@@ -244,7 +242,12 @@ impl Git2Service {
     /// Stage a file (add to index)
     pub fn stage_file(&self, path: &str) -> Result<()> {
         let mut index = self.repo.index()?;
-        index.add_path(Path::new(path))?;
+        let full_path = self.repo.workdir().unwrap().join(path);
+        if full_path.exists() {
+            index.add_path(Path::new(path))?;
+        } else {
+            index.remove_path(Path::new(path))?;
+        }
         index.write()?;
         Ok(())
     }
@@ -252,8 +255,14 @@ impl Git2Service {
     /// Stage multiple files
     pub fn stage_files(&self, paths: &[String]) -> Result<()> {
         let mut index = self.repo.index()?;
+        let workdir = self.repo.workdir().unwrap();
         for path in paths {
-            index.add_path(Path::new(path))?;
+            let full_path = workdir.join(path);
+            if full_path.exists() {
+                index.add_path(Path::new(path))?;
+            } else {
+                index.remove_path(Path::new(path))?;
+            }
         }
         index.write()?;
         Ok(())
@@ -1714,49 +1723,49 @@ mod tests {
     use tempfile::TempDir;
 
     fn setup_test_repo() -> (TempDir, Git2Service) {
-        let tmp = TempDir::new().unwrap();
-        let service = Git2Service::init(tmp.path(), false).unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let service = Git2Service::init(tmp.path(), false).expect("should initialize test repository");
         (tmp, service)
     }
 
     fn create_initial_commit(service: &Git2Service, tmp: &TempDir) {
         // Create a file
         let file_path = tmp.path().join("README.md");
-        fs::write(&file_path, "# Test Repository").unwrap();
+        fs::write(&file_path, "# Test Repository").expect("should write README.md file");
 
         // Stage the file
-        let mut index = service.repo.index().unwrap();
-        index.add_path(Path::new("README.md")).unwrap();
-        index.write().unwrap();
+        let mut index = service.repo.index().expect("should get repository index");
+        index.add_path(Path::new("README.md")).expect("should add README.md to index");
+        index.write().expect("should write index to disk");
 
         // Create commit
-        let tree_id = index.write_tree().unwrap();
-        let tree = service.repo.find_tree(tree_id).unwrap();
-        let sig = git2::Signature::now("Test User", "test@example.com").unwrap();
+        let tree_id = index.write_tree().expect("should write tree from index");
+        let tree = service.repo.find_tree(tree_id).expect("should find tree by id");
+        let sig = git2::Signature::now("Test User", "test@example.com").expect("should create signature");
 
         service
             .repo
             .commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
-            .unwrap();
+            .expect("should create initial commit");
     }
 
     #[test]
     fn test_init_repository() {
-        let tmp = TempDir::new().unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
         let service = Git2Service::init(tmp.path(), false);
         assert!(service.is_ok());
 
-        let service = service.unwrap();
-        let info = service.get_repository_info().unwrap();
+        let service = service.expect("should unwrap initialized service");
+        let info = service.get_repository_info().expect("should get repository info");
         assert!(!info.is_bare);
         assert_eq!(info.state, RepositoryState::Clean);
     }
 
     #[test]
     fn test_init_bare_repository() {
-        let tmp = TempDir::new().unwrap();
-        let service = Git2Service::init(tmp.path(), true).unwrap();
-        let info = service.get_repository_info().unwrap();
+        let tmp = TempDir::new().expect("should create temp directory");
+        let service = Git2Service::init(tmp.path(), true).expect("should initialize bare repository");
+        let info = service.get_repository_info().expect("should get repository info");
         assert!(info.is_bare);
     }
 
@@ -1770,7 +1779,7 @@ mod tests {
     #[test]
     fn test_status_empty_repo() {
         let (_tmp, service) = setup_test_repo();
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status of empty repo");
         assert!(status.staged.is_empty());
         assert!(status.unstaged.is_empty());
         assert!(status.untracked.is_empty());
@@ -1783,9 +1792,9 @@ mod tests {
 
         // Create an untracked file
         let file_path = tmp.path().join("test.txt");
-        fs::write(&file_path, "test content").unwrap();
+        fs::write(&file_path, "test content").expect("should write test.txt file");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status with untracked file");
         assert_eq!(status.untracked.len(), 1);
         assert_eq!(status.untracked[0].path, "test.txt");
     }
@@ -1795,7 +1804,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].summary, "Initial commit");
     }
@@ -1805,7 +1814,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        let branches = service.list_branches(BranchFilter::local_only()).expect("should list branches");
         assert!(!branches.is_empty());
 
         // Default branch should be main or master
@@ -1813,6 +1822,29 @@ mod tests {
             .iter()
             .any(|b| b.name == "main" || b.name == "master");
         assert!(has_default_branch);
+    }
+
+    #[test]
+    fn test_is_head_only_for_checked_out_branch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a new branch at the same commit (doesn't checkout)
+        let head_commit = service.repo.head().expect("should get HEAD").peel_to_commit().expect("should peel to commit");
+        service.repo.branch("feature-branch", &head_commit, false).expect("should create branch");
+
+        // Both branches now point to the same commit
+        let branches = service.list_branches(BranchFilter::local_only()).expect("should list branches");
+        assert_eq!(branches.len(), 2);
+
+        // Only one branch should have is_head = true
+        let head_branches: Vec<_> = branches.iter().filter(|b| b.is_head).collect();
+        assert_eq!(head_branches.len(), 1, "Only one branch should be marked as HEAD");
+
+        // The head branch should be main/master, not feature-branch
+        let head_branch = head_branches[0];
+        assert!(head_branch.name == "main" || head_branch.name == "master");
+        assert_ne!(head_branch.name, "feature-branch");
     }
 
     #[test]
@@ -1832,12 +1864,12 @@ mod tests {
 
         // Create an untracked file
         let file_path = tmp.path().join("test.txt");
-        fs::write(&file_path, "test content").unwrap();
+        fs::write(&file_path, "test content").expect("should write test.txt file");
 
         // Stage the file
-        service.stage_file("test.txt").unwrap();
+        service.stage_file("test.txt").expect("should stage test.txt");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after staging");
         assert_eq!(status.staged.len(), 1);
         assert_eq!(status.staged[0].path, "test.txt");
         assert!(status.untracked.is_empty());
@@ -1848,15 +1880,15 @@ mod tests {
         let (tmp, service) = setup_test_repo();
 
         // Create multiple files
-        fs::write(tmp.path().join("file1.txt"), "content 1").unwrap();
-        fs::write(tmp.path().join("file2.txt"), "content 2").unwrap();
+        fs::write(tmp.path().join("file1.txt"), "content 1").expect("should write file1.txt");
+        fs::write(tmp.path().join("file2.txt"), "content 2").expect("should write file2.txt");
 
         // Stage multiple files
         service
             .stage_files(&["file1.txt".to_string(), "file2.txt".to_string()])
-            .unwrap();
+            .expect("should stage multiple files");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after staging multiple files");
         assert_eq!(status.staged.len(), 2);
     }
 
@@ -1865,16 +1897,67 @@ mod tests {
         let (tmp, service) = setup_test_repo();
 
         // Create multiple files
-        fs::write(tmp.path().join("file1.txt"), "content 1").unwrap();
-        fs::write(tmp.path().join("file2.txt"), "content 2").unwrap();
-        fs::write(tmp.path().join("file3.txt"), "content 3").unwrap();
+        fs::write(tmp.path().join("file1.txt"), "content 1").expect("should write file1.txt");
+        fs::write(tmp.path().join("file2.txt"), "content 2").expect("should write file2.txt");
+        fs::write(tmp.path().join("file3.txt"), "content 3").expect("should write file3.txt");
 
         // Stage all
-        service.stage_all().unwrap();
+        service.stage_all().expect("should stage all files");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after staging all");
         assert_eq!(status.staged.len(), 3);
         assert!(status.untracked.is_empty());
+    }
+
+    #[test]
+    fn test_stage_deleted_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Delete the README.md that was created in initial commit
+        let file_path = tmp.path().join("README.md");
+        fs::remove_file(&file_path).expect("should delete README.md");
+
+        // Verify the file shows as unstaged deletion
+        let status = service.status().expect("should get status");
+        assert_eq!(status.unstaged.len(), 1);
+        assert_eq!(status.unstaged[0].path, "README.md");
+
+        // Stage the deleted file
+        service.stage_file("README.md").expect("should stage deleted file");
+
+        // Verify it's now staged as deletion
+        let status = service.status().expect("should get status after staging");
+        assert_eq!(status.staged.len(), 1);
+        assert_eq!(status.staged[0].path, "README.md");
+        assert!(status.unstaged.is_empty());
+    }
+
+    #[test]
+    fn test_stage_multiple_deleted_files() {
+        let (tmp, service) = setup_test_repo();
+
+        // Create initial commit with multiple files
+        fs::write(tmp.path().join("file1.txt"), "content 1").expect("should write file1");
+        fs::write(tmp.path().join("file2.txt"), "content 2").expect("should write file2");
+        service.stage_all().expect("should stage all");
+        service
+            .create_commit("Add files", Some("Test User"), Some("test@example.com"))
+            .expect("should create commit");
+
+        // Delete both files
+        fs::remove_file(tmp.path().join("file1.txt")).expect("should delete file1");
+        fs::remove_file(tmp.path().join("file2.txt")).expect("should delete file2");
+
+        // Stage deleted files
+        service
+            .stage_files(&["file1.txt".to_string(), "file2.txt".to_string()])
+            .expect("should stage deleted files");
+
+        // Verify both are staged
+        let status = service.status().expect("should get status");
+        assert_eq!(status.staged.len(), 2);
+        assert!(status.unstaged.is_empty());
     }
 
     #[test]
@@ -1884,16 +1967,16 @@ mod tests {
 
         // Create and stage a new file
         let file_path = tmp.path().join("new_file.txt");
-        fs::write(&file_path, "new content").unwrap();
-        service.stage_file("new_file.txt").unwrap();
+        fs::write(&file_path, "new content").expect("should write new_file.txt");
+        service.stage_file("new_file.txt").expect("should stage new_file.txt");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after staging");
         assert_eq!(status.staged.len(), 1);
 
         // Unstage the file
-        service.unstage_file("new_file.txt").unwrap();
+        service.unstage_file("new_file.txt").expect("should unstage new_file.txt");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after unstaging");
         assert!(status.staged.is_empty());
         assert_eq!(status.untracked.len(), 1);
     }
@@ -1905,19 +1988,19 @@ mod tests {
 
         // Modify the README
         let file_path = tmp.path().join("README.md");
-        fs::write(&file_path, "Modified content").unwrap();
+        fs::write(&file_path, "Modified content").expect("should write modified content");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after modification");
         assert_eq!(status.unstaged.len(), 1);
 
         // Discard changes
-        service.discard_file("README.md").unwrap();
+        service.discard_file("README.md").expect("should discard changes to README.md");
 
-        let status = service.status().unwrap();
+        let status = service.status().expect("should get status after discard");
         assert!(status.unstaged.is_empty());
 
         // Verify content is restored
-        let content = fs::read_to_string(&file_path).unwrap();
+        let content = fs::read_to_string(&file_path).expect("should read restored file");
         assert_eq!(content, "# Test Repository");
     }
 
@@ -1927,18 +2010,18 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create and stage a new file
-        fs::write(tmp.path().join("new_file.txt"), "new content").unwrap();
-        service.stage_file("new_file.txt").unwrap();
+        fs::write(tmp.path().join("new_file.txt"), "new content").expect("should write new_file.txt");
+        service.stage_file("new_file.txt").expect("should stage new_file.txt");
 
         // Create commit
         let oid = service
             .create_commit("Add new file", Some("Test User"), Some("test@example.com"))
-            .unwrap();
+            .expect("should create commit");
 
         assert!(!oid.is_empty());
 
         // Verify commit is in history
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         assert_eq!(commits.len(), 2);
         assert_eq!(commits[0].summary, "Add new file");
     }
@@ -1951,11 +2034,11 @@ mod tests {
         // Amend the commit with a new message
         let oid = service
             .amend_commit(Some("Amended initial commit"))
-            .unwrap();
+            .expect("should amend commit");
         assert!(!oid.is_empty());
 
         // Verify commit message was updated
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].summary, "Amended initial commit");
     }
@@ -1967,13 +2050,13 @@ mod tests {
 
         // Modify the README
         let file_path = tmp.path().join("README.md");
-        fs::write(&file_path, "# Modified Test Repository").unwrap();
+        fs::write(&file_path, "# Modified Test Repository").expect("should write modified README");
 
         let diffs = service
             .diff_workdir(&crate::models::DiffOptions::default())
-            .unwrap();
+            .expect("should get workdir diff");
         assert_eq!(diffs.len(), 1);
-        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
+        assert_eq!(diffs[0].new_path.as_ref().expect("should have new_path"), "README.md");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Modified);
         assert!(diffs[0].additions > 0 || diffs[0].deletions > 0);
     }
@@ -1984,14 +2067,14 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create and stage a new file
-        fs::write(tmp.path().join("new_file.txt"), "new content").unwrap();
-        service.stage_file("new_file.txt").unwrap();
+        fs::write(tmp.path().join("new_file.txt"), "new content").expect("should write new_file.txt");
+        service.stage_file("new_file.txt").expect("should stage new_file.txt");
 
         let diffs = service
             .diff_staged(&crate::models::DiffOptions::default())
-            .unwrap();
+            .expect("should get staged diff");
         assert_eq!(diffs.len(), 1);
-        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "new_file.txt");
+        assert_eq!(diffs[0].new_path.as_ref().expect("should have new_path"), "new_file.txt");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
     }
 
@@ -2001,14 +2084,14 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Get the commit OID
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         let oid = &commits[0].oid;
 
         let diffs = service
             .diff_commit(oid, &crate::models::DiffOptions::default())
-            .unwrap();
+            .expect("should get commit diff");
         assert_eq!(diffs.len(), 1);
-        assert_eq!(diffs[0].new_path.as_ref().unwrap(), "README.md");
+        assert_eq!(diffs[0].new_path.as_ref().expect("should have new_path"), "README.md");
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
     }
 
@@ -2018,15 +2101,15 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Modify the README
-        fs::write(tmp.path().join("README.md"), "# Modified Content").unwrap();
+        fs::write(tmp.path().join("README.md"), "# Modified Content").expect("should write modified content");
 
         // Get diff for specific file
         let diff = service
             .diff_file("README.md", false, &crate::models::DiffOptions::default())
-            .unwrap();
+            .expect("should get file diff");
         assert!(diff.is_some());
-        let diff = diff.unwrap();
-        assert_eq!(diff.new_path.as_ref().unwrap(), "README.md");
+        let diff = diff.expect("should have diff for modified file");
+        assert_eq!(diff.new_path.as_ref().expect("should have new_path"), "README.md");
     }
 
     // ==================== Phase 3 Tests: Branch Operations ====================
@@ -2037,7 +2120,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let options = crate::models::CreateBranchOptions::default();
-        let branch = service.create_branch("feature/test", &options).unwrap();
+        let branch = service.create_branch("feature/test", &options).expect("should create branch");
 
         assert_eq!(branch.name, "feature/test");
         assert_eq!(branch.branch_type, BranchType::Local);
@@ -2050,7 +2133,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Get the initial commit OID
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         let initial_oid = &commits[0].oid;
 
         let options = crate::models::CreateBranchOptions {
@@ -2060,7 +2143,7 @@ mod tests {
         };
         let branch = service
             .create_branch("branch-from-commit", &options)
-            .unwrap();
+            .expect("should create branch from specific commit");
 
         assert_eq!(branch.name, "branch-from-commit");
         assert_eq!(branch.target_oid, *initial_oid);
@@ -2075,13 +2158,13 @@ mod tests {
         let options = crate::models::CreateBranchOptions::default();
         service
             .create_branch("feature/checkout-test", &options)
-            .unwrap();
+            .expect("should create branch");
 
         // Checkout the branch
         let checkout_opts = crate::models::CheckoutOptions::default();
         service
             .checkout_branch("feature/checkout-test", &checkout_opts)
-            .unwrap();
+            .expect("should checkout branch");
 
         // Verify we're on the new branch
         let current = service.get_current_branch_name();
@@ -2101,7 +2184,7 @@ mod tests {
         };
         service
             .checkout_branch("feature/new-branch", &checkout_opts)
-            .unwrap();
+            .expect("should create and checkout branch in one operation");
 
         // Verify we're on the new branch
         let current = service.get_current_branch_name();
@@ -2115,17 +2198,17 @@ mod tests {
 
         // Create a branch
         let options = crate::models::CreateBranchOptions::default();
-        service.create_branch("old-name", &options).unwrap();
+        service.create_branch("old-name", &options).expect("should create branch");
 
         // Rename it
         let renamed = service
             .rename_branch("old-name", "new-name", false)
-            .unwrap();
+            .expect("should rename branch");
 
         assert_eq!(renamed.name, "new-name");
 
         // Verify old name doesn't exist
-        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        let branches = service.list_branches(BranchFilter::local_only()).expect("should list branches");
         assert!(!branches.iter().any(|b| b.name == "old-name"));
         assert!(branches.iter().any(|b| b.name == "new-name"));
     }
@@ -2137,17 +2220,17 @@ mod tests {
 
         // Create a branch
         let options = crate::models::CreateBranchOptions::default();
-        service.create_branch("to-delete", &options).unwrap();
+        service.create_branch("to-delete", &options).expect("should create branch");
 
         // Verify it exists
-        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        let branches = service.list_branches(BranchFilter::local_only()).expect("should list branches");
         assert!(branches.iter().any(|b| b.name == "to-delete"));
 
         // Delete it (force=true to avoid merge check)
-        service.delete_branch("to-delete", true).unwrap();
+        service.delete_branch("to-delete", true).expect("should delete branch");
 
         // Verify it's gone
-        let branches = service.list_branches(BranchFilter::local_only()).unwrap();
+        let branches = service.list_branches(BranchFilter::local_only()).expect("should list branches after delete");
         assert!(!branches.iter().any(|b| b.name == "to-delete"));
     }
 
@@ -2158,10 +2241,10 @@ mod tests {
 
         // Create a branch
         let options = crate::models::CreateBranchOptions::default();
-        service.create_branch("test-get", &options).unwrap();
+        service.create_branch("test-get", &options).expect("should create branch");
 
         // Get it by name
-        let branch = service.get_branch("test-get", BranchType::Local).unwrap();
+        let branch = service.get_branch("test-get", BranchType::Local).expect("should get branch by name");
         assert_eq!(branch.name, "test-get");
         assert_eq!(branch.branch_type, BranchType::Local);
     }
@@ -2174,7 +2257,7 @@ mod tests {
 
         let remote = service
             .add_remote("origin", "https://github.com/user/repo.git")
-            .unwrap();
+            .expect("should add remote");
 
         assert_eq!(remote.name, "origin");
         assert_eq!(
@@ -2190,12 +2273,12 @@ mod tests {
         // Add some remotes
         service
             .add_remote("origin", "https://github.com/user/repo.git")
-            .unwrap();
+            .expect("should add origin remote");
         service
             .add_remote("upstream", "https://github.com/other/repo.git")
-            .unwrap();
+            .expect("should add upstream remote");
 
-        let remotes = service.list_remotes().unwrap();
+        let remotes = service.list_remotes().expect("should list remotes");
         assert_eq!(remotes.len(), 2);
         assert!(remotes.iter().any(|r| r.name == "origin"));
         assert!(remotes.iter().any(|r| r.name == "upstream"));
@@ -2207,9 +2290,9 @@ mod tests {
 
         service
             .add_remote("origin", "https://github.com/user/repo.git")
-            .unwrap();
+            .expect("should add remote");
 
-        let remote = service.get_remote("origin").unwrap();
+        let remote = service.get_remote("origin").expect("should get remote by name");
         assert_eq!(remote.name, "origin");
         assert_eq!(
             remote.url.as_deref(),
@@ -2223,17 +2306,17 @@ mod tests {
 
         service
             .add_remote("origin", "https://github.com/user/repo.git")
-            .unwrap();
+            .expect("should add remote");
 
         // Verify it exists
-        let remotes = service.list_remotes().unwrap();
+        let remotes = service.list_remotes().expect("should list remotes");
         assert_eq!(remotes.len(), 1);
 
         // Remove it
-        service.remove_remote("origin").unwrap();
+        service.remove_remote("origin").expect("should remove remote");
 
         // Verify it's gone
-        let remotes = service.list_remotes().unwrap();
+        let remotes = service.list_remotes().expect("should list remotes after remove");
         assert!(remotes.is_empty());
     }
 
@@ -2243,13 +2326,13 @@ mod tests {
 
         service
             .add_remote("old-remote", "https://github.com/user/repo.git")
-            .unwrap();
+            .expect("should add remote");
 
         // Rename it
-        service.rename_remote("old-remote", "new-remote").unwrap();
+        service.rename_remote("old-remote", "new-remote").expect("should rename remote");
 
         // Verify the rename
-        let remotes = service.list_remotes().unwrap();
+        let remotes = service.list_remotes().expect("should list remotes");
         assert!(!remotes.iter().any(|r| r.name == "old-remote"));
         assert!(remotes.iter().any(|r| r.name == "new-remote"));
     }
@@ -2260,14 +2343,14 @@ mod tests {
 
         service
             .add_remote("origin", "https://github.com/user/old-repo.git")
-            .unwrap();
+            .expect("should add remote");
 
         // Change the URL
         service
             .set_remote_url("origin", "https://github.com/user/new-repo.git")
-            .unwrap();
+            .expect("should set remote URL");
 
-        let remote = service.get_remote("origin").unwrap();
+        let remote = service.get_remote("origin").expect("should get remote");
         assert_eq!(
             remote.url.as_deref(),
             Some("https://github.com/user/new-repo.git")
@@ -2282,12 +2365,12 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Add another commit
-        fs::write(tmp.path().join("file2.txt"), "content").unwrap();
-        service.stage_file("file2.txt").unwrap();
-        service.create_commit("Second commit", None, None).unwrap();
+        fs::write(tmp.path().join("file2.txt"), "content").expect("should write file2.txt");
+        service.stage_file("file2.txt").expect("should stage file2.txt");
+        service.create_commit("Second commit", None, None).expect("should create second commit");
 
         let options = crate::models::GraphOptions::default();
-        let result = service.build_graph(options).unwrap();
+        let result = service.build_graph(options).expect("should build graph");
 
         assert_eq!(result.commits.len(), 2);
         assert_eq!(result.total_count, 2);
@@ -2301,20 +2384,20 @@ mod tests {
 
         // Create a branch and add a commit
         let branch_opts = crate::models::CreateBranchOptions::default();
-        service.create_branch("feature", &branch_opts).unwrap();
+        service.create_branch("feature", &branch_opts).expect("should create feature branch");
 
         let checkout_opts = crate::models::CheckoutOptions::default();
-        service.checkout_branch("feature", &checkout_opts).unwrap();
+        service.checkout_branch("feature", &checkout_opts).expect("should checkout feature branch");
 
-        fs::write(tmp.path().join("feature.txt"), "feature content").unwrap();
-        service.stage_file("feature.txt").unwrap();
-        service.create_commit("Feature commit", None, None).unwrap();
+        fs::write(tmp.path().join("feature.txt"), "feature content").expect("should write feature.txt");
+        service.stage_file("feature.txt").expect("should stage feature.txt");
+        service.create_commit("Feature commit", None, None).expect("should create feature commit");
 
         let options = crate::models::GraphOptions {
             all_branches: true,
             ..Default::default()
         };
-        let result = service.build_graph(options).unwrap();
+        let result = service.build_graph(options).expect("should build graph with all branches");
 
         assert_eq!(result.commits.len(), 2);
         // Both commits should have refs
@@ -2332,11 +2415,11 @@ mod tests {
 
         // Add more commits
         for i in 2..=5 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
-            service.stage_file(&format!("file{}.txt", i)).unwrap();
+            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").expect("should write file");
+            service.stage_file(&format!("file{}.txt", i)).expect("should stage file");
             service
                 .create_commit(&format!("Commit {}", i), None, None)
-                .unwrap();
+                .expect("should create commit");
         }
 
         // Get first page
@@ -2344,7 +2427,7 @@ mod tests {
             limit: Some(2),
             ..Default::default()
         };
-        let result = service.build_graph(options).unwrap();
+        let result = service.build_graph(options).expect("should build first page of graph");
 
         assert_eq!(result.commits.len(), 2);
         assert_eq!(result.total_count, 5);
@@ -2356,7 +2439,7 @@ mod tests {
             skip: Some(2),
             ..Default::default()
         };
-        let result = service.build_graph(options).unwrap();
+        let result = service.build_graph(options).expect("should build second page of graph");
 
         assert_eq!(result.commits.len(), 2);
     }
@@ -2366,17 +2449,17 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        fs::write(tmp.path().join("feature.txt"), "content").unwrap();
-        service.stage_file("feature.txt").unwrap();
+        fs::write(tmp.path().join("feature.txt"), "content").expect("should write feature.txt");
+        service.stage_file("feature.txt").expect("should stage feature.txt");
         service
             .create_commit("Add amazing feature", None, None)
-            .unwrap();
+            .expect("should create feature commit");
 
-        fs::write(tmp.path().join("bugfix.txt"), "content").unwrap();
-        service.stage_file("bugfix.txt").unwrap();
+        fs::write(tmp.path().join("bugfix.txt"), "content").expect("should write bugfix.txt");
+        service.stage_file("bugfix.txt").expect("should stage bugfix.txt");
         service
             .create_commit("Fix critical bug", None, None)
-            .unwrap();
+            .expect("should create bugfix commit");
 
         let options = crate::models::SearchOptions {
             query: "amazing".to_string(),
@@ -2385,7 +2468,7 @@ mod tests {
             search_hash: false,
             limit: Some(10),
         };
-        let result = service.search_commits(options).unwrap();
+        let result = service.search_commits(options).expect("should search commits by message");
 
         assert_eq!(result.total_matches, 1);
         assert!(result.commits[0].summary.contains("amazing"));
@@ -2396,7 +2479,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let commits = service.log(LogOptions::default()).unwrap();
+        let commits = service.log(LogOptions::default()).expect("should get commit log");
         let first_commit_oid = &commits[0].oid;
         let short_oid = &first_commit_oid[..7];
 
@@ -2407,7 +2490,7 @@ mod tests {
             search_hash: true,
             limit: Some(10),
         };
-        let result = service.search_commits(options).unwrap();
+        let result = service.search_commits(options).expect("should search commits by hash");
 
         assert_eq!(result.total_matches, 1);
         assert!(result.commits[0].oid.starts_with(short_oid));
@@ -2418,7 +2501,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let result = service.blame_file("README.md", None).unwrap();
+        let result = service.blame_file("README.md", None).expect("should blame file");
 
         assert_eq!(result.path, "README.md");
         assert!(!result.lines.is_empty());
@@ -2432,9 +2515,9 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Modify the file and create another commit
-        fs::write(tmp.path().join("README.md"), "# Updated Title\nNew line").unwrap();
-        service.stage_file("README.md").unwrap();
-        service.create_commit("Update README", None, None).unwrap();
+        fs::write(tmp.path().join("README.md"), "# Updated Title\nNew line").expect("should write updated README");
+        service.stage_file("README.md").expect("should stage README.md");
+        service.create_commit("Update README", None, None).expect("should create update commit");
 
         // Get the first commit OID
         let commits = service
@@ -2442,13 +2525,13 @@ mod tests {
                 limit: Some(10),
                 ..Default::default()
             })
-            .unwrap();
+            .expect("should get commit log");
         let first_commit_oid = &commits[1].oid; // Second in list (older)
 
         // Blame at the first commit
         let result = service
             .blame_file("README.md", Some(first_commit_oid))
-            .unwrap();
+            .expect("should blame file at specific commit");
 
         assert_eq!(result.lines.len(), 1);
         assert!(result.lines[0].content.contains("Test Repository"));
@@ -2461,14 +2544,14 @@ mod tests {
 
         // Add more commits
         for i in 2..=3 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").unwrap();
-            service.stage_file(&format!("file{}.txt", i)).unwrap();
+            fs::write(tmp.path().join(format!("file{}.txt", i)), "content").expect("should write file");
+            service.stage_file(&format!("file{}.txt", i)).expect("should stage file");
             service
                 .create_commit(&format!("Commit {}", i), None, None)
-                .unwrap();
+                .expect("should create commit");
         }
 
-        let count = service.get_commit_count(None).unwrap();
+        let count = service.get_commit_count(None).expect("should get commit count");
         assert_eq!(count, 3);
     }
 
@@ -2479,7 +2562,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let tags = service.tag_list().unwrap();
+        let tags = service.tag_list().expect("should list tags");
         assert!(tags.is_empty());
     }
 
@@ -2490,10 +2573,10 @@ mod tests {
 
         let result = service
             .tag_create("v1.0.0", &CreateTagOptions::default())
-            .unwrap();
+            .expect("should create lightweight tag");
         assert!(result.success);
 
-        let tags = service.tag_list().unwrap();
+        let tags = service.tag_list().expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v1.0.0");
         assert!(!tags[0].is_annotated);
@@ -2513,11 +2596,11 @@ mod tests {
                     ..Default::default()
                 },
             )
-            .unwrap();
+            .expect("should create annotated tag");
 
         assert!(result.success);
 
-        let tags = service.tag_list().unwrap();
+        let tags = service.tag_list().expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v2.0.0");
         assert!(tags[0].is_annotated);
@@ -2531,13 +2614,13 @@ mod tests {
         // Create a tag
         service
             .tag_create("v1.0.0", &CreateTagOptions::default())
-            .unwrap();
-        assert_eq!(service.tag_list().unwrap().len(), 1);
+            .expect("should create tag");
+        assert_eq!(service.tag_list().expect("should list tags").len(), 1);
 
         // Delete the tag
-        let result = service.tag_delete("v1.0.0").unwrap();
+        let result = service.tag_delete("v1.0.0").expect("should delete tag");
         assert!(result.success);
 
-        assert!(service.tag_list().unwrap().is_empty());
+        assert!(service.tag_list().expect("should list tags after delete").is_empty());
     }
 }

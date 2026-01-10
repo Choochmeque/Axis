@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { grepApi } from '../../services/api';
 import type { GrepMatch, GrepResult } from '../../types';
-import './ContentSearch.css';
 
 interface ContentSearchProps {
   onFileSelect?: (path: string, lineNumber?: number) => void;
@@ -90,28 +89,28 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
   }, {} as Record<string, GrepMatch[]>);
 
   return (
-    <div className="content-search">
-      <div className="content-search-header">
-        <div className="content-search-title">
+    <div className="flex flex-col h-full bg-(--bg-secondary)">
+      <div className="flex items-center py-2 px-3 border-b border-(--border-color)">
+        <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <Search size={16} />
           <span>Search in Files</span>
         </div>
       </div>
 
-      <div className="content-search-input-container">
-        <div className="content-search-input-wrapper">
-          <Search size={14} className="content-search-icon" />
+      <div className="flex gap-2 py-2 px-3 border-b border-(--border-color)">
+        <div className="flex-1 relative flex items-center">
+          <Search size={14} className="absolute left-2 text-(--text-muted)" />
           <input
             type="text"
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pattern..."
-            className="content-search-input"
+            className="w-full py-1.5 px-7 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)"
           />
           {pattern && (
             <button
-              className="content-search-clear"
+              className="absolute right-1 p-0.5 bg-transparent border-none text-(--text-muted) cursor-pointer hover:text-(--text-primary)"
               onClick={() => {
                 setPattern('');
                 setResults(null);
@@ -122,7 +121,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
           )}
         </div>
         <button
-          className="btn btn-primary btn-small"
+          className="py-1 px-3 text-xs font-medium bg-(--accent-color) text-white border-none rounded cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleSearch}
           disabled={isLoading || !pattern.trim()}
         >
@@ -130,37 +129,40 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
         </button>
       </div>
 
-      <div className="content-search-options">
+      <div className="py-1 px-3 border-b border-(--border-color)">
         <button
-          className="content-search-options-toggle"
+          className="flex items-center gap-1 p-1 bg-transparent border-none text-(--text-secondary) text-xs cursor-pointer hover:text-(--text-primary)"
           onClick={() => setShowOptions(!showOptions)}
         >
           {showOptions ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>Options</span>
         </button>
         {showOptions && (
-          <div className="content-search-options-list">
-            <label className="checkbox-label">
+          <div className="flex gap-4 py-2 px-1">
+            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
               <input
                 type="checkbox"
                 checked={ignoreCase}
                 onChange={(e) => setIgnoreCase(e.target.checked)}
+                className="w-3.5 h-3.5 cursor-pointer"
               />
               <span>Ignore case</span>
             </label>
-            <label className="checkbox-label">
+            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
               <input
                 type="checkbox"
                 checked={wordRegexp}
                 onChange={(e) => setWordRegexp(e.target.checked)}
+                className="w-3.5 h-3.5 cursor-pointer"
               />
               <span>Whole word</span>
             </label>
-            <label className="checkbox-label">
+            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
               <input
                 type="checkbox"
                 checked={useRegex}
                 onChange={(e) => setUseRegex(e.target.checked)}
+                className="w-3.5 h-3.5 cursor-pointer"
               />
               <span>Use regex</span>
             </label>
@@ -169,24 +171,24 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       </div>
 
       {error && (
-        <div className="content-search-error">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-[13px]">
           <AlertCircle size={14} />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="content-search-results">
+      <div className="flex-1 overflow-y-auto">
         {results && (
-          <div className="content-search-summary">
+          <div className="py-2 px-3 text-xs text-(--text-secondary) border-b border-(--border-color)">
             {results.total_matches} {results.total_matches === 1 ? 'result' : 'results'} in{' '}
             {Object.keys(groupedResults || {}).length} files
           </div>
         )}
 
         {groupedResults && Object.entries(groupedResults).map(([path, matches]) => (
-          <div key={path} className="content-search-file">
+          <div key={path} className="border-b border-(--border-color)">
             <div
-              className="content-search-file-header"
+              className="flex items-center gap-1.5 py-1.5 px-3 cursor-pointer bg-(--bg-tertiary) hover:bg-(--bg-hover)"
               onClick={() => toggleFile(path)}
             >
               {expandedFiles.has(path) ? (
@@ -195,23 +197,23 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                 <ChevronRight size={14} />
               )}
               <FileText size={14} />
-              <span className="content-search-file-path">{path}</span>
-              <span className="content-search-file-count">{matches.length}</span>
+              <span className="flex-1 text-[13px] text-(--text-primary) font-mono">{path}</span>
+              <span className="bg-(--bg-secondary) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)">{matches.length}</span>
             </div>
             {expandedFiles.has(path) && (
-              <div className="content-search-matches">
+              <div className="bg-(--bg-primary)">
                 {matches.map((match, index) => (
                   <div
                     key={index}
-                    className="content-search-match"
+                    className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
                     onClick={() => handleMatchClick(match)}
                   >
                     {match.line_number && (
-                      <span className="content-search-line-number">
+                      <span className="w-10 shrink-0 text-(--text-muted) text-right pr-2">
                         {match.line_number}
                       </span>
                     )}
-                    <span className="content-search-content">
+                    <span className="flex-1 text-(--text-primary) whitespace-pre overflow-hidden text-ellipsis">
                       {match.content}
                     </span>
                   </div>
@@ -222,7 +224,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
         ))}
 
         {results && results.total_matches === 0 && (
-          <div className="content-search-no-results">
+          <div className="py-6 text-center text-(--text-muted)">
             No results found for "{pattern}"
           </div>
         )}

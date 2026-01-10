@@ -1,7 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-bg-primary: #1e1e1e;
+  --color-bg-secondary: #252526;
+  --color-bg-tertiary: #2d2d30;
+  --color-bg-sidebar: #1e1e1e;
+  --color-bg-toolbar: #2d2d30;
+  --color-bg-statusbar: #007acc;
+  --color-bg-header: #2d2d30;
+  --color-bg-hover: #2a2d2e;
+  --color-bg-active: #37373d;
+  --color-bg-card: #2d2d30;
+  --color-bg-code: #1e1e1e;
+  --color-bg-badge: #4d4d4d;
+  --color-bg-merge: rgba(86, 156, 214, 0.1);
+
+  --color-text-primary: #cccccc;
+  --color-text-secondary: #858585;
+  --color-text-tertiary: #5a5a5a;
+  --color-text-muted: #6e6e6e;
+
+  --color-border: #3c3c3c;
+
+  --color-accent: #0078d4;
+  --color-accent-hover: #1084d8;
+
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-error: #f44336;
+
+  --color-diff-add-bg: rgba(35, 134, 54, 0.2);
+  --color-diff-add-line: #2ea043;
+  --color-diff-delete-bg: rgba(248, 81, 73, 0.2);
+  --color-diff-delete-line: #f85149;
+  --color-diff-hunk-bg: rgba(56, 139, 253, 0.1);
+
+  /* Fonts */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+@layer base {
 /* Dark theme (default) */
 :root,
 [data-theme="dark"] {
-  /* Backgrounds */
   --bg-primary: #1e1e1e;
   --bg-secondary: #252526;
   --bg-tertiary: #2d2d30;
@@ -15,37 +58,32 @@
   --bg-code: #1e1e1e;
   --bg-badge: #4d4d4d;
   --bg-merge: rgba(86, 156, 214, 0.1);
+  --bg-input: #3c3c3c;
 
-  /* Text */
   --text-primary: #cccccc;
   --text-secondary: #858585;
   --text-tertiary: #5a5a5a;
   --text-muted: #6e6e6e;
 
-  /* Borders */
   --border-color: #3c3c3c;
 
-  /* Accent */
   --accent-color: #0078d4;
   --accent-hover: #1084d8;
+  --accent-color-hover: #1084d8;
 
-  /* Status colors */
   --color-success: #4caf50;
   --color-warning: #ff9800;
   --color-error: #f44336;
 
-  /* Diff colors */
   --diff-add-bg: rgba(35, 134, 54, 0.2);
   --diff-add-line: #2ea043;
   --diff-delete-bg: rgba(248, 81, 73, 0.2);
   --diff-delete-line: #f85149;
   --diff-hunk-bg: rgba(56, 139, 253, 0.1);
 
-  /* Error */
   --error-bg: rgba(244, 67, 54, 0.1);
   --error-color: #f44336;
 
-  /* Success */
   --success-bg: rgba(76, 175, 80, 0.1);
   --success-color: #4caf50;
 
@@ -54,7 +92,6 @@
 
 /* Light theme */
 [data-theme="light"] {
-  /* Backgrounds */
   --bg-primary: #ffffff;
   --bg-secondary: #f5f5f5;
   --bg-tertiary: #e8e8e8;
@@ -68,37 +105,32 @@
   --bg-code: #f5f5f5;
   --bg-badge: #e0e0e0;
   --bg-merge: rgba(0, 120, 212, 0.1);
+  --bg-input: #ffffff;
 
-  /* Text */
   --text-primary: #1f1f1f;
   --text-secondary: #616161;
   --text-tertiary: #9e9e9e;
   --text-muted: #757575;
 
-  /* Borders */
   --border-color: #d4d4d4;
 
-  /* Accent */
   --accent-color: #0078d4;
   --accent-hover: #005a9e;
+  --accent-color-hover: #005a9e;
 
-  /* Status colors */
   --color-success: #388e3c;
   --color-warning: #f57c00;
   --color-error: #d32f2f;
 
-  /* Diff colors */
   --diff-add-bg: rgba(35, 134, 54, 0.15);
   --diff-add-line: #22863a;
   --diff-delete-bg: rgba(248, 81, 73, 0.15);
   --diff-delete-line: #cb2431;
   --diff-hunk-bg: rgba(0, 120, 212, 0.1);
 
-  /* Error */
   --error-bg: rgba(211, 47, 47, 0.1);
   --error-color: #d32f2f;
 
-  /* Success */
   --success-bg: rgba(56, 142, 60, 0.1);
   --success-color: #388e3c;
 
@@ -106,12 +138,11 @@
 }
 
 :root {
-  /* Font */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
   font-weight: 400;
 }
 
@@ -164,10 +195,35 @@ body {
   outline-offset: 2px;
 }
 
-/* Button reset */
-button {
+/* Form element resets */
+button,
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+select {
+  appearance: none;
 }
 
 /* Code */
@@ -175,204 +231,20 @@ code {
   font-family: var(--font-mono);
 }
 
-/* Common button styles */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s, opacity 0.15s;
+/* Resize handle for panels */
+.resize-handle {
+  width: 4px;
+  background: transparent;
+  transition: background-color 0.15s;
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
+.resize-handle:hover,
+.resize-handle[data-resize-handle-active] {
   background: var(--accent-color);
-  color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+/* Radix UI Dialog/Dropdown overrides */
+[data-radix-popper-content-wrapper] {
+  z-index: 1000 !important;
 }
-
-.btn-secondary {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--bg-hover);
-}
-
-.btn-danger {
-  background: var(--color-error);
-  color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.btn-icon:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.btn-icon-small {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.btn-icon-small:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-/* Dialog styles */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dialog-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.dialog-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.dialog-close:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.dialog-content {
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border-color);
-}
-
-/* Form styles */
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-}
-
-.form-hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-/* Spinning animation */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
+} /* end @layer base */

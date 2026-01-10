@@ -3,7 +3,6 @@ import { StagingView } from '../staging';
 import { CommitForm } from '../staging/CommitForm';
 import { DiffView, type DiffMode } from '../diff';
 import { useStagingStore } from '../../store/stagingStore';
-import './WorkspaceView.css';
 
 export function WorkspaceView() {
   const {
@@ -18,8 +17,8 @@ export function WorkspaceView() {
   const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
 
   return (
-    <div className="workspace-view">
-      <div className="workspace-panels">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <PanelGroup direction="horizontal" autoSaveId="workspace-layout">
           <Panel defaultSize={35} minSize={25} maxSize={50}>
             <StagingView />

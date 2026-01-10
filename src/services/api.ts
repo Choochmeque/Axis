@@ -42,6 +42,12 @@ import type {
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
   SubmoduleResult,
+  GitFlowConfig,
+  GitFlowInitOptions,
+  GitFlowFinishOptions,
+  GitFlowResult,
+  GrepOptions,
+  GrepResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -418,4 +424,65 @@ export const submoduleApi = {
 
   summary: () =>
     invoke<string>('submodule_summary'),
+};
+
+export const gitflowApi = {
+  isInitialized: () =>
+    invoke<boolean>('gitflow_is_initialized'),
+
+  getConfig: () =>
+    invoke<GitFlowConfig | null>('gitflow_config'),
+
+  init: (options?: GitFlowInitOptions) =>
+    invoke<GitFlowResult>('gitflow_init', { options: options ?? {} }),
+
+  feature: {
+    start: (name: string, base?: string) =>
+      invoke<GitFlowResult>('gitflow_feature_start', { name, base }),
+
+    finish: (name: string, options?: GitFlowFinishOptions) =>
+      invoke<GitFlowResult>('gitflow_feature_finish', { name, options: options ?? {} }),
+
+    publish: (name: string) =>
+      invoke<GitFlowResult>('gitflow_feature_publish', { name }),
+
+    list: () =>
+      invoke<string[]>('gitflow_feature_list'),
+  },
+
+  release: {
+    start: (name: string, base?: string) =>
+      invoke<GitFlowResult>('gitflow_release_start', { name, base }),
+
+    finish: (name: string, options?: GitFlowFinishOptions) =>
+      invoke<GitFlowResult>('gitflow_release_finish', { name, options: options ?? {} }),
+
+    publish: (name: string) =>
+      invoke<GitFlowResult>('gitflow_release_publish', { name }),
+
+    list: () =>
+      invoke<string[]>('gitflow_release_list'),
+  },
+
+  hotfix: {
+    start: (name: string, base?: string) =>
+      invoke<GitFlowResult>('gitflow_hotfix_start', { name, base }),
+
+    finish: (name: string, options?: GitFlowFinishOptions) =>
+      invoke<GitFlowResult>('gitflow_hotfix_finish', { name, options: options ?? {} }),
+
+    publish: (name: string) =>
+      invoke<GitFlowResult>('gitflow_hotfix_publish', { name }),
+
+    list: () =>
+      invoke<string[]>('gitflow_hotfix_list'),
+  },
+};
+
+export const grepApi = {
+  search: (options: GrepOptions) =>
+    invoke<GrepResult>('grep_content', { options }),
+
+  searchCommit: (commitOid: string, options: GrepOptions) =>
+    invoke<GrepResult>('grep_commit', { commitOid, options }),
 };

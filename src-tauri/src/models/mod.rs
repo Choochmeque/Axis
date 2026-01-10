@@ -9,6 +9,7 @@ mod merge;
 mod stash;
 mod tag;
 mod submodule;
+mod gitflow;
 
 pub use repository::*;
 pub use commit::*;
@@ -21,3 +22,4 @@ pub use merge::*;
 pub use stash::*;
 pub use tag::*;
 pub use submodule::*;
+pub use gitflow::*;

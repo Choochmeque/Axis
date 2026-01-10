@@ -8,6 +8,8 @@ mod merge;
 mod stash;
 mod tags;
 mod submodules;
+mod gitflow;
+mod search;
 
 pub use repository::*;
 pub use staging::*;
@@ -19,3 +21,5 @@ pub use merge::*;
 pub use stash::*;
 pub use tags::*;
 pub use submodules::*;
+pub use gitflow::*;
+pub use search::*;

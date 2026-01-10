@@ -141,6 +141,25 @@ pub fn run() {
             commands::submodule_deinit,
             commands::submodule_remove,
             commands::submodule_summary,
+            // Git-flow commands
+            commands::gitflow_is_initialized,
+            commands::gitflow_config,
+            commands::gitflow_init,
+            commands::gitflow_feature_start,
+            commands::gitflow_feature_finish,
+            commands::gitflow_feature_publish,
+            commands::gitflow_feature_list,
+            commands::gitflow_release_start,
+            commands::gitflow_release_finish,
+            commands::gitflow_release_publish,
+            commands::gitflow_release_list,
+            commands::gitflow_hotfix_start,
+            commands::gitflow_hotfix_finish,
+            commands::gitflow_hotfix_publish,
+            commands::gitflow_hotfix_list,
+            // Search commands
+            commands::grep_content,
+            commands::grep_commit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

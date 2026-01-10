@@ -518,3 +518,69 @@ export interface SubmoduleResult {
   message: string;
   submodules: string[];
 }
+
+// Git-flow types
+export interface GitFlowConfig {
+  master: string;
+  develop: string;
+  feature_prefix: string;
+  release_prefix: string;
+  hotfix_prefix: string;
+  support_prefix: string;
+  version_tag_prefix: string;
+}
+
+export interface GitFlowInitOptions {
+  master?: string;
+  develop?: string;
+  feature_prefix?: string;
+  release_prefix?: string;
+  hotfix_prefix?: string;
+  support_prefix?: string;
+  version_tag_prefix?: string;
+  force?: boolean;
+}
+
+export interface GitFlowFinishOptions {
+  fetch?: boolean;
+  rebase?: boolean;
+  keep?: boolean;
+  force_delete?: boolean;
+  squash?: boolean;
+  no_ff?: boolean;
+  message?: string;
+  tag_message?: string;
+  push?: boolean;
+}
+
+export interface GitFlowResult {
+  success: boolean;
+  message: string;
+  branch: string | null;
+}
+
+export type GitFlowBranchType = 'feature' | 'release' | 'hotfix' | 'support';
+
+// Content search types
+export interface GrepOptions {
+  pattern: string;
+  paths?: string[];
+  ignore_case?: boolean;
+  word_regexp?: boolean;
+  extended_regexp?: boolean;
+  invert_match?: boolean;
+  show_line_numbers?: boolean;
+  max_count?: number;
+  context_lines?: number;
+}
+
+export interface GrepMatch {
+  path: string;
+  line_number: number | null;
+  content: string;
+}
+
+export interface GrepResult {
+  matches: GrepMatch[];
+  total_matches: number;
+}

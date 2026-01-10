@@ -4,6 +4,8 @@ use crate::models::{
     Tag, TagSignature, CreateTagOptions, TagResult,
     Submodule, SubmoduleStatus, AddSubmoduleOptions, UpdateSubmoduleOptions,
     SyncSubmoduleOptions, SubmoduleResult,
+    GitFlowConfig, GitFlowInitOptions, GitFlowFinishOptions, GitFlowResult,
+    GitFlowBranchType, GrepOptions, GrepMatch, GrepResult,
 };
 use chrono::{DateTime, Utc};
 use std::path::Path;
@@ -1084,6 +1086,434 @@ impl GitCliService {
             Ok(String::new())
         }
     }
+
+    // ==================== Git-flow Operations ====================
+
+    /// Check if git-flow is initialized
+    pub fn gitflow_is_initialized(&self) -> Result<bool> {
+        let result = self.execute(&["config", "--get", "gitflow.branch.master"])?;
+        Ok(result.success && !result.stdout.trim().is_empty())
+    }
+
+    /// Get current git-flow configuration
+    pub fn gitflow_config(&self) -> Result<Option<GitFlowConfig>> {
+        if !self.gitflow_is_initialized()? {
+            return Ok(None);
+        }
+
+        let master = self.execute(&["config", "--get", "gitflow.branch.master"])?;
+        let develop = self.execute(&["config", "--get", "gitflow.branch.develop"])?;
+        let feature = self.execute(&["config", "--get", "gitflow.prefix.feature"])?;
+        let release = self.execute(&["config", "--get", "gitflow.prefix.release"])?;
+        let hotfix = self.execute(&["config", "--get", "gitflow.prefix.hotfix"])?;
+        let support = self.execute(&["config", "--get", "gitflow.prefix.support"])?;
+        let versiontag = self.execute(&["config", "--get", "gitflow.prefix.versiontag"])?;
+
+        Ok(Some(GitFlowConfig {
+            master: master.stdout.trim().to_string(),
+            develop: develop.stdout.trim().to_string(),
+            feature_prefix: feature.stdout.trim().to_string(),
+            release_prefix: release.stdout.trim().to_string(),
+            hotfix_prefix: hotfix.stdout.trim().to_string(),
+            support_prefix: support.stdout.trim().to_string(),
+            version_tag_prefix: versiontag.stdout.trim().to_string(),
+        }))
+    }
+
+    /// Initialize git-flow in the repository
+    pub fn gitflow_init(&self, options: &GitFlowInitOptions) -> Result<GitFlowResult> {
+        let config = GitFlowConfig {
+            master: options.master.clone().unwrap_or_else(|| "main".to_string()),
+            develop: options.develop.clone().unwrap_or_else(|| "develop".to_string()),
+            feature_prefix: options.feature_prefix.clone().unwrap_or_else(|| "feature/".to_string()),
+            release_prefix: options.release_prefix.clone().unwrap_or_else(|| "release/".to_string()),
+            hotfix_prefix: options.hotfix_prefix.clone().unwrap_or_else(|| "hotfix/".to_string()),
+            support_prefix: options.support_prefix.clone().unwrap_or_else(|| "support/".to_string()),
+            version_tag_prefix: options.version_tag_prefix.clone().unwrap_or_default(),
+        };
+
+        // Set git-flow config values
+        self.execute_checked(&["config", "gitflow.branch.master", &config.master])?;
+        self.execute_checked(&["config", "gitflow.branch.develop", &config.develop])?;
+        self.execute_checked(&["config", "gitflow.prefix.feature", &config.feature_prefix])?;
+        self.execute_checked(&["config", "gitflow.prefix.release", &config.release_prefix])?;
+        self.execute_checked(&["config", "gitflow.prefix.hotfix", &config.hotfix_prefix])?;
+        self.execute_checked(&["config", "gitflow.prefix.support", &config.support_prefix])?;
+        self.execute_checked(&["config", "gitflow.prefix.versiontag", &config.version_tag_prefix])?;
+
+        // Check if develop branch exists, create it if not
+        let branch_exists = self.execute(&["rev-parse", "--verify", &config.develop])?;
+        if !branch_exists.success {
+            // Create develop branch from master
+            let result = self.execute(&["branch", &config.develop, &config.master])?;
+            if !result.success {
+                return Ok(GitFlowResult {
+                    success: false,
+                    message: format!("Failed to create develop branch: {}", result.stderr.trim()),
+                    branch: None,
+                });
+            }
+        }
+
+        Ok(GitFlowResult {
+            success: true,
+            message: "Git-flow initialized".to_string(),
+            branch: Some(config.develop),
+        })
+    }
+
+    /// Start a new feature/release/hotfix branch
+    pub fn gitflow_start(
+        &self,
+        branch_type: GitFlowBranchType,
+        name: &str,
+        base: Option<&str>,
+    ) -> Result<GitFlowResult> {
+        let config = self.gitflow_config()?.ok_or_else(|| {
+            AxisError::Other("Git-flow is not initialized".to_string())
+        })?;
+
+        let prefix = match branch_type {
+            GitFlowBranchType::Feature => &config.feature_prefix,
+            GitFlowBranchType::Release => &config.release_prefix,
+            GitFlowBranchType::Hotfix => &config.hotfix_prefix,
+            GitFlowBranchType::Support => &config.support_prefix,
+        };
+
+        let branch_name = format!("{}{}", prefix, name);
+        let base_branch = base.map(|s| s.to_string()).unwrap_or_else(|| {
+            match branch_type {
+                GitFlowBranchType::Feature => config.develop.clone(),
+                GitFlowBranchType::Release => config.develop.clone(),
+                GitFlowBranchType::Hotfix => config.master.clone(),
+                GitFlowBranchType::Support => config.master.clone(),
+            }
+        });
+
+        // Create and checkout the new branch
+        let result = self.execute(&["checkout", "-b", &branch_name, &base_branch])?;
+        if !result.success {
+            return Ok(GitFlowResult {
+                success: false,
+                message: format!("Failed to create branch: {}", result.stderr.trim()),
+                branch: None,
+            });
+        }
+
+        Ok(GitFlowResult {
+            success: true,
+            message: format!("Started {} '{}'", branch_type.as_str(), name),
+            branch: Some(branch_name),
+        })
+    }
+
+    /// Finish a feature/release/hotfix branch
+    pub fn gitflow_finish(
+        &self,
+        branch_type: GitFlowBranchType,
+        name: &str,
+        options: &GitFlowFinishOptions,
+    ) -> Result<GitFlowResult> {
+        let config = self.gitflow_config()?.ok_or_else(|| {
+            AxisError::Other("Git-flow is not initialized".to_string())
+        })?;
+
+        let prefix = match branch_type {
+            GitFlowBranchType::Feature => &config.feature_prefix,
+            GitFlowBranchType::Release => &config.release_prefix,
+            GitFlowBranchType::Hotfix => &config.hotfix_prefix,
+            GitFlowBranchType::Support => &config.support_prefix,
+        };
+
+        let branch_name = format!("{}{}", prefix, name);
+        let target_branch = match branch_type {
+            GitFlowBranchType::Feature => config.develop.clone(),
+            GitFlowBranchType::Release | GitFlowBranchType::Hotfix => config.master.clone(),
+            GitFlowBranchType::Support => config.master.clone(),
+        };
+
+        // Checkout target branch
+        let checkout = self.execute(&["checkout", &target_branch])?;
+        if !checkout.success {
+            return Ok(GitFlowResult {
+                success: false,
+                message: format!("Failed to checkout {}: {}", target_branch, checkout.stderr.trim()),
+                branch: None,
+            });
+        }
+
+        // Merge the branch
+        let mut merge_args = vec!["merge"];
+        if options.no_ff {
+            merge_args.push("--no-ff");
+        }
+        if options.squash {
+            merge_args.push("--squash");
+        }
+        if let Some(ref msg) = options.message {
+            merge_args.push("-m");
+            merge_args.push(msg);
+        }
+        merge_args.push(&branch_name);
+
+        let merge = self.execute(&merge_args)?;
+        if !merge.success {
+            return Ok(GitFlowResult {
+                success: false,
+                message: format!("Failed to merge: {}", merge.stderr.trim()),
+                branch: None,
+            });
+        }
+
+        // For release/hotfix, also merge to develop and create tag
+        if matches!(branch_type, GitFlowBranchType::Release | GitFlowBranchType::Hotfix) {
+            // Create tag
+            let tag_name = format!("{}{}", config.version_tag_prefix, name);
+            let mut tag_args = vec!["tag", "-a", &tag_name];
+            let tag_msg = options.tag_message.clone().unwrap_or_else(|| format!("Release {}", name));
+            tag_args.push("-m");
+            tag_args.push(&tag_msg);
+
+            let tag_result = self.execute(&tag_args)?;
+            if !tag_result.success {
+                return Ok(GitFlowResult {
+                    success: false,
+                    message: format!("Failed to create tag: {}", tag_result.stderr.trim()),
+                    branch: None,
+                });
+            }
+
+            // Merge to develop if not already on develop
+            if target_branch != config.develop {
+                self.execute(&["checkout", &config.develop])?;
+                let merge_develop = self.execute(&["merge", "--no-ff", &branch_name])?;
+                if !merge_develop.success {
+                    return Ok(GitFlowResult {
+                        success: false,
+                        message: format!("Failed to merge to develop: {}", merge_develop.stderr.trim()),
+                        branch: None,
+                    });
+                }
+            }
+        }
+
+        // Delete the branch unless keep is set
+        if !options.keep {
+            let delete_flag = if options.force_delete { "-D" } else { "-d" };
+            self.execute(&["branch", delete_flag, &branch_name])?;
+        }
+
+        Ok(GitFlowResult {
+            success: true,
+            message: format!("Finished {} '{}'", branch_type.as_str(), name),
+            branch: Some(target_branch),
+        })
+    }
+
+    /// Publish a branch to remote
+    pub fn gitflow_publish(
+        &self,
+        branch_type: GitFlowBranchType,
+        name: &str,
+    ) -> Result<GitFlowResult> {
+        let config = self.gitflow_config()?.ok_or_else(|| {
+            AxisError::Other("Git-flow is not initialized".to_string())
+        })?;
+
+        let prefix = match branch_type {
+            GitFlowBranchType::Feature => &config.feature_prefix,
+            GitFlowBranchType::Release => &config.release_prefix,
+            GitFlowBranchType::Hotfix => &config.hotfix_prefix,
+            GitFlowBranchType::Support => &config.support_prefix,
+        };
+
+        let branch_name = format!("{}{}", prefix, name);
+
+        let result = self.execute(&["push", "-u", "origin", &branch_name])?;
+        if !result.success {
+            return Ok(GitFlowResult {
+                success: false,
+                message: format!("Failed to publish: {}", result.stderr.trim()),
+                branch: None,
+            });
+        }
+
+        Ok(GitFlowResult {
+            success: true,
+            message: format!("Published {} '{}' to origin", branch_type.as_str(), name),
+            branch: Some(branch_name),
+        })
+    }
+
+    /// List branches of a specific type
+    pub fn gitflow_list(&self, branch_type: GitFlowBranchType) -> Result<Vec<String>> {
+        let config = self.gitflow_config()?.ok_or_else(|| {
+            AxisError::Other("Git-flow is not initialized".to_string())
+        })?;
+
+        let prefix = match branch_type {
+            GitFlowBranchType::Feature => &config.feature_prefix,
+            GitFlowBranchType::Release => &config.release_prefix,
+            GitFlowBranchType::Hotfix => &config.hotfix_prefix,
+            GitFlowBranchType::Support => &config.support_prefix,
+        };
+
+        let result = self.execute(&["branch", "--list", &format!("{}*", prefix)])?;
+        if !result.success {
+            return Ok(Vec::new());
+        }
+
+        let branches: Vec<String> = result.stdout
+            .lines()
+            .map(|line| line.trim().trim_start_matches("* ").to_string())
+            .filter(|name| !name.is_empty())
+            .map(|name| name.strip_prefix(prefix).unwrap_or(&name).to_string())
+            .collect();
+
+        Ok(branches)
+    }
+
+    // ==================== Content Search (grep) ====================
+
+    /// Search for content in the repository
+    pub fn grep(&self, options: &GrepOptions) -> Result<GrepResult> {
+        let mut args = vec!["grep"];
+
+        if options.ignore_case {
+            args.push("-i");
+        }
+        if options.word_regexp {
+            args.push("-w");
+        }
+        if options.extended_regexp {
+            args.push("-E");
+        }
+        if options.invert_match {
+            args.push("-v");
+        }
+        if options.show_line_numbers {
+            args.push("-n");
+        }
+
+        let max_count_str;
+        if let Some(max) = options.max_count {
+            max_count_str = format!("-m{}", max);
+            args.push(&max_count_str);
+        }
+
+        let context_str;
+        if let Some(ctx) = options.context_lines {
+            context_str = format!("-C{}", ctx);
+            args.push(&context_str);
+        }
+
+        args.push(&options.pattern);
+
+        for path in &options.paths {
+            args.push(path);
+        }
+
+        let result = self.execute(&args)?;
+
+        // Parse the output
+        let mut matches = Vec::new();
+        for line in result.stdout.lines() {
+            if line.is_empty() {
+                continue;
+            }
+
+            // Format: path:line_number:content or path:content
+            let parts: Vec<&str> = line.splitn(3, ':').collect();
+            match parts.len() {
+                2 => {
+                    matches.push(GrepMatch {
+                        path: parts[0].to_string(),
+                        line_number: None,
+                        content: parts[1].to_string(),
+                    });
+                }
+                3 => {
+                    let line_num = parts[1].parse().ok();
+                    matches.push(GrepMatch {
+                        path: parts[0].to_string(),
+                        line_number: line_num,
+                        content: parts[2].to_string(),
+                    });
+                }
+                _ => continue,
+            }
+        }
+
+        let total = matches.len();
+        Ok(GrepResult {
+            matches,
+            total_matches: total,
+        })
+    }
+
+    /// Search for content in a specific commit or tree
+    pub fn grep_commit(&self, commit_oid: &str, options: &GrepOptions) -> Result<GrepResult> {
+        let mut args = vec!["grep"];
+
+        if options.ignore_case {
+            args.push("-i");
+        }
+        if options.word_regexp {
+            args.push("-w");
+        }
+        if options.extended_regexp {
+            args.push("-E");
+        }
+        if options.show_line_numbers {
+            args.push("-n");
+        }
+
+        let max_count_str;
+        if let Some(max) = options.max_count {
+            max_count_str = format!("-m{}", max);
+            args.push(&max_count_str);
+        }
+
+        args.push(&options.pattern);
+        args.push(commit_oid);
+
+        for path in &options.paths {
+            args.push("--");
+            args.push(path);
+        }
+
+        let result = self.execute(&args)?;
+
+        let mut matches = Vec::new();
+        for line in result.stdout.lines() {
+            if line.is_empty() {
+                continue;
+            }
+
+            // Format: commit:path:line_number:content
+            let parts: Vec<&str> = line.splitn(4, ':').collect();
+            if parts.len() >= 3 {
+                let line_num = if parts.len() == 4 {
+                    parts[2].parse().ok()
+                } else {
+                    None
+                };
+                let content = if parts.len() == 4 { parts[3] } else { parts[2] };
+
+                matches.push(GrepMatch {
+                    path: parts[1].to_string(),
+                    line_number: line_num,
+                    content: content.to_string(),
+                });
+            }
+        }
+
+        let total = matches.len();
+        Ok(GrepResult {
+            matches,
+            total_matches: total,
+        })
+    }
 }
 
 impl From<Output> for GitCommandResult {
@@ -1659,5 +2089,166 @@ mod tests {
         // Should return empty string for repo with no submodules
         let summary = service.submodule_summary().unwrap();
         assert!(summary.is_empty());
+    }
+
+    // ==================== Git-flow Tests ====================
+
+    #[test]
+    fn test_gitflow_not_initialized() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let is_initialized = service.gitflow_is_initialized().unwrap();
+        assert!(!is_initialized);
+
+        let config = service.gitflow_config().unwrap();
+        assert!(config.is_none());
+    }
+
+    #[test]
+    fn test_gitflow_init() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let default_branch = get_default_branch(&tmp);
+
+        let result = service.gitflow_init(&GitFlowInitOptions {
+            master: Some(default_branch.clone()),
+            develop: Some("develop".to_string()),
+            ..Default::default()
+        }).unwrap();
+
+        assert!(result.success, "gitflow init failed: {}", result.message);
+
+        let is_initialized = service.gitflow_is_initialized().unwrap();
+        assert!(is_initialized);
+
+        let config = service.gitflow_config().unwrap();
+        assert!(config.is_some());
+        let config = config.unwrap();
+        assert_eq!(config.master, default_branch);
+        assert_eq!(config.develop, "develop");
+    }
+
+    #[test]
+    fn test_gitflow_feature_start() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let default_branch = get_default_branch(&tmp);
+
+        // Initialize git-flow first
+        service.gitflow_init(&GitFlowInitOptions {
+            master: Some(default_branch.clone()),
+            develop: Some("develop".to_string()),
+            ..Default::default()
+        }).unwrap();
+
+        // Checkout develop branch
+        checkout_branch(&tmp, "develop");
+
+        // Start a feature
+        let result = service.gitflow_start(
+            GitFlowBranchType::Feature,
+            "test-feature",
+            None,
+        ).unwrap();
+
+        assert!(result.success, "feature start failed: {}", result.message);
+        assert_eq!(result.branch, Some("feature/test-feature".to_string()));
+
+        // Verify the feature is in the list
+        let features = service.gitflow_list(GitFlowBranchType::Feature).unwrap();
+        assert!(features.contains(&"test-feature".to_string()));
+    }
+
+    #[test]
+    fn test_gitflow_feature_list_empty() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let default_branch = get_default_branch(&tmp);
+
+        // Initialize git-flow
+        service.gitflow_init(&GitFlowInitOptions {
+            master: Some(default_branch),
+            develop: Some("develop".to_string()),
+            ..Default::default()
+        }).unwrap();
+
+        let features = service.gitflow_list(GitFlowBranchType::Feature).unwrap();
+        assert!(features.is_empty());
+    }
+
+    // ==================== Grep Tests ====================
+
+    #[test]
+    fn test_grep_basic() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create a file with searchable content
+        fs::write(tmp.path().join("search.txt"), "hello world\ntest line\nhello again").unwrap();
+        Command::new("git")
+            .args(["add", "search.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "Add search file"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+
+        let result = service.grep(&GrepOptions {
+            pattern: "hello".to_string(),
+            show_line_numbers: true,
+            ..Default::default()
+        }).unwrap();
+
+        assert_eq!(result.total_matches, 2);
+        assert!(result.matches.iter().any(|m| m.content.contains("hello world")));
+        assert!(result.matches.iter().any(|m| m.content.contains("hello again")));
+    }
+
+    #[test]
+    fn test_grep_case_insensitive() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        fs::write(tmp.path().join("case.txt"), "Hello World\nHELLO CAPS\nhello lower").unwrap();
+        Command::new("git")
+            .args(["add", "case.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "Add case file"])
+            .current_dir(tmp.path())
+            .output()
+            .unwrap();
+
+        let result = service.grep(&GrepOptions {
+            pattern: "hello".to_string(),
+            ignore_case: true,
+            show_line_numbers: true,
+            ..Default::default()
+        }).unwrap();
+
+        assert_eq!(result.total_matches, 3);
+    }
+
+    #[test]
+    fn test_grep_no_matches() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let result = service.grep(&GrepOptions {
+            pattern: "nonexistent_pattern_xyz".to_string(),
+            ..Default::default()
+        }).unwrap();
+
+        assert_eq!(result.total_matches, 0);
+        assert!(result.matches.is_empty());
     }
 }

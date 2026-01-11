@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -16,11 +16,13 @@ import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { cn } from '../../lib/utils';
-import type { Branch } from '../../types';
+import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { TagDialog } from '../tags/TagDialog';
+import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
+import { tagApi, remoteApi, branchApi } from '../../services/api';
 
 // Tailwind class constants
 const sidebarItemClass =
@@ -200,11 +202,51 @@ export function Sidebar() {
     setCurrentView,
     selectCommit,
     loadTags,
+    loadBranches,
+    loadCommits,
+    loadStatus,
   } = useRepositoryStore();
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showRemoteDialog, setShowRemoteDialog] = useState(false);
   const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
+  const [remotes, setRemotes] = useState<Remote[]>([]);
+
+  // Load remotes for tag context menu
+  useEffect(() => {
+    if (repository) {
+      remoteApi.list().then(setRemotes).catch(console.error);
+    }
+  }, [repository]);
+
+  const handleTagCheckout = useCallback(async (tagName: string) => {
+    try {
+      await branchApi.checkout(tagName);
+      await loadBranches();
+      await loadCommits();
+      await loadStatus();
+    } catch (err) {
+      console.error('Failed to checkout tag:', err);
+    }
+  }, [loadBranches, loadCommits, loadStatus]);
+
+  const handleTagPush = useCallback(async (tagName: string, remote: string) => {
+    try {
+      await tagApi.push(tagName, remote);
+    } catch (err) {
+      console.error('Failed to push tag:', err);
+    }
+  }, []);
+
+  const handleTagDelete = useCallback(async (tagName: string) => {
+    if (!confirm(`Delete tag '${tagName}'?`)) return;
+    try {
+      await tagApi.delete(tagName);
+      await loadTags();
+    } catch (err) {
+      console.error('Failed to delete tag:', err);
+    }
+  }, [loadTags]);
 
   // Listen for menu events
   useEffect(() => {
@@ -344,16 +386,24 @@ export function Sidebar() {
             <Section title="TAGS" icon={<Tag size={14} />} defaultExpanded={false}>
               {tags.length > 0 ? (
                 tags.map((tag) => (
-                  <button
+                  <TagContextMenu
                     key={tag.name}
-                    className={sidebarItemClass}
-                    onClick={() => handleRefClick(tag.target_oid)}
+                    tag={tag}
+                    remotes={remotes}
+                    onCheckout={() => handleTagCheckout(tag.name)}
+                    onPush={(remote) => handleTagPush(tag.name, remote)}
+                    onDelete={() => handleTagDelete(tag.name)}
                   >
-                    <Tag size={12} />
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {tag.name}
-                    </span>
-                  </button>
+                    <button
+                      className={sidebarItemClass}
+                      onClick={() => handleRefClick(tag.target_oid)}
+                    >
+                      <Tag size={12} />
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {tag.name}
+                      </span>
+                    </button>
+                  </TagContextMenu>
                 ))
               ) : (
                 <div

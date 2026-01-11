@@ -362,7 +362,7 @@ function UnifiedDiff({
     <div className="min-w-fit">
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
-          <div className="flex items-center justify-between gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
+          <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-(--diff-hunk-bg) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
             <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
               {hunk.header.trim()}
             </span>
@@ -419,20 +419,20 @@ interface UnifiedDiffLineProps {
 }
 
 const lineNoClass =
-  'shrink-0 w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none';
+  'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums';
 
 function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
   const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.line_type);
   const prefix = getLinePrefix(line.line_type);
 
   return (
-    <div className={cn('flex leading-5 font-mono text-xs', bgClass)}>
+    <div className={cn('flex leading-5.5 font-mono text-xs', bgClass)}>
       <span className={cn(lineNoClass, lineNoBgClass)}>{line.old_line_no ?? ''}</span>
       <span className={cn(lineNoClass, lineNoBgClass)}>{line.new_line_no ?? ''}</span>
-      <span className={cn('shrink-0 w-4 py-0 px-1 text-center select-none', prefixColorClass)}>
+      <span className={cn('shrink-0 w-5 py-0 px-1 text-center select-none', prefixColorClass)}>
         {prefix}
       </span>
-      <span className="flex-1 py-0 px-2 whitespace-pre overflow-x-auto">
+      <span className="flex-1 py-0 px-3 whitespace-pre">
         <code className="font-inherit">{line.content}</code>
       </span>
     </div>
@@ -457,10 +457,10 @@ function SplitDiff({
   onDiscardHunk,
 }: SplitDiffProps) {
   return (
-    <div>
+    <div className="min-w-fit">
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
-          <div className="flex items-center justify-center gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
+          <div className="flex items-center gap-2 py-1 px-3 bg-(--diff-hunk-bg) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
             <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
               {hunk.header.trim()}
             </span>
@@ -522,37 +522,44 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
       {pairs.map((pair, index) => {
         const leftClasses = getLineClasses(pair.left?.line_type || 'context');
         const rightClasses = getLineClasses(pair.right?.line_type || 'context');
+        const leftEmpty = pair.left === null;
+        const rightEmpty = pair.right === null;
         return (
-          <div key={index} className="flex">
+          <div key={index} className="flex min-w-fit">
             <div
               className={cn(
-                'flex-1 flex leading-5 font-mono text-xs border-r-2 border-(--border-color)',
-                leftClasses.bgClass
+                'w-1/2 min-w-80 flex leading-5.5 font-mono text-xs border-r border-(--border-color)',
+                leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.bgClass
               )}
             >
               <span
                 className={cn(
-                  'w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none',
-                  leftClasses.lineNoBgClass
+                  'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
+                  leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.lineNoBgClass
                 )}
               >
                 {pair.left?.old_line_no ?? ''}
               </span>
-              <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
-                <code>{pair.left?.content ?? ''}</code>
+              <span className="flex-1 py-0 px-3 whitespace-pre">
+                <code className="font-inherit">{pair.left?.content ?? ''}</code>
               </span>
             </div>
-            <div className={cn('flex-1 flex leading-5 font-mono text-xs', rightClasses.bgClass)}>
+            <div
+              className={cn(
+                'w-1/2 min-w-80 flex leading-5.5 font-mono text-xs',
+                rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.bgClass
+              )}
+            >
               <span
                 className={cn(
-                  'w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none',
-                  rightClasses.lineNoBgClass
+                  'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
+                  rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.lineNoBgClass
                 )}
               >
                 {pair.right?.new_line_no ?? ''}
               </span>
-              <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
-                <code>{pair.right?.content ?? ''}</code>
+              <span className="flex-1 py-0 px-3 whitespace-pre">
+                <code className="font-inherit">{pair.right?.content ?? ''}</code>
               </span>
             </div>
           </div>
@@ -619,15 +626,15 @@ function getLineClasses(lineType: DiffLineType): {
   switch (lineType) {
     case 'addition':
       return {
-        bgClass: 'bg-success/15',
-        lineNoBgClass: 'bg-success/20',
-        prefixColorClass: 'text-success',
+        bgClass: 'bg-(--diff-add-bg)',
+        lineNoBgClass: 'bg-(--diff-add-bg)',
+        prefixColorClass: 'text-(--diff-add-line)',
       };
     case 'deletion':
       return {
-        bgClass: 'bg-error/15',
-        lineNoBgClass: 'bg-error/20',
-        prefixColorClass: 'text-error',
+        bgClass: 'bg-(--diff-delete-bg)',
+        lineNoBgClass: 'bg-(--diff-delete-bg)',
+        prefixColorClass: 'text-(--diff-delete-line)',
       };
     default:
       return {

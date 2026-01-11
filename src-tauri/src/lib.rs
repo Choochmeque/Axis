@@ -51,6 +51,8 @@ pub fn run() {
             commands::get_commit,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
+            commands::show_in_folder,
+            commands::open_terminal,
             // Staging commands
             commands::stage_file,
             commands::stage_files,

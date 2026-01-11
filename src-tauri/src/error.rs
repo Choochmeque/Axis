@@ -39,6 +39,9 @@ pub enum AxisError {
     #[error("Remote not found: {0}")]
     RemoteNotFound(String),
 
+    #[error("File not found: {0}")]
+    FileNotFound(String),
+
     #[error("Cannot fast-forward, merge or rebase required")]
     CannotFastForward,
 

@@ -11,10 +11,18 @@ import {
   ChevronRight,
   ChevronDown,
   Folder,
+  MoreHorizontal,
+  Minus,
+  FileX,
+  EyeOff,
+  FolderOpen,
 } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { invoke } from '@tauri-apps/api/core';
 import type { FileStatus, StatusType } from '../../types';
 import { cn } from '../../lib/utils';
 import type { StagingViewMode } from './StagingFilters';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 const fileItemClass =
   'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
@@ -167,6 +175,7 @@ function FileStatusItem({
   compact = false,
   indent = 0,
 }: FileStatusItemProps) {
+  const { repository } = useRepositoryStore();
   const status = file.staged_status || file.unstaged_status || file.status;
   const statusColorClass = getStatusColorClass(status);
 
@@ -175,10 +184,33 @@ function FileStatusItem({
     action?.();
   };
 
+  const handleShowInFinder = async () => {
+    if (repository?.path) {
+      const fullPath = `${repository.path}/${file.path}`;
+      try {
+        await invoke('show_in_folder', { path: fullPath });
+      } catch (err) {
+        console.error('Failed to show in finder:', err);
+      }
+    }
+  };
+
   const renderStatusIcon = () => {
     const Icon = getStatusIcon(status);
     return <Icon className={cn('shrink-0', statusColorClass)} size={compact ? 12 : 14} />;
   };
+
+  // Check if this is an unstaged file (has stage and discard actions)
+  const isUnstaged = onStage && onDiscard;
+  // Check if this is a staged file (has only unstage action)
+  const isStaged = onUnstage && !onStage;
+
+  const dropdownContentClass =
+    'min-w-40 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50';
+  const dropdownItemClass =
+    'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover) data-highlighted:bg-(--bg-hover)';
+  const dropdownItemDisabledClass =
+    'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-tertiary) cursor-not-allowed outline-none';
 
   if (compact) {
     return (
@@ -212,31 +244,63 @@ function FileStatusItem({
         {getFileName(file.path)}
       </span>
       <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
-        {onStage && (
-          <button
-            className={fileActionClass}
-            onClick={(e) => handleAction(e, onStage)}
-            title="Stage"
-          >
-            <Plus size={14} />
-          </button>
+        {isUnstaged && (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                className={fileActionClass}
+                onClick={(e) => e.stopPropagation()}
+                title="Actions"
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className={dropdownContentClass} align="end" sideOffset={4}>
+                <DropdownMenu.Item
+                  className={dropdownItemClass}
+                  onSelect={() => onStage?.()}
+                >
+                  <Plus size={14} />
+                  <span>Stage file</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className={cn(dropdownItemClass, 'text-error hover:bg-error/10 data-highlighted:bg-error/10')}
+                  onSelect={() => onDiscard?.()}
+                >
+                  <Trash2 size={14} />
+                  <span>Discard file</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  className={cn(dropdownItemClass, 'text-error hover:bg-error/10 data-highlighted:bg-error/10')}
+                  onSelect={() => onDiscard?.()}
+                >
+                  <FileX size={14} />
+                  <span>Remove file</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className={dropdownItemDisabledClass} disabled>
+                  <EyeOff size={14} />
+                  <span>Ignore file</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
+                <DropdownMenu.Item
+                  className={dropdownItemClass}
+                  onSelect={handleShowInFinder}
+                >
+                  <FolderOpen size={14} />
+                  <span>Show in Finder</span>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
-        {onUnstage && (
+        {isStaged && (
           <button
             className={fileActionClass}
             onClick={(e) => handleAction(e, onUnstage)}
             title="Unstage"
           >
-            <ArrowRightLeft size={14} />
-          </button>
-        )}
-        {onDiscard && (
-          <button
-            className={cn(fileActionClass, 'hover:bg-error/10 hover:text-error')}
-            onClick={(e) => handleAction(e, onDiscard)}
-            title="Discard changes"
-          >
-            <Trash2 size={14} />
+            <Minus size={14} />
           </button>
         )}
       </div>

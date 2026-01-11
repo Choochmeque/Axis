@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Tag as TagIcon, Trash2, Upload, Plus, RefreshCw, AlertCircle, X } from 'lucide-react';
-import { tagApi, remoteApi } from '../../services/api';
+import { Tag as TagIcon, Plus, RefreshCw, AlertCircle, X, Upload, Trash2 } from 'lucide-react';
+import { tagApi, remoteApi, branchApi } from '../../services/api';
 import type { Tag, Remote } from '../../types';
 import { TagDialog } from './TagDialog';
+import { TagContextMenu } from './TagContextMenu';
 import { cn } from '../../lib/utils';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -16,6 +18,7 @@ interface TagListProps {
 }
 
 export function TagList({ onRefresh, onTagSelect }: TagListProps) {
+  const { loadBranches, loadCommits, loadStatus } = useRepositoryStore();
   const [tags, setTags] = useState<Tag[]>([]);
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -61,11 +64,11 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
     }
   };
 
-  const handlePush = async (name: string) => {
-    const remote = remotes.length === 1 ? remotes[0].name : 'origin';
+  const handlePush = async (name: string, remote?: string) => {
+    const targetRemote = remote ?? (remotes.length === 1 ? remotes[0].name : 'origin');
 
     try {
-      const result = await tagApi.push(name, remote);
+      const result = await tagApi.push(name, targetRemote);
       if (result.success) {
         // Tag pushed successfully
         setError(null);
@@ -75,6 +78,18 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
     } catch (err) {
       console.error('Failed to push tag:', err);
       setError('Failed to push tag');
+    }
+  };
+
+  const handleCheckout = async (name: string) => {
+    try {
+      await branchApi.checkout(name);
+      await loadBranches();
+      await loadCommits();
+      await loadStatus();
+    } catch (err) {
+      console.error('Failed to checkout tag:', err);
+      setError(`Failed to checkout tag: ${err}`);
     }
   };
 
@@ -132,80 +147,88 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
           <div className="py-6 text-center text-(--text-muted) text-sm">No tags</div>
         ) : (
           tags.map((tag) => (
-            <div
+            <TagContextMenu
               key={tag.name}
-              className={cn(
-                'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
-                selectedTag === tag.name
-                  ? 'bg-(--bg-active) border-(--accent-color)'
-                  : 'bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)'
-              )}
-              onClick={() => {
-                setSelectedTag(tag.name);
-                onTagSelect?.(tag);
-              }}
+              tag={tag}
+              remotes={remotes}
+              onCheckout={() => handleCheckout(tag.name)}
+              onPush={(remote) => handlePush(tag.name, remote)}
+              onDelete={() => handleDelete(tag.name)}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <TagIcon
-                  size={14}
-                  className={tag.is_annotated ? 'text-(--accent-color)' : 'text-(--text-muted)'}
-                />
-                <span className="font-mono text-sm text-(--text-primary) font-medium">
-                  {tag.name}
-                </span>
-                {tag.is_annotated && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-(--accent-color)/10 text-(--accent-color) rounded">
-                    annotated
-                  </span>
+              <div
+                className={cn(
+                  'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
+                  selectedTag === tag.name
+                    ? 'bg-(--bg-active) border-(--accent-color)'
+                    : 'bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)'
                 )}
-              </div>
-              <div className="flex items-center gap-3 text-xs text-(--text-muted)">
-                <span className="font-mono text-(--accent-color)">{tag.short_oid}</span>
-                {tag.tagger && (
-                  <span>
-                    {tag.tagger.name} - {formatTimestamp(tag.tagger.timestamp)}
+                onClick={() => {
+                  setSelectedTag(tag.name);
+                  onTagSelect?.(tag);
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <TagIcon
+                    size={14}
+                    className={tag.is_annotated ? 'text-(--accent-color)' : 'text-(--text-muted)'}
+                  />
+                  <span className="font-mono text-sm text-(--text-primary) font-medium">
+                    {tag.name}
                   </span>
-                )}
-              </div>
-              {tag.message && (
-                <div className="mt-1 text-xs text-(--text-secondary) line-clamp-2">
-                  {tag.message}
+                  {tag.is_annotated && (
+                    <span className="px-1.5 py-0.5 text-[10px] bg-(--accent-color)/10 text-(--accent-color) rounded">
+                      annotated
+                    </span>
+                  )}
                 </div>
-              )}
-              {selectedTag === tag.name && (
-                <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
-                  {remotes.length > 0 && (
+                <div className="flex items-center gap-3 text-xs text-(--text-muted)">
+                  <span className="font-mono text-(--accent-color)">{tag.short_oid}</span>
+                  {tag.tagger && (
+                    <span>
+                      {tag.tagger.name} - {formatTimestamp(tag.tagger.timestamp)}
+                    </span>
+                  )}
+                </div>
+                {tag.message && (
+                  <div className="mt-1 text-xs text-(--text-secondary) line-clamp-2">
+                    {tag.message}
+                  </div>
+                )}
+                {selectedTag === tag.name && (
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
+                    {remotes.length > 0 && (
+                      <button
+                        className={cn(
+                          btnSmallClass,
+                          'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePush(tag.name);
+                        }}
+                        title="Push tag to remote"
+                      >
+                        <Upload size={12} />
+                        Push
+                      </button>
+                    )}
                     <button
                       className={cn(
                         btnSmallClass,
-                        'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                        'bg-error/10 border-error text-error hover:bg-error/20'
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handlePush(tag.name);
+                        handleDelete(tag.name);
                       }}
-                      title="Push tag to remote"
+                      title="Delete tag"
                     >
-                      <Upload size={12} />
-                      Push
+                      <Trash2 size={12} />
                     </button>
-                  )}
-                  <button
-                    className={cn(
-                      btnSmallClass,
-                      'bg-error/10 border-error text-error hover:bg-error/20'
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(tag.name);
-                    }}
-                    title="Delete tag"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            </TagContextMenu>
           ))
         )}
       </div>

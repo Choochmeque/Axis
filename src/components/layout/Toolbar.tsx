@@ -8,7 +8,10 @@ import {
   GitMerge,
   Archive,
   Settings,
+  FolderOpen,
+  Terminal,
 } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
@@ -38,6 +41,26 @@ export function Toolbar() {
   const handleRefresh = useCallback(() => {
     refreshRepository?.();
   }, [refreshRepository]);
+
+  const handleShowInFinder = useCallback(async () => {
+    if (repository?.path) {
+      try {
+        await invoke('show_in_folder', { path: repository.path });
+      } catch (err) {
+        console.error('Failed to show in finder:', err);
+      }
+    }
+  }, [repository?.path]);
+
+  const handleOpenTerminal = useCallback(async () => {
+    if (repository?.path) {
+      try {
+        await invoke('open_terminal', { path: repository.path });
+      } catch (err) {
+        console.error('Failed to open terminal:', err);
+      }
+    }
+  }, [repository?.path]);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -115,12 +138,33 @@ export function Toolbar() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-0.5">
+        {repository && (
+          <>
+            <button
+              className={toolbarButtonClass}
+              onClick={handleShowInFinder}
+              title="Show in Finder"
+            >
+              <FolderOpen size={18} />
+              <span>Show in Finder</span>
+            </button>
+            <button
+              className={toolbarButtonClass}
+              onClick={handleOpenTerminal}
+              title="Terminal"
+            >
+              <Terminal size={18} />
+              <span>Terminal</span>
+            </button>
+          </>
+        )}
         <button
           className={toolbarButtonClass}
           onClick={() => setSettingsOpen(true)}
           title="Settings"
         >
           <Settings size={18} />
+          <span>Settings</span>
         </button>
       </div>
 

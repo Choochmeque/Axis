@@ -7,6 +7,7 @@ use crate::services::Git2Service;
 use crate::state::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
 
 /// Helper function to get the Git2Service for the current repository
 fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
@@ -171,4 +172,66 @@ pub async fn stop_file_watcher(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 pub async fn is_file_watcher_active(state: State<'_, AppState>) -> Result<bool> {
     Ok(state.is_watching())
+}
+
+#[tauri::command]
+pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+
+    if !path.exists() {
+        return Err(AxisError::FileNotFound(path.display().to_string()));
+    }
+
+    app_handle
+        .opener()
+        .reveal_item_in_dir(path)
+        .map_err(|e| AxisError::Other(e.to_string()))
+}
+
+#[tauri::command]
+pub async fn open_terminal(path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+
+    if !path.exists() {
+        return Err(AxisError::FileNotFound(path.display().to_string()));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-a", "Terminal", path.to_str().unwrap_or(".")])
+            .spawn()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(["/c", "start", "cmd", "/k", &format!("cd /d {}", path.display())])
+            .spawn()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // Try common terminal emulators
+        let terminals = ["gnome-terminal", "konsole", "xterm", "x-terminal-emulator"];
+        let mut launched = false;
+        for term in terminals {
+            if std::process::Command::new(term)
+                .arg("--working-directory")
+                .arg(&path)
+                .spawn()
+                .is_ok()
+            {
+                launched = true;
+                break;
+            }
+        }
+        if !launched {
+            return Err(AxisError::Other("No terminal emulator found".to_string()));
+        }
+    }
+
+    Ok(())
 }

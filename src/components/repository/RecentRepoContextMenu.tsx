@@ -41,33 +41,25 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
     }
   };
 
-  const menuContentClass =
-    'min-w-50 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-[10000] animate-in fade-in zoom-in-95 duration-100';
-  const menuItemClass =
-    'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none select-none hover:bg-(--bg-tertiary) focus:bg-(--bg-tertiary) data-highlighted:bg-(--bg-tertiary)';
-  const separatorClass = 'h-px bg-(--border-color) my-1';
-  const dangerItemClass =
-    'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-error cursor-pointer outline-none select-none hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15';
-
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
 
       <ContextMenu.Portal>
-        <ContextMenu.Content className={menuContentClass}>
-          <ContextMenu.Item className={menuItemClass} onSelect={handleOpenInTab}>
+        <ContextMenu.Content className="menu-content">
+          <ContextMenu.Item className="menu-item" onSelect={handleOpenInTab}>
             <FolderOpen size={14} />
             <span>Open</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Item className={menuItemClass} onSelect={handleOpenInNewWindow}>
+          <ContextMenu.Item className="menu-item" onSelect={handleOpenInNewWindow}>
             <ExternalLink size={14} />
             <span>Open in New Window</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Separator className={separatorClass} />
+          <ContextMenu.Separator className="menu-separator" />
 
-          <ContextMenu.Item className={dangerItemClass} onSelect={handleRemove}>
+          <ContextMenu.Item className="menu-item-danger" onSelect={handleRemove}>
             <Trash2 size={14} />
             <span>Remove from Recent</span>
           </ContextMenu.Item>

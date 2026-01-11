@@ -16,7 +16,6 @@ import { useRepositoryStore } from '../../store/repositoryStore';
 import { branchApi } from '../../services/api';
 import { TagDialog } from '../tags/TagDialog';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
-import { cn } from '../../lib/utils';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -126,22 +125,14 @@ export function CommitContextMenu({
     // TODO: Implement reset with confirmation dialog
   };
 
-  const menuContentClass =
-    'min-w-50 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-[10000] animate-in fade-in zoom-in-95 duration-100';
-  const menuItemClass =
-    'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none select-none hover:bg-(--bg-tertiary) focus:bg-(--bg-tertiary) data-highlighted:bg-(--bg-tertiary) data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed';
-  const separatorClass = 'h-px bg-(--border-color) my-1';
-  const hintClass = 'ml-auto text-[11px] text-(--text-tertiary)';
-  const chevronClass = 'ml-auto text-(--text-tertiary)';
-
   return (
     <>
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
 
         <ContextMenu.Portal>
-          <ContextMenu.Content className={menuContentClass}>
-            <ContextMenu.Item className={menuItemClass} onSelect={handleCheckout}>
+          <ContextMenu.Content className="menu-content">
+            <ContextMenu.Item className="menu-item" onSelect={handleCheckout}>
               <Check size={14} />
               <span>Checkout</span>
               <span className="ml-auto text-[11px] text-(--text-tertiary) font-mono">
@@ -149,88 +140,85 @@ export function CommitContextMenu({
               </span>
             </ContextMenu.Item>
 
-            <ContextMenu.Separator className={separatorClass} />
+            <ContextMenu.Separator className="menu-separator" />
 
-            <ContextMenu.Item className={menuItemClass} onSelect={handleMerge}>
+            <ContextMenu.Item className="menu-item" onSelect={handleMerge}>
               <GitMerge size={14} />
               <span>Merge into {repository?.current_branch ?? 'current branch'}...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Separator className={separatorClass} />
+            <ContextMenu.Separator className="menu-separator" />
 
-            <ContextMenu.Item className={menuItemClass} onSelect={handleCreateTag}>
+            <ContextMenu.Item className="menu-item" onSelect={handleCreateTag}>
               <Tag size={14} />
               <span>Tag...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item className={menuItemClass} onSelect={handleCreateBranch}>
+            <ContextMenu.Item className="menu-item" onSelect={handleCreateBranch}>
               <GitBranch size={14} />
               <span>Branch...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Separator className={separatorClass} />
+            <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className={menuItemClass}>
+              <ContextMenu.SubTrigger className="menu-item">
                 <RotateCcw size={14} />
                 <span>Reset {repository?.current_branch ?? 'branch'} to here</span>
-                <ChevronRight size={14} className={chevronClass} />
+                <ChevronRight size={14} className="menu-chevron" />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
-                <ContextMenu.SubContent className={cn(menuContentClass, 'min-w-40')}>
-                  <ContextMenu.Item className={menuItemClass} onSelect={() => handleReset('soft')}>
+                <ContextMenu.SubContent className="menu-content min-w-40">
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('soft')}>
                     <span>Soft</span>
-                    <span className={hintClass}>Keep all changes staged</span>
+                    <span className="menu-hint">Keep all changes staged</span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item className={menuItemClass} onSelect={() => handleReset('mixed')}>
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('mixed')}>
                     <span>Mixed</span>
-                    <span className={hintClass}>Keep changes unstaged</span>
+                    <span className="menu-hint">Keep changes unstaged</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
-                    className={cn(
-                      menuItemClass,
-                      'text-error hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15'
-                    )}
+                    className="menu-item-danger"
                     onSelect={() => handleReset('hard')}
                   >
                     <span>Hard</span>
-                    <span className={hintClass}>Discard all changes</span>
+                    <span className="menu-hint">Discard all changes</span>
                   </ContextMenu.Item>
                 </ContextMenu.SubContent>
               </ContextMenu.Portal>
             </ContextMenu.Sub>
 
-            <ContextMenu.Item className={menuItemClass} onSelect={handleRevert}>
+            <ContextMenu.Item className="menu-item" onSelect={handleRevert}>
               <Undo2 size={14} />
               <span>Revert commit...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item className={menuItemClass} onSelect={handleCherryPick}>
+            <ContextMenu.Item className="menu-item" onSelect={handleCherryPick}>
               <CherryIcon size={14} />
               <span>Cherry Pick</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Separator className={separatorClass} />
+            <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className={menuItemClass}>
+              <ContextMenu.SubTrigger className="menu-item">
                 <Copy size={14} />
                 <span>Copy</span>
-                <ChevronRight size={14} className={chevronClass} />
+                <ChevronRight size={14} className="menu-chevron" />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
-                <ContextMenu.SubContent className={cn(menuContentClass, 'min-w-40')}>
-                  <ContextMenu.Item className={menuItemClass} onSelect={handleCopyShortSha}>
+                <ContextMenu.SubContent className="menu-content min-w-40">
+                  <ContextMenu.Item className="menu-item" onSelect={handleCopyShortSha}>
                     <span>Short SHA</span>
                     <span className="ml-auto text-[11px] text-(--text-secondary) font-mono">
                       {commit.short_oid}
                     </span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item className={menuItemClass} onSelect={handleCopySha}>
+                  <ContextMenu.Item className="menu-item" onSelect={handleCopySha}>
                     <span>Full SHA</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
-                    className={menuItemClass}
+                    className="menu-item"
                     onSelect={() => navigator.clipboard.writeText(commit.summary)}
                   >
                     <span>Commit Message</span>

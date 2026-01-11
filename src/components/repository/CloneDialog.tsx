@@ -156,11 +156,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
               </div>
             </div>
 
-            {error && (
-              <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
 
             {isLoading && (
               <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-[13px]">

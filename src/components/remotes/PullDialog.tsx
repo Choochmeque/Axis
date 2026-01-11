@@ -101,7 +101,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
           <div className="dialog-body">
             {success ? (
               <div>
-                <div className="flex items-center gap-2 p-3 mb-4 bg-success/10 border border-success rounded text-success text-sm">
+                <div className="alert alert-success mb-4">
                   <Check size={16} />
                   Pull completed successfully
                 </div>
@@ -204,11 +204,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
                   </label>
                 </div>
 
-                {error && (
-                  <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">
-                    {error}
-                  </div>
-                )}
+                {error && <div className="alert-inline alert-error mt-3">{error}</div>}
               </>
             )}
           </div>

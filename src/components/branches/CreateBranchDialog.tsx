@@ -130,11 +130,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
               </label>
             </div>
 
-            {error && (
-              <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
           </div>
 
           <div className="dialog-footer">

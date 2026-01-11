@@ -129,21 +129,14 @@ export function RebaseDialog({
 
           <div className="dialog-body">
             {error && (
-              <div className="flex items-start gap-2 p-3 bg-error/10 border border-error rounded-md text-error text-[13px] mb-4">
+              <div className="alert alert-error mb-4">
                 <AlertCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
 
             {result && (
-              <div
-                className={cn(
-                  'flex items-start gap-2 p-3 rounded-md text-[13px] mb-4',
-                  result.success
-                    ? 'bg-success/10 border border-success text-success'
-                    : 'bg-warning/10 border border-warning text-warning'
-                )}
-              >
+              <div className={cn('alert mb-4', result.success ? 'alert-success' : 'alert-warning')}>
                 {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
                 <span>{result.message}</span>
               </div>

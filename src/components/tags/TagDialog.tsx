@@ -114,14 +114,14 @@ export function TagDialog({
 
           <div className="dialog-body">
             {error && (
-              <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/30 rounded-md text-error text-[13px] mb-4">
+              <div className="alert alert-error mb-4">
                 <AlertCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
 
             {result && result.success ? (
-              <div className="flex items-start gap-2 p-3 bg-success/10 border border-success/30 rounded-md text-success text-[13px] mb-4">
+              <div className="alert alert-success mb-4">
                 <Check size={16} />
                 <span>Tag '{result.tag?.name}' created successfully</span>
               </div>

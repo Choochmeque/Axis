@@ -314,6 +314,46 @@
     @apply p-3 bg-(--bg-secondary) rounded mb-4;
   }
 
+  /* Context Menu classes */
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .menu-content {
+    @apply min-w-50 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-10000;
+    animation: menu-in 100ms ease-out;
+  }
+
+  .menu-item {
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none select-none;
+    @apply hover:bg-(--bg-tertiary) focus:bg-(--bg-tertiary) data-highlighted:bg-(--bg-tertiary);
+    @apply data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed;
+  }
+
+  .menu-item-danger {
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-xs text-error cursor-pointer outline-none select-none;
+    @apply hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15;
+  }
+
+  .menu-separator {
+    @apply h-px bg-(--border-color) my-1;
+  }
+
+  .menu-hint {
+    @apply ml-auto text-[11px] text-(--text-tertiary);
+  }
+
+  .menu-chevron {
+    @apply ml-auto text-(--text-tertiary);
+  }
+
   /* Button classes */
   .btn {
     @apply py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
@@ -358,6 +398,27 @@
 
   .checkbox-label {
     @apply text-[13px] text-(--text-primary) cursor-pointer select-none;
+  }
+
+  /* Alert/Message classes */
+  .alert {
+    @apply flex items-start gap-2 p-3 rounded-md text-[13px];
+  }
+
+  .alert-error {
+    @apply bg-error/10 border border-error text-error;
+  }
+
+  .alert-success {
+    @apply bg-success/10 border border-success text-success;
+  }
+
+  .alert-warning {
+    @apply bg-warning/10 border border-warning text-warning;
+  }
+
+  .alert-inline {
+    @apply py-2 px-3 rounded text-[13px];
   }
 
   /* Dropdown classes (Radix UI) */

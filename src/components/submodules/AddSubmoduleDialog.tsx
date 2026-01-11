@@ -4,15 +4,6 @@ import { X, FolderGit2 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 
-const contentClass =
-  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-120 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
-const titleClass =
-  'flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)';
-const bodyClass = 'p-5';
-const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
-const closeClass =
-  'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-
 interface AddSubmoduleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -85,13 +76,13 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className={contentClass}>
-          <Dialog.Title className={titleClass}>
+        <Dialog.Content className="dialog-content max-w-120">
+          <Dialog.Title className="dialog-title">
             <FolderGit2 size={18} />
             Add Submodule
           </Dialog.Title>
 
-          <div className={bodyClass}>
+          <div className="dialog-body">
             <div className="field">
               <label htmlFor="submodule-url" className="label">
                 Repository URL
@@ -148,7 +139,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
             )}
           </div>
 
-          <div className={footerClass}>
+          <div className="dialog-footer">
             <Dialog.Close asChild>
               <button className="btn btn-secondary">Cancel</button>
             </Dialog.Close>
@@ -162,7 +153,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
           </div>
 
           <Dialog.Close asChild>
-            <button className={closeClass} aria-label="Close">
+            <button className="btn-close absolute top-3 right-3" aria-label="Close">
               <X size={16} />
             </button>
           </Dialog.Close>

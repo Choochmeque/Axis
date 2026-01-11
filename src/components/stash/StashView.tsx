@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   Archive,
@@ -17,15 +18,6 @@ import { cn } from '../../lib/utils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
-const dialogClass =
-  'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
-const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
-const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
-const closeClass =
-  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const contentClass = 'flex-1 p-4 overflow-y-auto';
-const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
-const formGroupClass = 'mb-4';
 const btnSmallClass =
   'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
@@ -290,20 +282,17 @@ export function StashView({ onRefresh }: StashViewProps) {
         )}
       </div>
 
-      {showCreateDialog && (
-        <div className="dialog-overlay-centered" onClick={() => setShowCreateDialog(false)}>
-          <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
-            <div className={headerClass}>
-              <div className={titleClass}>
-                <Archive size={20} />
-                <span>Create Stash</span>
-              </div>
-              <button className={closeClass} onClick={() => setShowCreateDialog(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className={contentClass}>
-              <div className={formGroupClass}>
+      <Dialog.Root open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay-animated" />
+          <Dialog.Content className="dialog-content max-w-100">
+            <Dialog.Title className="dialog-title">
+              <Archive size={18} />
+              Create Stash
+            </Dialog.Title>
+
+            <div className="dialog-body">
+              <div className="field">
                 <label htmlFor="stash-message" className="label">
                   Message (optional)
                 </label>
@@ -347,17 +336,24 @@ export function StashView({ onRefresh }: StashViewProps) {
                 </label>
               </div>
             </div>
-            <div className={footerClass}>
-              <button className="btn-icon btn-secondary" onClick={() => setShowCreateDialog(false)}>
-                Cancel
-              </button>
-              <button className="btn-icon btn-primary" onClick={handleSave}>
+
+            <div className="dialog-footer">
+              <Dialog.Close asChild>
+                <button className="btn btn-secondary">Cancel</button>
+              </Dialog.Close>
+              <button className="btn btn-primary" onClick={handleSave}>
                 Create Stash
               </button>
             </div>
-          </div>
-        </div>
-      )}
+
+            <Dialog.Close asChild>
+              <button className="btn-close absolute top-3 right-3" aria-label="Close">
+                <X size={16} />
+              </button>
+            </Dialog.Close>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

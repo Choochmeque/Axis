@@ -13,16 +13,6 @@ interface DeleteBranchDialogProps {
   branch?: Branch;
 }
 
-const contentClass =
-  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
-const titleClass =
-  'flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)';
-const bodyClass = 'p-5';
-const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
-const closeClass =
-  'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
-
 export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
   const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,19 +49,19 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className={contentClass}>
-          <Dialog.Title className={titleClass}>
+        <Dialog.Content className="dialog-content max-w-105">
+          <Dialog.Title className="dialog-title">
             <Trash2 size={18} />
             Delete Branch
           </Dialog.Title>
 
-          <div className={bodyClass}>
+          <div className="dialog-body">
             <div className="flex items-center gap-2 py-2 px-3 mb-4 bg-warning/10 border border-warning rounded text-warning text-[13px]">
               <AlertTriangle size={16} className="shrink-0" />
               This action cannot be undone.
             </div>
 
-            <div className={infoBoxClass}>
+            <div className="dialog-info-box">
               <div className="flex justify-between text-[13px] py-1">
                 <span className="text-(--text-secondary)">Branch:</span>
                 <span className="text-(--text-primary) font-medium">{branch.name}</span>
@@ -111,7 +101,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
             )}
           </div>
 
-          <div className={footerClass}>
+          <div className="dialog-footer">
             <Dialog.Close asChild>
               <button className="btn btn-secondary">Cancel</button>
             </Dialog.Close>
@@ -128,7 +118,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
           </div>
 
           <Dialog.Close asChild>
-            <button className={closeClass} aria-label="Close">
+            <button className="btn-close absolute top-3 right-3" aria-label="Close">
               <X size={16} />
             </button>
           </Dialog.Close>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import {
   GitBranch,
   Check,
@@ -18,15 +19,6 @@ const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
 const btnIconSmallClass =
   'flex items-center justify-center w-5.5 h-5.5 p-0 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const dialogClass =
-  'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
-const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
-const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
-const closeClass =
-  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const contentClass = 'flex-1 p-4 overflow-y-auto';
-const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
-const formGroupClass = 'mb-4';
 
 interface GitFlowViewProps {
   onRefresh?: () => void;
@@ -470,20 +462,17 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       )}
 
       {/* Initialize Dialog */}
-      {showInitDialog && (
-        <div className="dialog-overlay-centered" onClick={() => setShowInitDialog(false)}>
-          <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
-            <div className={headerClass}>
-              <div className={titleClass}>
-                <Settings size={20} />
-                <span>Initialize Git Flow</span>
-              </div>
-              <button className={closeClass} onClick={() => setShowInitDialog(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className={contentClass}>
-              <div className={formGroupClass}>
+      <Dialog.Root open={showInitDialog} onOpenChange={setShowInitDialog}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay-animated" />
+          <Dialog.Content className="dialog-content max-w-100">
+            <Dialog.Title className="dialog-title">
+              <Settings size={18} />
+              Initialize Git Flow
+            </Dialog.Title>
+
+            <div className="dialog-body">
+              <div className="field">
                 <label htmlFor="init-master" className="label">
                   Production branch
                 </label>
@@ -496,7 +485,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                   className="input"
                 />
               </div>
-              <div className={formGroupClass}>
+              <div className="field">
                 <label htmlFor="init-develop" className="label">
                   Development branch
                 </label>
@@ -510,37 +499,39 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                 />
               </div>
             </div>
-            <div className={footerClass}>
-              <button
-                className="btn-icon btn-secondary"
-                onClick={() => setShowInitDialog(false)}
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button className="btn-icon btn-primary" onClick={handleInit} disabled={isLoading}>
+
+            <div className="dialog-footer">
+              <Dialog.Close asChild>
+                <button className="btn btn-secondary" disabled={isLoading}>
+                  Cancel
+                </button>
+              </Dialog.Close>
+              <button className="btn btn-primary" onClick={handleInit} disabled={isLoading}>
                 {isLoading ? 'Initializing...' : 'Initialize'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+
+            <Dialog.Close asChild>
+              <button className="btn-close absolute top-3 right-3" aria-label="Close">
+                <X size={16} />
+              </button>
+            </Dialog.Close>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Start Branch Dialog */}
-      {showStartDialog && (
-        <div className="dialog-overlay-centered" onClick={() => setShowStartDialog(false)}>
-          <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
-            <div className={headerClass}>
-              <div className={titleClass}>
-                {getTypeIcon(startType)}
-                <span>Start {getTypeLabel(startType)}</span>
-              </div>
-              <button className={closeClass} onClick={() => setShowStartDialog(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className={contentClass}>
-              <div className={formGroupClass}>
+      <Dialog.Root open={showStartDialog} onOpenChange={setShowStartDialog}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay-animated" />
+          <Dialog.Content className="dialog-content max-w-100">
+            <Dialog.Title className="dialog-title">
+              {getTypeIcon(startType)}
+              Start {getTypeLabel(startType)}
+            </Dialog.Title>
+
+            <div className="dialog-body">
+              <div className="field">
                 <label htmlFor="branch-name" className="label">
                   {getTypeLabel(startType)} name
                 </label>
@@ -560,25 +551,30 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                 </p>
               </div>
             </div>
-            <div className={footerClass}>
+
+            <div className="dialog-footer">
+              <Dialog.Close asChild>
+                <button className="btn btn-secondary" disabled={isLoading}>
+                  Cancel
+                </button>
+              </Dialog.Close>
               <button
-                className="btn-icon btn-secondary"
-                onClick={() => setShowStartDialog(false)}
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-icon btn-primary"
+                className="btn btn-primary"
                 onClick={handleStart}
                 disabled={isLoading || !branchName.trim()}
               >
                 {isLoading ? 'Starting...' : `Start ${getTypeLabel(startType)}`}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+
+            <Dialog.Close asChild>
+              <button className="btn-close absolute top-3 right-3" aria-label="Close">
+                <X size={16} />
+              </button>
+            </Dialog.Close>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

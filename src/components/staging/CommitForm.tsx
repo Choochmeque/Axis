@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { useStagingStore } from '../../store/stagingStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { remoteApi, commitApi } from '../../services/api';
@@ -119,13 +120,9 @@ export function CommitForm() {
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="min-w-45 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50"
-              align="end"
-              sideOffset={4}
-            >
+            <DropdownMenu.Content className="dropdown-content min-w-45" align="end" sideOffset={4}>
               <DropdownMenu.CheckboxItem
-                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
+                className="dropdown-item"
                 checked={isAmending}
                 onCheckedChange={setIsAmending}
               >
@@ -135,7 +132,7 @@ export function CommitForm() {
                 Amend last commit
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
+                className="dropdown-item"
                 checked={bypassHooks}
                 onCheckedChange={setBypassHooks}
               >
@@ -145,7 +142,7 @@ export function CommitForm() {
                 Bypass commit hooks
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
+                className="dropdown-item"
                 checked={signCommit}
                 onCheckedChange={setSignCommit}
               >
@@ -155,7 +152,7 @@ export function CommitForm() {
                 Sign commit
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
-                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
+                className="dropdown-item"
                 checked={signOff}
                 onCheckedChange={setSignOff}
               >
@@ -164,11 +161,8 @@ export function CommitForm() {
                 </DropdownMenu.ItemIndicator>
                 Sign off
               </DropdownMenu.CheckboxItem>
-              <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
-              <DropdownMenu.Item
-                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-tertiary) rounded cursor-default outline-none relative"
-                disabled
-              >
+              <DropdownMenu.Separator className="dropdown-separator" />
+              <DropdownMenu.Item className="dropdown-item" disabled>
                 Create pull request
               </DropdownMenu.Item>
             </DropdownMenu.Content>
@@ -204,17 +198,24 @@ export function CommitForm() {
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <label className="flex items-center gap-1.5 text-xs text-(--text-secondary) cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-3.5 h-3.5 cursor-pointer accent-(--accent-color)"
+          <div className="flex items-center gap-1.5">
+            <Checkbox.Root
+              id="push-after-commit"
+              className="checkbox"
               checked={pushAfterCommit}
-              onChange={(e) => setPushAfterCommit(e.target.checked)}
-            />
-            <span className="select-none">
+              onCheckedChange={(checked) => setPushAfterCommit(checked === true)}
+            >
+              <Checkbox.Indicator>
+                <Check size={10} className="text-white" />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
+            <label
+              htmlFor="push-after-commit"
+              className="text-xs text-(--text-secondary) cursor-pointer select-none"
+            >
               Push to origin/{repository?.current_branch || 'main'}
-            </span>
-          </label>
+            </label>
+          </div>
           <button
             className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-none rounded bg-(--accent-color) text-white text-xs font-medium cursor-pointer transition-colors hover:not-disabled:bg-[#0066b8] disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCommit}

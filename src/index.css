@@ -281,25 +281,37 @@
     }
   }
 
-  /* Dialog content classes */
-  .dialog-content {
-    @apply bg-(--bg-secondary) border border-(--border-color) rounded-lg shadow-xl;
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
   }
 
-  .dialog-header {
-    @apply flex items-center justify-between p-4 border-b border-(--border-color);
+  /* Dialog classes */
+  .dialog-content {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-h-[85vh] p-0 overflow-y-auto z-10000;
+    animation: dialog-in 150ms ease-out;
   }
 
   .dialog-title {
-    @apply text-base font-semibold text-(--text-primary);
+    @apply flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color);
   }
 
   .dialog-body {
-    @apply p-4;
+    @apply p-5;
   }
 
   .dialog-footer {
-    @apply flex justify-end gap-2 p-4 border-t border-(--border-color);
+    @apply flex justify-end gap-2 py-4 px-5 border-t border-(--border-color);
+  }
+
+  .dialog-info-box {
+    @apply p-3 bg-(--bg-secondary) rounded mb-4;
   }
 
   /* Button classes */
@@ -346,5 +358,31 @@
 
   .checkbox-label {
     @apply text-[13px] text-(--text-primary) cursor-pointer select-none;
+  }
+
+  /* Dropdown classes (Radix UI) */
+  .dropdown-button {
+    @apply flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover);
+  }
+
+  .dropdown-content {
+    @apply min-w-48 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50;
+  }
+
+  .dropdown-item {
+    @apply flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+  }
+
+  .dropdown-label {
+    @apply px-2 py-1 text-[11px] text-(--text-tertiary) uppercase;
+  }
+
+  .dropdown-separator {
+    @apply h-px bg-(--border-color) my-1;
+  }
+
+  /* Close button */
+  .btn-close {
+    @apply flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary);
   }
 }

@@ -3,11 +3,6 @@ import { X } from 'lucide-react';
 import { StashView } from './StashView';
 import { useRepositoryStore } from '../../store/repositoryStore';
 
-const contentClass =
-  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 max-w-[90vw] max-h-[80vh] bg-(--bg-primary) rounded-lg shadow-xl z-10000 flex flex-col overflow-hidden';
-const closeClass =
-  'absolute top-3 right-3 w-6 h-6 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-
 interface StashDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,11 +19,11 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className={contentClass}>
+        <Dialog.Overlay className="dialog-overlay-animated" />
+        <Dialog.Content className="dialog-content w-125 max-h-[80vh] flex flex-col overflow-hidden">
           <StashView onRefresh={handleRefresh} />
           <Dialog.Close asChild>
-            <button className={closeClass} aria-label="Close">
+            <button className="btn-close absolute top-3 right-3" aria-label="Close">
               <X size={16} />
             </button>
           </Dialog.Close>

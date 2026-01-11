@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   X,
@@ -14,14 +15,6 @@ import {
 import { settingsApi } from '../../services/api';
 import type { AppSettings, Theme } from '../../types';
 import { cn } from '../../lib/utils';
-
-const dialogClass =
-  'bg-(--bg-primary) rounded-lg shadow-xl w-175 max-w-[90vw] max-h-[80vh] flex flex-col z-10000';
-const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
-const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
-const closeClass =
-  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const footerClass = 'flex justify-between items-center py-3 px-4 border-t border-(--border-color)';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -106,8 +99,6 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  if (!isOpen) return null;
-
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
@@ -116,90 +107,96 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
   ];
 
   return (
-    <div className="dialog-overlay-centered" onClick={onClose}>
-      <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
-        <div className={headerClass}>
-          <div className={titleClass}>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog-overlay-animated" />
+        <Dialog.Content className="dialog-content max-w-175 max-h-[80vh] flex flex-col overflow-hidden">
+          <Dialog.Title className="dialog-title">
             <Settings size={20} />
-            <span>Settings</span>
+            Settings
+          </Dialog.Title>
+
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  className={cn(
+                    'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-[13px] cursor-pointer text-left transition-colors',
+                    activeTab === tab.id
+                      ? 'bg-(--accent-color) text-white'
+                      : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
+                  )}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 py-5 px-6 overflow-y-auto">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-50 text-(--text-muted)">
+                  Loading settings...
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'appearance' && (
+                    <AppearanceSettings settings={settings} updateSetting={updateSetting} />
+                  )}
+                  {activeTab === 'git' && (
+                    <GitSettings settings={settings} updateSetting={updateSetting} />
+                  )}
+                  {activeTab === 'diff' && (
+                    <DiffSettings settings={settings} updateSetting={updateSetting} />
+                  )}
+                  {activeTab === 'terminal' && (
+                    <TerminalSettings settings={settings} updateSetting={updateSetting} />
+                  )}
+                </>
+              )}
+            </div>
           </div>
-          <button className={closeClass} onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
 
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={cn(
-                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-[13px] cursor-pointer text-left transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-(--accent-color) text-white'
-                    : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+          {error && (
+            <div className="mx-4 p-3 bg-error/10 text-error rounded text-[13px]">{error}</div>
+          )}
 
-          <div className="flex-1 py-5 px-6 overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-50 text-(--text-muted)">
-                Loading settings...
-              </div>
-            ) : (
-              <>
-                {activeTab === 'appearance' && (
-                  <AppearanceSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'git' && (
-                  <GitSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'diff' && (
-                  <DiffSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'terminal' && (
-                  <TerminalSettings settings={settings} updateSetting={updateSetting} />
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="mx-4 p-3 bg-error/10 text-error rounded text-[13px]">{error}</div>
-        )}
-
-        <div className={footerClass}>
-          <button
-            className="btn-icon btn-secondary"
-            onClick={handleReset}
-            disabled={!hasChanges || isSaving}
-          >
-            <RotateCcw size={14} />
-            Reset
-          </button>
-          <div className="flex gap-2">
-            <button className="btn-icon btn-secondary" onClick={onClose} disabled={isSaving}>
-              Cancel
-            </button>
+          <div className="dialog-footer justify-between">
             <button
-              className="btn-icon btn-primary"
-              onClick={handleSave}
+              className="btn-icon btn-secondary"
+              onClick={handleReset}
               disabled={!hasChanges || isSaving}
             >
-              <Save size={14} />
-              {isSaving ? 'Saving...' : 'Save'}
+              <RotateCcw size={14} />
+              Reset
             </button>
+            <div className="flex gap-2">
+              <Dialog.Close asChild>
+                <button className="btn-icon btn-secondary" disabled={isSaving}>
+                  Cancel
+                </button>
+              </Dialog.Close>
+              <button
+                className="btn-icon btn-primary"
+                onClick={handleSave}
+                disabled={!hasChanges || isSaving}
+              >
+                <Save size={14} />
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+
+          <Dialog.Close asChild>
+            <button className="btn-close absolute top-3 right-3" aria-label="Close">
+              <X size={16} />
+            </button>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

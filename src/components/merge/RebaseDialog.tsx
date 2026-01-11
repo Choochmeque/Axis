@@ -1,20 +1,9 @@
 import { useState, useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import { GitBranch, X, AlertCircle, Check } from 'lucide-react';
 import { rebaseApi, branchApi } from '../../services/api';
 import type { Branch, RebaseResult } from '../../types';
 import { cn } from '../../lib/utils';
-
-const dialogClass =
-  'bg-(--bg-primary) rounded-lg shadow-xl min-w-100 max-w-125 max-h-[80vh] flex flex-col overflow-hidden z-10000';
-const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
-const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
-const closeClass =
-  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const contentClass = 'flex-1 p-4 overflow-y-auto';
-const footerClass = 'flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)';
-const formGroupClass = 'mb-4';
-const selectClass =
-  'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface RebaseDialogProps {
   isOpen: boolean;
@@ -128,150 +117,158 @@ export function RebaseDialog({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="dialog-overlay-centered" onClick={onClose}>
-      <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
-        <div className={headerClass}>
-          <div className={titleClass}>
-            <GitBranch size={20} />
-            <span>Rebase Branch</span>
-          </div>
-          <button className={closeClass} onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog-overlay-animated" />
+        <Dialog.Content className="dialog-content max-w-125">
+          <Dialog.Title className="dialog-title">
+            <GitBranch size={18} />
+            Rebase Branch
+          </Dialog.Title>
 
-        <div className={contentClass}>
-          {error && (
-            <div className="flex items-start gap-2 p-3 bg-error/10 border border-error rounded-md text-error text-[13px] mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
+          <div className="dialog-body">
+            {error && (
+              <div className="flex items-start gap-2 p-3 bg-error/10 border border-error rounded-md text-error text-[13px] mb-4">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
-          {result && (
-            <div
-              className={cn(
-                'flex items-start gap-2 p-3 rounded-md text-[13px] mb-4',
-                result.success
-                  ? 'bg-success/10 border border-success text-success'
-                  : 'bg-warning/10 border border-warning text-warning'
-              )}
-            >
-              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
-              <span>{result.message}</span>
-            </div>
-          )}
+            {result && (
+              <div
+                className={cn(
+                  'flex items-start gap-2 p-3 rounded-md text-[13px] mb-4',
+                  result.success
+                    ? 'bg-success/10 border border-success text-success'
+                    : 'bg-warning/10 border border-warning text-warning'
+                )}
+              >
+                {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+                <span>{result.message}</span>
+              </div>
+            )}
 
-          {!result && (
-            <>
-              <div className={formGroupClass}>
-                <label className="label">Current Branch</label>
-                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
-                  {currentBranch}
+            {!result && (
+              <>
+                <div className="field">
+                  <label className="label">Current Branch</label>
+                  <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
+                    {currentBranch}
+                  </div>
                 </div>
-              </div>
 
-              <div className={formGroupClass}>
-                <label htmlFor="rebase-branch" className="label">
-                  Rebase Onto
-                </label>
-                <select
-                  id="rebase-branch"
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
-                  disabled={isLoading}
-                  className={selectClass}
-                >
-                  <option value="">Select a branch...</option>
-                  {branches.map((branch) => (
-                    <option key={branch.full_name} value={branch.name}>
-                      {branch.name}
-                      {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
-                <p className="m-0 mb-2">
-                  This will replay all commits from{' '}
-                  <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
-                  top of{' '}
-                  <strong className="text-(--text-primary) font-mono">
-                    {selectedBranch || '...'}
-                  </strong>
-                  .
-                </p>
-                <p className="m-0 text-xs text-warning">
-                  Warning: Rebase rewrites commit history. Only rebase commits that haven't been
-                  pushed to a shared repository.
-                </p>
-              </div>
-            </>
-          )}
-
-          {result && result.conflicts.length > 0 && (
-            <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
-                Conflicted Files
-              </h4>
-              <ul className="m-0 p-0 list-none">
-                {result.conflicts.map((conflict) => (
-                  <li
-                    key={conflict.path}
-                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                <div className="field">
+                  <label htmlFor="rebase-branch" className="label">
+                    Rebase Onto
+                  </label>
+                  <select
+                    id="rebase-branch"
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    disabled={isLoading}
+                    className="input"
                   >
-                    {conflict.path}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+                    <option value="">Select a branch...</option>
+                    {branches.map((branch) => (
+                      <option key={branch.full_name} value={branch.name}>
+                        {branch.name}
+                        {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-        <div className={footerClass}>
-          {result && !result.success ? (
-            <>
-              <button
-                className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
-                onClick={handleAbort}
-              >
-                Abort Rebase
+                <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
+                  <p className="m-0 mb-2">
+                    This will replay all commits from{' '}
+                    <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
+                    top of{' '}
+                    <strong className="text-(--text-primary) font-mono">
+                      {selectedBranch || '...'}
+                    </strong>
+                    .
+                  </p>
+                  <p className="m-0 text-xs text-warning">
+                    Warning: Rebase rewrites commit history. Only rebase commits that haven't been
+                    pushed to a shared repository.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {result && result.conflicts.length > 0 && (
+              <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
+                <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+                  Conflicted Files
+                </h4>
+                <ul className="m-0 p-0 list-none">
+                  {result.conflicts.map((conflict) => (
+                    <li
+                      key={conflict.path}
+                      className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                    >
+                      {conflict.path}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="dialog-footer">
+            {result && !result.success ? (
+              <>
+                <button
+                  className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
+                  onClick={handleAbort}
+                >
+                  Abort Rebase
+                </button>
+                <button
+                  className="btn-icon btn-secondary"
+                  onClick={handleSkip}
+                  disabled={isLoading}
+                >
+                  Skip Commit
+                </button>
+                <button
+                  className="btn-icon btn-primary"
+                  onClick={handleContinue}
+                  disabled={isLoading}
+                >
+                  Continue
+                </button>
+              </>
+            ) : result && result.success ? (
+              <button className="btn-icon btn-primary" onClick={onClose}>
+                Close
               </button>
-              <button className="btn-icon btn-secondary" onClick={handleSkip} disabled={isLoading}>
-                Skip Commit
-              </button>
-              <button
-                className="btn-icon btn-primary"
-                onClick={handleContinue}
-                disabled={isLoading}
-              >
-                Continue
-              </button>
-            </>
-          ) : result && result.success ? (
-            <button className="btn-icon btn-primary" onClick={onClose}>
-              Close
+            ) : (
+              <>
+                <Dialog.Close asChild>
+                  <button className="btn-icon btn-secondary" disabled={isLoading}>
+                    Cancel
+                  </button>
+                </Dialog.Close>
+                <button
+                  className="btn-icon btn-primary"
+                  onClick={handleRebase}
+                  disabled={isLoading || !selectedBranch}
+                >
+                  {isLoading ? 'Rebasing...' : 'Rebase'}
+                </button>
+              </>
+            )}
+          </div>
+
+          <Dialog.Close asChild>
+            <button className="btn-close absolute top-3 right-3" aria-label="Close">
+              <X size={16} />
             </button>
-          ) : (
-            <>
-              <button className="btn-icon btn-secondary" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </button>
-              <button
-                className="btn-icon btn-primary"
-                onClick={handleRebase}
-                disabled={isLoading || !selectedBranch}
-              >
-                {isLoading ? 'Rebasing...' : 'Rebase'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

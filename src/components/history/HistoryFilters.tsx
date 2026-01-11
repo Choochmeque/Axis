@@ -33,13 +33,6 @@ export function HistoryFilters() {
     setSortOrder(value);
   };
 
-  const dropdownButtonClass =
-    'flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover)';
-  const dropdownContentClass =
-    'min-w-40 max-h-80 overflow-y-auto bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50';
-  const dropdownItemClass =
-    'flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover)';
-
   // Get local branches for the dropdown
   const localBranches = branches.filter((b) => b.branch_type === 'local');
 
@@ -48,22 +41,22 @@ export function HistoryFilters() {
       {/* Branch Filter Dropdown */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button className={dropdownButtonClass}>
+          <button className="dropdown-button">
             <span>{getBranchFilterLabel()}</span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content className={dropdownContentClass} align="start" sideOffset={4}>
+          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
             <DropdownMenu.Item
-              className={dropdownItemClass}
+              className="dropdown-item"
               onSelect={() => handleBranchFilterChange('all')}
             >
               {branchFilter === 'all' && <Check size={12} className="absolute left-2" />}
               All Branches
             </DropdownMenu.Item>
             <DropdownMenu.Item
-              className={dropdownItemClass}
+              className="dropdown-item"
               onSelect={() => handleBranchFilterChange('current')}
             >
               {branchFilter === 'current' && <Check size={12} className="absolute left-2" />}
@@ -71,14 +64,12 @@ export function HistoryFilters() {
             </DropdownMenu.Item>
             {localBranches.length > 0 && (
               <>
-                <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
-                <DropdownMenu.Label className="px-2 py-1 text-[11px] text-(--text-tertiary) uppercase">
-                  Branches
-                </DropdownMenu.Label>
+                <DropdownMenu.Separator className="dropdown-separator" />
+                <DropdownMenu.Label className="dropdown-label">Branches</DropdownMenu.Label>
                 {localBranches.map((branch) => (
                   <DropdownMenu.Item
                     key={branch.name}
-                    className={dropdownItemClass}
+                    className="dropdown-item"
                     onSelect={() => handleBranchFilterChange({ specific: branch.name })}
                   >
                     {typeof branchFilter === 'object' &&
@@ -98,24 +89,18 @@ export function HistoryFilters() {
       {/* Remote Branches Toggle */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button className={dropdownButtonClass}>
+          <button className="dropdown-button">
             <span>{includeRemotes ? 'Show Remote Branches' : 'Hide Remote Branches'}</span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content className={dropdownContentClass} align="start" sideOffset={4}>
-            <DropdownMenu.Item
-              className={dropdownItemClass}
-              onSelect={() => setIncludeRemotes(true)}
-            >
+          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
+            <DropdownMenu.Item className="dropdown-item" onSelect={() => setIncludeRemotes(true)}>
               {includeRemotes && <Check size={12} className="absolute left-2" />}
               Show Remote Branches
             </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className={dropdownItemClass}
-              onSelect={() => setIncludeRemotes(false)}
-            >
+            <DropdownMenu.Item className="dropdown-item" onSelect={() => setIncludeRemotes(false)}>
               {!includeRemotes && <Check size={12} className="absolute left-2" />}
               Hide Remote Branches
             </DropdownMenu.Item>
@@ -126,22 +111,22 @@ export function HistoryFilters() {
       {/* Sort Order Dropdown */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button className={dropdownButtonClass}>
+          <button className="dropdown-button">
             <span>{sortOrder === 'date_order' ? 'Date Order' : 'Ancestor Order'}</span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content className={dropdownContentClass} align="start" sideOffset={4}>
+          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
             <DropdownMenu.Item
-              className={dropdownItemClass}
+              className="dropdown-item"
               onSelect={() => handleSortOrderChange('date_order')}
             >
               {sortOrder === 'date_order' && <Check size={12} className="absolute left-2" />}
               Date Order
             </DropdownMenu.Item>
             <DropdownMenu.Item
-              className={dropdownItemClass}
+              className="dropdown-item"
               onSelect={() => handleSortOrderChange('ancestor_order')}
             >
               {sortOrder === 'ancestor_order' && <Check size={12} className="absolute left-2" />}

@@ -28,13 +28,13 @@ export function CommitInfo({ commit }: CommitInfoProps) {
   const valueClass = 'flex items-center gap-2 flex-wrap text-(--text-primary) min-w-0';
 
   return (
-    <div className="flex flex-col border-b border-(--border-color) bg-(--bg-primary) shrink-0">
-      <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary)">
+    <div className="flex flex-col h-full bg-(--bg-primary)">
+      <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
         <GitCommit size={16} />
         <span>Commit Details</span>
       </div>
 
-      <div className="flex flex-col p-3 gap-2">
+      <div className="flex flex-col p-3 gap-2 flex-1 overflow-y-auto">
         <div className={rowClass}>
           <span className={labelClass}>SHA</span>
           <div className={valueClass}>

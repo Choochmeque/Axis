@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Trash2, Check } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { useStagingStore } from '../../store/stagingStore';
 import { FileStatusList } from './FileStatusList';
 import {
@@ -144,9 +145,8 @@ export function StagingView() {
     return sortFiles(filtered, sortBy);
   }, [status?.conflicted, showOnly, sortBy]);
 
-  // Original counts for actions (before filtering)
+  // Original count for discard all action (before filtering)
   const totalUnstaged = (status?.unstaged?.length ?? 0) + (status?.untracked?.length ?? 0);
-  const totalStaged = status?.staged?.length ?? 0;
 
   if (isLoadingStatus && !status) {
     return (
@@ -195,16 +195,21 @@ export function StagingView() {
         <div className="flex flex-col min-h-0 overflow-hidden border-b border-(--border-color)">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
-              <span className={sectionTitleClass}>Staged Changes</span>
+              <Checkbox.Root
+                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+                checked={hasStaged}
+                onCheckedChange={(checked: boolean | 'indeterminate') => {
+                  if (checked === false) {
+                    unstageAll();
+                  }
+                }}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <span className={sectionTitleClass}>Staged files</span>
               {hasStaged && <span className={sectionCountClass}>{stagedFiles.length}</span>}
-            </div>
-            <div className="flex gap-1">
-              {totalStaged > 0 && (
-                <button className={actionBtnClass} onClick={unstageAll} title="Unstage all">
-                  <Minus size={14} />
-                  Unstage All
-                </button>
-              )}
             </div>
           </div>
 
@@ -228,26 +233,31 @@ export function StagingView() {
         <div className="flex flex-col min-h-0 overflow-hidden border-b border-(--border-color) last:border-b-0">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
-              <span className={sectionTitleClass}>Unstaged Changes</span>
+              <Checkbox.Root
+                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+                checked={false}
+                onCheckedChange={(checked: boolean | 'indeterminate') => {
+                  if (checked === true) {
+                    stageAll();
+                  }
+                }}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <span className={sectionTitleClass}>Unstaged files</span>
               {hasUnstaged && <span className={sectionCountClass}>{unstagedFiles.length}</span>}
             </div>
-            <div className="flex gap-1">
-              {totalUnstaged > 0 && (
-                <>
-                  <button className={actionBtnClass} onClick={stageAll} title="Stage all">
-                    <Plus size={14} />
-                    Stage All
-                  </button>
-                  <button
-                    className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-                    onClick={discardAll}
-                    title="Discard all changes"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </>
-              )}
-            </div>
+            {totalUnstaged > 0 && (
+              <button
+                className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
+                onClick={discardAll}
+                title="Discard all changes"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
 
           {hasUnstaged ? (

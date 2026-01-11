@@ -12,12 +12,13 @@ import {
   ChevronDown,
   Folder,
   MoreHorizontal,
-  Minus,
   FileX,
   EyeOff,
   FolderOpen,
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import { Check } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import type { FileStatus, StatusType } from '../../types';
 import { cn } from '../../lib/utils';
@@ -99,6 +100,7 @@ export function FileStatusList({
             {/* Table header */}
             <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-[11px] font-medium text-(--text-secondary) sticky top-0">
               <div className="w-6 shrink-0" />
+              <div className="w-6 shrink-0" />
               <div className="flex-1 min-w-0 px-2">Filename</div>
               <div className="flex-1 min-w-0 px-2">Path</div>
             </div>
@@ -179,11 +181,6 @@ function FileStatusItem({
   const status = file.staged_status || file.unstaged_status || file.status;
   const statusColorClass = getStatusColorClass(status);
 
-  const handleAction = (e: React.MouseEvent, action: (() => void) | undefined) => {
-    e.stopPropagation();
-    action?.();
-  };
-
   const handleShowInFinder = async () => {
     if (repository?.path) {
       const fullPath = `${repository.path}/${file.path}`;
@@ -205,12 +202,25 @@ function FileStatusItem({
   // Check if this is a staged file (has only unstage action)
   const isStaged = onUnstage && !onStage;
 
+  const handleCheckboxChange = (checked: boolean) => {
+    if (checked) {
+      // Checking = stage the file
+      onStage?.();
+    } else {
+      // Unchecking = unstage the file
+      onUnstage?.();
+    }
+  };
+
   const dropdownContentClass =
     'min-w-40 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50';
   const dropdownItemClass =
     'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover) data-highlighted:bg-(--bg-hover)';
   const dropdownItemDisabledClass =
     'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-tertiary) cursor-not-allowed outline-none';
+
+  const checkboxClass =
+    'flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)';
 
   if (compact) {
     return (
@@ -222,6 +232,18 @@ function FileStatusItem({
         onClick={onSelect}
         title={file.path}
       >
+        <Checkbox.Root
+          className={checkboxClass}
+          checked={isStaged}
+          onCheckedChange={(checked: boolean | 'indeterminate') => {
+            handleCheckboxChange(checked === true);
+          }}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          <Checkbox.Indicator>
+            <Check size={10} className="text-white" />
+          </Checkbox.Indicator>
+        </Checkbox.Root>
         {renderStatusIcon()}
         <span className="flex-1 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
           {getFileName(file.path)}
@@ -236,6 +258,18 @@ function FileStatusItem({
       onClick={onSelect}
       style={{ paddingLeft: indent > 0 ? `${indent * 16 + 12}px` : undefined }}
     >
+      <Checkbox.Root
+        className={checkboxClass}
+        checked={isStaged}
+        onCheckedChange={(checked: boolean | 'indeterminate') => {
+          handleCheckboxChange(checked === true);
+        }}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <Checkbox.Indicator>
+          <Check size={10} className="text-white" />
+        </Checkbox.Indicator>
+      </Checkbox.Root>
       {renderStatusIcon()}
       <span
         className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
@@ -294,15 +328,6 @@ function FileStatusItem({
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
         )}
-        {isStaged && (
-          <button
-            className={fileActionClass}
-            onClick={(e) => handleAction(e, onUnstage)}
-            title="Unstage"
-          >
-            <Minus size={14} />
-          </button>
-        )}
       </div>
     </div>
   );
@@ -322,14 +347,30 @@ function MultiColumnFileItem({
   file,
   isSelected,
   onSelect,
+  onStage,
+  onUnstage,
 }: MultiColumnFileItemProps) {
   const status = file.staged_status || file.unstaged_status || file.status;
   const statusColorClass = getStatusColorClass(status);
+
+  // Check if this is a staged file (has only unstage action)
+  const isStaged = onUnstage && !onStage;
+
+  const handleCheckboxChange = (checked: boolean) => {
+    if (checked) {
+      onStage?.();
+    } else {
+      onUnstage?.();
+    }
+  };
 
   const renderStatusIcon = () => {
     const Icon = getStatusIcon(status);
     return <Icon className={cn('shrink-0', statusColorClass)} size={14} />;
   };
+
+  const checkboxClass =
+    'flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)';
 
   return (
     <div
@@ -339,6 +380,20 @@ function MultiColumnFileItem({
       )}
       onClick={onSelect}
     >
+      <div className="w-6 shrink-0 flex items-center justify-center">
+        <Checkbox.Root
+          className={checkboxClass}
+          checked={isStaged}
+          onCheckedChange={(checked: boolean | 'indeterminate') => {
+            handleCheckboxChange(checked === true);
+          }}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          <Checkbox.Indicator>
+            <Check size={10} className="text-white" />
+          </Checkbox.Indicator>
+        </Checkbox.Root>
+      </div>
       <div className="w-6 shrink-0 flex items-center justify-center">
         {renderStatusIcon()}
       </div>

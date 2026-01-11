@@ -30,15 +30,22 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
         </button>
       </div>
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden *:data-panel-group:flex-1 *:data-panel-group:min-h-0">
-        <CommitInfo commit={commit} />
         <PanelGroup direction="horizontal" autoSaveId="commit-detail-layout">
           <Panel defaultSize={35} minSize={20} maxSize={50}>
-            <CommitFileList
-              files={selectedCommitFiles}
-              selectedFile={selectedCommitFile}
-              onSelectFile={selectCommitFile}
-              isLoading={isLoadingCommitFiles}
-            />
+            <PanelGroup direction="vertical" autoSaveId="commit-detail-left-layout">
+              <Panel defaultSize={60} minSize={30}>
+                <CommitFileList
+                  files={selectedCommitFiles}
+                  selectedFile={selectedCommitFile}
+                  onSelectFile={selectCommitFile}
+                  isLoading={isLoadingCommitFiles}
+                />
+              </Panel>
+              <PanelResizeHandle className="h-1 bg-(--border-color) cursor-row-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
+              <Panel defaultSize={40} minSize={20}>
+                <CommitInfo commit={commit} />
+              </Panel>
+            </PanelGroup>
           </Panel>
           <PanelResizeHandle className="w-1 bg-(--border-color) cursor-col-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
           <Panel minSize={50}>

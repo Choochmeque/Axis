@@ -27,9 +27,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
 
 interface GitFlowViewProps {
   onRefresh?: () => void;
@@ -487,7 +484,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="init-master" className={labelClass}>
+                <label htmlFor="init-master" className="label">
                   Production branch
                 </label>
                 <input
@@ -496,11 +493,11 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                   value={initMaster}
                   onChange={(e) => setInitMaster(e.target.value)}
                   placeholder="main"
-                  className={inputClass}
+                  className="input"
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="init-develop" className={labelClass}>
+                <label htmlFor="init-develop" className="label">
                   Development branch
                 </label>
                 <input
@@ -509,7 +506,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                   value={initDevelop}
                   onChange={(e) => setInitDevelop(e.target.value)}
                   placeholder="develop"
-                  className={inputClass}
+                  className="input"
                 />
               </div>
             </div>
@@ -544,7 +541,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="branch-name" className={labelClass}>
+                <label htmlFor="branch-name" className="label">
                   {getTypeLabel(startType)} name
                 </label>
                 <input
@@ -554,7 +551,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                   onChange={(e) => setBranchName(e.target.value)}
                   placeholder={startType === 'release' ? '1.0.0' : 'my-feature'}
                   autoFocus
-                  className={inputClass}
+                  className="input"
                 />
                 <p className="mt-1 text-xs text-(--text-muted)">
                   Branch will be created as:{' '}

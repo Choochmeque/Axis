@@ -13,7 +13,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const labelClass = 'block text-[13px] font-medium text-(--text-secondary) mb-1.5';
 const checkboxLabelClass =
   'flex items-center gap-2 cursor-pointer font-normal text-(--text-primary)';
 const checkboxDescClass = 'mt-1 ml-6 text-xs text-(--text-secondary)';
@@ -132,7 +131,7 @@ export function CherryPickDialog({
           {!result && (
             <>
               <div className={formGroupClass}>
-                <label className={labelClass}>
+                <label className="label">
                   {commits.length === 1 ? 'Commit to Cherry Pick' : 'Commits to Cherry Pick'}
                 </label>
                 <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">

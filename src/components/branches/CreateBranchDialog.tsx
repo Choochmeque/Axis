@@ -20,9 +20,7 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
+
 export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBranchDialogProps) {
   const [branchName, setBranchName] = useState('');
   const [baseBranch, setBaseBranch] = useState(startPoint || '');
@@ -87,7 +85,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="branch-name" className={labelClass}>
+              <label htmlFor="branch-name" className="label">
                 Branch Name
               </label>
               <input
@@ -98,19 +96,19 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
                 onKeyDown={handleKeyDown}
                 placeholder="feature/my-feature"
                 autoFocus
-                className={inputClass}
+                className="input"
               />
             </div>
 
             <div className={fieldClass}>
-              <label htmlFor="base-branch" className={labelClass}>
+              <label htmlFor="base-branch" className="label">
                 Starting Point
               </label>
               <select
                 id="base-branch"
                 value={baseBranch}
                 onChange={(e) => setBaseBranch(e.target.value)}
-                className={inputClass}
+                className="input"
               >
                 <option value="">Current HEAD</option>
                 {startPoint && !localBranches.some((b) => b.name === startPoint) && (

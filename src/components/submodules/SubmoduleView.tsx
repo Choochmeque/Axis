@@ -26,9 +26,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
 const btnSmallClass =
   'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
@@ -365,7 +362,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-url" className={labelClass}>
+                <label htmlFor="submodule-url" className="label">
                   Repository URL
                 </label>
                 <input
@@ -374,11 +371,11 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                   value={addUrl}
                   onChange={(e) => setAddUrl(e.target.value)}
                   placeholder="https://github.com/user/repo.git"
-                  className={inputClass}
+                  className="input"
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-path" className={labelClass}>
+                <label htmlFor="submodule-path" className="label">
                   Path
                 </label>
                 <input
@@ -387,11 +384,11 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                   value={addPath}
                   onChange={(e) => setAddPath(e.target.value)}
                   placeholder="lib/submodule"
-                  className={inputClass}
+                  className="input"
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-branch" className={labelClass}>
+                <label htmlFor="submodule-branch" className="label">
                   Branch (optional)
                 </label>
                 <input
@@ -400,7 +397,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                   value={addBranch}
                   onChange={(e) => setAddBranch(e.target.value)}
                   placeholder="main"
-                  className={inputClass}
+                  className="input"
                 />
               </div>
             </div>

@@ -200,9 +200,6 @@ interface SettingsPanelProps {
 const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';
 const groupClass = 'mb-5';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-primary)';
-const inputClass =
-  'w-full max-w-75 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
 const numberInputClass =
   'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
 const checkboxLabelClass =
@@ -215,14 +212,14 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Appearance</h3>
 
       <div className={groupClass}>
-        <label htmlFor="theme" className={labelClass}>
+        <label htmlFor="theme" className="label">
           Theme
         </label>
         <select
           id="theme"
           value={settings.theme}
           onChange={(e) => updateSetting('theme', e.target.value as Theme)}
-          className={inputClass}
+          className="input"
         >
           <option value="system">System</option>
           <option value="light">Light</option>
@@ -232,7 +229,7 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="fontSize" className={labelClass}>
+        <label htmlFor="fontSize" className="label">
           Font Size
         </label>
         <input
@@ -269,7 +266,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Git</h3>
 
       <div className={groupClass}>
-        <label htmlFor="defaultBranch" className={labelClass}>
+        <label htmlFor="defaultBranch" className="label">
           Default Branch Name
         </label>
         <input
@@ -277,13 +274,13 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="text"
           value={settings.default_branch_name}
           onChange={(e) => updateSetting('default_branch_name', e.target.value)}
-          className={inputClass}
+          className="input"
         />
         <p className={hintClass}>Default branch name for new repositories</p>
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="autoFetch" className={labelClass}>
+        <label htmlFor="autoFetch" className="label">
           Auto-fetch Interval (minutes)
         </label>
         <input
@@ -333,7 +330,7 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Diff & Editor</h3>
 
       <div className={groupClass}>
-        <label htmlFor="contextLines" className={labelClass}>
+        <label htmlFor="contextLines" className="label">
           Context Lines
         </label>
         <input
@@ -377,7 +374,7 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Commit</h3>
 
       <div className={groupClass}>
-        <label htmlFor="commitWidth" className={labelClass}>
+        <label htmlFor="commitWidth" className="label">
           Commit Message Width
         </label>
         <input
@@ -414,7 +411,7 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Terminal</h3>
 
       <div className={groupClass}>
-        <label htmlFor="terminalFont" className={labelClass}>
+        <label htmlFor="terminalFont" className="label">
           Font Family
         </label>
         <input
@@ -422,13 +419,13 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="text"
           value={settings.terminal_font_family}
           onChange={(e) => updateSetting('terminal_font_family', e.target.value)}
-          className={inputClass}
+          className="input"
         />
         <p className={hintClass}>Font family for terminal output</p>
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="terminalFontSize" className={labelClass}>
+        <label htmlFor="terminalFontSize" className="label">
           Font Size
         </label>
         <input

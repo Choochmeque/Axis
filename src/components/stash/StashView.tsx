@@ -15,9 +15,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
 const checkboxLabelClass = 'flex items-center gap-2 cursor-pointer text-(--text-primary)';
 const btnSmallClass =
   'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
@@ -297,7 +294,7 @@ export function StashView({ onRefresh }: StashViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="stash-message" className={labelClass}>
+                <label htmlFor="stash-message" className="label">
                   Message (optional)
                 </label>
                 <input
@@ -306,7 +303,7 @@ export function StashView({ onRefresh }: StashViewProps) {
                   value={stashMessage}
                   onChange={(e) => setStashMessage(e.target.value)}
                   placeholder="Stash message..."
-                  className={inputClass}
+                  className="input"
                 />
               </div>
               <div className={formGroupClass}>

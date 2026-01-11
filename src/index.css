@@ -318,4 +318,14 @@
   .btn-primary {
     @apply bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90;
   }
+
+  /* Input classes */
+  .input {
+    @apply w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color);
+  }
+
+  /* Label classes */
+  .label {
+    @apply block mb-1.5 text-[13px] font-medium text-(--text-secondary);
+  }
 }

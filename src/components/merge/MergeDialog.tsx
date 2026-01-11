@@ -13,7 +13,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const labelClass = 'block text-[13px] font-medium text-(--text-secondary) mb-1.5';
 const selectClass =
   'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
 const textareaClass =
@@ -147,14 +146,14 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
           {!result && (
             <>
               <div className={formGroupClass}>
-                <label className={labelClass}>Current Branch</label>
+                <label className="label">Current Branch</label>
                 <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
                   {currentBranch}
                 </div>
               </div>
 
               <div className={formGroupClass}>
-                <label htmlFor="merge-branch" className={labelClass}>
+                <label htmlFor="merge-branch" className="label">
                   Merge From
                 </label>
                 <select
@@ -175,7 +174,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
               </div>
 
               <div className={formGroupClass}>
-                <label htmlFor="merge-message" className={labelClass}>
+                <label htmlFor="merge-message" className="label">
                   Commit Message (optional)
                 </label>
                 <textarea

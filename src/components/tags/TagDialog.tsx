@@ -103,8 +103,6 @@ export function TagDialog({
 
   if (!isOpen) return null;
 
-  const inputClass =
-    'w-full py-2 px-3 text-sm bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) font-inherit focus:outline-none focus:border-(--accent-color)';
   const checkboxLabelClass =
     'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
 
@@ -157,7 +155,7 @@ export function TagDialog({
                   placeholder="v1.0.0"
                   disabled={isLoading}
                   autoFocus
-                  className={inputClass}
+                  className="input"
                 />
               </div>
 
@@ -196,7 +194,7 @@ export function TagDialog({
                         onChange={(e) => setSpecifiedCommit(e.target.value)}
                         placeholder="Commit SHA"
                         disabled={isLoading}
-                        className={cn(inputClass, 'font-mono text-[13px]')}
+                        className={cn('input', 'font-mono text-[13px]')}
                       />
                       {targetCommitSummary && (
                         <span className="text-xs text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">
@@ -283,7 +281,7 @@ export function TagDialog({
                           placeholder="Tag message..."
                           rows={3}
                           disabled={isLoading}
-                          className={cn(inputClass, 'resize-y min-h-15')}
+                          className={cn('input', 'resize-y min-h-15')}
                         />
                       </div>
                     )}

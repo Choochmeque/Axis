@@ -13,9 +13,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
 
 interface AddSubmoduleDialogProps {
   open: boolean;
@@ -97,7 +94,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="submodule-url" className={labelClass}>
+              <label htmlFor="submodule-url" className="label">
                 Repository URL
               </label>
               <input
@@ -108,12 +105,12 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
                 onKeyDown={handleKeyDown}
                 placeholder="https://github.com/user/repo.git"
                 autoFocus
-                className={inputClass}
+                className="input"
               />
             </div>
 
             <div className={fieldClass}>
-              <label htmlFor="submodule-path" className={labelClass}>
+              <label htmlFor="submodule-path" className="label">
                 Path
               </label>
               <input
@@ -123,7 +120,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
                 onChange={(e) => setPath(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="libs/my-submodule"
-                className={inputClass}
+                className="input"
               />
               <span className="block mt-1 text-xs text-(--text-muted)">
                 Relative path where the submodule will be cloned
@@ -131,7 +128,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
             </div>
 
             <div className={fieldClass}>
-              <label htmlFor="submodule-branch" className={labelClass}>
+              <label htmlFor="submodule-branch" className="label">
                 Branch (optional)
               </label>
               <input
@@ -141,7 +138,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
                 onChange={(e) => setBranch(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="main"
-                className={inputClass}
+                className="input"
               />
             </div>
 

@@ -19,9 +19,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
 const checkboxFieldClass = 'flex items-center gap-2 mb-4 last:mb-0';
 
 export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
@@ -135,7 +132,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
 
                 {!fetchAll && (
                   <div className={fieldClass}>
-                    <label htmlFor="remote-select" className={labelClass}>
+                    <label htmlFor="remote-select" className="label">
                       Remote
                     </label>
                     <select
@@ -143,7 +140,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
                       value={selectedRemote}
                       onChange={(e) => setSelectedRemote(e.target.value)}
                       disabled={remotes.length === 0}
-                      className={inputClass}
+                      className="input"
                     >
                       {remotes.map((remote) => (
                         <option key={remote.name} value={remote.name}>

@@ -18,9 +18,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
@@ -89,14 +86,14 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
             )}
 
             <div className={fieldClass}>
-              <label htmlFor="branch-select" className={labelClass}>
+              <label htmlFor="branch-select" className="label">
                 Select Branch
               </label>
               <select
                 id="branch-select"
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className={inputClass}
+                className="input"
               >
                 <option value="">-- Select a branch --</option>
 

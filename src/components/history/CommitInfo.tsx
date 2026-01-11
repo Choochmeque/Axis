@@ -24,7 +24,8 @@ export function CommitInfo({ commit }: CommitInfoProps) {
   };
 
   const rowClass = 'flex items-start gap-3 text-[13px]';
-  const labelClass = 'flex items-center gap-1 min-w-17.5 text-(--text-secondary) text-xs shrink-0';
+  const metaLabelClass =
+    'flex items-center gap-1 min-w-17.5 text-(--text-secondary) text-xs shrink-0';
   const valueClass = 'flex items-center gap-2 flex-wrap text-(--text-primary) min-w-0';
 
   return (
@@ -36,7 +37,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
       <div className="flex flex-col p-3 gap-2 flex-1 overflow-y-auto">
         <div className={rowClass}>
-          <span className={labelClass}>SHA</span>
+          <span className={metaLabelClass}>SHA</span>
           <div className={valueClass}>
             <code className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded break-all">
               {commit.oid}
@@ -53,7 +54,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         {commit.parent_oids.length > 0 && (
           <div className={rowClass}>
-            <span className={labelClass}>
+            <span className={metaLabelClass}>
               {commit.parent_oids.length === 1 ? 'Parent' : 'Parents'}
             </span>
             <div className={cn(valueClass, 'gap-1')}>
@@ -72,7 +73,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         )}
 
         <div className={rowClass}>
-          <span className={labelClass}>
+          <span className={metaLabelClass}>
             <User size={12} />
             Author
           </span>
@@ -83,7 +84,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         </div>
 
         <div className={rowClass}>
-          <span className={labelClass}>
+          <span className={metaLabelClass}>
             <Calendar size={12} />
             Date
           </span>
@@ -92,7 +93,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         {'refs' in commit && commit.refs.length > 0 && (
           <div className={rowClass}>
-            <span className={labelClass}>Refs</span>
+            <span className={metaLabelClass}>Refs</span>
             <div className={cn(valueClass, 'gap-1')}>
               {commit.refs.map((ref: GraphCommit['refs'][0], idx: number) => (
                 <span
@@ -114,7 +115,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         )}
 
         <div className="flex flex-col gap-1 mt-1">
-          <span className={labelClass}>Message</span>
+          <span className={metaLabelClass}>Message</span>
           <div className="font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-tertiary) p-2 rounded max-h-30 overflow-y-auto">
             {commit.message}
           </div>

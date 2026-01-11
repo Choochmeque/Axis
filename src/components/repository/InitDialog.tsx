@@ -21,9 +21,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
 export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   const [path, setPath] = useState('');
   const [bare, setBare] = useState(false);
@@ -100,7 +97,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="init-path" className={labelClass}>
+              <label htmlFor="init-path" className="label">
                 Directory
               </label>
               <div className="flex gap-2">
@@ -112,7 +109,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
                   onKeyDown={handleKeyDown}
                   placeholder="/path/to/new/repo"
                   autoFocus
-                  className={cn(inputClass, 'flex-1')}
+                  className={cn('input', 'flex-1')}
                 />
                 <button
                   type="button"

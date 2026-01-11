@@ -18,9 +18,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
-const inputClass =
-  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
 
 export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   const [remoteName, setRemoteName] = useState('');
@@ -81,7 +78,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="remote-name" className={labelClass}>
+              <label htmlFor="remote-name" className="label">
                 Remote Name
               </label>
               <input
@@ -92,12 +89,12 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
                 onKeyDown={handleKeyDown}
                 placeholder="origin"
                 autoFocus
-                className={inputClass}
+                className="input"
               />
             </div>
 
             <div className={fieldClass}>
-              <label htmlFor="remote-url" className={labelClass}>
+              <label htmlFor="remote-url" className="label">
                 Remote URL
               </label>
               <input
@@ -107,7 +104,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
                 onChange={(e) => setRemoteUrl(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="https://github.com/user/repo.git"
-                className={inputClass}
+                className="input"
               />
             </div>
 

@@ -154,9 +154,7 @@ describe('ContentSearch', () => {
   it('should call onFileSelect when clicking a match', async () => {
     const onFileSelect = vi.fn();
     vi.mocked(grepApi.search).mockResolvedValue({
-      matches: [
-        { path: 'src/main.ts', line_number: 10, content: 'const test = 1;' },
-      ],
+      matches: [{ path: 'src/main.ts', line_number: 10, content: 'const test = 1;' }],
       total_matches: 1,
     });
 

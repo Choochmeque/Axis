@@ -8,9 +8,10 @@ interface CommitFileListProps {
   isLoading?: boolean;
 }
 
-const listClass = "flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)";
-const headerClass = "flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0";
-const emptyClass = "p-6 text-center text-(--text-secondary) text-[13px]";
+const listClass = 'flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)';
+const headerClass =
+  'flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0';
+const emptyClass = 'p-6 text-center text-(--text-secondary) text-[13px]';
 
 export function CommitFileList({
   files,
@@ -47,7 +48,9 @@ export function CommitFileList({
     <div className={listClass}>
       <div className={headerClass}>
         <span className="flex-1">Changed Files</span>
-        <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">{files.length}</span>
+        <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">
+          {files.length}
+        </span>
         <span className="flex gap-1.5 text-[11px] font-medium">
           <span className="text-success">+{totalAdditions}</span>
           <span className="text-error">-{totalDeletions}</span>
@@ -59,8 +62,7 @@ export function CommitFileList({
             key={file.new_path || file.old_path}
             file={file}
             isSelected={
-              selectedFile?.new_path === file.new_path &&
-              selectedFile?.old_path === file.old_path
+              selectedFile?.new_path === file.new_path && selectedFile?.old_path === file.old_path
             }
             onSelect={() => onSelectFile(file)}
           />
@@ -84,14 +86,14 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)",
-        isSelected && "bg-(--bg-active)"
+        'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+        isSelected && 'bg-(--bg-active)'
       )}
       onClick={onSelect}
     >
       <span
         className={cn(
-          "flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0",
+          'flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0',
           statusColors.bg,
           statusColors.text
         )}
@@ -99,22 +101,24 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
       >
         {statusChar}
       </span>
-      <span className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)" title={path}>
+      <span
+        className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+        title={path}
+      >
         {getFileName(path)}
         {file.old_path && file.new_path && file.old_path !== file.new_path && (
           <span className="text-(--text-secondary) text-xs"> ({getFileName(file.old_path)})</span>
         )}
       </span>
-      <span className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5" title={path}>
+      <span
+        className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
+        title={path}
+      >
         {getDirectory(path)}
       </span>
       <span className="flex gap-1 text-[11px] font-medium shrink-0">
-        {file.additions > 0 && (
-          <span className="text-success">+{file.additions}</span>
-        )}
-        {file.deletions > 0 && (
-          <span className="text-error">-{file.deletions}</span>
-        )}
+        {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+        {file.deletions > 0 && <span className="text-error">-{file.deletions}</span>}
       </span>
     </div>
   );

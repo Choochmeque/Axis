@@ -18,85 +18,141 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
   const { setCurrentView } = useRepositoryStore();
 
   // Cmd/Ctrl + , - Open settings
-  useHotkeys('mod+,', (e) => {
-    e.preventDefault();
-    options.onOpenSettings?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+,',
+    (e) => {
+      e.preventDefault();
+      options.onOpenSettings?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + O - Open repository
-  useHotkeys('mod+o', (e) => {
-    e.preventDefault();
-    options.onOpenRepository?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+o',
+    (e) => {
+      e.preventDefault();
+      options.onOpenRepository?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + R - Refresh
-  useHotkeys('mod+r', (e) => {
-    e.preventDefault();
-    options.onRefresh?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+r',
+    (e) => {
+      e.preventDefault();
+      options.onRefresh?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + Enter - Commit
-  useHotkeys('mod+enter', (e) => {
-    e.preventDefault();
-    options.onCommit?.();
-  }, { enableOnFormTags: ['input', 'textarea'] });
+  useHotkeys(
+    'mod+enter',
+    (e) => {
+      e.preventDefault();
+      options.onCommit?.();
+    },
+    { enableOnFormTags: ['input', 'textarea'] }
+  );
 
   // Cmd/Ctrl + Shift + P - Push
-  useHotkeys('mod+shift+p', (e) => {
-    e.preventDefault();
-    options.onPush?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+shift+p',
+    (e) => {
+      e.preventDefault();
+      options.onPush?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + Shift + L - Pull
-  useHotkeys('mod+shift+l', (e) => {
-    e.preventDefault();
-    options.onPull?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+shift+l',
+    (e) => {
+      e.preventDefault();
+      options.onPull?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + Shift + F - Fetch
-  useHotkeys('mod+shift+f', (e) => {
-    e.preventDefault();
-    options.onFetch?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+shift+f',
+    (e) => {
+      e.preventDefault();
+      options.onFetch?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + B - Create branch
-  useHotkeys('mod+b', (e) => {
-    e.preventDefault();
-    options.onCreateBranch?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+b',
+    (e) => {
+      e.preventDefault();
+      options.onCreateBranch?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + Shift + S - Stash
-  useHotkeys('mod+shift+s', (e) => {
-    e.preventDefault();
-    options.onStash?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+shift+s',
+    (e) => {
+      e.preventDefault();
+      options.onStash?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Cmd/Ctrl + F - Search
-  useHotkeys('mod+f', (e) => {
-    e.preventDefault();
-    options.onSearch?.();
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    'mod+f',
+    (e) => {
+      e.preventDefault();
+      options.onSearch?.();
+    },
+    { enableOnFormTags: false }
+  );
 
   // Navigation shortcuts
   // 1 - File status view
-  useHotkeys('1', () => {
-    setCurrentView('file-status');
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    '1',
+    () => {
+      setCurrentView('file-status');
+    },
+    { enableOnFormTags: false }
+  );
 
   // 2 - History view
-  useHotkeys('2', () => {
-    setCurrentView('history');
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    '2',
+    () => {
+      setCurrentView('history');
+    },
+    { enableOnFormTags: false }
+  );
 
   // 3 - Search view
-  useHotkeys('3', () => {
-    setCurrentView('search');
-  }, { enableOnFormTags: false });
+  useHotkeys(
+    '3',
+    () => {
+      setCurrentView('search');
+    },
+    { enableOnFormTags: false }
+  );
 
   // Escape - General escape handler (dialogs handle their own)
-  useHotkeys('escape', () => {
-    // Can be used by parent components
-  }, { enableOnFormTags: true });
+  useHotkeys(
+    'escape',
+    () => {
+      // Can be used by parent components
+    },
+    { enableOnFormTags: true }
+  );
 }
 
 // Keyboard shortcut definitions for help display

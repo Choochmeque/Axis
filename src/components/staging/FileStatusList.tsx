@@ -11,8 +11,10 @@ import {
 import type { FileStatus, StatusType } from '../../types';
 import { cn } from '../../lib/utils';
 
-const fileItemClass = "flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)";
-const fileActionClass = "flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
+const fileItemClass =
+  'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
+const fileActionClass =
+  'flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 interface FileStatusListProps {
   files: FileStatus[];
@@ -48,7 +50,9 @@ export function FileStatusList({
       {title && (
         <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
           <span>{title}</span>
-          <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">{files.length}</span>
+          <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">
+            {files.length}
+          </span>
         </div>
       )}
       <div className="flex flex-col flex-1 overflow-y-auto">
@@ -89,27 +93,27 @@ function FileStatusItem({
   const StatusIcon = getStatusIcon(status);
   const statusColorClass = getStatusColorClass(status);
 
-  const handleAction = (
-    e: React.MouseEvent,
-    action: (() => void) | undefined
-  ) => {
+  const handleAction = (e: React.MouseEvent, action: (() => void) | undefined) => {
     e.stopPropagation();
     action?.();
   };
 
   return (
-    <div
-      className={cn(fileItemClass, isSelected && "bg-(--bg-active)")}
-      onClick={onSelect}
-    >
-      <StatusIcon className={cn("shrink-0", statusColorClass)} size={14} />
-      <span className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)" title={file.path}>
+    <div className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')} onClick={onSelect}>
+      <StatusIcon className={cn('shrink-0', statusColorClass)} size={14} />
+      <span
+        className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+        title={file.path}
+      >
         {getFileName(file.path)}
         {file.old_path && (
           <span className="text-(--text-secondary) text-xs"> ({file.old_path})</span>
         )}
       </span>
-      <span className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-50" title={file.path}>
+      <span
+        className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-50"
+        title={file.path}
+      >
         {getDirectory(file.path)}
       </span>
       <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
@@ -133,7 +137,7 @@ function FileStatusItem({
         )}
         {onDiscard && (
           <button
-            className={cn(fileActionClass, "hover:bg-error/10 hover:text-error")}
+            className={cn(fileActionClass, 'hover:bg-error/10 hover:text-error')}
             onClick={(e) => handleAction(e, onDiscard)}
             title="Discard changes"
           >

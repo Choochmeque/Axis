@@ -46,6 +46,23 @@ impl Database {
             [],
         )?;
 
+        // Clean up duplicate paths (with/without trailing slash)
+        // Keep the one with the most recent last_opened
+        conn.execute(
+            "DELETE FROM recent_repositories
+             WHERE id NOT IN (
+                SELECT MIN(id) FROM recent_repositories
+                GROUP BY TRIM(path, '/')
+             )",
+            [],
+        )?;
+
+        // Normalize existing paths (remove trailing slashes)
+        conn.execute(
+            "UPDATE recent_repositories SET path = RTRIM(path, '/') WHERE path LIKE '%/'",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -89,7 +106,8 @@ impl Database {
             .lock()
             .map_err(|e| AxisError::Other(e.to_string()))?;
         let now = Utc::now().to_rfc3339();
-        let path_str = path.to_string_lossy();
+        // Normalize path: remove trailing slash to avoid duplicates
+        let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
 
         conn.execute(
             "INSERT INTO recent_repositories (path, name, last_opened)
@@ -150,7 +168,8 @@ impl Database {
             .conn
             .lock()
             .map_err(|e| AxisError::Other(e.to_string()))?;
-        let path_str = path.to_string_lossy();
+        // Normalize path: remove trailing slash
+        let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
         conn.execute(
             "DELETE FROM recent_repositories WHERE path = ?1",
             params![path_str],

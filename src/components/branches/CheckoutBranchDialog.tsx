@@ -10,22 +10,23 @@ interface CheckoutBranchDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const overlayClass = "fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150";
-const contentClass = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150";
-const titleClass = "flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)";
-const bodyClass = "p-5";
-const footerClass = "flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)";
-const closeClass = "absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const fieldClass = "mb-4 last:mb-0";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)";
-const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
-const infoBoxClass = "p-3 bg-(--bg-secondary) rounded mb-4";
+const overlayClass = 'fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150';
+const contentClass =
+  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
+const titleClass =
+  'flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)';
+const bodyClass = 'p-5';
+const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
+const closeClass =
+  'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const fieldClass = 'mb-4 last:mb-0';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
+const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
+const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
-export function CheckoutBranchDialog({
-  open,
-  onOpenChange,
-}: CheckoutBranchDialogProps) {
+export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
   const [selectedBranch, setSelectedBranch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +92,9 @@ export function CheckoutBranchDialog({
             )}
 
             <div className={fieldClass}>
-              <label htmlFor="branch-select" className={labelClass}>Select Branch</label>
+              <label htmlFor="branch-select" className={labelClass}>
+                Select Branch
+              </label>
               <select
                 id="branch-select"
                 value={selectedBranch}
@@ -124,15 +127,29 @@ export function CheckoutBranchDialog({
               </select>
             </div>
 
-            {error && <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">{error}</div>}
+            {error && (
+              <div className="mt-3 py-2 px-3 bg-error/10 border border-error rounded text-error text-[13px]">
+                {error}
+              </div>
+            )}
           </div>
 
           <div className={footerClass}>
             <Dialog.Close asChild>
-              <button className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}>Cancel</button>
+              <button
+                className={cn(
+                  btnClass,
+                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
+              >
+                Cancel
+              </button>
             </Dialog.Close>
             <button
-              className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
+              className={cn(
+                btnClass,
+                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
               onClick={handleCheckout}
               disabled={isLoading || !selectedBranch}
             >

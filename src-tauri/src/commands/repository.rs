@@ -140,6 +140,12 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 }
 
 #[tauri::command]
+pub async fn remove_recent_repository(state: State<'_, AppState>, path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+    state.remove_recent_repository(&path)
+}
+
+#[tauri::command]
 pub async fn start_file_watcher(state: State<'_, AppState>, app_handle: AppHandle) -> Result<()> {
     state.start_file_watcher(app_handle)
 }

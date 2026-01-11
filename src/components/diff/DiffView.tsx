@@ -37,7 +37,14 @@ function generateHunkPatch(diff: FileDiff, hunk: DiffHunk): string {
   return patch;
 }
 
-export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnstageHunk, onDiscardHunk }: DiffViewProps) {
+export function DiffView({
+  diff,
+  isLoading,
+  mode = 'commit',
+  onStageHunk,
+  onUnstageHunk,
+  onDiscardHunk,
+}: DiffViewProps) {
   const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
 
@@ -77,8 +84,9 @@ export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnst
     }
   };
 
-  const diffViewClass = "flex flex-col h-full bg-(--bg-primary) overflow-hidden";
-  const emptyStateClass = "flex flex-col items-center justify-center h-full gap-4 text-(--text-tertiary) text-sm";
+  const diffViewClass = 'flex flex-col h-full bg-(--bg-primary) overflow-hidden';
+  const emptyStateClass =
+    'flex flex-col items-center justify-center h-full gap-4 text-(--text-tertiary) text-sm';
 
   if (isLoading) {
     return (
@@ -99,7 +107,7 @@ export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnst
   if (diff.binary) {
     return (
       <div className={diffViewClass}>
-        <div className={cn(emptyStateClass, "[&>svg]:opacity-50")}>
+        <div className={cn(emptyStateClass, '[&>svg]:opacity-50')}>
           <Binary size={48} />
           <span>Binary file</span>
         </div>
@@ -109,11 +117,7 @@ export function DiffView({ diff, isLoading, mode = 'commit', onStageHunk, onUnst
 
   return (
     <div className={diffViewClass}>
-      <DiffHeader
-        diff={diff}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+      <DiffHeader diff={diff} viewMode={viewMode} onViewModeChange={setViewMode} />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
           <div className={emptyStateClass}>No changes in this file</div>
@@ -156,8 +160,15 @@ function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
     <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <FileCode size={16} className="text-(--text-secondary) shrink-0" />
-        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">{fileName}</span>
-        <span className={cn("text-[11px] py-0.5 px-1.5 rounded uppercase font-medium", statusColorClass)}>
+        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+          {fileName}
+        </span>
+        <span
+          className={cn(
+            'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
+            statusColorClass
+          )}
+        >
           {statusText}
         </span>
       </div>
@@ -172,8 +183,9 @@ function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
       <div className="flex border border-(--border-color) rounded overflow-hidden">
         <button
           className={cn(
-            "flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) border-r border-(--border-color) last:border-r-0",
-            viewMode === 'unified' && "bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white"
+            'flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) border-r border-(--border-color) last:border-r-0',
+            viewMode === 'unified' &&
+              'bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white'
           )}
           onClick={() => onViewModeChange('unified')}
           title="Unified view"
@@ -182,8 +194,9 @@ function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
         </button>
         <button
           className={cn(
-            "flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)",
-            viewMode === 'split' && "bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white"
+            'flex items-center justify-center w-7 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)',
+            viewMode === 'split' &&
+              'bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white'
           )}
           onClick={() => onViewModeChange('split')}
           title="Side-by-side view"
@@ -204,15 +217,25 @@ interface UnifiedDiffProps {
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
 }
 
-const hunkActionClass = "flex items-center gap-1 py-0.5 px-2 border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-secondary) text-[11px] font-sans cursor-pointer transition-colors shrink-0 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) hover:not-disabled:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
+const hunkActionClass =
+  'flex items-center gap-1 py-0.5 px-2 border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-secondary) text-[11px] font-sans cursor-pointer transition-colors shrink-0 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) hover:not-disabled:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
 
-function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDiscardHunk }: UnifiedDiffProps) {
+function UnifiedDiff({
+  hunks,
+  mode,
+  loadingHunk,
+  onStageHunk,
+  onUnstageHunk,
+  onDiscardHunk,
+}: UnifiedDiffProps) {
   return (
     <div className="min-w-fit">
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
           <div className="flex items-center justify-between gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
-            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{hunk.header.trim()}</span>
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+              {hunk.header.trim()}
+            </span>
             {mode === 'workdir' && onStageHunk && (
               <button
                 className={hunkActionClass}
@@ -226,7 +249,10 @@ function UnifiedDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onD
             )}
             {mode === 'workdir' && onDiscardHunk && (
               <button
-                className={cn(hunkActionClass, "hover:not-disabled:border-error hover:not-disabled:text-error")}
+                className={cn(
+                  hunkActionClass,
+                  'hover:not-disabled:border-error hover:not-disabled:text-error'
+                )}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Discard hunk"
@@ -262,21 +288,20 @@ interface UnifiedDiffLineProps {
   line: DiffLine;
 }
 
-const lineNoClass = "shrink-0 w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none";
+const lineNoClass =
+  'shrink-0 w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none';
 
 function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
   const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.line_type);
   const prefix = getLinePrefix(line.line_type);
 
   return (
-    <div className={cn("flex leading-5 font-mono text-xs", bgClass)}>
-      <span className={cn(lineNoClass, lineNoBgClass)}>
-        {line.old_line_no ?? ''}
+    <div className={cn('flex leading-5 font-mono text-xs', bgClass)}>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.old_line_no ?? ''}</span>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.new_line_no ?? ''}</span>
+      <span className={cn('shrink-0 w-4 py-0 px-1 text-center select-none', prefixColorClass)}>
+        {prefix}
       </span>
-      <span className={cn(lineNoClass, lineNoBgClass)}>
-        {line.new_line_no ?? ''}
-      </span>
-      <span className={cn("shrink-0 w-4 py-0 px-1 text-center select-none", prefixColorClass)}>{prefix}</span>
       <span className="flex-1 py-0 px-2 whitespace-pre overflow-x-auto">
         <code className="font-inherit">{line.content}</code>
       </span>
@@ -293,13 +318,22 @@ interface SplitDiffProps {
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
 }
 
-function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDiscardHunk }: SplitDiffProps) {
+function SplitDiff({
+  hunks,
+  mode,
+  loadingHunk,
+  onStageHunk,
+  onUnstageHunk,
+  onDiscardHunk,
+}: SplitDiffProps) {
   return (
     <div>
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
           <div className="flex items-center justify-center gap-2 py-1 px-3 bg-(--bg-toolbar) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
-            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{hunk.header.trim()}</span>
+            <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+              {hunk.header.trim()}
+            </span>
             {mode === 'workdir' && onStageHunk && (
               <button
                 className={hunkActionClass}
@@ -313,7 +347,10 @@ function SplitDiff({ hunks, mode, loadingHunk, onStageHunk, onUnstageHunk, onDis
             )}
             {mode === 'workdir' && onDiscardHunk && (
               <button
-                className={cn(hunkActionClass, "hover:not-disabled:border-error hover:not-disabled:text-error")}
+                className={cn(
+                  hunkActionClass,
+                  'hover:not-disabled:border-error hover:not-disabled:text-error'
+                )}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
                 title="Discard hunk"
@@ -357,14 +394,33 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
         const rightClasses = getLineClasses(pair.right?.line_type || 'context');
         return (
           <div key={index} className="flex">
-            <div className={cn("flex-1 flex leading-5 font-mono text-xs border-r-2 border-(--border-color)", leftClasses.bgClass)}>
-              <span className={cn("w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none", leftClasses.lineNoBgClass)}>{pair.left?.old_line_no ?? ''}</span>
+            <div
+              className={cn(
+                'flex-1 flex leading-5 font-mono text-xs border-r-2 border-(--border-color)',
+                leftClasses.bgClass
+              )}
+            >
+              <span
+                className={cn(
+                  'w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none',
+                  leftClasses.lineNoBgClass
+                )}
+              >
+                {pair.left?.old_line_no ?? ''}
+              </span>
               <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
                 <code>{pair.left?.content ?? ''}</code>
               </span>
             </div>
-            <div className={cn("flex-1 flex leading-5 font-mono text-xs", rightClasses.bgClass)}>
-              <span className={cn("w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none", rightClasses.lineNoBgClass)}>{pair.right?.new_line_no ?? ''}</span>
+            <div className={cn('flex-1 flex leading-5 font-mono text-xs', rightClasses.bgClass)}>
+              <span
+                className={cn(
+                  'w-10 py-0 px-2 text-right text-(--text-tertiary) bg-(--bg-secondary) border-r border-(--border-color) select-none',
+                  rightClasses.lineNoBgClass
+                )}
+              >
+                {pair.right?.new_line_no ?? ''}
+              </span>
               <span className="flex-1 py-0 px-2 whitespace-pre overflow-hidden text-ellipsis">
                 <code>{pair.right?.content ?? ''}</code>
               </span>
@@ -425,7 +481,11 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
   return pairs;
 }
 
-function getLineClasses(lineType: DiffLineType): { bgClass: string; lineNoBgClass: string; prefixColorClass: string } {
+function getLineClasses(lineType: DiffLineType): {
+  bgClass: string;
+  lineNoBgClass: string;
+  prefixColorClass: string;
+} {
   switch (lineType) {
     case 'addition':
       return {

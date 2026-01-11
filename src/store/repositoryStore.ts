@@ -1,6 +1,26 @@
 import { create } from 'zustand';
-import type { Repository, GraphCommit, Commit, Branch, RepositoryStatus, RecentRepository, Tag, StashEntry, FileDiff, Submodule } from '../types';
-import { repositoryApi, graphApi, branchApi, tagApi, stashApi, diffApi, commitApi, submoduleApi } from '../services/api';
+import type {
+  Repository,
+  GraphCommit,
+  Commit,
+  Branch,
+  RepositoryStatus,
+  RecentRepository,
+  Tag,
+  StashEntry,
+  FileDiff,
+  Submodule,
+} from '../types';
+import {
+  repositoryApi,
+  graphApi,
+  branchApi,
+  tagApi,
+  stashApi,
+  diffApi,
+  commitApi,
+  submoduleApi,
+} from '../services/api';
 
 export type ViewType = 'file-status' | 'history' | 'search';
 

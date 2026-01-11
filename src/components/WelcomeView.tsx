@@ -5,10 +5,12 @@ import { useRepositoryStore } from '../store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
 import { CloneDialog } from './repository/CloneDialog';
 import { InitDialog } from './repository/InitDialog';
+import { RecentRepoContextMenu } from './repository/RecentRepoContextMenu';
 
 // Get the tab-aware open function from window
 const openInTab = (path: string) => {
-  const fn = (window as unknown as { openRepositoryInTab?: (path: string) => Promise<void> }).openRepositoryInTab;
+  const fn = (window as unknown as { openRepositoryInTab?: (path: string) => Promise<void> })
+    .openRepositoryInTab;
   if (fn) {
     return fn(path);
   }
@@ -83,18 +85,24 @@ export function WelcomeView() {
             <ul className="list-none p-0 m-0">
               {recentRepositories.map((repo) => (
                 <li key={repo.path}>
-                  <button
-                    className="flex flex-col items-start w-full py-3 px-4 bg-transparent border border-(--border-color) rounded-md mb-2 cursor-pointer transition-all text-left hover:bg-(--bg-hover) hover:border-(--accent-color)"
-                    onClick={() => handleOpenRecent(repo.path)}
-                  >
-                    <span className="text-sm font-semibold text-(--text-primary)">{repo.name}</span>
-                    <span className="text-xs text-(--text-secondary) mt-1 break-all">{repo.path}</span>
-                    <span className="text-[11px] text-(--text-tertiary) mt-1">
-                      {formatDistanceToNow(new Date(repo.last_opened), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </button>
+                  <RecentRepoContextMenu repo={repo} onOpenInTab={handleOpenRecent}>
+                    <button
+                      className="flex flex-col items-start w-full py-3 px-4 bg-transparent border border-(--border-color) rounded-md mb-2 cursor-pointer transition-all text-left hover:bg-(--bg-hover) hover:border-(--accent-color)"
+                      onClick={() => handleOpenRecent(repo.path)}
+                    >
+                      <span className="text-sm font-semibold text-(--text-primary)">
+                        {repo.name}
+                      </span>
+                      <span className="text-xs text-(--text-secondary) mt-1 break-all">
+                        {repo.path}
+                      </span>
+                      <span className="text-[11px] text-(--text-tertiary) mt-1">
+                        {formatDistanceToNow(new Date(repo.last_opened), {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    </button>
+                  </RecentRepoContextMenu>
                 </li>
               ))}
             </ul>

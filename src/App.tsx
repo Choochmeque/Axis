@@ -14,67 +14,126 @@ import './index.css';
 function App() {
   const { repository, currentView, openRepository, closeRepository } = useRepositoryStore();
   const { loadSettings } = useSettingsStore();
-  const { tabs, getActiveTab, addTab, setActiveTab, updateTab, findTabByPath } = useTabsStore();
+  const { tabs, activeTabId, addTab, setActiveTab, updateTab, findTabByPath } = useTabsStore();
 
   // Handle menu actions from native menu
   useMenuActions();
+
+  // Ensure welcome tab exists on mount (fix stale localStorage)
+  useEffect(() => {
+    const hasWelcome = tabs.some((t) => t.type === 'welcome');
+    if (!hasWelcome) {
+      useTabsStore.setState({
+        tabs: [{ id: 'welcome', type: 'welcome', name: 'Welcome' }, ...tabs],
+        activeTabId: 'welcome',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
 
-  // Sync repository changes with tabs
+  // Handle ?repo= query param for new windows (run once on mount)
   useEffect(() => {
-    if (repository) {
-      const activeTab = getActiveTab();
-      if (activeTab && activeTab.type === 'repository' && activeTab.path === repository.path.toString()) {
-        // Update tab with latest repository info
+    const params = new URLSearchParams(window.location.search);
+    const repoPath = params.get('repo');
+    if (repoPath) {
+      const decoded = decodeURIComponent(repoPath);
+      openRepository(decoded).then(() => {
+        const repo = useRepositoryStore.getState().repository;
+        if (repo) {
+          // Set only the repo tab (no welcome tab)
+          useTabsStore.setState({
+            tabs: [
+              {
+                id: 'repo-main',
+                type: 'repository',
+                path: repo.path.toString(),
+                name: repo.name,
+                repository: repo,
+              },
+            ],
+            activeTabId: 'repo-main',
+          });
+        }
+        // Clear the query param from URL
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Derive active tab from tabs and activeTabId
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+
+  // Sync repository changes with tabs (only when repository actually changes)
+  useEffect(() => {
+    if (
+      repository &&
+      activeTab &&
+      activeTab.type === 'repository' &&
+      activeTab.path === repository.path.toString()
+    ) {
+      // Only update if repository data differs
+      if (
+        activeTab.repository?.current_branch !== repository.current_branch ||
+        activeTab.name !== repository.name
+      ) {
         updateTab(activeTab.id, { repository, name: repository.name });
       }
     }
-  }, [repository, getActiveTab, updateTab]);
+  }, [repository, activeTab, updateTab]);
 
   // Handle opening a repository - creates or switches to tab
-  const handleOpenRepository = useCallback(async (path: string) => {
-    // Check if tab already exists for this repo
-    const existingTab = findTabByPath(path);
-    if (existingTab) {
-      setActiveTab(existingTab.id);
+  const handleOpenRepository = useCallback(
+    async (path: string) => {
+      // Check if tab already exists for this repo
+      const existingTab = findTabByPath(path);
+      if (existingTab) {
+        setActiveTab(existingTab.id);
+        await openRepository(path);
+        return;
+      }
+
+      // Open repository first
       await openRepository(path);
-      return;
-    }
 
-    // Open repository first
-    await openRepository(path);
-
-    // Create new tab
-    const repo = useRepositoryStore.getState().repository;
-    if (repo) {
-      addTab({
-        type: 'repository',
-        path: repo.path.toString(),
-        name: repo.name,
-        repository: repo,
-      });
-    }
-  }, [findTabByPath, setActiveTab, openRepository, addTab]);
+      // Create new tab
+      const repo = useRepositoryStore.getState().repository;
+      if (repo) {
+        addTab({
+          type: 'repository',
+          path: repo.path.toString(),
+          name: repo.name,
+          repository: repo,
+        });
+      }
+    },
+    [findTabByPath, setActiveTab, openRepository, addTab]
+  );
 
   // Handle tab switching
-  const handleTabChange = useCallback(async (tab: Tab) => {
-    if (tab.type === 'welcome') {
-      await closeRepository();
-    } else if (tab.path) {
-      await openRepository(tab.path);
-    }
-  }, [closeRepository, openRepository]);
+  const handleTabChange = useCallback(
+    async (tab: Tab) => {
+      if (tab.type === 'welcome') {
+        await closeRepository();
+      } else if (tab.path) {
+        await openRepository(tab.path);
+      }
+    },
+    [closeRepository, openRepository]
+  );
 
   // Expose handleOpenRepository globally for other components
   useEffect(() => {
-    (window as unknown as { openRepositoryInTab: typeof handleOpenRepository }).openRepositoryInTab = handleOpenRepository;
+    (
+      window as unknown as { openRepositoryInTab: typeof handleOpenRepository }
+    ).openRepositoryInTab = handleOpenRepository;
   }, [handleOpenRepository]);
 
-  const activeTab = getActiveTab();
-  const isWelcomeTab = activeTab?.type === 'welcome' || !repository;
+  const isWelcomeTab = activeTab?.type === 'welcome';
 
   const renderView = () => {
     switch (currentView) {
@@ -99,7 +158,9 @@ function App() {
     return (
       <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
         <TabBar onTabChange={handleTabChange} />
-        <WelcomeView />
+        <div className="flex-1 overflow-hidden">
+          <WelcomeView />
+        </div>
       </div>
     );
   }
@@ -108,9 +169,7 @@ function App() {
     <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
       <TabBar onTabChange={handleTabChange} />
       <div className="flex-1 overflow-hidden">
-        <AppLayout>
-          {renderView()}
-        </AppLayout>
+        <AppLayout>{renderView()}</AppLayout>
       </div>
     </div>
   );

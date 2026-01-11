@@ -4,20 +4,26 @@ import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
 
-const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
-const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
-const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col";
-const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
-const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
-const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const contentClass = "flex-1 p-4 overflow-y-auto";
-const footerClass = "flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)";
-const formGroupClass = "mb-4";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)";
-const checkboxLabelClass = "flex items-center gap-2 cursor-pointer text-(--text-primary)";
-const btnClass = "flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
-const btnSmallClass = "flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border";
+const btnIconClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
+const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
+const dialogClass =
+  'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
+const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
+const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
+const closeClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const contentClass = 'flex-1 p-4 overflow-y-auto';
+const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
+const formGroupClass = 'mb-4';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
+const checkboxLabelClass = 'flex items-center gap-2 cursor-pointer text-(--text-primary)';
+const btnClass =
+  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+const btnSmallClass =
+  'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
 interface StashViewProps {
   onRefresh?: () => void;
@@ -152,7 +158,9 @@ export function StashView({ onRefresh }: StashViewProps) {
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <Archive size={16} />
           <span>Stashes</span>
-          <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">{stashes.length}</span>
+          <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
+            {stashes.length}
+          </span>
         </div>
         <div className="flex gap-1">
           <button
@@ -177,7 +185,10 @@ export function StashView({ onRefresh }: StashViewProps) {
         <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-xs">
           <AlertCircle size={14} />
           <span className="flex-1">{error}</span>
-          <button className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100" onClick={() => setError(null)}>
+          <button
+            className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100"
+            onClick={() => setError(null)}
+          >
             <X size={14} />
           </button>
         </div>
@@ -191,17 +202,21 @@ export function StashView({ onRefresh }: StashViewProps) {
             <div
               key={stash.index}
               className={cn(
-                "p-3 mb-2 rounded-md cursor-pointer transition-colors border",
+                'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
                 selectedIndex === stash.index
-                  ? "bg-(--bg-active) border-(--accent-color)"
-                  : "bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)"
+                  ? 'bg-(--bg-active) border-(--accent-color)'
+                  : 'bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)'
               )}
               onClick={() => setSelectedIndex(stash.index)}
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-xs font-semibold text-(--accent-color)">{stash.stash_ref}</span>
+                <span className="font-mono text-xs font-semibold text-(--accent-color)">
+                  {stash.stash_ref}
+                </span>
                 {stash.branch && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-(--bg-tertiary) rounded text-(--text-secondary)">{stash.branch}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] bg-(--bg-tertiary) rounded text-(--text-secondary)">
+                    {stash.branch}
+                  </span>
                 )}
               </div>
               <div className="text-sm text-(--text-primary) mb-1">{stash.message}</div>
@@ -212,7 +227,10 @@ export function StashView({ onRefresh }: StashViewProps) {
               {selectedIndex === stash.index && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
                   <button
-                    className={cn(btnSmallClass, "bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleApply(stash.index);
@@ -223,7 +241,10 @@ export function StashView({ onRefresh }: StashViewProps) {
                     Apply
                   </button>
                   <button
-                    className={cn(btnSmallClass, "bg-(--accent-color) border-(--accent-color) text-white hover:opacity-90")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-(--accent-color) border-(--accent-color) text-white hover:opacity-90'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handlePop(stash.index);
@@ -233,7 +254,10 @@ export function StashView({ onRefresh }: StashViewProps) {
                     Pop
                   </button>
                   <button
-                    className={cn(btnSmallClass, "bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleBranch(stash.index);
@@ -243,7 +267,10 @@ export function StashView({ onRefresh }: StashViewProps) {
                     <GitBranch size={12} />
                   </button>
                   <button
-                    className={cn(btnSmallClass, "bg-error/10 border-error text-error hover:bg-error/20")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-error/10 border-error text-error hover:bg-error/20'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDrop(stash.index);
@@ -273,7 +300,9 @@ export function StashView({ onRefresh }: StashViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="stash-message" className={labelClass}>Message (optional)</label>
+                <label htmlFor="stash-message" className={labelClass}>
+                  Message (optional)
+                </label>
                 <input
                   id="stash-message"
                   type="text"
@@ -308,12 +337,21 @@ export function StashView({ onRefresh }: StashViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 onClick={() => setShowCreateDialog(false)}
               >
                 Cancel
               </button>
-              <button className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90")} onClick={handleSave}>
+              <button
+                className={cn(
+                  btnClass,
+                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
+                )}
+                onClick={handleSave}
+              >
                 Create Stash
               </button>
             </div>

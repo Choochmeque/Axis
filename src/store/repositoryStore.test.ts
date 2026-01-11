@@ -100,9 +100,7 @@ describe('repositoryStore', () => {
     it('should set error state when opening fails', async () => {
       vi.mocked(repositoryApi.open).mockRejectedValue(new Error('Not a git repository'));
 
-      await expect(
-        useRepositoryStore.getState().openRepository('/invalid/path')
-      ).rejects.toThrow();
+      await expect(useRepositoryStore.getState().openRepository('/invalid/path')).rejects.toThrow();
 
       const state = useRepositoryStore.getState();
       expect(state.error).toBe('Error: Not a git repository');

@@ -96,7 +96,9 @@ describe('SubmoduleView', () => {
 
     await waitFor(() => {
       // Dialog should not be visible initially (check for URL input placeholder)
-      expect(screen.queryByPlaceholderText('https://github.com/user/repo.git')).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('https://github.com/user/repo.git')
+      ).not.toBeInTheDocument();
     });
 
     const addButton = screen.getByTitle('Add submodule');

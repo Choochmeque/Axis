@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   useFileWatcher();
 
   return (
-    <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
+    <div className="flex flex-col h-full bg-(--bg-primary) text-(--text-primary)">
       <Toolbar />
       <div className="flex-1 flex overflow-hidden">
         <PanelGroup direction="horizontal" autoSaveId="main-layout">

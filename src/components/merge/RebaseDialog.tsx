@@ -4,17 +4,21 @@ import { rebaseApi, branchApi } from '../../services/api';
 import type { Branch, RebaseResult } from '../../types';
 import { cn } from '../../lib/utils';
 
-const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
-const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl min-w-100 max-w-125 max-h-[80vh] flex flex-col overflow-hidden z-10000";
-const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
-const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
-const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const contentClass = "flex-1 p-4 overflow-y-auto";
-const footerClass = "flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)";
-const formGroupClass = "mb-4";
-const labelClass = "block text-[13px] font-medium text-(--text-secondary) mb-1.5";
-const selectClass = "w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed";
-const btnClass = "flex items-center justify-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
+const dialogClass =
+  'bg-(--bg-primary) rounded-lg shadow-xl min-w-100 max-w-125 max-h-[80vh] flex flex-col overflow-hidden z-10000';
+const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
+const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
+const closeClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const contentClass = 'flex-1 p-4 overflow-y-auto';
+const footerClass = 'flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)';
+const formGroupClass = 'mb-4';
+const labelClass = 'block text-[13px] font-medium text-(--text-secondary) mb-1.5';
+const selectClass =
+  'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
+const btnClass =
+  'flex items-center justify-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface RebaseDialogProps {
   isOpen: boolean;
@@ -48,9 +52,7 @@ export function RebaseDialog({
     try {
       const allBranches = await branchApi.list(true, true);
       // Filter out the current branch
-      const otherBranches = allBranches.filter(
-        (b) => b.name !== currentBranch && !b.is_head
-      );
+      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.is_head);
       setBranches(otherBranches);
     } catch (err) {
       console.error('Failed to load branches:', err);
@@ -155,10 +157,10 @@ export function RebaseDialog({
           {result && (
             <div
               className={cn(
-                "flex items-start gap-2 p-3 rounded-md text-[13px] mb-4",
+                'flex items-start gap-2 p-3 rounded-md text-[13px] mb-4',
                 result.success
-                  ? "bg-success/10 border border-success text-success"
-                  : "bg-warning/10 border border-warning text-warning"
+                  ? 'bg-success/10 border border-success text-success'
+                  : 'bg-warning/10 border border-warning text-warning'
               )}
             >
               {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
@@ -170,11 +172,15 @@ export function RebaseDialog({
             <>
               <div className={formGroupClass}>
                 <label className={labelClass}>Current Branch</label>
-                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">{currentBranch}</div>
+                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
+                  {currentBranch}
+                </div>
               </div>
 
               <div className={formGroupClass}>
-                <label htmlFor="rebase-branch" className={labelClass}>Rebase Onto</label>
+                <label htmlFor="rebase-branch" className={labelClass}>
+                  Rebase Onto
+                </label>
                 <select
                   id="rebase-branch"
                   value={selectedBranch}
@@ -194,12 +200,17 @@ export function RebaseDialog({
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
                 <p className="m-0 mb-2">
-                  This will replay all commits from <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
-                  top of <strong className="text-(--text-primary) font-mono">{selectedBranch || '...'}</strong>.
+                  This will replay all commits from{' '}
+                  <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
+                  top of{' '}
+                  <strong className="text-(--text-primary) font-mono">
+                    {selectedBranch || '...'}
+                  </strong>
+                  .
                 </p>
                 <p className="m-0 text-xs text-warning">
-                  Warning: Rebase rewrites commit history. Only rebase commits that
-                  haven't been pushed to a shared repository.
+                  Warning: Rebase rewrites commit history. Only rebase commits that haven't been
+                  pushed to a shared repository.
                 </p>
               </div>
             </>
@@ -207,10 +218,17 @@ export function RebaseDialog({
 
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">Conflicted Files</h4>
+              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+                Conflicted Files
+              </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
-                  <li key={conflict.path} className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0">{conflict.path}</li>
+                  <li
+                    key={conflict.path}
+                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                  >
+                    {conflict.path}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -221,20 +239,26 @@ export function RebaseDialog({
           {result && !result.success ? (
             <>
               <button
-                className={cn(btnClass, "bg-error/10 text-error border border-error hover:bg-error/20")}
+                className={cn(
+                  btnClass,
+                  'bg-error/10 text-error border border-error hover:bg-error/20'
+                )}
                 onClick={handleAbort}
               >
                 Abort Rebase
               </button>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
+                )}
                 onClick={handleSkip}
                 disabled={isLoading}
               >
                 Skip Commit
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) text-white hover:opacity-90")}
+                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
                 onClick={handleContinue}
                 disabled={isLoading}
               >
@@ -242,20 +266,26 @@ export function RebaseDialog({
               </button>
             </>
           ) : result && result.success ? (
-            <button className={cn(btnClass, "bg-(--accent-color) text-white hover:opacity-90")} onClick={onClose}>
+            <button
+              className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+              onClick={onClose}
+            >
               Close
             </button>
           ) : (
             <>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
+                )}
                 onClick={onClose}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) text-white hover:opacity-90")}
+                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
                 onClick={handleRebase}
                 disabled={isLoading || !selectedBranch}
               >

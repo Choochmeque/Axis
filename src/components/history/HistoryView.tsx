@@ -33,7 +33,12 @@ interface GraphCellProps {
   width: number;
 }
 
-function GraphCell({ commit, width, index, activeLanes }: GraphCellProps & { index: number; activeLanes: Set<number> }) {
+function GraphCell({
+  commit,
+  width,
+  index,
+  activeLanes,
+}: GraphCellProps & { index: number; activeLanes: Set<number> }) {
   const height = ROW_HEIGHT;
   const nodeX = commit.lane * LANE_WIDTH + LANE_WIDTH / 2;
   const nodeY = height / 2;
@@ -57,12 +62,7 @@ function GraphCell({ commit, width, index, activeLanes }: GraphCellProps & { ind
 
       {/* Draw edges to parents (going down) */}
       {commit.parent_edges.map((edge, idx) => (
-        <GraphEdgeLine
-          key={idx}
-          edge={edge}
-          fromLane={commit.lane}
-          height={height}
-        />
+        <GraphEdgeLine key={idx} edge={edge} fromLane={commit.lane} height={height} />
       ))}
 
       {/* Draw pass-through lines for other active lanes */}
@@ -120,22 +120,11 @@ function GraphEdgeLine({ edge, fromLane, height }: GraphEdgeLineProps) {
   const fromY = height / 2;
   const toY = height;
   const color =
-    edge.edge_type === 'branch'
-      ? getLaneColor(fromLane)
-      : getLaneColor(edge.parent_lane);
+    edge.edge_type === 'branch' ? getLaneColor(fromLane) : getLaneColor(edge.parent_lane);
 
   if (fromLane === edge.parent_lane) {
     // Straight line down
-    return (
-      <line
-        x1={fromX}
-        y1={fromY}
-        x2={toX}
-        y2={toY}
-        stroke={color}
-        strokeWidth={2}
-      />
-    );
+    return <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke={color} strokeWidth={2} />;
   } else {
     // Curved line for merge/branch
     const midY = (fromY + toY) / 2;
@@ -235,22 +224,25 @@ export function HistoryView() {
   } = useRepositoryStore();
 
   // Check if there are uncommitted changes
-  const hasUncommittedChanges = status && (
-    status.staged.length > 0 ||
-    status.unstaged.length > 0 ||
-    status.untracked.length > 0 ||
-    status.conflicted.length > 0
-  );
+  const hasUncommittedChanges =
+    status &&
+    (status.staged.length > 0 ||
+      status.unstaged.length > 0 ||
+      status.untracked.length > 0 ||
+      status.conflicted.length > 0);
 
   const uncommittedChangeCount = status
-    ? status.staged.length + status.unstaged.length + status.untracked.length + status.conflicted.length
+    ? status.staged.length +
+      status.unstaged.length +
+      status.untracked.length +
+      status.conflicted.length
     : 0;
 
   const listRef = useRef<HTMLDivElement>(null);
 
   // Use commit from list if available, otherwise fall back to fetched data
   const selectedCommit = selectedCommitOid
-    ? commits.find((c) => c.oid === selectedCommitOid) ?? selectedCommitData
+    ? (commits.find((c) => c.oid === selectedCommitOid) ?? selectedCommitData)
     : null;
 
   const handleRowClick = (commit: GraphCommit) => {
@@ -282,7 +274,8 @@ export function HistoryView() {
     }
   }, [selectedCommitOid]);
 
-  const emptyStateClass = "flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3";
+  const emptyStateClass =
+    'flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3';
 
   if (isLoadingCommits) {
     return (
@@ -313,24 +306,21 @@ export function HistoryView() {
 
   const activeLanesPerRow = buildActiveLanes(commits);
 
-  const computedMaxLane = Math.max(
-    maxLane,
-    ...commits.map((commit) => commit.lane)
-  );
+  const computedMaxLane = Math.max(maxLane, ...commits.map((commit) => commit.lane));
   const graphWidth = (computedMaxLane + 1) * LANE_WIDTH + 6;
 
-  const colClass = "overflow-hidden text-ellipsis whitespace-nowrap";
+  const colClass = 'overflow-hidden text-ellipsis whitespace-nowrap';
 
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <div className="flex py-2 px-3 bg-(--bg-header) border-b border-(--border-color) text-[11px] font-semibold uppercase text-(--text-secondary)">
-        <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
+        <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
           Graph
         </div>
-        <div className={cn(colClass, "flex-1 min-w-50")}>Description</div>
-        <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>Date</div>
-        <div className={cn(colClass, "w-37 shrink-0")}>Author</div>
-        <div className={cn(colClass, "w-18 shrink-0")}>SHA</div>
+        <div className={cn(colClass, 'flex-1 min-w-50')}>Description</div>
+        <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>Date</div>
+        <div className={cn(colClass, 'w-37 shrink-0')}>Author</div>
+        <div className={cn(colClass, 'w-18 shrink-0')}>SHA</div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
         {hasUncommittedChanges && (
@@ -338,7 +328,7 @@ export function HistoryView() {
             className="flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover) bg-(--bg-uncommitted)"
             onClick={() => setCurrentView('file-status')}
           >
-            <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
+            <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
               <svg width={graphWidth} height={ROW_HEIGHT} className="graph-svg">
                 {/* Uncommitted changes node - hollow circle */}
                 <circle
@@ -360,7 +350,7 @@ export function HistoryView() {
                 />
               </svg>
             </div>
-            <div className={cn(colClass, "flex-1 min-w-50")}>
+            <div className={cn(colClass, 'flex-1 min-w-50')}>
               <span className="text-[13px] font-medium text-(--text-uncommitted)">
                 Uncommitted changes
               </span>
@@ -368,13 +358,13 @@ export function HistoryView() {
                 ({uncommittedChangeCount} {uncommittedChangeCount === 1 ? 'file' : 'files'})
               </span>
             </div>
-            <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>
+            <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>
               <span className="text-xs text-(--text-secondary)">–</span>
             </div>
-            <div className={cn(colClass, "w-37 shrink-0")}>
+            <div className={cn(colClass, 'w-37 shrink-0')}>
               <span className="text-xs text-(--text-secondary)">–</span>
             </div>
-            <div className={cn(colClass, "w-18 shrink-0")}>
+            <div className={cn(colClass, 'w-18 shrink-0')}>
               <code className="font-mono text-[11px] text-(--text-secondary)">*</code>
             </div>
           </div>
@@ -384,13 +374,13 @@ export function HistoryView() {
             <div
               data-commit-oid={commit.oid}
               className={cn(
-                "flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover)",
-                commit.is_merge && "bg-(--bg-merge)",
-                selectedCommitOid === commit.oid && "bg-(--bg-active) hover:bg-(--bg-active)"
+                'flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover)',
+                commit.is_merge && 'bg-(--bg-merge)',
+                selectedCommitOid === commit.oid && 'bg-(--bg-active) hover:bg-(--bg-active)'
               )}
               onClick={() => handleRowClick(commit)}
             >
-              <div className={cn(colClass, "shrink-0")} style={{ width: graphWidth }}>
+              <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
                 <GraphCell
                   commit={commit}
                   width={graphWidth}
@@ -398,25 +388,21 @@ export function HistoryView() {
                   activeLanes={activeLanesPerRow[index]}
                 />
               </div>
-              <div className={cn(colClass, "flex-1 min-w-50")}>
+              <div className={cn(colClass, 'flex-1 min-w-50')}>
                 {commit.refs && commit.refs.length > 0 && (
                   <span className="inline-flex gap-1 mr-2">
                     {commit.refs.map((ref, idx) => (
                       <span
                         key={idx}
                         className={cn(
-                          "inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0",
-                          ref.ref_type === 'local_branch' && "bg-[#107c10] text-white",
-                          ref.ref_type === 'remote_branch' && "bg-[#5c2d91] text-white",
-                          ref.ref_type === 'tag' && "bg-[#d83b01] text-white",
-                          ref.is_head && "font-bold"
+                          'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
+                          ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
+                          ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
+                          ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
+                          ref.is_head && 'font-bold'
                         )}
                       >
-                        {ref.ref_type === 'tag' ? (
-                          <Tag size={10} />
-                        ) : (
-                          <GitBranch size={10} />
-                        )}
+                        {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
                         {ref.name}
                       </span>
                     ))}
@@ -424,18 +410,20 @@ export function HistoryView() {
                 )}
                 <span className="text-[13px]">{commit.summary}</span>
               </div>
-              <div className={cn(colClass, "w-30 shrink-0 text-right pr-4")}>
+              <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>
                 <span className="text-xs text-(--text-secondary)">
                   {formatDistanceToNow(new Date(commit.timestamp), {
                     addSuffix: true,
                   })}
                 </span>
               </div>
-              <div className={cn(colClass, "w-37 shrink-0")}>
+              <div className={cn(colClass, 'w-37 shrink-0')}>
                 <span className="text-xs text-(--text-secondary)">{commit.author.name}</span>
               </div>
-              <div className={cn(colClass, "w-18 shrink-0")}>
-                <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">{commit.short_oid}</code>
+              <div className={cn(colClass, 'w-18 shrink-0')}>
+                <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
+                  {commit.short_oid}
+                </code>
               </div>
             </div>
           </CommitContextMenu>
@@ -450,7 +438,7 @@ export function HistoryView() {
     </div>
   );
 
-  const viewClass = "flex flex-col flex-1 h-full min-h-0 overflow-hidden";
+  const viewClass = 'flex flex-col flex-1 h-full min-h-0 overflow-hidden';
 
   if (!selectedCommit) {
     return <div className={viewClass}>{commitListContent}</div>;
@@ -464,10 +452,7 @@ export function HistoryView() {
         </Panel>
         <PanelResizeHandle className="h-1 bg-(--border-color) cursor-row-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
         <Panel defaultSize={50} minSize={30}>
-          <CommitDetailPanel
-            commit={selectedCommit}
-            onClose={clearCommitSelection}
-          />
+          <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
         </Panel>
       </PanelGroup>
     </div>

@@ -4,9 +4,12 @@ import { conflictApi, operationApi } from '../../services/api';
 import type { ConflictedFile, ConflictContent, OperationState } from '../../types';
 import { cn } from '../../lib/utils';
 
-const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const btnSmallClass = "py-1 px-2.5 text-[11px] font-medium border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)";
-const btnPrimarySmallClass = "py-1 px-2.5 text-[11px] font-medium border-none rounded bg-(--accent-color) text-white cursor-pointer hover:opacity-90";
+const btnIconClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const btnSmallClass =
+  'py-1 px-2.5 text-[11px] font-medium border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)';
+const btnPrimarySmallClass =
+  'py-1 px-2.5 text-[11px] font-medium border-none rounded bg-(--accent-color) text-white cursor-pointer hover:opacity-90';
 
 interface ConflictResolverProps {
   onAllResolved?: () => void;
@@ -142,11 +145,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
             </span>
           )}
         </div>
-        <button
-          className={btnIconClass}
-          onClick={loadConflicts}
-          title="Refresh conflicts"
-        >
+        <button className={btnIconClass} onClick={loadConflicts} title="Refresh conflicts">
           <RefreshCw size={16} />
         </button>
       </div>
@@ -173,23 +172,23 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
             <div
               key={conflict.path}
               className={cn(
-                "flex items-center justify-between py-2 px-3 text-[13px] cursor-pointer transition-colors border-b border-(--border-color)",
+                'flex items-center justify-between py-2 px-3 text-[13px] cursor-pointer transition-colors border-b border-(--border-color)',
                 selectedFile === conflict.path
-                  ? "bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5"
-                  : "hover:bg-(--bg-hover)",
-                conflict.is_resolved && "opacity-60"
+                  ? 'bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5'
+                  : 'hover:bg-(--bg-hover)',
+                conflict.is_resolved && 'opacity-60'
               )}
               onClick={() => setSelectedFile(conflict.path)}
             >
-              <span className={cn(
-                "font-mono overflow-hidden text-ellipsis whitespace-nowrap",
-                conflict.is_resolved ? "text-success" : "text-warning"
-              )}>
+              <span
+                className={cn(
+                  'font-mono overflow-hidden text-ellipsis whitespace-nowrap',
+                  conflict.is_resolved ? 'text-success' : 'text-warning'
+                )}
+              >
                 {conflict.path}
               </span>
-              {conflict.is_resolved && (
-                <Check size={14} className="text-success shrink-0" />
-              )}
+              {conflict.is_resolved && <Check size={14} className="text-success shrink-0" />}
             </div>
           ))}
         </div>

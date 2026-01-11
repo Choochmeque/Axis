@@ -1,25 +1,19 @@
 import { useState, useEffect } from 'react';
-import {
-  X,
-  Settings,
-  Palette,
-  GitBranch,
-  FileText,
-  Terminal,
-  Save,
-  RotateCcw,
-} from 'lucide-react';
+import { X, Settings, Palette, GitBranch, FileText, Terminal, Save, RotateCcw } from 'lucide-react';
 import { settingsApi } from '../../services/api';
 import type { AppSettings, Theme } from '../../types';
 import { cn } from '../../lib/utils';
 
-const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
-const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl w-175 max-w-[90vw] max-h-[80vh] flex flex-col z-10000";
-const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
-const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
-const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const footerClass = "flex justify-between items-center py-3 px-4 border-t border-(--border-color)";
-const btnClass = "flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
+const dialogClass =
+  'bg-(--bg-primary) rounded-lg shadow-xl w-175 max-w-[90vw] max-h-[80vh] flex flex-col z-10000';
+const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
+const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
+const closeClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const footerClass = 'flex justify-between items-center py-3 px-4 border-t border-(--border-color)';
+const btnClass =
+  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -101,7 +95,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
   };
 
   const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   if (!isOpen) return null;
@@ -132,10 +126,10 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
               <button
                 key={tab.id}
                 className={cn(
-                  "flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-[13px] cursor-pointer text-left transition-colors",
+                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-[13px] cursor-pointer text-left transition-colors',
                   activeTab === tab.id
-                    ? "bg-(--accent-color) text-white"
-                    : "text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)"
+                    ? 'bg-(--accent-color) text-white'
+                    : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
                 )}
                 onClick={() => setActiveTab(tab.id)}
               >
@@ -147,7 +141,9 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
 
           <div className="flex-1 py-5 px-6 overflow-y-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center h-50 text-(--text-muted)">Loading settings...</div>
+              <div className="flex items-center justify-center h-50 text-(--text-muted)">
+                Loading settings...
+              </div>
             ) : (
               <>
                 {activeTab === 'appearance' && (
@@ -168,14 +164,15 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
         </div>
 
         {error && (
-          <div className="mx-4 p-3 bg-error/10 text-error rounded text-[13px]">
-            {error}
-          </div>
+          <div className="mx-4 p-3 bg-error/10 text-error rounded text-[13px]">{error}</div>
         )}
 
         <div className={footerClass}>
           <button
-            className={cn(btnClass, "bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)")}
+            className={cn(
+              btnClass,
+              'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
+            )}
             onClick={handleReset}
             disabled={!hasChanges || isSaving}
           >
@@ -183,11 +180,18 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
             Reset
           </button>
           <div className="flex gap-2">
-            <button className={cn(btnClass, "bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)")} onClick={onClose} disabled={isSaving}>
+            <button
+              className={cn(
+                btnClass,
+                'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
+              )}
+              onClick={onClose}
+              disabled={isSaving}
+            >
               Cancel
             </button>
             <button
-              className={cn(btnClass, "bg-(--accent-color) text-white hover:opacity-90")}
+              className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
               onClick={handleSave}
               disabled={!hasChanges || isSaving}
             >
@@ -206,13 +210,17 @@ interface SettingsPanelProps {
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 }
 
-const sectionTitleClass = "m-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6";
-const groupClass = "mb-5";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-primary)";
-const inputClass = "w-full max-w-75 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)";
-const numberInputClass = "w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)";
-const checkboxLabelClass = "flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer";
-const hintClass = "mt-1.5 text-xs text-(--text-muted)";
+const sectionTitleClass =
+  'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';
+const groupClass = 'mb-5';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-primary)';
+const inputClass =
+  'w-full max-w-75 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
+const numberInputClass =
+  'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
+const checkboxLabelClass =
+  'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
+const hintClass = 'mt-1.5 text-xs text-(--text-muted)';
 
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
   return (
@@ -220,7 +228,9 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Appearance</h3>
 
       <div className={groupClass}>
-        <label htmlFor="theme" className={labelClass}>Theme</label>
+        <label htmlFor="theme" className={labelClass}>
+          Theme
+        </label>
         <select
           id="theme"
           value={settings.theme}
@@ -235,7 +245,9 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="fontSize" className={labelClass}>Font Size</label>
+        <label htmlFor="fontSize" className={labelClass}>
+          Font Size
+        </label>
         <input
           id="fontSize"
           type="number"
@@ -270,7 +282,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Git</h3>
 
       <div className={groupClass}>
-        <label htmlFor="defaultBranch" className={labelClass}>Default Branch Name</label>
+        <label htmlFor="defaultBranch" className={labelClass}>
+          Default Branch Name
+        </label>
         <input
           id="defaultBranch"
           type="text"
@@ -282,7 +296,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="autoFetch" className={labelClass}>Auto-fetch Interval (minutes)</label>
+        <label htmlFor="autoFetch" className={labelClass}>
+          Auto-fetch Interval (minutes)
+        </label>
         <input
           id="autoFetch"
           type="number"
@@ -330,7 +346,9 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Diff & Editor</h3>
 
       <div className={groupClass}>
-        <label htmlFor="contextLines" className={labelClass}>Context Lines</label>
+        <label htmlFor="contextLines" className={labelClass}>
+          Context Lines
+        </label>
         <input
           id="contextLines"
           type="number"
@@ -372,7 +390,9 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Commit</h3>
 
       <div className={groupClass}>
-        <label htmlFor="commitWidth" className={labelClass}>Commit Message Width</label>
+        <label htmlFor="commitWidth" className={labelClass}>
+          Commit Message Width
+        </label>
         <input
           id="commitWidth"
           type="number"
@@ -407,7 +427,9 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
       <h3 className={sectionTitleClass}>Terminal</h3>
 
       <div className={groupClass}>
-        <label htmlFor="terminalFont" className={labelClass}>Font Family</label>
+        <label htmlFor="terminalFont" className={labelClass}>
+          Font Family
+        </label>
         <input
           id="terminalFont"
           type="text"
@@ -419,7 +441,9 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label htmlFor="terminalFontSize" className={labelClass}>Font Size</label>
+        <label htmlFor="terminalFontSize" className={labelClass}>
+          Font Size
+        </label>
         <input
           id="terminalFontSize"
           type="number"

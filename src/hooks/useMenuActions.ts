@@ -145,7 +145,16 @@ export function useMenuActions() {
           console.log('Unhandled menu action:', action);
       }
     },
-    [openRepository, closeRepository, refreshRepository, repository, stageAll, unstageAll, setShowSettings, showSettings]
+    [
+      openRepository,
+      closeRepository,
+      refreshRepository,
+      repository,
+      stageAll,
+      unstageAll,
+      setShowSettings,
+      showSettings,
+    ]
   );
 
   useEffect(() => {

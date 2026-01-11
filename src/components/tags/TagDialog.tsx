@@ -22,7 +22,9 @@ export function TagDialog({
   targetCommitSummary,
 }: TagDialogProps) {
   const [tagName, setTagName] = useState('');
-  const [commitTarget, setCommitTarget] = useState<CommitTarget>(targetCommit ? 'specified' : 'head');
+  const [commitTarget, setCommitTarget] = useState<CommitTarget>(
+    targetCommit ? 'specified' : 'head'
+  );
   const [specifiedCommit, setSpecifiedCommit] = useState(targetCommit || '');
   const [pushTag, setPushTag] = useState(false);
   const [selectedRemote, setSelectedRemote] = useState('origin');
@@ -101,12 +103,17 @@ export function TagDialog({
 
   if (!isOpen) return null;
 
-  const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) font-inherit focus:outline-none focus:border-(--accent-color)";
-  const checkboxLabelClass = "flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer";
-  const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
+  const inputClass =
+    'w-full py-2 px-3 text-sm bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) font-inherit focus:outline-none focus:border-(--accent-color)';
+  const checkboxLabelClass =
+    'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
+  const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999" onClick={handleClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999"
+      onClick={handleClose}
+    >
       <div
         className="bg-(--bg-primary) rounded-lg shadow-xl min-w-112.5 max-w-125 max-h-[80vh] overflow-hidden flex flex-col z-10000"
         onClick={(e) => e.stopPropagation()}
@@ -140,7 +147,12 @@ export function TagDialog({
           ) : (
             <>
               <div className="mb-4">
-                <label htmlFor="tag-name" className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Tag Name:</label>
+                <label
+                  htmlFor="tag-name"
+                  className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)"
+                >
+                  Tag Name:
+                </label>
                 <input
                   id="tag-name"
                   type="text"
@@ -154,7 +166,9 @@ export function TagDialog({
               </div>
 
               <div className="mb-4">
-                <label className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Commit:</label>
+                <label className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">
+                  Commit:
+                </label>
                 <div className="flex flex-col gap-2.5 mt-1">
                   <label className={checkboxLabelClass}>
                     <input
@@ -186,10 +200,12 @@ export function TagDialog({
                         onChange={(e) => setSpecifiedCommit(e.target.value)}
                         placeholder="Commit SHA"
                         disabled={isLoading}
-                        className={cn(inputClass, "font-mono text-[13px]")}
+                        className={cn(inputClass, 'font-mono text-[13px]')}
                       />
                       {targetCommitSummary && (
-                        <span className="text-xs text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">{targetCommitSummary}</span>
+                        <span className="text-xs text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">
+                          {targetCommitSummary}
+                        </span>
                       )}
                     </div>
                   )}
@@ -197,7 +213,7 @@ export function TagDialog({
               </div>
 
               <div className="flex items-center gap-3 mb-4">
-                <label className={cn(checkboxLabelClass, "whitespace-nowrap")}>
+                <label className={cn(checkboxLabelClass, 'whitespace-nowrap')}>
                   <input
                     type="checkbox"
                     checked={pushTag}
@@ -258,7 +274,12 @@ export function TagDialog({
 
                     {!isLightweight && (
                       <div className="mt-1">
-                        <label htmlFor="tag-message" className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)">Message:</label>
+                        <label
+                          htmlFor="tag-message"
+                          className="block mb-1.5 text-[13px] font-medium text-(--text-secondary)"
+                        >
+                          Message:
+                        </label>
                         <textarea
                           id="tag-message"
                           value={message}
@@ -266,7 +287,7 @@ export function TagDialog({
                           placeholder="Tag message..."
                           rows={3}
                           disabled={isLoading}
-                          className={cn(inputClass, "resize-y min-h-15")}
+                          className={cn(inputClass, 'resize-y min-h-15')}
                         />
                       </div>
                     )}
@@ -279,20 +300,32 @@ export function TagDialog({
 
         <div className="flex justify-end gap-2 p-4 border-t border-(--border-color) shrink-0 bg-(--bg-primary)">
           {result && result.success ? (
-            <button className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)")} onClick={handleClose}>
+            <button
+              className={cn(
+                btnClass,
+                'bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)'
+              )}
+              onClick={handleClose}
+            >
               Close
             </button>
           ) : (
             <>
               <button
-                className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 onClick={handleClose}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
+                className={cn(
+                  btnClass,
+                  'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
                 onClick={handleCreate}
                 disabled={isLoading || !tagName.trim()}
               >

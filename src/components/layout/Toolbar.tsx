@@ -18,7 +18,8 @@ import { StashDialog } from '../stash';
 import { SettingsDialog } from '../settings/SettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
 
-const toolbarButtonClass = "flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed";
+const toolbarButtonClass =
+  'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
   const { repository, openRepository, setCurrentView, refreshRepository } = useRepositoryStore();
@@ -82,35 +83,19 @@ export function Toolbar() {
         <>
           <div className="w-px h-8 mx-2 bg-(--border-color)" />
           <div className="flex items-center gap-0.5">
-            <button
-              className={toolbarButtonClass}
-              title="Commit"
-              onClick={handleCommitClick}
-            >
+            <button className={toolbarButtonClass} title="Commit" onClick={handleCommitClick}>
               <GitCommit size={18} />
               <span>Commit</span>
             </button>
-            <button
-              className={toolbarButtonClass}
-              title="Pull"
-              onClick={() => setPullOpen(true)}
-            >
+            <button className={toolbarButtonClass} title="Pull" onClick={() => setPullOpen(true)}>
               <ArrowDownToLine size={18} />
               <span>Pull</span>
             </button>
-            <button
-              className={toolbarButtonClass}
-              title="Push"
-              onClick={() => setPushOpen(true)}
-            >
+            <button className={toolbarButtonClass} title="Push" onClick={() => setPushOpen(true)}>
               <ArrowUpFromLine size={18} />
               <span>Push</span>
             </button>
-            <button
-              className={toolbarButtonClass}
-              onClick={() => setFetchOpen(true)}
-              title="Fetch"
-            >
+            <button className={toolbarButtonClass} onClick={() => setFetchOpen(true)} title="Fetch">
               <RefreshCw size={18} />
               <span>Fetch</span>
             </button>
@@ -134,25 +119,15 @@ export function Toolbar() {
               <GitMerge size={18} />
               <span>Checkout</span>
             </button>
-            <button
-              className={toolbarButtonClass}
-              title="Stash"
-              onClick={() => setStashOpen(true)}
-            >
+            <button className={toolbarButtonClass} title="Stash" onClick={() => setStashOpen(true)}>
               <Archive size={18} />
               <span>Stash</span>
             </button>
           </div>
 
           {/* Branch Dialogs */}
-          <CreateBranchDialog
-            open={createBranchOpen}
-            onOpenChange={setCreateBranchOpen}
-          />
-          <CheckoutBranchDialog
-            open={checkoutBranchOpen}
-            onOpenChange={setCheckoutBranchOpen}
-          />
+          <CreateBranchDialog open={createBranchOpen} onOpenChange={setCreateBranchOpen} />
+          <CheckoutBranchDialog open={checkoutBranchOpen} onOpenChange={setCheckoutBranchOpen} />
 
           {/* Remote Dialogs */}
           <FetchDialog open={fetchOpen} onOpenChange={setFetchOpen} />
@@ -176,10 +151,7 @@ export function Toolbar() {
         </button>
       </div>
 
-      <SettingsDialog
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
+      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

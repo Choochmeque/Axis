@@ -81,7 +81,13 @@ export function useFileWatcher() {
         console.error('File watcher error:', event.payload.message);
       });
 
-      unlistenRefs.current = [unlistenFiles, unlistenIndex, unlistenHead, unlistenRef, unlistenError];
+      unlistenRefs.current = [
+        unlistenFiles,
+        unlistenIndex,
+        unlistenHead,
+        unlistenRef,
+        unlistenError,
+      ];
     };
 
     setupListeners();

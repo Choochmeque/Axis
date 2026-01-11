@@ -12,16 +12,20 @@ interface InitDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const overlayClass = "fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150";
-const contentClass = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150";
-const titleClass = "flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)";
-const bodyClass = "p-5";
-const footerClass = "flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)";
-const closeClass = "absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const fieldClass = "mb-4 last:mb-0";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)";
-const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
+const overlayClass = 'fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150';
+const contentClass =
+  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
+const titleClass =
+  'flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)';
+const bodyClass = 'p-5';
+const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
+const closeClass =
+  'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const fieldClass = 'mb-4 last:mb-0';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
+const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
 export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   const [path, setPath] = useState('');
@@ -54,8 +58,21 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
     setError(null);
 
     try {
-      await repositoryApi.init(path.trim(), bare);
+      const repo = await repositoryApi.init(path.trim(), bare);
       await loadRecentRepositories();
+
+      // Create tab for new repository
+      const existingTab = findTabByPath(repo.path.toString());
+      if (existingTab) {
+        setActiveTab(existingTab.id);
+      } else {
+        addTab({
+          type: 'repository',
+          path: repo.path.toString(),
+          name: repo.name,
+          repository: repo,
+        });
+      }
 
       // Reset form and close
       setPath('');
@@ -86,7 +103,9 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="init-path" className={labelClass}>Directory</label>
+              <label htmlFor="init-path" className={labelClass}>
+                Directory
+              </label>
               <div className="flex gap-2">
                 <input
                   id="init-path"
@@ -96,12 +115,15 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
                   onKeyDown={handleKeyDown}
                   placeholder="/path/to/new/repo"
                   autoFocus
-                  className={cn(inputClass, "flex-1")}
+                  className={cn(inputClass, 'flex-1')}
                 />
                 <button
                   type="button"
                   onClick={handleBrowse}
-                  className={cn(btnClass, "shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                  className={cn(
+                    btnClass,
+                    'shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                  )}
                 >
                   <FolderOpen size={16} />
                 </button>
@@ -111,7 +133,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
               </p>
             </div>
 
-            <div className={cn(fieldClass, "flex items-center gap-2")}>
+            <div className={cn(fieldClass, 'flex items-center gap-2')}>
               <input
                 id="bare"
                 type="checkbox"
@@ -119,7 +141,9 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
                 onChange={(e) => setBare(e.target.checked)}
                 className="w-4 h-4 accent-(--accent-color)"
               />
-              <label htmlFor="bare" className="mb-0 text-(--text-primary)">Create bare repository</label>
+              <label htmlFor="bare" className="mb-0 text-(--text-primary)">
+                Create bare repository
+              </label>
             </div>
             <p className="text-xs text-(--text-tertiary) ml-6 -mt-2">
               Bare repositories have no working directory (for servers)
@@ -135,14 +159,20 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
           <div className={footerClass}>
             <Dialog.Close asChild>
               <button
-                className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 disabled={isLoading}
               >
                 Cancel
               </button>
             </Dialog.Close>
             <button
-              className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
+              className={cn(
+                btnClass,
+                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
               onClick={handleInit}
               disabled={isLoading || !path.trim()}
             >

@@ -129,12 +129,7 @@ export interface DiffLine {
   new_line_no: number | null;
 }
 
-export type DiffLineType =
-  | 'context'
-  | 'addition'
-  | 'deletion'
-  | 'header'
-  | 'binary';
+export type DiffLineType = 'context' | 'addition' | 'deletion' | 'header' | 'binary';
 
 export interface DiffOptions {
   context_lines?: number;

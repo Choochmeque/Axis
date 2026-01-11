@@ -49,7 +49,16 @@ describe('stagingStore', () => {
   describe('loadStatus', () => {
     it('should load repository status', async () => {
       const mockStatus = {
-        staged: [{ path: 'staged.txt', status: 'added' as const, staged_status: 'added' as const, unstaged_status: null, is_conflict: false, old_path: null }],
+        staged: [
+          {
+            path: 'staged.txt',
+            status: 'added' as const,
+            staged_status: 'added' as const,
+            unstaged_status: null,
+            is_conflict: false,
+            old_path: null,
+          },
+        ],
         unstaged: [],
         untracked: [],
         conflicted: [],
@@ -111,8 +120,25 @@ describe('stagingStore', () => {
     it('should clear selection when null is passed', async () => {
       // Set initial selected file
       useStagingStore.setState({
-        selectedFile: { path: 'test.txt', status: 'modified', staged_status: null, unstaged_status: 'modified', is_conflict: false, old_path: null },
-        selectedFileDiff: { old_path: 'test.txt', new_path: 'test.txt', old_oid: null, new_oid: null, status: 'modified', binary: false, hunks: [], additions: 0, deletions: 0 },
+        selectedFile: {
+          path: 'test.txt',
+          status: 'modified',
+          staged_status: null,
+          unstaged_status: 'modified',
+          is_conflict: false,
+          old_path: null,
+        },
+        selectedFileDiff: {
+          old_path: 'test.txt',
+          new_path: 'test.txt',
+          old_oid: null,
+          new_oid: null,
+          status: 'modified',
+          binary: false,
+          hunks: [],
+          additions: 0,
+          deletions: 0,
+        },
       });
 
       await useStagingStore.getState().selectFile(null, false);
@@ -162,7 +188,14 @@ describe('stagingStore', () => {
     });
 
     it('should clear selected file if it was the discarded one', async () => {
-      const mockFile = { path: 'test.txt', status: 'modified' as const, staged_status: null, unstaged_status: 'modified' as const, is_conflict: false, old_path: null };
+      const mockFile = {
+        path: 'test.txt',
+        status: 'modified' as const,
+        staged_status: null,
+        unstaged_status: 'modified' as const,
+        is_conflict: false,
+        old_path: null,
+      };
       useStagingStore.setState({ selectedFile: mockFile });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
@@ -182,7 +215,8 @@ describe('stagingStore', () => {
       vi.mocked(stagingApi.stageHunk).mockResolvedValue(undefined);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
 
       expect(stagingApi.stageHunk).toHaveBeenCalledWith(patch);
@@ -190,8 +224,25 @@ describe('stagingStore', () => {
     });
 
     it('should refresh diff for selected file after staging hunk', async () => {
-      const mockFile = { path: 'test.txt', status: 'modified' as const, staged_status: null, unstaged_status: 'modified' as const, is_conflict: false, old_path: null };
-      const mockDiff = { old_path: 'test.txt', new_path: 'test.txt', old_oid: null, new_oid: null, status: 'modified' as const, binary: false, hunks: [], additions: 0, deletions: 0 };
+      const mockFile = {
+        path: 'test.txt',
+        status: 'modified' as const,
+        staged_status: null,
+        unstaged_status: 'modified' as const,
+        is_conflict: false,
+        old_path: null,
+      };
+      const mockDiff = {
+        old_path: 'test.txt',
+        new_path: 'test.txt',
+        old_oid: null,
+        new_oid: null,
+        status: 'modified' as const,
+        binary: false,
+        hunks: [],
+        additions: 0,
+        deletions: 0,
+      };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: false });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
@@ -199,7 +250,8 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
 
       expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', false);
@@ -209,7 +261,8 @@ describe('stagingStore', () => {
     it('should set error on failure', async () => {
       vi.mocked(stagingApi.stageHunk).mockRejectedValue(new Error('Failed to stage hunk'));
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
 
       expect(useStagingStore.getState().error).toBe('Error: Failed to stage hunk');
@@ -222,7 +275,8 @@ describe('stagingStore', () => {
       vi.mocked(stagingApi.unstageHunk).mockResolvedValue(undefined);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
 
       expect(stagingApi.unstageHunk).toHaveBeenCalledWith(patch);
@@ -230,8 +284,25 @@ describe('stagingStore', () => {
     });
 
     it('should refresh diff for selected file after unstaging hunk', async () => {
-      const mockFile = { path: 'test.txt', status: 'modified' as const, staged_status: 'modified' as const, unstaged_status: null, is_conflict: false, old_path: null };
-      const mockDiff = { old_path: 'test.txt', new_path: 'test.txt', old_oid: null, new_oid: null, status: 'modified' as const, binary: false, hunks: [], additions: 0, deletions: 0 };
+      const mockFile = {
+        path: 'test.txt',
+        status: 'modified' as const,
+        staged_status: 'modified' as const,
+        unstaged_status: null,
+        is_conflict: false,
+        old_path: null,
+      };
+      const mockDiff = {
+        old_path: 'test.txt',
+        new_path: 'test.txt',
+        old_oid: null,
+        new_oid: null,
+        status: 'modified' as const,
+        binary: false,
+        hunks: [],
+        additions: 0,
+        deletions: 0,
+      };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: true });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
@@ -239,7 +310,8 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
 
       expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', true);
@@ -249,7 +321,8 @@ describe('stagingStore', () => {
     it('should set error on failure', async () => {
       vi.mocked(stagingApi.unstageHunk).mockRejectedValue(new Error('Failed to unstage hunk'));
 
-      const patch = 'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
+      const patch =
+        'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
 
       expect(useStagingStore.getState().error).toBe('Error: Failed to unstage hunk');
@@ -283,7 +356,9 @@ describe('stagingStore', () => {
     it('should throw error when commit message is empty', async () => {
       useStagingStore.setState({ commitMessage: '' });
 
-      await expect(useStagingStore.getState().createCommit()).rejects.toThrow('Commit message is required');
+      await expect(useStagingStore.getState().createCommit()).rejects.toThrow(
+        'Commit message is required'
+      );
 
       expect(useStagingStore.getState().error).toBe('Commit message is required');
     });

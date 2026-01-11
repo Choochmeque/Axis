@@ -12,12 +12,8 @@ interface CommitDetailPanelProps {
 }
 
 export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
-  const {
-    selectedCommitFiles,
-    selectedCommitFile,
-    isLoadingCommitFiles,
-    selectCommitFile,
-  } = useRepositoryStore();
+  const { selectedCommitFiles, selectedCommitFile, isLoadingCommitFiles, selectCommitFile } =
+    useRepositoryStore();
 
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) border-t border-(--border-color)">

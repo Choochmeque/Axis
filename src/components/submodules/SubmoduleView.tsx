@@ -15,19 +15,25 @@ import { submoduleApi } from '../../services/api';
 import type { Submodule, SubmoduleStatus } from '../../types';
 import { cn } from '../../lib/utils';
 
-const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
-const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
-const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col";
-const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
-const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
-const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const contentClass = "flex-1 p-4 overflow-y-auto";
-const footerClass = "flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)";
-const formGroupClass = "mb-4";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)";
-const btnClass = "flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
-const btnSmallClass = "flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border";
+const btnIconClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
+const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
+const dialogClass =
+  'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
+const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
+const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
+const closeClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const contentClass = 'flex-1 p-4 overflow-y-auto';
+const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
+const formGroupClass = 'mb-4';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
+const btnClass =
+  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+const btnSmallClass =
+  'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
 interface SubmoduleViewProps {
   onRefresh?: () => void;
@@ -218,7 +224,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <FolderGit2 size={16} />
           <span>Submodules</span>
-          <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">{submodules.length}</span>
+          <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
+            {submodules.length}
+          </span>
         </div>
         <div className="flex gap-1">
           <button
@@ -251,7 +259,10 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
         <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-xs">
           <AlertCircle size={14} />
           <span className="flex-1">{error}</span>
-          <button className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100" onClick={() => setError(null)}>
+          <button
+            className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100"
+            onClick={() => setError(null)}
+          >
             <X size={14} />
           </button>
         </div>
@@ -265,23 +276,27 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             <div
               key={submodule.path}
               className={cn(
-                "p-3 mb-2 rounded-md cursor-pointer transition-colors border",
+                'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
                 selectedPath === submodule.path
-                  ? "bg-(--bg-active) border-(--accent-color)"
-                  : "bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)"
+                  ? 'bg-(--bg-active) border-(--accent-color)'
+                  : 'bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)'
               )}
               onClick={() => setSelectedPath(submodule.path)}
             >
               <div className="flex items-center gap-2 mb-1">
                 {getStatusIcon(submodule.status)}
-                <span className="font-mono text-sm text-(--text-primary) font-medium">{submodule.path}</span>
+                <span className="font-mono text-sm text-(--text-primary) font-medium">
+                  {submodule.path}
+                </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-(--text-muted) mb-1">
                 {submodule.short_oid && (
                   <span className="font-mono text-(--accent-color)">{submodule.short_oid}</span>
                 )}
                 {submodule.branch && (
-                  <span className="px-1.5 py-0.5 bg-(--bg-tertiary) rounded">{submodule.branch}</span>
+                  <span className="px-1.5 py-0.5 bg-(--bg-tertiary) rounded">
+                    {submodule.branch}
+                  </span>
                 )}
                 <span className={getStatusClass(submodule.status)}>
                   {getStatusLabel(submodule.status)}
@@ -294,7 +309,10 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                 <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
                   {submodule.status === 'uninitialized' && (
                     <button
-                      className={cn(btnSmallClass, "bg-(--accent-color) border-(--accent-color) text-white hover:opacity-90")}
+                      className={cn(
+                        btnSmallClass,
+                        'bg-(--accent-color) border-(--accent-color) text-white hover:opacity-90'
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleInit(submodule.path);
@@ -304,7 +322,10 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     </button>
                   )}
                   <button
-                    className={cn(btnSmallClass, "bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover) disabled:opacity-50")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover) disabled:opacity-50'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUpdate(submodule.path);
@@ -315,7 +336,10 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     Update
                   </button>
                   <button
-                    className={cn(btnSmallClass, "bg-error/10 border-error text-error hover:bg-error/20")}
+                    className={cn(
+                      btnSmallClass,
+                      'bg-error/10 border-error text-error hover:bg-error/20'
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemove(submodule.path);
@@ -344,7 +368,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-url" className={labelClass}>Repository URL</label>
+                <label htmlFor="submodule-url" className={labelClass}>
+                  Repository URL
+                </label>
                 <input
                   id="submodule-url"
                   type="text"
@@ -355,7 +381,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-path" className={labelClass}>Path</label>
+                <label htmlFor="submodule-path" className={labelClass}>
+                  Path
+                </label>
                 <input
                   id="submodule-path"
                   type="text"
@@ -366,7 +394,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="submodule-branch" className={labelClass}>Branch (optional)</label>
+                <label htmlFor="submodule-branch" className={labelClass}>
+                  Branch (optional)
+                </label>
                 <input
                   id="submodule-branch"
                   type="text"
@@ -379,14 +409,20 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 onClick={() => setShowAddDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90")}
+                className={cn(
+                  btnClass,
+                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
+                )}
                 onClick={handleAdd}
                 disabled={isLoading || !addUrl.trim() || !addPath.trim()}
               >

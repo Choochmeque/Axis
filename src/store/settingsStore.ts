@@ -84,9 +84,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 }));
 
 function applyTheme(theme: Theme) {
-  const effectiveTheme = theme === 'system'
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme;
+  const effectiveTheme =
+    theme === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : theme;
 
   document.documentElement.setAttribute('data-theme', effectiveTheme);
 }

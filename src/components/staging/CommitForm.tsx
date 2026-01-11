@@ -68,7 +68,7 @@ export function CommitForm() {
       }
 
       // Small delay to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       if (isAmending) {
         await amendCommit();
@@ -119,7 +119,11 @@ export function CommitForm() {
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
-            <DropdownMenu.Content className="min-w-45 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50" align="end" sideOffset={4}>
+            <DropdownMenu.Content
+              className="min-w-45 bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50"
+              align="end"
+              sideOffset={4}
+            >
               <DropdownMenu.CheckboxItem
                 className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default"
                 checked={isAmending}
@@ -161,7 +165,10 @@ export function CommitForm() {
                 Sign off
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
-              <DropdownMenu.Item className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-tertiary) rounded cursor-default outline-none relative" disabled>
+              <DropdownMenu.Item
+                className="flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-tertiary) rounded cursor-default outline-none relative"
+                disabled
+              >
                 Create pull request
               </DropdownMenu.Item>
             </DropdownMenu.Content>
@@ -174,8 +181,8 @@ export function CommitForm() {
           <textarea
             ref={textareaRef}
             className={cn(
-              "w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-y min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)",
-              isSummaryTooLong && "border-warning"
+              'w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-y min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)',
+              isSummaryTooLong && 'border-warning'
             )}
             placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
             value={localMessage}
@@ -185,7 +192,12 @@ export function CommitForm() {
             disabled={isCommitting}
           />
           <div className="flex justify-end mt-1">
-            <span className={cn("text-[11px] text-(--text-tertiary)", isSummaryTooLong && "text-warning")}>
+            <span
+              className={cn(
+                'text-[11px] text-(--text-tertiary)',
+                isSummaryTooLong && 'text-warning'
+              )}
+            >
               {summary.length}/72
             </span>
           </div>
@@ -199,7 +211,9 @@ export function CommitForm() {
               checked={pushAfterCommit}
               onChange={(e) => setPushAfterCommit(e.target.checked)}
             />
-            <span className="select-none">Push to origin/{repository?.current_branch || 'main'}</span>
+            <span className="select-none">
+              Push to origin/{repository?.current_branch || 'main'}
+            </span>
           </label>
           <button
             className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-none rounded bg-(--accent-color) text-white text-xs font-medium cursor-pointer transition-colors hover:not-disabled:bg-[#0066b8] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -207,9 +221,7 @@ export function CommitForm() {
             disabled={!canCommit || isCommitting}
           >
             {isCommitting ? 'Committing...' : isAmending ? 'Amend' : 'Commit'}
-            {stagedCount > 0 && (
-              <span className="opacity-80 font-normal">({stagedCount})</span>
-            )}
+            {stagedCount > 0 && <span className="opacity-80 font-normal">({stagedCount})</span>}
           </button>
         </div>
       </div>

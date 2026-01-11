@@ -68,9 +68,7 @@ describe('TagDialog', () => {
       },
     });
 
-    render(
-      <TagDialog isOpen={true} onClose={() => {}} onTagCreated={onTagCreated} />
-    );
+    render(<TagDialog isOpen={true} onClose={() => {}} onTagCreated={onTagCreated} />);
 
     // Uncheck annotated
     const annotatedCheckbox = screen.getByRole('checkbox');
@@ -179,9 +177,7 @@ describe('TagDialog', () => {
     fireEvent.click(createButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Tag 'v1.0.0' created successfully")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Tag 'v1.0.0' created successfully")).toBeInTheDocument();
     });
   });
 });

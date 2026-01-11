@@ -15,19 +15,25 @@ import { gitflowApi } from '../../services/api';
 import type { GitFlowConfig, GitFlowResult, GitFlowBranchType } from '../../types';
 import { cn } from '../../lib/utils';
 
-const btnIconClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed";
-const btnIconSmallClass = "flex items-center justify-center w-5.5 h-5.5 p-0 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const overlayClass = "fixed inset-0 bg-black/50 flex items-center justify-center z-9999";
-const dialogClass = "bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col";
-const headerClass = "flex items-center justify-between py-4 px-4 border-b border-(--border-color)";
-const titleClass = "flex items-center gap-2 text-base font-semibold text-(--text-primary)";
-const closeClass = "flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const contentClass = "flex-1 p-4 overflow-y-auto";
-const footerClass = "flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)";
-const formGroupClass = "mb-4";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)";
-const btnClass = "flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+const btnIconClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
+const btnIconSmallClass =
+  'flex items-center justify-center w-5.5 h-5.5 p-0 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) cursor-pointer hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
+const dialogClass =
+  'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
+const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
+const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text-primary)';
+const closeClass =
+  'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const contentClass = 'flex-1 p-4 overflow-y-auto';
+const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
+const formGroupClass = 'mb-4';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
+const btnClass =
+  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface GitFlowViewProps {
   onRefresh?: () => void;
@@ -267,12 +273,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <Settings size={16} />
             </button>
           )}
-          <button
-            className={btnIconClass}
-            onClick={loadState}
-            title="Refresh"
-            disabled={isLoading}
-          >
+          <button className={btnIconClass} onClick={loadState} title="Refresh" disabled={isLoading}>
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -282,7 +283,10 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
         <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-[13px]">
           <AlertCircle size={14} />
           <span className="flex-1">{error}</span>
-          <button className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100" onClick={() => setError(null)}>
+          <button
+            className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100"
+            onClick={() => setError(null)}
+          >
             <X size={14} />
           </button>
         </div>
@@ -292,7 +296,10 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
         <div className="flex items-center gap-2 py-2 px-3 m-2 bg-success/10 text-success rounded text-[13px]">
           <Check size={14} />
           <span className="flex-1">{success}</span>
-          <button className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100" onClick={() => setSuccess(null)}>
+          <button
+            className="p-0.5 bg-transparent border-none text-inherit cursor-pointer opacity-70 hover:opacity-100"
+            onClick={() => setSuccess(null)}
+          >
             <X size={14} />
           </button>
         </div>
@@ -301,7 +308,10 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       {!isInitialized ? (
         <div className="flex flex-col items-center justify-center py-6 px-4 text-center text-(--text-secondary)">
           <p className="mb-4">Git Flow is not initialized in this repository.</p>
-          <button className={cn(btnClass, "bg-(--accent-color) text-white hover:opacity-90")} onClick={() => setShowInitDialog(true)}>
+          <button
+            className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+            onClick={() => setShowInitDialog(true)}
+          >
             <Settings size={14} />
             Initialize Git Flow
           </button>
@@ -314,7 +324,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <GitBranch size={14} />
                 <span>Features</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">{features.length}</span>
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                  {features.length}
+                </span>
               </div>
               <button
                 className={btnIconSmallClass}
@@ -329,9 +341,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             ) : (
               <div className="flex flex-col gap-0.5">
                 {features.map((name) => (
-                  <div key={name} className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group">
+                  <div
+                    key={name}
+                    className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
+                  >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.feature_prefix}{name}
+                      {config?.feature_prefix}
+                      {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -361,7 +377,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <Rocket size={14} />
                 <span>Releases</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">{releases.length}</span>
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                  {releases.length}
+                </span>
               </div>
               <button
                 className={btnIconSmallClass}
@@ -376,9 +394,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             ) : (
               <div className="flex flex-col gap-0.5">
                 {releases.map((name) => (
-                  <div key={name} className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group">
+                  <div
+                    key={name}
+                    className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
+                  >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.release_prefix}{name}
+                      {config?.release_prefix}
+                      {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -408,7 +430,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <Bug size={14} />
                 <span>Hotfixes</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">{hotfixes.length}</span>
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                  {hotfixes.length}
+                </span>
               </div>
               <button
                 className={btnIconSmallClass}
@@ -423,9 +447,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             ) : (
               <div className="flex flex-col gap-0.5">
                 {hotfixes.map((name) => (
-                  <div key={name} className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group">
+                  <div
+                    key={name}
+                    className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
+                  >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.hotfix_prefix}{name}
+                      {config?.hotfix_prefix}
+                      {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -466,7 +494,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="init-master" className={labelClass}>Production branch</label>
+                <label htmlFor="init-master" className={labelClass}>
+                  Production branch
+                </label>
                 <input
                   id="init-master"
                   type="text"
@@ -477,7 +507,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                 />
               </div>
               <div className={formGroupClass}>
-                <label htmlFor="init-develop" className={labelClass}>Development branch</label>
+                <label htmlFor="init-develop" className={labelClass}>
+                  Development branch
+                </label>
                 <input
                   id="init-develop"
                   type="text"
@@ -490,14 +522,20 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 onClick={() => setShowInitDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90")}
+                className={cn(
+                  btnClass,
+                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
+                )}
                 onClick={handleInit}
                 disabled={isLoading}
               >
@@ -523,7 +561,9 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={contentClass}>
               <div className={formGroupClass}>
-                <label htmlFor="branch-name" className={labelClass}>{getTypeLabel(startType)} name</label>
+                <label htmlFor="branch-name" className={labelClass}>
+                  {getTypeLabel(startType)} name
+                </label>
                 <input
                   id="branch-name"
                   type="text"
@@ -534,20 +574,28 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                   className={inputClass}
                 />
                 <p className="mt-1 text-xs text-(--text-muted)">
-                  Branch will be created as: {config?.[`${startType}_prefix` as keyof GitFlowConfig]}{branchName || '...'}
+                  Branch will be created as:{' '}
+                  {config?.[`${startType}_prefix` as keyof GitFlowConfig]}
+                  {branchName || '...'}
                 </p>
               </div>
             </div>
             <div className={footerClass}>
               <button
-                className={cn(btnClass, "bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 onClick={() => setShowStartDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90")}
+                className={cn(
+                  btnClass,
+                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
+                )}
                 onClick={handleStart}
                 disabled={isLoading || !branchName.trim()}
               >

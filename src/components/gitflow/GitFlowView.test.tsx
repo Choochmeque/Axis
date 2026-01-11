@@ -41,7 +41,9 @@ describe('GitFlowView', () => {
     render(<GitFlowView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Git Flow is not initialized in this repository.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Git Flow is not initialized in this repository.')
+      ).toBeInTheDocument();
     });
   });
 
@@ -78,12 +80,14 @@ describe('GitFlowView', () => {
     render(<GitFlowView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Git Flow is not initialized in this repository.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Git Flow is not initialized in this repository.')
+      ).toBeInTheDocument();
     });
 
     // Get the primary button with text (not the icon button)
     const initButtons = screen.getAllByRole('button', { name: /Initialize Git Flow/i });
-    const primaryButton = initButtons.find(btn => btn.classList.contains('btn-primary'));
+    const primaryButton = initButtons.find((btn) => btn.classList.contains('btn-primary'));
     fireEvent.click(primaryButton!);
 
     expect(screen.getByText('Production branch')).toBeInTheDocument();
@@ -101,12 +105,14 @@ describe('GitFlowView', () => {
     render(<GitFlowView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Git Flow is not initialized in this repository.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Git Flow is not initialized in this repository.')
+      ).toBeInTheDocument();
     });
 
     // Open dialog - get the primary button with text (not the icon button)
     const initButtons = screen.getAllByRole('button', { name: /Initialize Git Flow/i });
-    const primaryButton = initButtons.find(btn => btn.classList.contains('btn-primary'));
+    const primaryButton = initButtons.find((btn) => btn.classList.contains('btn-primary'));
     fireEvent.click(primaryButton!);
 
     // Submit

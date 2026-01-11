@@ -12,16 +12,20 @@ interface CloneDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const overlayClass = "fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150";
-const contentClass = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-110 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150";
-const titleClass = "flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)";
-const bodyClass = "p-5";
-const footerClass = "flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)";
-const closeClass = "absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
-const fieldClass = "mb-4 last:mb-0";
-const labelClass = "block mb-1.5 text-[13px] font-medium text-(--text-secondary)";
-const inputClass = "w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)";
-const btnClass = "py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors";
+const overlayClass = 'fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150';
+const contentClass =
+  'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-110 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
+const titleClass =
+  'flex items-center gap-2 py-4 px-5 m-0 text-base font-semibold text-(--text-primary) border-b border-(--border-color)';
+const bodyClass = 'p-5';
+const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
+const closeClass =
+  'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+const fieldClass = 'mb-4 last:mb-0';
+const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
+const inputClass =
+  'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
+const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
 export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   const [url, setUrl] = useState('');
@@ -122,7 +126,9 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
 
           <div className={bodyClass}>
             <div className={fieldClass}>
-              <label htmlFor="clone-url" className={labelClass}>Repository URL</label>
+              <label htmlFor="clone-url" className={labelClass}>
+                Repository URL
+              </label>
               <input
                 id="clone-url"
                 type="text"
@@ -139,7 +145,9 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
             </div>
 
             <div className={fieldClass}>
-              <label htmlFor="clone-path" className={labelClass}>Destination</label>
+              <label htmlFor="clone-path" className={labelClass}>
+                Destination
+              </label>
               <div className="flex gap-2">
                 <input
                   id="clone-path"
@@ -148,12 +156,15 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
                   onChange={(e) => setPath(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="/path/to/clone"
-                  className={cn(inputClass, "flex-1")}
+                  className={cn(inputClass, 'flex-1')}
                 />
                 <button
                   type="button"
                   onClick={handleBrowse}
-                  className={cn(btnClass, "shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                  className={cn(
+                    btnClass,
+                    'shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                  )}
                 >
                   <FolderOpen size={16} />
                 </button>
@@ -176,14 +187,20 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
           <div className={footerClass}>
             <Dialog.Close asChild>
               <button
-                className={cn(btnClass, "bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)")}
+                className={cn(
+                  btnClass,
+                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
+                )}
                 disabled={isLoading}
               >
                 Cancel
               </button>
             </Dialog.Close>
             <button
-              className={cn(btnClass, "bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed")}
+              className={cn(
+                btnClass,
+                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
               onClick={handleClone}
               disabled={isLoading || !url.trim() || !path.trim()}
             >

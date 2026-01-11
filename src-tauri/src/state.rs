@@ -53,6 +53,10 @@ impl AppState {
         self.database.get_recent_repositories()
     }
 
+    pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
+        self.database.remove_recent_repository(path)
+    }
+
     pub fn get_settings(&self) -> Result<AppSettings> {
         self.database.get_settings()
     }

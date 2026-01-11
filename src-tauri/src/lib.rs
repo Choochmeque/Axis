@@ -50,6 +50,7 @@ pub fn run() {
             commands::get_branches,
             commands::get_commit,
             commands::get_recent_repositories,
+            commands::remove_recent_repository,
             // Staging commands
             commands::stage_file,
             commands::stage_files,

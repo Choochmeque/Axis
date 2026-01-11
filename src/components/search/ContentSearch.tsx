@@ -1,12 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  Search,
-  FileText,
-  AlertCircle,
-  X,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { grepApi } from '../../services/api';
 import type { GrepMatch, GrepResult } from '../../types';
 
@@ -80,13 +73,16 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
   };
 
   // Group results by file
-  const groupedResults = results?.matches.reduce((acc, match) => {
-    if (!acc[match.path]) {
-      acc[match.path] = [];
-    }
-    acc[match.path].push(match);
-    return acc;
-  }, {} as Record<string, GrepMatch[]>);
+  const groupedResults = results?.matches.reduce(
+    (acc, match) => {
+      if (!acc[match.path]) {
+        acc[match.path] = [];
+      }
+      acc[match.path].push(match);
+      return acc;
+    },
+    {} as Record<string, GrepMatch[]>
+  );
 
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary)">
@@ -185,43 +181,42 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
           </div>
         )}
 
-        {groupedResults && Object.entries(groupedResults).map(([path, matches]) => (
-          <div key={path} className="border-b border-(--border-color)">
-            <div
-              className="flex items-center gap-1.5 py-1.5 px-3 cursor-pointer bg-(--bg-tertiary) hover:bg-(--bg-hover)"
-              onClick={() => toggleFile(path)}
-            >
-              {expandedFiles.has(path) ? (
-                <ChevronDown size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
-              <FileText size={14} />
-              <span className="flex-1 text-[13px] text-(--text-primary) font-mono">{path}</span>
-              <span className="bg-(--bg-secondary) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)">{matches.length}</span>
-            </div>
-            {expandedFiles.has(path) && (
-              <div className="bg-(--bg-primary)">
-                {matches.map((match, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
-                    onClick={() => handleMatchClick(match)}
-                  >
-                    {match.line_number && (
-                      <span className="w-10 shrink-0 text-(--text-muted) text-right pr-2">
-                        {match.line_number}
-                      </span>
-                    )}
-                    <span className="flex-1 text-(--text-primary) whitespace-pre overflow-hidden text-ellipsis">
-                      {match.content}
-                    </span>
-                  </div>
-                ))}
+        {groupedResults &&
+          Object.entries(groupedResults).map(([path, matches]) => (
+            <div key={path} className="border-b border-(--border-color)">
+              <div
+                className="flex items-center gap-1.5 py-1.5 px-3 cursor-pointer bg-(--bg-tertiary) hover:bg-(--bg-hover)"
+                onClick={() => toggleFile(path)}
+              >
+                {expandedFiles.has(path) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <FileText size={14} />
+                <span className="flex-1 text-[13px] text-(--text-primary) font-mono">{path}</span>
+                <span className="bg-(--bg-secondary) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)">
+                  {matches.length}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              {expandedFiles.has(path) && (
+                <div className="bg-(--bg-primary)">
+                  {matches.map((match, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
+                      onClick={() => handleMatchClick(match)}
+                    >
+                      {match.line_number && (
+                        <span className="w-10 shrink-0 text-(--text-muted) text-right pr-2">
+                          {match.line_number}
+                        </span>
+                      )}
+                      <span className="flex-1 text-(--text-primary) whitespace-pre overflow-hidden text-ellipsis">
+                        {match.content}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
 
         {results && results.total_matches === 0 && (
           <div className="py-6 text-center text-(--text-muted)">

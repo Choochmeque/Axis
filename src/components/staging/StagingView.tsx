@@ -4,10 +4,13 @@ import { useStagingStore } from '../../store/stagingStore';
 import { FileStatusList } from './FileStatusList';
 import { cn } from '../../lib/utils';
 
-const sectionHeaderClass = "flex items-center justify-between py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0";
-const sectionTitleClass = "text-xs font-semibold uppercase text-(--text-secondary)";
-const sectionCountClass = "bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)";
-const actionBtnClass = "flex items-center gap-1 py-1 px-2 border-none rounded bg-transparent text-(--text-secondary) text-[11px] cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)";
+const sectionHeaderClass =
+  'flex items-center justify-between py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0';
+const sectionTitleClass = 'text-xs font-semibold uppercase text-(--text-secondary)';
+const sectionCountClass =
+  'bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)';
+const actionBtnClass =
+  'flex items-center gap-1 py-1 px-2 border-none rounded bg-transparent text-(--text-secondary) text-[11px] cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 export function StagingView() {
   const {
@@ -33,7 +36,9 @@ export function StagingView() {
   if (isLoadingStatus && !status) {
     return (
       <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
-        <div className="flex items-center justify-center h-full text-(--text-secondary)">Loading status...</div>
+        <div className="flex items-center justify-center h-full text-(--text-secondary)">
+          Loading status...
+        </div>
       </div>
     );
   }
@@ -43,7 +48,12 @@ export function StagingView() {
       <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
         <div className="flex flex-col items-center justify-center h-full gap-3 text-error">
           <span>{error}</span>
-          <button className="py-1 px-3 border border-(--border-color) rounded bg-transparent text-(--text-primary) cursor-pointer" onClick={clearError}>Dismiss</button>
+          <button
+            className="py-1 px-3 border border-(--border-color) rounded bg-transparent text-(--text-primary) cursor-pointer"
+            onClick={clearError}
+          >
+            Dismiss
+          </button>
         </div>
       </div>
     );
@@ -65,17 +75,11 @@ export function StagingView() {
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
               <span className={sectionTitleClass}>Staged Changes</span>
-              {hasStaged && (
-                <span className={sectionCountClass}>{stagedFiles.length}</span>
-              )}
+              {hasStaged && <span className={sectionCountClass}>{stagedFiles.length}</span>}
             </div>
             <div className="flex gap-1">
               {hasStaged && (
-                <button
-                  className={actionBtnClass}
-                  onClick={unstageAll}
-                  title="Unstage all"
-                >
+                <button className={actionBtnClass} onClick={unstageAll} title="Unstage all">
                   <Minus size={14} />
                   Unstage All
                 </button>
@@ -92,7 +96,9 @@ export function StagingView() {
               showUnstageButton
             />
           ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">No staged changes</div>
+            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+              No staged changes
+            </div>
           )}
         </div>
 
@@ -101,23 +107,17 @@ export function StagingView() {
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
               <span className={sectionTitleClass}>Unstaged Changes</span>
-              {hasUnstaged && (
-                <span className={sectionCountClass}>{unstagedFiles.length}</span>
-              )}
+              {hasUnstaged && <span className={sectionCountClass}>{unstagedFiles.length}</span>}
             </div>
             <div className="flex gap-1">
               {hasUnstaged && (
                 <>
-                  <button
-                    className={actionBtnClass}
-                    onClick={stageAll}
-                    title="Stage all"
-                  >
+                  <button className={actionBtnClass} onClick={stageAll} title="Stage all">
                     <Plus size={14} />
                     Stage All
                   </button>
                   <button
-                    className={cn(actionBtnClass, "hover:bg-error/10 hover:text-error")}
+                    className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
                     onClick={discardAll}
                     title="Discard all changes"
                   >
@@ -139,14 +139,16 @@ export function StagingView() {
               showDiscardButton
             />
           ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">No unstaged changes</div>
+            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+              No unstaged changes
+            </div>
           )}
         </div>
 
         {/* Conflicts section */}
         {hasConflicts && (
           <div className="flex flex-col shrink-0 max-h-50 overflow-hidden">
-            <div className={cn(sectionHeaderClass, "bg-error/10")}>
+            <div className={cn(sectionHeaderClass, 'bg-error/10')}>
               <div className="flex items-center gap-2">
                 <span className={sectionTitleClass}>Conflicts</span>
                 <span className={sectionCountClass}>{conflictedFiles.length}</span>

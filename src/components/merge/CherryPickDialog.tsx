@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { Cherry, X, AlertCircle, Check } from 'lucide-react';
 import { cherryPickApi } from '../../services/api';
 import type { Commit, CherryPickResult } from '../../types';
@@ -13,8 +14,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-4 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const checkboxLabelClass =
-  'flex items-center gap-2 cursor-pointer font-normal text-(--text-primary)';
 const checkboxDescClass = 'mt-1 ml-6 text-xs text-(--text-secondary)';
 
 interface CherryPickDialogProps {
@@ -151,18 +150,24 @@ export function CherryPickDialog({
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className={checkboxLabelClass}>
-                  <input
-                    type="checkbox"
-                    checked={noCommit}
-                    onChange={(e) => setNoCommit(e.target.checked)}
-                    disabled={isLoading}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <span>Stage changes only (--no-commit)</span>
-                </label>
-                <p className={checkboxDescClass}>Apply changes without creating a commit</p>
+              <div className="checkbox-field">
+                <Checkbox.Root
+                  id="no-commit"
+                  className="checkbox"
+                  checked={noCommit}
+                  onCheckedChange={(checked) => setNoCommit(checked === true)}
+                  disabled={isLoading}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <div>
+                  <label htmlFor="no-commit" className="checkbox-label">
+                    Stage changes only (--no-commit)
+                  </label>
+                  <p className={checkboxDescClass}>Apply changes without creating a commit</p>
+                </div>
               </div>
             </>
           )}

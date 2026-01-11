@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { Tag as TagIcon, X, AlertCircle, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { tagApi, remoteApi } from '../../services/api';
 import type { TagResult, Remote } from '../../types';
@@ -103,7 +104,7 @@ export function TagDialog({
 
   if (!isOpen) return null;
 
-  const checkboxLabelClass =
+  const radioLabelClass =
     'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
 
   return (
@@ -164,7 +165,7 @@ export function TagDialog({
                   Commit:
                 </label>
                 <div className="flex flex-col gap-2.5 mt-1">
-                  <label className={checkboxLabelClass}>
+                  <label className={radioLabelClass}>
                     <input
                       type="radio"
                       name="commit-target"
@@ -175,7 +176,7 @@ export function TagDialog({
                     />
                     <span className="flex-1">Working copy parent</span>
                   </label>
-                  <label className={checkboxLabelClass}>
+                  <label className={radioLabelClass}>
                     <input
                       type="radio"
                       name="commit-target"
@@ -207,16 +208,22 @@ export function TagDialog({
               </div>
 
               <div className="flex items-center gap-3 mb-4">
-                <label className={cn(checkboxLabelClass, 'whitespace-nowrap')}>
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <Checkbox.Root
+                    id="push-tag"
+                    className="checkbox"
                     checked={pushTag}
-                    onChange={(e) => setPushTag(e.target.checked)}
+                    onCheckedChange={(checked) => setPushTag(checked === true)}
                     disabled={isLoading}
-                    className="w-auto m-0 accent-(--accent-color)"
-                  />
-                  <span>Push tag:</span>
-                </label>
+                  >
+                    <Checkbox.Indicator>
+                      <Check size={10} className="text-white" />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
+                  <label htmlFor="push-tag" className="checkbox-label">
+                    Push tag:
+                  </label>
+                </div>
                 <select
                   value={selectedRemote}
                   onChange={(e) => setSelectedRemote(e.target.value)}
@@ -244,27 +251,39 @@ export function TagDialog({
 
                 {showAdvanced && (
                   <div className="flex flex-col gap-3 mt-3 pl-4.5">
-                    <label className={checkboxLabelClass}>
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-2">
+                      <Checkbox.Root
+                        id="force-move"
+                        className="checkbox"
                         checked={forceMove}
-                        onChange={(e) => setForceMove(e.target.checked)}
+                        onCheckedChange={(checked) => setForceMove(checked === true)}
                         disabled={isLoading}
-                        className="w-auto m-0 accent-(--accent-color)"
-                      />
-                      <span>Move existing tag</span>
-                    </label>
+                      >
+                        <Checkbox.Indicator>
+                          <Check size={10} className="text-white" />
+                        </Checkbox.Indicator>
+                      </Checkbox.Root>
+                      <label htmlFor="force-move" className="checkbox-label">
+                        Move existing tag
+                      </label>
+                    </div>
 
-                    <label className={checkboxLabelClass}>
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-2">
+                      <Checkbox.Root
+                        id="lightweight"
+                        className="checkbox"
                         checked={isLightweight}
-                        onChange={(e) => setIsLightweight(e.target.checked)}
+                        onCheckedChange={(checked) => setIsLightweight(checked === true)}
                         disabled={isLoading}
-                        className="w-auto m-0 accent-(--accent-color)"
-                      />
-                      <span>Lightweight tag (not recommended)</span>
-                    </label>
+                      >
+                        <Checkbox.Indicator>
+                          <Check size={10} className="text-white" />
+                        </Checkbox.Indicator>
+                      </Checkbox.Root>
+                      <label htmlFor="lightweight" className="checkbox-label">
+                        Lightweight tag (not recommended)
+                      </label>
+                    </div>
 
                     {!isLightweight && (
                       <div className="mt-1">

@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import {
+  Archive,
+  Play,
+  Trash2,
+  Plus,
+  RefreshCw,
+  GitBranch,
+  AlertCircle,
+  X,
+  Check,
+} from 'lucide-react';
 import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
@@ -15,7 +26,6 @@ const closeClass =
 const contentClass = 'flex-1 p-4 overflow-y-auto';
 const footerClass = 'flex justify-end gap-2 py-3 px-4 border-t border-(--border-color)';
 const formGroupClass = 'mb-4';
-const checkboxLabelClass = 'flex items-center gap-2 cursor-pointer text-(--text-primary)';
 const btnSmallClass =
   'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
@@ -306,26 +316,34 @@ export function StashView({ onRefresh }: StashViewProps) {
                   className="input"
                 />
               </div>
-              <div className={formGroupClass}>
-                <label className={checkboxLabelClass}>
-                  <input
-                    type="checkbox"
-                    checked={includeUntracked}
-                    onChange={(e) => setIncludeUntracked(e.target.checked)}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                  <span>Include untracked files</span>
+              <div className="checkbox-field">
+                <Checkbox.Root
+                  id="include-untracked"
+                  className="checkbox"
+                  checked={includeUntracked}
+                  onCheckedChange={(checked) => setIncludeUntracked(checked === true)}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <label htmlFor="include-untracked" className="checkbox-label">
+                  Include untracked files
                 </label>
               </div>
-              <div className={formGroupClass}>
-                <label className={checkboxLabelClass}>
-                  <input
-                    type="checkbox"
-                    checked={keepIndex}
-                    onChange={(e) => setKeepIndex(e.target.checked)}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                  <span>Keep staged changes in index</span>
+              <div className="checkbox-field">
+                <Checkbox.Root
+                  id="keep-index"
+                  className="checkbox"
+                  checked={keepIndex}
+                  onCheckedChange={(checked) => setKeepIndex(checked === true)}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <label htmlFor="keep-index" className="checkbox-label">
+                  Keep staged changes in index
                 </label>
               </div>
             </div>

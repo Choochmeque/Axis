@@ -217,9 +217,6 @@ function FileStatusItem({
   const dropdownItemDisabledClass =
     'flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-tertiary) cursor-not-allowed outline-none';
 
-  const checkboxClass =
-    'flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)';
-
   if (compact) {
     return (
       <div
@@ -231,7 +228,7 @@ function FileStatusItem({
         title={file.path}
       >
         <Checkbox.Root
-          className={checkboxClass}
+          className="checkbox"
           checked={isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
             handleCheckboxChange(checked === true);
@@ -259,7 +256,7 @@ function FileStatusItem({
       {indent > 0 && <span className="w-3.5 shrink-0" />}{' '}
       {/* Spacer to align with folder chevrons */}
       <Checkbox.Root
-        className={checkboxClass}
+        className="checkbox"
         checked={isStaged}
         onCheckedChange={(checked: boolean | 'indeterminate') => {
           handleCheckboxChange(checked === true);
@@ -369,9 +366,6 @@ function MultiColumnFileItem({
     return <Icon className={cn('shrink-0', statusColorClass)} size={14} />;
   };
 
-  const checkboxClass =
-    'flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)';
-
   return (
     <div
       className={cn(
@@ -382,7 +376,7 @@ function MultiColumnFileItem({
     >
       <div className="w-6 shrink-0 flex items-center justify-center">
         <Checkbox.Root
-          className={checkboxClass}
+          className="checkbox"
           checked={isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
             handleCheckboxChange(checked === true);

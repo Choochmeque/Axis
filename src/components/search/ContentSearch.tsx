@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { grepApi } from '../../services/api';
 import type { GrepMatch, GrepResult } from '../../types';
 
@@ -135,33 +136,60 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
         </button>
         {showOptions && (
           <div className="flex gap-4 py-2 px-1">
-            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-1.5">
+              <Checkbox.Root
+                id="ignore-case"
+                className="checkbox"
                 checked={ignoreCase}
-                onChange={(e) => setIgnoreCase(e.target.checked)}
-                className="w-3.5 h-3.5 cursor-pointer"
-              />
-              <span>Ignore case</span>
-            </label>
-            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
-              <input
-                type="checkbox"
+                onCheckedChange={(checked) => setIgnoreCase(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label
+                htmlFor="ignore-case"
+                className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
+              >
+                Ignore case
+              </label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox.Root
+                id="whole-word"
+                className="checkbox"
                 checked={wordRegexp}
-                onChange={(e) => setWordRegexp(e.target.checked)}
-                className="w-3.5 h-3.5 cursor-pointer"
-              />
-              <span>Whole word</span>
-            </label>
-            <label className="flex items-center gap-1 text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)">
-              <input
-                type="checkbox"
+                onCheckedChange={(checked) => setWordRegexp(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label
+                htmlFor="whole-word"
+                className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
+              >
+                Whole word
+              </label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox.Root
+                id="use-regex"
+                className="checkbox"
                 checked={useRegex}
-                onChange={(e) => setUseRegex(e.target.checked)}
-                className="w-3.5 h-3.5 cursor-pointer"
-              />
-              <span>Use regex</span>
-            </label>
+                onCheckedChange={(checked) => setUseRegex(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label
+                htmlFor="use-regex"
+                className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
+              >
+                Use regex
+              </label>
+            </div>
           </div>
         )}
       </div>

@@ -12,7 +12,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 
 interface AddSubmoduleDialogProps {
   open: boolean;
@@ -93,7 +92,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
           </Dialog.Title>
 
           <div className={bodyClass}>
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="submodule-url" className="label">
                 Repository URL
               </label>
@@ -109,7 +108,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
               />
             </div>
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="submodule-path" className="label">
                 Path
               </label>
@@ -127,7 +126,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
               </span>
             </div>
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="submodule-branch" className="label">
                 Branch (optional)
               </label>

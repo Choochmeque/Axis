@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { X, ArrowDownToLine, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -18,8 +19,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
-const checkboxFieldClass = 'flex items-center gap-2 mb-4 last:mb-0';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function PullDialog({ open, onOpenChange }: PullDialogProps) {
@@ -154,7 +153,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
                   </div>
                 )}
 
-                <div className={fieldClass}>
+                <div className="field">
                   <label htmlFor="remote-select" className="label">
                     Pull from Remote
                   </label>
@@ -173,36 +172,44 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
                   </select>
                 </div>
 
-                <div className={checkboxFieldClass}>
-                  <input
+                <div className="checkbox-field">
+                  <Checkbox.Root
                     id="rebase"
-                    type="checkbox"
+                    className="checkbox"
                     checked={rebase}
-                    onChange={(e) => {
-                      setRebase(e.target.checked);
-                      if (e.target.checked) setFfOnly(false);
+                    onCheckedChange={(checked) => {
+                      const isChecked = checked === true;
+                      setRebase(isChecked);
+                      if (isChecked) setFfOnly(false);
                     }}
                     disabled={ffOnly}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <label htmlFor="rebase" className="text-(--text-primary)">
+                  >
+                    <Checkbox.Indicator>
+                      <Check size={10} className="text-white" />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
+                  <label htmlFor="rebase" className="checkbox-label">
                     Rebase instead of merge
                   </label>
                 </div>
 
-                <div className={checkboxFieldClass}>
-                  <input
+                <div className="checkbox-field">
+                  <Checkbox.Root
                     id="ff-only"
-                    type="checkbox"
+                    className="checkbox"
                     checked={ffOnly}
-                    onChange={(e) => {
-                      setFfOnly(e.target.checked);
-                      if (e.target.checked) setRebase(false);
+                    onCheckedChange={(checked) => {
+                      const isChecked = checked === true;
+                      setFfOnly(isChecked);
+                      if (isChecked) setRebase(false);
                     }}
                     disabled={rebase}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <label htmlFor="ff-only" className="text-(--text-primary)">
+                  >
+                    <Checkbox.Indicator>
+                      <Check size={10} className="text-white" />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
+                  <label htmlFor="ff-only" className="checkbox-label">
                     Fast-forward only (abort if not possible)
                   </label>
                 </div>

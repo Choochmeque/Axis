@@ -254,7 +254,7 @@ describe('stagingStore', () => {
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
 
-      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', false);
+      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', false, expect.any(Object));
       expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
     });
 
@@ -314,7 +314,7 @@ describe('stagingStore', () => {
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
 
-      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', true);
+      expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', true, expect.any(Object));
       expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
     });
 

@@ -17,7 +17,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 
 export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   const [remoteName, setRemoteName] = useState('');
@@ -77,7 +76,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
           </Dialog.Title>
 
           <div className={bodyClass}>
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="remote-name" className="label">
                 Remote Name
               </label>
@@ -93,7 +92,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
               />
             </div>
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="remote-url" className="label">
                 Remote URL
               </label>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { open } from '@tauri-apps/plugin-dialog';
-import { X, FolderPlus, FolderOpen } from 'lucide-react';
+import { X, FolderPlus, FolderOpen, Check } from 'lucide-react';
 import { repositoryApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useTabsStore } from '../../store/tabsStore';
@@ -20,7 +21,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   const [path, setPath] = useState('');
   const [bare, setBare] = useState(false);
@@ -96,7 +96,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
           </Dialog.Title>
 
           <div className={bodyClass}>
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="init-path" className="label">
                 Directory
               </label>
@@ -127,15 +127,18 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
               </p>
             </div>
 
-            <div className={cn(fieldClass, 'flex items-center gap-2')}>
-              <input
+            <div className="checkbox-field">
+              <Checkbox.Root
                 id="bare"
-                type="checkbox"
+                className="checkbox"
                 checked={bare}
-                onChange={(e) => setBare(e.target.checked)}
-                className="w-4 h-4 accent-(--accent-color)"
-              />
-              <label htmlFor="bare" className="mb-0 text-(--text-primary)">
+                onCheckedChange={(checked) => setBare(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label htmlFor="bare" className="checkbox-label">
                 Create bare repository
               </label>
             </div>

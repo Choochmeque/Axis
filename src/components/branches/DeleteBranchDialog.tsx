@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Trash2, AlertTriangle } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import { X, Trash2, AlertTriangle, Check } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Branch } from '../../types';
@@ -20,7 +21,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
@@ -88,15 +88,18 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
               Are you sure you want to delete the branch "{branch.name}"?
             </p>
 
-            <div className={cn(fieldClass, 'flex items-center gap-2')}>
-              <input
+            <div className="checkbox-field">
+              <Checkbox.Root
                 id="force-delete"
-                type="checkbox"
+                className="checkbox"
                 checked={force}
-                onChange={(e) => setForce(e.target.checked)}
-                className="w-4 h-4 accent-(--accent-color)"
-              />
-              <label htmlFor="force-delete" className="mb-0 text-(--text-primary)">
+                onCheckedChange={(checked) => setForce(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label htmlFor="force-delete" className="checkbox-label">
                 Force delete (even if not fully merged)
               </label>
             </div>

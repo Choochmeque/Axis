@@ -328,4 +328,23 @@
   .label {
     @apply block mb-1.5 text-[13px] font-medium text-(--text-secondary);
   }
+
+  /* Field classes */
+  .field {
+    @apply mb-4 last:mb-0;
+  }
+
+  /* Checkbox classes (Radix UI) */
+  .checkbox {
+    @apply flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors;
+    @apply data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color);
+  }
+
+  .checkbox-field {
+    @apply flex items-center gap-2 mb-4 last:mb-0;
+  }
+
+  .checkbox-label {
+    @apply text-[13px] text-(--text-primary) cursor-pointer select-none;
+  }
 }

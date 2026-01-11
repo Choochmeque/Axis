@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { GitMerge, X, AlertCircle, Check } from 'lucide-react';
 import { mergeApi, branchApi } from '../../services/api';
 import type { Branch, MergeResult } from '../../types';
@@ -17,9 +18,6 @@ const selectClass =
   'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
 const textareaClass =
   'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md font-inherit resize-y min-h-15 outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
-const checkboxGroupClass = 'mb-3';
-const checkboxLabelClass =
-  'flex items-center gap-2 cursor-pointer font-normal text-(--text-primary)';
 const checkboxDescClass = 'mt-1 ml-6 text-xs text-(--text-secondary)';
 
 interface MergeDialogProps {
@@ -188,37 +186,50 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 />
               </div>
 
-              <div className={checkboxGroupClass}>
-                <label className={checkboxLabelClass}>
-                  <input
-                    type="checkbox"
-                    checked={noFastForward}
-                    onChange={(e) => setNoFastForward(e.target.checked)}
-                    disabled={isLoading || squash}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <span>Create merge commit (--no-ff)</span>
-                </label>
-                <p className={checkboxDescClass}>
-                  Always create a merge commit, even if fast-forward is possible
-                </p>
+              <div className="checkbox-field">
+                <Checkbox.Root
+                  id="no-ff"
+                  className="checkbox"
+                  checked={noFastForward}
+                  onCheckedChange={(checked) => setNoFastForward(checked === true)}
+                  disabled={isLoading || squash}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <div>
+                  <label htmlFor="no-ff" className="checkbox-label">
+                    Create merge commit (--no-ff)
+                  </label>
+                  <p className={checkboxDescClass}>
+                    Always create a merge commit, even if fast-forward is possible
+                  </p>
+                </div>
               </div>
 
-              <div className={checkboxGroupClass}>
-                <label className={checkboxLabelClass}>
-                  <input
-                    type="checkbox"
-                    checked={squash}
-                    onChange={(e) => {
-                      setSquash(e.target.checked);
-                      if (e.target.checked) setNoFastForward(false);
-                    }}
-                    disabled={isLoading}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <span>Squash commits</span>
-                </label>
-                <p className={checkboxDescClass}>Combine all commits into a single commit</p>
+              <div className="checkbox-field">
+                <Checkbox.Root
+                  id="squash"
+                  className="checkbox"
+                  checked={squash}
+                  onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+                    setSquash(isChecked);
+                    if (isChecked) setNoFastForward(false);
+                  }}
+                  disabled={isLoading}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <div>
+                  <label htmlFor="squash" className="checkbox-label">
+                    Squash commits
+                  </label>
+                  <p className={checkboxDescClass}>Combine all commits into a single commit</p>
+                </div>
               </div>
             </>
           )}

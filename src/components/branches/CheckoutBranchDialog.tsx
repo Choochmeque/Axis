@@ -17,7 +17,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
@@ -85,7 +84,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
               </div>
             )}
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="branch-select" className="label">
                 Select Branch
               </label>

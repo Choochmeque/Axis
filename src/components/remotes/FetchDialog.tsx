@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Checkbox from '@radix-ui/react-checkbox';
 import { X, RefreshCw, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -18,8 +19,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
-const checkboxFieldClass = 'flex items-center gap-2 mb-4 last:mb-0';
 
 export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   const [remotes, setRemotes] = useState<Remote[]>([]);
@@ -117,21 +116,24 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
               </div>
             ) : (
               <>
-                <div className={checkboxFieldClass}>
-                  <input
+                <div className="checkbox-field">
+                  <Checkbox.Root
                     id="fetch-all"
-                    type="checkbox"
+                    className="checkbox"
                     checked={fetchAll}
-                    onChange={(e) => setFetchAll(e.target.checked)}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <label htmlFor="fetch-all" className="text-(--text-primary)">
+                    onCheckedChange={(checked) => setFetchAll(checked === true)}
+                  >
+                    <Checkbox.Indicator>
+                      <Check size={10} className="text-white" />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
+                  <label htmlFor="fetch-all" className="checkbox-label">
                     Fetch from all remotes
                   </label>
                 </div>
 
                 {!fetchAll && (
-                  <div className={fieldClass}>
+                  <div className="field">
                     <label htmlFor="remote-select" className="label">
                       Remote
                     </label>
@@ -151,15 +153,18 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
                   </div>
                 )}
 
-                <div className={checkboxFieldClass}>
-                  <input
+                <div className="checkbox-field">
+                  <Checkbox.Root
                     id="prune"
-                    type="checkbox"
+                    className="checkbox"
                     checked={prune}
-                    onChange={(e) => setPrune(e.target.checked)}
-                    className="w-4 h-4 accent-(--accent-color)"
-                  />
-                  <label htmlFor="prune" className="text-(--text-primary)">
+                    onCheckedChange={(checked) => setPrune(checked === true)}
+                  >
+                    <Checkbox.Indicator>
+                      <Check size={10} className="text-white" />
+                    </Checkbox.Indicator>
+                  </Checkbox.Root>
+                  <label htmlFor="prune" className="checkbox-label">
                     Prune deleted remote branches
                   </label>
                 </div>

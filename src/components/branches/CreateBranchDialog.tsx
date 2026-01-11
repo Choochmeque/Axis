@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, GitBranch } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import { X, GitBranch, Check } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { cn } from '../../lib/utils';
 
 interface CreateBranchDialogProps {
   open: boolean;
@@ -19,7 +19,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 
 export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBranchDialogProps) {
   const [branchName, setBranchName] = useState('');
@@ -84,7 +83,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
           </Dialog.Title>
 
           <div className={bodyClass}>
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="branch-name" className="label">
                 Branch Name
               </label>
@@ -100,7 +99,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
               />
             </div>
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="base-branch" className="label">
                 Starting Point
               </label>
@@ -124,15 +123,18 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
               </select>
             </div>
 
-            <div className={cn(fieldClass, 'flex items-center gap-2')}>
-              <input
+            <div className="checkbox-field">
+              <Checkbox.Root
                 id="checkout"
-                type="checkbox"
+                className="checkbox"
                 checked={checkout}
-                onChange={(e) => setCheckout(e.target.checked)}
-                className="w-4 h-4 accent-(--accent-color)"
-              />
-              <label htmlFor="checkout" className="mb-0 text-(--text-primary)">
+                onCheckedChange={(checked) => setCheckout(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check size={10} className="text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label htmlFor="checkout" className="checkbox-label">
                 Checkout new branch
               </label>
             </div>

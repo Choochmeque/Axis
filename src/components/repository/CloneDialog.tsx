@@ -20,7 +20,6 @@ const bodyClass = 'p-5';
 const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-color)';
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
-const fieldClass = 'mb-4 last:mb-0';
 export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
@@ -119,7 +118,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
           </Dialog.Title>
 
           <div className={bodyClass}>
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="clone-url" className="label">
                 Repository URL
               </label>
@@ -138,7 +137,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
               </p>
             </div>
 
-            <div className={fieldClass}>
+            <div className="field">
               <label htmlFor="clone-path" className="label">
                 Destination
               </label>

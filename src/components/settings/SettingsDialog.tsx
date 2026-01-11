@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, Palette, GitBranch, FileText, Terminal, Save, RotateCcw } from 'lucide-react';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import {
+  X,
+  Settings,
+  Palette,
+  GitBranch,
+  FileText,
+  Terminal,
+  Save,
+  RotateCcw,
+  Check,
+} from 'lucide-react';
 import { settingsApi } from '../../services/api';
 import type { AppSettings, Theme } from '../../types';
 import { cn } from '../../lib/utils';
@@ -202,8 +213,6 @@ const sectionTitleClass =
 const groupClass = 'mb-5';
 const numberInputClass =
   'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
-const checkboxLabelClass =
-  'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
 const hintClass = 'mt-1.5 text-xs text-(--text-muted)';
 
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
@@ -245,15 +254,21 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="show-line-numbers"
+            className="checkbox"
             checked={settings.show_line_numbers}
-            onChange={(e) => updateSetting('show_line_numbers', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Show line numbers</span>
-        </label>
+            onCheckedChange={(checked) => updateSetting('show_line_numbers', checked === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="show-line-numbers" className="checkbox-label">
+            Show line numbers
+          </label>
+        </div>
         <p className={hintClass}>Display line numbers in diff and file views</p>
       </div>
     </div>
@@ -296,28 +311,40 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="confirm-before-discard"
+            className="checkbox"
             checked={settings.confirm_before_discard}
-            onChange={(e) => updateSetting('confirm_before_discard', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Confirm before discarding changes</span>
-        </label>
+            onCheckedChange={(checked) => updateSetting('confirm_before_discard', checked === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="confirm-before-discard" className="checkbox-label">
+            Confirm before discarding changes
+          </label>
+        </div>
         <p className={hintClass}>Show confirmation dialog before discarding changes</p>
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="sign-commits"
+            className="checkbox"
             checked={settings.sign_commits}
-            onChange={(e) => updateSetting('sign_commits', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Sign commits with GPG</span>
-        </label>
+            onCheckedChange={(checked) => updateSetting('sign_commits', checked === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="sign-commits" className="checkbox-label">
+            Sign commits with GPG
+          </label>
+        </div>
         <p className={hintClass}>Automatically sign commits using GPG</p>
       </div>
     </div>
@@ -346,28 +373,40 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="diff-word-wrap"
+            className="checkbox"
             checked={settings.diff_word_wrap}
-            onChange={(e) => updateSetting('diff_word_wrap', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Word wrap in diff view</span>
-        </label>
+            onCheckedChange={(checked) => updateSetting('diff_word_wrap', checked === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="diff-word-wrap" className="checkbox-label">
+            Word wrap in diff view
+          </label>
+        </div>
         <p className={hintClass}>Wrap long lines in diff view</p>
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="diff-side-by-side"
+            className="checkbox"
             checked={settings.diff_side_by_side}
-            onChange={(e) => updateSetting('diff_side_by_side', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Side-by-side diff view</span>
-        </label>
+            onCheckedChange={(checked) => updateSetting('diff_side_by_side', checked === true)}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="diff-side-by-side" className="checkbox-label">
+            Side-by-side diff view
+          </label>
+        </div>
         <p className={hintClass}>Show diffs in split view by default</p>
       </div>
 
@@ -390,15 +429,23 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <div className={groupClass}>
-        <label className={checkboxLabelClass}>
-          <input
-            type="checkbox"
+        <div className="checkbox-field">
+          <Checkbox.Root
+            id="spell-check-commit-messages"
+            className="checkbox"
             checked={settings.spell_check_commit_messages}
-            onChange={(e) => updateSetting('spell_check_commit_messages', e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <span>Spell check commit messages</span>
-        </label>
+            onCheckedChange={(checked) =>
+              updateSetting('spell_check_commit_messages', checked === true)
+            }
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="spell-check-commit-messages" className="checkbox-label">
+            Spell check commit messages
+          </label>
+        </div>
         <p className={hintClass}>Enable spell checking in commit message editor</p>
       </div>
     </div>

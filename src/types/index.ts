@@ -84,10 +84,17 @@ export interface RecentRepository {
   last_opened: string;
 }
 
+export type BranchFilterType = 'all' | 'current' | { specific: string };
+
+export type SortOrder = 'date_order' | 'ancestor_order';
+
 export interface LogOptions {
   limit?: number;
   skip?: number;
   from_ref?: string;
+  branch_filter?: BranchFilterType;
+  include_remotes?: boolean;
+  sort_order?: SortOrder;
 }
 
 // Diff types
@@ -257,6 +264,9 @@ export interface GraphOptions {
   skip?: number;
   from_ref?: string;
   all_branches?: boolean;
+  branch_filter?: BranchFilterType;
+  include_remotes?: boolean;
+  sort_order?: SortOrder;
 }
 
 export interface GraphResult {

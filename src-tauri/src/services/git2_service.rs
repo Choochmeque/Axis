@@ -1,7 +1,8 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, BranchType, Commit, CreateTagOptions, FileStatus, LogOptions, Repository,
-    RepositoryState, RepositoryStatus, Tag, TagResult, TagSignature,
+    Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, FileStatus,
+    LogOptions, Repository, RepositoryState, RepositoryStatus, SortOrder, Tag, TagResult,
+    TagSignature,
 };
 use chrono::{DateTime, Utc};
 use git2::{Repository as Git2Repository, StatusOptions};
@@ -187,16 +188,68 @@ impl Git2Service {
     pub fn log(&self, options: LogOptions) -> Result<Vec<Commit>> {
         let mut revwalk = self.repo.revwalk()?;
 
-        // Start from specified ref or HEAD
+        // Set sorting based on options
+        match options.sort_order {
+            SortOrder::AncestorOrder => {
+                revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::TIME)?;
+            }
+            SortOrder::DateOrder => {
+                revwalk.set_sorting(git2::Sort::TIME)?;
+            }
+        }
+
+        // Handle from_ref if specified (overrides branch_filter)
         if let Some(ref from_ref) = options.from_ref {
             let obj = self.repo.revparse_single(from_ref)?;
             revwalk.push(obj.id())?;
         } else {
-            revwalk.push_head()?;
+            // Apply branch filter
+            match &options.branch_filter {
+                BranchFilterType::Current => {
+                    revwalk.push_head()?;
+                }
+                BranchFilterType::Specific(branch_name) => {
+                    // Try local branch first, then remote
+                    let ref_name = format!("refs/heads/{}", branch_name);
+                    if let Ok(reference) = self.repo.find_reference(&ref_name) {
+                        if let Some(oid) = reference.target() {
+                            revwalk.push(oid)?;
+                        }
+                    } else {
+                        // Try as remote branch
+                        let ref_name = format!("refs/remotes/{}", branch_name);
+                        if let Ok(reference) = self.repo.find_reference(&ref_name) {
+                            if let Some(oid) = reference.target() {
+                                revwalk.push(oid)?;
+                            }
+                        } else {
+                            // Fall back to HEAD
+                            revwalk.push_head()?;
+                        }
+                    }
+                }
+                BranchFilterType::All => {
+                    // Push all local branches
+                    for branch_result in self.repo.branches(Some(git2::BranchType::Local))? {
+                        if let Ok((branch, _)) = branch_result {
+                            if let Some(oid) = branch.get().target() {
+                                let _ = revwalk.push(oid);
+                            }
+                        }
+                    }
+                    // Push remote branches if included
+                    if options.include_remotes {
+                        for branch_result in self.repo.branches(Some(git2::BranchType::Remote))? {
+                            if let Ok((branch, _)) = branch_result {
+                                if let Some(oid) = branch.get().target() {
+                                    let _ = revwalk.push(oid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-
-        // Sort by time (newest first)
-        revwalk.set_sorting(git2::Sort::TIME)?;
 
         let mut commits = Vec::new();
         let skip = options.skip.unwrap_or(0);
@@ -316,7 +369,11 @@ impl Git2Service {
     /// Stage a file (add to index)
     pub fn stage_file(&self, path: &str) -> Result<()> {
         let mut index = self.repo.index()?;
-        let full_path = self.repo.workdir().ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?.join(path);
+        let full_path = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?
+            .join(path);
         if full_path.exists() {
             index.add_path(Path::new(path))?;
         } else {
@@ -329,7 +386,10 @@ impl Git2Service {
     /// Stage multiple files
     pub fn stage_files(&self, paths: &[String]) -> Result<()> {
         let mut index = self.repo.index()?;
-        let workdir = self.repo.workdir().ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
+        let workdir = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
         for path in paths {
             let full_path = workdir.join(path);
             if full_path.exists() {
@@ -1325,24 +1385,55 @@ impl Git2Service {
 
         let mut revwalk = self.repo.revwalk()?;
 
-        // Configure revwalk
-        if options.all_branches {
-            // Add all branches
-            for branch_result in self.repo.branches(None)? {
-                let (branch, _) = branch_result?;
-                if let Some(oid) = branch.get().target() {
-                    let _ = revwalk.push(oid);
+        // Configure revwalk based on branch filter
+        match &options.branch_filter {
+            BranchFilterType::All => {
+                // Add all branches (local and optionally remote)
+                for branch_result in self.repo.branches(None)? {
+                    let (branch, branch_type) = branch_result?;
+                    // Skip remote branches if not included
+                    if !options.include_remotes && branch_type == git2::BranchType::Remote {
+                        continue;
+                    }
+                    if let Some(oid) = branch.get().target() {
+                        let _ = revwalk.push(oid);
+                    }
                 }
             }
-        } else if let Some(ref from_ref) = options.from_ref {
-            let obj = self.repo.revparse_single(from_ref)?;
-            revwalk.push(obj.id())?;
-        } else {
-            revwalk.push_head()?;
+            BranchFilterType::Current => {
+                // Only current branch
+                revwalk.push_head()?;
+            }
+            BranchFilterType::Specific(branch_name) => {
+                // Specific branch
+                if let Ok(reference) = self
+                    .repo
+                    .find_reference(&format!("refs/heads/{}", branch_name))
+                {
+                    if let Some(oid) = reference.target() {
+                        revwalk.push(oid)?;
+                    }
+                } else if let Ok(reference) = self
+                    .repo
+                    .find_reference(&format!("refs/remotes/{}", branch_name))
+                {
+                    if let Some(oid) = reference.target() {
+                        revwalk.push(oid)?;
+                    }
+                } else {
+                    // Try parsing as a ref
+                    let obj = self.repo.revparse_single(branch_name)?;
+                    revwalk.push(obj.id())?;
+                }
+            }
         }
 
-        // Sort topologically with time as secondary
-        revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::TIME)?;
+        // Set sort order
+        let sorting = match options.sort_order {
+            SortOrder::DateOrder => git2::Sort::TIME | git2::Sort::TOPOLOGICAL,
+            SortOrder::AncestorOrder => git2::Sort::TOPOLOGICAL,
+        };
+        revwalk.set_sorting(sorting)?;
 
         // Collect refs for each commit
         let commit_refs = self.collect_commit_refs()?;

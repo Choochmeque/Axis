@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import type { GraphCommit, GraphEdge } from '../../types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
+import { HistoryFilters } from './HistoryFilters';
 
 const LANE_WIDTH = 18;
 const ROW_HEIGHT = 28;
@@ -313,6 +314,7 @@ export function HistoryView() {
 
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      <HistoryFilters />
       <div className="flex py-2 px-3 bg-(--bg-header) border-b border-(--border-color) text-[11px] font-semibold uppercase text-(--text-secondary)">
         <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
           Graph

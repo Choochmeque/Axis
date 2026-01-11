@@ -10,6 +10,8 @@ import type {
   StashEntry,
   FileDiff,
   Submodule,
+  BranchFilterType,
+  SortOrder,
 } from '../types';
 import {
   repositoryApi,
@@ -38,6 +40,11 @@ interface RepositoryState {
 
   // UI State
   currentView: ViewType;
+
+  // History filters
+  branchFilter: BranchFilterType;
+  includeRemotes: boolean;
+  sortOrder: SortOrder;
 
   // Commit detail state
   selectedCommitOid: string | null;
@@ -68,6 +75,11 @@ interface RepositoryState {
   setCurrentView: (view: ViewType) => void;
   clearError: () => void;
 
+  // Filter actions
+  setBranchFilter: (filter: BranchFilterType) => void;
+  setIncludeRemotes: (include: boolean) => void;
+  setSortOrder: (order: SortOrder) => void;
+
   // Commit detail actions
   selectCommit: (oid: string | null) => Promise<void>;
   selectCommitFile: (file: FileDiff | null) => void;
@@ -86,6 +98,9 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   status: null,
   recentRepositories: [],
   currentView: 'file-status',
+  branchFilter: 'all',
+  includeRemotes: true,
+  sortOrder: 'date_order',
   selectedCommitOid: null,
   selectedCommitData: null,
   selectedCommitFiles: [],
@@ -161,9 +176,16 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   loadCommits: async (limit = 100, skip = 0) => {
+    const { branchFilter, includeRemotes, sortOrder } = get();
     set({ isLoadingCommits: true });
     try {
-      const result = await graphApi.build({ limit, skip, all_branches: true });
+      const result = await graphApi.build({
+        limit,
+        skip,
+        branch_filter: branchFilter,
+        include_remotes: includeRemotes,
+        sort_order: sortOrder,
+      });
       set({
         commits: result.commits,
         maxLane: result.max_lane,
@@ -176,7 +198,14 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   loadMoreCommits: async () => {
-    const { commits, hasMoreCommits, isLoadingMoreCommits } = get();
+    const {
+      commits,
+      hasMoreCommits,
+      isLoadingMoreCommits,
+      branchFilter,
+      includeRemotes,
+      sortOrder,
+    } = get();
     if (!hasMoreCommits || isLoadingMoreCommits) return;
 
     set({ isLoadingMoreCommits: true });
@@ -184,7 +213,9 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const result = await graphApi.build({
         limit: 100,
         skip: commits.length,
-        all_branches: true,
+        branch_filter: branchFilter,
+        include_remotes: includeRemotes,
+        sort_order: sortOrder,
       });
       set({
         commits: [...commits, ...result.commits],
@@ -255,6 +286,21 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   setCurrentView: (view: ViewType) => set({ currentView: view }),
 
   clearError: () => set({ error: null }),
+
+  setBranchFilter: (filter: BranchFilterType) => {
+    set({ branchFilter: filter });
+    get().loadCommits();
+  },
+
+  setIncludeRemotes: (include: boolean) => {
+    set({ includeRemotes: include });
+    get().loadCommits();
+  },
+
+  setSortOrder: (order: SortOrder) => {
+    set({ sortOrder: order });
+    get().loadCommits();
+  },
 
   selectCommit: async (oid: string | null) => {
     if (!oid) {

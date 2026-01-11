@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::Commit;
+use super::{BranchFilterType, Commit, SortOrder};
 
 /// A commit with graph layout information for visualization
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,9 +66,22 @@ pub struct GraphOptions {
     pub skip: Option<usize>,
     /// Start from a specific ref
     pub from_ref: Option<String>,
-    /// Include all branches (not just current)
+    /// Include all branches (not just current) - deprecated, use branch_filter instead
     #[serde(default)]
     pub all_branches: bool,
+    /// Branch filter (all, current, or specific branch)
+    #[serde(default)]
+    pub branch_filter: BranchFilterType,
+    /// Whether to include remote branches
+    #[serde(default = "default_include_remotes")]
+    pub include_remotes: bool,
+    /// Sort order for commits
+    #[serde(default)]
+    pub sort_order: SortOrder,
+}
+
+fn default_include_remotes() -> bool {
+    true
 }
 
 impl Default for GraphOptions {
@@ -78,6 +91,9 @@ impl Default for GraphOptions {
             skip: None,
             from_ref: None,
             all_branches: true,
+            branch_filter: BranchFilterType::default(),
+            include_remotes: true,
+            sort_order: SortOrder::default(),
         }
     }
 }

@@ -1,6 +1,7 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
+    Branch, BranchFilter, BranchFilterType, Commit, LogOptions, RecentRepository, Repository,
+    RepositoryStatus, SortOrder,
 };
 use crate::services::Git2Service;
 use crate::state::AppState;
@@ -62,7 +63,12 @@ pub async fn clone_repository(
     let path = PathBuf::from(&path);
 
     // Ensure target directory doesn't exist or is empty
-    if path.exists() && path.read_dir().map(|mut i| i.next().is_some()).unwrap_or(false) {
+    if path.exists()
+        && path
+            .read_dir()
+            .map(|mut i| i.next().is_some())
+            .unwrap_or(false)
+    {
         return Err(AxisError::InvalidRepositoryPath(
             "Target directory is not empty".to_string(),
         ));
@@ -104,12 +110,18 @@ pub async fn get_commit_history(
     limit: Option<usize>,
     skip: Option<usize>,
     from_ref: Option<String>,
+    branch_filter: Option<BranchFilterType>,
+    include_remotes: Option<bool>,
+    sort_order: Option<SortOrder>,
 ) -> Result<Vec<Commit>> {
     let service = get_service(&state)?;
     let options = LogOptions {
         limit,
         skip,
         from_ref,
+        branch_filter: branch_filter.unwrap_or_default(),
+        include_remotes: include_remotes.unwrap_or(true),
+        sort_order: sort_order.unwrap_or_default(),
     };
     service.log(options)
 }

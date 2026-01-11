@@ -54,11 +54,38 @@ impl Signature {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum BranchFilterType {
+    #[default]
+    All,
+    Current,
+    Specific(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum SortOrder {
+    #[default]
+    DateOrder,
+    AncestorOrder,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogOptions {
     pub limit: Option<usize>,
     pub skip: Option<usize>,
     pub from_ref: Option<String>,
+    #[serde(default)]
+    pub branch_filter: BranchFilterType,
+    #[serde(default = "default_include_remotes")]
+    pub include_remotes: bool,
+    #[serde(default)]
+    pub sort_order: SortOrder,
+}
+
+fn default_include_remotes() -> bool {
+    true
 }
 
 impl Default for LogOptions {
@@ -67,6 +94,9 @@ impl Default for LogOptions {
             limit: Some(100),
             skip: None,
             from_ref: None,
+            branch_filter: BranchFilterType::All,
+            include_remotes: true,
+            sort_order: SortOrder::DateOrder,
         }
     }
 }

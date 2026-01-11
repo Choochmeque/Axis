@@ -21,7 +21,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import { Check } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import type { FileStatus, StatusType } from '../../types';
-import { cn } from '../../lib/utils';
+import { cn, naturalCompare } from '../../lib/utils';
 import type { StagingViewMode } from './StagingFilters';
 import { useRepositoryStore } from '../../store/repositoryStore';
 
@@ -460,7 +460,7 @@ function buildTree(files: FileStatus[]): TreeNode[] {
   const sortNodes = (nodes: TreeNode[]) => {
     nodes.sort((a, b) => {
       if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
-      return a.name.localeCompare(b.name);
+      return naturalCompare(a.name, b.name);
     });
     nodes.forEach((node) => {
       if (node.children.length > 0) {

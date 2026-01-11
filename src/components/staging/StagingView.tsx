@@ -10,7 +10,7 @@ import {
   type StagingViewMode,
   type StagingMode,
 } from './StagingFilters';
-import { cn } from '../../lib/utils';
+import { cn, naturalCompare } from '../../lib/utils';
 import type { FileStatus } from '../../types';
 
 // Helper to get filename from path
@@ -38,24 +38,24 @@ function sortFiles(files: FileStatus[], sortBy: StagingSortBy): FileStatus[] {
 
   switch (sortBy) {
     case 'path':
-      return sorted.sort((a, b) => a.path.localeCompare(b.path));
+      return sorted.sort((a, b) => naturalCompare(a.path, b.path));
     case 'path_reversed':
-      return sorted.sort((a, b) => b.path.localeCompare(a.path));
+      return sorted.sort((a, b) => naturalCompare(b.path, a.path));
     case 'filename':
-      return sorted.sort((a, b) => getFilename(a.path).localeCompare(getFilename(b.path)));
+      return sorted.sort((a, b) => naturalCompare(getFilename(a.path), getFilename(b.path)));
     case 'filename_reversed':
-      return sorted.sort((a, b) => getFilename(b.path).localeCompare(getFilename(a.path)));
+      return sorted.sort((a, b) => naturalCompare(getFilename(b.path), getFilename(a.path)));
     case 'status':
       return sorted.sort((a, b) => {
         const aPriority = statusPriority[a.status] ?? 99;
         const bPriority = statusPriority[b.status] ?? 99;
         if (aPriority !== bPriority) return aPriority - bPriority;
-        return a.path.localeCompare(b.path);
+        return naturalCompare(a.path, b.path);
       });
     case 'checked':
       // When sorting by checked, staged files come first (they are "checked")
       // Since we already split staged/unstaged sections, within each section just sort by path
-      return sorted.sort((a, b) => a.path.localeCompare(b.path));
+      return sorted.sort((a, b) => naturalCompare(a.path, b.path));
     default:
       return sorted;
   }

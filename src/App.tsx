@@ -7,6 +7,7 @@ import { ContentSearch } from './components/search/ContentSearch';
 import { TabBar } from './components/layout/TabBar';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
+import { useStagingStore } from './store/stagingStore';
 import { useTabsStore, type Tab } from './store/tabsStore';
 import { useMenuActions } from './hooks';
 import './index.css';
@@ -117,10 +118,15 @@ function App() {
   // Handle tab switching
   const handleTabChange = useCallback(
     async (tab: Tab) => {
+      // Reset staging store to clear stale data from previous repo
+      useStagingStore.getState().reset();
+
       if (tab.type === 'welcome') {
         await closeRepository();
       } else if (tab.path) {
         await openRepository(tab.path);
+        // Reload staging status for the new repository
+        await useStagingStore.getState().loadStatus();
       }
     },
     [closeRepository, openRepository]

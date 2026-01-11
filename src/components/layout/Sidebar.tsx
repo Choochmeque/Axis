@@ -15,7 +15,7 @@ import {
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
-import { cn } from '../../lib/utils';
+import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { TagDialog } from '../tags/TagDialog';
@@ -102,7 +102,7 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
     const bIsFolder = b.children.size > 0 || !b.isLeaf;
     if (aIsFolder && !bIsFolder) return -1;
     if (!aIsFolder && bIsFolder) return 1;
-    return a.name.localeCompare(b.name);
+    return naturalCompare(a.name, b.name);
   });
 
   return (
@@ -153,7 +153,7 @@ function RemoteTree({ branches, onBranchClick }: RemoteTreeProps) {
     const bIsFolder = b.children.size > 0;
     if (aIsFolder && !bIsFolder) return -1;
     if (!aIsFolder && bIsFolder) return 1;
-    return a.name.localeCompare(b.name);
+    return naturalCompare(a.name, b.name);
   });
 
   return (
@@ -335,41 +335,48 @@ export function Sidebar() {
 
             <Section title="BRANCHES" icon={<GitBranch />} defaultExpanded={true}>
               {localBranches.length > 0 ? (
-                localBranches.map((branch) => (
-                  <button
-                    key={branch.name}
-                    className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
-                    onClick={() => handleRefClick(branch.target_oid)}
-                  >
-                    {branch.is_head ? (
-                      <svg width={12} height={12} className="shrink-0">
-                        <circle
-                          cx={6}
-                          cy={6}
-                          r={4}
-                          fill="var(--bg-sidebar)"
-                          stroke="var(--accent-color)"
-                          strokeWidth={2}
-                        />
-                      </svg>
-                    ) : (
-                      <span className="w-3 shrink-0" />
-                    )}
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {branch.name}
-                    </span>
-                    {branch.ahead !== null && branch.ahead > 0 && (
-                      <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
-                        {branch.ahead}↑
+                [...localBranches]
+                  .sort((a, b) => {
+                    // Current branch (HEAD) always first
+                    if (a.is_head) return -1;
+                    if (b.is_head) return 1;
+                    return naturalCompare(a.name, b.name);
+                  })
+                  .map((branch) => (
+                    <button
+                      key={branch.name}
+                      className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
+                      onClick={() => handleRefClick(branch.target_oid)}
+                    >
+                      {branch.is_head ? (
+                        <svg width={12} height={12} className="shrink-0">
+                          <circle
+                            cx={6}
+                            cy={6}
+                            r={4}
+                            fill="var(--bg-sidebar)"
+                            stroke="var(--accent-color)"
+                            strokeWidth={2}
+                          />
+                        </svg>
+                      ) : (
+                        <span className="w-3 shrink-0" />
+                      )}
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {branch.name}
                       </span>
-                    )}
-                    {branch.behind !== null && branch.behind > 0 && (
-                      <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
-                        {branch.behind}↓
-                      </span>
-                    )}
-                  </button>
-                ))
+                      {branch.ahead !== null && branch.ahead > 0 && (
+                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
+                          {branch.ahead}↑
+                        </span>
+                      )}
+                      {branch.behind !== null && branch.behind > 0 && (
+                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
+                          {branch.behind}↓
+                        </span>
+                      )}
+                    </button>
+                  ))
               ) : (
                 <div
                   className={cn(
@@ -384,26 +391,28 @@ export function Sidebar() {
 
             <Section title="TAGS" icon={<Tag />} defaultExpanded={false}>
               {tags.length > 0 ? (
-                tags.map((tag) => (
-                  <TagContextMenu
-                    key={tag.name}
-                    tag={tag}
-                    remotes={remotes}
-                    onCheckout={() => handleTagCheckout(tag.name)}
-                    onPush={(remote) => handleTagPush(tag.name, remote)}
-                    onDelete={() => handleTagDelete(tag.name)}
-                  >
-                    <button
-                      className={sidebarItemClass}
-                      onClick={() => handleRefClick(tag.target_oid)}
+                [...tags]
+                  .sort((a, b) => naturalCompare(a.name, b.name))
+                  .map((tag) => (
+                    <TagContextMenu
+                      key={tag.name}
+                      tag={tag}
+                      remotes={remotes}
+                      onCheckout={() => handleTagCheckout(tag.name)}
+                      onPush={(remote) => handleTagPush(tag.name, remote)}
+                      onDelete={() => handleTagDelete(tag.name)}
                     >
-                      <Tag size={12} />
-                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {tag.name}
-                      </span>
-                    </button>
-                  </TagContextMenu>
-                ))
+                      <button
+                        className={sidebarItemClass}
+                        onClick={() => handleRefClick(tag.target_oid)}
+                      >
+                        <Tag size={12} />
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {tag.name}
+                        </span>
+                      </button>
+                    </TagContextMenu>
+                  ))
               ) : (
                 <div
                   className={cn(
@@ -455,24 +464,26 @@ export function Sidebar() {
 
             <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
               {submodules.length > 0 ? (
-                submodules.map((submodule) => (
-                  <div key={submodule.path} className={sidebarItemClass}>
-                    <FolderGit2 size={12} />
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {submodule.name}
-                    </span>
-                    {submodule.status !== 'current' && (
-                      <span
-                        className={cn(
-                          'badge',
-                          submodule.status === 'modified' && 'bg-warning text-white'
-                        )}
-                      >
-                        {submodule.status}
+                [...submodules]
+                  .sort((a, b) => naturalCompare(a.name, b.name))
+                  .map((submodule) => (
+                    <div key={submodule.path} className={sidebarItemClass}>
+                      <FolderGit2 size={12} />
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {submodule.name}
                       </span>
-                    )}
-                  </div>
-                ))
+                      {submodule.status !== 'current' && (
+                        <span
+                          className={cn(
+                            'badge',
+                            submodule.status === 'modified' && 'bg-warning text-white'
+                          )}
+                        >
+                          {submodule.status}
+                        </span>
+                      )}
+                    </div>
+                  ))
               ) : (
                 <div
                   className={cn(

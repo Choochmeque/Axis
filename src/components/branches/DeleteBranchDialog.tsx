@@ -21,7 +21,6 @@ const footerClass = 'flex justify-end gap-2 py-4 px-5 border-t border-(--border-
 const closeClass =
   'absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const fieldClass = 'mb-4 last:mb-0';
-const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
@@ -111,18 +110,11 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
 
           <div className={footerClass}>
             <Dialog.Close asChild>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
-              >
-                Cancel
-              </button>
+              <button className="btn btn-secondary">Cancel</button>
             </Dialog.Close>
             <button
               className={cn(
-                btnClass,
+                'btn',
                 'bg-error border border-error text-white hover:not-disabled:bg-[#c0392b] disabled:opacity-50 disabled:cursor-not-allowed'
               )}
               onClick={handleDelete}

@@ -220,16 +220,19 @@ export function Sidebar() {
     }
   }, [repository]);
 
-  const handleTagCheckout = useCallback(async (tagName: string) => {
-    try {
-      await branchApi.checkout(tagName);
-      await loadBranches();
-      await loadCommits();
-      await loadStatus();
-    } catch (err) {
-      console.error('Failed to checkout tag:', err);
-    }
-  }, [loadBranches, loadCommits, loadStatus]);
+  const handleTagCheckout = useCallback(
+    async (tagName: string) => {
+      try {
+        await branchApi.checkout(tagName);
+        await loadBranches();
+        await loadCommits();
+        await loadStatus();
+      } catch (err) {
+        console.error('Failed to checkout tag:', err);
+      }
+    },
+    [loadBranches, loadCommits, loadStatus]
+  );
 
   const handleTagPush = useCallback(async (tagName: string, remote: string) => {
     try {
@@ -239,15 +242,18 @@ export function Sidebar() {
     }
   }, []);
 
-  const handleTagDelete = useCallback(async (tagName: string) => {
-    if (!confirm(`Delete tag '${tagName}'?`)) return;
-    try {
-      await tagApi.delete(tagName);
-      await loadTags();
-    } catch (err) {
-      console.error('Failed to delete tag:', err);
-    }
-  }, [loadTags]);
+  const handleTagDelete = useCallback(
+    async (tagName: string) => {
+      if (!confirm(`Delete tag '${tagName}'?`)) return;
+      try {
+        await tagApi.delete(tagName);
+        await loadTags();
+      } catch (err) {
+        console.error('Failed to delete tag:', err);
+      }
+    },
+    [loadTags]
+  );
 
   // Listen for menu events
   useEffect(() => {

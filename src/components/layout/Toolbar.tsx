@@ -50,7 +50,7 @@ export function Toolbar() {
         console.error('Failed to show in finder:', err);
       }
     }
-  }, [repository?.path]);
+  }, [repository]);
 
   const handleOpenTerminal = useCallback(async () => {
     if (repository?.path) {
@@ -60,7 +60,7 @@ export function Toolbar() {
         console.error('Failed to open terminal:', err);
       }
     }
-  }, [repository?.path]);
+  }, [repository]);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -148,11 +148,7 @@ export function Toolbar() {
               <FolderOpen size={18} />
               <span>Show in Finder</span>
             </button>
-            <button
-              className={toolbarButtonClass}
-              onClick={handleOpenTerminal}
-              title="Terminal"
-            >
+            <button className={toolbarButtonClass} onClick={handleOpenTerminal} title="Terminal">
               <Terminal size={18} />
               <span>Terminal</span>
             </button>

@@ -3,7 +3,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, FolderGit2 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { cn } from '../../lib/utils';
 
 const contentClass =
   'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-120 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
@@ -17,7 +16,6 @@ const fieldClass = 'mb-4 last:mb-0';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
-const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
 interface AddSubmoduleDialogProps {
   open: boolean;
@@ -156,20 +154,10 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
 
           <div className={footerClass}>
             <Dialog.Close asChild>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
-              >
-                Cancel
-              </button>
+              <button className="btn btn-secondary">Cancel</button>
             </Dialog.Close>
             <button
-              className={cn(
-                btnClass,
-                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="btn btn-primary"
               onClick={handleAdd}
               disabled={isLoading || !url.trim() || !path.trim()}
             >

@@ -107,7 +107,6 @@ export function TagDialog({
     'w-full py-2 px-3 text-sm bg-(--bg-input) border border-(--border-color) rounded text-(--text-primary) font-inherit focus:outline-none focus:border-(--accent-color)';
   const checkboxLabelClass =
     'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
-  const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
   return (
     <div className="dialog-overlay-centered" onClick={handleClose}>
@@ -297,32 +296,16 @@ export function TagDialog({
 
         <div className="flex justify-end gap-2 p-4 border-t border-(--border-color) shrink-0 bg-(--bg-primary)">
           {result && result.success ? (
-            <button
-              className={cn(
-                btnClass,
-                'bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)'
-              )}
-              onClick={handleClose}
-            >
+            <button className="btn btn-primary" onClick={handleClose}>
               Close
             </button>
           ) : (
             <>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
-                onClick={handleClose}
-                disabled={isLoading}
-              >
+              <button className="btn btn-secondary" onClick={handleClose} disabled={isLoading}>
                 Cancel
               </button>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
-                )}
+                className="btn btn-primary"
                 onClick={handleCreate}
                 disabled={isLoading || !tagName.trim()}
               >

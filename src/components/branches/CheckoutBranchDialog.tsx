@@ -3,7 +3,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, GitBranch } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { cn } from '../../lib/utils';
 
 interface CheckoutBranchDialogProps {
   open: boolean;
@@ -22,7 +21,6 @@ const fieldClass = 'mb-4 last:mb-0';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
-const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
 export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
@@ -135,20 +133,10 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
 
           <div className={footerClass}>
             <Dialog.Close asChild>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
-              >
-                Cancel
-              </button>
+              <button className="btn btn-secondary">Cancel</button>
             </Dialog.Close>
             <button
-              className={cn(
-                btnClass,
-                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="btn btn-primary"
               onClick={handleCheckout}
               disabled={isLoading || !selectedBranch}
             >

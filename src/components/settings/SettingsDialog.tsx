@@ -11,8 +11,6 @@ const titleClass = 'flex items-center gap-2 text-base font-semibold text-(--text
 const closeClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const footerClass = 'flex justify-between items-center py-3 px-4 border-t border-(--border-color)';
-const btnClass =
-  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -168,10 +166,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
 
         <div className={footerClass}>
           <button
-            className={cn(
-              btnClass,
-              'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
-            )}
+            className="btn-icon btn-secondary"
             onClick={handleReset}
             disabled={!hasChanges || isSaving}
           >
@@ -179,18 +174,11 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
             Reset
           </button>
           <div className="flex gap-2">
-            <button
-              className={cn(
-                btnClass,
-                'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
-              )}
-              onClick={onClose}
-              disabled={isSaving}
-            >
+            <button className="btn-icon btn-secondary" onClick={onClose} disabled={isSaving}>
               Cancel
             </button>
             <button
-              className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+              className="btn-icon btn-primary"
               onClick={handleSave}
               disabled={!hasChanges || isSaving}
             >

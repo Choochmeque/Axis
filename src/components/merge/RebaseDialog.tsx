@@ -16,8 +16,6 @@ const formGroupClass = 'mb-4';
 const labelClass = 'block text-[13px] font-medium text-(--text-secondary) mb-1.5';
 const selectClass =
   'w-full py-2.5 px-3 text-sm text-(--text-primary) bg-(--bg-input) border border-(--border-color) rounded-md outline-none transition-colors focus:border-(--accent-color) disabled:opacity-60 disabled:cursor-not-allowed';
-const btnClass =
-  'flex items-center justify-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface RebaseDialogProps {
   isOpen: boolean;
@@ -239,26 +237,16 @@ export function RebaseDialog({
           {result && !result.success ? (
             <>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-error/10 text-error border border-error hover:bg-error/20'
-                )}
+                className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
                 onClick={handleAbort}
               >
                 Abort Rebase
               </button>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
-                )}
-                onClick={handleSkip}
-                disabled={isLoading}
-              >
+              <button className="btn-icon btn-secondary" onClick={handleSkip} disabled={isLoading}>
                 Skip Commit
               </button>
               <button
-                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+                className="btn-icon btn-primary"
                 onClick={handleContinue}
                 disabled={isLoading}
               >
@@ -266,26 +254,16 @@ export function RebaseDialog({
               </button>
             </>
           ) : result && result.success ? (
-            <button
-              className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
-              onClick={onClose}
-            >
+            <button className="btn-icon btn-primary" onClick={onClose}>
               Close
             </button>
           ) : (
             <>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
-                )}
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <button className="btn-icon btn-secondary" onClick={onClose} disabled={isLoading}>
                 Cancel
               </button>
               <button
-                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+                className="btn-icon btn-primary"
                 onClick={handleRebase}
                 disabled={isLoading || !selectedBranch}
               >

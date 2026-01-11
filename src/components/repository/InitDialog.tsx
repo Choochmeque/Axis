@@ -24,8 +24,6 @@ const fieldClass = 'mb-4 last:mb-0';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
-const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
-
 export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   const [path, setPath] = useState('');
   const [bare, setBare] = useState(false);
@@ -120,7 +118,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
                   type="button"
                   onClick={handleBrowse}
                   className={cn(
-                    btnClass,
+                    'btn',
                     'shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
                   )}
                 >
@@ -157,21 +155,12 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
           <div className={footerClass}>
             <Dialog.Close asChild>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
-                disabled={isLoading}
-              >
+              <button className="btn btn-secondary" disabled={isLoading}>
                 Cancel
               </button>
             </Dialog.Close>
             <button
-              className={cn(
-                btnClass,
-                'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="btn btn-primary"
               onClick={handleInit}
               disabled={isLoading || !path.trim()}
             >

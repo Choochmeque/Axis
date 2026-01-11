@@ -132,12 +132,12 @@ export function DiffView({
   return (
     <div className={diffViewClass}>
       <DiffHeader
-          diff={diff}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          diffSettings={diffSettings}
-          onDiffSettingsChange={setDiffSettings}
-        />
+        diff={diff}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        diffSettings={diffSettings}
+        onDiffSettingsChange={setDiffSettings}
+      />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
           <div className={emptyStateClass}>No changes in this file</div>
@@ -241,9 +241,7 @@ function DiffHeader({
             {/* Whitespace */}
             <DropdownMenu.Item
               className={dropdownItemClass}
-              onSelect={() =>
-                onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })
-              }
+              onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })}
             >
               {diffSettings.whitespace === 'show' && (
                 <Check size={12} className="absolute left-2" />
@@ -252,9 +250,7 @@ function DiffHeader({
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className={dropdownItemClass}
-              onSelect={() =>
-                onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })
-              }
+              onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })}
             >
               {diffSettings.whitespace === 'ignore' && (
                 <Check size={12} className="absolute left-2" />
@@ -270,9 +266,7 @@ function DiffHeader({
               <DropdownMenu.Item
                 key={lines}
                 className={dropdownItemClass}
-                onSelect={() =>
-                  onDiffSettingsChange({ ...diffSettings, contextLines: lines })
-                }
+                onSelect={() => onDiffSettingsChange({ ...diffSettings, contextLines: lines })}
               >
                 {diffSettings.contextLines === lines && (
                   <Check size={12} className="absolute left-2" />
@@ -286,9 +280,7 @@ function DiffHeader({
             {/* Diff Compare Mode */}
             <DropdownMenu.Item
               className={dropdownItemClass}
-              onSelect={() =>
-                onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })
-              }
+              onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })}
             >
               {diffSettings.compareMode === 'parent' && (
                 <Check size={12} className="absolute left-2" />
@@ -297,9 +289,7 @@ function DiffHeader({
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className={dropdownItemClass}
-              onSelect={() =>
-                onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })
-              }
+              onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })}
             >
               {diffSettings.compareMode === 'merged' && (
                 <Check size={12} className="absolute left-2" />

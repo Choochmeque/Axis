@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { gitflowApi } from '../../services/api';
 import type { GitFlowConfig, GitFlowResult, GitFlowBranchType } from '../../types';
-import { cn } from '../../lib/utils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -31,8 +30,6 @@ const formGroupClass = 'mb-4';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
-const btnClass =
-  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface GitFlowViewProps {
   onRefresh?: () => void;
@@ -307,10 +304,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       {!isInitialized ? (
         <div className="flex flex-col items-center justify-center py-6 px-4 text-center text-(--text-secondary)">
           <p className="mb-4">Git Flow is not initialized in this repository.</p>
-          <button
-            className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
-            onClick={() => setShowInitDialog(true)}
-          >
+          <button className="btn-icon btn-primary" onClick={() => setShowInitDialog(true)}>
             <Settings size={14} />
             Initialize Git Flow
           </button>
@@ -521,23 +515,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
+                className="btn-icon btn-secondary"
                 onClick={() => setShowInitDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
-                )}
-                onClick={handleInit}
-                disabled={isLoading}
-              >
+              <button className="btn-icon btn-primary" onClick={handleInit} disabled={isLoading}>
                 {isLoading ? 'Initializing...' : 'Initialize'}
               </button>
             </div>
@@ -581,20 +565,14 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
+                className="btn-icon btn-secondary"
                 onClick={() => setShowStartDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
-                )}
+                className="btn-icon btn-primary"
                 onClick={handleStart}
                 disabled={isLoading || !branchName.trim()}
               >

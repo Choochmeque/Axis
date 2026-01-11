@@ -17,8 +17,6 @@ const labelClass = 'block text-[13px] font-medium text-(--text-secondary) mb-1.5
 const checkboxLabelClass =
   'flex items-center gap-2 cursor-pointer font-normal text-(--text-primary)';
 const checkboxDescClass = 'mt-1 ml-6 text-xs text-(--text-secondary)';
-const btnClass =
-  'flex items-center justify-center gap-1.5 py-2 px-4 text-[13px] font-medium border-none rounded-md cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 interface CherryPickDialogProps {
   isOpen: boolean;
@@ -193,16 +191,13 @@ export function CherryPickDialog({
           {result && !result.success ? (
             <>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-error/10 text-error border border-error hover:bg-error/20'
-                )}
+                className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
                 onClick={handleAbort}
               >
                 Abort
               </button>
               <button
-                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+                className="btn-icon btn-primary"
                 onClick={handleContinue}
                 disabled={isLoading}
               >
@@ -210,26 +205,16 @@ export function CherryPickDialog({
               </button>
             </>
           ) : result && result.success ? (
-            <button
-              className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
-              onClick={onClose}
-            >
+            <button className="btn-icon btn-primary" onClick={onClose}>
               Close
             </button>
           ) : (
             <>
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) text-(--text-primary) border border-(--border-color) hover:bg-(--bg-hover)'
-                )}
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <button className="btn-icon btn-secondary" onClick={onClose} disabled={isLoading}>
                 Cancel
               </button>
               <button
-                className={cn(btnClass, 'bg-(--accent-color) text-white hover:opacity-90')}
+                className="btn-icon btn-primary"
                 onClick={handleCherryPick}
                 disabled={isLoading || commits.length === 0}
               >

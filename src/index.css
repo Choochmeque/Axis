@@ -301,4 +301,21 @@
   .dialog-footer {
     @apply flex justify-end gap-2 p-4 border-t border-(--border-color);
   }
+
+  /* Button classes */
+  .btn {
+    @apply py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-icon {
+    @apply flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover);
+  }
+
+  .btn-primary {
+    @apply bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90;
+  }
 }

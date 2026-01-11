@@ -134,9 +134,7 @@ export function FileStatusList({
       case 'flat_single':
       default:
         return (
-          <div className="flex flex-col flex-1 overflow-y-auto">
-            {files.map(renderFileItem)}
-          </div>
+          <div className="flex flex-col flex-1 overflow-y-auto">{files.map(renderFileItem)}</div>
         );
     }
   };
@@ -258,7 +256,8 @@ function FileStatusItem({
       onClick={onSelect}
       style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
     >
-      {indent > 0 && <span className="w-3.5 shrink-0" />} {/* Spacer to align with folder chevrons */}
+      {indent > 0 && <span className="w-3.5 shrink-0" />}{' '}
+      {/* Spacer to align with folder chevrons */}
       <Checkbox.Root
         className={checkboxClass}
         checked={isStaged}
@@ -292,22 +291,25 @@ function FileStatusItem({
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenu.Content className={dropdownContentClass} align="end" sideOffset={4}>
-                <DropdownMenu.Item
-                  className={dropdownItemClass}
-                  onSelect={() => onStage?.()}
-                >
+                <DropdownMenu.Item className={dropdownItemClass} onSelect={() => onStage?.()}>
                   <Plus size={14} />
                   <span>Stage file</span>
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
-                  className={cn(dropdownItemClass, 'text-error hover:bg-error/10 data-highlighted:bg-error/10')}
+                  className={cn(
+                    dropdownItemClass,
+                    'text-error hover:bg-error/10 data-highlighted:bg-error/10'
+                  )}
                   onSelect={() => onDiscard?.()}
                 >
                   <Trash2 size={14} />
                   <span>Discard file</span>
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
-                  className={cn(dropdownItemClass, 'text-error hover:bg-error/10 data-highlighted:bg-error/10')}
+                  className={cn(
+                    dropdownItemClass,
+                    'text-error hover:bg-error/10 data-highlighted:bg-error/10'
+                  )}
                   onSelect={() => onDiscard?.()}
                 >
                   <FileX size={14} />
@@ -318,10 +320,7 @@ function FileStatusItem({
                   <span>Ignore file</span>
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
-                <DropdownMenu.Item
-                  className={dropdownItemClass}
-                  onSelect={handleShowInFinder}
-                >
+                <DropdownMenu.Item className={dropdownItemClass} onSelect={handleShowInFinder}>
                   <FolderOpen size={14} />
                   <span>Show in Finder</span>
                 </DropdownMenu.Item>
@@ -395,9 +394,7 @@ function MultiColumnFileItem({
           </Checkbox.Indicator>
         </Checkbox.Root>
       </div>
-      <div className="w-6 shrink-0 flex items-center justify-center">
-        {renderStatusIcon()}
-      </div>
+      <div className="w-6 shrink-0 flex items-center justify-center">{renderStatusIcon()}</div>
       <div className="flex-1 min-w-0 px-2">
         <span className="text-[13px] text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
           {getFileName(file.path)}
@@ -538,7 +535,9 @@ function TreeView({
   };
 
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto">{tree.map((node) => renderNode(node))}</div>
+    <div className="flex flex-col flex-1 overflow-y-auto">
+      {tree.map((node) => renderNode(node))}
+    </div>
   );
 }
 

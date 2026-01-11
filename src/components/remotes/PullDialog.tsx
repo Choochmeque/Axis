@@ -4,7 +4,6 @@ import { X, ArrowDownToLine, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote } from '../../types';
-import { cn } from '../../lib/utils';
 
 interface PullDialogProps {
   open: boolean;
@@ -23,7 +22,6 @@ const fieldClass = 'mb-4 last:mb-0';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 text-sm bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-primary) outline-none transition-colors focus:border-(--accent-color)';
-const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 const checkboxFieldClass = 'flex items-center gap-2 mb-4 last:mb-0';
 const infoBoxClass = 'p-3 bg-(--bg-secondary) rounded mb-4';
 
@@ -223,32 +221,16 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
 
           <div className={footerClass}>
             {success ? (
-              <button
-                className={cn(
-                  btnClass,
-                  'bg-(--accent-color) border border-(--accent-color) text-white hover:bg-(--accent-color-hover)'
-                )}
-                onClick={handleClose}
-              >
+              <button className="btn btn-primary" onClick={handleClose}>
                 Done
               </button>
             ) : (
               <>
                 <Dialog.Close asChild>
-                  <button
-                    className={cn(
-                      btnClass,
-                      'bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                    )}
-                  >
-                    Cancel
-                  </button>
+                  <button className="btn btn-secondary">Cancel</button>
                 </Dialog.Close>
                 <button
-                  className={cn(
-                    btnClass,
-                    'bg-(--accent-color) border border-(--accent-color) text-white hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
+                  className="btn btn-primary"
                   onClick={handlePull}
                   disabled={isLoading || !selectedRemote || !currentBranch}
                 >

@@ -29,8 +29,6 @@ const formGroupClass = 'mb-4';
 const labelClass = 'block mb-1.5 text-[13px] font-medium text-(--text-secondary)';
 const inputClass =
   'w-full py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-sm outline-none focus:border-(--accent-color)';
-const btnClass =
-  'flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 const btnSmallClass =
   'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
 
@@ -408,20 +406,14 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
             </div>
             <div className={footerClass}>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                )}
+                className="btn-icon btn-secondary"
                 onClick={() => setShowAddDialog(false)}
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
-                className={cn(
-                  btnClass,
-                  'bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90'
-                )}
+                className="btn-icon btn-primary"
                 onClick={handleAdd}
                 disabled={isLoading || !addUrl.trim() || !addPath.trim()}
               >

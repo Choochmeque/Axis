@@ -19,11 +19,11 @@ import {
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { Check } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
 import type { FileStatus, StatusType } from '../../types';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { StagingViewMode } from './StagingFilters';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { shellApi } from '../../services/api';
 
 const fileItemClass =
   'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
@@ -181,7 +181,7 @@ function FileStatusItem({
     if (repository?.path) {
       const fullPath = `${repository.path}/${file.path}`;
       try {
-        await invoke('show_in_folder', { path: fullPath });
+        await shellApi.showInFolder(fullPath);
       } catch (err) {
         console.error('Failed to show in finder:', err);
       }

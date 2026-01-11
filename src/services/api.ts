@@ -401,3 +401,9 @@ export const settingsApi = {
 
   save: (settings: AppSettings) => invoke<void>('save_settings', { settings }),
 };
+
+export const shellApi = {
+  showInFolder: (path: string) => invoke<void>('show_in_folder', { path }),
+
+  openTerminal: (path: string) => invoke<void>('open_terminal', { path }),
+};

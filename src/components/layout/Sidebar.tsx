@@ -22,6 +22,7 @@ import { TagDialog } from '../tags/TagDialog';
 import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
+import { StashContextMenu } from '../stash';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
 
 // Tailwind class constants
@@ -198,6 +199,9 @@ export function Sidebar() {
     currentView,
     setCurrentView,
     selectCommit,
+    selectStash,
+    selectedStash,
+    clearStashSelection,
     loadTags,
     loadBranches,
     loadCommits,
@@ -281,12 +285,23 @@ export function Sidebar() {
   }
 
   const handleViewClick = (view: ViewType) => {
+    clearStashSelection();
     setCurrentView(view);
   };
 
   const handleRefClick = (targetOid: string) => {
+    clearStashSelection();
     setCurrentView('history');
     selectCommit(targetOid);
+  };
+
+  const handleStashClick = (stash: (typeof stashes)[0]) => {
+    if (selectedStash?.stash_ref === stash.stash_ref) {
+      clearStashSelection();
+    } else {
+      setCurrentView('file-status');
+      selectStash(stash);
+    }
   };
 
   const handleTagCreated = async () => {
@@ -443,12 +458,21 @@ export function Sidebar() {
             <Section title="STASHES" icon={<Archive />} defaultExpanded={false}>
               {stashes.length > 0 ? (
                 stashes.map((stash) => (
-                  <div key={stash.stash_ref} className={sidebarItemClass}>
-                    <Archive size={12} />
-                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {stash.message || `stash@{${stash.index}}`}
-                    </span>
-                  </div>
+                  <StashContextMenu key={stash.stash_ref} stash={stash}>
+                    <button
+                      className={cn(
+                        sidebarItemClass,
+                        selectedStash?.stash_ref === stash.stash_ref &&
+                          'bg-(--bg-active) font-medium'
+                      )}
+                      onClick={() => handleStashClick(stash)}
+                    >
+                      <Archive size={12} />
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {stash.message || `stash@{${stash.index}}`}
+                      </span>
+                    </button>
+                  </StashContextMenu>
                 ))
               ) : (
                 <div

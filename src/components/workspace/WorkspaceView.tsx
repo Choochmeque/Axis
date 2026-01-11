@@ -2,7 +2,9 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { StagingView } from '../staging';
 import { CommitForm } from '../staging/CommitForm';
 import { DiffView, type DiffMode } from '../diff';
+import { StashDiffView } from '../stash';
 import { useStagingStore } from '../../store/stagingStore';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 export function WorkspaceView() {
   const {
@@ -14,7 +16,22 @@ export function WorkspaceView() {
     discardHunk,
   } = useStagingStore();
 
+  const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection } =
+    useRepositoryStore();
+
   const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
+
+  // Show stash diff view when a stash is selected
+  if (selectedStash) {
+    return (
+      <StashDiffView
+        stash={selectedStash}
+        files={selectedStashFiles}
+        isLoading={isLoadingStashFiles}
+        onClose={clearStashSelection}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

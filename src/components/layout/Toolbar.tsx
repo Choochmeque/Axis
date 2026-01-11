@@ -11,8 +11,8 @@ import {
   FolderOpen,
   Terminal,
 } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { shellApi } from '../../services/api';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
@@ -51,7 +51,7 @@ export function Toolbar() {
   const handleShowInFinder = useCallback(async () => {
     if (repository?.path) {
       try {
-        await invoke('show_in_folder', { path: repository.path });
+        await shellApi.showInFolder(repository.path);
       } catch (err) {
         console.error('Failed to show in finder:', err);
       }
@@ -61,7 +61,7 @@ export function Toolbar() {
   const handleOpenTerminal = useCallback(async () => {
     if (repository?.path) {
       try {
-        await invoke('open_terminal', { path: repository.path });
+        await shellApi.openTerminal(repository.path);
       } catch (err) {
         console.error('Failed to open terminal:', err);
       }

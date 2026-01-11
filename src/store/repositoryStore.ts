@@ -53,6 +53,12 @@ interface RepositoryState {
   selectedCommitFile: FileDiff | null;
   isLoadingCommitFiles: boolean;
 
+  // Stash detail state
+  selectedStash: StashEntry | null;
+  selectedStashFiles: FileDiff[];
+  selectedStashFile: FileDiff | null;
+  isLoadingStashFiles: boolean;
+
   // Loading states
   isLoading: boolean;
   isLoadingCommits: boolean;
@@ -84,6 +90,10 @@ interface RepositoryState {
   selectCommit: (oid: string | null) => Promise<void>;
   selectCommitFile: (file: FileDiff | null) => void;
   clearCommitSelection: () => void;
+
+  // Stash detail actions
+  selectStash: (stash: StashEntry | null) => Promise<void>;
+  clearStashSelection: () => void;
 }
 
 export const useRepositoryStore = create<RepositoryState>((set, get) => ({
@@ -106,6 +116,10 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   selectedCommitFiles: [],
   selectedCommitFile: null,
   isLoadingCommitFiles: false,
+  selectedStash: null,
+  selectedStashFiles: [],
+  selectedStashFile: null,
+  isLoadingStashFiles: false,
   isLoading: false,
   isLoadingCommits: false,
   isLoadingMoreCommits: false,
@@ -353,5 +367,48 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       selectedCommitFiles: [],
       selectedCommitFile: null,
       isLoadingCommitFiles: false,
+    }),
+
+  selectStash: async (stash: StashEntry | null) => {
+    if (!stash) {
+      set({
+        selectedStash: null,
+        selectedStashFiles: [],
+        selectedStashFile: null,
+        isLoadingStashFiles: false,
+      });
+      return;
+    }
+
+    // Clear commit selection when selecting a stash
+    set({
+      selectedStash: stash,
+      selectedStashFiles: [],
+      selectedStashFile: null,
+      isLoadingStashFiles: true,
+      selectedCommitOid: null,
+      selectedCommitData: null,
+      selectedCommitFiles: [],
+      selectedCommitFile: null,
+    });
+
+    try {
+      const files = await diffApi.getCommit(stash.commit_oid);
+      set({
+        selectedStashFiles: files,
+        selectedStashFile: files.length > 0 ? files[0] : null,
+        isLoadingStashFiles: false,
+      });
+    } catch (err) {
+      set({ error: String(err), isLoadingStashFiles: false });
+    }
+  },
+
+  clearStashSelection: () =>
+    set({
+      selectedStash: null,
+      selectedStashFiles: [],
+      selectedStashFile: null,
+      isLoadingStashFiles: false,
     }),
 }));

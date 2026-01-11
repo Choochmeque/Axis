@@ -36,6 +36,21 @@ function App() {
     loadSettings();
   }, [loadSettings]);
 
+  // Load repository for active tab on startup (after rehydration from localStorage)
+  useEffect(() => {
+    // Skip if there's a ?repo= param (handled by the next effect)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('repo')) return;
+
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    if (activeTab?.type === 'repository' && activeTab.path && !repository) {
+      openRepository(activeTab.path)
+        .then(() => useStagingStore.getState().loadStatus())
+        .catch(console.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Handle ?repo= query param for new windows (run once on mount)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

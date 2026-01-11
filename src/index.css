@@ -256,3 +256,49 @@
     z-index: 1000 !important;
   }
 } /* end @layer base */
+
+@layer components {
+  /* Dialog overlay classes */
+  .dialog-overlay {
+    @apply fixed inset-0 bg-black/50 z-9999;
+  }
+
+  .dialog-overlay-centered {
+    @apply fixed inset-0 bg-black/50 z-9999 flex items-center justify-center;
+  }
+
+  .dialog-overlay-animated {
+    @apply fixed inset-0 bg-black/50 z-9999;
+    animation: fade-in 150ms ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Dialog content classes */
+  .dialog-content {
+    @apply bg-(--bg-secondary) border border-(--border-color) rounded-lg shadow-xl;
+  }
+
+  .dialog-header {
+    @apply flex items-center justify-between p-4 border-b border-(--border-color);
+  }
+
+  .dialog-title {
+    @apply text-base font-semibold text-(--text-primary);
+  }
+
+  .dialog-body {
+    @apply p-4;
+  }
+
+  .dialog-footer {
+    @apply flex justify-end gap-2 p-4 border-t border-(--border-color);
+  }
+}

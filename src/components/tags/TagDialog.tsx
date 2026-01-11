@@ -110,10 +110,7 @@ export function TagDialog({
   const btnClass = 'py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors';
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-9999"
-      onClick={handleClose}
-    >
+    <div className="dialog-overlay-centered" onClick={handleClose}>
       <div
         className="bg-(--bg-primary) rounded-lg shadow-xl min-w-112.5 max-w-125 max-h-[80vh] overflow-hidden flex flex-col z-10000"
         onClick={(e) => e.stopPropagation()}

@@ -10,7 +10,6 @@ interface CheckoutBranchDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const overlayClass = 'fixed inset-0 bg-black/50 z-9999 animate-in fade-in duration-150';
 const contentClass =
   'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-w-105 max-h-[85vh] p-0 overflow-y-auto z-10000 animate-in fade-in zoom-in-95 duration-150';
 const titleClass =
@@ -74,7 +73,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className={overlayClass} />
+        <Dialog.Overlay className="dialog-overlay-animated" />
         <Dialog.Content className={contentClass}>
           <Dialog.Title className={titleClass}>
             <GitBranch size={18} />

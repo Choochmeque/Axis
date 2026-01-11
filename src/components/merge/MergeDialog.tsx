@@ -4,7 +4,6 @@ import { mergeApi, branchApi } from '../../services/api';
 import type { Branch, MergeResult } from '../../types';
 import { cn } from '../../lib/utils';
 
-const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
 const dialogClass =
   'bg-(--bg-primary) rounded-lg shadow-xl min-w-100 max-w-125 max-h-[80vh] flex flex-col overflow-hidden z-10000';
 const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
@@ -113,7 +112,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
   if (!isOpen) return null;
 
   return (
-    <div className={overlayClass} onClick={onClose}>
+    <div className="dialog-overlay-centered" onClick={onClose}>
       <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
         <div className={headerClass}>
           <div className={titleClass}>

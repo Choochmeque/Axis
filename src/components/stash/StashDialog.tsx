@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import { StashView } from './StashView';
 import { useRepositoryStore } from '../../store/repositoryStore';
 
-const overlayClass = 'fixed inset-0 bg-black/50 z-9999';
 const contentClass =
   'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 max-w-[90vw] max-h-[80vh] bg-(--bg-primary) rounded-lg shadow-xl z-10000 flex flex-col overflow-hidden';
 const closeClass =
@@ -25,7 +24,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className={overlayClass} />
+        <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content className={contentClass}>
           <StashView onRefresh={handleRefresh} />
           <Dialog.Close asChild>

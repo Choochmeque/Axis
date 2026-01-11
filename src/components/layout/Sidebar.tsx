@@ -93,6 +93,7 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
         style={{ paddingLeft }}
         onClick={() => node.branch && onBranchClick?.(node.branch.target_oid)}
       >
+        <span className="w-3 shrink-0" /> {/* Spacer to align with folder chevrons */}
         <GitBranch size={12} />
         <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
       </button>

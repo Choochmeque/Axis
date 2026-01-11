@@ -256,8 +256,9 @@ function FileStatusItem({
     <div
       className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')}
       onClick={onSelect}
-      style={{ paddingLeft: indent > 0 ? `${indent * 16 + 12}px` : undefined }}
+      style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
     >
+      {indent > 0 && <span className="w-3.5 shrink-0" />} {/* Spacer to align with folder chevrons */}
       <Checkbox.Root
         className={checkboxClass}
         checked={isStaged}

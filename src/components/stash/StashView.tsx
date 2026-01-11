@@ -6,7 +6,6 @@ import { cn } from '../../lib/utils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
-const overlayClass = 'fixed inset-0 bg-black/50 flex items-center justify-center z-9999';
 const dialogClass =
   'bg-(--bg-primary) rounded-lg shadow-xl w-100 max-w-[90vw] max-h-[80vh] flex flex-col';
 const headerClass = 'flex items-center justify-between py-4 px-4 border-b border-(--border-color)';
@@ -287,7 +286,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       </div>
 
       {showCreateDialog && (
-        <div className={overlayClass} onClick={() => setShowCreateDialog(false)}>
+        <div className="dialog-overlay-centered" onClick={() => setShowCreateDialog(false)}>
           <div className={dialogClass} onClick={(e) => e.stopPropagation()}>
             <div className={headerClass}>
               <div className={titleClass}>

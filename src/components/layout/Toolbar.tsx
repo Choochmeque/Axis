@@ -7,11 +7,9 @@ import {
   GitBranch,
   GitMerge,
   Archive,
-  FolderOpen,
   Settings,
 } from 'lucide-react';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { open } from '@tauri-apps/plugin-dialog';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
@@ -22,7 +20,7 @@ const toolbarButtonClass =
   'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
-  const { repository, openRepository, setCurrentView, refreshRepository } = useRepositoryStore();
+  const { repository, setCurrentView, refreshRepository } = useRepositoryStore();
 
   // Dialog states
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
@@ -32,18 +30,6 @@ export function Toolbar() {
   const [pullOpen, setPullOpen] = useState(false);
   const [stashOpen, setStashOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const handleOpenRepository = useCallback(async () => {
-    const selected = await open({
-      directory: true,
-      multiple: false,
-      title: 'Select Repository',
-    });
-
-    if (selected && typeof selected === 'string') {
-      await openRepository(selected);
-    }
-  }, [openRepository]);
 
   const handleCommitClick = useCallback(() => {
     setCurrentView('file-status');
@@ -56,7 +42,6 @@ export function Toolbar() {
   // Register keyboard shortcuts
   useKeyboardShortcuts({
     onOpenSettings: () => setSettingsOpen(true),
-    onOpenRepository: handleOpenRepository,
     onRefresh: handleRefresh,
     onCommit: handleCommitClick,
     onPush: () => repository && setPushOpen(true),
@@ -68,20 +53,8 @@ export function Toolbar() {
 
   return (
     <div className="flex items-center gap-1 px-3 py-2 bg-(--bg-toolbar) border-b border-(--border-color)">
-      <div className="flex items-center gap-0.5">
-        <button
-          className={toolbarButtonClass}
-          onClick={handleOpenRepository}
-          title="Open Repository"
-        >
-          <FolderOpen size={18} />
-          <span>Open</span>
-        </button>
-      </div>
-
       {repository && (
         <>
-          <div className="w-px h-8 mx-2 bg-(--border-color)" />
           <div className="flex items-center gap-0.5">
             <button className={toolbarButtonClass} title="Commit" onClick={handleCommitClick}>
               <GitCommit size={18} />

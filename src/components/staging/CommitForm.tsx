@@ -84,7 +84,7 @@ export function CommitForm() {
           console.error('Push failed:', err);
         }
       }
-    } catch (error) {
+    } catch {
       // Error is already handled in the store
     }
   };

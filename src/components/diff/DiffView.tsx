@@ -1,7 +1,18 @@
 import { useState } from 'react';
-import { Columns, Rows, FileCode, Binary, Plus, Minus, X } from 'lucide-react';
+import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Check } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
 import { cn } from '../../lib/utils';
+import {
+  useStagingStore,
+  type DiffSettings,
+  type WhitespaceMode,
+  type ContextLines,
+  type DiffCompareMode,
+} from '../../store/stagingStore';
+
+// Re-export types for external use
+export type { WhitespaceMode, ContextLines, DiffCompareMode, DiffSettings };
 
 export type DiffMode = 'workdir' | 'staged' | 'commit';
 
@@ -47,6 +58,9 @@ export function DiffView({
 }: DiffViewProps) {
   const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
+
+  // Use store for diff settings (persists across file selections and triggers re-fetch)
+  const { diffSettings, setDiffSettings } = useStagingStore();
 
   const handleStageHunk = async (hunkIndex: number) => {
     if (!diff || !onStageHunk) return;
@@ -117,7 +131,13 @@ export function DiffView({
 
   return (
     <div className={diffViewClass}>
-      <DiffHeader diff={diff} viewMode={viewMode} onViewModeChange={setViewMode} />
+      <DiffHeader
+          diff={diff}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          diffSettings={diffSettings}
+          onDiffSettingsChange={setDiffSettings}
+        />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
           <div className={emptyStateClass}>No changes in this file</div>
@@ -149,12 +169,31 @@ interface DiffHeaderProps {
   diff: FileDiff;
   viewMode: DiffViewMode;
   onViewModeChange: (mode: DiffViewMode) => void;
+  diffSettings: DiffSettings;
+  onDiffSettingsChange: (settings: DiffSettings) => void;
 }
 
-function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
+const contextLineOptions: ContextLines[] = [1, 3, 6, 12, 25, 50, 100];
+
+function DiffHeader({
+  diff,
+  viewMode,
+  onViewModeChange,
+  diffSettings,
+  onDiffSettingsChange,
+}: DiffHeaderProps) {
   const fileName = diff.new_path || diff.old_path || 'Unknown file';
   const statusText = getStatusText(diff.status);
   const statusColorClass = getStatusColorClass(diff.status);
+
+  const dropdownButtonClass =
+    'flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover)';
+  const dropdownContentClass =
+    'min-w-48 max-h-80 overflow-y-auto bg-(--bg-secondary) border border-(--border-color) rounded-md p-1 shadow-lg z-50';
+  const dropdownItemClass =
+    'flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover)';
+  const dropdownLabelClass = 'px-2 py-1 text-[11px] text-(--text-tertiary) uppercase';
+  const dropdownSeparatorClass = 'h-px bg-(--border-color) my-1';
 
   return (
     <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
@@ -180,6 +219,97 @@ function DiffHeader({ diff, viewMode, onViewModeChange }: DiffHeaderProps) {
           <span className="text-xs font-medium font-mono text-error">-{diff.deletions}</span>
         )}
       </div>
+
+      {/* Diff Settings Dropdown */}
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button className={dropdownButtonClass} title="Diff options">
+            <span>Context: {diffSettings.contextLines}</span>
+            <ChevronDown size={12} />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content className={dropdownContentClass} align="end" sideOffset={4}>
+            {/* External Diff */}
+            <DropdownMenu.Item className={dropdownItemClass}>
+              <span className="flex-1">External Diff</span>
+              <span className="text-[11px] text-(--text-tertiary)">⌘D</span>
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Separator className={dropdownSeparatorClass} />
+
+            {/* Whitespace */}
+            <DropdownMenu.Item
+              className={dropdownItemClass}
+              onSelect={() =>
+                onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })
+              }
+            >
+              {diffSettings.whitespace === 'show' && (
+                <Check size={12} className="absolute left-2" />
+              )}
+              Show whitespace
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className={dropdownItemClass}
+              onSelect={() =>
+                onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })
+              }
+            >
+              {diffSettings.whitespace === 'ignore' && (
+                <Check size={12} className="absolute left-2" />
+              )}
+              Ignore whitespace
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Separator className={dropdownSeparatorClass} />
+
+            {/* Lines of Context */}
+            <DropdownMenu.Label className={dropdownLabelClass}>Lines of context</DropdownMenu.Label>
+            {contextLineOptions.map((lines) => (
+              <DropdownMenu.Item
+                key={lines}
+                className={dropdownItemClass}
+                onSelect={() =>
+                  onDiffSettingsChange({ ...diffSettings, contextLines: lines })
+                }
+              >
+                {diffSettings.contextLines === lines && (
+                  <Check size={12} className="absolute left-2" />
+                )}
+                {lines}
+              </DropdownMenu.Item>
+            ))}
+
+            <DropdownMenu.Separator className={dropdownSeparatorClass} />
+
+            {/* Diff Compare Mode */}
+            <DropdownMenu.Item
+              className={dropdownItemClass}
+              onSelect={() =>
+                onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })
+              }
+            >
+              {diffSettings.compareMode === 'parent' && (
+                <Check size={12} className="absolute left-2" />
+              )}
+              Diff vs parent
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className={dropdownItemClass}
+              onSelect={() =>
+                onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })
+              }
+            >
+              {diffSettings.compareMode === 'merged' && (
+                <Check size={12} className="absolute left-2" />
+              )}
+              Diff vs merged
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+
       <div className="flex border border-(--border-color) rounded overflow-hidden">
         <button
           className={cn(

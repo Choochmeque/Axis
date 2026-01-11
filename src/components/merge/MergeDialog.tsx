@@ -53,6 +53,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       setSquash(false);
       setCustomMessage('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadBranches = async () => {

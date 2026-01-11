@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useRepositoryStore } from './repositoryStore';
-import { repositoryApi, commitApi, branchApi } from '../services/api';
+import {
+  repositoryApi,
+  graphApi,
+  branchApi,
+  tagApi,
+  stashApi,
+  submoduleApi,
+} from '../services/api';
+
+// Suppress unused import warnings - these are used in the mock
+void graphApi;
+void tagApi;
+void stashApi;
+void submoduleApi;
+import type { GraphCommit, Branch } from '../types';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({
@@ -11,11 +25,26 @@ vi.mock('../services/api', () => ({
     getStatus: vi.fn(),
     getRecentRepositories: vi.fn(),
   },
-  commitApi: {
-    getHistory: vi.fn(),
+  graphApi: {
+    build: vi.fn(),
   },
   branchApi: {
     list: vi.fn(),
+  },
+  tagApi: {
+    list: vi.fn(),
+  },
+  stashApi: {
+    list: vi.fn(),
+  },
+  submoduleApi: {
+    list: vi.fn(),
+  },
+  diffApi: {
+    getCommit: vi.fn(),
+  },
+  commitApi: {
+    getCommit: vi.fn(),
   },
 }));
 
@@ -83,15 +112,24 @@ describe('repositoryStore', () => {
       };
 
       vi.mocked(repositoryApi.open).mockResolvedValue(mockRepo);
-      vi.mocked(commitApi.getHistory).mockResolvedValue(mockCommits);
+      vi.mocked(graphApi.build).mockResolvedValue({
+        commits: mockCommits as unknown as GraphCommit[],
+        total_count: 1,
+        max_lane: 0,
+        has_more: false,
+      });
       vi.mocked(branchApi.list).mockResolvedValue(mockBranches);
+      vi.mocked(tagApi.list).mockResolvedValue([]);
+      vi.mocked(stashApi.list).mockResolvedValue([]);
+      vi.mocked(submoduleApi.list).mockResolvedValue([]);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useRepositoryStore.getState().openRepository('/path/to/repo');
 
       const state = useRepositoryStore.getState();
       expect(state.repository).toEqual(mockRepo);
-      expect(state.commits).toEqual(mockCommits);
+      expect(state.commits.length).toBe(1);
+      expect(state.commits[0].oid).toBe('abc123');
       expect(state.branches).toEqual(mockBranches);
       expect(state.status).toEqual(mockStatus);
       expect(state.isLoading).toBe(false);
@@ -120,8 +158,8 @@ describe('repositoryStore', () => {
           current_branch: 'main',
           state: 'clean',
         },
-        commits: [{ oid: 'abc' }] as any,
-        branches: [{ name: 'main' }] as any,
+        commits: [{ oid: 'abc' }] as unknown as GraphCommit[],
+        branches: [{ name: 'main' }] as unknown as Branch[],
       });
 
       vi.mocked(repositoryApi.close).mockResolvedValue(undefined);

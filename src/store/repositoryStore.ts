@@ -259,7 +259,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     try {
       const submodules = await submoduleApi.list();
       set({ submodules });
-    } catch (err) {
+    } catch {
       // Silently ignore - repo may not have submodules
       set({ submodules: [] });
     }

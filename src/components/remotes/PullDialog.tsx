@@ -54,6 +54,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
         setSelectedRemote(remoteName);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentBranch]);
 
   const loadRemotes = async () => {

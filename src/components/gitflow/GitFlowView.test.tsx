@@ -85,9 +85,12 @@ describe('GitFlowView', () => {
       ).toBeInTheDocument();
     });
 
-    // Get the primary button with text (not the icon button)
+    // Click the main "Initialize Git Flow" button (with visible text, not the icon-only button)
     const initButtons = screen.getAllByRole('button', { name: /Initialize Git Flow/i });
-    const primaryButton = initButtons.find((btn) => btn.classList.contains('btn-primary'));
+    // Find the button that contains visible text (not just title attribute)
+    const primaryButton = initButtons.find((btn) =>
+      btn.textContent?.includes('Initialize Git Flow')
+    );
     fireEvent.click(primaryButton!);
 
     expect(screen.getByText('Production branch')).toBeInTheDocument();
@@ -110,9 +113,11 @@ describe('GitFlowView', () => {
       ).toBeInTheDocument();
     });
 
-    // Open dialog - get the primary button with text (not the icon button)
+    // Open dialog - find the button with visible text (not the icon-only button in header)
     const initButtons = screen.getAllByRole('button', { name: /Initialize Git Flow/i });
-    const primaryButton = initButtons.find((btn) => btn.classList.contains('btn-primary'));
+    const primaryButton = initButtons.find((btn) =>
+      btn.textContent?.includes('Initialize Git Flow')
+    );
     fireEvent.click(primaryButton!);
 
     // Submit

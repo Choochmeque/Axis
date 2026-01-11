@@ -1,7 +1,17 @@
 import { create } from 'zustand';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
-import type { RepositoryStatus, FileDiff, FileStatus } from '../types';
+import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '../types';
 import { useRepositoryStore } from './repositoryStore';
+
+export type WhitespaceMode = 'show' | 'ignore';
+export type ContextLines = 1 | 3 | 6 | 12 | 25 | 50 | 100;
+export type DiffCompareMode = 'parent' | 'merged';
+
+export interface DiffSettings {
+  whitespace: WhitespaceMode;
+  contextLines: ContextLines;
+  compareMode: DiffCompareMode;
+}
 
 interface StagingState {
   // Status
@@ -14,6 +24,9 @@ interface StagingState {
   isSelectedFileStaged: boolean;
   isLoadingDiff: boolean;
 
+  // Diff settings
+  diffSettings: DiffSettings;
+
   // Commit form
   commitMessage: string;
   isAmending: boolean;
@@ -25,6 +38,7 @@ interface StagingState {
   // Actions
   loadStatus: () => Promise<void>;
   selectFile: (file: FileStatus | null, staged: boolean) => Promise<void>;
+  setDiffSettings: (settings: DiffSettings) => Promise<void>;
   stageFile: (path: string) => Promise<void>;
   stageFiles: (paths: string[]) => Promise<void>;
   stageAll: () => Promise<void>;
@@ -44,6 +58,12 @@ interface StagingState {
   reset: () => void;
 }
 
+const defaultDiffSettings: DiffSettings = {
+  whitespace: 'show',
+  contextLines: 3,
+  compareMode: 'parent',
+};
+
 const initialState = {
   status: null,
   isLoadingStatus: false,
@@ -51,11 +71,20 @@ const initialState = {
   selectedFileDiff: null,
   isSelectedFileStaged: false,
   isLoadingDiff: false,
+  diffSettings: defaultDiffSettings,
   commitMessage: '',
   isAmending: false,
   isCommitting: false,
   error: null,
 };
+
+// Helper to convert DiffSettings to DiffOptions for API calls
+function toDiffOptions(settings: DiffSettings): DiffOptions {
+  return {
+    context_lines: settings.contextLines,
+    ignore_whitespace: settings.whitespace === 'ignore',
+  };
+}
 
 export const useStagingStore = create<StagingState>((set, get) => ({
   ...initialState,
@@ -81,7 +110,8 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
     set({ selectedFile: file, isSelectedFileStaged: staged, isLoadingDiff: true, error: null });
     try {
-      const diff = await diffApi.getFile(file.path, staged);
+      const options = toDiffOptions(get().diffSettings);
+      const diff = await diffApi.getFile(file.path, staged, options);
       set({ selectedFileDiff: diff, isLoadingDiff: false });
     } catch (error) {
       set({
@@ -89,6 +119,22 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         selectedFileDiff: null,
         isLoadingDiff: false,
       });
+    }
+  },
+
+  setDiffSettings: async (settings: DiffSettings) => {
+    set({ diffSettings: settings });
+    // Re-fetch the diff with new settings if a file is selected
+    const { selectedFile, isSelectedFileStaged } = get();
+    if (selectedFile) {
+      set({ isLoadingDiff: true });
+      try {
+        const options = toDiffOptions(settings);
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged, options);
+        set({ selectedFileDiff: diff, isLoadingDiff: false });
+      } catch (error) {
+        set({ error: String(error), isLoadingDiff: false });
+      }
     }
   },
 
@@ -151,9 +197,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.stageHunk(patch);
       await get().loadStatus();
       // Refresh the diff for the currently selected file
-      const { selectedFile, isSelectedFileStaged } = get();
+      const { selectedFile, isSelectedFileStaged, diffSettings } = get();
       if (selectedFile) {
-        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged);
+        const options = toDiffOptions(diffSettings);
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged, options);
         set({ selectedFileDiff: diff });
       }
     } catch (error) {
@@ -166,9 +213,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.unstageHunk(patch);
       await get().loadStatus();
       // Refresh the diff for the currently selected file
-      const { selectedFile, isSelectedFileStaged } = get();
+      const { selectedFile, isSelectedFileStaged, diffSettings } = get();
       if (selectedFile) {
-        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged);
+        const options = toDiffOptions(diffSettings);
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged, options);
         set({ selectedFileDiff: diff });
       }
     } catch (error) {
@@ -181,9 +229,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.discardHunk(patch);
       await get().loadStatus();
       // Refresh the diff for the currently selected file
-      const { selectedFile, isSelectedFileStaged } = get();
+      const { selectedFile, isSelectedFileStaged, diffSettings } = get();
       if (selectedFile) {
-        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged);
+        const options = toDiffOptions(diffSettings);
+        const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged, options);
         set({ selectedFileDiff: diff });
       }
     } catch (error) {

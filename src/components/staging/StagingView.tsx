@@ -1,8 +1,91 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 import { useStagingStore } from '../../store/stagingStore';
 import { FileStatusList } from './FileStatusList';
+import {
+  StagingFilters,
+  type StagingSortBy,
+  type StagingShowOnly,
+  type StagingViewMode,
+  type StagingMode,
+} from './StagingFilters';
 import { cn } from '../../lib/utils';
+import type { FileStatus } from '../../types';
+
+// Helper to get filename from path
+function getFilename(path: string): string {
+  const parts = path.split('/');
+  return parts[parts.length - 1] || path;
+}
+
+// Status priority for sorting
+const statusPriority: Record<string, number> = {
+  conflicted: 0,
+  modified: 1,
+  added: 2,
+  deleted: 3,
+  renamed: 4,
+  copied: 5,
+  type_changed: 6,
+  untracked: 7,
+  ignored: 8,
+};
+
+// Sort files based on sortBy option
+function sortFiles(files: FileStatus[], sortBy: StagingSortBy): FileStatus[] {
+  const sorted = [...files];
+
+  switch (sortBy) {
+    case 'path':
+      return sorted.sort((a, b) => a.path.localeCompare(b.path));
+    case 'path_reversed':
+      return sorted.sort((a, b) => b.path.localeCompare(a.path));
+    case 'filename':
+      return sorted.sort((a, b) => getFilename(a.path).localeCompare(getFilename(b.path)));
+    case 'filename_reversed':
+      return sorted.sort((a, b) => getFilename(b.path).localeCompare(getFilename(a.path)));
+    case 'status':
+      return sorted.sort((a, b) => {
+        const aPriority = statusPriority[a.status] ?? 99;
+        const bPriority = statusPriority[b.status] ?? 99;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return a.path.localeCompare(b.path);
+      });
+    case 'checked':
+      // When sorting by checked, staged files come first (they are "checked")
+      // Since we already split staged/unstaged sections, within each section just sort by path
+      return sorted.sort((a, b) => a.path.localeCompare(b.path));
+    default:
+      return sorted;
+  }
+}
+
+// Filter files based on showOnly option
+function filterFiles(
+  files: FileStatus[],
+  showOnly: StagingShowOnly,
+  source: 'staged' | 'unstaged' | 'untracked' | 'conflicted'
+): FileStatus[] {
+  switch (showOnly) {
+    case 'all':
+    case 'pending':
+      // Show all files (pending means all changes, which is everything we have)
+      return files;
+    case 'conflicts':
+      return source === 'conflicted' ? files : files.filter((f) => f.is_conflict);
+    case 'untracked':
+      return source === 'untracked' ? files : files.filter((f) => f.status === 'untracked');
+    case 'modified':
+      return files.filter((f) => f.status === 'modified');
+    case 'ignored':
+      return files.filter((f) => f.status === 'ignored');
+    case 'clean':
+      // Clean files are not in any of our lists, so return empty
+      return [];
+    default:
+      return files;
+  }
+}
 
 const sectionHeaderClass =
   'flex items-center justify-between py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0';
@@ -29,9 +112,41 @@ export function StagingView() {
     clearError,
   } = useStagingStore();
 
+  // Filter state (UI only for now, filtering logic to be implemented)
+  const [sortBy, setSortBy] = useState<StagingSortBy>('path');
+  const [showOnly, setShowOnly] = useState<StagingShowOnly>('pending');
+  const [viewMode, setViewMode] = useState<StagingViewMode>('flat_single');
+  const [stagingMode, setStagingMode] = useState<StagingMode>('split_view');
+
   useEffect(() => {
     loadStatus();
   }, [loadStatus]);
+
+  // Apply filters and sorting - hooks must be called before any conditional returns
+  const stagedFiles = useMemo(() => {
+    const raw = status?.staged ?? [];
+    const filtered = filterFiles(raw, showOnly, 'staged');
+    return sortFiles(filtered, sortBy);
+  }, [status?.staged, showOnly, sortBy]);
+
+  const unstagedFiles = useMemo(() => {
+    const rawUnstaged = status?.unstaged ?? [];
+    const rawUntracked = status?.untracked ?? [];
+    const filteredUnstaged = filterFiles(rawUnstaged, showOnly, 'unstaged');
+    const filteredUntracked = filterFiles(rawUntracked, showOnly, 'untracked');
+    const combined = [...filteredUnstaged, ...filteredUntracked];
+    return sortFiles(combined, sortBy);
+  }, [status?.unstaged, status?.untracked, showOnly, sortBy]);
+
+  const conflictedFiles = useMemo(() => {
+    const raw = status?.conflicted ?? [];
+    const filtered = filterFiles(raw, showOnly, 'conflicted');
+    return sortFiles(filtered, sortBy);
+  }, [status?.conflicted, showOnly, sortBy]);
+
+  // Original counts for actions (before filtering)
+  const totalUnstaged = (status?.unstaged?.length ?? 0) + (status?.untracked?.length ?? 0);
+  const totalStaged = status?.staged?.length ?? 0;
 
   if (isLoadingStatus && !status) {
     return (
@@ -59,16 +174,22 @@ export function StagingView() {
     );
   }
 
-  const unstagedFiles = [...(status?.unstaged ?? []), ...(status?.untracked ?? [])];
-  const stagedFiles = status?.staged ?? [];
-  const conflictedFiles = status?.conflicted ?? [];
-
   const hasUnstaged = unstagedFiles.length > 0;
   const hasStaged = stagedFiles.length > 0;
   const hasConflicts = conflictedFiles.length > 0;
 
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
+      <StagingFilters
+        sortBy={sortBy}
+        showOnly={showOnly}
+        viewMode={viewMode}
+        stagingMode={stagingMode}
+        onSortByChange={setSortBy}
+        onShowOnlyChange={setShowOnly}
+        onViewModeChange={setViewMode}
+        onStagingModeChange={setStagingMode}
+      />
       <div className="grid grid-rows-2 flex-1 min-h-0 overflow-hidden">
         {/* Staged changes section */}
         <div className="flex flex-col min-h-0 overflow-hidden border-b border-(--border-color)">
@@ -78,7 +199,7 @@ export function StagingView() {
               {hasStaged && <span className={sectionCountClass}>{stagedFiles.length}</span>}
             </div>
             <div className="flex gap-1">
-              {hasStaged && (
+              {totalStaged > 0 && (
                 <button className={actionBtnClass} onClick={unstageAll} title="Unstage all">
                   <Minus size={14} />
                   Unstage All
@@ -94,6 +215,7 @@ export function StagingView() {
               onSelectFile={(file) => selectFile(file, true)}
               onUnstage={unstageFile}
               showUnstageButton
+              viewMode={viewMode}
             />
           ) : (
             <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
@@ -110,7 +232,7 @@ export function StagingView() {
               {hasUnstaged && <span className={sectionCountClass}>{unstagedFiles.length}</span>}
             </div>
             <div className="flex gap-1">
-              {hasUnstaged && (
+              {totalUnstaged > 0 && (
                 <>
                   <button className={actionBtnClass} onClick={stageAll} title="Stage all">
                     <Plus size={14} />
@@ -137,6 +259,7 @@ export function StagingView() {
               onDiscard={discardFile}
               showStageButton
               showDiscardButton
+              viewMode={viewMode}
             />
           ) : (
             <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
@@ -158,6 +281,7 @@ export function StagingView() {
               files={conflictedFiles}
               selectedFile={selectedFile}
               onSelectFile={(file) => selectFile(file, false)}
+              viewMode={viewMode}
             />
           </div>
         )}

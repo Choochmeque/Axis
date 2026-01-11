@@ -46,6 +46,7 @@ export function RebaseDialog({
       setResult(null);
       setSelectedBranch('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadBranches = async () => {

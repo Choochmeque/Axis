@@ -8,6 +8,9 @@ vi.mock('../../services/api', () => ({
   tagApi: {
     create: vi.fn(),
   },
+  remoteApi: {
+    list: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 describe('TagDialog', () => {
@@ -23,10 +26,10 @@ describe('TagDialog', () => {
   it('should render when open', () => {
     render(<TagDialog isOpen={true} onClose={() => {}} />);
     expect(screen.getByPlaceholderText('v1.0.0')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Tag' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
   });
 
-  it('should show target commit when provided', () => {
+  it('should show target commit when provided', async () => {
     render(
       <TagDialog
         isOpen={true}
@@ -36,7 +39,14 @@ describe('TagDialog', () => {
       />
     );
 
-    expect(screen.getByText('abc123d')).toBeInTheDocument();
+    // Wait for remoteApi.list to resolve
+    await waitFor(() => {
+      // The commit SHA is shown in the input field
+      const commitInput = screen.getByDisplayValue('abc123def456');
+      expect(commitInput).toBeInTheDocument();
+    });
+
+    // The summary is shown below the input
     expect(screen.getByText('Initial commit')).toBeInTheDocument();
   });
 
@@ -70,16 +80,20 @@ describe('TagDialog', () => {
 
     render(<TagDialog isOpen={true} onClose={() => {}} onTagCreated={onTagCreated} />);
 
-    // Uncheck annotated
-    const annotatedCheckbox = screen.getByRole('checkbox');
-    fireEvent.click(annotatedCheckbox);
-
     // Enter tag name
     const nameInput = screen.getByPlaceholderText('v1.0.0');
     fireEvent.change(nameInput, { target: { value: 'v1.0.0' } });
 
+    // Expand Advanced Options to access lightweight checkbox
+    const advancedButton = screen.getByRole('button', { name: /Advanced Options/i });
+    fireEvent.click(advancedButton);
+
+    // Check lightweight tag checkbox
+    const lightweightCheckbox = screen.getByRole('checkbox', { name: /Lightweight tag/i });
+    fireEvent.click(lightweightCheckbox);
+
     // Submit
-    const createButton = screen.getByRole('button', { name: 'Create Tag' });
+    const createButton = screen.getByRole('button', { name: 'Add' });
     fireEvent.click(createButton);
 
     await waitFor(() => {
@@ -87,6 +101,7 @@ describe('TagDialog', () => {
         target: undefined,
         annotated: false,
         message: undefined,
+        force: false,
       });
     });
 
@@ -118,12 +133,16 @@ describe('TagDialog', () => {
     const nameInput = screen.getByPlaceholderText('v1.0.0');
     fireEvent.change(nameInput, { target: { value: 'v2.0.0' } });
 
-    // Enter message
+    // Expand Advanced Options to access message field
+    const advancedButton = screen.getByRole('button', { name: /Advanced Options/i });
+    fireEvent.click(advancedButton);
+
+    // Enter message (message field is shown by default when not lightweight)
     const messageInput = screen.getByPlaceholderText('Tag message...');
     fireEvent.change(messageInput, { target: { value: 'Release v2.0.0' } });
 
     // Submit
-    const createButton = screen.getByRole('button', { name: 'Create Tag' });
+    const createButton = screen.getByRole('button', { name: 'Add' });
     fireEvent.click(createButton);
 
     await waitFor(() => {
@@ -131,6 +150,7 @@ describe('TagDialog', () => {
         target: undefined,
         annotated: true,
         message: 'Release v2.0.0',
+        force: false,
       });
     });
   });
@@ -138,7 +158,7 @@ describe('TagDialog', () => {
   it('should disable create button when tag name is empty', async () => {
     render(<TagDialog isOpen={true} onClose={() => {}} />);
 
-    const createButton = screen.getByRole('button', { name: 'Create Tag' });
+    const createButton = screen.getByRole('button', { name: 'Add' });
 
     // Button should be disabled when tag name is empty
     expect(createButton).toBeDisabled();
@@ -173,7 +193,7 @@ describe('TagDialog', () => {
     const nameInput = screen.getByPlaceholderText('v1.0.0');
     fireEvent.change(nameInput, { target: { value: 'v1.0.0' } });
 
-    const createButton = screen.getByRole('button', { name: 'Create Tag' });
+    const createButton = screen.getByRole('button', { name: 'Add' });
     fireEvent.click(createButton);
 
     await waitFor(() => {

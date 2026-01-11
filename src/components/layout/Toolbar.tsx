@@ -23,7 +23,13 @@ const toolbarButtonClass =
   'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
-  const { repository, setCurrentView, refreshRepository } = useRepositoryStore();
+  const { repository, status, branches, setCurrentView, refreshRepository } = useRepositoryStore();
+
+  // Get current branch for ahead/behind counts
+  const currentBranch = branches.find((b) => b.is_head);
+  const stagedCount = status?.staged?.length ?? 0;
+  const aheadCount = currentBranch?.ahead ?? 0;
+  const behindCount = currentBranch?.behind ?? 0;
 
   // Dialog states
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
@@ -80,15 +86,36 @@ export function Toolbar() {
         <>
           <div className="flex items-center gap-0.5">
             <button className={toolbarButtonClass} title="Commit" onClick={handleCommitClick}>
-              <GitCommit size={18} />
+              <div className="relative">
+                <GitCommit size={18} />
+                {stagedCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                    {stagedCount > 99 ? '99+' : stagedCount}
+                  </span>
+                )}
+              </div>
               <span>Commit</span>
             </button>
             <button className={toolbarButtonClass} title="Pull" onClick={() => setPullOpen(true)}>
-              <ArrowDownToLine size={18} />
+              <div className="relative">
+                <ArrowDownToLine size={18} />
+                {behindCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                    {behindCount > 99 ? '99+' : behindCount}
+                  </span>
+                )}
+              </div>
               <span>Pull</span>
             </button>
             <button className={toolbarButtonClass} title="Push" onClick={() => setPushOpen(true)}>
-              <ArrowUpFromLine size={18} />
+              <div className="relative">
+                <ArrowUpFromLine size={18} />
+                {aheadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                    {aheadCount > 99 ? '99+' : aheadCount}
+                  </span>
+                )}
+              </div>
               <span>Push</span>
             </button>
             <button className={toolbarButtonClass} onClick={() => setFetchOpen(true)} title="Fetch">

@@ -332,13 +332,13 @@
   }
 
   .menu-item {
-    @apply flex items-center gap-2 py-1.5 px-2 rounded text-xs text-(--text-primary) cursor-pointer outline-none select-none;
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-[13px] text-(--text-primary) cursor-pointer outline-none select-none;
     @apply hover:bg-(--bg-tertiary) focus:bg-(--bg-tertiary) data-highlighted:bg-(--bg-tertiary);
     @apply data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed;
   }
 
   .menu-item-danger {
-    @apply flex items-center gap-2 py-1.5 px-2 rounded text-xs text-error cursor-pointer outline-none select-none;
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-[13px] text-error cursor-pointer outline-none select-none;
     @apply hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15;
   }
 
@@ -431,7 +431,7 @@
   }
 
   .dropdown-item {
-    @apply flex items-center py-1.5 px-2 pl-6 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+    @apply flex items-center py-1.5 px-2 pl-7 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
   }
 
   .dropdown-label {
@@ -445,5 +445,20 @@
   /* Close button */
   .btn-close {
     @apply flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary);
+  }
+
+  /* Sidebar section header */
+  .sidebar-section-header {
+    @apply flex items-center gap-2 w-full py-2 px-3 bg-transparent border-none text-(--text-secondary) text-[11px] font-semibold uppercase tracking-wide cursor-pointer transition-colors hover:bg-(--bg-hover);
+  }
+
+  .sidebar-section-header > svg:nth-child(2) {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Badge */
+  .badge {
+    @apply py-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-(--bg-badge) text-(--text-primary);
   }
 }

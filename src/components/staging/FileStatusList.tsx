@@ -144,9 +144,7 @@ export function FileStatusList({
       {title && (
         <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
           <span>{title}</span>
-          <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">
-            {files.length}
-          </span>
+          <span className={cn('badge', 'text-[11px] font-normal')}>{files.length}</span>
         </div>
       )}
       {renderContent()}

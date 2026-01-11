@@ -126,8 +126,8 @@ export function CommitForm() {
                 checked={isAmending}
                 onCheckedChange={setIsAmending}
               >
-                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
-                  ✓
+                <DropdownMenu.ItemIndicator className="absolute left-2">
+                  <Check size={12} />
                 </DropdownMenu.ItemIndicator>
                 Amend last commit
               </DropdownMenu.CheckboxItem>
@@ -136,8 +136,8 @@ export function CommitForm() {
                 checked={bypassHooks}
                 onCheckedChange={setBypassHooks}
               >
-                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
-                  ✓
+                <DropdownMenu.ItemIndicator className="absolute left-2">
+                  <Check size={12} />
                 </DropdownMenu.ItemIndicator>
                 Bypass commit hooks
               </DropdownMenu.CheckboxItem>
@@ -146,8 +146,8 @@ export function CommitForm() {
                 checked={signCommit}
                 onCheckedChange={setSignCommit}
               >
-                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
-                  ✓
+                <DropdownMenu.ItemIndicator className="absolute left-2">
+                  <Check size={12} />
                 </DropdownMenu.ItemIndicator>
                 Sign commit
               </DropdownMenu.CheckboxItem>
@@ -156,8 +156,8 @@ export function CommitForm() {
                 checked={signOff}
                 onCheckedChange={setSignOff}
               >
-                <DropdownMenu.ItemIndicator className="absolute left-1.5 w-4 flex items-center justify-center text-xs">
-                  ✓
+                <DropdownMenu.ItemIndicator className="absolute left-2">
+                  <Check size={12} />
                 </DropdownMenu.ItemIndicator>
                 Sign off
               </DropdownMenu.CheckboxItem>

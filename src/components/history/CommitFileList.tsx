@@ -48,9 +48,7 @@ export function CommitFileList({
     <div className={listClass}>
       <div className={headerClass}>
         <span className="flex-1">Changed Files</span>
-        <span className="bg-(--bg-badge) py-0.5 px-1.5 rounded-full text-[11px]">
-          {files.length}
-        </span>
+        <span className={cn('badge', 'text-[11px] font-normal')}>{files.length}</span>
         <span className="flex gap-1.5 text-[11px] font-medium">
           <span className="text-success">+{totalAdditions}</span>
           <span className="text-error">-{totalDeletions}</span>

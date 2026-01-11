@@ -26,11 +26,7 @@ import { tagApi, remoteApi, branchApi } from '../../services/api';
 
 // Tailwind class constants
 const sidebarItemClass =
-  'flex items-center gap-2 w-full py-1.5 px-3 pl-6 text-[13px] cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)';
-const sectionHeaderClass =
-  'flex items-center gap-1.5 w-full py-2 px-3 bg-transparent border-none text-(--text-secondary) text-[11px] font-semibold uppercase tracking-wide cursor-pointer transition-colors hover:bg-(--bg-hover)';
-const badgeClass =
-  'py-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-(--bg-badge) text-(--text-primary)';
+  'flex items-center gap-2 w-full py-1.5 pr-3 pl-10 text-[13px] cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)';
 
 // Tree node for hierarchical display
 interface TreeNode {
@@ -123,7 +119,7 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
         <Folder size={12} />
         <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
         {!expanded && node.children.size > 0 && (
-          <span className="py-0.5 px-1.5 rounded-lg text-[10px] font-medium bg-(--bg-badge) text-(--text-secondary) ml-auto">
+          <span className={cn('badge', 'rounded-lg font-medium text-(--text-secondary) ml-auto')}>
             {node.children.size}
           </span>
         )}
@@ -181,7 +177,7 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
 
   return (
     <div className="border-b border-(--border-color)">
-      <button className={sectionHeaderClass} onClick={() => setExpanded(!expanded)}>
+      <button className="sidebar-section-header" onClick={() => setExpanded(!expanded)}>
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         {icon}
         <span className="flex-1 text-left">{title}</span>
@@ -303,7 +299,7 @@ export function Sidebar() {
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
           <ScrollArea className="flex flex-col h-full bg-(--bg-sidebar) border-r border-(--border-color) overflow-y-auto">
-            <Section title="WORKSPACE" icon={<FileCode size={14} />} defaultExpanded={true}>
+            <Section title="WORKSPACE" icon={<FileCode />} defaultExpanded={true}>
               <button
                 className={cn(
                   sidebarItemClass,
@@ -313,7 +309,7 @@ export function Sidebar() {
               >
                 <FileCode size={12} />
                 <span>File Status</span>
-                {changesCount > 0 && <span className={badgeClass}>{changesCount}</span>}
+                {changesCount > 0 && <span className="badge">{changesCount}</span>}
               </button>
               <button
                 className={cn(
@@ -337,7 +333,7 @@ export function Sidebar() {
               </button>
             </Section>
 
-            <Section title="BRANCHES" icon={<GitBranch size={14} />} defaultExpanded={true}>
+            <Section title="BRANCHES" icon={<GitBranch />} defaultExpanded={true}>
               {localBranches.length > 0 ? (
                 localBranches.map((branch) => (
                   <button
@@ -363,16 +359,12 @@ export function Sidebar() {
                       {branch.name}
                     </span>
                     {branch.ahead !== null && branch.ahead > 0 && (
-                      <span
-                        className={cn(badgeClass, 'bg-(--bg-tertiary) text-(--text-secondary)')}
-                      >
+                      <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
                         {branch.ahead}↑
                       </span>
                     )}
                     {branch.behind !== null && branch.behind > 0 && (
-                      <span
-                        className={cn(badgeClass, 'bg-(--bg-tertiary) text-(--text-secondary)')}
-                      >
+                      <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
                         {branch.behind}↓
                       </span>
                     )}
@@ -390,7 +382,7 @@ export function Sidebar() {
               )}
             </Section>
 
-            <Section title="TAGS" icon={<Tag size={14} />} defaultExpanded={false}>
+            <Section title="TAGS" icon={<Tag />} defaultExpanded={false}>
               {tags.length > 0 ? (
                 tags.map((tag) => (
                   <TagContextMenu
@@ -424,7 +416,7 @@ export function Sidebar() {
               )}
             </Section>
 
-            <Section title="REMOTES" icon={<Cloud size={14} />} defaultExpanded={false}>
+            <Section title="REMOTES" icon={<Cloud />} defaultExpanded={false}>
               {remoteBranches.length > 0 ? (
                 <RemoteTree branches={remoteBranches} onBranchClick={handleRefClick} />
               ) : (
@@ -439,7 +431,7 @@ export function Sidebar() {
               )}
             </Section>
 
-            <Section title="STASHES" icon={<Archive size={14} />} defaultExpanded={false}>
+            <Section title="STASHES" icon={<Archive />} defaultExpanded={false}>
               {stashes.length > 0 ? (
                 stashes.map((stash) => (
                   <div key={stash.stash_ref} className={sidebarItemClass}>
@@ -461,7 +453,7 @@ export function Sidebar() {
               )}
             </Section>
 
-            <Section title="SUBMODULES" icon={<FolderGit2 size={14} />} defaultExpanded={false}>
+            <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
               {submodules.length > 0 ? (
                 submodules.map((submodule) => (
                   <div key={submodule.path} className={sidebarItemClass}>
@@ -472,7 +464,7 @@ export function Sidebar() {
                     {submodule.status !== 'current' && (
                       <span
                         className={cn(
-                          badgeClass,
+                          'badge',
                           submodule.status === 'modified' && 'bg-warning text-white'
                         )}
                       >
@@ -496,35 +488,23 @@ export function Sidebar() {
         </ContextMenu.Trigger>
 
         <ContextMenu.Portal>
-          <ContextMenu.Content className="min-w-48 bg-(--bg-secondary) border border-(--border-color) rounded-md shadow-lg py-1 z-50">
-            <ContextMenu.Item
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)"
-              onSelect={() => setShowBranchDialog(true)}
-            >
+          <ContextMenu.Content className="menu-content">
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowBranchDialog(true)}>
               <GitBranch size={14} />
               <span>New Branch...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)"
-              onSelect={() => setShowTagDialog(true)}
-            >
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowTagDialog(true)}>
               <Tag size={14} />
               <span>New Tag...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)"
-              onSelect={() => setShowRemoteDialog(true)}
-            >
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowRemoteDialog(true)}>
               <Cloud size={14} />
               <span>New Remote...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-primary) cursor-pointer outline-none hover:bg-(--bg-hover) focus:bg-(--bg-hover)"
-              onSelect={() => setShowSubmoduleDialog(true)}
-            >
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowSubmoduleDialog(true)}>
               <FolderGit2 size={14} />
               <span>Add Submodule...</span>
             </ContextMenu.Item>

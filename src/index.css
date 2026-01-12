@@ -478,6 +478,9 @@ code {
 
   .alert-inline {
     @apply py-2 px-3 rounded text-[13px];
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    cursor: text;
   }
 
   /* Dropdown classes (Radix UI) */

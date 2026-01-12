@@ -365,11 +365,11 @@
   }
 
   .btn-secondary {
-    @apply bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover);
+    @apply bg-transparent border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover) disabled:hover:bg-transparent;
   }
 
   .btn-primary {
-    @apply bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90;
+    @apply bg-(--accent-color) border border-(--accent-color) text-white hover:opacity-90 disabled:hover:opacity-50;
   }
 
   /* Input classes */

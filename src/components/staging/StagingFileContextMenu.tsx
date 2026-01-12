@@ -30,6 +30,7 @@ interface StagingFileContextMenuProps {
   file: FileStatus;
   children: ReactNode;
   isStaged: boolean;
+  isTreeView?: boolean;
   onStage?: () => void;
   onUnstage?: () => void;
   onDiscard?: () => void;
@@ -39,6 +40,7 @@ export function StagingFileContextMenu({
   file,
   children,
   isStaged,
+  isTreeView = false,
   onStage,
   onUnstage,
   onDiscard,
@@ -222,19 +224,23 @@ export function StagingFileContextMenu({
             <span>Move...</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Separator className="menu-separator" />
+          {isTreeView && (
+            <>
+              <ContextMenu.Separator className="menu-separator" />
 
-          {/* Expand All */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <ChevronDown size={14} />
-            <span>Expand All</span>
-          </ContextMenu.Item>
+              {/* Expand All */}
+              <ContextMenu.Item className="menu-item" disabled>
+                <ChevronDown size={14} />
+                <span>Expand All</span>
+              </ContextMenu.Item>
 
-          {/* Collapse All */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <ChevronUp size={14} />
-            <span>Collapse All</span>
-          </ContextMenu.Item>
+              {/* Collapse All */}
+              <ContextMenu.Item className="menu-item" disabled>
+                <ChevronUp size={14} />
+                <span>Collapse All</span>
+              </ContextMenu.Item>
+            </>
+          )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>

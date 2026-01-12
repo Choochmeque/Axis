@@ -20,6 +20,7 @@ import { useRepositoryStore } from '../../store/repositoryStore';
 import { branchApi } from '../../services/api';
 import { TagDialog } from '../tags/TagDialog';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
+import { CherryPickDialog } from '../merge/CherryPickDialog';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -47,6 +48,7 @@ export function CommitContextMenu({
   const { repository, loadBranches, loadTags, loadCommits, loadStatus } = useRepositoryStore();
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
+  const [showCherryPickDialog, setShowCherryPickDialog] = useState(false);
 
   const handleCopySha = async () => {
     try {
@@ -118,8 +120,15 @@ export function CommitContextMenu({
   const handleCherryPick = () => {
     if (onCherryPick) {
       onCherryPick();
+    } else {
+      setShowCherryPickDialog(true);
     }
-    // TODO: Implement cherry-pick
+  };
+
+  const handleCherryPickComplete = async () => {
+    setShowCherryPickDialog(false);
+    await loadCommits();
+    await loadStatus();
   };
 
   const handleReset = (mode: 'soft' | 'mixed' | 'hard') => {
@@ -151,7 +160,7 @@ export function CommitContextMenu({
 
             <ContextMenu.Separator className="menu-separator" />
 
-            <ContextMenu.Item className="menu-item" onSelect={handleMerge}>
+            <ContextMenu.Item className="menu-item" disabled onSelect={handleMerge}>
               <GitMerge size={14} />
               <span>Merge into {repository?.current_branch ?? 'current branch'}...</span>
             </ContextMenu.Item>
@@ -181,23 +190,32 @@ export function CommitContextMenu({
             <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item">
+              <ContextMenu.SubTrigger className="menu-item" disabled>
                 <RotateCcw size={14} />
                 <span>Reset {repository?.current_branch ?? 'branch'} to here</span>
                 <ChevronRight size={14} className="menu-chevron" />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('soft')}>
+                  <ContextMenu.Item
+                    className="menu-item"
+                    disabled
+                    onSelect={() => handleReset('soft')}
+                  >
                     <span>Soft</span>
                     <span className="menu-hint">Keep all changes staged</span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('mixed')}>
+                  <ContextMenu.Item
+                    className="menu-item"
+                    disabled
+                    onSelect={() => handleReset('mixed')}
+                  >
                     <span>Mixed</span>
                     <span className="menu-hint">Keep changes unstaged</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className="menu-item-danger"
+                    disabled
                     onSelect={() => handleReset('hard')}
                   >
                     <span>Hard</span>
@@ -207,7 +225,7 @@ export function CommitContextMenu({
               </ContextMenu.Portal>
             </ContextMenu.Sub>
 
-            <ContextMenu.Item className="menu-item" onSelect={handleRevert}>
+            <ContextMenu.Item className="menu-item" disabled onSelect={handleRevert}>
               <Undo2 size={14} />
               <span>Revert commit...</span>
             </ContextMenu.Item>
@@ -273,6 +291,13 @@ export function CommitContextMenu({
         open={showBranchDialog}
         onOpenChange={setShowBranchDialog}
         startPoint={commit.oid}
+      />
+
+      <CherryPickDialog
+        isOpen={showCherryPickDialog}
+        onClose={() => setShowCherryPickDialog(false)}
+        onCherryPickComplete={handleCherryPickComplete}
+        commits={[commit]}
       />
     </>
   );

@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { History, FileText, RotateCcw, FileCode, FolderOpen, Copy, Eye, Diff } from 'lucide-react';
 import type { FileDiff } from '../../types';
+import { useRepositoryStore } from '../../store/repositoryStore';
+import { shellApi } from '../../services/api';
 
 interface HistoryFileContextMenuProps {
   file: FileDiff;
@@ -9,10 +11,22 @@ interface HistoryFileContextMenuProps {
 }
 
 export function HistoryFileContextMenu({ file, children }: HistoryFileContextMenuProps) {
+  const { repository } = useRepositoryStore();
   const filePath = file.new_path || file.old_path || '';
 
   const handleCopyPath = () => {
     navigator.clipboard.writeText(filePath);
+  };
+
+  const handleShowInFinder = async () => {
+    if (repository?.path && filePath) {
+      const fullPath = `${repository.path}/${filePath}`;
+      try {
+        await shellApi.showInFolder(fullPath);
+      } catch (err) {
+        console.error('Failed to show in finder:', err);
+      }
+    }
   };
 
   return (
@@ -54,7 +68,7 @@ export function HistoryFileContextMenu({ file, children }: HistoryFileContextMen
           </ContextMenu.Item>
 
           {/* Show In Finder */}
-          <ContextMenu.Item className="menu-item" disabled>
+          <ContextMenu.Item className="menu-item" onSelect={handleShowInFinder}>
             <FolderOpen size={14} />
             <span>Show In Finder</span>
           </ContextMenu.Item>

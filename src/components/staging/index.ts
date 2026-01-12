@@ -8,3 +8,4 @@ export {
   type StagingViewMode,
   type StagingMode,
 } from './StagingFilters';
+export { StagingFileContextMenu } from './StagingFileContextMenu';

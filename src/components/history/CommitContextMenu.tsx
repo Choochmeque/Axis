@@ -10,6 +10,10 @@ import {
   CherryIcon,
   Undo2,
   Check,
+  Archive,
+  FileText,
+  ArrowUpFromLine,
+  PenTool,
 } from 'lucide-react';
 import type { GraphCommit } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -140,6 +144,11 @@ export function CommitContextMenu({
               </span>
             </ContextMenu.Item>
 
+            <ContextMenu.Item className="menu-item" disabled>
+              <ArrowUpFromLine size={14} />
+              <span>Push revision...</span>
+            </ContextMenu.Item>
+
             <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Item className="menu-item" onSelect={handleMerge}>
@@ -147,11 +156,21 @@ export function CommitContextMenu({
               <span>Merge into {repository?.current_branch ?? 'current branch'}...</span>
             </ContextMenu.Item>
 
+            <ContextMenu.Item className="menu-item" disabled>
+              <GitMerge size={14} className="rotate-180" />
+              <span>Rebase...</span>
+            </ContextMenu.Item>
+
             <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Item className="menu-item" onSelect={handleCreateTag}>
               <Tag size={14} />
               <span>Tag...</span>
+            </ContextMenu.Item>
+
+            <ContextMenu.Item className="menu-item" disabled>
+              <PenTool size={14} />
+              <span>Sign...</span>
             </ContextMenu.Item>
 
             <ContextMenu.Item className="menu-item" onSelect={handleCreateBranch}>
@@ -196,6 +215,18 @@ export function CommitContextMenu({
             <ContextMenu.Item className="menu-item" onSelect={handleCherryPick}>
               <CherryIcon size={14} />
               <span>Cherry Pick</span>
+            </ContextMenu.Item>
+
+            <ContextMenu.Item className="menu-item" disabled>
+              <FileText size={14} />
+              <span>Create Patch...</span>
+            </ContextMenu.Item>
+
+            <ContextMenu.Separator className="menu-separator" />
+
+            <ContextMenu.Item className="menu-item" disabled>
+              <Archive size={14} />
+              <span>Archive...</span>
             </ContextMenu.Item>
 
             <ContextMenu.Separator className="menu-separator" />

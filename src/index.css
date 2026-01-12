@@ -340,6 +340,7 @@
   .menu-item-danger {
     @apply flex items-center gap-2 py-1.5 px-2 rounded text-[13px] text-error cursor-pointer outline-none select-none;
     @apply hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15;
+    @apply data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed data-disabled:hover:bg-transparent;
   }
 
   .menu-separator {

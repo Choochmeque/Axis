@@ -17,7 +17,7 @@ import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
-import { CreateBranchDialog } from '../branches/CreateBranchDialog';
+import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
 import { TagDialog } from '../tags/TagDialog';
 import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
@@ -83,17 +83,21 @@ function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
   const hasChildren = node.children.size > 0;
   const paddingLeft = 24 + depth * 16;
 
-  if (node.isLeaf && !hasChildren) {
+  if (node.isLeaf && !hasChildren && node.branch) {
     return (
-      <button
-        className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
-        style={{ paddingLeft }}
-        onClick={() => node.branch && onBranchClick?.(node.branch.target_oid)}
-      >
-        <span className="w-3 shrink-0" /> {/* Spacer to align with folder chevrons */}
-        <GitBranch size={12} />
-        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
-      </button>
+      <RemoteBranchContextMenu branch={node.branch}>
+        <button
+          className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
+          style={{ paddingLeft }}
+          onClick={() => onBranchClick?.(node.branch!.target_oid)}
+        >
+          <span className="w-3 shrink-0" /> {/* Spacer to align with folder chevrons */}
+          <GitBranch size={12} />
+          <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+            {node.name}
+          </span>
+        </button>
+      </RemoteBranchContextMenu>
     );
   }
 
@@ -358,39 +362,44 @@ export function Sidebar() {
                     return naturalCompare(a.name, b.name);
                   })
                   .map((branch) => (
-                    <button
-                      key={branch.name}
-                      className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
-                      onClick={() => handleRefClick(branch.target_oid)}
-                    >
-                      {branch.is_head ? (
-                        <svg width={12} height={12} className="shrink-0">
-                          <circle
-                            cx={6}
-                            cy={6}
-                            r={4}
-                            fill="var(--bg-sidebar)"
-                            stroke="var(--accent-color)"
-                            strokeWidth={2}
-                          />
-                        </svg>
-                      ) : (
-                        <span className="w-3 shrink-0" />
-                      )}
-                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {branch.name}
-                      </span>
-                      {branch.ahead !== null && branch.ahead > 0 && (
-                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
-                          {branch.ahead}↑
+                    <BranchContextMenu key={branch.name} branch={branch}>
+                      <button
+                        className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
+                        onClick={() => handleRefClick(branch.target_oid)}
+                      >
+                        {branch.is_head ? (
+                          <svg width={12} height={12} className="shrink-0">
+                            <circle
+                              cx={6}
+                              cy={6}
+                              r={4}
+                              fill="var(--bg-sidebar)"
+                              stroke="var(--accent-color)"
+                              strokeWidth={2}
+                            />
+                          </svg>
+                        ) : (
+                          <span className="w-3 shrink-0" />
+                        )}
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {branch.name}
                         </span>
-                      )}
-                      {branch.behind !== null && branch.behind > 0 && (
-                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
-                          {branch.behind}↓
-                        </span>
-                      )}
-                    </button>
+                        {branch.ahead !== null && branch.ahead > 0 && (
+                          <span
+                            className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}
+                          >
+                            {branch.ahead}↑
+                          </span>
+                        )}
+                        {branch.behind !== null && branch.behind > 0 && (
+                          <span
+                            className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}
+                          >
+                            {branch.behind}↓
+                          </span>
+                        )}
+                      </button>
+                    </BranchContextMenu>
                   ))
               ) : (
                 <div

@@ -1,5 +1,6 @@
 import type { FileDiff, DiffStatus } from '../../types';
 import { cn } from '../../lib/utils';
+import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 interface CommitFileListProps {
   files: FileDiff[];
@@ -82,43 +83,45 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
   const statusChar = getStatusChar(file.status);
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-        isSelected && 'bg-(--bg-active)'
-      )}
-      onClick={onSelect}
-    >
-      <span
+    <HistoryFileContextMenu file={file}>
+      <div
         className={cn(
-          'flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0',
-          statusColors.bg,
-          statusColors.text
+          'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+          isSelected && 'bg-(--bg-active)'
         )}
-        title={file.status}
+        onClick={onSelect}
       >
-        {statusChar}
-      </span>
-      <span
-        className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-        title={path}
-      >
-        {getFileName(path)}
-        {file.old_path && file.new_path && file.old_path !== file.new_path && (
-          <span className="text-(--text-secondary) text-xs"> ({getFileName(file.old_path)})</span>
-        )}
-      </span>
-      <span
-        className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
-        title={path}
-      >
-        {getDirectory(path)}
-      </span>
-      <span className="flex gap-1 text-[11px] font-medium shrink-0">
-        {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
-        {file.deletions > 0 && <span className="text-error">-{file.deletions}</span>}
-      </span>
-    </div>
+        <span
+          className={cn(
+            'flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0',
+            statusColors.bg,
+            statusColors.text
+          )}
+          title={file.status}
+        >
+          {statusChar}
+        </span>
+        <span
+          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          title={path}
+        >
+          {getFileName(path)}
+          {file.old_path && file.new_path && file.old_path !== file.new_path && (
+            <span className="text-(--text-secondary) text-xs"> ({getFileName(file.old_path)})</span>
+          )}
+        </span>
+        <span
+          className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
+          title={path}
+        >
+          {getDirectory(path)}
+        </span>
+        <span className="flex gap-1 text-[11px] font-medium shrink-0">
+          {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
+          {file.deletions > 0 && <span className="text-error">-{file.deletions}</span>}
+        </span>
+      </div>
+    </HistoryFileContextMenu>
   );
 }
 

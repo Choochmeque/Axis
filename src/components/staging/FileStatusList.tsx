@@ -24,6 +24,7 @@ import { cn, naturalCompare } from '../../lib/utils';
 import type { StagingViewMode } from './StagingFilters';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { shellApi } from '../../services/api';
+import { StagingFileContextMenu } from './StagingFileContextMenu';
 
 const fileItemClass =
   'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
@@ -161,6 +162,7 @@ interface FileStatusItemProps {
   onDiscard?: () => void;
   compact?: boolean;
   indent?: number;
+  isTreeView?: boolean;
 }
 
 function FileStatusItem({
@@ -172,6 +174,7 @@ function FileStatusItem({
   onDiscard,
   compact = false,
   indent = 0,
+  isTreeView = false,
 }: FileStatusItemProps) {
   const { repository } = useRepositoryStore();
   const status = file.staged_status || file.unstaged_status || file.status;
@@ -217,14 +220,59 @@ function FileStatusItem({
 
   if (compact) {
     return (
-      <div
-        className={cn(
-          'flex items-center gap-1.5 py-1 px-2 cursor-pointer border-b border-r border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-          isSelected && 'bg-(--bg-active)'
-        )}
-        onClick={onSelect}
-        title={file.path}
+      <StagingFileContextMenu
+        file={file}
+        isStaged={!!isStaged}
+        isTreeView={isTreeView}
+        onStage={onStage}
+        onUnstage={onUnstage}
+        onDiscard={onDiscard}
       >
+        <div
+          className={cn(
+            'flex items-center gap-1.5 py-1 px-2 cursor-pointer border-b border-r border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+            isSelected && 'bg-(--bg-active)'
+          )}
+          onClick={onSelect}
+          title={file.path}
+        >
+          <Checkbox.Root
+            className="checkbox"
+            checked={isStaged}
+            onCheckedChange={(checked: boolean | 'indeterminate') => {
+              handleCheckboxChange(checked === true);
+            }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          {renderStatusIcon()}
+          <span className="flex-1 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
+            {getFileName(file.path)}
+          </span>
+        </div>
+      </StagingFileContextMenu>
+    );
+  }
+
+  return (
+    <StagingFileContextMenu
+      file={file}
+      isStaged={!!isStaged}
+      isTreeView={isTreeView}
+      onStage={onStage}
+      onUnstage={onUnstage}
+      onDiscard={onDiscard}
+    >
+      <div
+        className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')}
+        onClick={onSelect}
+        style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
+      >
+        {indent > 0 && <span className="w-3.5 shrink-0" />}{' '}
+        {/* Spacer to align with folder chevrons */}
         <Checkbox.Root
           className="checkbox"
           checked={isStaged}
@@ -238,93 +286,66 @@ function FileStatusItem({
           </Checkbox.Indicator>
         </Checkbox.Root>
         {renderStatusIcon()}
-        <span className="flex-1 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
+        <span
+          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          title={file.path}
+        >
           {getFileName(file.path)}
         </span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')}
-      onClick={onSelect}
-      style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
-    >
-      {indent > 0 && <span className="w-3.5 shrink-0" />}{' '}
-      {/* Spacer to align with folder chevrons */}
-      <Checkbox.Root
-        className="checkbox"
-        checked={isStaged}
-        onCheckedChange={(checked: boolean | 'indeterminate') => {
-          handleCheckboxChange(checked === true);
-        }}
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-      >
-        <Checkbox.Indicator>
-          <Check size={10} className="text-white" />
-        </Checkbox.Indicator>
-      </Checkbox.Root>
-      {renderStatusIcon()}
-      <span
-        className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-        title={file.path}
-      >
-        {getFileName(file.path)}
-      </span>
-      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
-        {isUnstaged && (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button
-                className={fileActionClass}
-                onClick={(e) => e.stopPropagation()}
-                title="Actions"
-              >
-                <MoreHorizontal size={14} />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content className={dropdownContentClass} align="end" sideOffset={4}>
-                <DropdownMenu.Item className={dropdownItemClass} onSelect={() => onStage?.()}>
-                  <Plus size={14} />
-                  <span>Stage file</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  className={cn(
-                    dropdownItemClass,
-                    'text-error hover:bg-error/10 data-highlighted:bg-error/10'
-                  )}
-                  onSelect={() => onDiscard?.()}
+        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
+          {isUnstaged && (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className={fileActionClass}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Actions"
                 >
-                  <Trash2 size={14} />
-                  <span>Discard file</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  className={cn(
-                    dropdownItemClass,
-                    'text-error hover:bg-error/10 data-highlighted:bg-error/10'
-                  )}
-                  onSelect={() => onDiscard?.()}
-                >
-                  <FileX size={14} />
-                  <span>Remove file</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item className={dropdownItemDisabledClass} disabled>
-                  <EyeOff size={14} />
-                  <span>Ignore file</span>
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
-                <DropdownMenu.Item className={dropdownItemClass} onSelect={handleShowInFinder}>
-                  <FolderOpen size={14} />
-                  <span>Show in Finder</span>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        )}
+                  <MoreHorizontal size={14} />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className={dropdownContentClass} align="end" sideOffset={4}>
+                  <DropdownMenu.Item className={dropdownItemClass} onSelect={() => onStage?.()}>
+                    <Plus size={14} />
+                    <span>Stage file</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className={cn(
+                      dropdownItemClass,
+                      'text-error hover:bg-error/10 data-highlighted:bg-error/10'
+                    )}
+                    onSelect={() => onDiscard?.()}
+                  >
+                    <Trash2 size={14} />
+                    <span>Discard file</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className={cn(
+                      dropdownItemClass,
+                      'text-error hover:bg-error/10 data-highlighted:bg-error/10'
+                    )}
+                    onSelect={() => onDiscard?.()}
+                  >
+                    <FileX size={14} />
+                    <span>Remove file</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item className={dropdownItemDisabledClass} disabled>
+                    <EyeOff size={14} />
+                    <span>Ignore file</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="h-px bg-(--border-color) my-1" />
+                  <DropdownMenu.Item className={dropdownItemClass} onSelect={handleShowInFinder}>
+                    <FolderOpen size={14} />
+                    <span>Show in Finder</span>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+        </div>
       </div>
-    </div>
+    </StagingFileContextMenu>
   );
 }
 
@@ -344,6 +365,7 @@ function MultiColumnFileItem({
   onSelect,
   onStage,
   onUnstage,
+  onDiscard,
 }: MultiColumnFileItemProps) {
   const status = file.staged_status || file.unstaged_status || file.status;
   const statusColorClass = getStatusColorClass(status);
@@ -365,42 +387,50 @@ function MultiColumnFileItem({
   };
 
   return (
-    <div
-      className={cn(
-        'flex items-center py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-        isSelected && 'bg-(--bg-active)'
-      )}
-      onClick={onSelect}
+    <StagingFileContextMenu
+      file={file}
+      isStaged={!!isStaged}
+      onStage={onStage}
+      onUnstage={onUnstage}
+      onDiscard={onDiscard}
     >
-      <div className="w-6 shrink-0 flex items-center justify-center">
-        <Checkbox.Root
-          className="checkbox"
-          checked={isStaged}
-          onCheckedChange={(checked: boolean | 'indeterminate') => {
-            handleCheckboxChange(checked === true);
-          }}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          <Checkbox.Indicator>
-            <Check size={10} className="text-white" />
-          </Checkbox.Indicator>
-        </Checkbox.Root>
+      <div
+        className={cn(
+          'flex items-center py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+          isSelected && 'bg-(--bg-active)'
+        )}
+        onClick={onSelect}
+      >
+        <div className="w-6 shrink-0 flex items-center justify-center">
+          <Checkbox.Root
+            className="checkbox"
+            checked={isStaged}
+            onCheckedChange={(checked: boolean | 'indeterminate') => {
+              handleCheckboxChange(checked === true);
+            }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <Checkbox.Indicator>
+              <Check size={10} className="text-white" />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+        </div>
+        <div className="w-6 shrink-0 flex items-center justify-center">{renderStatusIcon()}</div>
+        <div className="flex-1 min-w-0 px-2">
+          <span className="text-[13px] text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
+            {getFileName(file.path)}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0 px-2">
+          <span
+            className="text-[13px] text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis block"
+            title={file.path}
+          >
+            {getDirectory(file.path) || '.'}
+          </span>
+        </div>
       </div>
-      <div className="w-6 shrink-0 flex items-center justify-center">{renderStatusIcon()}</div>
-      <div className="flex-1 min-w-0 px-2">
-        <span className="text-[13px] text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
-          {getFileName(file.path)}
-        </span>
-      </div>
-      <div className="flex-1 min-w-0 px-2">
-        <span
-          className="text-[13px] text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis block"
-          title={file.path}
-        >
-          {getDirectory(file.path) || '.'}
-        </span>
-      </div>
-    </div>
+    </StagingFileContextMenu>
   );
 }
 
@@ -517,6 +547,7 @@ function TreeView({
           onSelect={() => onSelectFile(node.file!)}
           onStage={onStage ? () => onStage(node.file!.path) : undefined}
           onUnstage={onUnstage ? () => onUnstage(node.file!.path) : undefined}
+          isTreeView
           onDiscard={onDiscard ? () => onDiscard(node.file!.path) : undefined}
           indent={depth}
         />

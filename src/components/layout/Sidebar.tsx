@@ -370,12 +370,7 @@ export function Sidebar() {
             <Section title="BRANCHES" icon={<GitBranch />} defaultExpanded={true}>
               {localBranches.length > 0 ? (
                 [...localBranches]
-                  .sort((a, b) => {
-                    // Current branch (HEAD) always first
-                    if (a.is_head) return -1;
-                    if (b.is_head) return 1;
-                    return naturalCompare(a.name, b.name);
-                  })
+                  .sort((a, b) => naturalCompare(a.name, b.name))
                   .map((branch) => (
                     <BranchContextMenu
                       key={branch.name}

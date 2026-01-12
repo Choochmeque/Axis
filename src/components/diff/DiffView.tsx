@@ -481,7 +481,7 @@ function DiffHeader({
         <DropdownMenu.Portal>
           <DropdownMenu.Content className="dropdown-content" align="end" sideOffset={4}>
             {/* External Diff */}
-            <DropdownMenu.Item className="dropdown-item">
+            <DropdownMenu.Item className="dropdown-item" disabled>
               <span className="flex-1">External Diff</span>
               <span className="text-[11px] text-(--text-tertiary)">⌘D</span>
             </DropdownMenu.Item>

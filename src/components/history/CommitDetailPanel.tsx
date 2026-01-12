@@ -44,13 +44,13 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
                   isLoading={isLoadingCommitFiles}
                 />
               </Panel>
-              <PanelResizeHandle className="h-1 bg-(--border-color) cursor-row-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
+              <PanelResizeHandle className="resize-handle-vertical" />
               <Panel defaultSize={40} minSize={20}>
                 <CommitInfo commit={commit} />
               </Panel>
             </PanelGroup>
           </Panel>
-          <PanelResizeHandle className="w-1 bg-(--border-color) cursor-col-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
+          <PanelResizeHandle className="resize-handle" />
           <Panel minSize={50}>
             <DiffView
               diff={selectedCommitFile}

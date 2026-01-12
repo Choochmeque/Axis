@@ -107,8 +107,8 @@ export function CommitForm() {
   const isSummaryTooLong = summary.length > 72;
 
   return (
-    <div className="flex flex-col border-t border-(--border-color) bg-(--bg-secondary) shrink-0 mt-auto">
-      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
+    <div className="flex flex-col h-full border-t border-(--border-color) bg-(--bg-secondary)">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color) shrink-0">
         <span className="text-xs font-semibold uppercase text-(--text-secondary)">
           {isAmending ? 'Amend Commit' : 'Commit'}
         </span>
@@ -135,6 +135,7 @@ export function CommitForm() {
                 className="dropdown-item"
                 checked={bypassHooks}
                 onCheckedChange={setBypassHooks}
+                disabled
               >
                 <DropdownMenu.ItemIndicator className="absolute left-2">
                   <Check size={12} />
@@ -145,6 +146,7 @@ export function CommitForm() {
                 className="dropdown-item"
                 checked={signCommit}
                 onCheckedChange={setSignCommit}
+                disabled
               >
                 <DropdownMenu.ItemIndicator className="absolute left-2">
                   <Check size={12} />
@@ -170,22 +172,21 @@ export function CommitForm() {
         </DropdownMenu.Root>
       </div>
 
-      <div className="p-3 flex flex-col gap-2">
-        <div className="relative">
+      <div className="p-3 flex flex-col gap-2 flex-1 min-h-0">
+        <div className="relative flex flex-col flex-1 min-h-0">
           <textarea
             ref={textareaRef}
             className={cn(
-              'w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-y min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)',
+              'w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)',
               isSummaryTooLong && 'border-warning'
             )}
             placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
             value={localMessage}
             onChange={handleMessageChange}
             onKeyDown={handleKeyDown}
-            rows={3}
             disabled={isCommitting}
           />
-          <div className="flex justify-end mt-1">
+          <div className="flex justify-end mt-1 shrink-0">
             <span
               className={cn(
                 'text-[11px] text-(--text-tertiary)',
@@ -197,7 +198,7 @@ export function CommitForm() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-1.5">
             <Checkbox.Root
               id="push-after-commit"

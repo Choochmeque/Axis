@@ -11,6 +11,7 @@ import {
   Search,
   Folder,
   FolderGit2,
+  Pointer,
 } from 'lucide-react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
@@ -368,16 +369,7 @@ export function Sidebar() {
                         onClick={() => handleRefClick(branch.target_oid)}
                       >
                         {branch.is_head ? (
-                          <svg width={12} height={12} className="shrink-0">
-                            <circle
-                              cx={6}
-                              cy={6}
-                              r={4}
-                              fill="var(--bg-sidebar)"
-                              stroke="var(--accent-color)"
-                              strokeWidth={2}
-                            />
-                          </svg>
+                          <Pointer size={12} className="shrink-0 rotate-90" />
                         ) : (
                           <span className="w-3 shrink-0" />
                         )}

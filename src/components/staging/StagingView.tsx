@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Trash2, Check } from 'lucide-react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { useStagingStore } from '../../store/stagingStore';
@@ -188,122 +189,130 @@ export function StagingView() {
         onViewModeChange={setViewMode}
         onStagingModeChange={setStagingMode}
       />
-      <div className="grid grid-rows-2 flex-1 min-h-0 overflow-hidden">
+      <PanelGroup direction="vertical" autoSaveId="staging-layout" className="flex-1 min-h-0">
         {/* Staged changes section */}
-        <div className="flex flex-col min-h-0 overflow-hidden border-b border-(--border-color)">
-          <div className={sectionHeaderClass}>
-            <div className="flex items-center gap-2">
-              <Checkbox.Root
-                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
-                checked={hasStaged}
-                onCheckedChange={(checked: boolean | 'indeterminate') => {
-                  if (checked === false) {
-                    unstageAll();
-                  }
-                }}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
-              <span className={sectionTitleClass}>Staged files</span>
-              {hasStaged && (
-                <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
-                  {stagedFiles.length}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {hasStaged ? (
-            <FileStatusList
-              files={stagedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, true)}
-              onUnstage={unstageFile}
-              showUnstageButton
-              viewMode={viewMode}
-            />
-          ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
-              No staged changes
-            </div>
-          )}
-        </div>
-
-        {/* Unstaged changes section */}
-        <div className="flex flex-col min-h-0 overflow-hidden border-b border-(--border-color) last:border-b-0">
-          <div className={sectionHeaderClass}>
-            <div className="flex items-center gap-2">
-              <Checkbox.Root
-                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
-                checked={false}
-                onCheckedChange={(checked: boolean | 'indeterminate') => {
-                  if (checked === true) {
-                    stageAll();
-                  }
-                }}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
-              <span className={sectionTitleClass}>Unstaged files</span>
-              {hasUnstaged && (
-                <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
-                  {unstagedFiles.length}
-                </span>
-              )}
-            </div>
-            {totalUnstaged > 0 && (
-              <button
-                className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-                onClick={discardAll}
-                title="Discard all changes"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-
-          {hasUnstaged ? (
-            <FileStatusList
-              files={unstagedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, false)}
-              onStage={stageFile}
-              onDiscard={discardFile}
-              showStageButton
-              showDiscardButton
-              viewMode={viewMode}
-            />
-          ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
-              No unstaged changes
-            </div>
-          )}
-        </div>
-
-        {/* Conflicts section */}
-        {hasConflicts && (
-          <div className="flex flex-col shrink-0 max-h-50 overflow-hidden">
-            <div className={cn(sectionHeaderClass, 'bg-error/10')}>
+        <Panel defaultSize={50} minSize={20}>
+          <div className="flex flex-col h-full min-h-0 overflow-hidden">
+            <div className={sectionHeaderClass}>
               <div className="flex items-center gap-2">
-                <span className={sectionTitleClass}>Conflicts</span>
-                <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
-                  {conflictedFiles.length}
-                </span>
+                <Checkbox.Root
+                  className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+                  checked={hasStaged}
+                  onCheckedChange={(checked: boolean | 'indeterminate') => {
+                    if (checked === false) {
+                      unstageAll();
+                    }
+                  }}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <span className={sectionTitleClass}>Staged files</span>
+                {hasStaged && (
+                  <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+                    {stagedFiles.length}
+                  </span>
+                )}
               </div>
             </div>
-            <FileStatusList
-              files={conflictedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, false)}
-              viewMode={viewMode}
-            />
+
+            {hasStaged ? (
+              <FileStatusList
+                files={stagedFiles}
+                selectedFile={selectedFile}
+                onSelectFile={(file) => selectFile(file, true)}
+                onUnstage={unstageFile}
+                showUnstageButton
+                viewMode={viewMode}
+              />
+            ) : (
+              <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+                No staged changes
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </Panel>
+
+        <PanelResizeHandle className="resize-handle-vertical" />
+
+        {/* Unstaged changes section */}
+        <Panel defaultSize={50} minSize={20}>
+          <div className="flex flex-col h-full min-h-0 overflow-hidden">
+            <div className={sectionHeaderClass}>
+              <div className="flex items-center gap-2">
+                <Checkbox.Root
+                  className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+                  checked={false}
+                  onCheckedChange={(checked: boolean | 'indeterminate') => {
+                    if (checked === true) {
+                      stageAll();
+                    }
+                  }}
+                >
+                  <Checkbox.Indicator>
+                    <Check size={10} className="text-white" />
+                  </Checkbox.Indicator>
+                </Checkbox.Root>
+                <span className={sectionTitleClass}>Unstaged files</span>
+                {hasUnstaged && (
+                  <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+                    {unstagedFiles.length}
+                  </span>
+                )}
+              </div>
+              {totalUnstaged > 0 && (
+                <button
+                  className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
+                  onClick={discardAll}
+                  title="Discard all changes"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+
+            {hasUnstaged ? (
+              <FileStatusList
+                files={unstagedFiles}
+                selectedFile={selectedFile}
+                onSelectFile={(file) => selectFile(file, false)}
+                onStage={stageFile}
+                onDiscard={discardFile}
+                showStageButton
+                showDiscardButton
+                viewMode={viewMode}
+              />
+            ) : (
+              <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+                No unstaged changes
+              </div>
+            )}
+
+            {/* Conflicts section */}
+            {hasConflicts && (
+              <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
+                <div className={cn(sectionHeaderClass, 'bg-error/10')}>
+                  <div className="flex items-center gap-2">
+                    <span className={sectionTitleClass}>Conflicts</span>
+                    <span
+                      className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}
+                    >
+                      {conflictedFiles.length}
+                    </span>
+                  </div>
+                </div>
+                <FileStatusList
+                  files={conflictedFiles}
+                  selectedFile={selectedFile}
+                  onSelectFile={(file) => selectFile(file, false)}
+                  viewMode={viewMode}
+                />
+              </div>
+            )}
+          </div>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }

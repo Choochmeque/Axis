@@ -23,7 +23,6 @@ interface BranchContextMenuProps {
 export function BranchContextMenu({ branch, children }: BranchContextMenuProps) {
   const { branches } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.is_head);
-  const isCurrentBranch = branch.is_head;
   const hasUpstream = !!branch.upstream;
 
   return (
@@ -105,7 +104,7 @@ export function BranchContextMenu({ branch, children }: BranchContextMenuProps) 
           <ContextMenu.Separator className="menu-separator" />
 
           {/* Diff Against Current */}
-          <ContextMenu.Item className="menu-item" disabled={isCurrentBranch}>
+          <ContextMenu.Item className="menu-item" disabled>
             <Diff size={14} />
             <span>Diff Against Current</span>
           </ContextMenu.Item>
@@ -119,7 +118,7 @@ export function BranchContextMenu({ branch, children }: BranchContextMenuProps) 
           </ContextMenu.Item>
 
           {/* Delete */}
-          <ContextMenu.Item className="menu-item-danger" disabled={isCurrentBranch}>
+          <ContextMenu.Item className="menu-item-danger" disabled>
             <Trash2 size={14} />
             <span>Delete {branch.name}</span>
           </ContextMenu.Item>

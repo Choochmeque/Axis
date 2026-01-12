@@ -1,5 +1,12 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+  type ColumnResizeMode,
+} from '@tanstack/react-table';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
 import { GitCommit, Loader2, GitBranch, Tag } from 'lucide-react';
@@ -207,6 +214,15 @@ function buildActiveLanes(commits: GraphCommit[]): Set<number>[] {
   return activeLanesPerRow;
 }
 
+// Extended type for table rows (includes index and activeLanes for graph rendering)
+interface CommitRow {
+  commit: GraphCommit;
+  index: number;
+  activeLanes: Set<number>;
+}
+
+const columnHelper = createColumnHelper<CommitRow>();
+
 export function HistoryView() {
   const {
     commits,
@@ -275,6 +291,129 @@ export function HistoryView() {
     }
   }, [selectedCommitOid]);
 
+  // Compute graph data
+  const activeLanesPerRow = useMemo(() => buildActiveLanes(commits), [commits]);
+  const computedMaxLane = useMemo(
+    () => Math.max(maxLane, ...commits.map((commit) => commit.lane)),
+    [commits, maxLane]
+  );
+  const minGraphWidth = (computedMaxLane + 1) * LANE_WIDTH + 6;
+
+  // Prepare table data
+  const tableData = useMemo<CommitRow[]>(
+    () =>
+      commits.map((commit, index) => ({
+        commit,
+        index,
+        activeLanes: activeLanesPerRow[index] || new Set(),
+      })),
+    [commits, activeLanesPerRow]
+  );
+
+  // Define columns
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor((row) => row.commit, {
+        id: 'graph',
+        header: 'Graph',
+        size: minGraphWidth,
+        minSize: minGraphWidth,
+        maxSize: 300,
+        cell: ({ row, column }) => (
+          <GraphCell
+            commit={row.original.commit}
+            width={column.getSize()}
+            index={row.original.index}
+            activeLanes={row.original.activeLanes}
+          />
+        ),
+      }),
+      columnHelper.accessor((row) => row.commit.summary, {
+        id: 'description',
+        header: 'Description',
+        size: 400,
+        minSize: 200,
+        cell: ({ row }) => {
+          const commit = row.original.commit;
+          return (
+            <>
+              {commit.refs && commit.refs.length > 0 && (
+                <span className="inline-flex gap-1 mr-2">
+                  {commit.refs.map((ref, idx) => (
+                    <span
+                      key={idx}
+                      className={cn(
+                        'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
+                        ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
+                        ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
+                        ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
+                        ref.is_head && 'font-bold'
+                      )}
+                    >
+                      {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                      {ref.name}
+                    </span>
+                  ))}
+                </span>
+              )}
+              <span className="text-[13px]">{commit.summary}</span>
+            </>
+          );
+        },
+      }),
+      columnHelper.accessor((row) => row.commit.timestamp, {
+        id: 'date',
+        header: 'Date',
+        size: 120,
+        minSize: 80,
+        maxSize: 200,
+        cell: ({ row }) => (
+          <span className="text-xs text-(--text-secondary)">
+            {formatDistanceToNow(new Date(row.original.commit.timestamp), {
+              addSuffix: true,
+            })}
+          </span>
+        ),
+      }),
+      columnHelper.accessor((row) => row.commit.author.name, {
+        id: 'author',
+        header: 'Author',
+        size: 148,
+        minSize: 80,
+        maxSize: 300,
+        cell: ({ row }) => (
+          <span className="text-xs text-(--text-secondary)">{row.original.commit.author.name}</span>
+        ),
+      }),
+      columnHelper.accessor((row) => row.commit.short_oid, {
+        id: 'sha',
+        header: 'SHA',
+        size: 72,
+        minSize: 60,
+        maxSize: 120,
+        cell: ({ row }) => (
+          <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
+            {row.original.commit.short_oid}
+          </code>
+        ),
+      }),
+    ],
+    [minGraphWidth]
+  );
+
+  const columnResizeMode: ColumnResizeMode = 'onChange';
+
+  const table = useReactTable({
+    data: tableData,
+    columns,
+    columnResizeMode,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 50,
+      maxSize: 500,
+    },
+  });
+
   const emptyStateClass =
     'flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3';
 
@@ -305,131 +444,130 @@ export function HistoryView() {
     );
   }
 
-  const activeLanesPerRow = buildActiveLanes(commits);
-
-  const computedMaxLane = Math.max(maxLane, ...commits.map((commit) => commit.lane));
-  const graphWidth = (computedMaxLane + 1) * LANE_WIDTH + 6;
-
-  const colClass = 'overflow-hidden text-ellipsis whitespace-nowrap';
-
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
-      <div className="flex py-2 px-3 bg-(--bg-header) border-b border-(--border-color) text-[11px] font-semibold uppercase text-(--text-secondary)">
-        <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
-          Graph
-        </div>
-        <div className={cn(colClass, 'flex-1 min-w-50')}>Description</div>
-        <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>Date</div>
-        <div className={cn(colClass, 'w-37 shrink-0')}>Author</div>
-        <div className={cn(colClass, 'w-18 shrink-0')}>SHA</div>
+      {/* Table Header */}
+      <div className="bg-(--bg-header) border-b border-(--border-color) shrink-0">
+        {table.getHeaderGroups().map((headerGroup) => (
+          <div key={headerGroup.id} className="flex items-center h-8 px-3">
+            {headerGroup.headers.map((header) => (
+              <div
+                key={header.id}
+                className={cn(
+                  'relative overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-semibold uppercase text-(--text-secondary) shrink-0',
+                  header.id === 'date' && 'text-right pr-4'
+                )}
+                style={{ width: header.getSize() }}
+              >
+                {flexRender(header.column.columnDef.header, header.getContext())}
+                {/* Resize handle */}
+                {header.column.getCanResize() && (
+                  <div
+                    onMouseDown={header.getResizeHandler()}
+                    onTouchStart={header.getResizeHandler()}
+                    className="col-divider absolute -right-1 top-0 h-full"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
+      {/* Table Body */}
       <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
+        {/* Uncommitted changes row */}
         {hasUncommittedChanges && (
           <div
-            className="flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover) bg-(--bg-uncommitted)"
+            className="flex items-center h-7 px-3 transition-colors cursor-pointer hover:bg-(--bg-hover) bg-(--bg-uncommitted)"
             onClick={() => setCurrentView('file-status')}
           >
-            <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
-              <svg width={graphWidth} height={ROW_HEIGHT} className="graph-svg">
-                {/* Uncommitted changes node - hollow circle */}
-                <circle
-                  cx={LANE_WIDTH / 2}
-                  cy={ROW_HEIGHT / 2}
-                  r={NODE_RADIUS + 1}
-                  fill="var(--bg-secondary)"
-                  stroke={LANE_COLORS[0]}
-                  strokeWidth={2}
-                />
-                {/* Line going down to first commit */}
-                <line
-                  x1={LANE_WIDTH / 2}
-                  y1={ROW_HEIGHT / 2 + NODE_RADIUS + 1}
-                  x2={LANE_WIDTH / 2}
-                  y2={ROW_HEIGHT}
-                  stroke={LANE_COLORS[0]}
-                  strokeWidth={2}
-                />
-              </svg>
-            </div>
-            <div className={cn(colClass, 'flex-1 min-w-50')}>
-              <span className="text-[13px] font-medium text-(--text-uncommitted)">
-                Uncommitted changes
-              </span>
-              <span className="ml-2 text-xs text-(--text-secondary)">
-                ({uncommittedChangeCount} {uncommittedChangeCount === 1 ? 'file' : 'files'})
-              </span>
-            </div>
-            <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>
-              <span className="text-xs text-(--text-secondary)">–</span>
-            </div>
-            <div className={cn(colClass, 'w-37 shrink-0')}>
-              <span className="text-xs text-(--text-secondary)">–</span>
-            </div>
-            <div className={cn(colClass, 'w-18 shrink-0')}>
-              <code className="font-mono text-[11px] text-(--text-secondary)">*</code>
-            </div>
+            {table.getAllColumns().map((column) => {
+              const size = column.getSize();
+              return (
+                <div
+                  key={column.id}
+                  className={cn(
+                    'overflow-hidden text-ellipsis whitespace-nowrap shrink-0',
+                    column.id === 'date' && 'text-right pr-4'
+                  )}
+                  style={{ width: size }}
+                >
+                  {column.id === 'graph' && (
+                    <svg width={size} height={ROW_HEIGHT} className="graph-svg">
+                      <circle
+                        cx={LANE_WIDTH / 2}
+                        cy={ROW_HEIGHT / 2}
+                        r={NODE_RADIUS + 1}
+                        fill="var(--bg-secondary)"
+                        stroke={LANE_COLORS[0]}
+                        strokeWidth={2}
+                      />
+                      <line
+                        x1={LANE_WIDTH / 2}
+                        y1={ROW_HEIGHT / 2 + NODE_RADIUS + 1}
+                        x2={LANE_WIDTH / 2}
+                        y2={ROW_HEIGHT}
+                        stroke={LANE_COLORS[0]}
+                        strokeWidth={2}
+                      />
+                    </svg>
+                  )}
+                  {column.id === 'description' && (
+                    <>
+                      <span className="text-[13px] font-medium text-(--text-uncommitted)">
+                        Uncommitted changes
+                      </span>
+                      <span className="ml-2 text-xs text-(--text-secondary)">
+                        ({uncommittedChangeCount} {uncommittedChangeCount === 1 ? 'file' : 'files'})
+                      </span>
+                    </>
+                  )}
+                  {column.id === 'date' && (
+                    <span className="text-xs text-(--text-secondary)">–</span>
+                  )}
+                  {column.id === 'author' && (
+                    <span className="text-xs text-(--text-secondary)">–</span>
+                  )}
+                  {column.id === 'sha' && (
+                    <code className="font-mono text-[11px] text-(--text-secondary)">*</code>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-        {commits.map((commit, index) => (
-          <CommitContextMenu key={commit.oid} commit={commit}>
-            <div
-              data-commit-oid={commit.oid}
-              className={cn(
-                'flex items-center h-7 px-3 border-b border-(--border-color) transition-colors cursor-pointer hover:bg-(--bg-hover)',
-                commit.is_merge && 'bg-(--bg-merge)',
-                selectedCommitOid === commit.oid && 'bg-(--bg-active) hover:bg-(--bg-active)'
-              )}
-              onClick={() => handleRowClick(commit)}
-            >
-              <div className={cn(colClass, 'shrink-0')} style={{ width: graphWidth }}>
-                <GraphCell
-                  commit={commit}
-                  width={graphWidth}
-                  index={index}
-                  activeLanes={activeLanesPerRow[index]}
-                />
-              </div>
-              <div className={cn(colClass, 'flex-1 min-w-50')}>
-                {commit.refs && commit.refs.length > 0 && (
-                  <span className="inline-flex gap-1 mr-2">
-                    {commit.refs.map((ref, idx) => (
-                      <span
-                        key={idx}
-                        className={cn(
-                          'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
-                          ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
-                          ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
-                          ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
-                          ref.is_head && 'font-bold'
-                        )}
-                      >
-                        {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
-                        {ref.name}
-                      </span>
-                    ))}
-                  </span>
+        {/* Commit rows */}
+        {table.getRowModel().rows.map((row) => {
+          const commit = row.original.commit;
+          return (
+            <CommitContextMenu key={commit.oid} commit={commit}>
+              <div
+                data-commit-oid={commit.oid}
+                className={cn(
+                  'flex items-center h-7 px-3 transition-colors cursor-pointer hover:bg-(--bg-hover)',
+                  selectedCommitOid === commit.oid && 'bg-(--bg-active) hover:bg-(--bg-active)'
                 )}
-                <span className="text-[13px]">{commit.summary}</span>
+                onClick={() => handleRowClick(commit)}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  return (
+                    <div
+                      key={cell.id}
+                      className={cn(
+                        'overflow-hidden text-ellipsis whitespace-nowrap shrink-0',
+                        cell.column.id === 'date' && 'text-right pr-4'
+                      )}
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </div>
+                  );
+                })}
               </div>
-              <div className={cn(colClass, 'w-30 shrink-0 text-right pr-4')}>
-                <span className="text-xs text-(--text-secondary)">
-                  {formatDistanceToNow(new Date(commit.timestamp), {
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-              <div className={cn(colClass, 'w-37 shrink-0')}>
-                <span className="text-xs text-(--text-secondary)">{commit.author.name}</span>
-              </div>
-              <div className={cn(colClass, 'w-18 shrink-0')}>
-                <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
-                  {commit.short_oid}
-                </code>
-              </div>
-            </div>
-          </CommitContextMenu>
-        ))}
+            </CommitContextMenu>
+          );
+        })}
         {isLoadingMoreCommits && (
           <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
             <Loader2 size={16} className="animate-spin" />
@@ -452,7 +590,7 @@ export function HistoryView() {
         <Panel defaultSize={50} minSize={20}>
           {commitListContent}
         </Panel>
-        <PanelResizeHandle className="h-1 bg-(--border-color) cursor-row-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
+        <PanelResizeHandle className="resize-handle-vertical" />
         <Panel defaultSize={50} minSize={30}>
           <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
         </Panel>

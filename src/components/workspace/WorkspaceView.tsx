@@ -38,26 +38,31 @@ export function WorkspaceView() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <PanelGroup direction="horizontal" autoSaveId="workspace-layout">
-          <Panel defaultSize={35} minSize={25} maxSize={50}>
-            <StagingView />
-          </Panel>
-          <PanelResizeHandle className="resize-handle" />
-          <Panel minSize={50}>
-            <DiffView
-              diff={selectedFileDiff}
-              isLoading={isLoadingDiff}
-              mode={diffMode}
-              parentCommitOid={headCommitOid}
-              onStageHunk={stageHunk}
-              onUnstageHunk={unstageHunk}
-              onDiscardHunk={discardHunk}
-            />
-          </Panel>
-        </PanelGroup>
-      </div>
-      <CommitForm />
+      <PanelGroup direction="vertical" autoSaveId="workspace-vertical-layout">
+        <Panel defaultSize={80} minSize={50}>
+          <PanelGroup direction="horizontal" autoSaveId="workspace-layout">
+            <Panel defaultSize={35} minSize={25} maxSize={50}>
+              <StagingView />
+            </Panel>
+            <PanelResizeHandle className="resize-handle" />
+            <Panel minSize={50}>
+              <DiffView
+                diff={selectedFileDiff}
+                isLoading={isLoadingDiff}
+                mode={diffMode}
+                parentCommitOid={headCommitOid}
+                onStageHunk={stageHunk}
+                onUnstageHunk={unstageHunk}
+                onDiscardHunk={discardHunk}
+              />
+            </Panel>
+          </PanelGroup>
+        </Panel>
+        <PanelResizeHandle className="resize-handle-vertical" />
+        <Panel defaultSize={20} minSize={10} maxSize={50}>
+          <CommitForm />
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }

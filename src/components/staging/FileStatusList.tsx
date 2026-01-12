@@ -99,10 +99,11 @@ export function FileStatusList({
         return (
           <div className="flex flex-col flex-1 overflow-y-auto">
             {/* Table header */}
-            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-[11px] font-medium text-(--text-secondary) sticky top-0">
+            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-[11px] font-medium uppercase text-(--text-secondary) sticky top-0">
               <div className="w-6 shrink-0" />
               <div className="w-6 shrink-0" />
               <div className="flex-1 min-w-0 px-2">Filename</div>
+              <div className="col-divider" />
               <div className="flex-1 min-w-0 px-2">Path</div>
             </div>
             {/* Table rows */}

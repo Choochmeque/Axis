@@ -1,5 +1,20 @@
 @import 'tailwindcss';
 
+/* Global user-select disable - must be outside @layer for highest priority */
+*:not(input):not(textarea):not([contenteditable='true']):not(pre):not(code) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+pre,
+code {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
 @theme {
   /* Colors */
   --color-bg-primary: #1e1e1e;
@@ -228,6 +243,7 @@
     background: transparent;
     border: none;
     outline: none;
+    text-transform: none;
   }
 
   select {
@@ -242,12 +258,52 @@
   /* Resize handle for panels */
   .resize-handle {
     width: 4px;
-    background: transparent;
+    background: var(--border-color);
+    cursor: col-resize;
+    transition: background-color 0.15s;
+  }
+
+  .resize-handle-vertical {
+    height: 4px;
+    background: var(--border-color);
+    cursor: row-resize;
     transition: background-color 0.15s;
   }
 
   .resize-handle:hover,
-  .resize-handle[data-resize-handle-active] {
+  .resize-handle[data-resize-handle-active],
+  .resize-handle-vertical:hover,
+  .resize-handle-vertical[data-resize-handle-active] {
+    background: var(--accent-color);
+  }
+
+  /* Column divider for table headers */
+  .col-divider {
+    width: 9px;
+    align-self: stretch;
+    margin: 0 2px;
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .col-divider::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 12px;
+    background: var(--border-color);
+    transition: background-color 0.15s;
+    pointer-events: none;
+  }
+
+  .col-divider:hover::after,
+  .col-divider:active::after {
     background: var(--accent-color);
   }
 

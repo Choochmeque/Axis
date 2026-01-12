@@ -50,14 +50,22 @@ export function TagContextMenu({
             <span>Checkout {tag.name}</span>
           </ContextMenu.Item>
 
-          <ContextMenu.Item className="menu-item" onSelect={onShowDetails}>
+          <ContextMenu.Item
+            className="menu-item"
+            disabled={!onShowDetails}
+            onSelect={onShowDetails}
+          >
             <Info size={14} />
             <span>Details...</span>
           </ContextMenu.Item>
 
           <ContextMenu.Separator className="menu-separator" />
 
-          <ContextMenu.Item className="menu-item" onSelect={onDiffAgainstCurrent}>
+          <ContextMenu.Item
+            className="menu-item"
+            disabled={!onDiffAgainstCurrent}
+            onSelect={onDiffAgainstCurrent}
+          >
             <GitCompare size={14} />
             <span>Diff Against Current</span>
           </ContextMenu.Item>

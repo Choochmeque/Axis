@@ -55,17 +55,19 @@ export function TabBar({ onTabChange }: TabBarProps) {
             </svg>
           )}
           <span className="text-[13px] text-(--text-primary) truncate max-w-40">{tab.name}</span>
-          <button
-            className={cn(
-              'flex items-center justify-center w-4 h-4 rounded shrink-0 transition-colors',
-              'text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--bg-active)',
-              'opacity-0 group-hover:opacity-100',
-              activeTabId === tab.id && 'opacity-100'
-            )}
-            onClick={(e) => handleCloseTab(e, tab.id)}
-          >
-            <X size={12} />
-          </button>
+          {tab.type !== 'welcome' && (
+            <button
+              className={cn(
+                'flex items-center justify-center w-4 h-4 rounded shrink-0 transition-colors',
+                'text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--bg-active)',
+                'opacity-0 group-hover:opacity-100',
+                activeTabId === tab.id && 'opacity-100'
+              )}
+              onClick={(e) => handleCloseTab(e, tab.id)}
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
       ))}
     </div>

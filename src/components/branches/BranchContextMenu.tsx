@@ -18,12 +18,14 @@ import { useRepositoryStore } from '../../store/repositoryStore';
 interface BranchContextMenuProps {
   branch: Branch;
   children: ReactNode;
+  onCheckout?: () => void;
 }
 
-export function BranchContextMenu({ branch, children }: BranchContextMenuProps) {
+export function BranchContextMenu({ branch, children, onCheckout }: BranchContextMenuProps) {
   const { branches } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.is_head);
   const hasUpstream = !!branch.upstream;
+  const isCurrentBranch = branch.is_head;
 
   return (
     <ContextMenu.Root>
@@ -32,7 +34,7 @@ export function BranchContextMenu({ branch, children }: BranchContextMenuProps) 
       <ContextMenu.Portal>
         <ContextMenu.Content className="menu-content">
           {/* Checkout */}
-          <ContextMenu.Item className="menu-item" disabled>
+          <ContextMenu.Item className="menu-item" disabled={isCurrentBranch} onSelect={onCheckout}>
             <GitBranch size={14} />
             <span>Checkout {branch.name}</span>
           </ContextMenu.Item>

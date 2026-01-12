@@ -225,6 +225,20 @@ export function Sidebar() {
     }
   }, [repository]);
 
+  const handleBranchCheckout = useCallback(
+    async (branchName: string) => {
+      try {
+        await branchApi.checkout(branchName);
+        await loadBranches();
+        await loadCommits();
+        await loadStatus();
+      } catch (err) {
+        console.error('Failed to checkout branch:', err);
+      }
+    },
+    [loadBranches, loadCommits, loadStatus]
+  );
+
   const handleTagCheckout = useCallback(
     async (tagName: string) => {
       try {
@@ -363,10 +377,19 @@ export function Sidebar() {
                     return naturalCompare(a.name, b.name);
                   })
                   .map((branch) => (
-                    <BranchContextMenu key={branch.name} branch={branch}>
+                    <BranchContextMenu
+                      key={branch.name}
+                      branch={branch}
+                      onCheckout={() => handleBranchCheckout(branch.name)}
+                    >
                       <button
                         className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
                         onClick={() => handleRefClick(branch.target_oid)}
+                        onDoubleClick={() => {
+                          if (!branch.is_head) {
+                            handleBranchCheckout(branch.name);
+                          }
+                        }}
                       >
                         {branch.is_head ? (
                           <Pointer size={12} className="shrink-0 rotate-90" />

@@ -20,7 +20,8 @@ function validateBranchName(name: string): string | null {
   if (name.endsWith('/')) return 'Branch name cannot end with a slash';
   if (name.endsWith('.lock')) return 'Branch name cannot end with .lock';
   if (name.includes('..')) return 'Branch name cannot contain consecutive dots';
-  if (/[~^:?*\[\]\\@{]/.test(name)) return 'Branch name contains invalid characters';
+  if (/[~^:?*[\]\\@{]/.test(name)) return 'Branch name contains invalid characters';
+  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1f\x7f]/.test(name)) return 'Branch name contains control characters';
 
   return null;
@@ -110,9 +111,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
                 autoFocus
                 className="input"
               />
-              {validationError && (
-                <p className="text-xs text-error mt-1">{validationError}</p>
-              )}
+              {validationError && <p className="text-xs text-error mt-1">{validationError}</p>}
             </div>
 
             <div className="field">

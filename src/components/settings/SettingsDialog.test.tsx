@@ -1,7 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsDialog } from './SettingsDialog';
 import { settingsApi } from '../../services/api';
+
+// Mock window.matchMedia before importing the settings store
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-color-scheme: dark)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 // Mock the API
 vi.mock('../../services/api', () => ({
@@ -9,6 +26,23 @@ vi.mock('../../services/api', () => ({
     get: vi.fn(),
     save: vi.fn(),
   },
+  signingApi: {
+    listGpgKeys: vi.fn().mockResolvedValue([]),
+    listSshKeys: vi.fn().mockResolvedValue([]),
+    getConfig: vi.fn().mockResolvedValue({}),
+    testSigning: vi.fn().mockResolvedValue({ success: true }),
+  },
+}));
+
+// Mock the settings store
+const mockUpdateSettings = vi.fn();
+vi.mock('../../store/settingsStore', () => ({
+  useSettingsStore: vi.fn((selector) => {
+    const state = {
+      updateSettings: mockUpdateSettings,
+    };
+    return selector ? selector(state) : state;
+  }),
 }));
 
 const mockSettings = {
@@ -19,6 +53,10 @@ const mockSettings = {
   auto_fetch_interval: 0,
   confirm_before_discard: true,
   sign_commits: false,
+  signing_format: 'gpg' as const,
+  signing_key: undefined,
+  gpg_program: undefined,
+  ssh_program: undefined,
   diff_context_lines: 3,
   diff_word_wrap: false,
   diff_side_by_side: false,
@@ -33,6 +71,7 @@ describe('SettingsDialog', () => {
     vi.clearAllMocks();
     vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
     vi.mocked(settingsApi.save).mockResolvedValue();
+    mockUpdateSettings.mockResolvedValue(undefined);
   });
 
   it('should not render when not open', () => {
@@ -110,12 +149,12 @@ describe('SettingsDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
-      expect(settingsApi.save).toHaveBeenCalled();
+      expect(mockUpdateSettings).toHaveBeenCalled();
     });
   });
 
   it('should show error when save fails', async () => {
-    vi.mocked(settingsApi.save).mockRejectedValue(new Error('Save failed'));
+    mockUpdateSettings.mockRejectedValue(new Error('Save failed'));
 
     render(<SettingsDialog isOpen={true} onClose={() => {}} />);
 

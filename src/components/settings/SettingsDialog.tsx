@@ -13,6 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import { settingsApi, signingApi } from '../../services/api';
+import { useSettingsStore } from '../../store/settingsStore';
 import type { AppSettings, Theme, SigningFormat, GpgKey, SshKey } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -46,6 +47,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
+  const updateSettingsToStore = useSettingsStore((state) => state.updateSettings);
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [originalSettings, setOriginalSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -83,7 +85,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     setIsSaving(true);
     setError(null);
     try {
-      await settingsApi.save(settings);
+      await updateSettingsToStore(settings);
       setOriginalSettings(settings);
       onSettingsChange?.(settings);
       onClose();

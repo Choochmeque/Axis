@@ -2,6 +2,7 @@ use crate::error::Result;
 use crate::models::{DiffOptions, FileDiff};
 use crate::services::Git2Service;
 use crate::state::AppState;
+use tauri::ipc::Response;
 use tauri::State;
 
 /// Helper function to get the Git2Service for the current repository
@@ -79,4 +80,20 @@ pub async fn get_file_diff(
     let service = get_service(&state)?;
     let opts = options.unwrap_or_default();
     service.diff_file(&path, staged, &opts)
+}
+
+/// Get blob content as raw bytes for a file at a specific commit
+/// Returns ArrayBuffer to frontend for efficient binary transfer
+/// If commit_oid is None, reads the file from the working directory
+#[tauri::command]
+pub async fn get_file_blob(
+    state: State<'_, AppState>,
+    path: String,
+    commit_oid: Option<String>,
+) -> std::result::Result<Response, String> {
+    let service = get_service(&state).map_err(|e| e.to_string())?;
+    let data = service
+        .get_file_blob(&path, commit_oid.as_deref())
+        .map_err(|e| e.to_string())?;
+    Ok(Response::new(data))
 }

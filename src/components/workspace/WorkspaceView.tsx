@@ -16,8 +16,11 @@ export function WorkspaceView() {
     discardHunk,
   } = useStagingStore();
 
-  const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection } =
+  const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection, commits } =
     useRepositoryStore();
+
+  // Get HEAD commit OID for image diff comparison (first commit in graph is typically HEAD)
+  const headCommitOid = commits.length > 0 ? commits[0].oid : undefined;
 
   const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
 
@@ -46,6 +49,7 @@ export function WorkspaceView() {
               diff={selectedFileDiff}
               isLoading={isLoadingDiff}
               mode={diffMode}
+              parentCommitOid={headCommitOid}
               onStageHunk={stageHunk}
               onUnstageHunk={unstageHunk}
               onDiscardHunk={discardHunk}

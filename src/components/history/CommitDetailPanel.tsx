@@ -15,6 +15,9 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
   const { selectedCommitFiles, selectedCommitFile, isLoadingCommitFiles, selectCommitFile } =
     useRepositoryStore();
 
+  // Get parent commit OID for image diff comparison (first parent for regular commits)
+  const parentCommitOid = commit.parent_oids.length > 0 ? commit.parent_oids[0] : undefined;
+
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) border-t border-(--border-color)">
       <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) shrink-0">
@@ -49,7 +52,12 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
           </Panel>
           <PanelResizeHandle className="w-1 bg-(--border-color) cursor-col-resize transition-colors hover:bg-(--accent-color) data-[resize-handle-state=hover]:bg-(--accent-color) data-[resize-handle-state=drag]:bg-(--accent-color)" />
           <Panel minSize={50}>
-            <DiffView diff={selectedCommitFile} isLoading={isLoadingCommitFiles} />
+            <DiffView
+              diff={selectedCommitFile}
+              isLoading={isLoadingCommitFiles}
+              commitOid={commit.oid}
+              parentCommitOid={parentCommitOid}
+            />
           </Panel>
         </PanelGroup>
       </div>

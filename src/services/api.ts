@@ -216,6 +216,9 @@ export const diffApi = {
 
   getFile: (path: string, staged: boolean, options?: DiffOptions) =>
     invoke<FileDiff | null>('get_file_diff', { path, staged, options }),
+
+  getFileBlob: (path: string, commitOid?: string) =>
+    invoke<ArrayBuffer>('get_file_blob', { path, commitOid }),
 };
 
 export const graphApi = {

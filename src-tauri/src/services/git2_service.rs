@@ -672,6 +672,29 @@ impl Git2Service {
         }))
     }
 
+    /// Get blob content as raw bytes
+    /// If commit_oid is Some, gets the file from that commit's tree
+    /// If commit_oid is None, reads the file from the working directory
+    pub fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
+        if let Some(oid_str) = commit_oid {
+            // Get blob from a specific commit
+            let oid = git2::Oid::from_str(oid_str)?;
+            let commit = self.repo.find_commit(oid)?;
+            let tree = commit.tree()?;
+            let entry = tree.get_path(std::path::Path::new(path))?;
+            let blob = entry.to_object(&self.repo)?.peel_to_blob()?;
+            Ok(blob.content().to_vec())
+        } else {
+            // Read from working directory
+            let repo_path = self
+                .repo
+                .workdir()
+                .ok_or_else(|| crate::error::AxisError::Other("No working directory".into()))?;
+            let file_path = repo_path.join(path);
+            Ok(std::fs::read(&file_path)?)
+        }
+    }
+
     /// Apply diff options to git2 DiffOptions
     fn apply_diff_options(
         &self,

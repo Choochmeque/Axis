@@ -75,6 +75,7 @@ pub fn run() {
             commands::get_diff_commit,
             commands::get_diff_commits,
             commands::get_file_diff,
+            commands::get_file_blob,
             // File watcher commands
             commands::start_file_watcher,
             commands::stop_file_watcher,

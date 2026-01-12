@@ -1,8 +1,20 @@
-import { useState } from 'react';
-import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Columns,
+  Rows,
+  FileCode,
+  Binary,
+  Plus,
+  Minus,
+  X,
+  ChevronDown,
+  Check,
+  Image,
+} from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
 import { cn } from '../../lib/utils';
+import { diffApi } from '../../services/api';
 import {
   useStagingStore,
   type DiffSettings,
@@ -20,12 +32,236 @@ interface DiffViewProps {
   diff: FileDiff | null;
   isLoading?: boolean;
   mode?: DiffMode;
+  commitOid?: string; // For viewing files at specific commits (history view)
+  parentCommitOid?: string; // Parent commit for before/after comparison
   onStageHunk?: (patch: string) => Promise<void>;
   onUnstageHunk?: (patch: string) => Promise<void>;
   onDiscardHunk?: (patch: string) => Promise<void>;
 }
 
+// Image extensions we support displaying
+const IMAGE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'svg',
+  'bmp',
+  'ico',
+  'avif',
+]);
+
+function isImageFile(path: string): boolean {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  return IMAGE_EXTENSIONS.has(ext);
+}
+
+function getMimeType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  const mimeTypes: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    ico: 'image/x-icon',
+    avif: 'image/avif',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
+interface BinaryImageViewProps {
+  path: string;
+  oldPath?: string;
+  commitOid?: string;
+  parentCommitOid?: string;
+  status: string;
+}
+
+function BinaryImageView({
+  path,
+  oldPath,
+  commitOid,
+  parentCommitOid,
+  status,
+}: BinaryImageViewProps) {
+  const [newImageUrl, setNewImageUrl] = useState<string | null>(null);
+  const [oldImageUrl, setOldImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const showBefore = status === 'modified' || status === 'deleted';
+  const showAfter = status === 'modified' || status === 'added' || status === 'untracked';
+
+  useEffect(() => {
+    let mounted = true;
+    const objectUrls: string[] = [];
+
+    async function loadImages() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const promises: Promise<void>[] = [];
+
+        // Load new/current version
+        if (showAfter) {
+          promises.push(
+            diffApi.getFileBlob(path, commitOid).then((data) => {
+              if (!mounted) return;
+              const mimeType = getMimeType(path);
+              const blob = new Blob([data], { type: mimeType });
+              const url = URL.createObjectURL(blob);
+              objectUrls.push(url);
+              setNewImageUrl(url);
+            })
+          );
+        }
+
+        // Load old/previous version
+        if (showBefore) {
+          const beforePath = oldPath || path;
+          // For working directory, parentCommitOid should be 'HEAD' or similar
+          // For commit view, it's the parent commit
+          const beforeCommit = parentCommitOid || 'HEAD';
+          promises.push(
+            diffApi
+              .getFileBlob(beforePath, beforeCommit)
+              .then((data) => {
+                if (!mounted) return;
+                const mimeType = getMimeType(beforePath);
+                const blob = new Blob([data], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                objectUrls.push(url);
+                setOldImageUrl(url);
+              })
+              .catch(() => {
+                // Old version might not exist (e.g., renamed from non-existent)
+                if (mounted) setOldImageUrl(null);
+              })
+          );
+        }
+
+        await Promise.all(promises);
+      } catch (err) {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load image');
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadImages();
+
+    return () => {
+      mounted = false;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [path, oldPath, commitOid, parentCommitOid, status, showBefore, showAfter]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full text-(--text-tertiary) text-sm">
+        Loading image...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-(--text-tertiary) text-sm">
+        <Image size={48} className="opacity-50" />
+        <span>Failed to load image</span>
+        <span className="text-xs text-error">{error}</span>
+      </div>
+    );
+  }
+
+  const imageClass =
+    'max-w-full max-h-full object-contain rounded border border-(--border-color) bg-[repeating-conic-gradient(#808080_0%_25%,transparent_0%_50%)] bg-size-[16px_16px]';
+
+  // Side-by-side view for modified images
+  if (showBefore && showAfter) {
+    return (
+      <div className="flex h-full">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-2 border-r border-(--border-color)">
+          <span className="text-xs font-medium text-(--text-secondary) mb-2">Before</span>
+          {oldImageUrl ? (
+            <img src={oldImageUrl} alt="Before" className={imageClass} />
+          ) : (
+            <div className="flex items-center justify-center text-(--text-tertiary) text-sm">
+              <span>Not available</span>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-2">
+          <span className="text-xs font-medium text-(--text-secondary) mb-2">After</span>
+          {newImageUrl ? (
+            <img src={newImageUrl} alt="After" className={imageClass} />
+          ) : (
+            <div className="flex items-center justify-center text-(--text-tertiary) text-sm">
+              <span>Not available</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Single image view for added/deleted
+  return (
+    <div className="flex items-center justify-center h-full p-6">
+      {status === 'deleted' ? (
+        oldImageUrl ? (
+          <img src={oldImageUrl} alt={path} className={imageClass} />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-(--text-tertiary)">
+            <Image size={48} className="opacity-50" />
+            <span>Image not available</span>
+          </div>
+        )
+      ) : (
+        newImageUrl && <img src={newImageUrl} alt={path} className={imageClass} />
+      )}
+    </div>
+  );
+}
+
 type DiffViewMode = 'unified' | 'split';
+
+interface ImageDiffHeaderProps {
+  diff: FileDiff;
+}
+
+function ImageDiffHeader({ diff }: ImageDiffHeaderProps) {
+  const fileName = diff.new_path || diff.old_path || 'Unknown file';
+  const statusText = getStatusText(diff.status);
+  const statusColorClass = getStatusColorClass(diff.status);
+
+  return (
+    <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Image size={16} className="text-(--text-secondary) shrink-0" />
+        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+          {fileName}
+        </span>
+        <span
+          className={cn(
+            'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
+            statusColorClass
+          )}
+        >
+          {statusText}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // Generate a patch string for a specific hunk
 function generateHunkPatch(diff: FileDiff, hunk: DiffHunk): string {
@@ -52,6 +288,8 @@ export function DiffView({
   diff,
   isLoading,
   mode = 'commit',
+  commitOid,
+  parentCommitOid,
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
@@ -118,6 +356,27 @@ export function DiffView({
     );
   }
 
+  const filePath = diff.new_path || diff.old_path || '';
+
+  // Show image preview for image files (including SVG which is text-based)
+  if (isImageFile(filePath)) {
+    return (
+      <div className={diffViewClass}>
+        <ImageDiffHeader diff={diff} />
+        <div className="flex-1 overflow-auto">
+          <BinaryImageView
+            path={filePath}
+            oldPath={diff.old_path || undefined}
+            commitOid={commitOid}
+            parentCommitOid={parentCommitOid}
+            status={diff.status}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Generic binary file message for non-images
   if (diff.binary) {
     return (
       <div className={diffViewClass}>
@@ -187,7 +446,7 @@ function DiffHeader({
   const statusColorClass = getStatusColorClass(diff.status);
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
+    <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <FileCode size={16} className="text-(--text-secondary) shrink-0" />
         <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">

@@ -47,6 +47,13 @@ export function StagingFileContextMenu({
 }: StagingFileContextMenuProps) {
   const { repository } = useRepositoryStore();
 
+  // Computed flags for menu item visibility
+  const isUntracked = file.status === 'untracked';
+  const isConflicted = file.status === 'conflicted';
+  const isTracked = !isUntracked;
+  const canReset = isTracked && !!onDiscard;
+  const canDelete = isUntracked;
+
   const handleCopyPath = () => {
     navigator.clipboard.writeText(file.path);
   };
@@ -120,37 +127,37 @@ export function StagingFileContextMenu({
 
           <ContextMenu.Separator className="menu-separator" />
 
-          {/* Add to index (Stage) */}
-          <ContextMenu.Item
-            className="menu-item"
-            disabled={isStaged || !onStage}
-            onSelect={onStage}
-          >
-            <Plus size={14} />
-            <span>Add to index</span>
-          </ContextMenu.Item>
+          {/* Add to index (Stage) - only show for unstaged files */}
+          {!isStaged && (
+            <ContextMenu.Item className="menu-item" disabled={!onStage} onSelect={onStage}>
+              <Plus size={14} />
+              <span>Add to index</span>
+            </ContextMenu.Item>
+          )}
 
-          {/* Unstage from index */}
-          <ContextMenu.Item
-            className="menu-item"
-            disabled={!isStaged || !onUnstage}
-            onSelect={onUnstage}
-          >
-            <Minus size={14} />
-            <span>Unstage from index</span>
-          </ContextMenu.Item>
+          {/* Unstage from index - only show for staged files */}
+          {isStaged && (
+            <ContextMenu.Item className="menu-item" disabled={!onUnstage} onSelect={onUnstage}>
+              <Minus size={14} />
+              <span>Unstage from index</span>
+            </ContextMenu.Item>
+          )}
 
-          {/* Remove */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <XCircle size={14} />
-            <span>Remove</span>
-          </ContextMenu.Item>
+          {/* Delete - only for untracked files */}
+          {canDelete && (
+            <ContextMenu.Item className="menu-item-danger" disabled>
+              <XCircle size={14} />
+              <span>Delete</span>
+            </ContextMenu.Item>
+          )}
 
-          {/* Stop Tracking */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <EyeOff size={14} />
-            <span>Stop Tracking</span>
-          </ContextMenu.Item>
+          {/* Stop Tracking - only for tracked files */}
+          {isTracked && (
+            <ContextMenu.Item className="menu-item" disabled>
+              <EyeOff size={14} />
+              <span>Stop Tracking</span>
+            </ContextMenu.Item>
+          )}
 
           {/* Ignore */}
           <ContextMenu.Item className="menu-item" disabled>
@@ -166,35 +173,47 @@ export function StagingFileContextMenu({
             <span>Commit Selected...</span>
           </ContextMenu.Item>
 
-          {/* Reset */}
-          <ContextMenu.Item className="menu-item-danger" disabled={!onDiscard} onSelect={onDiscard}>
-            <RotateCcw size={14} />
-            <span>Reset...</span>
-          </ContextMenu.Item>
+          {/* Reset - only for tracked files */}
+          {isTracked && (
+            <ContextMenu.Item
+              className="menu-item-danger"
+              disabled={!canReset}
+              onSelect={onDiscard}
+            >
+              <RotateCcw size={14} />
+              <span>Reset...</span>
+            </ContextMenu.Item>
+          )}
 
-          {/* Reset to Commit */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <RotateCcw size={14} />
-            <span>Reset to Commit...</span>
-          </ContextMenu.Item>
+          {/* Reset to Commit - only for tracked files */}
+          {isTracked && (
+            <ContextMenu.Item className="menu-item" disabled>
+              <RotateCcw size={14} />
+              <span>Reset to Commit...</span>
+            </ContextMenu.Item>
+          )}
 
-          <ContextMenu.Separator className="menu-separator" />
+          {/* Resolve Conflicts submenu - only for conflicted files */}
+          {isConflicted && (
+            <>
+              <ContextMenu.Separator className="menu-separator" />
 
-          {/* Resolve Conflicts submenu */}
-          <ContextMenu.Sub>
-            <ContextMenu.SubTrigger className="menu-item" disabled>
-              <Diff size={14} />
-              <span>Resolve Conflicts</span>
-              <ChevronRight size={14} className="menu-chevron" />
-            </ContextMenu.SubTrigger>
-            <ContextMenu.Portal>
-              <ContextMenu.SubContent className="menu-content">
-                <ContextMenu.Item className="menu-item" disabled>
-                  <span>Mark as Resolved</span>
-                </ContextMenu.Item>
-              </ContextMenu.SubContent>
-            </ContextMenu.Portal>
-          </ContextMenu.Sub>
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className="menu-item">
+                  <Diff size={14} />
+                  <span>Resolve Conflicts</span>
+                  <ChevronRight size={14} className="menu-chevron" />
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent className="menu-content">
+                    <ContextMenu.Item className="menu-item" disabled>
+                      <span>Mark as Resolved</span>
+                    </ContextMenu.Item>
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+            </>
+          )}
 
           <ContextMenu.Separator className="menu-separator" />
 

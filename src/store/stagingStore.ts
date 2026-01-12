@@ -52,7 +52,7 @@ interface StagingState {
   discardAll: () => Promise<void>;
   setCommitMessage: (message: string) => void;
   setIsAmending: (isAmending: boolean) => void;
-  createCommit: () => Promise<string>;
+  createCommit: (sign?: boolean) => Promise<string>;
   amendCommit: () => Promise<string>;
   clearError: () => void;
   reset: () => void;
@@ -271,7 +271,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     set({ isAmending });
   },
 
-  createCommit: async () => {
+  createCommit: async (sign?: boolean) => {
     const { commitMessage } = get();
     if (!commitMessage.trim()) {
       set({ error: 'Commit message is required' });
@@ -280,7 +280,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
     set({ isCommitting: true, error: null });
     try {
-      const oid = await commitApi.create(commitMessage);
+      const oid = await commitApi.create(commitMessage, undefined, undefined, sign);
       set({
         commitMessage: '',
         isCommitting: false,

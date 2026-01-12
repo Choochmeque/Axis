@@ -4,8 +4,9 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { useStagingStore } from '../../store/stagingStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { remoteApi, commitApi } from '../../services/api';
+import { remoteApi, commitApi, signingApi } from '../../services/api';
 import { cn } from '../../lib/utils';
+import type { SigningConfig } from '../../types';
 
 export function CommitForm() {
   const {
@@ -25,11 +26,35 @@ export function CommitForm() {
   const [bypassHooks, setBypassHooks] = useState(false);
   const [signCommit, setSignCommit] = useState(false);
   const [signOff, setSignOff] = useState(false);
+  const [signingAvailable, setSigningAvailable] = useState(false);
+  const [signingConfig, setSigningConfig] = useState<SigningConfig | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setLocalMessage(commitMessage);
   }, [commitMessage]);
+
+  // Check signing availability when repository changes
+  useEffect(() => {
+    const checkSigning = async () => {
+      try {
+        const config = await signingApi.getConfig();
+        setSigningConfig(config);
+        if (config.signing_key) {
+          const available = await signingApi.isAvailable(config);
+          setSigningAvailable(available);
+        } else {
+          setSigningAvailable(false);
+        }
+      } catch {
+        setSigningAvailable(false);
+        setSigningConfig(null);
+      }
+    };
+    if (repository) {
+      checkSigning();
+    }
+  }, [repository]);
 
   // Listen for menu focus event
   useEffect(() => {
@@ -74,7 +99,7 @@ export function CommitForm() {
       if (isAmending) {
         await amendCommit();
       } else {
-        await createCommit();
+        await createCommit(signCommit);
       }
       setLocalMessage('');
 
@@ -146,12 +171,12 @@ export function CommitForm() {
                 className="dropdown-item"
                 checked={signCommit}
                 onCheckedChange={setSignCommit}
-                disabled
+                disabled={!signingAvailable}
               >
                 <DropdownMenu.ItemIndicator className="absolute left-2">
                   <Check size={12} />
                 </DropdownMenu.ItemIndicator>
-                Sign commit
+                Sign commit{!signingAvailable && signingConfig ? ' (no key configured)' : !signingAvailable ? ' (unavailable)' : ''}
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
                 className="dropdown-item"

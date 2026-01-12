@@ -1,9 +1,10 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, FileStatus,
-    LogOptions, Repository, RepositoryState, RepositoryStatus, SortOrder, Tag, TagResult,
-    TagSignature,
+    LogOptions, Repository, RepositoryState, RepositoryStatus, SigningConfig, SortOrder, Tag,
+    TagResult, TagSignature,
 };
+use crate::services::SigningService;
 use chrono::{DateTime, Utc};
 use git2::{Repository as Git2Repository, StatusOptions};
 use std::path::Path;
@@ -485,12 +486,13 @@ impl Git2Service {
 
     // ==================== Commit Operations ====================
 
-    /// Create a new commit
+    /// Create a new commit (optionally signed)
     pub fn create_commit(
         &self,
         message: &str,
         author_name: Option<&str>,
         author_email: Option<&str>,
+        signing_config: Option<&SigningConfig>,
     ) -> Result<String> {
         let mut index = self.repo.index()?;
         let tree_id = index.write_tree()?;
@@ -516,9 +518,49 @@ impl Git2Service {
 
         let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
+        // Sign the commit if config is provided with a key
+        if let Some(config) = signing_config {
+            if config.signing_key.is_some() {
+                return self.create_commit_signed(message, &sig, &tree, &parent_refs, config);
+            }
+        }
+
+        // Create unsigned commit
         let oid = self
             .repo
             .commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)?;
+
+        Ok(oid.to_string())
+    }
+
+    /// Internal: Create a signed commit
+    fn create_commit_signed(
+        &self,
+        message: &str,
+        sig: &git2::Signature,
+        tree: &git2::Tree,
+        parents: &[&git2::Commit],
+        signing_config: &SigningConfig,
+    ) -> Result<String> {
+        // Create the unsigned commit buffer
+        let commit_buf =
+            self.repo
+                .commit_create_buffer(sig, sig, message, tree, parents)?;
+
+        let commit_str = std::str::from_utf8(&commit_buf)
+            .map_err(|e| AxisError::Other(format!("Invalid commit buffer: {}", e)))?;
+
+        // Sign the commit buffer
+        let signing_service = SigningService::new(self.repo.path());
+        let signature = signing_service.sign_buffer(commit_str, signing_config)?;
+
+        // Create the signed commit
+        let oid = self
+            .repo
+            .commit_signed(commit_str, &signature, Some("gpgsig"))?;
+
+        // Update HEAD to point to the new commit
+        self.repo.head()?.set_target(oid, "commit (signed)")?;
 
         Ok(oid.to_string())
     }
@@ -2170,7 +2212,7 @@ mod tests {
         fs::write(tmp.path().join("file2.txt"), "content 2").expect("should write file2");
         service.stage_all().expect("should stage all");
         service
-            .create_commit("Add files", Some("Test User"), Some("test@example.com"))
+            .create_commit("Add files", Some("Test User"), Some("test@example.com"), None)
             .expect("should create commit");
 
         // Delete both files
@@ -2254,7 +2296,7 @@ mod tests {
 
         // Create commit
         let oid = service
-            .create_commit("Add new file", Some("Test User"), Some("test@example.com"))
+            .create_commit("Add new file", Some("Test User"), Some("test@example.com"), None)
             .expect("should create commit");
 
         assert!(!oid.is_empty());
@@ -2659,7 +2701,7 @@ mod tests {
             .stage_file("file2.txt")
             .expect("should stage file2.txt");
         service
-            .create_commit("Second commit", None, None)
+            .create_commit("Second commit", None, None, None)
             .expect("should create second commit");
 
         let options = crate::models::GraphOptions::default();
@@ -2692,7 +2734,7 @@ mod tests {
             .stage_file("feature.txt")
             .expect("should stage feature.txt");
         service
-            .create_commit("Feature commit", None, None)
+            .create_commit("Feature commit", None, None, None)
             .expect("should create feature commit");
 
         let options = crate::models::GraphOptions {
@@ -2725,7 +2767,7 @@ mod tests {
                 .stage_file(&format!("file{}.txt", i))
                 .expect("should stage file");
             service
-                .create_commit(&format!("Commit {}", i), None, None)
+                .create_commit(&format!("Commit {}", i), None, None, None)
                 .expect("should create commit");
         }
 
@@ -2765,7 +2807,7 @@ mod tests {
             .stage_file("feature.txt")
             .expect("should stage feature.txt");
         service
-            .create_commit("Add amazing feature", None, None)
+            .create_commit("Add amazing feature", None, None, None)
             .expect("should create feature commit");
 
         fs::write(tmp.path().join("bugfix.txt"), "content").expect("should write bugfix.txt");
@@ -2773,7 +2815,7 @@ mod tests {
             .stage_file("bugfix.txt")
             .expect("should stage bugfix.txt");
         service
-            .create_commit("Fix critical bug", None, None)
+            .create_commit("Fix critical bug", None, None, None)
             .expect("should create bugfix commit");
 
         let options = crate::models::SearchOptions {
@@ -2844,7 +2886,7 @@ mod tests {
             .stage_file("README.md")
             .expect("should stage README.md");
         service
-            .create_commit("Update README", None, None)
+            .create_commit("Update README", None, None, None)
             .expect("should create update commit");
 
         // Get the first commit OID
@@ -2878,7 +2920,7 @@ mod tests {
                 .stage_file(&format!("file{}.txt", i))
                 .expect("should stage file");
             service
-                .create_commit(&format!("Commit {}", i), None, None)
+                .create_commit(&format!("Commit {}", i), None, None, None)
                 .expect("should create commit");
         }
 

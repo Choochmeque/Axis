@@ -605,6 +605,12 @@ export interface AppSettings {
   confirm_before_discard: boolean;
   sign_commits: boolean;
 
+  // Signing
+  signing_format: SigningFormat;
+  signing_key?: string;
+  gpg_program?: string;
+  ssh_program?: string;
+
   // Diff
   diff_context_lines: number;
   diff_word_wrap: boolean;
@@ -617,4 +623,33 @@ export interface AppSettings {
   // Terminal
   terminal_font_family: string;
   terminal_font_size: number;
+}
+
+// Signing types
+export type SigningFormat = 'gpg' | 'ssh';
+
+export interface SigningConfig {
+  format: SigningFormat;
+  signing_key?: string;
+  gpg_program?: string;
+  ssh_program?: string;
+}
+
+export interface GpgKey {
+  key_id: string;
+  user_id: string;
+  email?: string;
+  is_default: boolean;
+}
+
+export interface SshKey {
+  path: string;
+  key_type: string;
+  comment?: string;
+}
+
+export interface SigningTestResult {
+  success: boolean;
+  error?: string;
+  program_used?: string;
 }

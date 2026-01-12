@@ -179,6 +179,12 @@ pub fn run() {
             // Settings commands
             commands::get_settings,
             commands::save_settings,
+            // Signing commands
+            commands::get_signing_config,
+            commands::list_gpg_keys,
+            commands::list_ssh_keys,
+            commands::test_signing,
+            commands::is_signing_available,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

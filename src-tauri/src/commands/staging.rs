@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::services::{Git2Service, GitCliService};
+use crate::services::{Git2Service, GitCliService, SigningService};
 use crate::state::AppState;
 use tauri::State;
 
@@ -63,9 +63,28 @@ pub async fn create_commit(
     message: String,
     author_name: Option<String>,
     author_email: Option<String>,
+    sign: Option<bool>,
 ) -> Result<String> {
     let service = get_service(&state)?;
-    service.create_commit(&message, author_name.as_deref(), author_email.as_deref())
+    let path = state.ensure_repository_open()?;
+    let settings = state.get_settings()?;
+
+    // Use explicit sign param if provided, otherwise use settings
+    let should_sign = sign.unwrap_or(settings.sign_commits);
+
+    let signing_config = if should_sign {
+        let signing_service = SigningService::new(&path);
+        Some(signing_service.get_config_from_git()?)
+    } else {
+        None
+    };
+
+    service.create_commit(
+        &message,
+        author_name.as_deref(),
+        author_email.as_deref(),
+        signing_config.as_ref(),
+    )
 }
 
 #[tauri::command]

@@ -49,6 +49,10 @@ import type {
   GrepOptions,
   GrepResult,
   AppSettings,
+  SigningConfig,
+  GpgKey,
+  SshKey,
+  SigningTestResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -86,11 +90,12 @@ export const commitApi = {
 
   getCommit: (oid: string) => invoke<Commit>('get_commit', { oid }),
 
-  create: (message: string, authorName?: string, authorEmail?: string) =>
+  create: (message: string, authorName?: string, authorEmail?: string, sign?: boolean) =>
     invoke<string>('create_commit', {
       message,
       authorName,
       authorEmail,
+      sign,
     }),
 
   amend: (message?: string) => invoke<string>('amend_commit', { message }),
@@ -403,6 +408,18 @@ export const settingsApi = {
   get: () => invoke<AppSettings>('get_settings'),
 
   save: (settings: AppSettings) => invoke<void>('save_settings', { settings }),
+};
+
+export const signingApi = {
+  getConfig: () => invoke<SigningConfig>('get_signing_config'),
+
+  listGpgKeys: () => invoke<GpgKey[]>('list_gpg_keys'),
+
+  listSshKeys: () => invoke<SshKey[]>('list_ssh_keys'),
+
+  testSigning: (config: SigningConfig) => invoke<SigningTestResult>('test_signing', { config }),
+
+  isAvailable: (config: SigningConfig) => invoke<boolean>('is_signing_available', { config }),
 };
 
 export const shellApi = {

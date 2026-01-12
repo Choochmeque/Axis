@@ -182,7 +182,7 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="border-b border-(--border-color)">
+    <div>
       <button className="sidebar-section-header" onClick={() => setExpanded(!expanded)}>
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         {icon}

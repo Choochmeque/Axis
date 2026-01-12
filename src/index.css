@@ -4,6 +4,7 @@
 *:not(input):not(textarea):not([contenteditable='true']):not(pre):not(code) {
   -webkit-user-select: none !important;
   user-select: none !important;
+  cursor: default;
 }
 
 input,
@@ -13,6 +14,7 @@ pre,
 code {
   -webkit-user-select: text !important;
   user-select: text !important;
+  cursor: text;
 }
 
 @theme {

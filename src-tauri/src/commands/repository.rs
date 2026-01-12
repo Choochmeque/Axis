@@ -207,7 +207,13 @@ pub async fn open_terminal(path: String) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("cmd")
-            .args(["/c", "start", "cmd", "/k", &format!("cd /d {}", path.display())])
+            .args([
+                "/c",
+                "start",
+                "cmd",
+                "/k",
+                &format!("cd /d {}", path.display()),
+            ])
             .spawn()
             .map_err(|e| AxisError::Other(e.to_string()))?;
     }

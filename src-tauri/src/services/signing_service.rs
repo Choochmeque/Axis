@@ -159,13 +159,7 @@ impl SigningService {
             .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
 
         let mut child = Command::new(&gpg_program)
-            .args([
-                "--status-fd=2",
-                "-bsau",
-                key_id,
-                "--armor",
-                "--detach-sign",
-            ])
+            .args(["--status-fd=2", "-bsau", key_id, "--armor", "--detach-sign"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -233,9 +227,9 @@ impl SigningService {
                 &expanded_key_path,
                 "-n",
                 "git",
-                temp_path.to_str().ok_or_else(|| {
-                    AxisError::Other("Invalid temp file path".to_string())
-                })?,
+                temp_path
+                    .to_str()
+                    .ok_or_else(|| AxisError::Other("Invalid temp file path".to_string()))?,
             ])
             .output()
             .map_err(|e| AxisError::Other(format!("Failed to execute ssh-keygen: {}", e)))?;
@@ -279,7 +273,12 @@ impl SigningService {
             .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
 
         let output = Command::new(&gpg_program)
-            .args(["--list-secret-keys", "--keyid-format", "long", "--with-colons"])
+            .args([
+                "--list-secret-keys",
+                "--keyid-format",
+                "long",
+                "--with-colons",
+            ])
             .output()
             .map_err(|e| AxisError::Other(format!("Failed to list GPG keys: {}", e)))?;
 
@@ -335,7 +334,11 @@ impl SigningService {
             if let Some(default_key) = config.signing_key {
                 for key in &mut keys {
                     key.is_default = key.key_id.ends_with(&default_key)
-                        || key.email.as_ref().map(|e| e == &default_key).unwrap_or(false);
+                        || key
+                            .email
+                            .as_ref()
+                            .map(|e| e == &default_key)
+                            .unwrap_or(false);
                 }
             }
         }
@@ -404,14 +407,12 @@ impl SigningService {
         let (success, error, program_used) = match self.sign_buffer(test_content, config) {
             Ok(_) => {
                 let program = match config.format {
-                    SigningFormat::Gpg => config
-                        .gpg_program
-                        .clone()
-                        .or_else(|| Self::find_gpg_program().map(|p| p.to_string_lossy().to_string())),
-                    SigningFormat::Ssh => config
-                        .ssh_program
-                        .clone()
-                        .or_else(|| Self::find_ssh_program().map(|p| p.to_string_lossy().to_string())),
+                    SigningFormat::Gpg => config.gpg_program.clone().or_else(|| {
+                        Self::find_gpg_program().map(|p| p.to_string_lossy().to_string())
+                    }),
+                    SigningFormat::Ssh => config.ssh_program.clone().or_else(|| {
+                        Self::find_ssh_program().map(|p| p.to_string_lossy().to_string())
+                    }),
                 };
                 (true, None, program)
             }

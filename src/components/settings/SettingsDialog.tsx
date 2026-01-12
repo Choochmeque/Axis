@@ -315,7 +315,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       } else {
         setTestResult({ success: false, message: 'No signing key found in git config' });
       }
-    } catch (err) {
+    } catch {
       setTestResult({ success: false, message: 'Failed to detect configuration' });
     } finally {
       setIsDetecting(false);
@@ -337,7 +337,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       } else {
         setTestResult({ success: false, message: result.error || 'Signing test failed' });
       }
-    } catch (err) {
+    } catch {
       setTestResult({ success: false, message: 'Failed to test signing' });
     } finally {
       setIsTesting(false);
@@ -458,9 +458,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             className="input flex-1"
             disabled={isLoadingKeys}
           >
-            <option value="">
-              {isLoadingKeys ? 'Loading keys...' : 'Select a key...'}
-            </option>
+            <option value="">{isLoadingKeys ? 'Loading keys...' : 'Select a key...'}</option>
             {availableKeys.map((key) => (
               <option key={key.value} value={key.value}>
                 {key.label}
@@ -518,7 +516,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             className="input"
             placeholder="Auto-detect"
           />
-          <p className={hintClass}>Custom path to ssh-keygen executable (leave empty for auto-detect)</p>
+          <p className={hintClass}>
+            Custom path to ssh-keygen executable (leave empty for auto-detect)
+          </p>
         </div>
       )}
 

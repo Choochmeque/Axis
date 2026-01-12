@@ -176,7 +176,12 @@ export function CommitForm() {
                 <DropdownMenu.ItemIndicator className="absolute left-2">
                   <Check size={12} />
                 </DropdownMenu.ItemIndicator>
-                Sign commit{!signingAvailable && signingConfig ? ' (no key configured)' : !signingAvailable ? ' (unavailable)' : ''}
+                Sign commit
+                {!signingAvailable && signingConfig
+                  ? ' (no key configured)'
+                  : !signingAvailable
+                    ? ' (unavailable)'
+                    : ''}
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.CheckboxItem
                 className="dropdown-item"

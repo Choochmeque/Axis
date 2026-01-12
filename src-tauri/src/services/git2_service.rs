@@ -543,9 +543,9 @@ impl Git2Service {
         signing_config: &SigningConfig,
     ) -> Result<String> {
         // Create the unsigned commit buffer
-        let commit_buf =
-            self.repo
-                .commit_create_buffer(sig, sig, message, tree, parents)?;
+        let commit_buf = self
+            .repo
+            .commit_create_buffer(sig, sig, message, tree, parents)?;
 
         let commit_str = std::str::from_utf8(&commit_buf)
             .map_err(|e| AxisError::Other(format!("Invalid commit buffer: {}", e)))?;
@@ -2212,7 +2212,12 @@ mod tests {
         fs::write(tmp.path().join("file2.txt"), "content 2").expect("should write file2");
         service.stage_all().expect("should stage all");
         service
-            .create_commit("Add files", Some("Test User"), Some("test@example.com"), None)
+            .create_commit(
+                "Add files",
+                Some("Test User"),
+                Some("test@example.com"),
+                None,
+            )
             .expect("should create commit");
 
         // Delete both files
@@ -2296,7 +2301,12 @@ mod tests {
 
         // Create commit
         let oid = service
-            .create_commit("Add new file", Some("Test User"), Some("test@example.com"), None)
+            .create_commit(
+                "Add new file",
+                Some("Test User"),
+                Some("test@example.com"),
+                None,
+            )
             .expect("should create commit");
 
         assert!(!oid.is_empty());

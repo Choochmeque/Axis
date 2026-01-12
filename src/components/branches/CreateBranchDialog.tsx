@@ -11,6 +11,21 @@ interface CreateBranchDialogProps {
   startPoint?: string;
 }
 
+// Validate branch name according to git rules
+function validateBranchName(name: string): string | null {
+  if (!name.trim()) return null; // Empty is handled separately
+
+  if (name.includes(' ')) return 'Branch name cannot contain spaces';
+  if (name.startsWith('.')) return 'Branch name cannot start with a dot';
+  if (name.endsWith('/')) return 'Branch name cannot end with a slash';
+  if (name.endsWith('.lock')) return 'Branch name cannot end with .lock';
+  if (name.includes('..')) return 'Branch name cannot contain consecutive dots';
+  if (/[~^:?*\[\]\\@{]/.test(name)) return 'Branch name contains invalid characters';
+  if (/[\x00-\x1f\x7f]/.test(name)) return 'Branch name contains control characters';
+
+  return null;
+}
+
 export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBranchDialogProps) {
   const [branchName, setBranchName] = useState('');
   const [baseBranch, setBaseBranch] = useState(startPoint || '');
@@ -28,9 +43,16 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
     }
   }, [open, startPoint]);
 
+  const validationError = validateBranchName(branchName);
+
   const handleCreate = async () => {
     if (!branchName.trim()) {
       setError('Branch name is required');
+      return;
+    }
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -58,7 +80,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
+    if (e.key === 'Enter' && !isLoading && !validationError && branchName.trim()) {
       handleCreate();
     }
   };
@@ -88,6 +110,9 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
                 autoFocus
                 className="input"
               />
+              {validationError && (
+                <p className="text-xs text-error mt-1">{validationError}</p>
+              )}
             </div>
 
             <div className="field">
@@ -140,7 +165,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
             <button
               className="btn btn-primary"
               onClick={handleCreate}
-              disabled={isLoading || !branchName.trim()}
+              disabled={isLoading || !branchName.trim() || !!validationError}
             >
               {isLoading ? 'Creating...' : 'Create Branch'}
             </button>

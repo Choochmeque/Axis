@@ -348,7 +348,7 @@ describe('stagingStore', () => {
       const oid = await useStagingStore.getState().createCommit();
 
       expect(oid).toBe('abc123');
-      expect(commitApi.create).toHaveBeenCalledWith('Test commit');
+      expect(commitApi.create).toHaveBeenCalledWith('Test commit', undefined, undefined, undefined);
       expect(useStagingStore.getState().commitMessage).toBe('');
       expect(useStagingStore.getState().isCommitting).toBe(false);
     });

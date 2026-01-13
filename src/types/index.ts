@@ -653,3 +653,48 @@ export interface SigningTestResult {
   error?: string;
   program_used?: string;
 }
+
+// Archive types
+export interface ArchiveOptions {
+  reference: string;
+  format: ArchiveFormat;
+  output_path: string;
+  prefix?: string;
+}
+
+export type ArchiveFormat = 'zip' | 'tar' | 'tar.gz' | 'tar.bz2';
+
+export interface ArchiveResult {
+  success: boolean;
+  message: string;
+  output_path?: string;
+  size_bytes?: number;
+}
+
+// Patch types
+export interface FormatPatchOptions {
+  range: string;
+  output_dir: string;
+}
+
+export interface CreatePatchOptions {
+  commit_oid?: string;
+  output_dir: string;
+}
+
+export interface ApplyPatchOptions {
+  patch_path: string;
+  check_only?: boolean;
+  three_way?: boolean;
+}
+
+export interface ApplyMailboxOptions {
+  patch_paths: string[];
+  three_way?: boolean;
+}
+
+export interface PatchResult {
+  success: boolean;
+  message: string;
+  patches: string[];
+}

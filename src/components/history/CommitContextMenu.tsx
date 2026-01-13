@@ -24,6 +24,8 @@ import { CherryPickDialog } from '../merge/CherryPickDialog';
 import { ResetConfirmDialog } from '../merge/ResetConfirmDialog';
 import { RevertCommitDialog } from '../merge/RevertCommitDialog';
 import { RebaseDialog } from '../merge/RebaseDialog';
+import { ArchiveDialog } from './ArchiveDialog';
+import { PatchDialog } from './PatchDialog';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -56,6 +58,8 @@ export function CommitContextMenu({
   const [resetMode, setResetMode] = useState<ResetMode>('mixed');
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showRebaseDialog, setShowRebaseDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showPatchDialog, setShowPatchDialog] = useState(false);
 
   const handleCopySha = async () => {
     try {
@@ -260,14 +264,14 @@ export function CommitContextMenu({
               <span>Cherry Pick</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item className="menu-item" disabled>
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowPatchDialog(true)}>
               <FileText size={14} />
               <span>Create Patch...</span>
             </ContextMenu.Item>
 
             <ContextMenu.Separator className="menu-separator" />
 
-            <ContextMenu.Item className="menu-item" disabled>
+            <ContextMenu.Item className="menu-item" onSelect={() => setShowArchiveDialog(true)}>
               <Archive size={14} />
               <span>Archive...</span>
             </ContextMenu.Item>
@@ -347,6 +351,21 @@ export function CommitContextMenu({
         onRebaseComplete={handleRebaseComplete}
         currentBranch={repository?.current_branch ?? ''}
         targetCommit={commit}
+      />
+
+      <ArchiveDialog
+        isOpen={showArchiveDialog}
+        onClose={() => setShowArchiveDialog(false)}
+        commitOid={commit.oid}
+        commitSummary={commit.summary}
+      />
+
+      <PatchDialog
+        isOpen={showPatchDialog}
+        onClose={() => setShowPatchDialog(false)}
+        mode="create"
+        commitOid={commit.oid}
+        commitSummary={commit.summary}
       />
     </>
   );

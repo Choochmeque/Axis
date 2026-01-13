@@ -185,6 +185,15 @@ pub fn run() {
             commands::list_ssh_keys,
             commands::test_signing,
             commands::is_signing_available,
+            // Archive & Patch commands
+            commands::create_archive,
+            commands::format_patch,
+            commands::create_patch,
+            commands::apply_patch,
+            commands::apply_mailbox,
+            commands::am_abort,
+            commands::am_continue,
+            commands::am_skip,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

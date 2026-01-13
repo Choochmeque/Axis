@@ -53,6 +53,13 @@ import type {
   GpgKey,
   SshKey,
   SigningTestResult,
+  ArchiveOptions,
+  ArchiveResult,
+  FormatPatchOptions,
+  CreatePatchOptions,
+  ApplyPatchOptions,
+  ApplyMailboxOptions,
+  PatchResult,
 } from '../types';
 
 export const repositoryApi = {
@@ -426,4 +433,24 @@ export const shellApi = {
   showInFolder: (path: string) => invoke<void>('show_in_folder', { path }),
 
   openTerminal: (path: string) => invoke<void>('open_terminal', { path }),
+};
+
+export const archiveApi = {
+  create: (options: ArchiveOptions) => invoke<ArchiveResult>('create_archive', { options }),
+};
+
+export const patchApi = {
+  formatPatch: (options: FormatPatchOptions) => invoke<PatchResult>('format_patch', { options }),
+
+  createPatch: (options: CreatePatchOptions) => invoke<PatchResult>('create_patch', { options }),
+
+  applyPatch: (options: ApplyPatchOptions) => invoke<PatchResult>('apply_patch', { options }),
+
+  applyMailbox: (options: ApplyMailboxOptions) => invoke<PatchResult>('apply_mailbox', { options }),
+
+  abort: () => invoke<PatchResult>('am_abort'),
+
+  continue: () => invoke<PatchResult>('am_continue'),
+
+  skip: () => invoke<PatchResult>('am_skip'),
 };

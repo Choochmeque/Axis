@@ -1,9 +1,9 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    AddSubmoduleOptions, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
-    GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, StashApplyOptions,
-    StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult, SubmoduleStatus,
-    SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
+    AddSubmoduleOptions, ArchiveResult, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
+    GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, PatchResult,
+    StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult,
+    SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
 };
 use chrono::{DateTime, Utc};
 use std::path::Path;
@@ -1525,6 +1525,359 @@ impl GitCliService {
         }
 
         Ok(())
+    }
+
+    // ==================== Archive Operations ====================
+
+    /// Create an archive from a specific reference (commit, tag, branch)
+    /// Supported formats: zip, tar, tar.gz, tar.bz2
+    pub fn archive(
+        &self,
+        reference: &str,
+        format: &str,
+        output_path: &Path,
+        prefix: Option<&str>,
+    ) -> Result<ArchiveResult> {
+        let mut args = vec!["archive"];
+
+        // Determine format and compression
+        let actual_format = match format {
+            "zip" => "zip",
+            "tar" => "tar",
+            "tar.gz" | "tgz" => "tar.gz",
+            "tar.bz2" | "tbz2" => "tar.bz2",
+            _ => {
+                return Err(AxisError::Other(format!(
+                    "Unsupported archive format: {}",
+                    format
+                )))
+            }
+        };
+
+        args.push("--format");
+        match actual_format {
+            "zip" => args.push("zip"),
+            "tar" | "tar.gz" | "tar.bz2" => args.push("tar"),
+            _ => {}
+        }
+
+        // Add prefix if specified
+        let prefix_arg;
+        if let Some(p) = prefix {
+            prefix_arg = format!("--prefix={}", p);
+            args.push(&prefix_arg);
+        }
+
+        args.push("-o");
+        let output_str = output_path.to_string_lossy();
+        args.push(&output_str);
+
+        args.push(reference);
+
+        // For tar.gz and tar.bz2, we need to pipe through compression
+        if actual_format == "tar.gz" || actual_format == "tar.bz2" {
+            // Create tar first, then compress
+            let temp_tar = output_path.with_extension("tar");
+            let temp_tar_str = temp_tar.to_string_lossy();
+            let prefix_arg_tar = prefix.map(|p| format!("--prefix={}", p));
+
+            let mut tar_args = vec!["archive", "--format", "tar"];
+            if let Some(ref pa) = prefix_arg_tar {
+                tar_args.push(pa);
+            }
+            tar_args.push("-o");
+            tar_args.push(&temp_tar_str);
+            tar_args.push(reference);
+
+            let result = self.execute(&tar_args)?;
+            if !result.success {
+                return Ok(ArchiveResult {
+                    success: false,
+                    message: format!("Failed to create archive: {}", result.stderr.trim()),
+                    output_path: None,
+                    size_bytes: None,
+                });
+            }
+
+            // Compress the tar file
+            let compress_result = if actual_format == "tar.gz" {
+                Command::new("gzip")
+                    .arg("-f")
+                    .arg(&temp_tar)
+                    .current_dir(&self.repo_path)
+                    .output()
+            } else {
+                Command::new("bzip2")
+                    .arg("-f")
+                    .arg(&temp_tar)
+                    .current_dir(&self.repo_path)
+                    .output()
+            };
+
+            match compress_result {
+                Ok(output) if output.status.success() => {
+                    // Rename compressed file to desired output
+                    let compressed_path = if actual_format == "tar.gz" {
+                        temp_tar.with_extension("tar.gz")
+                    } else {
+                        temp_tar.with_extension("tar.bz2")
+                    };
+
+                    if compressed_path != output_path {
+                        std::fs::rename(&compressed_path, output_path)
+                            .map_err(AxisError::IoError)?;
+                    }
+                }
+                Ok(output) => {
+                    // Clean up temp file
+                    let _ = std::fs::remove_file(&temp_tar);
+                    return Ok(ArchiveResult {
+                        success: false,
+                        message: format!(
+                            "Failed to compress archive: {}",
+                            String::from_utf8_lossy(&output.stderr)
+                        ),
+                        output_path: None,
+                        size_bytes: None,
+                    });
+                }
+                Err(e) => {
+                    // Clean up temp file
+                    let _ = std::fs::remove_file(&temp_tar);
+                    return Ok(ArchiveResult {
+                        success: false,
+                        message: format!("Compression tool not available: {}", e),
+                        output_path: None,
+                        size_bytes: None,
+                    });
+                }
+            }
+        } else {
+            let result = self.execute(&args)?;
+            if !result.success {
+                return Ok(ArchiveResult {
+                    success: false,
+                    message: format!("Failed to create archive: {}", result.stderr.trim()),
+                    output_path: None,
+                    size_bytes: None,
+                });
+            }
+        }
+
+        // Get file size
+        let size_bytes = std::fs::metadata(output_path).ok().map(|m| m.len());
+
+        Ok(ArchiveResult {
+            success: true,
+            message: format!("Archive created successfully"),
+            output_path: Some(output_path.to_string_lossy().to_string()),
+            size_bytes,
+        })
+    }
+
+    // ==================== Patch Operations ====================
+
+    /// Create patch files from commits using git format-patch
+    /// range can be: commit..commit, -n (last n commits), branch, etc.
+    pub fn format_patch(
+        &self,
+        range: &str,
+        output_dir: &Path,
+    ) -> Result<PatchResult> {
+        // Ensure output directory exists
+        if !output_dir.exists() {
+            std::fs::create_dir_all(output_dir).map_err(AxisError::IoError)?;
+        }
+
+        let output_str = output_dir.to_string_lossy();
+        let args = vec!["format-patch", "-o", &output_str, range];
+
+        let result = self.execute(&args)?;
+
+        if !result.success {
+            return Ok(PatchResult {
+                success: false,
+                message: format!("Failed to create patches: {}", result.stderr.trim()),
+                patches: Vec::new(),
+            });
+        }
+
+        // Parse output to get created patch files
+        let patches: Vec<String> = result
+            .stdout
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|line| line.to_string())
+            .collect();
+
+        Ok(PatchResult {
+            success: true,
+            message: format!("Created {} patch file(s)", patches.len()),
+            patches,
+        })
+    }
+
+    /// Create a single patch from staged changes or specific commit
+    pub fn create_patch_from_diff(
+        &self,
+        commit_oid: Option<&str>,
+        output_path: &Path,
+    ) -> Result<PatchResult> {
+        let args = match commit_oid {
+            Some(oid) => vec!["format-patch", "-1", "--stdout", oid],
+            None => vec!["diff", "--cached"],
+        };
+
+        let result = self.execute(&args)?;
+
+        if !result.success {
+            return Ok(PatchResult {
+                success: false,
+                message: format!("Failed to create patch: {}", result.stderr.trim()),
+                patches: Vec::new(),
+            });
+        }
+
+        if result.stdout.trim().is_empty() {
+            return Ok(PatchResult {
+                success: false,
+                message: "No changes to create patch from".to_string(),
+                patches: Vec::new(),
+            });
+        }
+
+        // Write patch to file
+        std::fs::write(output_path, &result.stdout).map_err(AxisError::IoError)?;
+
+        Ok(PatchResult {
+            success: true,
+            message: "Patch created successfully".to_string(),
+            patches: vec![output_path.to_string_lossy().to_string()],
+        })
+    }
+
+    /// Apply a patch file using git apply
+    pub fn apply_patch(
+        &self,
+        patch_path: &Path,
+        check_only: bool,
+        three_way: bool,
+    ) -> Result<PatchResult> {
+        let mut args = vec!["apply"];
+
+        if check_only {
+            args.push("--check");
+        }
+
+        if three_way {
+            args.push("--3way");
+        }
+
+        let path_str = patch_path.to_string_lossy();
+        args.push(&path_str);
+
+        let result = self.execute(&args)?;
+
+        if !result.success {
+            return Ok(PatchResult {
+                success: false,
+                message: format!("Failed to apply patch: {}", result.stderr.trim()),
+                patches: Vec::new(),
+            });
+        }
+
+        Ok(PatchResult {
+            success: true,
+            message: if check_only {
+                "Patch can be applied cleanly".to_string()
+            } else {
+                "Patch applied successfully".to_string()
+            },
+            patches: vec![patch_path.to_string_lossy().to_string()],
+        })
+    }
+
+    /// Apply patches using git am (mailbox format, creates commits)
+    pub fn apply_mailbox(
+        &self,
+        patch_paths: &[std::path::PathBuf],
+        three_way: bool,
+    ) -> Result<PatchResult> {
+        let mut args = vec!["am"];
+
+        if three_way {
+            args.push("--3way");
+        }
+
+        let path_strs: Vec<String> = patch_paths
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
+
+        for path_str in &path_strs {
+            args.push(path_str);
+        }
+
+        let result = self.execute(&args)?;
+
+        if !result.success {
+            return Ok(PatchResult {
+                success: false,
+                message: format!("Failed to apply patches: {}", result.stderr.trim()),
+                patches: Vec::new(),
+            });
+        }
+
+        Ok(PatchResult {
+            success: true,
+            message: format!("Applied {} patch(es) successfully", patch_paths.len()),
+            patches: path_strs,
+        })
+    }
+
+    /// Abort an in-progress git am session
+    pub fn am_abort(&self) -> Result<PatchResult> {
+        let result = self.execute(&["am", "--abort"])?;
+
+        Ok(PatchResult {
+            success: result.success,
+            message: if result.success {
+                "Patch application aborted".to_string()
+            } else {
+                result.stderr.trim().to_string()
+            },
+            patches: Vec::new(),
+        })
+    }
+
+    /// Continue git am after resolving conflicts
+    pub fn am_continue(&self) -> Result<PatchResult> {
+        let result = self.execute(&["am", "--continue"])?;
+
+        Ok(PatchResult {
+            success: result.success,
+            message: if result.success {
+                "Patch application continued".to_string()
+            } else {
+                result.stderr.trim().to_string()
+            },
+            patches: Vec::new(),
+        })
+    }
+
+    /// Skip the current patch in git am
+    pub fn am_skip(&self) -> Result<PatchResult> {
+        let result = self.execute(&["am", "--skip"])?;
+
+        Ok(PatchResult {
+            success: result.success,
+            message: if result.success {
+                "Patch skipped".to_string()
+            } else {
+                result.stderr.trim().to_string()
+            },
+            patches: Vec::new(),
+        })
     }
 }
 

@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
 import { open } from '@tauri-apps/plugin-dialog';
-import { X, FolderPlus, FolderOpen } from 'lucide-react';
+import { FolderPlus, FolderOpen } from 'lucide-react';
 import { repositoryApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useTabsStore } from '../../store/tabsStore';
-import { cn } from '../../lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  Alert,
+} from '@/components/ui';
 
 interface CloneDialogProps {
   open: boolean;
@@ -100,97 +110,75 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-110">
-          <Dialog.Title className="dialog-title">
-            <FolderPlus size={18} />
-            Clone Repository
-          </Dialog.Title>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-110">
+        <DialogTitle>
+          <FolderPlus size={18} />
+          Clone Repository
+        </DialogTitle>
 
-          <div className="dialog-body">
-            <div className="field">
-              <label htmlFor="clone-url" className="label">
-                Repository URL
-              </label>
-              <input
-                id="clone-url"
+        <DialogBody>
+          <FormField
+            label="Repository URL"
+            htmlFor="clone-url"
+            hint="HTTPS or SSH URL (e.g., git@github.com:user/repo.git)"
+          >
+            <Input
+              id="clone-url"
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="https://github.com/user/repo.git"
+              autoFocus
+            />
+          </FormField>
+
+          <FormField label="Destination" htmlFor="clone-path">
+            <div className="flex gap-2">
+              <Input
+                id="clone-path"
                 type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                value={path}
+                onChange={(e) => setPath(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="https://github.com/user/repo.git"
-                autoFocus
-                className="input"
+                placeholder="/path/to/clone"
+                className="flex-1"
               />
-              <p className="mt-1 text-xs text-(--text-tertiary)">
-                HTTPS or SSH URL (e.g., git@github.com:user/repo.git)
-              </p>
+              <Button variant="secondary" onClick={handleBrowse}>
+                <FolderOpen size={16} />
+              </Button>
             </div>
+          </FormField>
 
-            <div className="field">
-              <label htmlFor="clone-path" className="label">
-                Destination
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="clone-path"
-                  type="text"
-                  value={path}
-                  onChange={(e) => setPath(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="/path/to/clone"
-                  className={cn('input', 'flex-1')}
-                />
-                <button
-                  type="button"
-                  onClick={handleBrowse}
-                  className={cn(
-                    'btn',
-                    'shrink-0 bg-(--bg-secondary) border border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                  )}
-                >
-                  <FolderOpen size={16} />
-                </button>
-              </div>
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
+          )}
+
+          {isLoading && (
+            <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-[13px]">
+              Cloning repository... This may take a while for large repositories.
             </div>
+          )}
+        </DialogBody>
 
-            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-
-            {isLoading && (
-              <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-[13px]">
-                Cloning repository... This may take a while for large repositories.
-              </div>
-            )}
-          </div>
-
-          <div className="dialog-footer">
-            <Dialog.Close asChild>
-              <button className="btn btn-secondary" disabled={isLoading}>
-                Cancel
-              </button>
-            </Dialog.Close>
-            <button
-              className="btn btn-primary"
-              onClick={handleClone}
-              disabled={isLoading || !url.trim() || !path.trim()}
-            >
-              {isLoading ? 'Cloning...' : 'Clone'}
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button
-              className="btn-close absolute top-3 right-3"
-              aria-label="Close"
-              disabled={isLoading}
-            >
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={isLoading}>
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handleClone}
+            disabled={isLoading || !url.trim() || !path.trim()}
+          >
+            {isLoading ? 'Cloning...' : 'Clone'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui';
 import { grepApi } from '../../services/api';
 import type { GrepMatch, GrepResult } from '../../types';
 
@@ -137,16 +137,11 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
         {showOptions && (
           <div className="flex gap-4 py-2 px-1">
             <div className="flex items-center gap-1.5">
-              <Checkbox.Root
+              <Checkbox
                 id="ignore-case"
-                className="checkbox"
                 checked={ignoreCase}
                 onCheckedChange={(checked) => setIgnoreCase(checked === true)}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
+              />
               <label
                 htmlFor="ignore-case"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
@@ -155,16 +150,11 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
               </label>
             </div>
             <div className="flex items-center gap-1.5">
-              <Checkbox.Root
+              <Checkbox
                 id="whole-word"
-                className="checkbox"
                 checked={wordRegexp}
                 onCheckedChange={(checked) => setWordRegexp(checked === true)}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
+              />
               <label
                 htmlFor="whole-word"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
@@ -173,16 +163,11 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
               </label>
             </div>
             <div className="flex items-center gap-1.5">
-              <Checkbox.Root
+              <Checkbox
                 id="use-regex"
-                className="checkbox"
                 checked={useRegex}
                 onCheckedChange={(checked) => setUseRegex(checked === true)}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
+              />
               <label
                 htmlFor="use-regex"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"

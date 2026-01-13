@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
 import {
   GitBranch,
   Check,
@@ -14,6 +13,17 @@ import {
 } from 'lucide-react';
 import { gitflowApi } from '../../services/api';
 import type { GitFlowConfig, GitFlowResult, GitFlowBranchType } from '../../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+} from '@/components/ui';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -293,10 +303,10 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       {!isInitialized ? (
         <div className="flex flex-col items-center justify-center py-6 px-4 text-center text-(--text-secondary)">
           <p className="mb-4">Git Flow is not initialized in this repository.</p>
-          <button className="btn-icon btn-primary" onClick={() => setShowInitDialog(true)}>
+          <Button variant="primary" hasIcon onClick={() => setShowInitDialog(true)}>
             <Settings size={14} />
             Initialize Git Flow
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-2">
@@ -462,119 +472,88 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       )}
 
       {/* Initialize Dialog */}
-      <Dialog.Root open={showInitDialog} onOpenChange={setShowInitDialog}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-animated" />
-          <Dialog.Content className="dialog-content max-w-100">
-            <Dialog.Title className="dialog-title">
-              <Settings size={18} />
-              Initialize Git Flow
-            </Dialog.Title>
+      <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
+        <DialogContent className="max-w-100">
+          <DialogTitle>
+            <Settings size={18} />
+            Initialize Git Flow
+          </DialogTitle>
 
-            <div className="dialog-body">
-              <div className="field">
-                <label htmlFor="init-master" className="label">
-                  Production branch
-                </label>
-                <input
-                  id="init-master"
-                  type="text"
-                  value={initMaster}
-                  onChange={(e) => setInitMaster(e.target.value)}
-                  placeholder="main"
-                  className="input"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="init-develop" className="label">
-                  Development branch
-                </label>
-                <input
-                  id="init-develop"
-                  type="text"
-                  value={initDevelop}
-                  onChange={(e) => setInitDevelop(e.target.value)}
-                  placeholder="develop"
-                  className="input"
-                />
-              </div>
-            </div>
+          <DialogBody>
+            <FormField label="Production branch" htmlFor="init-master">
+              <Input
+                id="init-master"
+                type="text"
+                value={initMaster}
+                onChange={(e) => setInitMaster(e.target.value)}
+                placeholder="main"
+              />
+            </FormField>
+            <FormField label="Development branch" htmlFor="init-develop">
+              <Input
+                id="init-develop"
+                type="text"
+                value={initDevelop}
+                onChange={(e) => setInitDevelop(e.target.value)}
+                placeholder="develop"
+              />
+            </FormField>
+          </DialogBody>
 
-            <div className="dialog-footer">
-              <Dialog.Close asChild>
-                <button className="btn btn-secondary" disabled={isLoading}>
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button className="btn btn-primary" onClick={handleInit} disabled={isLoading}>
-                {isLoading ? 'Initializing...' : 'Initialize'}
-              </button>
-            </div>
-
-            <Dialog.Close asChild>
-              <button className="btn-close absolute top-3 right-3" aria-label="Close">
-                <X size={16} />
-              </button>
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button variant="primary" onClick={handleInit} disabled={isLoading}>
+              {isLoading ? 'Initializing...' : 'Initialize'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Start Branch Dialog */}
-      <Dialog.Root open={showStartDialog} onOpenChange={setShowStartDialog}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-animated" />
-          <Dialog.Content className="dialog-content max-w-100">
-            <Dialog.Title className="dialog-title">
-              {getTypeIcon(startType)}
-              Start {getTypeLabel(startType)}
-            </Dialog.Title>
+      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+        <DialogContent className="max-w-100">
+          <DialogTitle>
+            {getTypeIcon(startType)}
+            Start {getTypeLabel(startType)}
+          </DialogTitle>
 
-            <div className="dialog-body">
-              <div className="field">
-                <label htmlFor="branch-name" className="label">
-                  {getTypeLabel(startType)} name
-                </label>
-                <input
-                  id="branch-name"
-                  type="text"
-                  value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
-                  placeholder={startType === 'release' ? '1.0.0' : 'my-feature'}
-                  autoFocus
-                  className="input"
-                />
-                <p className="mt-1 text-xs text-(--text-muted)">
-                  Branch will be created as:{' '}
-                  {config?.[`${startType}_prefix` as keyof GitFlowConfig]}
-                  {branchName || '...'}
-                </p>
-              </div>
-            </div>
+          <DialogBody>
+            <FormField
+              label={`${getTypeLabel(startType)} name`}
+              htmlFor="branch-name"
+              hint={`Branch will be created as: ${config?.[`${startType}_prefix` as keyof GitFlowConfig]}${branchName || '...'}`}
+            >
+              <Input
+                id="branch-name"
+                type="text"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                placeholder={startType === 'release' ? '1.0.0' : 'my-feature'}
+                autoFocus
+              />
+            </FormField>
+          </DialogBody>
 
-            <div className="dialog-footer">
-              <Dialog.Close asChild>
-                <button className="btn btn-secondary" disabled={isLoading}>
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                className="btn btn-primary"
-                onClick={handleStart}
-                disabled={isLoading || !branchName.trim()}
-              >
-                {isLoading ? 'Starting...' : `Start ${getTypeLabel(startType)}`}
-              </button>
-            </div>
-
-            <Dialog.Close asChild>
-              <button className="btn-close absolute top-3 right-3" aria-label="Close">
-                <X size={16} />
-              </button>
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="primary"
+              onClick={handleStart}
+              disabled={isLoading || !branchName.trim()}
+            >
+              {isLoading ? 'Starting...' : `Start ${getTypeLabel(startType)}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,7 +11,14 @@ import {
   Check,
   Image,
 } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
 import { cn } from '../../lib/utils';
 import { diffApi } from '../../services/api';
@@ -471,84 +478,75 @@ function DiffHeader({
       </div>
 
       {/* Diff Settings Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button" title="Diff options">
             <span>Context: {diffSettings.contextLines}</span>
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="end" sideOffset={4}>
-            {/* External Diff */}
-            <DropdownMenu.Item className="dropdown-item" disabled>
-              <span className="flex-1">External Diff</span>
-              <span className="text-[11px] text-(--text-tertiary)">⌘D</span>
-            </DropdownMenu.Item>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {/* External Diff */}
+          <DropdownMenuItem disabled>
+            <span className="flex-1">External Diff</span>
+            <span className="text-[11px] text-(--text-tertiary)">⌘D</span>
+          </DropdownMenuItem>
 
-            <DropdownMenu.Separator className="dropdown-separator" />
+          <DropdownMenuSeparator />
 
-            {/* Whitespace */}
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })}
+          {/* Whitespace */}
+          <DropdownMenuItem
+            onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })}
+          >
+            {diffSettings.whitespace === 'show' && <Check size={12} className="absolute left-2" />}
+            Show whitespace
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })}
+          >
+            {diffSettings.whitespace === 'ignore' && (
+              <Check size={12} className="absolute left-2" />
+            )}
+            Ignore whitespace
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          {/* Lines of Context */}
+          <DropdownMenuLabel>Lines of context</DropdownMenuLabel>
+          {contextLineOptions.map((lines) => (
+            <DropdownMenuItem
+              key={lines}
+              onSelect={() => onDiffSettingsChange({ ...diffSettings, contextLines: lines })}
             >
-              {diffSettings.whitespace === 'show' && (
+              {diffSettings.contextLines === lines && (
                 <Check size={12} className="absolute left-2" />
               )}
-              Show whitespace
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })}
-            >
-              {diffSettings.whitespace === 'ignore' && (
-                <Check size={12} className="absolute left-2" />
-              )}
-              Ignore whitespace
-            </DropdownMenu.Item>
+              {lines}
+            </DropdownMenuItem>
+          ))}
 
-            <DropdownMenu.Separator className="dropdown-separator" />
+          <DropdownMenuSeparator />
 
-            {/* Lines of Context */}
-            <DropdownMenu.Label className="dropdown-label">Lines of context</DropdownMenu.Label>
-            {contextLineOptions.map((lines) => (
-              <DropdownMenu.Item
-                key={lines}
-                className="dropdown-item"
-                onSelect={() => onDiffSettingsChange({ ...diffSettings, contextLines: lines })}
-              >
-                {diffSettings.contextLines === lines && (
-                  <Check size={12} className="absolute left-2" />
-                )}
-                {lines}
-              </DropdownMenu.Item>
-            ))}
-
-            <DropdownMenu.Separator className="dropdown-separator" />
-
-            {/* Diff Compare Mode */}
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })}
-            >
-              {diffSettings.compareMode === 'parent' && (
-                <Check size={12} className="absolute left-2" />
-              )}
-              Diff vs parent
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })}
-            >
-              {diffSettings.compareMode === 'merged' && (
-                <Check size={12} className="absolute left-2" />
-              )}
-              Diff vs merged
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+          {/* Diff Compare Mode */}
+          <DropdownMenuItem
+            onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })}
+          >
+            {diffSettings.compareMode === 'parent' && (
+              <Check size={12} className="absolute left-2" />
+            )}
+            Diff vs parent
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })}
+          >
+            {diffSettings.compareMode === 'merged' && (
+              <Check size={12} className="absolute left-2" />
+            )}
+            Diff vs merged
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="flex border border-(--border-color) rounded overflow-hidden">
         <button

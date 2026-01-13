@@ -1,9 +1,20 @@
 import { useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, Check, Archive } from 'lucide-react';
+import { Archive } from 'lucide-react';
 import { stashApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface StashDialogProps {
   open: boolean;
@@ -56,70 +67,52 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-105">
-          <Dialog.Title className="dialog-title">
-            <Archive size={18} />
-            Stash Changes
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogTitle>
+          <Archive size={18} />
+          Stash Changes
+        </DialogTitle>
 
-          <div className="dialog-body">
-            <p className="text-[13px] text-(--text-secondary) mb-4">
-              This will stash all the changes in your working copy and return it to a clean state.
-            </p>
+        <DialogBody>
+          <p className="text-[13px] text-(--text-secondary) mb-4">
+            This will stash all the changes in your working copy and return it to a clean state.
+          </p>
 
-            <div className="field">
-              <label htmlFor="stash-message" className="label">
-                Message (optional)
-              </label>
-              <input
-                id="stash-message"
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Optional stash message..."
-                className="input"
-                autoFocus
-              />
-            </div>
+          <FormField label="Message (optional)" htmlFor="stash-message">
+            <Input
+              id="stash-message"
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Optional stash message..."
+              autoFocus
+            />
+          </FormField>
 
-            <div className="checkbox-field">
-              <Checkbox.Root
-                id="keep-staged"
-                className="checkbox"
-                checked={keepStaged}
-                onCheckedChange={(checked) => setKeepStaged(checked === true)}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
-              <label htmlFor="keep-staged" className="checkbox-label">
-                Keep staged changes
-              </label>
-            </div>
+          <CheckboxField
+            id="keep-staged"
+            label="Keep staged changes"
+            checked={keepStaged}
+            onCheckedChange={setKeepStaged}
+          />
 
-            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-          </div>
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
+          )}
+        </DialogBody>
 
-          <div className="dialog-footer">
-            <Dialog.Close asChild>
-              <button className="btn btn-secondary">Cancel</button>
-            </Dialog.Close>
-            <button className="btn btn-primary" onClick={handleStash} disabled={isLoading}>
-              {isLoading ? 'Stashing...' : 'Stash'}
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button variant="primary" onClick={handleStash} disabled={isLoading}>
+            {isLoading ? 'Stashing...' : 'Stash'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

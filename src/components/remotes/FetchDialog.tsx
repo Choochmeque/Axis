@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, RefreshCw, Check } from 'lucide-react';
+import { RefreshCw, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote, FetchResult } from '../../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Select,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface FetchDialogProps {
   open: boolean;
@@ -73,127 +84,100 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleClose}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-120">
-          <Dialog.Title className="dialog-title">
-            <RefreshCw size={18} />
-            Fetch from Remote
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-120">
+        <DialogTitle>
+          <RefreshCw size={18} />
+          Fetch from Remote
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {result ? (
-              <div>
-                <div className="alert alert-success mb-4">
-                  <Check size={16} />
-                  Fetch completed successfully
-                </div>
-                {result.map((r) => (
-                  <div key={r.remote} className="p-3 bg-(--bg-secondary) rounded mb-2 last:mb-0">
-                    <strong className="block mb-1 text-(--text-primary)">{r.remote}</strong>
-                    <div className="text-xs text-(--text-secondary)">
-                      {r.stats.received_objects > 0 ? (
-                        <span>
-                          Received {r.stats.received_objects} objects (
-                          {formatBytes(r.stats.received_bytes)})
-                        </span>
-                      ) : (
-                        <span>Already up to date</span>
-                      )}
-                    </div>
+        <DialogBody>
+          {result ? (
+            <div>
+              <Alert variant="success" className="mb-4">
+                <Check size={16} />
+                Fetch completed successfully
+              </Alert>
+              {result.map((r) => (
+                <div key={r.remote} className="p-3 bg-(--bg-secondary) rounded mb-2 last:mb-0">
+                  <strong className="block mb-1 text-(--text-primary)">{r.remote}</strong>
+                  <div className="text-xs text-(--text-secondary)">
+                    {r.stats.received_objects > 0 ? (
+                      <span>
+                        Received {r.stats.received_objects} objects (
+                        {formatBytes(r.stats.received_bytes)})
+                      </span>
+                    ) : (
+                      <span>Already up to date</span>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="fetch-all"
-                    className="checkbox"
-                    checked={fetchAll}
-                    onCheckedChange={(checked) => setFetchAll(checked === true)}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="fetch-all" className="checkbox-label">
-                    Fetch from all remotes
-                  </label>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <CheckboxField
+                id="fetch-all"
+                label="Fetch from all remotes"
+                checked={fetchAll}
+                onCheckedChange={setFetchAll}
+              />
 
-                {!fetchAll && (
-                  <div className="field">
-                    <label htmlFor="remote-select" className="label">
-                      Remote
-                    </label>
-                    <select
-                      id="remote-select"
-                      value={selectedRemote}
-                      onChange={(e) => setSelectedRemote(e.target.value)}
-                      disabled={remotes.length === 0}
-                      className="input"
-                    >
-                      {remotes.map((remote) => (
-                        <option key={remote.name} value={remote.name}>
-                          {remote.name} ({remote.url})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="prune"
-                    className="checkbox"
-                    checked={prune}
-                    onCheckedChange={(checked) => setPrune(checked === true)}
+              {!fetchAll && (
+                <FormField label="Remote" htmlFor="remote-select">
+                  <Select
+                    id="remote-select"
+                    value={selectedRemote}
+                    onChange={(e) => setSelectedRemote(e.target.value)}
+                    disabled={remotes.length === 0}
                   >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="prune" className="checkbox-label">
-                    Prune deleted remote branches
-                  </label>
-                </div>
+                    {remotes.map((remote) => (
+                      <option key={remote.name} value={remote.name}>
+                        {remote.name} ({remote.url})
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
 
-                {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-              </>
-            )}
-          </div>
+              <CheckboxField
+                id="prune"
+                label="Prune deleted remote branches"
+                checked={prune}
+                onCheckedChange={setPrune}
+              />
 
-          <div className="dialog-footer">
-            {result ? (
-              <button className="btn btn-primary" onClick={handleClose}>
-                Done
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn btn-secondary">Cancel</button>
-                </Dialog.Close>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleFetch}
-                  disabled={isLoading || (!fetchAll && !selectedRemote)}
-                >
-                  {isLoading ? 'Fetching...' : 'Fetch'}
-                </button>
-              </>
-            )}
-          </div>
+              {error && (
+                <Alert variant="error" inline className="mt-3">
+                  {error}
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogBody>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          {result ? (
+            <Button variant="primary" onClick={handleClose}>
+              Done
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handleFetch}
+                disabled={isLoading || (!fetchAll && !selectedRemote)}
+              >
+                {isLoading ? 'Fetching...' : 'Fetch'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

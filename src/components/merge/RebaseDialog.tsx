@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import { GitBranch, X, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { GitBranch, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { rebaseApi, branchApi } from '../../services/api';
 import type { Branch, Commit, RebasePreview, RebaseResult } from '../../types';
-import { cn } from '../../lib/utils';
 import { RebasePreviewDiagram } from './RebasePreviewDiagram';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Select,
+  Label,
+  Alert,
+} from '@/components/ui';
 
 interface RebaseDialogProps {
   isOpen: boolean;
@@ -152,175 +163,150 @@ export function RebaseDialog({
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-125">
-          <Dialog.Title className="dialog-title">
-            <GitBranch size={18} />
-            Rebase Branch
-          </Dialog.Title>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-125">
+        <DialogTitle>
+          <GitBranch size={18} />
+          Rebase Branch
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {error && (
-              <div className="alert alert-error mb-4">
-                <AlertCircle size={16} />
-                <span>{error}</span>
-              </div>
-            )}
+        <DialogBody>
+          {error && (
+            <Alert variant="error" className="mb-4">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </Alert>
+          )}
 
-            {result && (
-              <div className={cn('alert mb-4', result.success ? 'alert-success' : 'alert-warning')}>
-                {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
-                <span>{result.message}</span>
-              </div>
-            )}
+          {result && (
+            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
+              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+              <span>{result.message}</span>
+            </Alert>
+          )}
 
-            {!result && (
-              <>
+          {!result && (
+            <>
+              <FormField label="Current Branch">
+                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
+                  {currentBranch}
+                </div>
+              </FormField>
+
+              {targetCommit ? (
                 <div className="field">
-                  <label className="label">Current Branch</label>
-                  <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
-                    {currentBranch}
+                  <Label>Rebase Onto Commit</Label>
+                  <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
+                    <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
+                      {targetCommit.short_oid}
+                    </span>
+                    <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+                      {targetCommit.summary}
+                    </span>
                   </div>
                 </div>
+              ) : (
+                <FormField label="Rebase Onto" htmlFor="rebase-branch">
+                  <Select
+                    id="rebase-branch"
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    disabled={isLoading}
+                  >
+                    <option value="">Select a branch...</option>
+                    {branches.map((branch) => (
+                      <option key={branch.full_name} value={branch.name}>
+                        {branch.name}
+                        {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
 
-                {targetCommit ? (
-                  <div className="field">
-                    <label className="label">Rebase Onto Commit</label>
-                    <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
-                      <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
-                        {targetCommit.short_oid}
-                      </span>
-                      <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
-                        {targetCommit.summary}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="field">
-                    <label htmlFor="rebase-branch" className="label">
-                      Rebase Onto
-                    </label>
-                    <select
-                      id="rebase-branch"
-                      value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
-                      disabled={isLoading}
-                      className="input"
-                    >
-                      <option value="">Select a branch...</option>
-                      {branches.map((branch) => (
-                        <option key={branch.full_name} value={branch.name}>
-                          {branch.name}
-                          {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {isLoadingPreview && (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 size={16} className="animate-spin text-(--text-secondary)" />
-                    <span className="ml-2 text-sm text-(--text-secondary)">Loading preview...</span>
-                  </div>
-                )}
-
-                {preview && !isLoadingPreview && (
-                  <RebasePreviewDiagram preview={preview} currentBranch={currentBranch} />
-                )}
-
-                <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
-                  <p className="m-0 mb-2">
-                    This will replay all commits from{' '}
-                    <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
-                    top of{' '}
-                    <strong className="text-(--text-primary) font-mono">
-                      {targetCommit ? targetCommit.short_oid : selectedBranch || '...'}
-                    </strong>
-                    .
-                  </p>
-                  <p className="m-0 text-xs text-warning">
-                    Warning: Rebase rewrites commit history. Only rebase commits that haven't been
-                    pushed to a shared repository.
-                  </p>
+              {isLoadingPreview && (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 size={16} className="animate-spin text-(--text-secondary)" />
+                  <span className="ml-2 text-sm text-(--text-secondary)">Loading preview...</span>
                 </div>
-              </>
-            )}
+              )}
 
-            {result && result.conflicts.length > 0 && (
-              <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-                <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
-                  Conflicted Files
-                </h4>
-                <ul className="m-0 p-0 list-none">
-                  {result.conflicts.map((conflict) => (
-                    <li
-                      key={conflict.path}
-                      className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
-                    >
-                      {conflict.path}
-                    </li>
-                  ))}
-                </ul>
+              {preview && !isLoadingPreview && (
+                <RebasePreviewDiagram preview={preview} currentBranch={currentBranch} />
+              )}
+
+              <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
+                <p className="m-0 mb-2">
+                  This will replay all commits from{' '}
+                  <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
+                  top of{' '}
+                  <strong className="text-(--text-primary) font-mono">
+                    {targetCommit ? targetCommit.short_oid : selectedBranch || '...'}
+                  </strong>
+                  .
+                </p>
+                <p className="m-0 text-xs text-warning">
+                  Warning: Rebase rewrites commit history. Only rebase commits that haven't been
+                  pushed to a shared repository.
+                </p>
               </div>
-            )}
-          </div>
+            </>
+          )}
 
-          <div className="dialog-footer">
-            {result && !result.success ? (
-              <>
-                <button
-                  className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
-                  onClick={handleAbort}
-                >
-                  Abort Rebase
-                </button>
-                <button
-                  className="btn-icon btn-secondary"
-                  onClick={handleSkip}
-                  disabled={isLoading}
-                >
-                  Skip Commit
-                </button>
-                <button
-                  className="btn-icon btn-primary"
-                  onClick={handleContinue}
-                  disabled={isLoading}
-                >
-                  Continue
-                </button>
-              </>
-            ) : result && result.success ? (
-              <button className="btn-icon btn-primary" onClick={onClose}>
-                Close
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn-icon btn-secondary" disabled={isLoading}>
-                    Cancel
-                  </button>
-                </Dialog.Close>
-                <button
-                  className="btn-icon btn-primary"
-                  onClick={handleRebase}
-                  disabled={isLoading || (!targetCommit && !selectedBranch)}
-                >
-                  {isLoading ? 'Rebasing...' : 'Rebase'}
-                </button>
-              </>
-            )}
-          </div>
+          {result && result.conflicts.length > 0 && (
+            <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
+              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+                Conflicted Files
+              </h4>
+              <ul className="m-0 p-0 list-none">
+                {result.conflicts.map((conflict) => (
+                  <li
+                    key={conflict.path}
+                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                  >
+                    {conflict.path}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </DialogBody>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          {result && !result.success ? (
+            <>
+              <Button variant="destructive" onClick={handleAbort}>
+                Abort Rebase
+              </Button>
+              <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
+                Skip Commit
+              </Button>
+              <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
+                Continue
+              </Button>
+            </>
+          ) : result && result.success ? (
+            <Button variant="primary" onClick={onClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary" disabled={isLoading}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handleRebase}
+                disabled={isLoading || (!targetCommit && !selectedBranch)}
+              >
+                {isLoading ? 'Rebasing...' : 'Rebase'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

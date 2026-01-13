@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { TreeView, buildTreeFromPaths } from '@/components/ui';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
@@ -30,144 +31,79 @@ import { tagApi, remoteApi, branchApi } from '../../services/api';
 const sidebarItemClass =
   'flex items-center gap-2 w-full py-1.5 pr-3 pl-10 text-[13px] cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)';
 
-// Tree node for hierarchical display
-interface TreeNode {
-  name: string;
-  fullPath: string;
-  isLeaf: boolean;
-  branch?: Branch;
-  children: Map<string, TreeNode>;
-}
-
-function buildTree(branches: Branch[]): Map<string, TreeNode> {
-  const root = new Map<string, TreeNode>();
-
-  for (const branch of branches) {
-    const parts = branch.name.split('/');
-    let currentLevel = root;
-    let currentPath = '';
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
-      const isLast = i === parts.length - 1;
-
-      if (!currentLevel.has(part)) {
-        currentLevel.set(part, {
-          name: part,
-          fullPath: currentPath,
-          isLeaf: isLast,
-          branch: isLast ? branch : undefined,
-          children: new Map(),
-        });
-      } else if (isLast) {
-        const node = currentLevel.get(part)!;
-        node.isLeaf = true;
-        node.branch = branch;
-      }
-
-      currentLevel = currentLevel.get(part)!.children;
-    }
-  }
-
-  return root;
-}
-
-interface TreeNodeViewProps {
-  node: TreeNode;
-  depth: number;
-  onBranchClick?: (targetOid: string) => void;
-}
-
-function TreeNodeView({ node, depth, onBranchClick }: TreeNodeViewProps) {
-  const [expanded, setExpanded] = useState(depth < 1);
-  const hasChildren = node.children.size > 0;
-  const paddingLeft = 24 + depth * 16;
-
-  if (node.isLeaf && !hasChildren && node.branch) {
-    return (
-      <RemoteBranchContextMenu branch={node.branch}>
-        <button
-          className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
-          style={{ paddingLeft }}
-          onClick={() => onBranchClick?.(node.branch!.target_oid)}
-        >
-          <span className="w-3 shrink-0" /> {/* Spacer to align with folder chevrons */}
-          <GitBranch size={12} />
-          <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-            {node.name}
-          </span>
-        </button>
-      </RemoteBranchContextMenu>
-    );
-  }
-
-  const sortedChildren = Array.from(node.children.values()).sort((a, b) => {
-    // Folders first, then alphabetically
-    const aIsFolder = a.children.size > 0 || !a.isLeaf;
-    const bIsFolder = b.children.size > 0 || !b.isLeaf;
-    if (aIsFolder && !bIsFolder) return -1;
-    if (!aIsFolder && bIsFolder) return 1;
-    return naturalCompare(a.name, b.name);
-  });
-
-  return (
-    <div className="flex flex-col">
-      <button
-        className={cn(
-          sidebarItemClass,
-          '[&>svg:first-child]:shrink-0 [&>svg:first-child]:opacity-70'
-        )}
-        style={{ paddingLeft }}
-        onClick={() => setExpanded(!expanded)}
-      >
-        {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <Folder size={12} />
-        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{node.name}</span>
-        {!expanded && node.children.size > 0 && (
-          <span className={cn('badge', 'rounded-lg font-medium text-(--text-secondary) ml-auto')}>
-            {node.children.size}
-          </span>
-        )}
-      </button>
-      {expanded && (
-        <div className="flex flex-col">
-          {sortedChildren.map((child) => (
-            <TreeNodeView
-              key={child.fullPath}
-              node={child}
-              depth={depth + 1}
-              onBranchClick={onBranchClick}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
+// Remote branches tree using UI TreeView
 interface RemoteTreeProps {
   branches: Branch[];
   onBranchClick?: (targetOid: string) => void;
 }
 
 function RemoteTree({ branches, onBranchClick }: RemoteTreeProps) {
-  const tree = useMemo(() => buildTree(branches), [branches]);
-
-  const sortedNodes = Array.from(tree.values()).sort((a, b) => {
-    const aIsFolder = a.children.size > 0;
-    const bIsFolder = b.children.size > 0;
-    if (aIsFolder && !bIsFolder) return -1;
-    if (!aIsFolder && bIsFolder) return 1;
-    return naturalCompare(a.name, b.name);
-  });
+  const treeData = useMemo(
+    () =>
+      buildTreeFromPaths(
+        branches,
+        (b) => b.name,
+        (b) => b.name
+      ),
+    [branches]
+  );
 
   return (
-    <>
-      {sortedNodes.map((node) => (
-        <TreeNodeView key={node.fullPath} node={node} depth={0} onBranchClick={onBranchClick} />
-      ))}
-    </>
+    <TreeView<Branch>
+      data={treeData}
+      defaultExpandAll={false}
+      renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+        const paddingLeft = 24 + depth * 16;
+
+        // Folder node
+        if (node.children && node.children.length > 0) {
+          return (
+            <button
+              className={cn(
+                sidebarItemClass,
+                '[&>svg:first-child]:shrink-0 [&>svg:first-child]:opacity-70'
+              )}
+              style={{ paddingLeft }}
+              onClick={toggleExpand}
+            >
+              {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <Folder size={12} />
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                {node.name}
+              </span>
+              {!isExpanded && (
+                <span
+                  className={cn('badge', 'rounded-lg font-medium text-(--text-secondary) ml-auto')}
+                >
+                  {node.children.length}
+                </span>
+              )}
+            </button>
+          );
+        }
+
+        // Branch leaf node
+        if (node.data) {
+          return (
+            <RemoteBranchContextMenu branch={node.data}>
+              <button
+                className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
+                style={{ paddingLeft }}
+                onClick={() => onBranchClick?.(node.data!.target_oid)}
+              >
+                <span className="w-3 shrink-0" />
+                <GitBranch size={12} />
+                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {node.name}
+                </span>
+              </button>
+            </RemoteBranchContextMenu>
+          );
+        }
+
+        return null;
+      }}
+    />
   );
 }
 

@@ -1,5 +1,12 @@
 import { ChevronDown, Check } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { cn } from '../../lib/utils';
 import type { BranchFilterType, SortOrder } from '../../types';
@@ -39,102 +46,83 @@ export function HistoryFilters() {
   return (
     <div className="flex items-center gap-2 py-1.5 px-3 border-b border-(--border-color) bg-(--bg-secondary)">
       {/* Branch Filter Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
             <span>{getBranchFilterLabel()}</span>
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => handleBranchFilterChange('all')}
-            >
-              {branchFilter === 'all' && <Check size={12} className="absolute left-2" />}
-              All Branches
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => handleBranchFilterChange('current')}
-            >
-              {branchFilter === 'current' && <Check size={12} className="absolute left-2" />}
-              Current Branch
-            </DropdownMenu.Item>
-            {localBranches.length > 0 && (
-              <>
-                <DropdownMenu.Separator className="dropdown-separator" />
-                <DropdownMenu.Label className="dropdown-label">Branches</DropdownMenu.Label>
-                {localBranches.map((branch) => (
-                  <DropdownMenu.Item
-                    key={branch.name}
-                    className="dropdown-item"
-                    onSelect={() => handleBranchFilterChange({ specific: branch.name })}
-                  >
-                    {typeof branchFilter === 'object' &&
-                      'specific' in branchFilter &&
-                      branchFilter.specific === branch.name && (
-                        <Check size={12} className="absolute left-2" />
-                      )}
-                    <span className={cn(branch.is_head && 'font-semibold')}>{branch.name}</span>
-                  </DropdownMenu.Item>
-                ))}
-              </>
-            )}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => handleBranchFilterChange('all')}>
+            {branchFilter === 'all' && <Check size={12} className="absolute left-2" />}
+            All Branches
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => handleBranchFilterChange('current')}>
+            {branchFilter === 'current' && <Check size={12} className="absolute left-2" />}
+            Current Branch
+          </DropdownMenuItem>
+          {localBranches.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Branches</DropdownMenuLabel>
+              {localBranches.map((branch) => (
+                <DropdownMenuItem
+                  key={branch.name}
+                  onSelect={() => handleBranchFilterChange({ specific: branch.name })}
+                >
+                  {typeof branchFilter === 'object' &&
+                    'specific' in branchFilter &&
+                    branchFilter.specific === branch.name && (
+                      <Check size={12} className="absolute left-2" />
+                    )}
+                  <span className={cn(branch.is_head && 'font-semibold')}>{branch.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Remote Branches Toggle */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
             <span>{includeRemotes ? 'Show Remote Branches' : 'Hide Remote Branches'}</span>
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
-            <DropdownMenu.Item className="dropdown-item" onSelect={() => setIncludeRemotes(true)}>
-              {includeRemotes && <Check size={12} className="absolute left-2" />}
-              Show Remote Branches
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="dropdown-item" onSelect={() => setIncludeRemotes(false)}>
-              {!includeRemotes && <Check size={12} className="absolute left-2" />}
-              Hide Remote Branches
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => setIncludeRemotes(true)}>
+            {includeRemotes && <Check size={12} className="absolute left-2" />}
+            Show Remote Branches
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setIncludeRemotes(false)}>
+            {!includeRemotes && <Check size={12} className="absolute left-2" />}
+            Hide Remote Branches
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Sort Order Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
             <span>{sortOrder === 'date_order' ? 'Date Order' : 'Ancestor Order'}</span>
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => handleSortOrderChange('date_order')}
-            >
-              {sortOrder === 'date_order' && <Check size={12} className="absolute left-2" />}
-              Date Order
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => handleSortOrderChange('ancestor_order')}
-            >
-              {sortOrder === 'ancestor_order' && <Check size={12} className="absolute left-2" />}
-              Ancestor Order
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => handleSortOrderChange('date_order')}>
+            {sortOrder === 'date_order' && <Check size={12} className="absolute left-2" />}
+            Date Order
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => handleSortOrderChange('ancestor_order')}>
+            {sortOrder === 'ancestor_order' && <Check size={12} className="absolute left-2" />}
+            Ancestor Order
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, ArrowUpFromLine, Check } from 'lucide-react';
+import { ArrowUpFromLine, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote, PushResult } from '../../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Select,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface PushDialogProps {
   open: boolean;
@@ -81,144 +92,113 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleClose}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-120">
-          <Dialog.Title className="dialog-title">
-            <ArrowUpFromLine size={18} />
-            Push to Remote
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-120">
+        <DialogTitle>
+          <ArrowUpFromLine size={18} />
+          Push to Remote
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {result ? (
-              <div>
-                <div className="alert alert-success mb-4">
-                  <Check size={16} />
-                  Push completed successfully
-                </div>
-                <div className="p-3 bg-(--bg-secondary) rounded">
-                  <strong className="block mb-1 text-(--text-primary)">
-                    Pushed to {result.remote}
-                  </strong>
-                  <div className="text-xs text-(--text-secondary)">
-                    Branch: {currentBranch?.name}
-                  </div>
-                </div>
+        <DialogBody>
+          {result ? (
+            <div>
+              <Alert variant="success" className="mb-4">
+                <Check size={16} />
+                Push completed successfully
+              </Alert>
+              <div className="p-3 bg-(--bg-secondary) rounded">
+                <strong className="block mb-1 text-(--text-primary)">
+                  Pushed to {result.remote}
+                </strong>
+                <div className="text-xs text-(--text-secondary)">Branch: {currentBranch?.name}</div>
               </div>
-            ) : (
-              <>
-                {currentBranch && (
-                  <div className="dialog-info-box">
+            </div>
+          ) : (
+            <>
+              {currentBranch && (
+                <div className="dialog-info-box">
+                  <div className="flex justify-between text-[13px] py-1">
+                    <span className="text-(--text-secondary)">Current branch:</span>
+                    <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
+                  </div>
+                  {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
                     <div className="flex justify-between text-[13px] py-1">
-                      <span className="text-(--text-secondary)">Current branch:</span>
+                      <span className="text-(--text-secondary)">Commits ahead:</span>
                       <span className="text-(--text-primary) font-medium">
-                        {currentBranch.name}
+                        {currentBranch.ahead}
                       </span>
                     </div>
-                    {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
-                      <div className="flex justify-between text-[13px] py-1">
-                        <span className="text-(--text-secondary)">Commits ahead:</span>
-                        <span className="text-(--text-primary) font-medium">
-                          {currentBranch.ahead}
-                        </span>
-                      </div>
-                    )}
-                    {currentBranch.upstream && (
-                      <div className="flex justify-between text-[13px] py-1">
-                        <span className="text-(--text-secondary)">Upstream:</span>
-                        <span className="text-(--text-primary) font-medium">
-                          {currentBranch.upstream}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="field">
-                  <label htmlFor="remote-select" className="label">
-                    Push to Remote
-                  </label>
-                  <select
-                    id="remote-select"
-                    value={selectedRemote}
-                    onChange={(e) => setSelectedRemote(e.target.value)}
-                    disabled={remotes.length === 0}
-                    className="input"
-                  >
-                    {remotes.map((remote) => (
-                      <option key={remote.name} value={remote.name}>
-                        {remote.name}
-                      </option>
-                    ))}
-                  </select>
+                  )}
+                  {currentBranch.upstream && (
+                    <div className="flex justify-between text-[13px] py-1">
+                      <span className="text-(--text-secondary)">Upstream:</span>
+                      <span className="text-(--text-primary) font-medium">
+                        {currentBranch.upstream}
+                      </span>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="set-upstream"
-                    className="checkbox"
-                    checked={setUpstream}
-                    onCheckedChange={(checked) => setSetUpstream(checked === true)}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="set-upstream" className="checkbox-label">
-                    Set as upstream tracking branch
-                  </label>
-                </div>
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="force-push"
-                    className="checkbox"
-                    checked={force}
-                    onCheckedChange={(checked) => setForce(checked === true)}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="force-push" className="checkbox-label">
-                    Force push (overwrites remote changes)
-                  </label>
-                </div>
-
-                {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-              </>
-            )}
-          </div>
-
-          <div className="dialog-footer">
-            {result ? (
-              <button className="btn btn-primary" onClick={handleClose}>
-                Done
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn btn-secondary">Cancel</button>
-                </Dialog.Close>
-                <button
-                  className="btn btn-primary"
-                  onClick={handlePush}
-                  disabled={isLoading || !selectedRemote || !currentBranch}
+              <FormField label="Push to Remote" htmlFor="remote-select">
+                <Select
+                  id="remote-select"
+                  value={selectedRemote}
+                  onChange={(e) => setSelectedRemote(e.target.value)}
+                  disabled={remotes.length === 0}
                 >
-                  {isLoading ? 'Pushing...' : 'Push'}
-                </button>
-              </>
-            )}
-          </div>
+                  {remotes.map((remote) => (
+                    <option key={remote.name} value={remote.name}>
+                      {remote.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              <CheckboxField
+                id="set-upstream"
+                label="Set as upstream tracking branch"
+                checked={setUpstream}
+                onCheckedChange={setSetUpstream}
+              />
+
+              <CheckboxField
+                id="force-push"
+                label="Force push (overwrites remote changes)"
+                checked={force}
+                onCheckedChange={setForce}
+              />
+
+              {error && (
+                <Alert variant="error" inline className="mt-3">
+                  {error}
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          {result ? (
+            <Button variant="primary" onClick={handleClose}>
+              Done
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handlePush}
+                disabled={isLoading || !selectedRemote || !currentBranch}
+              >
+                {isLoading ? 'Pushing...' : 'Push'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

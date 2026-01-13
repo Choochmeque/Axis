@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, ArrowDownToLine, Check } from 'lucide-react';
+import { ArrowDownToLine, Check } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote } from '../../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Select,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface PullDialogProps {
   open: boolean;
@@ -89,154 +100,121 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleClose}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-120">
-          <Dialog.Title className="dialog-title">
-            <ArrowDownToLine size={18} />
-            Pull from Remote
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-120">
+        <DialogTitle>
+          <ArrowDownToLine size={18} />
+          Pull from Remote
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {success ? (
-              <div>
-                <div className="alert alert-success mb-4">
-                  <Check size={16} />
-                  Pull completed successfully
-                </div>
-                <div className="p-3 bg-(--bg-secondary) rounded">
-                  <strong className="block mb-1 text-(--text-primary)">
-                    Pulled from {selectedRemote}
-                  </strong>
-                  <div className="text-xs text-(--text-secondary)">
-                    Branch: {currentBranch?.name}
-                  </div>
-                </div>
+        <DialogBody>
+          {success ? (
+            <div>
+              <Alert variant="success" className="mb-4">
+                <Check size={16} />
+                Pull completed successfully
+              </Alert>
+              <div className="p-3 bg-(--bg-secondary) rounded">
+                <strong className="block mb-1 text-(--text-primary)">
+                  Pulled from {selectedRemote}
+                </strong>
+                <div className="text-xs text-(--text-secondary)">Branch: {currentBranch?.name}</div>
               </div>
-            ) : (
-              <>
-                {currentBranch && (
-                  <div className="dialog-info-box">
+            </div>
+          ) : (
+            <>
+              {currentBranch && (
+                <div className="dialog-info-box">
+                  <div className="flex justify-between text-[13px] py-1">
+                    <span className="text-(--text-secondary)">Current branch:</span>
+                    <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
+                  </div>
+                  {currentBranch.behind !== null && currentBranch.behind > 0 && (
                     <div className="flex justify-between text-[13px] py-1">
-                      <span className="text-(--text-secondary)">Current branch:</span>
+                      <span className="text-(--text-secondary)">Commits behind:</span>
                       <span className="text-(--text-primary) font-medium">
-                        {currentBranch.name}
+                        {currentBranch.behind}
                       </span>
                     </div>
-                    {currentBranch.behind !== null && currentBranch.behind > 0 && (
-                      <div className="flex justify-between text-[13px] py-1">
-                        <span className="text-(--text-secondary)">Commits behind:</span>
-                        <span className="text-(--text-primary) font-medium">
-                          {currentBranch.behind}
-                        </span>
-                      </div>
-                    )}
-                    {currentBranch.upstream && (
-                      <div className="flex justify-between text-[13px] py-1">
-                        <span className="text-(--text-secondary)">Upstream:</span>
-                        <span className="text-(--text-primary) font-medium">
-                          {currentBranch.upstream}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="field">
-                  <label htmlFor="remote-select" className="label">
-                    Pull from Remote
-                  </label>
-                  <select
-                    id="remote-select"
-                    value={selectedRemote}
-                    onChange={(e) => setSelectedRemote(e.target.value)}
-                    disabled={remotes.length === 0}
-                    className="input"
-                  >
-                    {remotes.map((remote) => (
-                      <option key={remote.name} value={remote.name}>
-                        {remote.name}
-                      </option>
-                    ))}
-                  </select>
+                  )}
+                  {currentBranch.upstream && (
+                    <div className="flex justify-between text-[13px] py-1">
+                      <span className="text-(--text-secondary)">Upstream:</span>
+                      <span className="text-(--text-primary) font-medium">
+                        {currentBranch.upstream}
+                      </span>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="rebase"
-                    className="checkbox"
-                    checked={rebase}
-                    onCheckedChange={(checked) => {
-                      const isChecked = checked === true;
-                      setRebase(isChecked);
-                      if (isChecked) setFfOnly(false);
-                    }}
-                    disabled={ffOnly}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="rebase" className="checkbox-label">
-                    Rebase instead of merge
-                  </label>
-                </div>
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="ff-only"
-                    className="checkbox"
-                    checked={ffOnly}
-                    onCheckedChange={(checked) => {
-                      const isChecked = checked === true;
-                      setFfOnly(isChecked);
-                      if (isChecked) setRebase(false);
-                    }}
-                    disabled={rebase}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <label htmlFor="ff-only" className="checkbox-label">
-                    Fast-forward only (abort if not possible)
-                  </label>
-                </div>
-
-                {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-              </>
-            )}
-          </div>
-
-          <div className="dialog-footer">
-            {success ? (
-              <button className="btn btn-primary" onClick={handleClose}>
-                Done
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn btn-secondary">Cancel</button>
-                </Dialog.Close>
-                <button
-                  className="btn btn-primary"
-                  onClick={handlePull}
-                  disabled={isLoading || !selectedRemote || !currentBranch}
+              <FormField label="Pull from Remote" htmlFor="remote-select">
+                <Select
+                  id="remote-select"
+                  value={selectedRemote}
+                  onChange={(e) => setSelectedRemote(e.target.value)}
+                  disabled={remotes.length === 0}
                 >
-                  {isLoading ? 'Pulling...' : 'Pull'}
-                </button>
-              </>
-            )}
-          </div>
+                  {remotes.map((remote) => (
+                    <option key={remote.name} value={remote.name}>
+                      {remote.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              <CheckboxField
+                id="rebase"
+                label="Rebase instead of merge"
+                checked={rebase}
+                disabled={ffOnly}
+                onCheckedChange={(checked) => {
+                  setRebase(checked);
+                  if (checked) setFfOnly(false);
+                }}
+              />
+
+              <CheckboxField
+                id="ff-only"
+                label="Fast-forward only (abort if not possible)"
+                checked={ffOnly}
+                disabled={rebase}
+                onCheckedChange={(checked) => {
+                  setFfOnly(checked);
+                  if (checked) setRebase(false);
+                }}
+              />
+
+              {error && (
+                <Alert variant="error" inline className="mt-3">
+                  {error}
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          {success ? (
+            <Button variant="primary" onClick={handleClose}>
+              Done
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handlePull}
+                disabled={isLoading || !selectedRemote || !currentBranch}
+              >
+                {isLoading ? 'Pulling...' : 'Pull'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

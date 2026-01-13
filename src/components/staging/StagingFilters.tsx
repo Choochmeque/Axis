@@ -8,7 +8,14 @@ import {
   Rows3,
   LayoutPanelTop,
 } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui';
 
 export type StagingSortBy =
   | 'path'
@@ -82,113 +89,86 @@ export function StagingFilters({
   return (
     <div className="flex items-center gap-2 py-1.5 px-3 border-b border-(--border-color) bg-(--bg-secondary)">
       {/* Sort & Filter Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
             <span>{getSortLabel()}</span>
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
-            {/* Show Only Section */}
-            <DropdownMenu.Label className="dropdown-label">Show only</DropdownMenu.Label>
-            {(Object.keys(showOnlyLabels) as StagingShowOnly[]).map((option) => (
-              <DropdownMenu.Item
-                key={option}
-                className="dropdown-item"
-                onSelect={() => onShowOnlyChange(option)}
-              >
-                {showOnly === option && <Check size={12} className="absolute left-2" />}
-                {showOnlyLabels[option]}
-              </DropdownMenu.Item>
-            ))}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {/* Show Only Section */}
+          <DropdownMenuLabel>Show only</DropdownMenuLabel>
+          {(Object.keys(showOnlyLabels) as StagingShowOnly[]).map((option) => (
+            <DropdownMenuItem key={option} onSelect={() => onShowOnlyChange(option)}>
+              {showOnly === option && <Check size={12} className="absolute left-2" />}
+              {showOnlyLabels[option]}
+            </DropdownMenuItem>
+          ))}
 
-            <DropdownMenu.Separator className="dropdown-separator" />
+          <DropdownMenuSeparator />
 
-            {/* Sort By Section */}
-            <DropdownMenu.Label className="dropdown-label">Sort by</DropdownMenu.Label>
-            {(Object.keys(sortByLabels) as StagingSortBy[]).map((option) => (
-              <DropdownMenu.Item
-                key={option}
-                className="dropdown-item"
-                onSelect={() => onSortByChange(option)}
-              >
-                {sortBy === option && <Check size={12} className="absolute left-2" />}
-                {sortByLabels[option]}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+          {/* Sort By Section */}
+          <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+          {(Object.keys(sortByLabels) as StagingSortBy[]).map((option) => (
+            <DropdownMenuItem key={option} onSelect={() => onSortByChange(option)}>
+              {sortBy === option && <Check size={12} className="absolute left-2" />}
+              {sortByLabels[option]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* View Options Dropdown */}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="dropdown-button" title="View options">
             {viewMode === 'flat_single' && <List size={14} />}
             {viewMode === 'flat_multi' && <Columns2 size={14} />}
             {viewMode === 'tree' && <ListTree size={14} />}
             <ChevronDown size={12} />
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content className="dropdown-content" align="start" sideOffset={4}>
-            {/* View Mode Section */}
-            <DropdownMenu.Label className="dropdown-label">View</DropdownMenu.Label>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onViewModeChange('flat_single')}
-            >
-              {viewMode === 'flat_single' && <Check size={12} className="absolute left-2" />}
-              <List size={14} className="mr-2" />
-              Flat list (single column)
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onViewModeChange('flat_multi')}
-            >
-              {viewMode === 'flat_multi' && <Check size={12} className="absolute left-2" />}
-              <Columns2 size={14} className="mr-2" />
-              Flat list (multiple columns)
-            </DropdownMenu.Item>
-            <DropdownMenu.Item className="dropdown-item" onSelect={() => onViewModeChange('tree')}>
-              {viewMode === 'tree' && <Check size={12} className="absolute left-2" />}
-              <ListTree size={14} className="mr-2" />
-              Tree view
-            </DropdownMenu.Item>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {/* View Mode Section */}
+          <DropdownMenuLabel>View</DropdownMenuLabel>
+          <DropdownMenuItem onSelect={() => onViewModeChange('flat_single')}>
+            {viewMode === 'flat_single' && <Check size={12} className="absolute left-2" />}
+            <List size={14} className="mr-2" />
+            Flat list (single column)
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onViewModeChange('flat_multi')}>
+            {viewMode === 'flat_multi' && <Check size={12} className="absolute left-2" />}
+            <Columns2 size={14} className="mr-2" />
+            Flat list (multiple columns)
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onViewModeChange('tree')}>
+            {viewMode === 'tree' && <Check size={12} className="absolute left-2" />}
+            <ListTree size={14} className="mr-2" />
+            Tree view
+          </DropdownMenuItem>
 
-            <DropdownMenu.Separator className="dropdown-separator" />
+          <DropdownMenuSeparator />
 
-            {/* Staging Mode Section */}
-            <DropdownMenu.Label className="dropdown-label">Staging</DropdownMenu.Label>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onStagingModeChange('no_staging')}
-            >
-              {stagingMode === 'no_staging' && <Check size={12} className="absolute left-2" />}
-              <Square size={14} className="mr-2" />
-              No staging
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onStagingModeChange('fluid')}
-            >
-              {stagingMode === 'fluid' && <Check size={12} className="absolute left-2" />}
-              <Rows3 size={14} className="mr-2" />
-              Fluid staging
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="dropdown-item"
-              onSelect={() => onStagingModeChange('split_view')}
-            >
-              {stagingMode === 'split_view' && <Check size={12} className="absolute left-2" />}
-              <LayoutPanelTop size={14} className="mr-2" />
-              Split view staging
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+          {/* Staging Mode Section */}
+          <DropdownMenuLabel>Staging</DropdownMenuLabel>
+          <DropdownMenuItem onSelect={() => onStagingModeChange('no_staging')}>
+            {stagingMode === 'no_staging' && <Check size={12} className="absolute left-2" />}
+            <Square size={14} className="mr-2" />
+            No staging
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onStagingModeChange('fluid')}>
+            {stagingMode === 'fluid' && <Check size={12} className="absolute left-2" />}
+            <Rows3 size={14} className="mr-2" />
+            Fluid staging
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onStagingModeChange('split_view')}>
+            {stagingMode === 'split_view' && <Check size={12} className="absolute left-2" />}
+            <LayoutPanelTop size={14} className="mr-2" />
+            Split view staging
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

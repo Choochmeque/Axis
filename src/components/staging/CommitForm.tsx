@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import * as Checkbox from '@radix-ui/react-checkbox';
+import { ChevronDown } from 'lucide-react';
 import { useStagingStore } from '../../store/stagingStore';
+import {
+  Checkbox,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from '@/components/ui';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { remoteApi, commitApi, signingApi } from '../../services/api';
 import { cn } from '../../lib/utils';
@@ -137,69 +144,43 @@ export function CommitForm() {
         <span className="text-xs font-semibold uppercase text-(--text-secondary)">
           {isAmending ? 'Amend Commit' : 'Commit'}
         </span>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1 py-1 px-2 border-none bg-transparent text-(--text-secondary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)">
               <span>Commit Options...</span>
               <ChevronDown size={12} />
             </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content className="dropdown-content min-w-45" align="end" sideOffset={4}>
-              <DropdownMenu.CheckboxItem
-                className="dropdown-item"
-                checked={isAmending}
-                onCheckedChange={setIsAmending}
-              >
-                <DropdownMenu.ItemIndicator className="absolute left-2">
-                  <Check size={12} />
-                </DropdownMenu.ItemIndicator>
-                Amend last commit
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.CheckboxItem
-                className="dropdown-item"
-                checked={bypassHooks}
-                onCheckedChange={setBypassHooks}
-                disabled
-              >
-                <DropdownMenu.ItemIndicator className="absolute left-2">
-                  <Check size={12} />
-                </DropdownMenu.ItemIndicator>
-                Bypass commit hooks
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.CheckboxItem
-                className="dropdown-item"
-                checked={signCommit}
-                onCheckedChange={setSignCommit}
-                disabled={!signingAvailable}
-              >
-                <DropdownMenu.ItemIndicator className="absolute left-2">
-                  <Check size={12} />
-                </DropdownMenu.ItemIndicator>
-                Sign commit
-                {!signingAvailable && signingConfig
-                  ? ' (no key configured)'
-                  : !signingAvailable
-                    ? ' (unavailable)'
-                    : ''}
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.CheckboxItem
-                className="dropdown-item"
-                checked={signOff}
-                onCheckedChange={setSignOff}
-              >
-                <DropdownMenu.ItemIndicator className="absolute left-2">
-                  <Check size={12} />
-                </DropdownMenu.ItemIndicator>
-                Sign off
-              </DropdownMenu.CheckboxItem>
-              <DropdownMenu.Separator className="dropdown-separator" />
-              <DropdownMenu.Item className="dropdown-item" disabled>
-                Create pull request
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="min-w-45" align="end">
+            <DropdownMenuCheckboxItem checked={isAmending} onCheckedChange={setIsAmending}>
+              Amend last commit
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={bypassHooks}
+              onCheckedChange={setBypassHooks}
+              disabled
+            >
+              Bypass commit hooks
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={signCommit}
+              onCheckedChange={setSignCommit}
+              disabled={!signingAvailable}
+            >
+              Sign commit
+              {!signingAvailable && signingConfig
+                ? ' (no key configured)'
+                : !signingAvailable
+                  ? ' (unavailable)'
+                  : ''}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem checked={signOff} onCheckedChange={setSignOff}>
+              Sign off
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled>Create pull request</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="p-3 flex flex-col gap-2 flex-1 min-h-0">
@@ -230,16 +211,11 @@ export function CommitForm() {
 
         <div className="flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-1.5">
-            <Checkbox.Root
+            <Checkbox
               id="push-after-commit"
-              className="checkbox"
               checked={pushAfterCommit}
               onCheckedChange={(checked) => setPushAfterCommit(checked === true)}
-            >
-              <Checkbox.Indicator>
-                <Check size={10} className="text-white" />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
+            />
             <label
               htmlFor="push-after-commit"
               className="text-xs text-(--text-secondary) cursor-pointer select-none"

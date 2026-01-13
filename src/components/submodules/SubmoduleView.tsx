@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
 import {
   FolderGit2,
   RefreshCw,
@@ -15,6 +14,17 @@ import {
 import { submoduleApi } from '../../services/api';
 import type { Submodule, SubmoduleStatus } from '../../types';
 import { cn } from '../../lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+} from '@/components/ui';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -340,80 +350,59 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
         )}
       </div>
 
-      <Dialog.Root open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-animated" />
-          <Dialog.Content className="dialog-content max-w-100">
-            <Dialog.Title className="dialog-title">
-              <FolderGit2 size={18} />
-              Add Submodule
-            </Dialog.Title>
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-100">
+          <DialogTitle>
+            <FolderGit2 size={18} />
+            Add Submodule
+          </DialogTitle>
 
-            <div className="dialog-body">
-              <div className="field">
-                <label htmlFor="submodule-url" className="label">
-                  Repository URL
-                </label>
-                <input
-                  id="submodule-url"
-                  type="text"
-                  value={addUrl}
-                  onChange={(e) => setAddUrl(e.target.value)}
-                  placeholder="https://github.com/user/repo.git"
-                  className="input"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="submodule-path" className="label">
-                  Path
-                </label>
-                <input
-                  id="submodule-path"
-                  type="text"
-                  value={addPath}
-                  onChange={(e) => setAddPath(e.target.value)}
-                  placeholder="lib/submodule"
-                  className="input"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="submodule-branch" className="label">
-                  Branch (optional)
-                </label>
-                <input
-                  id="submodule-branch"
-                  type="text"
-                  value={addBranch}
-                  onChange={(e) => setAddBranch(e.target.value)}
-                  placeholder="main"
-                  className="input"
-                />
-              </div>
-            </div>
+          <DialogBody>
+            <FormField label="Repository URL" htmlFor="submodule-url">
+              <Input
+                id="submodule-url"
+                type="text"
+                value={addUrl}
+                onChange={(e) => setAddUrl(e.target.value)}
+                placeholder="https://github.com/user/repo.git"
+              />
+            </FormField>
+            <FormField label="Path" htmlFor="submodule-path">
+              <Input
+                id="submodule-path"
+                type="text"
+                value={addPath}
+                onChange={(e) => setAddPath(e.target.value)}
+                placeholder="lib/submodule"
+              />
+            </FormField>
+            <FormField label="Branch (optional)" htmlFor="submodule-branch">
+              <Input
+                id="submodule-branch"
+                type="text"
+                value={addBranch}
+                onChange={(e) => setAddBranch(e.target.value)}
+                placeholder="main"
+              />
+            </FormField>
+          </DialogBody>
 
-            <div className="dialog-footer">
-              <Dialog.Close asChild>
-                <button className="btn btn-secondary" disabled={isLoading}>
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                className="btn btn-primary"
-                onClick={handleAdd}
-                disabled={isLoading || !addUrl.trim() || !addPath.trim()}
-              >
-                {isLoading ? 'Adding...' : 'Add Submodule'}
-              </button>
-            </div>
-
-            <Dialog.Close asChild>
-              <button className="btn-close absolute top-3 right-3" aria-label="Close">
-                <X size={16} />
-              </button>
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="primary"
+              onClick={handleAdd}
+              disabled={isLoading || !addUrl.trim() || !addPath.trim()}
+            >
+              {isLoading ? 'Adding...' : 'Add Submodule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

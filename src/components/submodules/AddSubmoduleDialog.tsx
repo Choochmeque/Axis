@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import { X, FolderGit2 } from 'lucide-react';
+import { FolderGit2 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  Alert,
+} from '@/components/ui';
 
 interface AddSubmoduleDialogProps {
   open: boolean;
@@ -73,88 +84,72 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-120">
-          <Dialog.Title className="dialog-title">
-            <FolderGit2 size={18} />
-            Add Submodule
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-120">
+        <DialogTitle>
+          <FolderGit2 size={18} />
+          Add Submodule
+        </DialogTitle>
 
-          <div className="dialog-body">
-            <div className="field">
-              <label htmlFor="submodule-url" className="label">
-                Repository URL
-              </label>
-              <input
-                id="submodule-url"
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="https://github.com/user/repo.git"
-                autoFocus
-                className="input"
-              />
-            </div>
+        <DialogBody>
+          <FormField label="Repository URL" htmlFor="submodule-url">
+            <Input
+              id="submodule-url"
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="https://github.com/user/repo.git"
+              autoFocus
+            />
+          </FormField>
 
-            <div className="field">
-              <label htmlFor="submodule-path" className="label">
-                Path
-              </label>
-              <input
-                id="submodule-path"
-                type="text"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="libs/my-submodule"
-                className="input"
-              />
-              <span className="block mt-1 text-xs text-(--text-muted)">
-                Relative path where the submodule will be cloned
-              </span>
-            </div>
+          <FormField
+            label="Path"
+            htmlFor="submodule-path"
+            hint="Relative path where the submodule will be cloned"
+          >
+            <Input
+              id="submodule-path"
+              type="text"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="libs/my-submodule"
+            />
+          </FormField>
 
-            <div className="field">
-              <label htmlFor="submodule-branch" className="label">
-                Branch (optional)
-              </label>
-              <input
-                id="submodule-branch"
-                type="text"
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="main"
-                className="input"
-              />
-            </div>
+          <FormField label="Branch (optional)" htmlFor="submodule-branch">
+            <Input
+              id="submodule-branch"
+              type="text"
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="main"
+            />
+          </FormField>
 
-            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-          </div>
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
+          )}
+        </DialogBody>
 
-          <div className="dialog-footer">
-            <Dialog.Close asChild>
-              <button className="btn btn-secondary">Cancel</button>
-            </Dialog.Close>
-            <button
-              className="btn btn-primary"
-              onClick={handleAdd}
-              disabled={isLoading || !url.trim() || !path.trim()}
-            >
-              {isLoading ? 'Adding...' : 'Add Submodule'}
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handleAdd}
+            disabled={isLoading || !url.trim() || !path.trim()}
+          >
+            {isLoading ? 'Adding...' : 'Add Submodule'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

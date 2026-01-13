@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { GitMerge, X, AlertCircle, Check } from 'lucide-react';
+import { GitMerge, AlertCircle, Check } from 'lucide-react';
 import { mergeApi, branchApi } from '../../services/api';
 import type { Branch, MergeResult } from '../../types';
 import { cn } from '../../lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Select,
+  Textarea,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface MergeDialogProps {
   isOpen: boolean;
@@ -91,183 +103,139 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-125">
-          <Dialog.Title className="dialog-title">
-            <GitMerge size={18} />
-            Merge Branch
-          </Dialog.Title>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-125">
+        <DialogTitle>
+          <GitMerge size={18} />
+          Merge Branch
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {error && (
-              <div className="alert alert-error mb-4">
-                <AlertCircle size={16} />
-                <span>{error}</span>
-              </div>
-            )}
+        <DialogBody>
+          {error && (
+            <Alert variant="error" className="mb-4">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </Alert>
+          )}
 
-            {result && (
-              <div className={cn('alert mb-4', result.success ? 'alert-success' : 'alert-warning')}>
-                {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
-                <span>{result.message}</span>
-              </div>
-            )}
+          {result && (
+            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
+              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+              <span>{result.message}</span>
+            </Alert>
+          )}
 
-            {!result && (
-              <>
-                <div className="field">
-                  <label className="label">Current Branch</label>
-                  <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
-                    {currentBranch}
-                  </div>
+          {!result && (
+            <>
+              <FormField label="Current Branch">
+                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
+                  {currentBranch}
                 </div>
+              </FormField>
 
-                <div className="field">
-                  <label htmlFor="merge-branch" className="label">
-                    Merge From
-                  </label>
-                  <select
-                    id="merge-branch"
-                    value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    disabled={isLoading}
-                    className="input"
-                  >
-                    <option value="">Select a branch...</option>
-                    {branches.map((branch) => (
-                      <option key={branch.full_name} value={branch.name}>
-                        {branch.name}
-                        {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="field">
-                  <label htmlFor="merge-message" className="label">
-                    Commit Message (optional)
-                  </label>
-                  <textarea
-                    id="merge-message"
-                    value={customMessage}
-                    onChange={(e) => setCustomMessage(e.target.value)}
-                    placeholder={`Merge branch '${selectedBranch || '...'}' into ${currentBranch}`}
-                    disabled={isLoading}
-                    rows={3}
-                    className={cn('input', 'resize-y min-h-15')}
-                  />
-                </div>
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="no-ff"
-                    className="checkbox"
-                    checked={noFastForward}
-                    onCheckedChange={(checked) => setNoFastForward(checked === true)}
-                    disabled={isLoading || squash}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <div>
-                    <label htmlFor="no-ff" className="checkbox-label">
-                      Create merge commit (--no-ff)
-                    </label>
-                    <p className="mt-1 ml-6 text-xs text-(--text-secondary)">
-                      Always create a merge commit, even if fast-forward is possible
-                    </p>
-                  </div>
-                </div>
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="squash"
-                    className="checkbox"
-                    checked={squash}
-                    onCheckedChange={(checked) => {
-                      const isChecked = checked === true;
-                      setSquash(isChecked);
-                      if (isChecked) setNoFastForward(false);
-                    }}
-                    disabled={isLoading}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <div>
-                    <label htmlFor="squash" className="checkbox-label">
-                      Squash commits
-                    </label>
-                    <p className="mt-1 ml-6 text-xs text-(--text-secondary)">
-                      Combine all commits into a single commit
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {result && result.conflicts.length > 0 && (
-              <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-                <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
-                  Conflicted Files
-                </h4>
-                <ul className="m-0 p-0 list-none">
-                  {result.conflicts.map((conflict) => (
-                    <li
-                      key={conflict.path}
-                      className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
-                    >
-                      {conflict.path}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <div className="dialog-footer">
-            {result && !result.success ? (
-              <>
-                <button className="btn-icon btn-secondary" onClick={handleAbort}>
-                  Abort Merge
-                </button>
-                <button className="btn-icon btn-primary" onClick={onClose}>
-                  Resolve Conflicts
-                </button>
-              </>
-            ) : result && result.success ? (
-              <button className="btn-icon btn-primary" onClick={onClose}>
-                Close
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn-icon btn-secondary" disabled={isLoading}>
-                    Cancel
-                  </button>
-                </Dialog.Close>
-                <button
-                  className="btn-icon btn-primary"
-                  onClick={handleMerge}
-                  disabled={isLoading || !selectedBranch}
+              <FormField label="Merge From" htmlFor="merge-branch">
+                <Select
+                  id="merge-branch"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  disabled={isLoading}
                 >
-                  {isLoading ? 'Merging...' : 'Merge'}
-                </button>
-              </>
-            )}
-          </div>
+                  <option value="">Select a branch...</option>
+                  {branches.map((branch) => (
+                    <option key={branch.full_name} value={branch.name}>
+                      {branch.name}
+                      {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              <FormField label="Commit Message (optional)" htmlFor="merge-message">
+                <Textarea
+                  id="merge-message"
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder={`Merge branch '${selectedBranch || '...'}' into ${currentBranch}`}
+                  disabled={isLoading}
+                  rows={3}
+                  className={cn('resize-y min-h-15')}
+                />
+              </FormField>
+
+              <CheckboxField
+                id="no-ff"
+                label="Create merge commit (--no-ff)"
+                description="Always create a merge commit, even if fast-forward is possible"
+                checked={noFastForward}
+                disabled={isLoading || squash}
+                onCheckedChange={setNoFastForward}
+              />
+
+              <CheckboxField
+                id="squash"
+                label="Squash commits"
+                description="Combine all commits into a single commit"
+                checked={squash}
+                disabled={isLoading}
+                onCheckedChange={(checked) => {
+                  setSquash(checked);
+                  if (checked) setNoFastForward(false);
+                }}
+              />
+            </>
+          )}
+
+          {result && result.conflicts.length > 0 && (
+            <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
+              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+                Conflicted Files
+              </h4>
+              <ul className="m-0 p-0 list-none">
+                {result.conflicts.map((conflict) => (
+                  <li
+                    key={conflict.path}
+                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                  >
+                    {conflict.path}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          {result && !result.success ? (
+            <>
+              <Button variant="secondary" onClick={handleAbort}>
+                Abort Merge
+              </Button>
+              <Button variant="primary" onClick={onClose}>
+                Resolve Conflicts
+              </Button>
+            </>
+          ) : result && result.success ? (
+            <Button variant="primary" onClick={onClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary" disabled={isLoading}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handleMerge}
+                disabled={isLoading || !selectedBranch}
+              >
+                {isLoading ? 'Merging...' : 'Merge'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

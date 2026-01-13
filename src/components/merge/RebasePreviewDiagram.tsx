@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { RebasePreview } from '../../types';
 
@@ -58,7 +58,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
   }, [preview]);
 
   const renderBeforeDiagram = () => {
-    const elements: JSX.Element[] = [];
+    const elements: ReactElement[] = [];
     let y = 14;
 
     // Current branch commits (top, branching off)
@@ -213,7 +213,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
   };
 
   const renderAfterDiagram = () => {
-    const elements: JSX.Element[] = [];
+    const elements: ReactElement[] = [];
     let y = 14;
 
     // Rebased commits (top, on main line)

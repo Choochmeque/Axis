@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   auto_fetch_interval: 0,
   confirm_before_discard: true,
   sign_commits: false,
+  signing_format: 'gpg',
   diff_context_lines: 3,
   diff_word_wrap: false,
   diff_side_by_side: false,

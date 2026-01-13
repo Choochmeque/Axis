@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { Cherry, X, AlertCircle, Check } from 'lucide-react';
+import { Cherry, AlertCircle, Check } from 'lucide-react';
 import { cherryPickApi } from '../../services/api';
 import type { Commit, CherryPickResult } from '../../types';
-import { cn } from '../../lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  Label,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface CherryPickDialogProps {
   isOpen: boolean;
@@ -81,142 +90,113 @@ export function CherryPickDialog({
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-125">
-          <Dialog.Title className="dialog-title">
-            <Cherry size={18} />
-            Cherry Pick
-          </Dialog.Title>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-125">
+        <DialogTitle>
+          <Cherry size={18} />
+          Cherry Pick
+        </DialogTitle>
 
-          <div className="dialog-body">
-            {error && (
-              <div className="alert alert-error mb-4">
-                <AlertCircle size={16} />
-                <span>{error}</span>
-              </div>
-            )}
+        <DialogBody>
+          {error && (
+            <Alert variant="error" className="mb-4">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </Alert>
+          )}
 
-            {result && (
-              <div className={cn('alert mb-4', result.success ? 'alert-success' : 'alert-warning')}>
-                {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
-                <span>{result.message}</span>
-              </div>
-            )}
+          {result && (
+            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
+              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+              <span>{result.message}</span>
+            </Alert>
+          )}
 
-            {!result && (
-              <>
-                <div className="field">
-                  <label className="label">
-                    {commits.length === 1 ? 'Commit to Cherry Pick' : 'Commits to Cherry Pick'}
-                  </label>
-                  <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
-                    {commits.map((commit) => (
-                      <div
-                        key={commit.oid}
-                        className="flex items-center gap-3 py-2.5 px-3 border-b border-(--border-color) last:border-b-0"
-                      >
-                        <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
-                          {commit.short_oid}
-                        </span>
-                        <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
-                          {commit.summary}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="checkbox-field">
-                  <Checkbox.Root
-                    id="no-commit"
-                    className="checkbox"
-                    checked={noCommit}
-                    onCheckedChange={(checked) => setNoCommit(checked === true)}
-                    disabled={isLoading}
-                  >
-                    <Checkbox.Indicator>
-                      <Check size={10} className="text-white" />
-                    </Checkbox.Indicator>
-                  </Checkbox.Root>
-                  <div>
-                    <label htmlFor="no-commit" className="checkbox-label">
-                      Stage changes only (--no-commit)
-                    </label>
-                    <p className="mt-1 ml-6 text-xs text-(--text-secondary)">
-                      Apply changes without creating a commit
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {result && result.conflicts.length > 0 && (
-              <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-                <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
-                  Conflicted Files
-                </h4>
-                <ul className="m-0 p-0 list-none">
-                  {result.conflicts.map((conflict) => (
-                    <li
-                      key={conflict.path}
-                      className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+          {!result && (
+            <>
+              <div className="field">
+                <Label>
+                  {commits.length === 1 ? 'Commit to Cherry Pick' : 'Commits to Cherry Pick'}
+                </Label>
+                <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
+                  {commits.map((commit) => (
+                    <div
+                      key={commit.oid}
+                      className="flex items-center gap-3 py-2.5 px-3 border-b border-(--border-color) last:border-b-0"
                     >
-                      {conflict.path}
-                    </li>
+                      <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
+                        {commit.short_oid}
+                      </span>
+                      <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+                        {commit.summary}
+                      </span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="dialog-footer">
-            {result && !result.success ? (
-              <>
-                <button
-                  className="btn-icon bg-error/10 text-error border border-error hover:bg-error/20"
-                  onClick={handleAbort}
-                >
-                  Abort
-                </button>
-                <button
-                  className="btn-icon btn-primary"
-                  onClick={handleContinue}
-                  disabled={isLoading}
-                >
-                  Continue
-                </button>
-              </>
-            ) : result && result.success ? (
-              <button className="btn-icon btn-primary" onClick={onClose}>
-                Close
-              </button>
-            ) : (
-              <>
-                <Dialog.Close asChild>
-                  <button className="btn-icon btn-secondary" disabled={isLoading}>
-                    Cancel
-                  </button>
-                </Dialog.Close>
-                <button
-                  className="btn-icon btn-primary"
-                  onClick={handleCherryPick}
-                  disabled={isLoading || commits.length === 0}
-                >
-                  {isLoading ? 'Cherry Picking...' : 'Cherry Pick'}
-                </button>
-              </>
-            )}
-          </div>
+              <CheckboxField
+                id="no-commit"
+                label="Stage changes only (--no-commit)"
+                description="Apply changes without creating a commit"
+                checked={noCommit}
+                disabled={isLoading}
+                onCheckedChange={setNoCommit}
+              />
+            </>
+          )}
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          {result && result.conflicts.length > 0 && (
+            <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
+              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+                Conflicted Files
+              </h4>
+              <ul className="m-0 p-0 list-none">
+                {result.conflicts.map((conflict) => (
+                  <li
+                    key={conflict.path}
+                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                  >
+                    {conflict.path}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          {result && !result.success ? (
+            <>
+              <Button variant="destructive" onClick={handleAbort}>
+                Abort
+              </Button>
+              <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
+                Continue
+              </Button>
+            </>
+          ) : result && result.success ? (
+            <Button variant="primary" onClick={onClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <DialogClose asChild>
+                <Button variant="secondary" disabled={isLoading}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                variant="primary"
+                onClick={handleCherryPick}
+                disabled={isLoading || commits.length === 0}
+              >
+                {isLoading ? 'Cherry Picking...' : 'Cherry Pick'}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

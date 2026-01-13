@@ -1,0 +1,108 @@
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
+
+const Dialog = DialogPrimitive.Root;
+const DialogTrigger = DialogPrimitive.Trigger;
+const DialogPortal = DialogPrimitive.Portal;
+
+const DialogOverlay = forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn('dialog-overlay-animated', className)}
+    {...props}
+  />
+));
+DialogOverlay.displayName = 'DialogOverlay';
+
+const maxWidthClasses = {
+  sm: 'max-w-80',
+  md: 'max-w-105',
+  lg: 'max-w-125',
+  xl: 'max-w-150',
+  '2xl': 'max-w-175',
+} as const;
+
+interface DialogContentProps extends React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> {
+  maxWidth?: keyof typeof maxWidthClasses;
+  showClose?: boolean;
+}
+
+const DialogContent = forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Content>,
+  DialogContentProps
+>(({ className, children, maxWidth = 'md', showClose = true, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn('dialog-content', maxWidthClasses[maxWidth], className)}
+      {...props}
+    >
+      {children}
+      {showClose && (
+        <DialogPrimitive.Close asChild>
+          <button className="btn-close absolute top-3 right-3" aria-label="Close">
+            <X size={16} />
+          </button>
+        </DialogPrimitive.Close>
+      )}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
+DialogContent.displayName = 'DialogContent';
+
+const DialogTitle = forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title ref={ref} className={cn('dialog-title', className)} {...props} />
+));
+DialogTitle.displayName = 'DialogTitle';
+
+const DialogDescription = forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn('text-sm text-(--text-secondary) px-5 pb-2', className)}
+    {...props}
+  />
+));
+DialogDescription.displayName = 'DialogDescription';
+
+const DialogBody = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('dialog-body', className)} {...props} />
+  )
+);
+DialogBody.displayName = 'DialogBody';
+
+const DialogFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('dialog-footer', className)} {...props} />
+  )
+);
+DialogFooter.displayName = 'DialogFooter';
+
+const DialogClose = DialogPrimitive.Close;
+
+export {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  DialogOverlay,
+  DialogPortal,
+};

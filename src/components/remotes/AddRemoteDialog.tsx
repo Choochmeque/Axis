@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import { X, Cloud } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  Alert,
+} from '@/components/ui';
 
 interface AddRemoteDialogProps {
   open: boolean;
@@ -57,70 +68,57 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-120">
-          <Dialog.Title className="dialog-title">
-            <Cloud size={18} />
-            Add Remote
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-120">
+        <DialogTitle>
+          <Cloud size={18} />
+          Add Remote
+        </DialogTitle>
 
-          <div className="dialog-body">
-            <div className="field">
-              <label htmlFor="remote-name" className="label">
-                Remote Name
-              </label>
-              <input
-                id="remote-name"
-                type="text"
-                value={remoteName}
-                onChange={(e) => setRemoteName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="origin"
-                autoFocus
-                className="input"
-              />
-            </div>
+        <DialogBody>
+          <FormField label="Remote Name" htmlFor="remote-name">
+            <Input
+              id="remote-name"
+              type="text"
+              value={remoteName}
+              onChange={(e) => setRemoteName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="origin"
+              autoFocus
+            />
+          </FormField>
 
-            <div className="field">
-              <label htmlFor="remote-url" className="label">
-                Remote URL
-              </label>
-              <input
-                id="remote-url"
-                type="url"
-                value={remoteUrl}
-                onChange={(e) => setRemoteUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="https://github.com/user/repo.git"
-                className="input"
-              />
-            </div>
+          <FormField label="Remote URL" htmlFor="remote-url">
+            <Input
+              id="remote-url"
+              type="url"
+              value={remoteUrl}
+              onChange={(e) => setRemoteUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="https://github.com/user/repo.git"
+            />
+          </FormField>
 
-            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
-          </div>
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
+          )}
+        </DialogBody>
 
-          <div className="dialog-footer">
-            <Dialog.Close asChild>
-              <button className="btn btn-secondary">Cancel</button>
-            </Dialog.Close>
-            <button
-              className="btn btn-primary"
-              onClick={handleAdd}
-              disabled={isLoading || !remoteName.trim() || !remoteUrl.trim()}
-            >
-              {isLoading ? 'Adding...' : 'Add Remote'}
-            </button>
-          </div>
-
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handleAdd}
+            disabled={isLoading || !remoteName.trim() || !remoteUrl.trim()}
+          >
+            {isLoading ? 'Adding...' : 'Add Remote'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

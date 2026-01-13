@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Trash2, Check } from 'lucide-react';
-import * as Checkbox from '@radix-ui/react-checkbox';
+import { Trash2 } from 'lucide-react';
 import { useStagingStore } from '../../store/stagingStore';
+import { Checkbox } from '@/components/ui';
 import { FileStatusList, FluidFileList, type FluidFile } from './FileStatusList';
 import {
   StagingFilters,
@@ -204,8 +204,7 @@ export function StagingView() {
       {/* Header with counts and actions */}
       <div className={sectionHeaderClass}>
         <div className="flex items-center gap-2">
-          <Checkbox.Root
-            className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color) data-[state=indeterminate]:bg-(--accent-color) data-[state=indeterminate]:border-(--accent-color)"
+          <Checkbox
             checked={totalStaged === totalFiles ? true : totalStaged > 0 ? 'indeterminate' : false}
             onCheckedChange={(checked: boolean | 'indeterminate') => {
               if (checked === true) {
@@ -214,11 +213,7 @@ export function StagingView() {
                 unstageAll();
               }
             }}
-          >
-            <Checkbox.Indicator>
-              <Check size={10} className="text-white" />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
+          />
           <span className={sectionTitleClass}>Changes</span>
           {totalFiles > 0 && (
             <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
@@ -278,19 +273,14 @@ export function StagingView() {
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
-              <Checkbox.Root
-                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+              <Checkbox
                 checked={hasStaged}
                 onCheckedChange={(checked: boolean | 'indeterminate') => {
                   if (checked === false) {
                     unstageAll();
                   }
                 }}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
+              />
               <span className={sectionTitleClass}>Staged files</span>
               {hasStaged && (
                 <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
@@ -324,19 +314,14 @@ export function StagingView() {
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
-              <Checkbox.Root
-                className="flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color)"
+              <Checkbox
                 checked={false}
                 onCheckedChange={(checked: boolean | 'indeterminate') => {
                   if (checked === true) {
                     stageAll();
                   }
                 }}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
+              />
               <span className={sectionTitleClass}>Unstaged files</span>
               {hasUnstaged && (
                 <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>

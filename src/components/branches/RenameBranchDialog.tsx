@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, Pencil, Check } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Branch } from '../../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  CheckboxField,
+  Alert,
+} from '@/components/ui';
 
 interface RenameBranchDialogProps {
   open: boolean;
@@ -91,85 +102,70 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
   if (!branch) return null;
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay-animated" />
-        <Dialog.Content className="dialog-content max-w-105">
-          <Dialog.Title className="dialog-title">
-            <Pencil size={18} />
-            Rename Branch
-          </Dialog.Title>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle>
+          <Pencil size={18} />
+          Rename Branch
+        </DialogTitle>
 
-          <div className="dialog-body">
-            <div className="dialog-info-box">
+        <DialogBody>
+          <div className="dialog-info-box">
+            <div className="flex justify-between text-[13px] py-1">
+              <span className="text-(--text-secondary)">Current name:</span>
+              <span className="text-(--text-primary) font-medium">{branch.name}</span>
+            </div>
+            {branch.is_head && (
               <div className="flex justify-between text-[13px] py-1">
-                <span className="text-(--text-secondary)">Current name:</span>
-                <span className="text-(--text-primary) font-medium">{branch.name}</span>
+                <span className="text-(--text-secondary)">Status:</span>
+                <span className="text-(--text-primary) font-medium">Current branch (HEAD)</span>
               </div>
-              {branch.is_head && (
-                <div className="flex justify-between text-[13px] py-1">
-                  <span className="text-(--text-secondary)">Status:</span>
-                  <span className="text-(--text-primary) font-medium">Current branch (HEAD)</span>
-                </div>
-              )}
-            </div>
-
-            <div className="field">
-              <label htmlFor="new-branch-name" className="label">
-                New Branch Name
-              </label>
-              <input
-                id="new-branch-name"
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter new branch name"
-                autoFocus
-                className="input"
-              />
-              {validationError && <p className="text-xs text-error mt-1">{validationError}</p>}
-            </div>
-
-            <div className="checkbox-field">
-              <Checkbox.Root
-                id="force-rename"
-                className="checkbox"
-                checked={force}
-                onCheckedChange={(checked) => setForce(checked === true)}
-              >
-                <Checkbox.Indicator>
-                  <Check size={10} className="text-white" />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
-              <label htmlFor="force-rename" className="checkbox-label">
-                Force rename (overwrite if branch exists)
-              </label>
-            </div>
-
-            {error && <div className="alert-inline alert-error mt-3">{error}</div>}
+            )}
           </div>
 
-          <div className="dialog-footer">
-            <Dialog.Close asChild>
-              <button className="btn btn-secondary">Cancel</button>
-            </Dialog.Close>
-            <button
-              className="btn btn-primary"
-              onClick={handleRename}
-              disabled={isLoading || !newName.trim() || !!validationError || isUnchanged}
-            >
-              {isLoading ? 'Renaming...' : 'Rename Branch'}
-            </button>
-          </div>
+          <FormField
+            label="New Branch Name"
+            htmlFor="new-branch-name"
+            error={validationError ?? undefined}
+          >
+            <Input
+              id="new-branch-name"
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter new branch name"
+              autoFocus
+            />
+          </FormField>
 
-          <Dialog.Close asChild>
-            <button className="btn-close absolute top-3 right-3" aria-label="Close">
-              <X size={16} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          <CheckboxField
+            id="force-rename"
+            label="Force rename (overwrite if branch exists)"
+            checked={force}
+            onCheckedChange={setForce}
+          />
+
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handleRename}
+            disabled={isLoading || !newName.trim() || !!validationError || isUnchanged}
+          >
+            {isLoading ? 'Renaming...' : 'Rename Branch'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { Play, Trash2, GitBranch, Copy, ChevronRight } from 'lucide-react';
+import { Button, Input } from '@/components/ui';
 import type { StashEntry } from '../../types';
 import { stashApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -109,10 +110,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
             <ContextMenu.Portal>
               <ContextMenu.SubContent className="menu-content min-w-48">
                 <div className="p-2">
-                  <input
-                    type="text"
+                  <Input
                     placeholder="Branch name..."
-                    className="input text-sm"
+                    className="text-sm"
                     value={branchName}
                     onChange={(e) => setBranchName(e.target.value)}
                     onKeyDown={(e) => {
@@ -123,13 +123,14 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
                     }}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <button
-                    className="btn btn-primary w-full mt-2 text-xs"
+                  <Button
+                    variant="primary"
+                    className="w-full mt-2 text-xs"
                     onClick={() => handleBranch(branchName)}
                     disabled={!branchName.trim()}
                   >
                     Create
-                  </button>
+                  </Button>
                 </div>
               </ContextMenu.SubContent>
             </ContextMenu.Portal>

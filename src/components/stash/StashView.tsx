@@ -1,20 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Checkbox from '@radix-ui/react-checkbox';
-import {
-  Archive,
-  Play,
-  Trash2,
-  Plus,
-  RefreshCw,
-  GitBranch,
-  AlertCircle,
-  X,
-  Check,
-} from 'lucide-react';
+import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
 import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  FormField,
+  Input,
+  CheckboxField,
+} from '@/components/ui';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -282,78 +282,47 @@ export function StashView({ onRefresh }: StashViewProps) {
         )}
       </div>
 
-      <Dialog.Root open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay-animated" />
-          <Dialog.Content className="dialog-content max-w-100">
-            <Dialog.Title className="dialog-title">
-              <Archive size={18} />
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-100">
+          <DialogTitle>
+            <Archive size={18} />
+            Create Stash
+          </DialogTitle>
+
+          <DialogBody>
+            <FormField label="Message (optional)" htmlFor="stash-message">
+              <Input
+                id="stash-message"
+                type="text"
+                value={stashMessage}
+                onChange={(e) => setStashMessage(e.target.value)}
+                placeholder="Stash message..."
+              />
+            </FormField>
+            <CheckboxField
+              id="include-untracked"
+              label="Include untracked files"
+              checked={includeUntracked}
+              onCheckedChange={(checked) => setIncludeUntracked(checked === true)}
+            />
+            <CheckboxField
+              id="keep-index"
+              label="Keep staged changes in index"
+              checked={keepIndex}
+              onCheckedChange={(checked) => setKeepIndex(checked === true)}
+            />
+          </DialogBody>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button variant="primary" onClick={handleSave}>
               Create Stash
-            </Dialog.Title>
-
-            <div className="dialog-body">
-              <div className="field">
-                <label htmlFor="stash-message" className="label">
-                  Message (optional)
-                </label>
-                <input
-                  id="stash-message"
-                  type="text"
-                  value={stashMessage}
-                  onChange={(e) => setStashMessage(e.target.value)}
-                  placeholder="Stash message..."
-                  className="input"
-                />
-              </div>
-              <div className="checkbox-field">
-                <Checkbox.Root
-                  id="include-untracked"
-                  className="checkbox"
-                  checked={includeUntracked}
-                  onCheckedChange={(checked) => setIncludeUntracked(checked === true)}
-                >
-                  <Checkbox.Indicator>
-                    <Check size={10} className="text-white" />
-                  </Checkbox.Indicator>
-                </Checkbox.Root>
-                <label htmlFor="include-untracked" className="checkbox-label">
-                  Include untracked files
-                </label>
-              </div>
-              <div className="checkbox-field">
-                <Checkbox.Root
-                  id="keep-index"
-                  className="checkbox"
-                  checked={keepIndex}
-                  onCheckedChange={(checked) => setKeepIndex(checked === true)}
-                >
-                  <Checkbox.Indicator>
-                    <Check size={10} className="text-white" />
-                  </Checkbox.Indicator>
-                </Checkbox.Root>
-                <label htmlFor="keep-index" className="checkbox-label">
-                  Keep staged changes in index
-                </label>
-              </div>
-            </div>
-
-            <div className="dialog-footer">
-              <Dialog.Close asChild>
-                <button className="btn btn-secondary">Cancel</button>
-              </Dialog.Close>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Create Stash
-              </button>
-            </div>
-
-            <Dialog.Close asChild>
-              <button className="btn-close absolute top-3 right-3" aria-label="Close">
-                <X size={16} />
-              </button>
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

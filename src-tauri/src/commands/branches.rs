@@ -10,7 +10,9 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
     Git2Service::open(&path)
 }
 
+/// Create a new branch
 #[tauri::command]
+#[specta::specta]
 pub async fn create_branch(
     state: State<'_, AppState>,
     name: String,
@@ -27,7 +29,9 @@ pub async fn create_branch(
     service.create_branch(&name, &options)
 }
 
+/// Delete a branch
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_branch(
     state: State<'_, AppState>,
     name: String,
@@ -37,7 +41,9 @@ pub async fn delete_branch(
     service.delete_branch(&name, force.unwrap_or(false))
 }
 
+/// Rename a branch
 #[tauri::command]
+#[specta::specta]
 pub async fn rename_branch(
     state: State<'_, AppState>,
     old_name: String,
@@ -48,7 +54,9 @@ pub async fn rename_branch(
     service.rename_branch(&old_name, &new_name, force.unwrap_or(false))
 }
 
+/// Checkout a branch
 #[tauri::command]
+#[specta::specta]
 pub async fn checkout_branch(
     state: State<'_, AppState>,
     name: String,
@@ -65,7 +73,9 @@ pub async fn checkout_branch(
     service.checkout_branch(&name, &options)
 }
 
+/// Checkout a remote branch locally
 #[tauri::command]
+#[specta::specta]
 pub async fn checkout_remote_branch(
     state: State<'_, AppState>,
     remote_name: String,
@@ -76,7 +86,9 @@ pub async fn checkout_remote_branch(
     service.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref())
 }
 
+/// Get branch details
 #[tauri::command]
+#[specta::specta]
 pub async fn get_branch(
     state: State<'_, AppState>,
     name: String,
@@ -86,7 +98,9 @@ pub async fn get_branch(
     service.get_branch(&name, branch_type)
 }
 
+/// Set the upstream branch for a local branch
 #[tauri::command]
+#[specta::specta]
 pub async fn set_branch_upstream(
     state: State<'_, AppState>,
     branch_name: String,
@@ -96,7 +110,9 @@ pub async fn set_branch_upstream(
     service.set_branch_upstream(&branch_name, upstream.as_deref())
 }
 
+/// Delete a remote branch
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_remote_branch(
     state: State<'_, AppState>,
     remote_name: String,

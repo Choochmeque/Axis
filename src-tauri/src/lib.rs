@@ -200,3 +200,180 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod specta_export {
+    use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
+
+    #[test]
+    fn export_typescript_bindings() {
+        let builder = Builder::<tauri::Wry>::new()
+            .commands(collect_commands![
+                // Repository commands
+                crate::commands::open_repository,
+                crate::commands::init_repository,
+                crate::commands::clone_repository,
+                crate::commands::close_repository,
+                crate::commands::get_repository_info,
+                crate::commands::get_repository_status,
+                crate::commands::get_commit_history,
+                crate::commands::get_branches,
+                crate::commands::get_commit,
+                crate::commands::get_recent_repositories,
+                crate::commands::remove_recent_repository,
+                crate::commands::show_in_folder,
+                crate::commands::open_terminal,
+                // Staging commands
+                crate::commands::stage_file,
+                crate::commands::stage_files,
+                crate::commands::stage_all,
+                crate::commands::unstage_file,
+                crate::commands::unstage_files,
+                crate::commands::unstage_all,
+                crate::commands::discard_file,
+                crate::commands::discard_all,
+                crate::commands::create_commit,
+                crate::commands::amend_commit,
+                crate::commands::get_user_signature,
+                crate::commands::stage_hunk,
+                crate::commands::unstage_hunk,
+                crate::commands::discard_hunk,
+                // Diff commands
+                crate::commands::get_diff_workdir,
+                crate::commands::get_diff_staged,
+                crate::commands::get_diff_head,
+                crate::commands::get_diff_commit,
+                crate::commands::get_diff_commits,
+                crate::commands::get_file_diff,
+                // File watcher commands
+                crate::commands::start_file_watcher,
+                crate::commands::stop_file_watcher,
+                crate::commands::is_file_watcher_active,
+                // Branch commands
+                crate::commands::create_branch,
+                crate::commands::delete_branch,
+                crate::commands::delete_remote_branch,
+                crate::commands::rename_branch,
+                crate::commands::checkout_branch,
+                crate::commands::checkout_remote_branch,
+                crate::commands::get_branch,
+                crate::commands::set_branch_upstream,
+                // Remote commands
+                crate::commands::list_remotes,
+                crate::commands::get_remote,
+                crate::commands::add_remote,
+                crate::commands::remove_remote,
+                crate::commands::rename_remote,
+                crate::commands::set_remote_url,
+                crate::commands::set_remote_push_url,
+                crate::commands::fetch_remote,
+                crate::commands::push_remote,
+                crate::commands::push_current_branch,
+                crate::commands::pull_remote,
+                crate::commands::fetch_all,
+                // Graph commands
+                crate::commands::build_graph,
+                crate::commands::search_commits,
+                crate::commands::blame_file,
+                crate::commands::get_commit_count,
+                // Merge commands
+                crate::commands::merge_branch,
+                crate::commands::merge_abort,
+                crate::commands::merge_continue,
+                // Rebase commands
+                crate::commands::rebase_branch,
+                crate::commands::rebase_abort,
+                crate::commands::rebase_continue,
+                crate::commands::rebase_skip,
+                crate::commands::get_rebase_preview,
+                // Cherry-pick commands
+                crate::commands::cherry_pick,
+                crate::commands::cherry_pick_abort,
+                crate::commands::cherry_pick_continue,
+                // Revert commands
+                crate::commands::revert_commits,
+                crate::commands::revert_abort,
+                crate::commands::revert_continue,
+                // Conflict resolution commands
+                crate::commands::get_conflicted_files,
+                crate::commands::get_conflict_content,
+                crate::commands::resolve_conflict,
+                crate::commands::mark_conflict_resolved,
+                // Operation state
+                crate::commands::get_operation_state,
+                // Reset commands
+                crate::commands::reset_to_commit,
+                // Stash commands
+                crate::commands::stash_list,
+                crate::commands::stash_save,
+                crate::commands::stash_apply,
+                crate::commands::stash_pop,
+                crate::commands::stash_drop,
+                crate::commands::stash_clear,
+                crate::commands::stash_show,
+                crate::commands::stash_branch,
+                // Tag commands
+                crate::commands::tag_list,
+                crate::commands::tag_create,
+                crate::commands::tag_delete,
+                crate::commands::tag_push,
+                crate::commands::tag_push_all,
+                crate::commands::tag_delete_remote,
+                // Submodule commands
+                crate::commands::submodule_list,
+                crate::commands::submodule_add,
+                crate::commands::submodule_init,
+                crate::commands::submodule_update,
+                crate::commands::submodule_sync,
+                crate::commands::submodule_deinit,
+                crate::commands::submodule_remove,
+                crate::commands::submodule_summary,
+                // Git-flow commands
+                crate::commands::gitflow_is_initialized,
+                crate::commands::gitflow_config,
+                crate::commands::gitflow_init,
+                crate::commands::gitflow_feature_start,
+                crate::commands::gitflow_feature_finish,
+                crate::commands::gitflow_feature_publish,
+                crate::commands::gitflow_feature_list,
+                crate::commands::gitflow_release_start,
+                crate::commands::gitflow_release_finish,
+                crate::commands::gitflow_release_publish,
+                crate::commands::gitflow_release_list,
+                crate::commands::gitflow_hotfix_start,
+                crate::commands::gitflow_hotfix_finish,
+                crate::commands::gitflow_hotfix_publish,
+                crate::commands::gitflow_hotfix_list,
+                // Search commands
+                crate::commands::grep_content,
+                crate::commands::grep_commit,
+                // Settings commands
+                crate::commands::get_settings,
+                crate::commands::save_settings,
+                // Signing commands
+                crate::commands::get_signing_config,
+                crate::commands::list_gpg_keys,
+                crate::commands::list_ssh_keys,
+                crate::commands::test_signing,
+                crate::commands::is_signing_available,
+                // Archive & Patch commands
+                crate::commands::create_archive,
+                crate::commands::format_patch,
+                crate::commands::create_patch,
+                crate::commands::apply_patch,
+                crate::commands::apply_mailbox,
+                crate::commands::am_abort,
+                crate::commands::am_continue,
+                crate::commands::am_skip,
+            ])
+            .error_handling(ErrorHandlingMode::Throw);
+
+        builder
+            .export(
+                specta_typescript::Typescript::default()
+                    .bigint(specta_typescript::BigIntExportBehavior::BigInt),
+                "../src/bindings/api.ts",
+            )
+            .expect("Failed to export typescript bindings");
+    }
+}

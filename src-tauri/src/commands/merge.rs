@@ -32,6 +32,7 @@ fn get_git2_service(state: &State<AppState>) -> Result<Git2Service> {
 
 /// Merge a branch into the current branch
 #[tauri::command]
+#[specta::specta]
 pub async fn merge_branch(
     state: State<'_, AppState>,
     options: MergeOptions,
@@ -89,6 +90,7 @@ pub async fn merge_branch(
 
 /// Abort an in-progress merge
 #[tauri::command]
+#[specta::specta]
 pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
     let cli = get_cli_service(&state)?;
     cli.merge_abort()?;
@@ -97,6 +99,7 @@ pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
 
 /// Continue a merge after resolving conflicts
 #[tauri::command]
+#[specta::specta]
 pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
     let cli = get_cli_service(&state)?;
     let result = cli.merge_continue()?;
@@ -118,6 +121,7 @@ pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
 
 /// Start a rebase onto a target branch
 #[tauri::command]
+#[specta::specta]
 pub async fn rebase_branch(
     state: State<'_, AppState>,
     options: RebaseOptions,
@@ -157,6 +161,7 @@ pub async fn rebase_branch(
 
 /// Abort an in-progress rebase
 #[tauri::command]
+#[specta::specta]
 pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
     let cli = get_cli_service(&state)?;
     cli.rebase_abort()?;
@@ -165,6 +170,7 @@ pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
 
 /// Continue a rebase after resolving conflicts
 #[tauri::command]
+#[specta::specta]
 pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult> {
     let cli = get_cli_service(&state)?;
     let result = cli.rebase_continue()?;
@@ -199,6 +205,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
 
 /// Skip the current commit during rebase
 #[tauri::command]
+#[specta::specta]
 pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
     let cli = get_cli_service(&state)?;
     let result = cli.rebase_skip()?;
@@ -219,6 +226,7 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
 
 /// Get preview information for a rebase operation
 #[tauri::command]
+#[specta::specta]
 pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
     let service = get_git2_service(&state)?;
     service.get_rebase_preview(&onto)
@@ -228,6 +236,7 @@ pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Res
 
 /// Cherry-pick commits
 #[tauri::command]
+#[specta::specta]
 pub async fn cherry_pick(
     state: State<'_, AppState>,
     options: CherryPickOptions,
@@ -236,7 +245,7 @@ pub async fn cherry_pick(
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
-    let mut commit_oids = Vec::new();
+    let commit_oids = Vec::new();
 
     for commit in &options.commits {
         let result = cli.cherry_pick(commit, options.no_commit)?;
@@ -272,6 +281,7 @@ pub async fn cherry_pick(
 
 /// Abort an in-progress cherry-pick
 #[tauri::command]
+#[specta::specta]
 pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
     let cli = get_cli_service(&state)?;
     cli.cherry_pick_abort()?;
@@ -280,6 +290,7 @@ pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
 
 /// Continue cherry-pick after resolving conflicts
 #[tauri::command]
+#[specta::specta]
 pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPickResult> {
     let cli = get_cli_service(&state)?;
     let result = cli.cherry_pick_continue()?;
@@ -312,6 +323,7 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
 
 /// Revert commits
 #[tauri::command]
+#[specta::specta]
 pub async fn revert_commits(
     state: State<'_, AppState>,
     options: RevertOptions,
@@ -352,6 +364,7 @@ pub async fn revert_commits(
 
 /// Abort an in-progress revert
 #[tauri::command]
+#[specta::specta]
 pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
     let cli = get_cli_service(&state)?;
     cli.revert_abort()?;
@@ -360,6 +373,7 @@ pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
 
 /// Continue revert after resolving conflicts
 #[tauri::command]
+#[specta::specta]
 pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult> {
     let cli = get_cli_service(&state)?;
     let result = cli.revert_continue()?;
@@ -380,6 +394,7 @@ pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult>
 
 /// Get list of conflicted files
 #[tauri::command]
+#[specta::specta]
 pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<ConflictedFile>> {
     let cli = get_cli_service(&state)?;
     get_conflicted_files_internal(&cli)
@@ -387,6 +402,7 @@ pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<Conf
 
 /// Get three-way content for a conflicted file
 #[tauri::command]
+#[specta::specta]
 pub async fn get_conflict_content(
     state: State<'_, AppState>,
     path: String,
@@ -412,6 +428,7 @@ pub async fn get_conflict_content(
 
 /// Resolve a conflict by choosing a version
 #[tauri::command]
+#[specta::specta]
 pub async fn resolve_conflict(
     state: State<'_, AppState>,
     path: String,
@@ -446,6 +463,7 @@ pub async fn resolve_conflict(
 
 /// Mark a file as resolved
 #[tauri::command]
+#[specta::specta]
 pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) -> Result<()> {
     let cli = get_cli_service(&state)?;
     cli.mark_resolved(&path)?;
@@ -456,6 +474,7 @@ pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) ->
 
 /// Get the current operation in progress
 #[tauri::command]
+#[specta::specta]
 pub async fn get_operation_state(state: State<'_, AppState>) -> Result<OperationState> {
     let cli = get_cli_service(&state)?;
 
@@ -480,6 +499,7 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
 
 /// Reset the repository to a specific commit
 #[tauri::command]
+#[specta::specta]
 pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) -> Result<()> {
     let cli = get_cli_service(&state)?;
 

@@ -14,6 +14,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 
 /// Search for content in the repository working tree
 #[tauri::command]
+#[specta::specta]
 pub async fn grep_content(state: State<'_, AppState>, options: GrepOptions) -> Result<GrepResult> {
     let cli = get_cli_service(&state)?;
     cli.grep(&options)
@@ -21,6 +22,7 @@ pub async fn grep_content(state: State<'_, AppState>, options: GrepOptions) -> R
 
 /// Search for content in a specific commit
 #[tauri::command]
+#[specta::specta]
 pub async fn grep_commit(
     state: State<'_, AppState>,
     commit_oid: String,

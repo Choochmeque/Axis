@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Represents a complete diff for a file
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FileDiff {
     pub old_path: Option<String>,
     pub new_path: Option<String>,
@@ -16,8 +18,8 @@ pub struct FileDiff {
 }
 
 /// The type of change for a file in a diff
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum DiffStatus {
     Added,
     Deleted,
@@ -30,7 +32,8 @@ pub enum DiffStatus {
 }
 
 /// A hunk within a diff (a contiguous block of changes)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct DiffHunk {
     pub header: String,
     pub old_start: u32,
@@ -41,7 +44,8 @@ pub struct DiffHunk {
 }
 
 /// A single line within a diff hunk
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct DiffLine {
     pub line_type: DiffLineType,
     pub content: String,
@@ -49,8 +53,8 @@ pub struct DiffLine {
     pub new_line_no: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum DiffLineType {
     Context,
     Addition,
@@ -60,7 +64,8 @@ pub enum DiffLineType {
 }
 
 /// Options for generating diffs
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct DiffOptions {
     /// Number of context lines around changes
     pub context_lines: Option<u32>,
@@ -71,8 +76,8 @@ pub struct DiffOptions {
 }
 
 /// Types of diffs we can generate
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum DiffTarget {
     /// Diff between working directory and index (unstaged changes)
     WorkdirToIndex,
@@ -87,14 +92,16 @@ pub enum DiffTarget {
 }
 
 /// Request for staging/unstaging hunks or lines
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PatchRequest {
     pub file_path: String,
     pub hunks: Option<Vec<usize>>, // Indices of hunks to stage/unstage
     pub lines: Option<Vec<LineRange>>, // Specific line ranges
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct LineRange {
     pub hunk_index: usize,
     pub start_line: usize,

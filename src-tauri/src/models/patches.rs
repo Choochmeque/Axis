@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Result of an archive operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ArchiveResult {
     pub success: bool,
     pub message: String,
@@ -10,7 +12,8 @@ pub struct ArchiveResult {
 }
 
 /// Options for creating an archive
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ArchiveOptions {
     /// The reference to archive (commit SHA, branch name, tag)
     pub reference: String,
@@ -23,7 +26,8 @@ pub struct ArchiveOptions {
 }
 
 /// Result of a patch operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PatchResult {
     pub success: bool,
     pub message: String,
@@ -32,7 +36,8 @@ pub struct PatchResult {
 }
 
 /// Options for creating patches
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CreatePatchOptions {
     /// The commit SHA to create patch from (None = staged changes)
     pub commit_oid: Option<String>,
@@ -41,7 +46,8 @@ pub struct CreatePatchOptions {
 }
 
 /// Options for format-patch (creating patches from commit range)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FormatPatchOptions {
     /// Range specification (e.g., "HEAD~3", "main..feature", "abc123")
     pub range: String,
@@ -50,7 +56,8 @@ pub struct FormatPatchOptions {
 }
 
 /// Options for applying a patch
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ApplyPatchOptions {
     /// Path to the patch file
     pub patch_path: String,
@@ -61,7 +68,8 @@ pub struct ApplyPatchOptions {
 }
 
 /// Options for applying mailbox patches (git am)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ApplyMailboxOptions {
     /// Paths to patch files
     pub patch_paths: Vec<String>,

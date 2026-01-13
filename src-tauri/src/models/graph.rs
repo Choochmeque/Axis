@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::collections::HashMap;
 
 use super::{BranchFilterType, Commit, SortOrder};
 
 /// A commit with graph layout information for visualization
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GraphCommit {
     /// The underlying commit data
     #[serde(flatten)]
@@ -18,7 +20,8 @@ pub struct GraphCommit {
 }
 
 /// An edge connecting a commit to its parent in the graph
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GraphEdge {
     /// The parent commit OID
     pub parent_oid: String,
@@ -29,7 +32,7 @@ pub struct GraphEdge {
 }
 
 /// Type of edge in the commit graph
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum EdgeType {
     /// Straight line (same lane)
@@ -41,7 +44,8 @@ pub enum EdgeType {
 }
 
 /// A reference (branch or tag) pointing to a commit
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CommitRef {
     pub name: String,
     pub ref_type: RefType,
@@ -49,8 +53,8 @@ pub struct CommitRef {
 }
 
 /// Type of reference
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum RefType {
     LocalBranch,
     RemoteBranch,
@@ -58,7 +62,8 @@ pub enum RefType {
 }
 
 /// Options for graph generation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GraphOptions {
     /// Maximum number of commits to include
     pub limit: Option<usize>,
@@ -99,7 +104,8 @@ impl Default for GraphOptions {
 }
 
 /// Result of graph generation with metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GraphResult {
     /// The commits with graph layout
     pub commits: Vec<GraphCommit>,
@@ -112,7 +118,8 @@ pub struct GraphResult {
 }
 
 /// Search options for commit search
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchOptions {
     /// Search query
     pub query: String,
@@ -139,21 +146,24 @@ impl Default for SearchOptions {
 }
 
 /// Search result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchResult {
     pub commits: Vec<Commit>,
     pub total_matches: usize,
 }
 
 /// Blame information for a file
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct BlameResult {
     pub path: String,
     pub lines: Vec<BlameLine>,
 }
 
 /// A single line in a blame result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct BlameLine {
     /// Line number (1-indexed)
     pub line_number: usize,

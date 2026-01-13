@@ -17,6 +17,7 @@ fn get_cli_service(state: &State<'_, AppState>) -> Result<GitCliService> {
 // ==================== Archive Commands ====================
 
 #[tauri::command]
+#[specta::specta]
 pub async fn create_archive(
     state: State<'_, AppState>,
     options: ArchiveOptions,
@@ -35,6 +36,7 @@ pub async fn create_archive(
 
 /// Create patches from a commit range using git format-patch
 #[tauri::command]
+#[specta::specta]
 pub async fn format_patch(
     state: State<'_, AppState>,
     options: FormatPatchOptions,
@@ -46,6 +48,7 @@ pub async fn format_patch(
 
 /// Create a patch from a specific commit or staged changes
 #[tauri::command]
+#[specta::specta]
 pub async fn create_patch(
     state: State<'_, AppState>,
     options: CreatePatchOptions,
@@ -66,6 +69,7 @@ pub async fn create_patch(
 
 /// Apply a patch file (git apply)
 #[tauri::command]
+#[specta::specta]
 pub async fn apply_patch(
     state: State<'_, AppState>,
     options: ApplyPatchOptions,
@@ -77,6 +81,7 @@ pub async fn apply_patch(
 
 /// Apply patches using git am (creates commits)
 #[tauri::command]
+#[specta::specta]
 pub async fn apply_mailbox(
     state: State<'_, AppState>,
     options: ApplyMailboxOptions,
@@ -92,6 +97,7 @@ pub async fn apply_mailbox(
 
 /// Abort an in-progress git am session
 #[tauri::command]
+#[specta::specta]
 pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
     let service = get_cli_service(&state)?;
     service.am_abort()
@@ -99,6 +105,7 @@ pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
 
 /// Continue git am after resolving conflicts
 #[tauri::command]
+#[specta::specta]
 pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
     let service = get_cli_service(&state)?;
     service.am_continue()
@@ -106,6 +113,7 @@ pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
 
 /// Skip the current patch in git am
 #[tauri::command]
+#[specta::specta]
 pub async fn am_skip(state: State<'_, AppState>) -> Result<PatchResult> {
     let service = get_cli_service(&state)?;
     service.am_skip()

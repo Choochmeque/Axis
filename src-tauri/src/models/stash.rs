@@ -1,8 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Represents a stash entry
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct StashEntry {
     /// Index of the stash (0 = most recent)
     pub index: usize,
@@ -23,7 +25,8 @@ pub struct StashEntry {
 }
 
 /// Options for creating a stash
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct StashSaveOptions {
     /// Message for the stash
     pub message: Option<String>,
@@ -36,7 +39,8 @@ pub struct StashSaveOptions {
 }
 
 /// Options for applying/popping a stash
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct StashApplyOptions {
     /// Stash index to apply (default: 0)
     pub index: Option<usize>,
@@ -45,7 +49,8 @@ pub struct StashApplyOptions {
 }
 
 /// Result of a stash operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct StashResult {
     pub success: bool,
     pub message: String,

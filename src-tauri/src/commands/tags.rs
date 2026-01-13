@@ -20,6 +20,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 
 /// List all tags
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
     let git2 = get_git2_service(&state)?;
     git2.tag_list()
@@ -27,6 +28,7 @@ pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
 
 /// Create a new tag
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_create(
     state: State<'_, AppState>,
     name: String,
@@ -38,6 +40,7 @@ pub async fn tag_create(
 
 /// Delete a local tag
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagResult> {
     let git2 = get_git2_service(&state)?;
     git2.tag_delete(&name)
@@ -45,6 +48,7 @@ pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagR
 
 /// Push a tag to a remote
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_push(
     state: State<'_, AppState>,
     name: String,
@@ -56,6 +60,7 @@ pub async fn tag_push(
 
 /// Push all tags to a remote
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<TagResult> {
     let cli = get_cli_service(&state)?;
     cli.tag_push_all(&remote)
@@ -63,6 +68,7 @@ pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<
 
 /// Delete a remote tag
 #[tauri::command]
+#[specta::specta]
 pub async fn tag_delete_remote(
     state: State<'_, AppState>,
     name: String,

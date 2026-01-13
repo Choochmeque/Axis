@@ -3,6 +3,7 @@ node_modules
 src-tauri/target
 src-tauri/gen
 coverage
+src/bindings
 pnpm-lock.yaml
 *.min.js
 *.min.css

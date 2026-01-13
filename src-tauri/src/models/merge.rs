@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 use super::commit::Commit;
 
 /// Options for merge operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct MergeOptions {
     /// The branch to merge into the current branch
     pub branch: String,
@@ -18,7 +20,8 @@ pub struct MergeOptions {
 }
 
 /// Result of a merge operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct MergeResult {
     /// Whether the merge was successful
     pub success: bool,
@@ -33,7 +36,8 @@ pub struct MergeResult {
 }
 
 /// Type of merge that occurred
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum MergeType {
     /// Already up to date
     UpToDate,
@@ -46,7 +50,8 @@ pub enum MergeType {
 }
 
 /// Options for rebase operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RebaseOptions {
     /// The branch/commit to rebase onto
     pub onto: String,
@@ -59,7 +64,8 @@ pub struct RebaseOptions {
 }
 
 /// Result of a rebase operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RebaseResult {
     /// Whether the rebase was successful
     pub success: bool,
@@ -76,7 +82,8 @@ pub struct RebaseResult {
 }
 
 /// Preview data for a rebase operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RebasePreview {
     /// Commits that will be rebased (from branch tip to merge-base)
     pub commits_to_rebase: Vec<Commit>,
@@ -89,7 +96,8 @@ pub struct RebasePreview {
 }
 
 /// Target information for rebase preview
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RebaseTarget {
     /// Branch name or commit short_oid
     pub name: String,
@@ -102,7 +110,8 @@ pub struct RebaseTarget {
 }
 
 /// Options for cherry-pick operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CherryPickOptions {
     /// Commit(s) to cherry-pick
     pub commits: Vec<String>,
@@ -113,7 +122,8 @@ pub struct CherryPickOptions {
 }
 
 /// Result of a cherry-pick operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CherryPickResult {
     /// Whether the cherry-pick was successful
     pub success: bool,
@@ -126,7 +136,8 @@ pub struct CherryPickResult {
 }
 
 /// Options for revert operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RevertOptions {
     /// Commit(s) to revert
     pub commits: Vec<String>,
@@ -135,7 +146,8 @@ pub struct RevertOptions {
 }
 
 /// Result of a revert operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RevertResult {
     /// Whether the revert was successful
     pub success: bool,
@@ -148,7 +160,8 @@ pub struct RevertResult {
 }
 
 /// Information about a conflicted file
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ConflictedFile {
     /// Path to the conflicted file
     pub path: String,
@@ -159,7 +172,8 @@ pub struct ConflictedFile {
 }
 
 /// Type of conflict
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum ConflictType {
     /// Content conflict (both sides modified)
     Content,
@@ -176,7 +190,8 @@ pub enum ConflictType {
 }
 
 /// Three-way content for conflict resolution
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ConflictContent {
     /// Path to the file
     pub path: String,
@@ -191,7 +206,8 @@ pub struct ConflictContent {
 }
 
 /// Which version to use when resolving a conflict
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum ConflictResolution {
     /// Use our version
     Ours,
@@ -202,7 +218,8 @@ pub enum ConflictResolution {
 }
 
 /// Operation currently in progress
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum OperationState {
     /// No operation in progress
     #[default]
@@ -234,7 +251,8 @@ pub enum OperationState {
 }
 
 /// Reset mode for reset operations
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum ResetMode {
     /// Keep changes staged
     Soft,
@@ -246,7 +264,8 @@ pub enum ResetMode {
 }
 
 /// Options for reset operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ResetOptions {
     /// Target commit/ref to reset to
     pub target: String,

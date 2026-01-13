@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Represents a Git submodule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Submodule {
     /// Submodule name
     pub name: String,
@@ -22,7 +24,8 @@ pub struct Submodule {
 }
 
 /// Status of a submodule
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum SubmoduleStatus {
     /// Submodule is up to date
     Current,
@@ -42,7 +45,8 @@ pub enum SubmoduleStatus {
 }
 
 /// Options for adding a submodule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct AddSubmoduleOptions {
     /// URL of the repository to add
     pub url: String,
@@ -57,7 +61,8 @@ pub struct AddSubmoduleOptions {
 }
 
 /// Options for updating submodules
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateSubmoduleOptions {
     /// Specific submodule paths to update (empty = all)
     pub paths: Vec<String>,
@@ -76,7 +81,8 @@ pub struct UpdateSubmoduleOptions {
 }
 
 /// Options for syncing submodules
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SyncSubmoduleOptions {
     /// Specific submodule paths to sync (empty = all)
     pub paths: Vec<String>,
@@ -85,7 +91,8 @@ pub struct SyncSubmoduleOptions {
 }
 
 /// Result of a submodule operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SubmoduleResult {
     pub success: bool,
     pub message: String,

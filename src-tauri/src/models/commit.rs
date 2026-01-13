@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Commit {
     pub oid: String,
     pub short_oid: String,
@@ -14,7 +16,7 @@ pub struct Commit {
     pub is_merge: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Signature {
     pub name: String,
     pub email: String,
@@ -54,8 +56,8 @@ impl Signature {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum BranchFilterType {
     #[default]
     All,
@@ -63,15 +65,16 @@ pub enum BranchFilterType {
     Specific(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum SortOrder {
     #[default]
     DateOrder,
     AncestorOrder,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct LogOptions {
     pub limit: Option<usize>,
     pub skip: Option<usize>,

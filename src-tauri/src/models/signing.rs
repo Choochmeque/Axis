@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Signing format - GPG (OpenPGP) or SSH
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum SigningFormat {
     #[default]
     Gpg,
@@ -31,7 +32,8 @@ impl std::str::FromStr for SigningFormat {
 }
 
 /// Configuration for commit signing (how to sign, not whether to sign)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SigningConfig {
     /// Signing format (GPG or SSH)
     pub format: SigningFormat,
@@ -44,7 +46,8 @@ pub struct SigningConfig {
 }
 
 /// Represents a GPG key available for signing
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GpgKey {
     /// Key ID (short or long form)
     pub key_id: String,
@@ -57,7 +60,8 @@ pub struct GpgKey {
 }
 
 /// Represents an SSH key available for signing
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SshKey {
     /// Path to the private key file
     pub path: String,
@@ -68,7 +72,8 @@ pub struct SshKey {
 }
 
 /// Result of testing signing configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SigningTestResult {
     /// Whether the test was successful
     pub success: bool,

@@ -69,3 +69,14 @@ impl Serialize for AxisError {
 }
 
 pub type Result<T> = std::result::Result<T, AxisError>;
+
+// Implement specta::Type for AxisError
+// Since AxisError serializes to a String, we represent it as a String type in TypeScript
+impl specta::Type for AxisError {
+    fn inline(
+        _type_map: &mut specta::TypeMap,
+        _generics: specta::Generics,
+    ) -> specta::datatype::DataType {
+        specta::datatype::DataType::Primitive(specta::datatype::PrimitiveType::String)
+    }
+}

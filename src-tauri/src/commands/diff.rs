@@ -13,6 +13,7 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 
 /// Get diff for unstaged changes (working directory vs index)
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diff_workdir(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
@@ -24,6 +25,7 @@ pub async fn get_diff_workdir(
 
 /// Get diff for staged changes (index vs HEAD)
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diff_staged(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
@@ -35,6 +37,7 @@ pub async fn get_diff_staged(
 
 /// Get diff for all uncommitted changes (working directory vs HEAD)
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diff_head(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
@@ -46,6 +49,7 @@ pub async fn get_diff_head(
 
 /// Get diff for a specific commit (commit vs its parent)
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diff_commit(
     state: State<'_, AppState>,
     oid: String,
@@ -58,6 +62,7 @@ pub async fn get_diff_commit(
 
 /// Get diff between two commits
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diff_commits(
     state: State<'_, AppState>,
     from_oid: String,
@@ -71,6 +76,7 @@ pub async fn get_diff_commits(
 
 /// Get diff for a single file (staged or unstaged)
 #[tauri::command]
+#[specta::specta]
 pub async fn get_file_diff(
     state: State<'_, AppState>,
     path: String,

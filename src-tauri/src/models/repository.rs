@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Repository {
     pub id: String,
     pub name: String,
@@ -11,8 +13,8 @@ pub struct Repository {
     pub state: RepositoryState,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum RepositoryState {
     Clean,
     Merging,
@@ -46,7 +48,8 @@ impl From<git2::RepositoryState> for RepositoryState {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct RecentRepository {
     pub path: PathBuf,
     pub name: String,

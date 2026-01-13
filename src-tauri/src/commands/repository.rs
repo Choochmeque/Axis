@@ -16,6 +16,7 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result<Repository> {
     let path = PathBuf::from(&path);
 
@@ -36,6 +37,7 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn init_repository(
     state: State<'_, AppState>,
     path: String,
@@ -56,6 +58,7 @@ pub async fn init_repository(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn clone_repository(
     state: State<'_, AppState>,
     url: String,
@@ -88,24 +91,28 @@ pub async fn clone_repository(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn close_repository(state: State<'_, AppState>) -> Result<()> {
     state.close_current_repository();
     Ok(())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repository> {
     let service = get_service(&state)?;
     service.get_repository_info()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
     let service = get_service(&state)?;
     service.status()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_commit_history(
     state: State<'_, AppState>,
     limit: Option<usize>,
@@ -128,6 +135,7 @@ pub async fn get_commit_history(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_branches(
     state: State<'_, AppState>,
     include_local: Option<bool>,
@@ -142,39 +150,46 @@ pub async fn get_branches(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
     let service = get_service(&state)?;
     service.get_commit(&oid)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<RecentRepository>> {
     state.get_recent_repositories()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_recent_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
     state.remove_recent_repository(&path)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn start_file_watcher(state: State<'_, AppState>, app_handle: AppHandle) -> Result<()> {
     state.start_file_watcher(app_handle)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn stop_file_watcher(state: State<'_, AppState>) -> Result<()> {
     state.stop_file_watcher();
     Ok(())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn is_file_watcher_active(state: State<'_, AppState>) -> Result<bool> {
     Ok(state.is_watching())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
 
@@ -189,6 +204,7 @@ pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn open_terminal(path: String) -> Result<()> {
     let path = PathBuf::from(&path);
 

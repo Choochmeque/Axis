@@ -4,11 +4,13 @@ use crate::state::AppState;
 use tauri::State;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings> {
     state.get_settings()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Result<()> {
     state.save_settings(&settings)
 }

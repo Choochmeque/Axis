@@ -1,7 +1,9 @@
 use crate::models::SigningFormat;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     // Appearance
     pub theme: Theme,
@@ -34,8 +36,8 @@ pub struct AppSettings {
     pub terminal_font_size: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum Theme {
     Light,
     Dark,

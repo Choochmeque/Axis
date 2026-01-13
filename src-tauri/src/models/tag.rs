@@ -1,8 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Represents a Git tag
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Tag {
     /// Tag name
     pub name: String,
@@ -25,7 +27,8 @@ pub struct Tag {
 }
 
 /// Signature for a tag tagger
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct TagSignature {
     pub name: String,
     pub email: String,
@@ -33,7 +36,8 @@ pub struct TagSignature {
 }
 
 /// Options for creating a tag
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateTagOptions {
     /// Target ref/commit (default: HEAD)
     pub target: Option<String>,
@@ -46,7 +50,8 @@ pub struct CreateTagOptions {
 }
 
 /// Options for listing tags
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ListTagsOptions {
     /// Filter pattern (glob-style)
     pub pattern: Option<String>,
@@ -56,7 +61,8 @@ pub struct ListTagsOptions {
     pub limit: Option<usize>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum TagSortOrder {
     #[default]
     Alphabetical,
@@ -66,7 +72,8 @@ pub enum TagSortOrder {
 }
 
 /// Result of a tag operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct TagResult {
     pub success: bool,
     pub message: String,

@@ -12,6 +12,7 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 
 /// Build commit graph with lane assignments for visualization
 #[tauri::command]
+#[specta::specta]
 pub async fn build_graph(
     state: State<'_, AppState>,
     options: Option<GraphOptions>,
@@ -22,6 +23,7 @@ pub async fn build_graph(
 
 /// Search commits by message, author, or hash
 #[tauri::command]
+#[specta::specta]
 pub async fn search_commits(
     state: State<'_, AppState>,
     options: SearchOptions,
@@ -32,6 +34,7 @@ pub async fn search_commits(
 
 /// Get blame information for a file
 #[tauri::command]
+#[specta::specta]
 pub async fn blame_file(
     state: State<'_, AppState>,
     path: String,
@@ -43,6 +46,7 @@ pub async fn blame_file(
 
 /// Get total commit count for pagination
 #[tauri::command]
+#[specta::specta]
 pub async fn get_commit_count(
     state: State<'_, AppState>,
     from_ref: Option<String>,

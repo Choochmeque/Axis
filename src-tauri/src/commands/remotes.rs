@@ -11,30 +11,35 @@ fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn list_remotes(state: State<'_, AppState>) -> Result<Vec<Remote>> {
     let service = get_service(&state)?;
     service.list_remotes()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_remote(state: State<'_, AppState>, name: String) -> Result<Remote> {
     let service = get_service(&state)?;
     service.get_remote(&name)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn add_remote(state: State<'_, AppState>, name: String, url: String) -> Result<Remote> {
     let service = get_service(&state)?;
     service.add_remote(&name, &url)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_remote(state: State<'_, AppState>, name: String) -> Result<()> {
     let service = get_service(&state)?;
     service.remove_remote(&name)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn rename_remote(
     state: State<'_, AppState>,
     old_name: String,
@@ -45,12 +50,14 @@ pub async fn rename_remote(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_remote_url(state: State<'_, AppState>, name: String, url: String) -> Result<()> {
     let service = get_service(&state)?;
     service.set_remote_url(&name, &url)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_remote_push_url(
     state: State<'_, AppState>,
     name: String,
@@ -61,6 +68,7 @@ pub async fn set_remote_push_url(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn fetch_remote(
     state: State<'_, AppState>,
     remote_name: String,
@@ -78,6 +86,7 @@ pub async fn fetch_remote(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn push_remote(
     state: State<'_, AppState>,
     remote_name: String,
@@ -96,6 +105,7 @@ pub async fn push_remote(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn push_current_branch(
     state: State<'_, AppState>,
     remote_name: String,
@@ -112,6 +122,7 @@ pub async fn push_current_branch(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn pull_remote(
     state: State<'_, AppState>,
     remote_name: String,
@@ -128,6 +139,7 @@ pub async fn pull_remote(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let service = get_service(&state)?;
     let remotes = service.list_remotes()?;

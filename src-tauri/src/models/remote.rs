@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Represents a Git remote
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct Remote {
     pub name: String,
     pub url: Option<String>,
@@ -11,7 +13,8 @@ pub struct Remote {
 }
 
 /// Progress information for fetch operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FetchProgress {
     pub total_objects: usize,
     pub indexed_objects: usize,
@@ -23,7 +26,8 @@ pub struct FetchProgress {
 }
 
 /// Progress information for push operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PushProgress {
     pub current: usize,
     pub total: usize,
@@ -31,7 +35,8 @@ pub struct PushProgress {
 }
 
 /// Result of a fetch operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FetchResult {
     pub remote: String,
     pub updated_refs: Vec<UpdatedRef>,
@@ -39,7 +44,8 @@ pub struct FetchResult {
 }
 
 /// An updated reference from fetch/push
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatedRef {
     pub ref_name: String,
     pub old_oid: Option<String>,
@@ -47,8 +53,8 @@ pub struct UpdatedRef {
     pub status: RefUpdateStatus,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum RefUpdateStatus {
     FastForward,
     Forced,
@@ -59,22 +65,24 @@ pub enum RefUpdateStatus {
 }
 
 /// Result of a push operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PushResult {
     pub remote: String,
     pub pushed_refs: Vec<PushedRef>,
 }
 
 /// A pushed reference result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PushedRef {
     pub ref_name: String,
     pub status: PushStatus,
     pub message: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum PushStatus {
     Ok,
     Rejected,
@@ -83,7 +91,8 @@ pub enum PushStatus {
 }
 
 /// Options for checkout operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CheckoutOptions {
     /// Create a new branch if it doesn't exist
     pub create: bool,
@@ -94,7 +103,8 @@ pub struct CheckoutOptions {
 }
 
 /// Options for branch creation
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateBranchOptions {
     /// The starting point (commit/branch/tag). If None, uses HEAD.
     pub start_point: Option<String>,
@@ -105,7 +115,8 @@ pub struct CreateBranchOptions {
 }
 
 /// Options for branch deletion
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct DeleteBranchOptions {
     /// Force deletion even if not fully merged
     pub force: bool,
@@ -114,7 +125,8 @@ pub struct DeleteBranchOptions {
 }
 
 /// Options for fetch operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FetchOptions {
     /// Prune remote tracking branches that no longer exist
     pub prune: bool,
@@ -125,7 +137,8 @@ pub struct FetchOptions {
 }
 
 /// Options for push operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PushOptions {
     /// Force push
     pub force: bool,
@@ -136,7 +149,8 @@ pub struct PushOptions {
 }
 
 /// Options for pull operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PullOptions {
     /// Rebase instead of merge
     pub rebase: bool,

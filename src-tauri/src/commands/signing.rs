@@ -5,6 +5,7 @@ use crate::state::AppState;
 use tauri::State;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_signing_config(state: State<'_, AppState>) -> Result<SigningConfig> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
@@ -12,6 +13,7 @@ pub async fn get_signing_config(state: State<'_, AppState>) -> Result<SigningCon
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn list_gpg_keys(state: State<'_, AppState>) -> Result<Vec<GpgKey>> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
@@ -19,6 +21,7 @@ pub async fn list_gpg_keys(state: State<'_, AppState>) -> Result<Vec<GpgKey>> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn list_ssh_keys(state: State<'_, AppState>) -> Result<Vec<SshKey>> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
@@ -26,6 +29,7 @@ pub async fn list_ssh_keys(state: State<'_, AppState>) -> Result<Vec<SshKey>> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn test_signing(
     state: State<'_, AppState>,
     config: SigningConfig,
@@ -36,6 +40,7 @@ pub async fn test_signing(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn is_signing_available(
     state: State<'_, AppState>,
     config: SigningConfig,

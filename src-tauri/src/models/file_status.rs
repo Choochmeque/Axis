@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct FileStatus {
     pub path: String,
     pub status: StatusType,
@@ -10,8 +12,8 @@ pub struct FileStatus {
     pub old_path: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum StatusType {
     Untracked,
     Added,
@@ -84,7 +86,7 @@ impl FileStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 pub struct RepositoryStatus {
     pub staged: Vec<FileStatus>,
     pub unstaged: Vec<FileStatus>,

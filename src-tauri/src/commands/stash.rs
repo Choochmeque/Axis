@@ -14,6 +14,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 
 /// List all stash entries
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_list(state: State<'_, AppState>) -> Result<Vec<StashEntry>> {
     let cli = get_cli_service(&state)?;
     cli.stash_list()
@@ -21,6 +22,7 @@ pub async fn stash_list(state: State<'_, AppState>) -> Result<Vec<StashEntry>> {
 
 /// Create a new stash
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_save(
     state: State<'_, AppState>,
     options: StashSaveOptions,
@@ -31,6 +33,7 @@ pub async fn stash_save(
 
 /// Apply a stash (keep it in the stash list)
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_apply(
     state: State<'_, AppState>,
     options: StashApplyOptions,
@@ -41,6 +44,7 @@ pub async fn stash_apply(
 
 /// Pop a stash (apply and remove from stash list)
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_pop(
     state: State<'_, AppState>,
     options: StashApplyOptions,
@@ -51,6 +55,7 @@ pub async fn stash_pop(
 
 /// Drop a stash entry
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Result<StashResult> {
     let cli = get_cli_service(&state)?;
     cli.stash_drop(index)
@@ -58,6 +63,7 @@ pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Res
 
 /// Clear all stashes
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_clear(state: State<'_, AppState>) -> Result<StashResult> {
     let cli = get_cli_service(&state)?;
     cli.stash_clear()
@@ -65,6 +71,7 @@ pub async fn stash_clear(state: State<'_, AppState>) -> Result<StashResult> {
 
 /// Show the diff of a stash
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_show(
     state: State<'_, AppState>,
     index: Option<usize>,
@@ -76,6 +83,7 @@ pub async fn stash_show(
 
 /// Create a branch from a stash
 #[tauri::command]
+#[specta::specta]
 pub async fn stash_branch(
     state: State<'_, AppState>,
     branch_name: String,

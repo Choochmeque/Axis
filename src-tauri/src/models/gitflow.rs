@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 /// Git-flow configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GitFlowConfig {
     pub master: String,
     pub develop: String,
@@ -27,7 +29,8 @@ impl Default for GitFlowConfig {
 }
 
 /// Options for initializing git-flow
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GitFlowInitOptions {
     #[serde(default)]
     pub master: Option<String>,
@@ -48,7 +51,8 @@ pub struct GitFlowInitOptions {
 }
 
 /// Options for finishing a feature/release/hotfix
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GitFlowFinishOptions {
     #[serde(default)]
     pub fetch: bool,
@@ -71,7 +75,8 @@ pub struct GitFlowFinishOptions {
 }
 
 /// Result of a git-flow operation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GitFlowResult {
     pub success: bool,
     pub message: String,
@@ -79,8 +84,8 @@ pub struct GitFlowResult {
 }
 
 /// Type of git-flow branch
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "PascalCase")]
 pub enum GitFlowBranchType {
     Feature,
     Release,
@@ -100,7 +105,8 @@ impl GitFlowBranchType {
 }
 
 /// Content search options
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GrepOptions {
     pub pattern: String,
     #[serde(default)]
@@ -116,13 +122,14 @@ pub struct GrepOptions {
     #[serde(default)]
     pub show_line_numbers: bool,
     #[serde(default)]
-    pub max_count: Option<usize>,
+    pub max_count: Option<u32>,
     #[serde(default)]
-    pub context_lines: Option<usize>,
+    pub context_lines: Option<u32>,
 }
 
 /// A single grep match
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GrepMatch {
     pub path: String,
     pub line_number: Option<usize>,
@@ -130,7 +137,8 @@ pub struct GrepMatch {
 }
 
 /// Result of a grep search
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct GrepResult {
     pub matches: Vec<GrepMatch>,
     pub total_matches: usize,

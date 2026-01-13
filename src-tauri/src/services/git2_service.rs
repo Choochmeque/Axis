@@ -1,8 +1,8 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, FileStatus,
-    LogOptions, Repository, RepositoryState, RepositoryStatus, SigningConfig, SortOrder, Tag,
-    TagResult, TagSignature,
+    LogOptions, RebasePreview, RebaseTarget, Repository, RepositoryState, RepositoryStatus,
+    SigningConfig, SortOrder, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -1943,6 +1943,87 @@ impl Git2Service {
                 tag: None,
             }),
         }
+    }
+
+    // ==================== Rebase Preview ====================
+
+    /// Get preview data for a rebase operation
+    pub fn get_rebase_preview(&self, onto: &str) -> Result<RebasePreview> {
+        // Get HEAD commit (current branch tip)
+        let head = self.repo.head()?;
+        let head_commit = head.peel_to_commit()?;
+
+        // Resolve the "onto" target
+        let target_obj = self.repo.revparse_single(onto)?;
+        let target_commit = target_obj
+            .peel_to_commit()
+            .map_err(|_| AxisError::InvalidReference(onto.to_string()))?;
+
+        // Find merge-base between HEAD and target
+        let merge_base_oid = self
+            .repo
+            .merge_base(head_commit.id(), target_commit.id())
+            .map_err(|_| {
+                AxisError::Other(format!(
+                    "No common ancestor found between HEAD and '{}'",
+                    onto
+                ))
+            })?;
+        let merge_base_commit = self.repo.find_commit(merge_base_oid)?;
+
+        // Collect commits to rebase (from HEAD to merge-base, exclusive)
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push(head_commit.id())?;
+        revwalk.hide(merge_base_oid)?;
+        revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)?;
+
+        let mut commits_to_rebase = Vec::new();
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+            commits_to_rebase.push(Commit::from_git2_commit(&commit));
+        }
+
+        // Count commits on target since merge-base
+        let mut target_revwalk = self.repo.revwalk()?;
+        target_revwalk.push(target_commit.id())?;
+        target_revwalk.hide(merge_base_oid)?;
+        let target_commits_ahead = target_revwalk.count();
+
+        // Determine target name (try to find a branch name)
+        let target_name = self.resolve_ref_name(onto);
+
+        Ok(RebasePreview {
+            commits_to_rebase,
+            merge_base: Commit::from_git2_commit(&merge_base_commit),
+            target: RebaseTarget {
+                name: target_name,
+                oid: target_commit.id().to_string(),
+                short_oid: target_commit.id().to_string()[..7].to_string(),
+                summary: target_commit.summary().unwrap_or("").to_string(),
+            },
+            target_commits_ahead,
+        })
+    }
+
+    /// Helper to resolve a ref spec to a friendly name
+    fn resolve_ref_name(&self, spec: &str) -> String {
+        // Try as local branch first
+        if let Ok(branch) = self.repo.find_branch(spec, git2::BranchType::Local) {
+            if let Ok(Some(name)) = branch.name() {
+                return name.to_string();
+            }
+        }
+
+        // Try as remote branch
+        if let Ok(branch) = self.repo.find_branch(spec, git2::BranchType::Remote) {
+            if let Ok(Some(name)) = branch.name() {
+                return name.to_string();
+            }
+        }
+
+        // Fall back to the spec itself (could be a commit hash or other ref)
+        spec.to_string()
     }
 }
 

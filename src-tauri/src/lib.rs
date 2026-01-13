@@ -115,6 +115,7 @@ pub fn run() {
             commands::rebase_abort,
             commands::rebase_continue,
             commands::rebase_skip,
+            commands::get_rebase_preview,
             // Cherry-pick commands
             commands::cherry_pick,
             commands::cherry_pick_abort,

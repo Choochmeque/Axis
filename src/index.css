@@ -523,4 +523,47 @@ code {
   .badge {
     @apply py-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-(--bg-badge) text-(--text-primary);
   }
+
+  /* Rebase Preview Diagram */
+  .rebase-preview {
+    @apply flex items-stretch gap-3 p-3 bg-(--bg-secondary) rounded-md;
+  }
+
+  .rebase-preview-panel {
+    @apply flex-1 flex flex-col min-w-0;
+  }
+
+  .rebase-preview-header {
+    @apply text-[11px] font-semibold uppercase text-(--text-tertiary) mb-1 text-center tracking-wide;
+  }
+
+  .rebase-preview-branch-info {
+    @apply text-center mb-2;
+  }
+
+  .rebase-preview-branch-name {
+    @apply text-xs font-semibold font-mono;
+  }
+
+  .rebase-preview-svg {
+    @apply flex-1 block;
+  }
+
+  .rebase-preview-arrow {
+    @apply flex items-center justify-center text-(--text-tertiary) px-1;
+  }
+
+  .rebase-preview-commit-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+  }
+
+  .rebase-preview-branch-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .rebase-preview-empty {
+    @apply flex items-center justify-center p-4 bg-(--bg-secondary) rounded-md;
+  }
 }

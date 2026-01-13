@@ -20,6 +20,7 @@ import type {
   MergeOptions,
   MergeResult,
   RebaseOptions,
+  RebasePreview,
   RebaseResult,
   CherryPickOptions,
   CherryPickResult,
@@ -264,6 +265,8 @@ export const rebaseApi = {
   continue: () => invoke<RebaseResult>('rebase_continue'),
 
   skip: () => invoke<RebaseResult>('rebase_skip'),
+
+  getPreview: (onto: string) => invoke<RebasePreview>('get_rebase_preview', { onto }),
 };
 
 export const cherryPickApi = {

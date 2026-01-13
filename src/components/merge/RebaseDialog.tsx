@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { GitBranch, X, AlertCircle, Check } from 'lucide-react';
+import { GitBranch, X, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { rebaseApi, branchApi } from '../../services/api';
-import type { Branch, Commit, RebaseResult } from '../../types';
+import type { Branch, Commit, RebasePreview, RebaseResult } from '../../types';
 import { cn } from '../../lib/utils';
+import { RebasePreviewDiagram } from './RebasePreviewDiagram';
 
 interface RebaseDialogProps {
   isOpen: boolean;
@@ -25,18 +26,45 @@ export function RebaseDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RebaseResult | null>(null);
+  const [preview, setPreview] = useState<RebasePreview | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setError(null);
       setResult(null);
       setSelectedBranch('');
+      setPreview(null);
       if (!targetCommit) {
         loadBranches();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, targetCommit]);
+
+  // Load preview when target changes
+  useEffect(() => {
+    const loadPreview = async () => {
+      const rebaseTarget = targetCommit?.oid ?? selectedBranch;
+      if (!rebaseTarget || !isOpen) {
+        setPreview(null);
+        return;
+      }
+
+      setIsLoadingPreview(true);
+      try {
+        const previewData = await rebaseApi.getPreview(rebaseTarget);
+        setPreview(previewData);
+      } catch (err) {
+        console.error('Failed to load rebase preview:', err);
+        setPreview(null);
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [isOpen, targetCommit, selectedBranch]);
 
   const loadBranches = async () => {
     try {
@@ -190,6 +218,17 @@ export function RebaseDialog({
                       ))}
                     </select>
                   </div>
+                )}
+
+                {isLoadingPreview && (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 size={16} className="animate-spin text-(--text-secondary)" />
+                    <span className="ml-2 text-sm text-(--text-secondary)">Loading preview...</span>
+                  </div>
+                )}
+
+                {preview && !isLoadingPreview && (
+                  <RebasePreviewDiagram preview={preview} currentBranch={currentBranch} />
                 )}
 
                 <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">

@@ -1679,11 +1679,7 @@ impl GitCliService {
 
     /// Create patch files from commits using git format-patch
     /// range can be: commit..commit, -n (last n commits), branch, etc.
-    pub fn format_patch(
-        &self,
-        range: &str,
-        output_dir: &Path,
-    ) -> Result<PatchResult> {
+    pub fn format_patch(&self, range: &str, output_dir: &Path) -> Result<PatchResult> {
         // Ensure output directory exists
         if !output_dir.exists() {
             std::fs::create_dir_all(output_dir).map_err(AxisError::IoError)?;

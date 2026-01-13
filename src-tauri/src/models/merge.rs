@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::commit::Commit;
+
 /// Options for merge operations
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MergeOptions {
@@ -71,6 +73,32 @@ pub struct RebaseResult {
     pub conflicts: Vec<ConflictedFile>,
     /// Informational message
     pub message: String,
+}
+
+/// Preview data for a rebase operation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RebasePreview {
+    /// Commits that will be rebased (from branch tip to merge-base)
+    pub commits_to_rebase: Vec<Commit>,
+    /// The merge-base commit (fork point)
+    pub merge_base: Commit,
+    /// Target branch/commit info
+    pub target: RebaseTarget,
+    /// Number of commits on target since merge-base
+    pub target_commits_ahead: usize,
+}
+
+/// Target information for rebase preview
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RebaseTarget {
+    /// Branch name or commit short_oid
+    pub name: String,
+    /// Full commit OID
+    pub oid: String,
+    /// Short commit OID
+    pub short_oid: String,
+    /// Commit summary
+    pub summary: String,
 }
 
 /// Options for cherry-pick operations

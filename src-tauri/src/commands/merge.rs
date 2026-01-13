@@ -2,8 +2,9 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictType,
     ConflictedFile, MergeOptions, MergeResult, MergeType, OperationState, RebaseOptions,
-    RebaseResult, ResetMode, ResetOptions, RevertOptions, RevertResult,
+    RebasePreview, RebaseResult, ResetMode, ResetOptions, RevertOptions, RevertResult,
 };
+use crate::services::Git2Service;
 use crate::services::GitCliService;
 use crate::state::AppState;
 use std::fs;
@@ -19,6 +20,12 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 /// Helper to get the repository path
 fn get_repo_path(state: &State<AppState>) -> Result<PathBuf> {
     state.ensure_repository_open()
+}
+
+/// Helper to get Git2Service from current repository
+fn get_git2_service(state: &State<AppState>) -> Result<Git2Service> {
+    let path = state.ensure_repository_open()?;
+    Git2Service::open(&path)
 }
 
 // ==================== Merge Commands ====================
@@ -208,6 +215,13 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
             result.stderr.trim().to_string()
         },
     })
+}
+
+/// Get preview information for a rebase operation
+#[tauri::command]
+pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
+    let service = get_git2_service(&state)?;
+    service.get_rebase_preview(&onto)
 }
 
 // ==================== Cherry-pick Commands ====================

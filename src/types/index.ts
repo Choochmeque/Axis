@@ -343,6 +343,20 @@ export interface RebaseResult {
   message: string;
 }
 
+export interface RebasePreview {
+  commits_to_rebase: Commit[];
+  merge_base: Commit;
+  target: RebaseTarget;
+  target_commits_ahead: number;
+}
+
+export interface RebaseTarget {
+  name: string;
+  oid: string;
+  short_oid: string;
+  summary: string;
+}
+
 // Cherry-pick types
 export interface CherryPickOptions {
   commits: string[];

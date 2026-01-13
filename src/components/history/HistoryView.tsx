@@ -238,6 +238,7 @@ export function HistoryView() {
     loadMoreCommits,
     status,
     setCurrentView,
+    branches,
   } = useRepositoryStore();
 
   // Check if there are uncommitted changes
@@ -339,21 +340,35 @@ export function HistoryView() {
             <>
               {commit.refs && commit.refs.length > 0 && (
                 <span className="inline-flex gap-1 mr-2">
-                  {commit.refs.map((ref, idx) => (
-                    <span
-                      key={idx}
-                      className={cn(
-                        'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
-                        ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
-                        ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
-                        ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
-                        ref.is_head && 'font-bold'
-                      )}
-                    >
-                      {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
-                      {ref.name}
-                    </span>
-                  ))}
+                  {commit.refs.map((ref, idx) => {
+                    // Get behind count for local branches
+                    const behindCount =
+                      ref.ref_type === 'local_branch'
+                        ? branches.find((b) => b.name === ref.name && b.branch_type === 'local')
+                            ?.behind
+                        : null;
+
+                    return (
+                      <span
+                        key={idx}
+                        className={cn(
+                          'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
+                          ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
+                          ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
+                          ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
+                          ref.is_head && 'font-bold'
+                        )}
+                      >
+                        {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                        {ref.name}
+                        {behindCount != null && behindCount > 0 && (
+                          <span className="ml-1 pl-1 border-l border-white/30">
+                            {behindCount} behind
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
                 </span>
               )}
               <span className="text-[13px]">{commit.summary}</span>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { GitBranch, X, AlertCircle, Check } from 'lucide-react';
 import { rebaseApi, branchApi } from '../../services/api';
-import type { Branch, RebaseResult } from '../../types';
+import type { Branch, Commit, RebaseResult } from '../../types';
 import { cn } from '../../lib/utils';
 
 interface RebaseDialogProps {
@@ -10,6 +10,7 @@ interface RebaseDialogProps {
   onClose: () => void;
   onRebaseComplete?: (result: RebaseResult) => void;
   currentBranch: string;
+  targetCommit?: Commit;
 }
 
 export function RebaseDialog({
@@ -17,6 +18,7 @@ export function RebaseDialog({
   onClose,
   onRebaseComplete,
   currentBranch,
+  targetCommit,
 }: RebaseDialogProps) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
@@ -26,13 +28,15 @@ export function RebaseDialog({
 
   useEffect(() => {
     if (isOpen) {
-      loadBranches();
       setError(null);
       setResult(null);
       setSelectedBranch('');
+      if (!targetCommit) {
+        loadBranches();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, targetCommit]);
 
   const loadBranches = async () => {
     try {
@@ -47,7 +51,9 @@ export function RebaseDialog({
   };
 
   const handleRebase = async () => {
-    if (!selectedBranch) {
+    const rebaseTarget = targetCommit ? targetCommit.oid : selectedBranch;
+
+    if (!rebaseTarget) {
       setError('Please select a branch to rebase onto');
       return;
     }
@@ -57,7 +63,7 @@ export function RebaseDialog({
 
     try {
       const rebaseResult = await rebaseApi.rebase({
-        onto: selectedBranch,
+        onto: rebaseTarget,
       });
 
       setResult(rebaseResult);
@@ -151,26 +157,40 @@ export function RebaseDialog({
                   </div>
                 </div>
 
-                <div className="field">
-                  <label htmlFor="rebase-branch" className="label">
-                    Rebase Onto
-                  </label>
-                  <select
-                    id="rebase-branch"
-                    value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    disabled={isLoading}
-                    className="input"
-                  >
-                    <option value="">Select a branch...</option>
-                    {branches.map((branch) => (
-                      <option key={branch.full_name} value={branch.name}>
-                        {branch.name}
-                        {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {targetCommit ? (
+                  <div className="field">
+                    <label className="label">Rebase Onto Commit</label>
+                    <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
+                      <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
+                        {targetCommit.short_oid}
+                      </span>
+                      <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+                        {targetCommit.summary}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="field">
+                    <label htmlFor="rebase-branch" className="label">
+                      Rebase Onto
+                    </label>
+                    <select
+                      id="rebase-branch"
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      disabled={isLoading}
+                      className="input"
+                    >
+                      <option value="">Select a branch...</option>
+                      {branches.map((branch) => (
+                        <option key={branch.full_name} value={branch.name}>
+                          {branch.name}
+                          {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
                   <p className="m-0 mb-2">
@@ -178,7 +198,7 @@ export function RebaseDialog({
                     <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
                     top of{' '}
                     <strong className="text-(--text-primary) font-mono">
-                      {selectedBranch || '...'}
+                      {targetCommit ? targetCommit.short_oid : selectedBranch || '...'}
                     </strong>
                     .
                   </p>
@@ -247,7 +267,7 @@ export function RebaseDialog({
                 <button
                   className="btn-icon btn-primary"
                   onClick={handleRebase}
-                  disabled={isLoading || !selectedBranch}
+                  disabled={isLoading || (!targetCommit && !selectedBranch)}
                 >
                   {isLoading ? 'Rebasing...' : 'Rebase'}
                 </button>

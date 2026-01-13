@@ -15,12 +15,15 @@ import {
   ArrowUpFromLine,
   PenTool,
 } from 'lucide-react';
-import type { GraphCommit } from '../../types';
+import type { GraphCommit, ResetMode } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { branchApi } from '../../services/api';
 import { TagDialog } from '../tags/TagDialog';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { CherryPickDialog } from '../merge/CherryPickDialog';
+import { ResetConfirmDialog } from '../merge/ResetConfirmDialog';
+import { RevertCommitDialog } from '../merge/RevertCommitDialog';
+import { RebaseDialog } from '../merge/RebaseDialog';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -49,6 +52,10 @@ export function CommitContextMenu({
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [showCherryPickDialog, setShowCherryPickDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetMode, setResetMode] = useState<ResetMode>('mixed');
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [showRebaseDialog, setShowRebaseDialog] = useState(false);
 
   const handleCopySha = async () => {
     try {
@@ -110,11 +117,29 @@ export function CommitContextMenu({
     // TODO: Open merge dialog
   };
 
+  const handleRebase = () => {
+    setShowRebaseDialog(true);
+  };
+
+  const handleRebaseComplete = async () => {
+    setShowRebaseDialog(false);
+    await loadCommits();
+    await loadStatus();
+    await loadBranches();
+  };
+
   const handleRevert = () => {
     if (onRevert) {
       onRevert();
+    } else {
+      setShowRevertDialog(true);
     }
-    // TODO: Implement revert
+  };
+
+  const handleRevertComplete = async () => {
+    setShowRevertDialog(false);
+    await loadCommits();
+    await loadStatus();
   };
 
   const handleCherryPick = () => {
@@ -131,11 +156,20 @@ export function CommitContextMenu({
     await loadStatus();
   };
 
-  const handleReset = (mode: 'soft' | 'mixed' | 'hard') => {
+  const handleReset = (mode: ResetMode) => {
     if (onReset) {
       onReset(mode);
+    } else {
+      setResetMode(mode);
+      setShowResetDialog(true);
     }
-    // TODO: Implement reset with confirmation dialog
+  };
+
+  const handleResetComplete = async () => {
+    setShowResetDialog(false);
+    await loadCommits();
+    await loadStatus();
+    await loadBranches();
   };
 
   return (
@@ -165,7 +199,7 @@ export function CommitContextMenu({
               <span>Merge into {repository?.current_branch ?? 'current branch'}...</span>
             </ContextMenu.Item>
 
-            <ContextMenu.Item className="menu-item" disabled>
+            <ContextMenu.Item className="menu-item" onSelect={handleRebase}>
               <GitMerge size={14} className="rotate-180" />
               <span>Rebase...</span>
             </ContextMenu.Item>
@@ -190,32 +224,23 @@ export function CommitContextMenu({
             <ContextMenu.Separator className="menu-separator" />
 
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item" disabled>
+              <ContextMenu.SubTrigger className="menu-item">
                 <RotateCcw size={14} />
                 <span>Reset {repository?.current_branch ?? 'branch'} to here</span>
                 <ChevronRight size={14} className="menu-chevron" />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item
-                    className="menu-item"
-                    disabled
-                    onSelect={() => handleReset('soft')}
-                  >
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('soft')}>
                     <span>Soft</span>
                     <span className="menu-hint">Keep all changes staged</span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item
-                    className="menu-item"
-                    disabled
-                    onSelect={() => handleReset('mixed')}
-                  >
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('mixed')}>
                     <span>Mixed</span>
                     <span className="menu-hint">Keep changes unstaged</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className="menu-item-danger"
-                    disabled
                     onSelect={() => handleReset('hard')}
                   >
                     <span>Hard</span>
@@ -225,7 +250,7 @@ export function CommitContextMenu({
               </ContextMenu.Portal>
             </ContextMenu.Sub>
 
-            <ContextMenu.Item className="menu-item" disabled onSelect={handleRevert}>
+            <ContextMenu.Item className="menu-item" onSelect={handleRevert}>
               <Undo2 size={14} />
               <span>Revert commit...</span>
             </ContextMenu.Item>
@@ -298,6 +323,30 @@ export function CommitContextMenu({
         onClose={() => setShowCherryPickDialog(false)}
         onCherryPickComplete={handleCherryPickComplete}
         commits={[commit]}
+      />
+
+      <ResetConfirmDialog
+        isOpen={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        onResetComplete={handleResetComplete}
+        commit={commit}
+        mode={resetMode}
+        currentBranch={repository?.current_branch ?? 'unknown'}
+      />
+
+      <RevertCommitDialog
+        isOpen={showRevertDialog}
+        onClose={() => setShowRevertDialog(false)}
+        onRevertComplete={handleRevertComplete}
+        commits={[commit]}
+      />
+
+      <RebaseDialog
+        isOpen={showRebaseDialog}
+        onClose={() => setShowRebaseDialog(false)}
+        onRebaseComplete={handleRebaseComplete}
+        currentBranch={repository?.current_branch ?? ''}
+        targetCommit={commit}
       />
     </>
   );

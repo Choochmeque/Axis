@@ -17,6 +17,7 @@ import type { Branch, Remote } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { remoteApi, branchApi } from '../../services/api';
 import { RenameBranchDialog } from './RenameBranchDialog';
+import { DeleteBranchDialog } from './DeleteBranchDialog';
 import { PullDialog } from '../remotes/PullDialog';
 import { PushDialog } from '../remotes/PushDialog';
 
@@ -28,6 +29,7 @@ interface BranchContextMenuProps {
 
 export function BranchContextMenu({ branch, children, onCheckout }: BranchContextMenuProps) {
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPullDialog, setShowPullDialog] = useState(false);
   const [showPushDialog, setShowPushDialog] = useState(false);
   const [remotes, setRemotes] = useState<Remote[]>([]);
@@ -169,10 +171,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
             {/* Track Remote Branch submenu */}
             <ContextMenu.Sub>
-              <ContextMenu.SubTrigger
-                className="menu-item"
-                disabled={remoteBranches.length === 0}
-              >
+              <ContextMenu.SubTrigger className="menu-item" disabled={remoteBranches.length === 0}>
                 <GitBranch size={14} />
                 <span>Track Remote Branch</span>
                 <ChevronRight size={14} className="menu-chevron" />
@@ -225,10 +224,15 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
             </ContextMenu.Item>
 
             {/* Delete */}
-            <ContextMenu.Item className="menu-item-danger" disabled>
-              <Trash2 size={14} />
-              <span>Delete {branch.name}</span>
-            </ContextMenu.Item>
+            {!isCurrentBranch && (
+              <ContextMenu.Item
+                className="menu-item-danger"
+                onSelect={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 size={14} />
+                <span>Delete {branch.name}</span>
+              </ContextMenu.Item>
+            )}
 
             <ContextMenu.Separator className="menu-separator" />
 
@@ -261,6 +265,12 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
       <PullDialog open={showPullDialog} onOpenChange={setShowPullDialog} />
 
       <PushDialog open={showPushDialog} onOpenChange={setShowPushDialog} />
+
+      <DeleteBranchDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        branch={branch}
+      />
     </>
   );
 }

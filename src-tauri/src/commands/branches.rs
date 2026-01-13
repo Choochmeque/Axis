@@ -95,3 +95,14 @@ pub async fn set_branch_upstream(
     let service = get_service(&state)?;
     service.set_branch_upstream(&branch_name, upstream.as_deref())
 }
+
+#[tauri::command]
+pub async fn delete_remote_branch(
+    state: State<'_, AppState>,
+    remote_name: String,
+    branch_name: String,
+    force: Option<bool>,
+) -> Result<()> {
+    let service = get_service(&state)?;
+    service.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false))
+}

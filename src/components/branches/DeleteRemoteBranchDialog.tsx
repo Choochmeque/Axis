@@ -7,51 +7,41 @@ import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Branch } from '../../types';
 import { cn } from '../../lib/utils';
 
-interface DeleteBranchDialogProps {
+interface DeleteRemoteBranchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   branch?: Branch;
 }
 
-export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
+export function DeleteRemoteBranchDialog({
+  open,
+  onOpenChange,
+  branch,
+}: DeleteRemoteBranchDialogProps) {
   const [force, setForce] = useState(false);
-  const [deleteRemote, setDeleteRemote] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
 
-  // Parse upstream to get remote and branch name (e.g., "origin/main" -> remote="origin", branch="main")
-  const hasUpstream = !!branch?.upstream;
-  const upstreamParts = branch?.upstream?.split('/') ?? [];
-  const remoteName = upstreamParts[0] ?? '';
-  const remoteBranchName = upstreamParts.slice(1).join('/');
+  // Parse remote and branch name from full name (e.g., "origin/main")
+  const parts = branch?.name.split('/') ?? [];
+  const remoteName = parts[0] ?? '';
+  const branchName = parts.slice(1).join('/');
 
   const handleDelete = async () => {
-    if (!branch) return;
+    if (!branch || !remoteName || !branchName) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Delete local branch
-      await branchApi.delete(branch.name, force);
-
-      // Delete remote branch if requested
-      if (deleteRemote && hasUpstream && remoteName && remoteBranchName) {
-        await branchApi.deleteRemote(remoteName, remoteBranchName, force);
-      }
-
+      await branchApi.deleteRemote(remoteName, branchName, force);
       await loadBranches();
       await refreshRepository();
       onOpenChange(false);
     } catch (err) {
-      const errorMsg = String(err);
-      if (errorMsg.includes('not fully merged') && !force) {
-        setError('Branch is not fully merged. Check "Force delete" to delete anyway.');
-      } else {
-        setError(errorMsg);
-      }
+      setError(String(err));
     } finally {
       setIsLoading(false);
     }
@@ -66,35 +56,33 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
         <Dialog.Content className="dialog-content max-w-105">
           <Dialog.Title className="dialog-title">
             <Trash2 size={18} />
-            Delete Branch
+            Delete Remote Branch
           </Dialog.Title>
 
           <div className="dialog-body">
             <div className="flex items-center gap-2 py-2 px-3 mb-4 bg-warning/10 border border-warning rounded text-warning text-[13px]">
               <AlertTriangle size={16} className="shrink-0" />
-              This action cannot be undone.
+              This will delete the branch from the remote server.
             </div>
 
             <div className="dialog-info-box">
               <div className="flex justify-between text-[13px] py-1">
-                <span className="text-(--text-secondary)">Branch:</span>
-                <span className="text-(--text-primary) font-medium">{branch.name}</span>
+                <span className="text-(--text-secondary)">Remote:</span>
+                <span className="text-(--text-primary) font-medium">{remoteName}</span>
               </div>
               <div className="flex justify-between text-[13px] py-1">
-                <span className="text-(--text-secondary)">Last commit:</span>
-                <span className="text-(--text-primary) font-medium">
-                  {branch.last_commit_summary}
-                </span>
+                <span className="text-(--text-secondary)">Branch:</span>
+                <span className="text-(--text-primary) font-medium">{branchName}</span>
               </div>
             </div>
 
             <p className="text-sm text-(--text-secondary) mb-4">
-              Are you sure you want to delete the branch "{branch.name}"?
+              Are you sure you want to delete "{branchName}" from {remoteName}?
             </p>
 
             <div className="checkbox-field">
               <Checkbox.Root
-                id="force-delete"
+                id="force-delete-remote"
                 className="checkbox"
                 checked={force}
                 onCheckedChange={(checked) => setForce(checked === true)}
@@ -103,28 +91,10 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
                   <Check size={10} className="text-white" />
                 </Checkbox.Indicator>
               </Checkbox.Root>
-              <label htmlFor="force-delete" className="checkbox-label">
-                Force delete (even if not fully merged)
+              <label htmlFor="force-delete-remote" className="checkbox-label">
+                Force delete
               </label>
             </div>
-
-            {hasUpstream && (
-              <div className="checkbox-field">
-                <Checkbox.Root
-                  id="delete-remote"
-                  className="checkbox"
-                  checked={deleteRemote}
-                  onCheckedChange={(checked) => setDeleteRemote(checked === true)}
-                >
-                  <Checkbox.Indicator>
-                    <Check size={10} className="text-white" />
-                  </Checkbox.Indicator>
-                </Checkbox.Root>
-                <label htmlFor="delete-remote" className="checkbox-label">
-                  Also delete remote branch ({branch.upstream})
-                </label>
-              </div>
-            )}
 
             {error && <div className="alert-inline alert-error mt-3">{error}</div>}
           </div>
@@ -141,7 +111,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
               onClick={handleDelete}
               disabled={isLoading}
             >
-              {isLoading ? 'Deleting...' : 'Delete Branch'}
+              {isLoading ? 'Deleting...' : 'Delete from Remote'}
             </button>
           </div>
 

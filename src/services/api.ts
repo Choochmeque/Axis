@@ -128,6 +128,9 @@ export const branchApi = {
 
   delete: (name: string, force?: boolean) => invoke<void>('delete_branch', { name, force }),
 
+  deleteRemote: (remoteName: string, branchName: string, force?: boolean) =>
+    invoke<void>('delete_remote_branch', { remoteName, branchName, force }),
+
   rename: (oldName: string, newName: string, force?: boolean) =>
     invoke<Branch>('rename_branch', { oldName, newName, force }),
 

@@ -799,6 +799,24 @@ impl Git2Service {
         Ok(())
     }
 
+    /// Delete a remote branch
+    pub fn delete_remote_branch(
+        &self,
+        remote_name: &str,
+        branch_name: &str,
+        force: bool,
+    ) -> Result<()> {
+        // Use push with a delete refspec (empty source = delete)
+        let refspec = format!(":refs/heads/{}", branch_name);
+        let options = crate::models::PushOptions {
+            force,
+            set_upstream: false,
+            tags: false,
+        };
+        self.push(remote_name, &[refspec], &options)?;
+        Ok(())
+    }
+
     /// Rename a branch
     pub fn rename_branch(&self, old_name: &str, new_name: &str, force: bool) -> Result<Branch> {
         let mut branch = self.repo.find_branch(old_name, git2::BranchType::Local)?;

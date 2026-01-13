@@ -11,10 +11,14 @@ import {
   Trash2,
   Copy,
   ChevronRight,
+  Check,
 } from 'lucide-react';
-import type { Branch } from '../../types';
+import type { Branch, Remote } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { remoteApi, branchApi } from '../../services/api';
 import { RenameBranchDialog } from './RenameBranchDialog';
+import { PullDialog } from '../remotes/PullDialog';
+import { PushDialog } from '../remotes/PushDialog';
 
 interface BranchContextMenuProps {
   branch: Branch;
@@ -24,14 +28,69 @@ interface BranchContextMenuProps {
 
 export function BranchContextMenu({ branch, children, onCheckout }: BranchContextMenuProps) {
   const [showRenameDialog, setShowRenameDialog] = useState(false);
-  const { branches } = useRepositoryStore();
+  const [showPullDialog, setShowPullDialog] = useState(false);
+  const [showPushDialog, setShowPushDialog] = useState(false);
+  const [remotes, setRemotes] = useState<Remote[]>([]);
+  const [remoteBranches, setRemoteBranches] = useState<Branch[]>([]);
+  const [isSettingUpstream, setIsSettingUpstream] = useState(false);
+
+  const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.is_head);
   const hasUpstream = !!branch.upstream;
   const isCurrentBranch = branch.is_head;
 
+  // Load remotes and remote branches when menu opens
+  const handleMenuOpen = async (open: boolean) => {
+    if (open) {
+      try {
+        const [remotesData, branchesData] = await Promise.all([
+          remoteApi.list(),
+          branchApi.list(false, true), // Only remote branches
+        ]);
+        setRemotes(remotesData);
+        setRemoteBranches(branchesData);
+      } catch (err) {
+        console.error('Failed to load remotes/branches:', err);
+      }
+    }
+  };
+
+  const handlePullTracked = () => {
+    // Open pull dialog - it will auto-select the upstream
+    setShowPullDialog(true);
+  };
+
+  const handlePushTracked = () => {
+    // Open push dialog - it will auto-select the upstream
+    setShowPushDialog(true);
+  };
+
+  const handlePushToRemote = async (remoteName: string) => {
+    try {
+      await remoteApi.pushCurrentBranch(remoteName, false, !hasUpstream);
+      await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
+    } catch (err) {
+      console.error('Push failed:', err);
+    }
+  };
+
+  const handleTrackRemoteBranch = async (remoteBranch: Branch) => {
+    if (isSettingUpstream) return;
+    setIsSettingUpstream(true);
+    try {
+      // Set the upstream for the current branch
+      await branchApi.setUpstream(branch.name, remoteBranch.full_name);
+      await loadBranches();
+    } catch (err) {
+      console.error('Failed to set upstream:', err);
+    } finally {
+      setIsSettingUpstream(false);
+    }
+  };
+
   return (
     <>
-      <ContextMenu.Root>
+      <ContextMenu.Root onOpenChange={handleMenuOpen}>
         <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
 
         <ContextMenu.Portal>
@@ -63,52 +122,93 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
             <ContextMenu.Separator className="menu-separator" />
 
             {/* Pull (if has upstream) */}
-            {hasUpstream && (
-              <ContextMenu.Item className="menu-item" disabled>
+            {hasUpstream && isCurrentBranch && (
+              <ContextMenu.Item className="menu-item" onSelect={handlePullTracked}>
                 <ArrowDownToLine size={14} />
                 <span>Pull {branch.upstream} (tracked)</span>
               </ContextMenu.Item>
             )}
 
             {/* Push (if has upstream) */}
-            {hasUpstream && (
-              <ContextMenu.Item className="menu-item" disabled>
+            {hasUpstream && isCurrentBranch && (
+              <ContextMenu.Item className="menu-item" onSelect={handlePushTracked}>
                 <ArrowUpFromLine size={14} />
                 <span>Push to {branch.upstream} (tracked)</span>
               </ContextMenu.Item>
             )}
 
             {/* Push to submenu */}
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item" disabled>
-                <ArrowUpFromLine size={14} />
-                <span>Push to</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content">
-                  <ContextMenu.Item className="menu-item" disabled>
-                    <span>origin</span>
-                  </ContextMenu.Item>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
+            {isCurrentBranch && (
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className="menu-item" disabled={remotes.length === 0}>
+                  <ArrowUpFromLine size={14} />
+                  <span>Push to</span>
+                  <ChevronRight size={14} className="menu-chevron" />
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent className="menu-content">
+                    {remotes.length === 0 ? (
+                      <ContextMenu.Item className="menu-item" disabled>
+                        <span className="text-(--text-tertiary)">No remotes configured</span>
+                      </ContextMenu.Item>
+                    ) : (
+                      remotes.map((remote) => (
+                        <ContextMenu.Item
+                          key={remote.name}
+                          className="menu-item"
+                          onSelect={() => handlePushToRemote(remote.name)}
+                        >
+                          <span>{remote.name}</span>
+                        </ContextMenu.Item>
+                      ))
+                    )}
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+            )}
 
             {/* Track Remote Branch submenu */}
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item" disabled>
-                <GitBranch size={14} />
-                <span>Track Remote Branch</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content">
-                  <ContextMenu.Item className="menu-item" disabled>
-                    <span>origin/main</span>
-                  </ContextMenu.Item>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
+            {isCurrentBranch && (
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger
+                  className="menu-item"
+                  disabled={remoteBranches.length === 0}
+                >
+                  <GitBranch size={14} />
+                  <span>Track Remote Branch</span>
+                  <ChevronRight size={14} className="menu-chevron" />
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent className="menu-content max-h-64 overflow-y-auto">
+                    {remoteBranches.length === 0 ? (
+                      <ContextMenu.Item className="menu-item" disabled>
+                        <span className="text-(--text-tertiary)">No remote branches</span>
+                      </ContextMenu.Item>
+                    ) : (
+                      remoteBranches.map((remoteBranch) => (
+                        <ContextMenu.Item
+                          key={remoteBranch.full_name}
+                          className="menu-item"
+                          onSelect={() => handleTrackRemoteBranch(remoteBranch)}
+                          disabled={isSettingUpstream}
+                        >
+                          {branch.upstream === remoteBranch.full_name && (
+                            <Check size={14} className="text-success" />
+                          )}
+                          <span
+                            className={
+                              branch.upstream === remoteBranch.full_name ? 'font-medium' : ''
+                            }
+                          >
+                            {remoteBranch.name}
+                          </span>
+                        </ContextMenu.Item>
+                      ))
+                    )}
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+            )}
 
             <ContextMenu.Separator className="menu-separator" />
 
@@ -159,6 +259,10 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         onOpenChange={setShowRenameDialog}
         branch={branch}
       />
+
+      <PullDialog open={showPullDialog} onOpenChange={setShowPullDialog} />
+
+      <PushDialog open={showPushDialog} onOpenChange={setShowPushDialog} />
     </>
   );
 }

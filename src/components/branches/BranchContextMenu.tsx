@@ -67,7 +67,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
   const handlePushToRemote = async (remoteName: string) => {
     try {
-      await remoteApi.pushCurrentBranch(remoteName, false, !hasUpstream);
+      // Push the specific branch (works for both current and non-current branches)
+      const refspec = `refs/heads/${branch.name}:refs/heads/${branch.name}`;
+      await remoteApi.push(remoteName, [refspec], false, !hasUpstream);
       await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
     } catch (err) {
       console.error('Push failed:', err);
@@ -138,77 +140,73 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
             )}
 
             {/* Push to submenu */}
-            {isCurrentBranch && (
-              <ContextMenu.Sub>
-                <ContextMenu.SubTrigger className="menu-item" disabled={remotes.length === 0}>
-                  <ArrowUpFromLine size={14} />
-                  <span>Push to</span>
-                  <ChevronRight size={14} className="menu-chevron" />
-                </ContextMenu.SubTrigger>
-                <ContextMenu.Portal>
-                  <ContextMenu.SubContent className="menu-content">
-                    {remotes.length === 0 ? (
-                      <ContextMenu.Item className="menu-item" disabled>
-                        <span className="text-(--text-tertiary)">No remotes configured</span>
+            <ContextMenu.Sub>
+              <ContextMenu.SubTrigger className="menu-item" disabled={remotes.length === 0}>
+                <ArrowUpFromLine size={14} />
+                <span>Push to</span>
+                <ChevronRight size={14} className="menu-chevron" />
+              </ContextMenu.SubTrigger>
+              <ContextMenu.Portal>
+                <ContextMenu.SubContent className="menu-content">
+                  {remotes.length === 0 ? (
+                    <ContextMenu.Item className="menu-item" disabled>
+                      <span className="text-(--text-tertiary)">No remotes configured</span>
+                    </ContextMenu.Item>
+                  ) : (
+                    remotes.map((remote) => (
+                      <ContextMenu.Item
+                        key={remote.name}
+                        className="menu-item"
+                        onSelect={() => handlePushToRemote(remote.name)}
+                      >
+                        <span>{remote.name}</span>
                       </ContextMenu.Item>
-                    ) : (
-                      remotes.map((remote) => (
-                        <ContextMenu.Item
-                          key={remote.name}
-                          className="menu-item"
-                          onSelect={() => handlePushToRemote(remote.name)}
-                        >
-                          <span>{remote.name}</span>
-                        </ContextMenu.Item>
-                      ))
-                    )}
-                  </ContextMenu.SubContent>
-                </ContextMenu.Portal>
-              </ContextMenu.Sub>
-            )}
+                    ))
+                  )}
+                </ContextMenu.SubContent>
+              </ContextMenu.Portal>
+            </ContextMenu.Sub>
 
             {/* Track Remote Branch submenu */}
-            {isCurrentBranch && (
-              <ContextMenu.Sub>
-                <ContextMenu.SubTrigger
-                  className="menu-item"
-                  disabled={remoteBranches.length === 0}
-                >
-                  <GitBranch size={14} />
-                  <span>Track Remote Branch</span>
-                  <ChevronRight size={14} className="menu-chevron" />
-                </ContextMenu.SubTrigger>
-                <ContextMenu.Portal>
-                  <ContextMenu.SubContent className="menu-content max-h-64 overflow-y-auto">
-                    {remoteBranches.length === 0 ? (
-                      <ContextMenu.Item className="menu-item" disabled>
-                        <span className="text-(--text-tertiary)">No remote branches</span>
-                      </ContextMenu.Item>
-                    ) : (
-                      remoteBranches.map((remoteBranch) => (
-                        <ContextMenu.Item
-                          key={remoteBranch.full_name}
-                          className="menu-item"
-                          onSelect={() => handleTrackRemoteBranch(remoteBranch)}
-                          disabled={isSettingUpstream}
+            <ContextMenu.Sub>
+              <ContextMenu.SubTrigger
+                className="menu-item"
+                disabled={remoteBranches.length === 0}
+              >
+                <GitBranch size={14} />
+                <span>Track Remote Branch</span>
+                <ChevronRight size={14} className="menu-chevron" />
+              </ContextMenu.SubTrigger>
+              <ContextMenu.Portal>
+                <ContextMenu.SubContent className="menu-content max-h-64 overflow-y-auto">
+                  {remoteBranches.length === 0 ? (
+                    <ContextMenu.Item className="menu-item" disabled>
+                      <span className="text-(--text-tertiary)">No remote branches</span>
+                    </ContextMenu.Item>
+                  ) : (
+                    remoteBranches.map((remoteBranch) => (
+                      <ContextMenu.Item
+                        key={remoteBranch.full_name}
+                        className="menu-item"
+                        onSelect={() => handleTrackRemoteBranch(remoteBranch)}
+                        disabled={isSettingUpstream}
+                      >
+                        {branch.upstream === remoteBranch.full_name && (
+                          <Check size={14} className="text-success" />
+                        )}
+                        <span
+                          className={
+                            branch.upstream === remoteBranch.full_name ? 'font-medium' : ''
+                          }
                         >
-                          {branch.upstream === remoteBranch.full_name && (
-                            <Check size={14} className="text-success" />
-                          )}
-                          <span
-                            className={
-                              branch.upstream === remoteBranch.full_name ? 'font-medium' : ''
-                            }
-                          >
-                            {remoteBranch.name}
-                          </span>
-                        </ContextMenu.Item>
-                      ))
-                    )}
-                  </ContextMenu.SubContent>
-                </ContextMenu.Portal>
-              </ContextMenu.Sub>
-            )}
+                          {remoteBranch.name}
+                        </span>
+                      </ContextMenu.Item>
+                    ))
+                  )}
+                </ContextMenu.SubContent>
+              </ContextMenu.Portal>
+            </ContextMenu.Sub>
 
             <ContextMenu.Separator className="menu-separator" />
 

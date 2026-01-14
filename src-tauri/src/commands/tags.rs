@@ -1,20 +1,7 @@
 use crate::error::Result;
 use crate::models::{CreateTagOptions, Tag, TagResult};
-use crate::services::{Git2Service, GitCliService};
 use crate::state::AppState;
 use tauri::State;
-
-/// Helper to get Git2Service from current repository
-fn get_git2_service(state: &State<AppState>) -> Result<Git2Service> {
-    let path = state.ensure_repository_open()?;
-    Git2Service::open(&path)
-}
-
-/// Helper to get GitCliService from current repository (for remote operations)
-fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
-    let path = state.ensure_repository_open()?;
-    Ok(GitCliService::new(&path))
-}
 
 // ==================== Tag Commands ====================
 
@@ -22,7 +9,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
-    let git2 = get_git2_service(&state)?;
+    let git2 = state.get_service()?;
     git2.tag_list()
 }
 
@@ -34,7 +21,7 @@ pub async fn tag_create(
     name: String,
     options: CreateTagOptions,
 ) -> Result<TagResult> {
-    let git2 = get_git2_service(&state)?;
+    let git2 = state.get_service()?;
     git2.tag_create(&name, &options)
 }
 
@@ -42,7 +29,7 @@ pub async fn tag_create(
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagResult> {
-    let git2 = get_git2_service(&state)?;
+    let git2 = state.get_service()?;
     git2.tag_delete(&name)
 }
 
@@ -54,7 +41,7 @@ pub async fn tag_push(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.tag_push(&name, &remote)
 }
 
@@ -62,7 +49,7 @@ pub async fn tag_push(
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<TagResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.tag_push_all(&remote)
 }
 
@@ -74,6 +61,6 @@ pub async fn tag_delete_remote(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.tag_delete_remote(&name, &remote)
 }

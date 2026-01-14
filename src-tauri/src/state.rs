@@ -1,6 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository};
-use crate::services::FileWatcherService;
+use crate::services::{FileWatcherService, Git2Service, GitCliService};
 use crate::storage::Database;
 use parking_lot::RwLock;
 use std::path::{Path, PathBuf};
@@ -43,6 +43,16 @@ impl AppState {
     pub fn ensure_repository_open(&self) -> Result<PathBuf> {
         self.get_current_repository_path()
             .ok_or(AxisError::NoRepositoryOpen)
+    }
+
+    pub fn get_service(&self) -> Result<Git2Service> {
+        let path = self.ensure_repository_open()?;
+        Git2Service::open(&path)
+    }
+
+    pub fn get_cli_service(&self) -> Result<GitCliService> {
+        let path = self.ensure_repository_open()?;
+        Ok(GitCliService::new(&path))
     }
 
     pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {

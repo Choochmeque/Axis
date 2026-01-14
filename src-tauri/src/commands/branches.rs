@@ -1,14 +1,7 @@
 use crate::error::Result;
 use crate::models::{Branch, BranchType, CheckoutOptions, CreateBranchOptions};
-use crate::services::Git2Service;
 use crate::state::AppState;
 use tauri::State;
-
-/// Helper function to get the Git2Service for the current repository
-fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
-    let path = state.ensure_repository_open()?;
-    Git2Service::open(&path)
-}
 
 /// Create a new branch
 #[tauri::command]
@@ -20,7 +13,7 @@ pub async fn create_branch(
     force: Option<bool>,
     track: Option<String>,
 ) -> Result<Branch> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let options = CreateBranchOptions {
         start_point,
         force: force.unwrap_or(false),
@@ -37,7 +30,7 @@ pub async fn delete_branch(
     name: String,
     force: Option<bool>,
 ) -> Result<()> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.delete_branch(&name, force.unwrap_or(false))
 }
 
@@ -50,7 +43,7 @@ pub async fn rename_branch(
     new_name: String,
     force: Option<bool>,
 ) -> Result<Branch> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.rename_branch(&old_name, &new_name, force.unwrap_or(false))
 }
 
@@ -64,7 +57,7 @@ pub async fn checkout_branch(
     force: Option<bool>,
     track: Option<String>,
 ) -> Result<()> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let options = CheckoutOptions {
         create: create.unwrap_or(false),
         force: force.unwrap_or(false),
@@ -82,7 +75,7 @@ pub async fn checkout_remote_branch(
     branch_name: String,
     local_name: Option<String>,
 ) -> Result<()> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref())
 }
 
@@ -94,7 +87,7 @@ pub async fn get_branch(
     name: String,
     branch_type: BranchType,
 ) -> Result<Branch> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.get_branch(&name, branch_type)
 }
 
@@ -106,7 +99,7 @@ pub async fn set_branch_upstream(
     branch_name: String,
     upstream: Option<String>,
 ) -> Result<()> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.set_branch_upstream(&branch_name, upstream.as_deref())
 }
 
@@ -119,6 +112,6 @@ pub async fn delete_remote_branch(
     branch_name: String,
     force: Option<bool>,
 ) -> Result<()> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false))
 }

@@ -203,7 +203,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod specta_export {
-    use tauri_specta::{collect_commands, Builder, ErrorHandlingMode};
+    use tauri_specta::{collect_commands, collect_events, Builder, ErrorHandlingMode};
 
     #[test]
     fn export_typescript_bindings() {
@@ -366,11 +366,13 @@ mod specta_export {
                 crate::commands::am_continue,
                 crate::commands::am_skip,
             ])
+            .events(collect_events![crate::services::FileWatchEvent])
             .error_handling(ErrorHandlingMode::Throw);
 
         builder
             .export(
                 specta_typescript::Typescript::default()
+                    .formatter(specta_typescript::formatter::prettier)
                     .bigint(specta_typescript::BigIntExportBehavior::BigInt),
                 "../src/bindings/api.ts",
             )

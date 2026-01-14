@@ -3,16 +3,9 @@ use crate::models::{
     ApplyMailboxOptions, ApplyPatchOptions, ArchiveOptions, ArchiveResult, CreatePatchOptions,
     FormatPatchOptions, PatchResult,
 };
-use crate::services::GitCliService;
 use crate::state::AppState;
 use std::path::PathBuf;
 use tauri::State;
-
-/// Helper function to get the GitCliService for the current repository
-fn get_cli_service(state: &State<'_, AppState>) -> Result<GitCliService> {
-    let path = state.ensure_repository_open()?;
-    Ok(GitCliService::new(&path))
-}
 
 // ==================== Archive Commands ====================
 
@@ -22,7 +15,7 @@ pub async fn create_archive(
     state: State<'_, AppState>,
     options: ArchiveOptions,
 ) -> Result<ArchiveResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     let output_path = PathBuf::from(&options.output_path);
     service.archive(
         &options.reference,
@@ -41,7 +34,7 @@ pub async fn format_patch(
     state: State<'_, AppState>,
     options: FormatPatchOptions,
 ) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     let output_dir = PathBuf::from(&options.output_dir);
     service.format_patch(&options.range, &output_dir)
 }
@@ -53,7 +46,7 @@ pub async fn create_patch(
     state: State<'_, AppState>,
     options: CreatePatchOptions,
 ) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     let output_dir = PathBuf::from(&options.output_dir);
 
     // Generate output filename
@@ -74,7 +67,7 @@ pub async fn apply_patch(
     state: State<'_, AppState>,
     options: ApplyPatchOptions,
 ) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     let patch_path = PathBuf::from(&options.patch_path);
     service.apply_patch(&patch_path, options.check_only, options.three_way)
 }
@@ -86,7 +79,7 @@ pub async fn apply_mailbox(
     state: State<'_, AppState>,
     options: ApplyMailboxOptions,
 ) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     let patch_paths: Vec<PathBuf> = options
         .patch_paths
         .iter()
@@ -99,7 +92,7 @@ pub async fn apply_mailbox(
 #[tauri::command]
 #[specta::specta]
 pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     service.am_abort()
 }
 
@@ -107,7 +100,7 @@ pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
 #[tauri::command]
 #[specta::specta]
 pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     service.am_continue()
 }
 
@@ -115,6 +108,6 @@ pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
 #[tauri::command]
 #[specta::specta]
 pub async fn am_skip(state: State<'_, AppState>) -> Result<PatchResult> {
-    let service = get_cli_service(&state)?;
+    let service = state.get_cli_service()?;
     service.am_skip()
 }

@@ -9,12 +9,6 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
-/// Helper function to get the Git2Service for the current repository
-fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
-    let path = state.ensure_repository_open()?;
-    Git2Service::open(&path)
-}
-
 #[tauri::command]
 #[specta::specta]
 pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result<Repository> {
@@ -100,14 +94,14 @@ pub async fn close_repository(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repository> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.get_repository_info()
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.status()
 }
 
@@ -122,7 +116,7 @@ pub async fn get_commit_history(
     include_remotes: Option<bool>,
     sort_order: Option<SortOrder>,
 ) -> Result<Vec<Commit>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let options = LogOptions {
         limit,
         skip,
@@ -141,7 +135,7 @@ pub async fn get_branches(
     include_local: Option<bool>,
     include_remote: Option<bool>,
 ) -> Result<Vec<Branch>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let filter = BranchFilter {
         include_local: include_local.unwrap_or(true),
         include_remote: include_remote.unwrap_or(true),
@@ -152,7 +146,7 @@ pub async fn get_branches(
 #[tauri::command]
 #[specta::specta]
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     service.get_commit(&oid)
 }
 

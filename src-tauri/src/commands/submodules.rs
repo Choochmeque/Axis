@@ -2,15 +2,8 @@ use crate::error::Result;
 use crate::models::{
     AddSubmoduleOptions, Submodule, SubmoduleResult, SyncSubmoduleOptions, UpdateSubmoduleOptions,
 };
-use crate::services::GitCliService;
 use crate::state::AppState;
 use tauri::State;
-
-/// Helper to get GitCliService from current repository
-fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
-    let path = state.ensure_repository_open()?;
-    Ok(GitCliService::new(&path))
-}
 
 // ==================== Submodule Commands ====================
 
@@ -18,7 +11,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_list(state: State<'_, AppState>) -> Result<Vec<Submodule>> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_list()
 }
 
@@ -29,7 +22,7 @@ pub async fn submodule_add(
     state: State<'_, AppState>,
     options: AddSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_add(&options)
 }
 
@@ -40,7 +33,7 @@ pub async fn submodule_init(
     state: State<'_, AppState>,
     paths: Vec<String>,
 ) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_init(&paths)
 }
 
@@ -51,7 +44,7 @@ pub async fn submodule_update(
     state: State<'_, AppState>,
     options: UpdateSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_update(&options)
 }
 
@@ -62,7 +55,7 @@ pub async fn submodule_sync(
     state: State<'_, AppState>,
     options: SyncSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_sync(&options)
 }
 
@@ -74,7 +67,7 @@ pub async fn submodule_deinit(
     paths: Vec<String>,
     force: bool,
 ) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_deinit(&paths, force)
 }
 
@@ -82,7 +75,7 @@ pub async fn submodule_deinit(
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Result<SubmoduleResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_remove(&path)
 }
 
@@ -90,6 +83,6 @@ pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Resul
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_summary(state: State<'_, AppState>) -> Result<String> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.submodule_summary()
 }

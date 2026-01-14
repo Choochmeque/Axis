@@ -1,14 +1,7 @@
 use crate::error::Result;
 use crate::models::{StashApplyOptions, StashEntry, StashResult, StashSaveOptions};
-use crate::services::GitCliService;
 use crate::state::AppState;
 use tauri::State;
-
-/// Helper to get GitCliService from current repository
-fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
-    let path = state.ensure_repository_open()?;
-    Ok(GitCliService::new(&path))
-}
 
 // ==================== Stash Commands ====================
 
@@ -16,7 +9,7 @@ fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
 #[tauri::command]
 #[specta::specta]
 pub async fn stash_list(state: State<'_, AppState>) -> Result<Vec<StashEntry>> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_list()
 }
 
@@ -27,7 +20,7 @@ pub async fn stash_save(
     state: State<'_, AppState>,
     options: StashSaveOptions,
 ) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_save(&options)
 }
 
@@ -38,7 +31,7 @@ pub async fn stash_apply(
     state: State<'_, AppState>,
     options: StashApplyOptions,
 ) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_apply(&options)
 }
 
@@ -49,7 +42,7 @@ pub async fn stash_pop(
     state: State<'_, AppState>,
     options: StashApplyOptions,
 ) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_pop(&options)
 }
 
@@ -57,7 +50,7 @@ pub async fn stash_pop(
 #[tauri::command]
 #[specta::specta]
 pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_drop(index)
 }
 
@@ -65,7 +58,7 @@ pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Res
 #[tauri::command]
 #[specta::specta]
 pub async fn stash_clear(state: State<'_, AppState>) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_clear()
 }
 
@@ -77,7 +70,7 @@ pub async fn stash_show(
     index: Option<usize>,
     stat_only: bool,
 ) -> Result<String> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_show(index, stat_only)
 }
 
@@ -89,6 +82,6 @@ pub async fn stash_branch(
     branch_name: String,
     index: Option<usize>,
 ) -> Result<StashResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.stash_branch(&branch_name, index)
 }

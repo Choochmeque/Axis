@@ -1,15 +1,8 @@
 use crate::error::Result;
 use crate::models::{DiffOptions, FileDiff};
-use crate::services::Git2Service;
 use crate::state::AppState;
 use tauri::ipc::Response;
 use tauri::State;
-
-/// Helper function to get the Git2Service for the current repository
-fn get_service(state: &State<'_, AppState>) -> Result<Git2Service> {
-    let path = state.ensure_repository_open()?;
-    Git2Service::open(&path)
-}
 
 /// Get diff for unstaged changes (working directory vs index)
 #[tauri::command]
@@ -18,7 +11,7 @@ pub async fn get_diff_workdir(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_workdir(&opts)
 }
@@ -30,7 +23,7 @@ pub async fn get_diff_staged(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_staged(&opts)
 }
@@ -42,7 +35,7 @@ pub async fn get_diff_head(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_head(&opts)
 }
@@ -55,7 +48,7 @@ pub async fn get_diff_commit(
     oid: String,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_commit(&oid, &opts)
 }
@@ -69,7 +62,7 @@ pub async fn get_diff_commits(
     to_oid: String,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_commits(&from_oid, &to_oid, &opts)
 }
@@ -83,7 +76,7 @@ pub async fn get_file_diff(
     staged: bool,
     options: Option<DiffOptions>,
 ) -> Result<Option<FileDiff>> {
-    let service = get_service(&state)?;
+    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
     service.diff_file(&path, staged, &opts)
 }
@@ -97,7 +90,7 @@ pub async fn get_file_blob(
     path: String,
     commit_oid: Option<String>,
 ) -> std::result::Result<Response, String> {
-    let service = get_service(&state).map_err(|e| e.to_string())?;
+    let service = state.get_service().map_err(|e| e.to_string())?;
     let data = service
         .get_file_blob(&path, commit_oid.as_deref())
         .map_err(|e| e.to_string())?;

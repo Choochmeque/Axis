@@ -4,29 +4,10 @@ use crate::models::{
     ConflictedFile, MergeOptions, MergeResult, MergeType, OperationState, RebaseOptions,
     RebasePreview, RebaseResult, ResetMode, ResetOptions, RevertOptions, RevertResult,
 };
-use crate::services::Git2Service;
 use crate::services::GitCliService;
 use crate::state::AppState;
 use std::fs;
-use std::path::PathBuf;
 use tauri::State;
-
-/// Helper to get GitCliService from current repository
-fn get_cli_service(state: &State<AppState>) -> Result<GitCliService> {
-    let path = state.ensure_repository_open()?;
-    Ok(GitCliService::new(&path))
-}
-
-/// Helper to get the repository path
-fn get_repo_path(state: &State<AppState>) -> Result<PathBuf> {
-    state.ensure_repository_open()
-}
-
-/// Helper to get Git2Service from current repository
-fn get_git2_service(state: &State<AppState>) -> Result<Git2Service> {
-    let path = state.ensure_repository_open()?;
-    Git2Service::open(&path)
-}
 
 // ==================== Merge Commands ====================
 
@@ -37,7 +18,7 @@ pub async fn merge_branch(
     state: State<'_, AppState>,
     options: MergeOptions,
 ) -> Result<MergeResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     // Check for ff_only case - use git2 for fast-forward detection
     if options.ff_only {
@@ -92,7 +73,7 @@ pub async fn merge_branch(
 #[tauri::command]
 #[specta::specta]
 pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.merge_abort()?;
     Ok(())
 }
@@ -101,7 +82,7 @@ pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     let result = cli.merge_continue()?;
 
     Ok(MergeResult {
@@ -126,7 +107,7 @@ pub async fn rebase_branch(
     state: State<'_, AppState>,
     options: RebaseOptions,
 ) -> Result<RebaseResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     let result = cli.rebase(&options.onto, options.interactive)?;
 
@@ -163,7 +144,7 @@ pub async fn rebase_branch(
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.rebase_abort()?;
     Ok(())
 }
@@ -172,7 +153,7 @@ pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     let result = cli.rebase_continue()?;
 
     if result.success {
@@ -207,7 +188,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     let result = cli.rebase_skip()?;
 
     Ok(RebaseResult {
@@ -228,7 +209,7 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
-    let service = get_git2_service(&state)?;
+    let service = state.get_service()?;
     service.get_rebase_preview(&onto)
 }
 
@@ -241,7 +222,7 @@ pub async fn cherry_pick(
     state: State<'_, AppState>,
     options: CherryPickOptions,
 ) -> Result<CherryPickResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
@@ -283,7 +264,7 @@ pub async fn cherry_pick(
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.cherry_pick_abort()?;
     Ok(())
 }
@@ -292,7 +273,7 @@ pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPickResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     let result = cli.cherry_pick_continue()?;
 
     if result.success {
@@ -328,7 +309,7 @@ pub async fn revert_commits(
     state: State<'_, AppState>,
     options: RevertOptions,
 ) -> Result<RevertResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
@@ -366,7 +347,7 @@ pub async fn revert_commits(
 #[tauri::command]
 #[specta::specta]
 pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.revert_abort()?;
     Ok(())
 }
@@ -375,7 +356,7 @@ pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     let result = cli.revert_continue()?;
 
     Ok(RevertResult {
@@ -396,7 +377,7 @@ pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult>
 #[tauri::command]
 #[specta::specta]
 pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<ConflictedFile>> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     get_conflicted_files_internal(&cli)
 }
 
@@ -407,8 +388,8 @@ pub async fn get_conflict_content(
     state: State<'_, AppState>,
     path: String,
 ) -> Result<ConflictContent> {
-    let cli = get_cli_service(&state)?;
-    let repo_path = get_repo_path(&state)?;
+    let cli = state.get_cli_service()?;
+    let repo_path = state.ensure_repository_open()?;
 
     let base = cli.get_conflict_base(&path).ok();
     let ours = cli.get_conflict_ours(&path).ok();
@@ -435,8 +416,8 @@ pub async fn resolve_conflict(
     resolution: ConflictResolution,
     custom_content: Option<String>,
 ) -> Result<()> {
-    let cli = get_cli_service(&state)?;
-    let repo_path = get_repo_path(&state)?;
+    let cli = state.get_cli_service()?;
+    let repo_path = state.ensure_repository_open()?;
 
     match resolution {
         ConflictResolution::Ours => {
@@ -465,7 +446,7 @@ pub async fn resolve_conflict(
 #[tauri::command]
 #[specta::specta]
 pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
     cli.mark_resolved(&path)?;
     Ok(())
 }
@@ -476,7 +457,7 @@ pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) ->
 #[tauri::command]
 #[specta::specta]
 pub async fn get_operation_state(state: State<'_, AppState>) -> Result<OperationState> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     if cli.is_rebasing()? {
         Ok(OperationState::Rebasing {
@@ -501,7 +482,7 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
 #[tauri::command]
 #[specta::specta]
 pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) -> Result<()> {
-    let cli = get_cli_service(&state)?;
+    let cli = state.get_cli_service()?;
 
     let mode = match options.mode {
         ResetMode::Soft => crate::services::ResetMode::Soft,

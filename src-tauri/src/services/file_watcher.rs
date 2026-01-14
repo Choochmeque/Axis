@@ -1,15 +1,17 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::Mutex;
+use specta::Type;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
+use tauri_specta::Event as SpectaEvent;
 
 /// Events emitted by the file watcher
-#[derive(Clone, serde::Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[derive(Clone, serde::Serialize, Type, SpectaEvent)]
+#[serde(tag = "type", rename_all = "camelCase")]
 pub enum FileWatchEvent {
     /// Files in the repository changed
     FilesChanged { paths: Vec<String> },

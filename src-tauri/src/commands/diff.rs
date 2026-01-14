@@ -89,10 +89,8 @@ pub async fn get_file_blob(
     state: State<'_, AppState>,
     path: String,
     commit_oid: Option<String>,
-) -> std::result::Result<Response, String> {
-    let service = state.get_service().map_err(|e| e.to_string())?;
-    let data = service
-        .get_file_blob(&path, commit_oid.as_deref())
-        .map_err(|e| e.to_string())?;
+) -> Result<Response> {
+    let service = state.get_service()?;
+    let data = service.get_file_blob(&path, commit_oid.as_deref())?;
     Ok(Response::new(data))
 }

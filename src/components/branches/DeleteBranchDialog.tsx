@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import type { Branch } from '../../types';
+import { BranchType, type Branch } from '../../types';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
     }
 
     // Otherwise, look for a matching remote branch (prefer origin)
-    const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
+    const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
 
     // Try origin first
     const originMatch = remoteBranches.find((b) => b.name === `origin/${branch.name}`);

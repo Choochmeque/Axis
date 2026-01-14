@@ -114,22 +114,25 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
   };
 
   const getOperationLabel = () => {
-    if (!operationState) return '';
-    switch (operationState.type) {
-      case 'merging':
-        return `Merging${operationState.branch ? ` ${operationState.branch}` : ''}`;
-      case 'rebasing':
-        return `Rebasing${operationState.current && operationState.total ? ` (${operationState.current}/${operationState.total})` : ''}`;
-      case 'cherry_picking':
-        return 'Cherry Picking';
-      case 'reverting':
-        return 'Reverting';
-      default:
-        return '';
+    if (!operationState || operationState === 'None') return '';
+    if ('Merging' in operationState) {
+      const { branch } = operationState.Merging;
+      return `Merging${branch ? ` ${branch}` : ''}`;
     }
+    if ('Rebasing' in operationState) {
+      const { current, total } = operationState.Rebasing;
+      return `Rebasing${current != null && total != null ? ` (${String(current)}/${String(total)})` : ''}`;
+    }
+    if ('CherryPicking' in operationState) {
+      return 'Cherry Picking';
+    }
+    if ('Reverting' in operationState) {
+      return 'Reverting';
+    }
+    return '';
   };
 
-  if (conflicts.length === 0 && operationState?.type === 'none') {
+  if (conflicts.length === 0 && operationState === 'None') {
     return null;
   }
 
@@ -139,7 +142,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         <div className="flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
           <AlertTriangle size={18} className="text-warning" />
           <span>Resolve Conflicts</span>
-          {operationState && operationState.type !== 'none' && (
+          {operationState && operationState !== 'None' && (
             <span className="py-0.5 px-2 text-[11px] font-medium bg-(--bg-secondary) rounded text-(--text-secondary)">
               {getOperationLabel()}
             </span>
@@ -176,19 +179,19 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                 selectedFile === conflict.path
                   ? 'bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5'
                   : 'hover:bg-(--bg-hover)',
-                conflict.is_resolved && 'opacity-60'
+                conflict.isResolved && 'opacity-60'
               )}
               onClick={() => setSelectedFile(conflict.path)}
             >
               <span
                 className={cn(
                   'font-mono overflow-hidden text-ellipsis whitespace-nowrap',
-                  conflict.is_resolved ? 'text-success' : 'text-warning'
+                  conflict.isResolved ? 'text-success' : 'text-warning'
                 )}
               >
                 {conflict.path}
               </span>
-              {conflict.is_resolved && <Check size={14} className="text-success shrink-0" />}
+              {conflict.isResolved && <Check size={14} className="text-success shrink-0" />}
             </div>
           ))}
         </div>

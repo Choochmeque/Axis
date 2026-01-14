@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::services::{GitCliService, SigningService};
+use crate::services::SigningService;
 use crate::state::AppState;
 use tauri::State;
 
@@ -107,23 +107,20 @@ pub async fn get_user_signature(state: State<'_, AppState>) -> Result<(String, S
 #[tauri::command]
 #[specta::specta]
 pub async fn stage_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
-    let path = state.ensure_repository_open()?;
-    let service = GitCliService::new(&path);
+    let service = state.get_cli_service()?;
     service.stage_hunk(&patch)
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn unstage_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
-    let path = state.ensure_repository_open()?;
-    let service = GitCliService::new(&path);
+    let service = state.get_cli_service()?;
     service.unstage_hunk(&patch)
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn discard_hunk(state: State<'_, AppState>, patch: String) -> Result<()> {
-    let path = state.ensure_repository_open()?;
-    let service = GitCliService::new(&path);
+    let service = state.get_cli_service()?;
     service.discard_hunk(&patch)
 }

@@ -144,7 +144,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             Ok(result) => results.push(result),
             Err(e) => {
                 // Log error but continue with other remotes
-                eprintln!("Failed to fetch from {}: {}", remote.name, e);
+                log::error!("Failed to fetch from {}: {e}", remote.name);
             }
         }
     }

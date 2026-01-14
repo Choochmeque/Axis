@@ -1,4 +1,5 @@
 use crate::error::{AxisError, Result};
+use crate::models::ResetMode;
 use crate::models::{
     AddSubmoduleOptions, ArchiveResult, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
     GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, PatchResult,
@@ -17,6 +18,14 @@ use std::process::{Command, Output};
 /// - Revert operations
 pub struct GitCliService {
     repo_path: std::path::PathBuf,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OperationType {
+    Merge,
+    Rebase,
+    CherryPick,
+    Revert,
 }
 
 #[derive(Debug)]
@@ -1892,21 +1901,6 @@ impl From<Output> for GitCommandResult {
 pub enum ConflictVersion {
     Ours,
     Theirs,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OperationType {
-    Merge,
-    Rebase,
-    CherryPick,
-    Revert,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResetMode {
-    Soft,
-    Mixed,
-    Hard,
 }
 
 #[cfg(test)]

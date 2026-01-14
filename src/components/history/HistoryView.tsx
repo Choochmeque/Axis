@@ -15,6 +15,7 @@ import type { GraphCommit, GraphEdge } from '../../types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
 import { HistoryFilters } from './HistoryFilters';
+import { BranchType } from '@/types';
 
 const LANE_WIDTH = 18;
 const ROW_HEIGHT = 28;
@@ -339,8 +340,9 @@ export function HistoryView() {
                     // Get behind count for local branches
                     const behindCount =
                       ref.refType === 'LocalBranch'
-                        ? branches.find((b) => b.name === ref.name && b.branchType === 'Local')
-                            ?.behind
+                        ? branches.find(
+                            (b) => b.name === ref.name && b.branchType === BranchType.Local
+                          )?.behind
                         : null;
 
                     return (

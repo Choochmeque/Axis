@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { GitBranch, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { rebaseApi, branchApi } from '../../services/api';
-import type { Branch, Commit, RebasePreview, RebaseResult } from '../../types';
+import {
+  BranchType,
+  type Branch,
+  type Commit,
+  type RebasePreview,
+  type RebaseResult,
+} from '../../types';
 import { RebasePreviewDiagram } from './RebasePreviewDiagram';
 import {
   Dialog,
@@ -220,7 +226,7 @@ export function RebaseDialog({
                     {branches.map((branch) => (
                       <option key={branch.fullName} value={branch.name}>
                         {branch.name}
-                        {branch.branchType === 'Remote' && ` (${branch.branchType})`}
+                        {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
                       </option>
                     ))}
                   </Select>

@@ -1,15 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { UnlistenFn } from '@tauri-apps/api/event';
 import { repositoryApi } from '../services/api';
 import { useRepositoryStore } from '../store/repositoryStore';
 import { useStagingStore } from '../store/stagingStore';
-
-interface FileWatchEvent {
-  type: 'files_changed' | 'index_changed' | 'head_changed' | 'ref_changed' | 'watch_error';
-  paths?: string[];
-  ref_name?: string;
-  message?: string;
-}
+import { events } from '@/bindings/api';
 
 export function useFileWatcher() {
   const repository = useRepositoryStore((state) => state.repository);
@@ -40,21 +34,21 @@ export function useFileWatcher() {
       }
 
       // Listen for files_changed events (working directory changes)
-      const unlistenFiles = await listen<FileWatchEvent>('repository:files_changed', () => {
+      const unlistenFiles = await events.filesChangedEvent.listen(() => {
         // Reload status when files change
         loadStatus();
         stagingLoadStatus();
       });
 
       // Listen for index_changed events (staging area changes)
-      const unlistenIndex = await listen<FileWatchEvent>('repository:index_changed', () => {
+      const unlistenIndex = await events.indexChangedEvent.listen(() => {
         // Reload status when index changes
         loadStatus();
         stagingLoadStatus();
       });
 
       // Listen for head_changed events (commits, checkouts)
-      const unlistenHead = await listen<FileWatchEvent>('repository:head_changed', () => {
+      const unlistenHead = await events.headChangedEvent.listen(() => {
         // Reload commits and status
         loadCommits();
         loadStatus();
@@ -63,8 +57,8 @@ export function useFileWatcher() {
       });
 
       // Listen for ref_changed events (branch/tag changes)
-      const unlistenRef = await listen<FileWatchEvent>('repository:ref_changed', (event) => {
-        const refName = event.payload.ref_name;
+      const unlistenRef = await events.refChangedEvent.listen((event) => {
+        const refName = event.payload.refName;
         if (refName?.startsWith('refs/tags/')) {
           loadTags();
         } else if (refName?.startsWith('refs/heads/') || refName?.startsWith('refs/remotes/')) {
@@ -77,7 +71,7 @@ export function useFileWatcher() {
       });
 
       // Listen for watch errors
-      const unlistenError = await listen<FileWatchEvent>('repository:watch_error', (event) => {
+      const unlistenError = await events.watchErrorEvent.listen((event) => {
         console.error('File watcher error:', event.payload.message);
       });
 

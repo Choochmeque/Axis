@@ -103,8 +103,8 @@ describe('stagingStore', () => {
         status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 5n,
-        deletions: 2n,
+        additions: 5,
+        deletions: 2,
       };
 
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
@@ -136,8 +136,8 @@ describe('stagingStore', () => {
           status: 'Modified',
           binary: false,
           hunks: [],
-          additions: 0n,
-          deletions: 0n,
+          additions: 0,
+          deletions: 0,
         },
       });
 
@@ -240,8 +240,8 @@ describe('stagingStore', () => {
         status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 0n,
-        deletions: 0n,
+        additions: 0,
+        deletions: 0,
       };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: false });
 
@@ -300,8 +300,8 @@ describe('stagingStore', () => {
         status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 0n,
-        deletions: 0n,
+        additions: 0,
+        deletions: 0,
       };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: true });
 

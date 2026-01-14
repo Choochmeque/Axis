@@ -35,7 +35,7 @@ describe('StashView', () => {
   it('should render stash list', async () => {
     const mockStashes = [
       {
-        index: 0n,
+        index: 0,
         stashRef: 'stash@{0}',
         message: 'WIP on main: Test stash',
         commitOid: 'abc123def456',
@@ -45,7 +45,7 @@ describe('StashView', () => {
         timestamp: '2024-01-01T00:00:00Z',
       },
       {
-        index: 1n,
+        index: 1,
         stashRef: 'stash@{1}',
         message: 'WIP on feature: Another stash',
         commitOid: 'def456abc789',
@@ -69,7 +69,7 @@ describe('StashView', () => {
   it('should display stash count in header', async () => {
     const mockStashes = [
       {
-        index: 0n,
+        index: 0,
         stashRef: 'stash@{0}',
         message: 'Test stash',
         commitOid: 'abc123',
@@ -112,7 +112,7 @@ describe('StashView', () => {
     vi.mocked(stashApi.save).mockResolvedValue({
       success: true,
       message: 'Stash created',
-      filesAffected: 1n,
+      filesAffected: 1,
       conflicts: [],
     });
 

@@ -1,29 +1,15 @@
+use crate::events::{
+    FilesChangedEvent, HeadChangedEvent, IndexChangedEvent, RefChangedEvent, WatchErrorEvent,
+};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::Mutex;
-use specta::Type;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter};
-use tauri_specta::Event as SpectaEvent;
-
-/// Events emitted by the file watcher
-#[derive(Clone, serde::Serialize, Type, SpectaEvent)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum FileWatchEvent {
-    /// Files in the repository changed
-    FilesChanged { paths: Vec<String> },
-    /// The index (staging area) changed
-    IndexChanged,
-    /// A ref (branch, tag) changed
-    RefChanged { ref_name: String },
-    /// HEAD changed (checkout, commit)
-    HeadChanged,
-    /// Watch error occurred
-    WatchError { message: String },
-}
+use tauri::AppHandle;
+use tauri_specta::Event as _;
 
 pub struct FileWatcherService {
     watcher: Arc<Mutex<Option<RecommendedWatcher>>>,
@@ -106,21 +92,12 @@ impl FileWatcherService {
                                 let relative_str = relative.to_string_lossy();
 
                                 if relative_str == "index" || relative_str == "index.lock" {
-                                    let _ = app_handle.emit(
-                                        "repository:index_changed",
-                                        FileWatchEvent::IndexChanged,
-                                    );
+                                    let _ = IndexChangedEvent {}.emit(&app_handle);
                                 } else if relative_str == "HEAD" || relative_str == "HEAD.lock" {
-                                    let _ = app_handle.emit(
-                                        "repository:head_changed",
-                                        FileWatchEvent::HeadChanged,
-                                    );
+                                    let _ = HeadChangedEvent {}.emit(&app_handle);
                                 } else if relative_str.starts_with("refs/") {
                                     let ref_name = relative_str.to_string();
-                                    let _ = app_handle.emit(
-                                        "repository:ref_changed",
-                                        FileWatchEvent::RefChanged { ref_name },
-                                    );
+                                    let _ = RefChangedEvent { ref_name }.emit(&app_handle);
                                 }
                                 // Ignore other .git internal files
                             } else {
@@ -130,12 +107,10 @@ impl FileWatcherService {
                         }
                     }
                     Ok(Err(e)) => {
-                        let _ = app_handle.emit(
-                            "repository:watch_error",
-                            FileWatchEvent::WatchError {
-                                message: e.to_string(),
-                            },
-                        );
+                        let _ = WatchErrorEvent {
+                            message: e.to_string(),
+                        }
+                        .emit(&app_handle);
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                         // Timeout - flush pending changes if any
@@ -158,10 +133,7 @@ impl FileWatcherService {
                         .collect();
 
                     if !paths.is_empty() {
-                        let _ = app_handle.emit(
-                            "repository:files_changed",
-                            FileWatchEvent::FilesChanged { paths },
-                        );
+                        let _ = FilesChangedEvent { paths }.emit(&app_handle);
                     }
                     last_emit = std::time::Instant::now();
                 }

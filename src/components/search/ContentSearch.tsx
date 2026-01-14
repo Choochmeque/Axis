@@ -189,7 +189,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       <div className="flex-1 overflow-y-auto">
         {results && (
           <div className="py-2 px-3 text-xs text-(--text-secondary) border-b border-(--border-color)">
-            {String(results.totalMatches)} {results.totalMatches === 1n ? 'result' : 'results'} in{' '}
+            {results.totalMatches} {results.totalMatches === 1 ? 'result' : 'results'} in{' '}
             {Object.keys(groupedResults || {}).length} files
           </div>
         )}
@@ -231,7 +231,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
             </div>
           ))}
 
-        {results && results.totalMatches === 0n && (
+        {results && results.totalMatches === 0 && (
           <div className="py-6 text-center text-(--text-muted)">
             No results found for "{pattern}"
           </div>

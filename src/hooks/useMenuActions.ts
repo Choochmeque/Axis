@@ -1,30 +1,11 @@
 import { useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useRepositoryStore } from '../store/repositoryStore';
-import { useStagingStore } from '../store/stagingStore';
-import { useSettingsStore } from '../store/settingsStore';
-import { remoteApi, stashApi } from '../services/api';
-
-// Menu action IDs - should match Rust menu.rs
-const MENU_IDS = {
-  NEW_WINDOW: 'new_window',
-  OPEN_REPOSITORY: 'open_repository',
-  CLOSE_REPOSITORY: 'close_repository',
-  SETTINGS: 'settings',
-  REFRESH: 'refresh',
-  TOGGLE_SIDEBAR: 'toggle_sidebar',
-  FETCH: 'fetch',
-  PULL: 'pull',
-  PUSH: 'push',
-  STAGE_ALL: 'stage_all',
-  UNSTAGE_ALL: 'unstage_all',
-  COMMIT: 'commit',
-  NEW_BRANCH: 'new_branch',
-  NEW_TAG: 'new_tag',
-  STASH: 'stash',
-  POP_STASH: 'pop_stash',
-} as const;
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useStagingStore } from '@/store/stagingStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { remoteApi, stashApi } from '@/services/api';
+import { MenuAction } from '@/types';
 
 export function useMenuActions() {
   const { openRepository, closeRepository, refreshRepository, repository } = useRepositoryStore();
@@ -34,7 +15,7 @@ export function useMenuActions() {
   const handleMenuAction = useCallback(
     async (action: string) => {
       switch (action) {
-        case MENU_IDS.OPEN_REPOSITORY: {
+        case MenuAction.NewWindow: {
           const selected = await open({
             directory: true,
             multiple: false,
@@ -46,23 +27,23 @@ export function useMenuActions() {
           break;
         }
 
-        case MENU_IDS.CLOSE_REPOSITORY:
+        case MenuAction.CloseRepository:
           await closeRepository();
           break;
 
-        case MENU_IDS.REFRESH:
+        case MenuAction.Refresh:
           await refreshRepository();
           break;
 
-        case MENU_IDS.SETTINGS:
+        case MenuAction.Settings:
           setShowSettings(!showSettings);
           break;
 
-        case MENU_IDS.TOGGLE_SIDEBAR:
+        case MenuAction.ToggleSidebar:
           // TODO: Implement sidebar toggle
           break;
 
-        case MENU_IDS.FETCH:
+        case MenuAction.Fetch:
           if (repository) {
             try {
               await remoteApi.fetchAll();
@@ -73,7 +54,7 @@ export function useMenuActions() {
           }
           break;
 
-        case MENU_IDS.PULL:
+        case MenuAction.Pull:
           if (repository) {
             try {
               const branchName = repository.currentBranch || 'main';
@@ -85,7 +66,7 @@ export function useMenuActions() {
           }
           break;
 
-        case MENU_IDS.PUSH:
+        case MenuAction.Push:
           if (repository) {
             try {
               await remoteApi.pushCurrentBranch('origin');
@@ -96,30 +77,30 @@ export function useMenuActions() {
           }
           break;
 
-        case MENU_IDS.STAGE_ALL:
+        case MenuAction.StageAll:
           await stageAll();
           break;
 
-        case MENU_IDS.UNSTAGE_ALL:
+        case MenuAction.UnstageAll:
           await unstageAll();
           break;
 
-        case MENU_IDS.COMMIT:
+        case MenuAction.Commit:
           // Focus commit form - handled by component
           document.dispatchEvent(new CustomEvent('focus-commit-form'));
           break;
 
-        case MENU_IDS.NEW_BRANCH:
+        case MenuAction.NewBranch:
           // Open branch dialog - handled by Sidebar component
           document.dispatchEvent(new CustomEvent('open-new-branch-dialog'));
           break;
 
-        case MENU_IDS.NEW_TAG:
+        case MenuAction.NewTag:
           // Open tag dialog - handled by Sidebar component
           document.dispatchEvent(new CustomEvent('open-new-tag-dialog'));
           break;
 
-        case MENU_IDS.STASH:
+        case MenuAction.Stash:
           if (repository) {
             try {
               await stashApi.save({
@@ -135,10 +116,10 @@ export function useMenuActions() {
           }
           break;
 
-        case MENU_IDS.POP_STASH:
+        case MenuAction.PopStash:
           if (repository) {
             try {
-              await stashApi.pop({ index: 0n, reinstateIndex: false });
+              await stashApi.pop({ index: 0, reinstateIndex: false });
               await refreshRepository();
             } catch (err) {
               console.error('Pop stash failed:', err);

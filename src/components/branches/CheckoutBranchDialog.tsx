@@ -14,6 +14,7 @@ import {
   Select,
   Alert,
 } from '@/components/ui';
+import { BranchType } from '@/types';
 
 interface CheckoutBranchDialogProps {
   open: boolean;
@@ -26,8 +27,8 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const localBranches = branches.filter((b) => b.branchType === 'Local');
-  const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
+  const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
+  const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
   const currentBranch = branches.find((b) => b.isHead);
 
   const handleCheckout = async () => {

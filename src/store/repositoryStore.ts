@@ -194,8 +194,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     set({ isLoadingCommits: true });
     try {
       const result = await graphApi.build({
-        limit: BigInt(limit),
-        skip: BigInt(skip),
+        limit: limit,
+        skip: skip,
         branchFilter: branchFilter,
         includeRemotes: includeRemotes,
         sortOrder: sortOrder,
@@ -226,8 +226,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     set({ isLoadingMoreCommits: true });
     try {
       const result = await graphApi.build({
-        limit: 100n,
-        skip: BigInt(commits.length),
+        limit: 100,
+        skip: commits.length,
         branchFilter: branchFilter,
         includeRemotes: includeRemotes,
         sortOrder: sortOrder,

@@ -1,26 +1,33 @@
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use std::str::FromStr;
+use strum::{Display, EnumString};
 use tauri::{
     menu::{Menu, MenuId, MenuItem, PredefinedMenuItem, Submenu},
     AppHandle, Emitter, Wry,
 };
 
 /// Menu item IDs for custom actions
-pub mod menu_ids {
-    pub const NEW_WINDOW: &str = "new_window";
-    pub const OPEN_REPOSITORY: &str = "open_repository";
-    pub const CLOSE_REPOSITORY: &str = "close_repository";
-    pub const SETTINGS: &str = "settings";
-    pub const REFRESH: &str = "refresh";
-    pub const TOGGLE_SIDEBAR: &str = "toggle_sidebar";
-    pub const FETCH: &str = "fetch";
-    pub const PULL: &str = "pull";
-    pub const PUSH: &str = "push";
-    pub const STAGE_ALL: &str = "stage_all";
-    pub const UNSTAGE_ALL: &str = "unstage_all";
-    pub const COMMIT: &str = "commit";
-    pub const NEW_BRANCH: &str = "new_branch";
-    pub const NEW_TAG: &str = "new_tag";
-    pub const STASH: &str = "stash";
-    pub const POP_STASH: &str = "pop_stash";
+#[derive(Debug, Display, EnumString, Deserialize, Serialize, Type)]
+#[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "PascalCase")]
+pub enum MenuAction {
+    NewWindow,
+    OpenRepository,
+    CloseRepository,
+    Settings,
+    Refresh,
+    ToggleSidebar,
+    Fetch,
+    Pull,
+    Push,
+    StageAll,
+    UnstageAll,
+    Commit,
+    NewBranch,
+    NewTag,
+    Stash,
+    PopStash,
 }
 
 /// Create the application menu
@@ -71,7 +78,7 @@ fn create_app_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator1 = PredefinedMenuItem::separator(app)?;
     let settings = MenuItem::with_id(
         app,
-        menu_ids::SETTINGS,
+        MenuAction::Settings,
         "Settings...",
         true,
         Some("CmdOrCtrl+,"),
@@ -110,7 +117,7 @@ fn create_app_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
 fn create_file_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let new_window = MenuItem::with_id(
         app,
-        menu_ids::NEW_WINDOW,
+        MenuAction::NewWindow,
         "New Window",
         true,
         Some("CmdOrCtrl+Shift+N"),
@@ -118,7 +125,7 @@ fn create_file_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator1 = PredefinedMenuItem::separator(app)?;
     let open_repo = MenuItem::with_id(
         app,
-        menu_ids::OPEN_REPOSITORY,
+        MenuAction::OpenRepository,
         "Open Repository...",
         true,
         Some("CmdOrCtrl+O"),
@@ -126,7 +133,7 @@ fn create_file_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator2 = PredefinedMenuItem::separator(app)?;
     let close_repo = MenuItem::with_id(
         app,
-        menu_ids::CLOSE_REPOSITORY,
+        MenuAction::CloseRepository,
         "Close Repository",
         true,
         Some("CmdOrCtrl+Shift+W"),
@@ -214,11 +221,17 @@ fn create_edit_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
 }
 
 fn create_view_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
-    let refresh = MenuItem::with_id(app, menu_ids::REFRESH, "Refresh", true, Some("CmdOrCtrl+R"))?;
+    let refresh = MenuItem::with_id(
+        app,
+        MenuAction::Refresh,
+        "Refresh",
+        true,
+        Some("CmdOrCtrl+R"),
+    )?;
     let separator1 = PredefinedMenuItem::separator(app)?;
     let toggle_sidebar = MenuItem::with_id(
         app,
-        menu_ids::TOGGLE_SIDEBAR,
+        MenuAction::ToggleSidebar,
         "Toggle Sidebar",
         true,
         Some("CmdOrCtrl+\\"),
@@ -245,24 +258,36 @@ fn create_view_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
 fn create_repository_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let fetch = MenuItem::with_id(
         app,
-        menu_ids::FETCH,
+        MenuAction::Fetch,
         "Fetch",
         true,
         Some("CmdOrCtrl+Shift+F"),
     )?;
-    let pull = MenuItem::with_id(app, menu_ids::PULL, "Pull", true, Some("CmdOrCtrl+Shift+P"))?;
-    let push = MenuItem::with_id(app, menu_ids::PUSH, "Push", true, Some("CmdOrCtrl+Shift+U"))?;
+    let pull = MenuItem::with_id(
+        app,
+        MenuAction::Pull,
+        "Pull",
+        true,
+        Some("CmdOrCtrl+Shift+P"),
+    )?;
+    let push = MenuItem::with_id(
+        app,
+        MenuAction::Push,
+        "Push",
+        true,
+        Some("CmdOrCtrl+Shift+U"),
+    )?;
     let separator1 = PredefinedMenuItem::separator(app)?;
     let stage_all = MenuItem::with_id(
         app,
-        menu_ids::STAGE_ALL,
+        MenuAction::StageAll,
         "Stage All Changes",
         true,
         Some("CmdOrCtrl+Shift+S"),
     )?;
     let unstage_all = MenuItem::with_id(
         app,
-        menu_ids::UNSTAGE_ALL,
+        MenuAction::UnstageAll,
         "Unstage All",
         true,
         None::<&str>,
@@ -270,7 +295,7 @@ fn create_repository_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator2 = PredefinedMenuItem::separator(app)?;
     let commit = MenuItem::with_id(
         app,
-        menu_ids::COMMIT,
+        MenuAction::Commit,
         "Commit...",
         true,
         Some("CmdOrCtrl+Return"),
@@ -278,14 +303,14 @@ fn create_repository_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator3 = PredefinedMenuItem::separator(app)?;
     let stash = MenuItem::with_id(
         app,
-        menu_ids::STASH,
+        MenuAction::Stash,
         "Stash Changes",
         true,
         Some("CmdOrCtrl+Shift+H"),
     )?;
     let pop_stash = MenuItem::with_id(
         app,
-        menu_ids::POP_STASH,
+        MenuAction::PopStash,
         "Pop Stash",
         true,
         Some("CmdOrCtrl+Shift+Alt+H"),
@@ -316,7 +341,7 @@ fn create_repository_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
 fn create_branch_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let new_branch = MenuItem::with_id(
         app,
-        menu_ids::NEW_BRANCH,
+        MenuAction::NewBranch,
         "New Branch...",
         true,
         Some("CmdOrCtrl+Shift+B"),
@@ -324,7 +349,7 @@ fn create_branch_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
     let separator1 = PredefinedMenuItem::separator(app)?;
     let new_tag = MenuItem::with_id(
         app,
-        menu_ids::NEW_TAG,
+        MenuAction::NewTag,
         "New Tag...",
         true,
         Some("CmdOrCtrl+Shift+T"),
@@ -358,8 +383,8 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, id: &MenuId) {
         log::error!("[Menu] Failed to emit menu-action event: {:?}", e);
     }
 
-    match id_str {
-        menu_ids::NEW_WINDOW => {
+    match MenuAction::from_str(id_str) {
+        Ok(MenuAction::NewWindow) => {
             // Create a new window
             let _ = tauri::WebviewWindowBuilder::new(
                 app,

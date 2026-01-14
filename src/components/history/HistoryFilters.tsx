@@ -10,6 +10,7 @@ import {
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
 import type { BranchFilterType, SortOrder } from '@/types';
+import { BranchType } from '@/types';
 
 export function HistoryFilters() {
   const {
@@ -41,7 +42,7 @@ export function HistoryFilters() {
   };
 
   // Get local branches for the dropdown
-  const localBranches = branches.filter((b) => b.branchType === 'Local');
+  const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
 
   return (
     <div className="flex items-center gap-2 py-1.5 px-3 border-b border-(--border-color) bg-(--bg-secondary)">

@@ -43,11 +43,11 @@ describe('ContentSearch', () => {
   it('should perform search and display results', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [
-        { path: 'src/main.ts', lineNumber: 10n, content: 'const test = 1;' },
-        { path: 'src/main.ts', lineNumber: 20n, content: 'function test() {}' },
-        { path: 'src/utils.ts', lineNumber: 5n, content: 'export const test = true;' },
+        { path: 'src/main.ts', lineNumber: 10, content: 'const test = 1;' },
+        { path: 'src/main.ts', lineNumber: 20, content: 'function test() {}' },
+        { path: 'src/utils.ts', lineNumber: 5, content: 'export const test = true;' },
       ],
-      totalMatches: 3n,
+      totalMatches: 3,
     });
 
     render(<ContentSearch />);
@@ -69,7 +69,7 @@ describe('ContentSearch', () => {
   it('should show no results message', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      totalMatches: 0n,
+      totalMatches: 0,
     });
 
     render(<ContentSearch />);
@@ -103,7 +103,7 @@ describe('ContentSearch', () => {
   it('should search with options', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      totalMatches: 0n,
+      totalMatches: 0,
     });
 
     render(<ContentSearch />);
@@ -137,7 +137,7 @@ describe('ContentSearch', () => {
   it('should search on Enter key', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      totalMatches: 0n,
+      totalMatches: 0,
     });
 
     render(<ContentSearch />);
@@ -154,8 +154,8 @@ describe('ContentSearch', () => {
   it('should call onFileSelect when clicking a match', async () => {
     const onFileSelect = vi.fn();
     vi.mocked(grepApi.search).mockResolvedValue({
-      matches: [{ path: 'src/main.ts', lineNumber: 10n, content: 'const test = 1;' }],
-      totalMatches: 1n,
+      matches: [{ path: 'src/main.ts', lineNumber: 10, content: 'const test = 1;' }],
+      totalMatches: 1,
     });
 
     render(<ContentSearch onFileSelect={onFileSelect} />);

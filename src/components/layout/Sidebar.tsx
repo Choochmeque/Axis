@@ -26,6 +26,7 @@ import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
+import { BranchType } from '@/types';
 
 // Tailwind class constants
 const sidebarItemClass =
@@ -224,8 +225,8 @@ export function Sidebar() {
     };
   }, []);
 
-  const localBranches = branches.filter((b) => b.branchType === 'Local');
-  const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
+  const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
+  const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
 
   const changesCount =
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);

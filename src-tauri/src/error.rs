@@ -1,7 +1,9 @@
 use serde::Serialize;
+use specta::Type;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize, Type)]
+#[serde(tag = "type", content = "data")]
 pub enum AxisError {
     #[error("Repository not found: {0}")]
     RepositoryNotFound(String),
@@ -13,16 +15,32 @@ pub enum AxisError {
     InvalidRepositoryPath(String),
 
     #[error("Git operation failed: {0}")]
-    GitError(#[from] git2::Error),
+    GitError(
+        #[serde(skip)]
+        #[from]
+        git2::Error,
+    ),
 
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    IoError(
+        #[serde(skip)]
+        #[from]
+        std::io::Error,
+    ),
 
     #[error("Database error: {0}")]
-    DatabaseError(#[from] rusqlite::Error),
+    DatabaseError(
+        #[serde(skip)]
+        #[from]
+        rusqlite::Error,
+    ),
 
     #[error("Serialization error: {0}")]
-    SerializationError(#[from] serde_json::Error),
+    SerializationError(
+        #[serde(skip)]
+        #[from]
+        serde_json::Error,
+    ),
 
     #[error("Invalid reference: {0}")]
     InvalidReference(String),
@@ -58,25 +76,4 @@ pub enum AxisError {
     Other(String),
 }
 
-// Make AxisError serializable for Tauri IPC
-impl Serialize for AxisError {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
 pub type Result<T> = std::result::Result<T, AxisError>;
-
-// Implement specta::Type for AxisError
-// Since AxisError serializes to a String, we represent it as a String type in TypeScript
-impl specta::Type for AxisError {
-    fn inline(
-        _type_map: &mut specta::TypeMap,
-        _generics: specta::Generics,
-    ) -> specta::datatype::DataType {
-        specta::datatype::DataType::Primitive(specta::datatype::PrimitiveType::String)
-    }
-}

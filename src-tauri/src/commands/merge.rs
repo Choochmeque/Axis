@@ -2,7 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictType,
     ConflictedFile, MergeOptions, MergeResult, MergeType, OperationState, RebaseOptions,
-    RebasePreview, RebaseResult, ResetMode, ResetOptions, RevertOptions, RevertResult,
+    RebasePreview, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
 use crate::services::GitCliService;
 use crate::state::AppState;
@@ -483,14 +483,7 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
 #[specta::specta]
 pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) -> Result<()> {
     let cli = state.get_cli_service()?;
-
-    let mode = match options.mode {
-        ResetMode::Soft => crate::services::ResetMode::Soft,
-        ResetMode::Mixed => crate::services::ResetMode::Mixed,
-        ResetMode::Hard => crate::services::ResetMode::Hard,
-    };
-
-    cli.reset(&options.target, mode)?;
+    cli.reset(&options.target, options.mode)?;
     Ok(())
 }
 

@@ -12,7 +12,6 @@ export type {
 
   // Branch types
   Branch,
-  BranchType,
   BranchFilterType,
   SortOrder,
 
@@ -135,10 +134,12 @@ export type {
 
 // Import types used locally
 import type {
+  BranchType as BranchTypeType,
   BranchFilterType,
   SortOrder,
   RepositoryState as RepositoryStateType,
   StatusType as StatusTypeType,
+  MenuAction as MenuActionType,
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
@@ -151,13 +152,6 @@ export interface LogOptions {
   includeRemotes?: boolean;
   sortOrder?: SortOrder;
 }
-
-export type FileWatchEvent =
-  | { type: 'filesChanged'; paths: string[] }
-  | { type: 'indexChanged' }
-  | { type: 'refChanged'; refName: string }
-  | { type: 'headChanged' }
-  | { type: 'watchError'; message: string };
 
 export interface CreateBranchOptions {
   startPoint?: string;
@@ -193,6 +187,14 @@ export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';
 export type ArchiveFormat = 'zip' | 'tar' | 'tar.gz' | 'tar.bz2';
 
 // Re-export the type for type annotations
+/* eslint-disable @typescript-eslint/naming-convention */
+
+export const BranchType: { [K in BranchTypeType]: K } = {
+  Local: 'Local',
+  Remote: 'Remote',
+};
+
+export type BranchType = BranchTypeType;
 
 export const RepositoryState: { [K in RepositoryStateType]: K } = {
   Clean: 'Clean',
@@ -221,3 +223,24 @@ export const StatusType: { [K in StatusTypeType]: K } = {
 };
 
 export type StatusType = StatusTypeType;
+
+export const MenuAction: { [K in MenuActionType]: K } = {
+  NewWindow: 'NewWindow',
+  OpenRepository: 'OpenRepository',
+  CloseRepository: 'CloseRepository',
+  Settings: 'Settings',
+  Refresh: 'Refresh',
+  ToggleSidebar: 'ToggleSidebar',
+  Fetch: 'Fetch',
+  Pull: 'Pull',
+  Push: 'Push',
+  StageAll: 'StageAll',
+  UnstageAll: 'UnstageAll',
+  Commit: 'Commit',
+  NewBranch: 'NewBranch',
+  NewTag: 'NewTag',
+  Stash: 'Stash',
+  PopStash: 'PopStash',
+};
+
+export type MenuAction = MenuActionType;

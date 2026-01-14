@@ -16,6 +16,7 @@ import {
   CheckboxField,
   Alert,
 } from '@/components/ui';
+import { BranchType } from '@/types';
 
 interface CreateBranchDialogProps {
   open: boolean;
@@ -47,7 +48,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const localBranches = branches.filter((b) => b.branchType === 'Local');
+  const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
 
   // Update baseBranch when startPoint changes (e.g., dialog reopens with different commit)
   useEffect(() => {

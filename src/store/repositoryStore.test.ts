@@ -15,7 +15,7 @@ void tagApi;
 void stashApi;
 void submoduleApi;
 import type { GraphCommit, Branch } from '../types';
-import { RepositoryState } from '../types';
+import { BranchType, RepositoryState } from '../types';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({
@@ -94,7 +94,7 @@ describe('repositoryStore', () => {
         {
           name: 'main',
           fullName: 'refs/heads/main',
-          branchType: 'Local' as const,
+          branchType: BranchType.Local,
           isHead: true,
           upstream: null,
           ahead: null,
@@ -115,8 +115,8 @@ describe('repositoryStore', () => {
       vi.mocked(repositoryApi.open).mockResolvedValue(mockRepo);
       vi.mocked(graphApi.build).mockResolvedValue({
         commits: mockCommits as unknown as GraphCommit[],
-        totalCount: 1n,
-        maxLane: 0n,
+        totalCount: 1,
+        maxLane: 0,
         hasMore: false,
       });
       vi.mocked(branchApi.list).mockResolvedValue(mockBranches);

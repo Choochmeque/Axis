@@ -57,8 +57,8 @@ export const repositoryApi = {
 export const commitApi = {
   getHistory: (options?: LogOptions) =>
     commands.getCommitHistory(
-      options?.limit != null ? BigInt(options.limit) : null,
-      options?.skip != null ? BigInt(options.skip) : null,
+      options?.limit ?? null,
+      options?.skip ?? null,
       options?.fromRef ?? null,
       options?.branchFilter ?? null,
       options?.includeRemotes ?? null,
@@ -256,15 +256,13 @@ export const stashApi = {
 
   pop: (options: StashApplyOptions) => commands.stashPop(options),
 
-  drop: (index?: number) => commands.stashDrop(index != null ? BigInt(index) : null),
+  drop: (index?: number) => commands.stashDrop(index ?? null),
 
   clear: () => commands.stashClear(),
 
-  show: (index?: number, statOnly: boolean = false) =>
-    commands.stashShow(index != null ? BigInt(index) : null, statOnly),
+  show: (index?: number, statOnly: boolean = false) => commands.stashShow(index ?? null, statOnly),
 
-  branch: (branchName: string, index?: number) =>
-    commands.stashBranch(branchName, index != null ? BigInt(index) : null),
+  branch: (branchName: string, index?: number) => commands.stashBranch(branchName, index ?? null),
 };
 
 export const tagApi = {

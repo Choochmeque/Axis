@@ -1,12 +1,16 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, FileStatus,
-    LogOptions, RebasePreview, RebaseTarget, Repository, RepositoryState, RepositoryStatus,
-    SigningConfig, SortOrder, Tag, TagResult, TagSignature,
+    Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, EdgeType,
+    FileStatus, GraphCommit, GraphEdge, GraphResult, LaneState, LogOptions, RebasePreview,
+    RebaseTarget, Repository, RepositoryState, RepositoryStatus, SigningConfig, SortOrder, Tag,
+    TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
-use git2::{Repository as Git2Repository, StatusOptions};
+use git2::{
+    build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks, Repository as Git2Repository,
+    StatusOptions,
+};
 use std::path::Path;
 
 pub struct Git2Service {
@@ -32,8 +36,6 @@ impl Git2Service {
 
     /// Clone a repository from a URL
     pub fn clone(url: &str, path: &Path) -> Result<Self> {
-        use git2::{build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks};
-
         let mut callbacks = RemoteCallbacks::new();
 
         // Set up authentication callback
@@ -1462,10 +1464,6 @@ impl Git2Service {
         &self,
         options: crate::models::GraphOptions,
     ) -> Result<crate::models::GraphResult> {
-        use crate::models::{
-            CommitRef, EdgeType, GraphCommit, GraphEdge, GraphResult, LaneState, RefType,
-        };
-
         let mut revwalk = self.repo.revwalk()?;
 
         // Configure revwalk based on branch filter

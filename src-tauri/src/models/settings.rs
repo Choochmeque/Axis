@@ -1,6 +1,7 @@
 use crate::models::SigningFormat;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use strum::{Display, EnumString};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -36,8 +37,9 @@ pub struct AppSettings {
     pub terminal_font_size: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type)]
+#[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "lowercase")]
 pub enum Theme {
     Light,
     Dark,
@@ -77,29 +79,6 @@ impl Default for AppSettings {
             // Terminal
             terminal_font_family: "monospace".to_string(),
             terminal_font_size: 13,
-        }
-    }
-}
-
-impl std::fmt::Display for Theme {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Theme::Light => write!(f, "light"),
-            Theme::Dark => write!(f, "dark"),
-            Theme::System => write!(f, "system"),
-        }
-    }
-}
-
-impl std::str::FromStr for Theme {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "light" => Ok(Theme::Light),
-            "dark" => Ok(Theme::Dark),
-            "system" => Ok(Theme::System),
-            _ => Err(format!("Unknown theme: {}", s)),
         }
     }
 }

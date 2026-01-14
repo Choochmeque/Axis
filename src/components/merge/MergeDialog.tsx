@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GitMerge, AlertCircle, Check } from 'lucide-react';
 import { mergeApi, branchApi } from '../../services/api';
-import type { Branch, MergeResult } from '../../types';
+import { BranchType, type Branch, type MergeResult } from '../../types';
 import { cn } from '../../lib/utils';
 import {
   Dialog,
@@ -145,7 +145,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                   {branches.map((branch) => (
                     <option key={branch.fullName} value={branch.name}>
                       {branch.name}
-                      {branch.branchType === 'Remote' && ` (${branch.branchType})`}
+                      {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
                     </option>
                   ))}
                 </Select>

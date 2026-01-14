@@ -27,7 +27,7 @@ interface StashViewProps {
 
 export function StashView({ onRefresh }: StashViewProps) {
   const [stashes, setStashes] = useState<StashEntry[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<bigint | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -78,7 +78,7 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleApply = async (index: bigint) => {
+  const handleApply = async (index: number) => {
     try {
       const result = await stashApi.apply({ index, reinstateIndex: false });
       if (result.success) {
@@ -94,7 +94,7 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handlePop = async (index: bigint) => {
+  const handlePop = async (index: number) => {
     try {
       const result = await stashApi.pop({ index, reinstateIndex: false });
       if (result.success) {
@@ -111,9 +111,9 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleDrop = async (index: bigint) => {
+  const handleDrop = async (index: number) => {
     try {
-      const result = await stashApi.drop(Number(index));
+      const result = await stashApi.drop(index);
       if (result.success) {
         await loadStashes();
         setSelectedIndex(null);
@@ -126,12 +126,12 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleBranch = async (index: bigint) => {
+  const handleBranch = async (index: number) => {
     const branchName = prompt('Enter branch name:');
     if (!branchName) return;
 
     try {
-      const result = await stashApi.branch(branchName, Number(index));
+      const result = await stashApi.branch(branchName, index);
       if (result.success) {
         await loadStashes();
         onRefresh?.();

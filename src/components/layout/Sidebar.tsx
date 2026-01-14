@@ -89,7 +89,7 @@ function RemoteTree({ branches, onBranchClick }: RemoteTreeProps) {
               <button
                 className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
                 style={{ paddingLeft }}
-                onClick={() => onBranchClick?.(node.data!.target_oid)}
+                onClick={() => onBranchClick?.(node.data!.targetOid)}
               >
                 <span className="w-3 shrink-0" />
                 <GitBranch size={12} />
@@ -224,8 +224,8 @@ export function Sidebar() {
     };
   }, []);
 
-  const localBranches = branches.filter((b) => b.branch_type === 'local');
-  const remoteBranches = branches.filter((b) => b.branch_type === 'remote');
+  const localBranches = branches.filter((b) => b.branchType === 'Local');
+  const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
 
   const changesCount =
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);
@@ -251,7 +251,7 @@ export function Sidebar() {
   };
 
   const handleStashClick = (stash: (typeof stashes)[0]) => {
-    if (selectedStash?.stash_ref === stash.stash_ref) {
+    if (selectedStash?.stashRef === stash.stashRef) {
       clearStashSelection();
     } else {
       setCurrentView('file-status');
@@ -314,15 +314,15 @@ export function Sidebar() {
                       onCheckout={() => handleBranchCheckout(branch.name)}
                     >
                       <button
-                        className={cn(sidebarItemClass, branch.is_head && 'font-semibold')}
-                        onClick={() => handleRefClick(branch.target_oid)}
+                        className={cn(sidebarItemClass, branch.isHead && 'font-semibold')}
+                        onClick={() => handleRefClick(branch.targetOid)}
                         onDoubleClick={() => {
-                          if (!branch.is_head) {
+                          if (!branch.isHead) {
                             handleBranchCheckout(branch.name);
                           }
                         }}
                       >
-                        {branch.is_head ? (
+                        {branch.isHead ? (
                           <Pointer size={12} className="shrink-0 rotate-90" />
                         ) : (
                           <span className="w-3 shrink-0" />
@@ -374,7 +374,7 @@ export function Sidebar() {
                     >
                       <button
                         className={sidebarItemClass}
-                        onClick={() => handleRefClick(tag.target_oid)}
+                        onClick={() => handleRefClick(tag.targetOid)}
                       >
                         <Tag size={12} />
                         <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -413,12 +413,11 @@ export function Sidebar() {
             <Section title="STASHES" icon={<Archive />} defaultExpanded={false}>
               {stashes.length > 0 ? (
                 stashes.map((stash) => (
-                  <StashContextMenu key={stash.stash_ref} stash={stash}>
+                  <StashContextMenu key={stash.stashRef} stash={stash}>
                     <button
                       className={cn(
                         sidebarItemClass,
-                        selectedStash?.stash_ref === stash.stash_ref &&
-                          'bg-(--bg-active) font-medium'
+                        selectedStash?.stashRef === stash.stashRef && 'bg-(--bg-active) font-medium'
                       )}
                       onClick={() => handleStashClick(stash)}
                     >
@@ -451,11 +450,11 @@ export function Sidebar() {
                       <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                         {submodule.name}
                       </span>
-                      {submodule.status !== 'current' && (
+                      {submodule.status !== 'Current' && (
                         <span
                           className={cn(
                             'badge',
-                            submodule.status === 'modified' && 'bg-warning text-white'
+                            submodule.status === 'Modified' && 'bg-warning text-white'
                           )}
                         >
                           {submodule.status}

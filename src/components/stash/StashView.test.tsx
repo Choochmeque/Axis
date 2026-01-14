@@ -35,21 +35,21 @@ describe('StashView', () => {
   it('should render stash list', async () => {
     const mockStashes = [
       {
-        index: 0,
-        stash_ref: 'stash@{0}',
+        index: 0n,
+        stashRef: 'stash@{0}',
         message: 'WIP on main: Test stash',
-        commit_oid: 'abc123def456',
-        short_oid: 'abc123d',
+        commitOid: 'abc123def456',
+        shortOid: 'abc123d',
         branch: 'main',
         author: 'Test User',
         timestamp: '2024-01-01T00:00:00Z',
       },
       {
-        index: 1,
-        stash_ref: 'stash@{1}',
+        index: 1n,
+        stashRef: 'stash@{1}',
         message: 'WIP on feature: Another stash',
-        commit_oid: 'def456abc789',
-        short_oid: 'def456a',
+        commitOid: 'def456abc789',
+        shortOid: 'def456a',
         branch: 'feature',
         author: 'Test User',
         timestamp: '2024-01-02T00:00:00Z',
@@ -69,11 +69,11 @@ describe('StashView', () => {
   it('should display stash count in header', async () => {
     const mockStashes = [
       {
-        index: 0,
-        stash_ref: 'stash@{0}',
+        index: 0n,
+        stashRef: 'stash@{0}',
         message: 'Test stash',
-        commit_oid: 'abc123',
-        short_oid: 'abc123',
+        commitOid: 'abc123',
+        shortOid: 'abc123',
         branch: 'main',
         author: 'Test',
         timestamp: '2024-01-01T00:00:00Z',
@@ -112,7 +112,7 @@ describe('StashView', () => {
     vi.mocked(stashApi.save).mockResolvedValue({
       success: true,
       message: 'Stash created',
-      files_affected: 1,
+      filesAffected: 1n,
       conflicts: [],
     });
 
@@ -133,8 +133,9 @@ describe('StashView', () => {
     await waitFor(() => {
       expect(stashApi.save).toHaveBeenCalledWith({
         message: 'My test stash',
-        include_untracked: false,
-        keep_index: false,
+        includeUntracked: false,
+        keepIndex: false,
+        includeIgnored: false,
       });
     });
   });

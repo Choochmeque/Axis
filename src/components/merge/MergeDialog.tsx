@@ -52,7 +52,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
     try {
       const allBranches = await branchApi.list(true, true);
       // Filter out the current branch
-      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.is_head);
+      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
       setBranches(otherBranches);
     } catch (err) {
       console.error('Failed to load branches:', err);
@@ -72,8 +72,9 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
     try {
       const mergeResult = await mergeApi.merge({
         branch: selectedBranch,
-        message: customMessage || undefined,
-        no_ff: noFastForward,
+        message: customMessage || null,
+        noFf: noFastForward,
+        ffOnly: false,
         squash,
       });
 
@@ -142,9 +143,9 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 >
                   <option value="">Select a branch...</option>
                   {branches.map((branch) => (
-                    <option key={branch.full_name} value={branch.name}>
+                    <option key={branch.fullName} value={branch.name}>
                       {branch.name}
-                      {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                      {branch.branchType === 'Remote' && ` (${branch.branchType})`}
                     </option>
                   ))}
                 </Select>

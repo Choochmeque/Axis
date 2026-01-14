@@ -33,7 +33,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       setConflicts(conflictedFiles);
       setOperationState(opState);
 
-      if (conflictedFiles.length === 0 && opState.type !== 'none') {
+      if (conflictedFiles.length === 0 && opState !== 'None') {
         onAllResolved?.();
       }
 
@@ -78,7 +78,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'ours');
+      await conflictApi.resolveConflict(selectedFile, 'Ours');
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {
@@ -91,7 +91,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'theirs');
+      await conflictApi.resolveConflict(selectedFile, 'Theirs');
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {
@@ -104,7 +104,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'merged', mergedContent);
+      await conflictApi.resolveConflict(selectedFile, 'Merged', mergedContent);
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {

@@ -52,13 +52,13 @@ export function CommitInfo({ commit }: CommitInfoProps) {
           </div>
         </div>
 
-        {commit.parent_oids.length > 0 && (
+        {commit.parentOids.length > 0 && (
           <div className={rowClass}>
             <span className={metaLabelClass}>
-              {commit.parent_oids.length === 1 ? 'Parent' : 'Parents'}
+              {commit.parentOids.length === 1 ? 'Parent' : 'Parents'}
             </span>
             <div className={cn(valueClass, 'gap-1')}>
-              {commit.parent_oids.map((parentOid) => (
+              {commit.parentOids.map((parentOid) => (
                 <button
                   key={parentOid}
                   className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded border-none text-(--accent-color) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:underline"
@@ -100,13 +100,13 @@ export function CommitInfo({ commit }: CommitInfoProps) {
                   key={idx}
                   className={cn(
                     'inline-flex items-center gap-1 py-0.5 px-2 rounded text-[11px] font-medium',
-                    ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
-                    ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
-                    ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
-                    ref.is_head && 'font-semibold'
+                    ref.refType === 'LocalBranch' && 'bg-[#107c10] text-white',
+                    ref.refType === 'RemoteBranch' && 'bg-[#5c2d91] text-white',
+                    ref.refType === 'Tag' && 'bg-[#d83b01] text-white',
+                    ref.isHead && 'font-semibold'
                   )}
                 >
-                  {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                  {ref.refType === 'Tag' ? <Tag size={10} /> : <GitBranch size={10} />}
                   {ref.name}
                 </span>
               ))}

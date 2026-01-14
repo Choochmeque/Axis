@@ -26,17 +26,17 @@ interface ResetConfirmDialogProps {
 
 const modeDescriptions: Record<ResetMode, { title: string; description: string; warning: string }> =
   {
-    soft: {
+    Soft: {
       title: 'Soft Reset',
       description: 'Move branch pointer to target commit. All changes will be kept staged.',
       warning: 'This is a safe operation. No changes will be lost.',
     },
-    mixed: {
+    Mixed: {
       title: 'Mixed Reset',
       description: 'Move branch pointer to target commit. All changes will be kept but unstaged.',
       warning: 'This is a safe operation. No changes will be lost.',
     },
-    hard: {
+    Hard: {
       title: 'Hard Reset',
       description:
         'Move branch pointer to target commit. All changes will be permanently discarded.',
@@ -56,7 +56,7 @@ export function ResetConfirmDialog({
   const [error, setError] = useState<string | null>(null);
 
   const modeInfo = modeDescriptions[mode];
-  const isHardReset = mode === 'hard';
+  const isHardReset = mode === 'Hard';
 
   const handleReset = async () => {
     setIsLoading(true);
@@ -111,7 +111,7 @@ export function ResetConfirmDialog({
             <Label>Reset to Commit</Label>
             <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
               <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
-                {commit.short_oid}
+                {commit.shortOid}
               </span>
               <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
                 {commit.summary}

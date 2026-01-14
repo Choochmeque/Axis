@@ -76,7 +76,7 @@ export function useMenuActions() {
         case MENU_IDS.PULL:
           if (repository) {
             try {
-              const branchName = repository.current_branch || 'main';
+              const branchName = repository.currentBranch || 'main';
               await remoteApi.pull('origin', branchName);
               await refreshRepository();
             } catch (err) {
@@ -122,7 +122,12 @@ export function useMenuActions() {
         case MENU_IDS.STASH:
           if (repository) {
             try {
-              await stashApi.save();
+              await stashApi.save({
+                message: null,
+                includeUntracked: false,
+                keepIndex: false,
+                includeIgnored: false,
+              });
               await refreshRepository();
             } catch (err) {
               console.error('Stash failed:', err);
@@ -133,7 +138,7 @@ export function useMenuActions() {
         case MENU_IDS.POP_STASH:
           if (repository) {
             try {
-              await stashApi.pop({ index: 0 });
+              await stashApi.pop({ index: 0n, reinstateIndex: false });
               await refreshRepository();
             } catch (err) {
               console.error('Pop stash failed:', err);

@@ -170,19 +170,19 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <TagIcon
                     size={14}
-                    className={tag.is_annotated ? 'text-(--accent-color)' : 'text-(--text-muted)'}
+                    className={tag.isAnnotated ? 'text-(--accent-color)' : 'text-(--text-muted)'}
                   />
                   <span className="font-mono text-sm text-(--text-primary) font-medium">
                     {tag.name}
                   </span>
-                  {tag.is_annotated && (
+                  {tag.isAnnotated && (
                     <span className="px-1.5 py-0.5 text-[10px] bg-(--accent-color)/10 text-(--accent-color) rounded">
                       annotated
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-(--text-muted)">
-                  <span className="font-mono text-(--accent-color)">{tag.short_oid}</span>
+                  <span className="font-mono text-(--accent-color)">{tag.shortOid}</span>
                   {tag.tagger && (
                     <span>
                       {tag.tagger.name} - {formatTimestamp(tag.tagger.timestamp)}

@@ -47,7 +47,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const localBranches = branches.filter((b) => b.branch_type === 'local');
+  const localBranches = branches.filter((b) => b.branchType === 'Local');
 
   // Update baseBranch when startPoint changes (e.g., dialog reopens with different commit)
   useEffect(() => {
@@ -133,7 +133,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
               )}
               {localBranches.map((branch) => (
                 <option key={branch.name} value={branch.name}>
-                  {branch.name} {branch.is_head && '(current)'}
+                  {branch.name} {branch.isHead && '(current)'}
                 </option>
               ))}
             </Select>

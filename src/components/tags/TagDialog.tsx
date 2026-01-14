@@ -81,11 +81,11 @@ export function TagDialog({
     setError(null);
 
     try {
-      const target = commitTarget === 'specified' ? specifiedCommit : undefined;
+      const target = commitTarget === 'specified' ? specifiedCommit : null;
       const tagResult = await tagApi.create(tagName, {
         target,
         annotated: !isLightweight,
-        message: !isLightweight ? message || undefined : undefined,
+        message: !isLightweight ? message || null : null,
         force: forceMove,
       });
 

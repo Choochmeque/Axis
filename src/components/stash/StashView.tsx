@@ -27,7 +27,7 @@ interface StashViewProps {
 
 export function StashView({ onRefresh }: StashViewProps) {
   const [stashes, setStashes] = useState<StashEntry[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<bigint | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -56,9 +56,10 @@ export function StashView({ onRefresh }: StashViewProps) {
   const handleSave = async () => {
     try {
       const result = await stashApi.save({
-        message: stashMessage || undefined,
-        include_untracked: includeUntracked,
-        keep_index: keepIndex,
+        message: stashMessage || null,
+        includeUntracked: includeUntracked,
+        keepIndex: keepIndex,
+        includeIgnored: false,
       });
 
       if (result.success) {
@@ -77,9 +78,9 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleApply = async (index: number) => {
+  const handleApply = async (index: bigint) => {
     try {
-      const result = await stashApi.apply({ index });
+      const result = await stashApi.apply({ index, reinstateIndex: false });
       if (result.success) {
         onRefresh?.();
       } else if (result.conflicts.length > 0) {
@@ -93,9 +94,9 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handlePop = async (index: number) => {
+  const handlePop = async (index: bigint) => {
     try {
-      const result = await stashApi.pop({ index });
+      const result = await stashApi.pop({ index, reinstateIndex: false });
       if (result.success) {
         await loadStashes();
         onRefresh?.();
@@ -110,9 +111,9 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleDrop = async (index: number) => {
+  const handleDrop = async (index: bigint) => {
     try {
-      const result = await stashApi.drop(index);
+      const result = await stashApi.drop(Number(index));
       if (result.success) {
         await loadStashes();
         setSelectedIndex(null);
@@ -125,12 +126,12 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
-  const handleBranch = async (index: number) => {
+  const handleBranch = async (index: bigint) => {
     const branchName = prompt('Enter branch name:');
     if (!branchName) return;
 
     try {
-      const result = await stashApi.branch(branchName, index);
+      const result = await stashApi.branch(branchName, Number(index));
       if (result.success) {
         await loadStashes();
         onRefresh?.();
@@ -207,7 +208,7 @@ export function StashView({ onRefresh }: StashViewProps) {
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-mono text-xs font-semibold text-(--accent-color)">
-                  {stash.stash_ref}
+                  {stash.stashRef}
                 </span>
                 {stash.branch && (
                   <span className="px-1.5 py-0.5 text-[10px] bg-(--bg-tertiary) rounded text-(--text-secondary)">

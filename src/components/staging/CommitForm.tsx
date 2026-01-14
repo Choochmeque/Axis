@@ -47,7 +47,7 @@ export function CommitForm() {
       try {
         const config = await signingApi.getConfig();
         setSigningConfig(config);
-        if (config.signing_key) {
+        if (config.signingKey) {
           const available = await signingApi.isAvailable(config);
           setSigningAvailable(available);
         } else {
@@ -220,7 +220,7 @@ export function CommitForm() {
               htmlFor="push-after-commit"
               className="text-xs text-(--text-secondary) cursor-pointer select-none"
             >
-              Push to origin/{repository?.current_branch || 'main'}
+              Push to origin/{repository?.currentBranch || 'main'}
             </label>
           </div>
           <button

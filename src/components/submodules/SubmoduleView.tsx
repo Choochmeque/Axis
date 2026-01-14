@@ -76,7 +76,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       const result = await submoduleApi.add({
         url: addUrl,
         path: addPath,
-        branch: addBranch || undefined,
+        branch: addBranch || null,
+        name: null,
+        depth: null,
       });
 
       if (result.success) {
@@ -121,6 +123,10 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
         paths: path ? [path] : [],
         init: true,
         recursive: true,
+        force: false,
+        remote: false,
+        rebase: false,
+        merge: false,
       });
       if (result.success) {
         await loadSubmodules();
@@ -163,17 +169,17 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
   const getStatusIcon = (status: SubmoduleStatus) => {
     switch (status) {
-      case 'current':
+      case 'Current':
         return <Check size={14} className="text-success" />;
-      case 'modified':
+      case 'Modified':
         return <AlertTriangle size={14} className="text-warning" />;
-      case 'uninitialized':
+      case 'Uninitialized':
         return <Circle size={14} className="text-(--text-muted)" />;
-      case 'missing':
+      case 'Missing':
         return <AlertCircle size={14} className="text-error" />;
-      case 'conflict':
+      case 'Conflict':
         return <AlertCircle size={14} className="text-error" />;
-      case 'dirty':
+      case 'Dirty':
         return <AlertTriangle size={14} className="text-warning" />;
       default:
         return <Circle size={14} className="text-(--text-muted)" />;
@@ -182,17 +188,17 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
   const getStatusLabel = (status: SubmoduleStatus) => {
     switch (status) {
-      case 'current':
+      case 'Current':
         return 'Up to date';
-      case 'modified':
+      case 'Modified':
         return 'Modified';
-      case 'uninitialized':
+      case 'Uninitialized':
         return 'Not initialized';
-      case 'missing':
+      case 'Missing':
         return 'Missing';
-      case 'conflict':
+      case 'Conflict':
         return 'Conflict';
-      case 'dirty':
+      case 'Dirty':
         return 'Dirty';
       default:
         return 'Unknown';
@@ -201,13 +207,13 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
   const getStatusClass = (status: SubmoduleStatus) => {
     switch (status) {
-      case 'current':
+      case 'Current':
         return 'text-success';
-      case 'modified':
-      case 'dirty':
+      case 'Modified':
+      case 'Dirty':
         return 'text-warning';
-      case 'missing':
-      case 'conflict':
+      case 'Missing':
+      case 'Conflict':
         return 'text-error';
       default:
         return 'text-(--text-muted)';
@@ -286,8 +292,8 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-(--text-muted) mb-1">
-                {submodule.short_oid && (
-                  <span className="font-mono text-(--accent-color)">{submodule.short_oid}</span>
+                {submodule.shortOid && (
+                  <span className="font-mono text-(--accent-color)">{submodule.shortOid}</span>
                 )}
                 {submodule.branch && (
                   <span className="px-1.5 py-0.5 bg-(--bg-tertiary) rounded">
@@ -303,7 +309,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
               )}
               {selectedPath === submodule.path && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
-                  {submodule.status === 'uninitialized' && (
+                  {submodule.status === 'Uninitialized' && (
                     <button
                       className={cn(
                         btnSmallClass,
@@ -326,7 +332,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                       e.stopPropagation();
                       handleUpdate(submodule.path);
                     }}
-                    disabled={submodule.status === 'uninitialized'}
+                    disabled={submodule.status === 'Uninitialized'}
                   >
                     <Download size={12} />
                     Update

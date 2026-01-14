@@ -52,11 +52,11 @@ describe('GitFlowView', () => {
     vi.mocked(gitflowApi.getConfig).mockResolvedValue({
       master: 'main',
       develop: 'develop',
-      feature_prefix: 'feature/',
-      release_prefix: 'release/',
-      hotfix_prefix: 'hotfix/',
-      support_prefix: 'support/',
-      version_tag_prefix: '',
+      featurePrefix: 'feature/',
+      releasePrefix: 'release/',
+      hotfixPrefix: 'hotfix/',
+      supportPrefix: 'support/',
+      versionTagPrefix: '',
     });
     vi.mocked(gitflowApi.feature.list).mockResolvedValue(['login', 'dashboard']);
     vi.mocked(gitflowApi.release.list).mockResolvedValue(['1.0.0']);
@@ -137,11 +137,11 @@ describe('GitFlowView', () => {
     vi.mocked(gitflowApi.getConfig).mockResolvedValue({
       master: 'main',
       develop: 'develop',
-      feature_prefix: 'feature/',
-      release_prefix: 'release/',
-      hotfix_prefix: 'hotfix/',
-      support_prefix: 'support/',
-      version_tag_prefix: '',
+      featurePrefix: 'feature/',
+      releasePrefix: 'release/',
+      hotfixPrefix: 'hotfix/',
+      supportPrefix: 'support/',
+      versionTagPrefix: '',
     });
     vi.mocked(gitflowApi.feature.list).mockResolvedValue([]);
     vi.mocked(gitflowApi.release.list).mockResolvedValue([]);

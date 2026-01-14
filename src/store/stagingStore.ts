@@ -81,8 +81,9 @@ const initialState = {
 // Helper to convert DiffSettings to DiffOptions for API calls
 function toDiffOptions(settings: DiffSettings): DiffOptions {
   return {
-    context_lines: settings.contextLines,
-    ignore_whitespace: settings.whitespace === 'ignore',
+    contextLines: settings.contextLines,
+    ignoreWhitespace: settings.whitespace === 'ignore',
+    ignoreWhitespaceEol: false,
   };
 }
 

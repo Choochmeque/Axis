@@ -32,7 +32,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   const [success, setSuccess] = useState(false);
 
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
-  const currentBranch = branches.find((b) => b.is_head);
+  const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
     if (open) {

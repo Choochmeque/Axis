@@ -12,7 +12,7 @@ interface HistoryFileContextMenuProps {
 
 export function HistoryFileContextMenu({ file, children }: HistoryFileContextMenuProps) {
   const { repository } = useRepositoryStore();
-  const filePath = file.new_path || file.old_path || '';
+  const filePath = file.newPath || file.oldPath || '';
 
   const handleCopyPath = () => {
     navigator.clipboard.writeText(filePath);

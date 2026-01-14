@@ -94,7 +94,7 @@ function App() {
     ) {
       // Only update if repository data differs
       if (
-        activeTab.repository?.current_branch !== repository.current_branch ||
+        activeTab.repository?.currentBranch !== repository.currentBranch ||
         activeTab.name !== repository.name
       ) {
         updateTab(activeTab.id, { repository, name: repository.name });

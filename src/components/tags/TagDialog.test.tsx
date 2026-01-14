@@ -67,14 +67,14 @@ describe('TagDialog', () => {
       message: 'Tag created',
       tag: {
         name: 'v1.0.0',
-        full_name: 'refs/tags/v1.0.0',
-        target_oid: 'abc123',
-        short_oid: 'abc123',
-        is_annotated: false,
+        fullName: 'refs/tags/v1.0.0',
+        targetOid: 'abc123',
+        shortOid: 'abc123',
+        isAnnotated: false,
         message: null,
         tagger: null,
-        target_summary: null,
-        target_time: null,
+        targetSummary: null,
+        targetTime: null,
       },
     });
 
@@ -98,9 +98,9 @@ describe('TagDialog', () => {
 
     await waitFor(() => {
       expect(tagApi.create).toHaveBeenCalledWith('v1.0.0', {
-        target: undefined,
+        target: null,
         annotated: false,
-        message: undefined,
+        message: null,
         force: false,
       });
     });
@@ -116,14 +116,14 @@ describe('TagDialog', () => {
       message: 'Tag created',
       tag: {
         name: 'v2.0.0',
-        full_name: 'refs/tags/v2.0.0',
-        target_oid: 'abc123',
-        short_oid: 'abc123',
-        is_annotated: true,
+        fullName: 'refs/tags/v2.0.0',
+        targetOid: 'abc123',
+        shortOid: 'abc123',
+        isAnnotated: true,
         message: 'Release v2.0.0',
         tagger: null,
-        target_summary: null,
-        target_time: null,
+        targetSummary: null,
+        targetTime: null,
       },
     });
 
@@ -147,7 +147,7 @@ describe('TagDialog', () => {
 
     await waitFor(() => {
       expect(tagApi.create).toHaveBeenCalledWith('v2.0.0', {
-        target: undefined,
+        target: null,
         annotated: true,
         message: 'Release v2.0.0',
         force: false,
@@ -177,14 +177,14 @@ describe('TagDialog', () => {
       message: 'Tag created',
       tag: {
         name: 'v1.0.0',
-        full_name: 'refs/tags/v1.0.0',
-        target_oid: 'abc123',
-        short_oid: 'abc123',
-        is_annotated: false,
+        fullName: 'refs/tags/v1.0.0',
+        targetOid: 'abc123',
+        shortOid: 'abc123',
+        isAnnotated: false,
         message: null,
         tagger: null,
-        target_summary: null,
-        target_time: null,
+        targetSummary: null,
+        targetTime: null,
       },
     });
 

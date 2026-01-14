@@ -108,9 +108,9 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   status: null,
   recentRepositories: [],
   currentView: 'file-status',
-  branchFilter: 'all',
+  branchFilter: 'All',
   includeRemotes: true,
-  sortOrder: 'date_order',
+  sortOrder: 'DateOrder',
   selectedCommitOid: null,
   selectedCommitData: null,
   selectedCommitFiles: [],
@@ -194,16 +194,17 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     set({ isLoadingCommits: true });
     try {
       const result = await graphApi.build({
-        limit,
-        skip,
-        branch_filter: branchFilter,
-        include_remotes: includeRemotes,
-        sort_order: sortOrder,
+        limit: BigInt(limit),
+        skip: BigInt(skip),
+        branchFilter: branchFilter,
+        includeRemotes: includeRemotes,
+        sortOrder: sortOrder,
+        fromRef: null,
       });
       set({
         commits: result.commits,
-        maxLane: result.max_lane,
-        hasMoreCommits: result.has_more,
+        maxLane: Number(result.maxLane),
+        hasMoreCommits: result.hasMore,
         isLoadingCommits: false,
       });
     } catch (err) {
@@ -225,16 +226,17 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     set({ isLoadingMoreCommits: true });
     try {
       const result = await graphApi.build({
-        limit: 100,
-        skip: commits.length,
-        branch_filter: branchFilter,
-        include_remotes: includeRemotes,
-        sort_order: sortOrder,
+        limit: 100n,
+        skip: BigInt(commits.length),
+        branchFilter: branchFilter,
+        includeRemotes: includeRemotes,
+        sortOrder: sortOrder,
+        fromRef: null,
       });
       set({
         commits: [...commits, ...result.commits],
-        maxLane: Math.max(get().maxLane, result.max_lane),
-        hasMoreCommits: result.has_more,
+        maxLane: Math.max(get().maxLane, Number(result.maxLane)),
+        hasMoreCommits: result.hasMore,
         isLoadingMoreCommits: false,
       });
     } catch (err) {
@@ -393,7 +395,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     });
 
     try {
-      const files = await diffApi.getCommit(stash.commit_oid);
+      const files = await diffApi.getCommit(stash.commitOid);
       set({
         selectedStashFiles: files,
         selectedStashFile: files.length > 0 ? files[0] : null,

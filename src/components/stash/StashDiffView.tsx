@@ -10,8 +10,8 @@ interface StashDiffViewProps {
 }
 
 export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffViewProps) {
-  const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
-  const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+  const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
+  const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) overflow-hidden">
@@ -72,7 +72,7 @@ interface FileDiffSectionProps {
 }
 
 function FileDiffSection({ file }: FileDiffSectionProps) {
-  const fileName = file.new_path || file.old_path || 'Unknown file';
+  const fileName = file.newPath || file.oldPath || 'Unknown file';
   const statusText = getStatusText(file.status);
   const statusColorClass = getStatusColorClass(file.status);
 
@@ -170,13 +170,13 @@ const lineNoClass =
   'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums';
 
 function DiffLineRow({ line }: DiffLineRowProps) {
-  const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.line_type);
-  const prefix = getLinePrefix(line.line_type);
+  const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.lineType);
+  const prefix = getLinePrefix(line.lineType);
 
   return (
     <div className={cn('flex leading-5.5 font-mono text-xs', bgClass)}>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.old_line_no ?? ''}</span>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.new_line_no ?? ''}</span>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.oldLineNo ?? ''}</span>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.newLineNo ?? ''}</span>
       <span className={cn('shrink-0 w-5 py-0 px-1 text-center select-none', prefixColorClass)}>
         {prefix}
       </span>
@@ -193,13 +193,13 @@ function getLineClasses(lineType: DiffLineType): {
   prefixColorClass: string;
 } {
   switch (lineType) {
-    case 'addition':
+    case 'Addition':
       return {
         bgClass: 'bg-(--diff-add-bg)',
         lineNoBgClass: 'bg-(--diff-add-bg)',
         prefixColorClass: 'text-(--diff-add-line)',
       };
-    case 'deletion':
+    case 'Deletion':
       return {
         bgClass: 'bg-(--diff-delete-bg)',
         lineNoBgClass: 'bg-(--diff-delete-bg)',
@@ -216,9 +216,9 @@ function getLineClasses(lineType: DiffLineType): {
 
 function getLinePrefix(lineType: DiffLineType): string {
   switch (lineType) {
-    case 'addition':
+    case 'Addition':
       return '+';
-    case 'deletion':
+    case 'Deletion':
       return '-';
     default:
       return ' ';
@@ -227,21 +227,21 @@ function getLinePrefix(lineType: DiffLineType): string {
 
 function getStatusText(status: string): string {
   switch (status) {
-    case 'added':
+    case 'Added':
       return 'Added';
-    case 'deleted':
+    case 'Deleted':
       return 'Deleted';
-    case 'modified':
+    case 'Modified':
       return 'Modified';
-    case 'renamed':
+    case 'Renamed':
       return 'Renamed';
-    case 'copied':
+    case 'Copied':
       return 'Copied';
-    case 'type_changed':
+    case 'TypeChanged':
       return 'Type Changed';
-    case 'untracked':
+    case 'Untracked':
       return 'Untracked';
-    case 'conflicted':
+    case 'Conflicted':
       return 'Conflicted';
     default:
       return status;
@@ -250,16 +250,16 @@ function getStatusText(status: string): string {
 
 function getStatusColorClass(status: string): string {
   switch (status) {
-    case 'added':
-    case 'untracked':
+    case 'Added':
+    case 'Untracked':
       return 'bg-success/20 text-success';
-    case 'deleted':
-    case 'conflicted':
+    case 'Deleted':
+    case 'Conflicted':
       return 'bg-error/20 text-error';
-    case 'modified':
+    case 'Modified':
       return 'bg-warning/20 text-warning';
-    case 'renamed':
-    case 'copied':
+    case 'Renamed':
+    case 'Copied':
       return 'bg-(--accent-color)/20 text-(--accent-color)';
     default:
       return '';

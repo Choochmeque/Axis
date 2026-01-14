@@ -13,7 +13,7 @@ interface RemoteBranchContextMenuProps {
 export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContextMenuProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { branches } = useRepositoryStore();
-  const currentBranch = branches.find((b) => b.is_head);
+  const currentBranch = branches.find((b) => b.isHead);
 
   // Extract remote and branch name from full name (e.g., "origin/main" -> remote="origin", name="main")
   const parts = branch.name.split('/');

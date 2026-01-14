@@ -45,7 +45,8 @@ export function CherryPickDialog({
     try {
       const cherryPickResult = await cherryPickApi.cherryPick({
         commits: commits.map((c) => c.oid),
-        no_commit: noCommit,
+        noCommit: noCommit,
+        allowEmpty: false,
       });
 
       setResult(cherryPickResult);
@@ -125,7 +126,7 @@ export function CherryPickDialog({
                       className="flex items-center gap-3 py-2.5 px-3 border-b border-(--border-color) last:border-b-0"
                     >
                       <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
-                        {commit.short_oid}
+                        {commit.shortOid}
                       </span>
                       <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
                         {commit.summary}

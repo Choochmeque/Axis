@@ -45,7 +45,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
     }
 
     // Otherwise, look for a matching remote branch (prefer origin)
-    const remoteBranches = branches.filter((b) => b.branch_type === 'remote');
+    const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
 
     // Try origin first
     const originMatch = remoteBranches.find((b) => b.name === `origin/${branch.name}`);
@@ -133,9 +133,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
             </div>
             <div className="flex justify-between text-[13px] py-1">
               <span className="text-(--text-secondary)">Last commit:</span>
-              <span className="text-(--text-primary) font-medium">
-                {branch.last_commit_summary}
-              </span>
+              <span className="text-(--text-primary) font-medium">{branch.lastCommitSummary}</span>
             </div>
           </div>
 

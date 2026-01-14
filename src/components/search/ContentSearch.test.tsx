@@ -43,11 +43,11 @@ describe('ContentSearch', () => {
   it('should perform search and display results', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [
-        { path: 'src/main.ts', line_number: 10, content: 'const test = 1;' },
-        { path: 'src/main.ts', line_number: 20, content: 'function test() {}' },
-        { path: 'src/utils.ts', line_number: 5, content: 'export const test = true;' },
+        { path: 'src/main.ts', lineNumber: 10n, content: 'const test = 1;' },
+        { path: 'src/main.ts', lineNumber: 20n, content: 'function test() {}' },
+        { path: 'src/utils.ts', lineNumber: 5n, content: 'export const test = true;' },
       ],
-      total_matches: 3,
+      totalMatches: 3n,
     });
 
     render(<ContentSearch />);
@@ -69,7 +69,7 @@ describe('ContentSearch', () => {
   it('should show no results message', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      total_matches: 0,
+      totalMatches: 0n,
     });
 
     render(<ContentSearch />);
@@ -103,7 +103,7 @@ describe('ContentSearch', () => {
   it('should search with options', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      total_matches: 0,
+      totalMatches: 0n,
     });
 
     render(<ContentSearch />);
@@ -125,11 +125,11 @@ describe('ContentSearch', () => {
     await waitFor(() => {
       expect(grepApi.search).toHaveBeenCalledWith({
         pattern: 'TEST',
-        ignore_case: true,
-        word_regexp: false,
-        extended_regexp: false,
-        show_line_numbers: true,
-        max_count: 1000,
+        ignoreCase: true,
+        wordRegexp: false,
+        extendedRegexp: false,
+        showLineNumbers: true,
+        maxCount: 1000,
       });
     });
   });
@@ -137,7 +137,7 @@ describe('ContentSearch', () => {
   it('should search on Enter key', async () => {
     vi.mocked(grepApi.search).mockResolvedValue({
       matches: [],
-      total_matches: 0,
+      totalMatches: 0n,
     });
 
     render(<ContentSearch />);
@@ -154,8 +154,8 @@ describe('ContentSearch', () => {
   it('should call onFileSelect when clicking a match', async () => {
     const onFileSelect = vi.fn();
     vi.mocked(grepApi.search).mockResolvedValue({
-      matches: [{ path: 'src/main.ts', line_number: 10, content: 'const test = 1;' }],
-      total_matches: 1,
+      matches: [{ path: 'src/main.ts', lineNumber: 10n, content: 'const test = 1;' }],
+      totalMatches: 1n,
     });
 
     render(<ContentSearch onFileSelect={onFileSelect} />);

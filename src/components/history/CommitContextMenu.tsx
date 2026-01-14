@@ -36,7 +36,7 @@ interface CommitContextMenuProps {
   onMerge?: () => void;
   onRevert?: () => void;
   onCherryPick?: () => void;
-  onReset?: (mode: 'soft' | 'mixed' | 'hard') => void;
+  onReset?: (mode: ResetMode) => void;
 }
 
 export function CommitContextMenu({
@@ -55,7 +55,7 @@ export function CommitContextMenu({
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [showCherryPickDialog, setShowCherryPickDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetMode, setResetMode] = useState<ResetMode>('mixed');
+  const [resetMode, setResetMode] = useState<ResetMode>('Mixed');
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showRebaseDialog, setShowRebaseDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -71,7 +71,7 @@ export function CommitContextMenu({
 
   const handleCopyShortSha = async () => {
     try {
-      await navigator.clipboard.writeText(commit.short_oid);
+      await navigator.clipboard.writeText(commit.shortOid);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -187,7 +187,7 @@ export function CommitContextMenu({
               <Check size={14} />
               <span>Checkout</span>
               <span className="ml-auto text-[11px] text-(--text-tertiary) font-mono">
-                {commit.short_oid}
+                {commit.shortOid}
               </span>
             </ContextMenu.Item>
 
@@ -200,7 +200,7 @@ export function CommitContextMenu({
 
             <ContextMenu.Item className="menu-item" disabled onSelect={handleMerge}>
               <GitMerge size={14} />
-              <span>Merge into {repository?.current_branch ?? 'current branch'}...</span>
+              <span>Merge into {repository?.currentBranch ?? 'current branch'}...</span>
             </ContextMenu.Item>
 
             <ContextMenu.Item className="menu-item" onSelect={handleRebase}>
@@ -230,22 +230,22 @@ export function CommitContextMenu({
             <ContextMenu.Sub>
               <ContextMenu.SubTrigger className="menu-item">
                 <RotateCcw size={14} />
-                <span>Reset {repository?.current_branch ?? 'branch'} to here</span>
+                <span>Reset {repository?.currentBranch ?? 'branch'} to here</span>
                 <ChevronRight size={14} className="menu-chevron" />
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('soft')}>
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('Soft')}>
                     <span>Soft</span>
                     <span className="menu-hint">Keep all changes staged</span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('mixed')}>
+                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('Mixed')}>
                     <span>Mixed</span>
                     <span className="menu-hint">Keep changes unstaged</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className="menu-item-danger"
-                    onSelect={() => handleReset('hard')}
+                    onSelect={() => handleReset('Hard')}
                   >
                     <span>Hard</span>
                     <span className="menu-hint">Discard all changes</span>
@@ -289,7 +289,7 @@ export function CommitContextMenu({
                   <ContextMenu.Item className="menu-item" onSelect={handleCopyShortSha}>
                     <span>Short SHA</span>
                     <span className="ml-auto text-[11px] text-(--text-secondary) font-mono">
-                      {commit.short_oid}
+                      {commit.shortOid}
                     </span>
                   </ContextMenu.Item>
                   <ContextMenu.Item className="menu-item" onSelect={handleCopySha}>
@@ -335,7 +335,7 @@ export function CommitContextMenu({
         onResetComplete={handleResetComplete}
         commit={commit}
         mode={resetMode}
-        currentBranch={repository?.current_branch ?? 'unknown'}
+        currentBranch={repository?.currentBranch ?? 'unknown'}
       />
 
       <RevertCommitDialog
@@ -349,7 +349,7 @@ export function CommitContextMenu({
         isOpen={showRebaseDialog}
         onClose={() => setShowRebaseDialog(false)}
         onRebaseComplete={handleRebaseComplete}
-        currentBranch={repository?.current_branch ?? ''}
+        currentBranch={repository?.currentBranch ?? ''}
         targetCommit={commit}
       />
 

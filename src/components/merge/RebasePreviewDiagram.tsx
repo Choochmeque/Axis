@@ -25,8 +25,8 @@ const COLORS = {
 
 export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDiagramProps) {
   const { beforeData, afterData, svgHeight, hasMoreCommits, extraCommitCount } = useMemo(() => {
-    const commitsToRebase = preview.commits_to_rebase;
-    const targetAhead = preview.target_commits_ahead;
+    const commitsToRebase = preview.commitsToRebase;
+    const targetAhead = preview.targetCommitsAhead;
 
     // Limit commits shown
     const shownCommits = commitsToRebase.slice(0, MAX_COMMITS_SHOWN);
@@ -36,7 +36,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
     // Calculate rows needed
     // Before: current branch commits + merge base + target commits ahead (max 2)
     // After: rebased commits + target tip + target commits (max 2)
-    const targetCommitsShown = Math.min(targetAhead, 2);
+    const targetCommitsShown = Math.min(Number(targetAhead), 2);
     const beforeRows = shownCommits.length + 1 + targetCommitsShown + (hasMore ? 1 : 0);
     const afterRows = shownCommits.length + 1 + targetCommitsShown + (hasMore ? 1 : 0);
     const maxRows = Math.max(beforeRows, afterRows);
@@ -62,7 +62,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
     let y = 14;
 
     // Current branch commits (top, branching off)
-    beforeData.commits.forEach((commit, i) => {
+    beforeData.commits.forEach((commit: { shortOid: string }, i: number) => {
       // Commit node
       elements.push(
         <circle
@@ -82,7 +82,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           className="rebase-preview-commit-label"
           fill="var(--text-secondary)"
         >
-          {commit.short_oid}
+          {commit.shortOid}
         </text>
       );
       // Line to next
@@ -161,7 +161,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
         className="rebase-preview-commit-label"
         fill="var(--text-tertiary)"
       >
-        {preview.merge_base.short_oid}
+        {preview.mergeBase.shortOid}
       </text>
     );
 
@@ -217,7 +217,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
     let y = 14;
 
     // Rebased commits (top, on main line)
-    beforeData.commits.forEach((commit, i) => {
+    beforeData.commits.forEach((commit: { shortOid: string }, i: number) => {
       // Commit node
       elements.push(
         <circle
@@ -237,7 +237,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           className="rebase-preview-commit-label"
           fill="var(--text-secondary)"
         >
-          {commit.short_oid}'
+          {commit.shortOid}'
         </text>
       );
       // Line to next
@@ -346,7 +346,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
   };
 
   // Don't render if no commits to rebase
-  if (preview.commits_to_rebase.length === 0) {
+  if (preview.commitsToRebase.length === 0) {
     return (
       <div className="rebase-preview-empty">
         <span className="text-sm text-(--text-secondary)">

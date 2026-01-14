@@ -81,7 +81,7 @@ export function RebaseDialog({
     try {
       const allBranches = await branchApi.list(true, true);
       // Filter out the current branch
-      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.is_head);
+      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
       setBranches(otherBranches);
     } catch (err) {
       console.error('Failed to load branches:', err);
@@ -103,6 +103,9 @@ export function RebaseDialog({
     try {
       const rebaseResult = await rebaseApi.rebase({
         onto: rebaseTarget,
+        interactive: false,
+        preserveMerges: false,
+        autosquash: false,
       });
 
       setResult(rebaseResult);
@@ -198,7 +201,7 @@ export function RebaseDialog({
                   <Label>Rebase Onto Commit</Label>
                   <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
                     <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
-                      {targetCommit.short_oid}
+                      {targetCommit.shortOid}
                     </span>
                     <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
                       {targetCommit.summary}
@@ -215,9 +218,9 @@ export function RebaseDialog({
                   >
                     <option value="">Select a branch...</option>
                     {branches.map((branch) => (
-                      <option key={branch.full_name} value={branch.name}>
+                      <option key={branch.fullName} value={branch.name}>
                         {branch.name}
-                        {branch.branch_type === 'remote' && ` (${branch.branch_type})`}
+                        {branch.branchType === 'Remote' && ` (${branch.branchType})`}
                       </option>
                     ))}
                   </Select>
@@ -241,7 +244,7 @@ export function RebaseDialog({
                   <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
                   top of{' '}
                   <strong className="text-(--text-primary) font-mono">
-                    {targetCommit ? targetCommit.short_oid : selectedBranch || '...'}
+                    {targetCommit ? targetCommit.shortOid : selectedBranch || '...'}
                   </strong>
                   .
                 </p>

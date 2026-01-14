@@ -52,11 +52,11 @@ describe('stagingStore', () => {
         staged: [
           {
             path: 'staged.txt',
-            status: 'added' as const,
-            staged_status: 'added' as const,
-            unstaged_status: null,
-            is_conflict: false,
-            old_path: null,
+            status: 'Added' as const,
+            stagedStatus: 'Added' as const,
+            unstagedStatus: null,
+            isConflict: false,
+            oldPath: null,
           },
         ],
         unstaged: [],
@@ -88,23 +88,23 @@ describe('stagingStore', () => {
     it('should select a file and load its diff', async () => {
       const mockFile = {
         path: 'test.txt',
-        status: 'modified' as const,
-        staged_status: null,
-        unstaged_status: 'modified' as const,
-        is_conflict: false,
-        old_path: null,
+        status: 'Modified' as const,
+        stagedStatus: null,
+        unstagedStatus: 'Modified' as const,
+        isConflict: false,
+        oldPath: null,
       };
 
       const mockDiff = {
-        old_path: 'test.txt',
-        new_path: 'test.txt',
-        old_oid: 'abc123',
-        new_oid: 'def456',
-        status: 'modified' as const,
+        oldPath: 'test.txt',
+        newPath: 'test.txt',
+        oldOid: 'abc123',
+        newOid: 'def456',
+        status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 5,
-        deletions: 2,
+        additions: 5n,
+        deletions: 2n,
       };
 
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
@@ -122,22 +122,22 @@ describe('stagingStore', () => {
       useStagingStore.setState({
         selectedFile: {
           path: 'test.txt',
-          status: 'modified',
-          staged_status: null,
-          unstaged_status: 'modified',
-          is_conflict: false,
-          old_path: null,
+          status: 'Modified',
+          stagedStatus: null,
+          unstagedStatus: 'Modified',
+          isConflict: false,
+          oldPath: null,
         },
         selectedFileDiff: {
-          old_path: 'test.txt',
-          new_path: 'test.txt',
-          old_oid: null,
-          new_oid: null,
-          status: 'modified',
+          oldPath: 'test.txt',
+          newPath: 'test.txt',
+          oldOid: null,
+          newOid: null,
+          status: 'Modified',
           binary: false,
           hunks: [],
-          additions: 0,
-          deletions: 0,
+          additions: 0n,
+          deletions: 0n,
         },
       });
 
@@ -152,7 +152,7 @@ describe('stagingStore', () => {
   describe('stageFile', () => {
     it('should stage a file and reload status', async () => {
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.stageFile).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().stageFile('test.txt');
@@ -165,7 +165,7 @@ describe('stagingStore', () => {
   describe('unstageFile', () => {
     it('should unstage a file and reload status', async () => {
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.unstageFile).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.unstageFile).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().unstageFile('test.txt');
@@ -178,7 +178,7 @@ describe('stagingStore', () => {
   describe('discardFile', () => {
     it('should discard file changes and reload status', async () => {
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.discardFile).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.discardFile).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().discardFile('test.txt');
@@ -190,16 +190,16 @@ describe('stagingStore', () => {
     it('should clear selected file if it was the discarded one', async () => {
       const mockFile = {
         path: 'test.txt',
-        status: 'modified' as const,
-        staged_status: null,
-        unstaged_status: 'modified' as const,
-        is_conflict: false,
-        old_path: null,
+        status: 'Modified' as const,
+        stagedStatus: null,
+        unstagedStatus: 'Modified' as const,
+        isConflict: false,
+        oldPath: null,
       };
       useStagingStore.setState({ selectedFile: mockFile });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.discardFile).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.discardFile).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().discardFile('test.txt');
@@ -212,7 +212,7 @@ describe('stagingStore', () => {
   describe('stageHunk', () => {
     it('should stage a hunk and reload status', async () => {
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.stageHunk).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.stageHunk).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       const patch =
@@ -226,27 +226,27 @@ describe('stagingStore', () => {
     it('should refresh diff for selected file after staging hunk', async () => {
       const mockFile = {
         path: 'test.txt',
-        status: 'modified' as const,
-        staged_status: null,
-        unstaged_status: 'modified' as const,
-        is_conflict: false,
-        old_path: null,
+        status: 'Modified' as const,
+        stagedStatus: null,
+        unstagedStatus: 'Modified' as const,
+        isConflict: false,
+        oldPath: null,
       };
       const mockDiff = {
-        old_path: 'test.txt',
-        new_path: 'test.txt',
-        old_oid: null,
-        new_oid: null,
-        status: 'modified' as const,
+        oldPath: 'test.txt',
+        newPath: 'test.txt',
+        oldOid: null,
+        newOid: null,
+        status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 0,
-        deletions: 0,
+        additions: 0n,
+        deletions: 0n,
       };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: false });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.stageHunk).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.stageHunk).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
 
@@ -272,7 +272,7 @@ describe('stagingStore', () => {
   describe('unstageHunk', () => {
     it('should unstage a hunk and reload status', async () => {
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       const patch =
@@ -286,27 +286,27 @@ describe('stagingStore', () => {
     it('should refresh diff for selected file after unstaging hunk', async () => {
       const mockFile = {
         path: 'test.txt',
-        status: 'modified' as const,
-        staged_status: 'modified' as const,
-        unstaged_status: null,
-        is_conflict: false,
-        old_path: null,
+        status: 'Modified' as const,
+        stagedStatus: 'Modified' as const,
+        unstagedStatus: null,
+        isConflict: false,
+        oldPath: null,
       };
       const mockDiff = {
-        old_path: 'test.txt',
-        new_path: 'test.txt',
-        old_oid: null,
-        new_oid: null,
-        status: 'modified' as const,
+        oldPath: 'test.txt',
+        newPath: 'test.txt',
+        oldOid: null,
+        newOid: null,
+        status: 'Modified' as const,
         binary: false,
         hunks: [],
-        additions: 0,
-        deletions: 0,
+        additions: 0n,
+        deletions: 0n,
       };
       useStagingStore.setState({ selectedFile: mockFile, isSelectedFileStaged: true });
 
       const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(undefined);
+      vi.mocked(stagingApi.unstageHunk).mockResolvedValue(null);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
       vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
 

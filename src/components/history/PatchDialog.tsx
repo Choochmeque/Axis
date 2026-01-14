@@ -116,14 +116,14 @@ export function PatchDialog({
       if (commitOid) {
         // Create patch from specific commit
         patchResult = await patchApi.createPatch({
-          commit_oid: commitOid,
-          output_dir: outputDir,
+          commitOid: commitOid,
+          outputDir: outputDir,
         });
       } else {
         // Create patch from HEAD (last commit)
         patchResult = await patchApi.formatPatch({
           range: '-1',
-          output_dir: outputDir,
+          outputDir: outputDir,
         });
       }
 
@@ -156,15 +156,15 @@ export function PatchDialog({
       if (useAm) {
         // Use git am (creates commits)
         patchResult = await patchApi.applyMailbox({
-          patch_paths: [patchPath],
-          three_way: threeWay,
+          patchPaths: [patchPath],
+          threeWay: threeWay,
         });
       } else {
         // Use git apply (applies to working tree)
         patchResult = await patchApi.applyPatch({
-          patch_path: patchPath,
-          check_only: checkOnly,
-          three_way: threeWay,
+          patchPath: patchPath,
+          checkOnly: checkOnly,
+          threeWay: threeWay,
         });
       }
 

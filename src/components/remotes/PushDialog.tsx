@@ -32,7 +32,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [result, setResult] = useState<PushResult | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const currentBranch = branches.find((b) => b.is_head);
+  const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
     if (open) {

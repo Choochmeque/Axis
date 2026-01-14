@@ -48,57 +48,51 @@ function GraphCell({
   activeLanes,
 }: GraphCellProps & { index: number; activeLanes: Set<number> }) {
   const height = ROW_HEIGHT;
-  const nodeX = commit.lane * LANE_WIDTH + LANE_WIDTH / 2;
+  const lane = Number(commit.lane);
+  const nodeX = lane * LANE_WIDTH + LANE_WIDTH / 2;
   const nodeY = height / 2;
 
   // Draw incoming line if this commit's lane was active before this row
-  const hasIncomingLine = index > 0 && activeLanes.has(commit.lane);
+  const hasIncomingLine = index > 0 && activeLanes.has(lane);
 
   return (
     <svg width={width} height={height} className="graph-svg">
       {/* Draw line from top to node center (incoming from previous row) */}
       {hasIncomingLine && (
-        <line
-          x1={nodeX}
-          y1={0}
-          x2={nodeX}
-          y2={nodeY}
-          stroke={getLaneColor(commit.lane)}
-          strokeWidth={2}
-        />
+        <line x1={nodeX} y1={0} x2={nodeX} y2={nodeY} stroke={getLaneColor(lane)} strokeWidth={2} />
       )}
 
       {/* Draw edges to parents (going down) */}
-      {commit.parent_edges.map((edge, idx) => (
-        <GraphEdgeLine key={idx} edge={edge} fromLane={commit.lane} height={height} />
+      {commit.parentEdges.map((edge, idx) => (
+        <GraphEdgeLine key={idx} edge={edge} fromLane={lane} height={height} />
       ))}
 
       {/* Draw pass-through lines for other active lanes */}
-      {Array.from(activeLanes).map((lane) => {
+      {Array.from(activeLanes).map((activeLane) => {
         // Skip the commit's own lane (handled above)
-        if (lane === commit.lane) return null;
+        if (activeLane === lane) return null;
 
-        const x = lane * LANE_WIDTH + LANE_WIDTH / 2;
+        const x = activeLane * LANE_WIDTH + LANE_WIDTH / 2;
         return (
           <line
-            key={`pass-${lane}`}
+            key={`pass-${activeLane}`}
             x1={x}
             y1={0}
             x2={x}
             y2={height}
-            stroke={getLaneColor(lane)}
+            stroke={getLaneColor(activeLane)}
             strokeWidth={2}
           />
         );
       })}
 
       {/* Draw the commit node */}
-      {commit.is_merge ? (
+      {commit.isMerge ? (
         <circle
           cx={nodeX}
           cy={nodeY}
           r={NODE_RADIUS + 1}
-          fill={getLaneColor(commit.lane)}
+          fill={getLaneColor(lane)}
           stroke="var(--bg-secondary)"
           strokeWidth={2}
         />
@@ -107,7 +101,7 @@ function GraphCell({
           cx={nodeX}
           cy={nodeY}
           r={NODE_RADIUS}
-          fill={getLaneColor(commit.lane)}
+          fill={getLaneColor(lane)}
           stroke="var(--bg-secondary)"
           strokeWidth={2}
         />
@@ -123,14 +117,14 @@ interface GraphEdgeLineProps {
 }
 
 function GraphEdgeLine({ edge, fromLane, height }: GraphEdgeLineProps) {
+  const parentLane = Number(edge.parentLane);
   const fromX = fromLane * LANE_WIDTH + LANE_WIDTH / 2;
-  const toX = edge.parent_lane * LANE_WIDTH + LANE_WIDTH / 2;
+  const toX = parentLane * LANE_WIDTH + LANE_WIDTH / 2;
   const fromY = height / 2;
   const toY = height;
-  const color =
-    edge.edge_type === 'branch' ? getLaneColor(fromLane) : getLaneColor(edge.parent_lane);
+  const color = edge.edgeType === 'branch' ? getLaneColor(fromLane) : getLaneColor(parentLane);
 
-  if (fromLane === edge.parent_lane) {
+  if (fromLane === parentLane) {
     // Straight line down
     return <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke={color} strokeWidth={2} />;
   } else {
@@ -183,26 +177,27 @@ function buildActiveLanes(commits: GraphCommit[]): Set<number>[] {
       )
     );
 
-    commitLanes.set(commit.oid, commit.lane);
+    const lane = Number(commit.lane);
+    commitLanes.set(commit.oid, lane);
 
-    if (commit.lane >= activeLanes.length) {
-      while (activeLanes.length <= commit.lane) {
+    if (lane >= activeLanes.length) {
+      while (activeLanes.length <= lane) {
         activeLanes.push(null);
       }
     }
-    activeLanes[commit.lane] = null;
+    activeLanes[lane] = null;
 
-    if (commit.parent_oids.length === 0) {
+    if (commit.parentOids.length === 0) {
       return;
     }
 
-    const firstParent = commit.parent_oids[0];
+    const firstParent = commit.parentOids[0];
     const parentLane = findLane(firstParent);
-    if (parentLane === null || parentLane === commit.lane) {
-      activeLanes[commit.lane] = firstParent;
+    if (parentLane === null || parentLane === lane) {
+      activeLanes[lane] = firstParent;
     }
 
-    commit.parent_oids.slice(1).forEach((parentOid) => {
+    commit.parentOids.slice(1).forEach((parentOid) => {
       if (findLane(parentOid) !== null) {
         return;
       }
@@ -295,7 +290,7 @@ export function HistoryView() {
   // Compute graph data
   const activeLanesPerRow = useMemo(() => buildActiveLanes(commits), [commits]);
   const computedMaxLane = useMemo(
-    () => Math.max(maxLane, ...commits.map((commit) => commit.lane)),
+    () => Math.max(Number(maxLane), ...commits.map((commit) => Number(commit.lane))),
     [commits, maxLane]
   );
   const minGraphWidth = (computedMaxLane + 1) * LANE_WIDTH + 6;
@@ -343,8 +338,8 @@ export function HistoryView() {
                   {commit.refs.map((ref, idx) => {
                     // Get behind count for local branches
                     const behindCount =
-                      ref.ref_type === 'local_branch'
-                        ? branches.find((b) => b.name === ref.name && b.branch_type === 'local')
+                      ref.refType === 'LocalBranch'
+                        ? branches.find((b) => b.name === ref.name && b.branchType === 'Local')
                             ?.behind
                         : null;
 
@@ -353,13 +348,13 @@ export function HistoryView() {
                         key={idx}
                         className={cn(
                           'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
-                          ref.ref_type === 'local_branch' && 'bg-[#107c10] text-white',
-                          ref.ref_type === 'remote_branch' && 'bg-[#5c2d91] text-white',
-                          ref.ref_type === 'tag' && 'bg-[#d83b01] text-white',
-                          ref.is_head && 'font-bold'
+                          ref.refType === 'LocalBranch' && 'bg-[#107c10] text-white',
+                          ref.refType === 'RemoteBranch' && 'bg-[#5c2d91] text-white',
+                          ref.refType === 'Tag' && 'bg-[#d83b01] text-white',
+                          ref.isHead && 'font-bold'
                         )}
                       >
-                        {ref.ref_type === 'tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                        {ref.refType === 'Tag' ? <Tag size={10} /> : <GitBranch size={10} />}
                         {ref.name}
                         {behindCount != null && behindCount > 0 && (
                           <span className="ml-1 pl-1 border-l border-white/30">
@@ -400,7 +395,7 @@ export function HistoryView() {
           <span className="text-xs text-(--text-secondary)">{row.original.commit.author.name}</span>
         ),
       }),
-      columnHelper.accessor((row) => row.commit.short_oid, {
+      columnHelper.accessor((row) => row.commit.shortOid, {
         id: 'sha',
         header: 'SHA',
         size: 72,
@@ -408,7 +403,7 @@ export function HistoryView() {
         maxSize: 120,
         cell: ({ row }) => (
           <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
-            {row.original.commit.short_oid}
+            {row.original.commit.shortOid}
           </code>
         ),
       }),

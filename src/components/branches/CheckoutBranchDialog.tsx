@@ -26,9 +26,9 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const localBranches = branches.filter((b) => b.branch_type === 'local');
-  const remoteBranches = branches.filter((b) => b.branch_type === 'remote');
-  const currentBranch = branches.find((b) => b.is_head);
+  const localBranches = branches.filter((b) => b.branchType === 'Local');
+  const remoteBranches = branches.filter((b) => b.branchType === 'Remote');
+  const currentBranch = branches.find((b) => b.isHead);
 
   const handleCheckout = async () => {
     if (!selectedBranch) {
@@ -94,7 +94,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
               {localBranches.length > 0 && (
                 <optgroup label="Local Branches">
                   {localBranches
-                    .filter((b) => !b.is_head)
+                    .filter((b) => !b.isHead)
                     .map((branch) => (
                       <option key={branch.name} value={branch.name}>
                         {branch.name}
@@ -106,7 +106,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
               {remoteBranches.length > 0 && (
                 <optgroup label="Remote Branches">
                   {remoteBranches.map((branch) => (
-                    <option key={branch.full_name} value={branch.name}>
+                    <option key={branch.fullName} value={branch.name}>
                       {branch.name}
                     </option>
                   ))}

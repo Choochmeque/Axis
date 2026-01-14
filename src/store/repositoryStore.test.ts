@@ -15,6 +15,7 @@ void tagApi;
 void stashApi;
 void submoduleApi;
 import type { GraphCommit, Branch } from '../types';
+import { RepositoryState } from '../types';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({
@@ -70,37 +71,37 @@ describe('repositoryStore', () => {
         id: '123',
         name: 'test-repo',
         path: '/path/to/repo',
-        is_bare: false,
-        current_branch: 'main',
-        state: 'clean' as const,
+        isBare: false,
+        currentBranch: 'main',
+        state: RepositoryState.Clean,
       };
 
       const mockCommits = [
         {
           oid: 'abc123',
-          short_oid: 'abc123',
+          shortOid: 'abc123',
           message: 'Initial commit',
           summary: 'Initial commit',
           author: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
           committer: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
-          parent_oids: [],
+          parentOids: [],
           timestamp: '2024-01-01T00:00:00Z',
-          is_merge: false,
+          isMerge: false,
         },
       ];
 
       const mockBranches = [
         {
           name: 'main',
-          full_name: 'refs/heads/main',
-          branch_type: 'local' as const,
-          is_head: true,
+          fullName: 'refs/heads/main',
+          branchType: 'Local' as const,
+          isHead: true,
           upstream: null,
           ahead: null,
           behind: null,
-          target_oid: 'abc123',
-          last_commit_summary: 'Initial commit',
-          last_commit_time: '2024-01-01T00:00:00Z',
+          targetOid: 'abc123',
+          lastCommitSummary: 'Initial commit',
+          lastCommitTime: '2024-01-01T00:00:00Z',
         },
       ];
 
@@ -114,9 +115,9 @@ describe('repositoryStore', () => {
       vi.mocked(repositoryApi.open).mockResolvedValue(mockRepo);
       vi.mocked(graphApi.build).mockResolvedValue({
         commits: mockCommits as unknown as GraphCommit[],
-        total_count: 1,
-        max_lane: 0,
-        has_more: false,
+        totalCount: 1n,
+        maxLane: 0n,
+        hasMore: false,
       });
       vi.mocked(branchApi.list).mockResolvedValue(mockBranches);
       vi.mocked(tagApi.list).mockResolvedValue([]);
@@ -154,15 +155,15 @@ describe('repositoryStore', () => {
           id: '123',
           name: 'test-repo',
           path: '/path/to/repo',
-          is_bare: false,
-          current_branch: 'main',
-          state: 'clean',
+          isBare: false,
+          currentBranch: 'main',
+          state: RepositoryState.Clean,
         },
         commits: [{ oid: 'abc' }] as unknown as GraphCommit[],
         branches: [{ name: 'main' }] as unknown as Branch[],
       });
 
-      vi.mocked(repositoryApi.close).mockResolvedValue(undefined);
+      vi.mocked(repositoryApi.close).mockResolvedValue(null);
 
       await useRepositoryStore.getState().closeRepository();
 
@@ -176,8 +177,8 @@ describe('repositoryStore', () => {
   describe('loadRecentRepositories', () => {
     it('should load recent repositories', async () => {
       const mockRecent = [
-        { path: '/path/1', name: 'repo1', last_opened: '2024-01-01T00:00:00Z' },
-        { path: '/path/2', name: 'repo2', last_opened: '2024-01-02T00:00:00Z' },
+        { path: '/path/1', name: 'repo1', lastOpened: '2024-01-01T00:00:00Z' },
+        { path: '/path/2', name: 'repo2', lastOpened: '2024-01-02T00:00:00Z' },
       ];
 
       vi.mocked(repositoryApi.getRecentRepositories).mockResolvedValue(mockRecent);

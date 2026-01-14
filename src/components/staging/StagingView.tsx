@@ -74,13 +74,13 @@ function filterFiles(
       // Show all files (pending means all changes, which is everything we have)
       return files;
     case 'conflicts':
-      return source === 'conflicted' ? files : files.filter((f) => f.is_conflict);
+      return source === 'conflicted' ? files : files.filter((f) => f.isConflict);
     case 'untracked':
-      return source === 'untracked' ? files : files.filter((f) => f.status === 'untracked');
+      return source === 'untracked' ? files : files.filter((f) => f.status === 'Untracked');
     case 'modified':
-      return files.filter((f) => f.status === 'modified');
+      return files.filter((f) => f.status === 'Modified');
     case 'ignored':
-      return files.filter((f) => f.status === 'ignored');
+      return files.filter((f) => f.status === 'Ignored');
     case 'clean':
       // Clean files are not in any of our lists, so return empty
       return [];

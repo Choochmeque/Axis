@@ -25,6 +25,7 @@ import {
 import type { FileStatus } from '../../types';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { shellApi } from '../../services/api';
+import { StatusType } from '../../types';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -48,8 +49,8 @@ export function StagingFileContextMenu({
   const { repository } = useRepositoryStore();
 
   // Computed flags for menu item visibility
-  const isUntracked = file.status === 'untracked';
-  const isConflicted = file.status === 'conflicted';
+  const isUntracked = file.status === StatusType.Untracked;
+  const isConflicted = file.status === StatusType.Conflicted;
   const isTracked = !isUntracked;
   const canReset = isTracked && !!onDiscard;
   const canDelete = isUntracked;

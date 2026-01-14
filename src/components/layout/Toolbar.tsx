@@ -26,7 +26,7 @@ export function Toolbar() {
   const { repository, status, branches, setCurrentView, refreshRepository } = useRepositoryStore();
 
   // Get current branch for ahead/behind counts
-  const currentBranch = branches.find((b) => b.is_head);
+  const currentBranch = branches.find((b) => b.isHead);
   const stagedCount = status?.staged?.length ?? 0;
   const aheadCount = currentBranch?.ahead ?? 0;
   const behindCount = currentBranch?.behind ?? 0;

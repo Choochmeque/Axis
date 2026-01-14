@@ -66,7 +66,9 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
       await submoduleApi.add({
         url: url.trim(),
         path: path.trim(),
-        branch: branch.trim() || undefined,
+        branch: branch.trim() || null,
+        name: null,
+        depth: null,
       });
       await loadSubmodules();
       onOpenChange(false);

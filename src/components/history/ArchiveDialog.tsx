@@ -94,8 +94,8 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
       const archiveResult = await archiveApi.create({
         reference: commitOid || 'HEAD',
         format,
-        output_path: outputPath,
-        prefix: prefix || undefined,
+        outputPath: outputPath,
+        prefix: prefix || null,
       });
 
       if (archiveResult.success) {
@@ -139,9 +139,9 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
               <Check size={16} />
               <div className="flex flex-col gap-1">
                 <span>Archive created successfully</span>
-                {result.size_bytes && (
+                {result.sizeBytes && (
                   <span className="text-xs opacity-80">
-                    Size: {formatFileSize(result.size_bytes)}
+                    Size: {formatFileSize(Number(result.sizeBytes))}
                   </span>
                 )}
               </div>

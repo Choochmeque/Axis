@@ -38,21 +38,21 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: 'abc123def456',
-        short_oid: 'abc123d',
-        indexed_oid: null,
+        headOid: 'abc123def456',
+        shortOid: 'abc123d',
+        indexedOid: null,
         branch: 'main',
-        status: 'current' as const,
+        status: 'Current' as const,
       },
       {
         name: 'lib/utils',
         path: 'lib/utils',
         url: 'https://github.com/user/utils.git',
-        head_oid: 'def456abc789',
-        short_oid: 'def456a',
-        indexed_oid: null,
+        headOid: 'def456abc789',
+        shortOid: 'def456a',
+        indexedOid: null,
         branch: 'main',
-        status: 'modified' as const,
+        status: 'Modified' as const,
       },
     ];
 
@@ -72,11 +72,11 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: 'abc123',
-        short_oid: 'abc123',
-        indexed_oid: null,
+        headOid: 'abc123',
+        shortOid: 'abc123',
+        indexedOid: null,
         branch: 'main',
-        status: 'current' as const,
+        status: 'Current' as const,
       },
     ];
 
@@ -115,11 +115,11 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: 'abc123',
-        short_oid: 'abc123',
-        indexed_oid: null,
+        headOid: 'abc123',
+        shortOid: 'abc123',
+        indexedOid: null,
         branch: 'main',
-        status: 'current' as const,
+        status: 'Current' as const,
       },
     ];
 
@@ -138,11 +138,11 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: 'abc123',
-        short_oid: 'abc123',
-        indexed_oid: null,
+        headOid: 'abc123',
+        shortOid: 'abc123',
+        indexedOid: null,
         branch: 'main',
-        status: 'modified' as const,
+        status: 'Modified' as const,
       },
     ];
 
@@ -161,11 +161,11 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: null,
-        short_oid: null,
-        indexed_oid: null,
+        headOid: null,
+        shortOid: null,
+        indexedOid: null,
         branch: null,
-        status: 'uninitialized' as const,
+        status: 'Uninitialized' as const,
       },
     ];
 
@@ -219,7 +219,9 @@ describe('SubmoduleView', () => {
       expect(submoduleApi.add).toHaveBeenCalledWith({
         url: 'https://github.com/user/new.git',
         path: 'lib/new',
-        branch: undefined,
+        branch: null,
+        name: null,
+        depth: null,
       });
     });
   });
@@ -240,11 +242,11 @@ describe('SubmoduleView', () => {
         name: 'lib/common',
         path: 'lib/common',
         url: 'https://github.com/user/common.git',
-        head_oid: 'abc123',
-        short_oid: 'abc123',
-        indexed_oid: null,
+        headOid: 'abc123',
+        shortOid: 'abc123',
+        indexedOid: null,
         branch: 'main',
-        status: 'current' as const,
+        status: 'Current' as const,
       },
     ];
 
@@ -273,6 +275,10 @@ describe('SubmoduleView', () => {
         paths: [],
         init: true,
         recursive: true,
+        force: false,
+        remote: false,
+        rebase: false,
+        merge: false,
       });
     });
   });

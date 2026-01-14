@@ -102,10 +102,10 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
                 <div key={r.remote} className="p-3 bg-(--bg-secondary) rounded mb-2 last:mb-0">
                   <strong className="block mb-1 text-(--text-primary)">{r.remote}</strong>
                   <div className="text-xs text-(--text-secondary)">
-                    {r.stats.received_objects > 0 ? (
+                    {r.stats.receivedObjects > 0 ? (
                       <span>
-                        Received {r.stats.received_objects} objects (
-                        {formatBytes(r.stats.received_bytes)})
+                        Received {r.stats.receivedObjects} objects (
+                        {formatBytes(Number(r.stats.receivedBytes))})
                       </span>
                     ) : (
                       <span>Already up to date</span>

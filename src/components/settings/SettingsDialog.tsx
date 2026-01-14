@@ -27,24 +27,24 @@ interface SettingsDialogProps {
 type SettingsTab = 'appearance' | 'git' | 'diff' | 'terminal';
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'system',
-  font_size: 13,
-  show_line_numbers: true,
-  default_branch_name: 'main',
-  auto_fetch_interval: 0,
-  confirm_before_discard: true,
-  sign_commits: false,
-  signing_format: 'gpg',
-  signing_key: undefined,
-  gpg_program: undefined,
-  ssh_program: undefined,
-  diff_context_lines: 3,
-  diff_word_wrap: false,
-  diff_side_by_side: false,
-  commit_message_width: 72,
-  spell_check_commit_messages: false,
-  terminal_font_family: 'monospace',
-  terminal_font_size: 13,
+  theme: 'System',
+  fontSize: 13,
+  showLineNumbers: true,
+  defaultBranchName: 'main',
+  autoFetchInterval: 0,
+  confirmBeforeDiscard: true,
+  signCommits: false,
+  signingFormat: 'Gpg',
+  signingKey: null,
+  gpgProgram: null,
+  sshProgram: null,
+  diffContextLines: 3,
+  diffWordWrap: false,
+  diffSideBySide: false,
+  commitMessageWidth: 72,
+  spellCheckCommitMessages: false,
+  terminalFontFamily: 'monospace',
+  terminalFontSize: 13,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -214,9 +214,9 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           value={settings.theme}
           onChange={(e) => updateSetting('theme', e.target.value as Theme)}
         >
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
+          <option value="System">System</option>
+          <option value="Light">Light</option>
+          <option value="Dark">Dark</option>
         </Select>
       </FormField>
 
@@ -230,8 +230,8 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="number"
           min={10}
           max={24}
-          value={settings.font_size}
-          onChange={(e) => updateSetting('font_size', parseInt(e.target.value) || 13)}
+          value={settings.fontSize}
+          onChange={(e) => updateSetting('fontSize', parseInt(e.target.value) || 13)}
           className={numberInputClass}
         />
       </FormField>
@@ -241,8 +241,8 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="show-line-numbers"
           label="Show line numbers"
           description="Display line numbers in diff and file views"
-          checked={settings.show_line_numbers}
-          onCheckedChange={(checked) => updateSetting('show_line_numbers', checked === true)}
+          checked={settings.showLineNumbers}
+          onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
       </div>
     </div>
@@ -279,11 +279,11 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
     setTestResult(null);
     try {
       const config = await signingApi.getConfig();
-      if (config.signing_key) {
-        updateSetting('signing_format', config.format);
-        updateSetting('signing_key', config.signing_key);
-        if (config.gpg_program) updateSetting('gpg_program', config.gpg_program);
-        if (config.ssh_program) updateSetting('ssh_program', config.ssh_program);
+      if (config.signingKey) {
+        updateSetting('signingFormat', config.format);
+        updateSetting('signingKey', config.signingKey);
+        if (config.gpgProgram) updateSetting('gpgProgram', config.gpgProgram);
+        if (config.sshProgram) updateSetting('sshProgram', config.sshProgram);
         setTestResult({ success: true, message: 'Configuration detected from git config' });
       } else {
         setTestResult({ success: false, message: 'No signing key found in git config' });
@@ -300,13 +300,13 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
     setTestResult(null);
     try {
       const result = await signingApi.testSigning({
-        format: settings.signing_format,
-        signing_key: settings.signing_key,
-        gpg_program: settings.gpg_program,
-        ssh_program: settings.ssh_program,
+        format: settings.signingFormat,
+        signingKey: settings.signingKey,
+        gpgProgram: settings.gpgProgram,
+        sshProgram: settings.sshProgram,
       });
       if (result.success) {
-        setTestResult({ success: true, message: `Signing works! Using: ${result.program_used}` });
+        setTestResult({ success: true, message: `Signing works! Using: ${result.programUsed}` });
       } else {
         setTestResult({ success: false, message: result.error || 'Signing test failed' });
       }
@@ -318,9 +318,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   };
 
   const availableKeys =
-    settings.signing_format === 'gpg'
-      ? gpgKeys.map((k) => ({ value: k.key_id, label: `${k.key_id} - ${k.user_id}` }))
-      : sshKeys.map((k) => ({ value: k.path, label: `${k.key_type} - ${k.comment || k.path}` }));
+    settings.signingFormat === 'Gpg'
+      ? gpgKeys.map((k) => ({ value: k.keyId, label: `${k.keyId} - ${k.userId}` }))
+      : sshKeys.map((k) => ({ value: k.path, label: `${k.keyType} - ${k.comment || k.path}` }));
 
   return (
     <div>
@@ -334,8 +334,8 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Input
           id="defaultBranch"
           type="text"
-          value={settings.default_branch_name}
-          onChange={(e) => updateSetting('default_branch_name', e.target.value)}
+          value={settings.defaultBranchName}
+          onChange={(e) => updateSetting('defaultBranchName', e.target.value)}
         />
       </FormField>
 
@@ -349,8 +349,8 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="number"
           min={0}
           max={60}
-          value={settings.auto_fetch_interval}
-          onChange={(e) => updateSetting('auto_fetch_interval', parseInt(e.target.value) || 0)}
+          value={settings.autoFetchInterval}
+          onChange={(e) => updateSetting('autoFetchInterval', parseInt(e.target.value) || 0)}
           className={numberInputClass}
         />
       </FormField>
@@ -360,8 +360,8 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="confirm-before-discard"
           label="Confirm before discarding changes"
           description="Show confirmation dialog before discarding changes"
-          checked={settings.confirm_before_discard}
-          onCheckedChange={(checked) => updateSetting('confirm_before_discard', checked === true)}
+          checked={settings.confirmBeforeDiscard}
+          onCheckedChange={(checked) => updateSetting('confirmBeforeDiscard', checked === true)}
         />
       </div>
 
@@ -372,8 +372,8 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="sign-commits"
           label="Sign commits by default"
           description="Automatically sign all commits"
-          checked={settings.sign_commits}
-          onCheckedChange={(checked) => updateSetting('sign_commits', checked === true)}
+          checked={settings.signCommits}
+          onCheckedChange={(checked) => updateSetting('signCommits', checked === true)}
         />
       </div>
 
@@ -384,15 +384,15 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       >
         <Select
           id="signingFormat"
-          value={settings.signing_format}
+          value={settings.signingFormat}
           onChange={(e) => {
-            updateSetting('signing_format', e.target.value as SigningFormat);
-            updateSetting('signing_key', undefined);
+            updateSetting('signingFormat', e.target.value as SigningFormat);
+            updateSetting('signingKey', null);
             setTestResult(null);
           }}
         >
-          <option value="gpg">GPG</option>
-          <option value="ssh">SSH</option>
+          <option value="Gpg">GPG</option>
+          <option value="Ssh">SSH</option>
         </Select>
       </FormField>
 
@@ -400,7 +400,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         label="Signing Key"
         htmlFor="signingKey"
         hint={
-          settings.signing_format === 'gpg'
+          settings.signingFormat === 'Gpg'
             ? 'Select your GPG key or enter a key ID'
             : 'Select your SSH key file'
         }
@@ -408,9 +408,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         <div className="flex gap-2">
           <Select
             id="signingKey"
-            value={settings.signing_key || ''}
+            value={settings.signingKey || ''}
             onChange={(e) => {
-              updateSetting('signing_key', e.target.value || undefined);
+              updateSetting('signingKey', e.target.value || null);
               setTestResult(null);
             }}
             className="flex-1"
@@ -427,14 +427,14 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             {isDetecting ? 'Detecting...' : 'Auto-detect'}
           </Button>
         </div>
-        {!settings.signing_key && availableKeys.length === 0 && !isLoadingKeys && (
+        {!settings.signingKey && availableKeys.length === 0 && !isLoadingKeys && (
           <p className="mt-1.5 text-xs text-warning">
-            No {settings.signing_format === 'gpg' ? 'GPG' : 'SSH'} keys found on this system
+            No {settings.signingFormat === 'Gpg' ? 'GPG' : 'SSH'} keys found on this system
           </p>
         )}
       </FormField>
 
-      {settings.signing_format === 'gpg' && (
+      {settings.signingFormat === 'Gpg' && (
         <FormField
           label="GPG Program (optional)"
           htmlFor="gpgProgram"
@@ -443,14 +443,14 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           <Input
             id="gpgProgram"
             type="text"
-            value={settings.gpg_program || ''}
-            onChange={(e) => updateSetting('gpg_program', e.target.value || undefined)}
+            value={settings.gpgProgram || ''}
+            onChange={(e) => updateSetting('gpgProgram', e.target.value || null)}
             placeholder="Auto-detect"
           />
         </FormField>
       )}
 
-      {settings.signing_format === 'ssh' && (
+      {settings.signingFormat === 'Ssh' && (
         <FormField
           label="SSH Program (optional)"
           htmlFor="sshProgram"
@@ -459,8 +459,8 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           <Input
             id="sshProgram"
             type="text"
-            value={settings.ssh_program || ''}
-            onChange={(e) => updateSetting('ssh_program', e.target.value || undefined)}
+            value={settings.sshProgram || ''}
+            onChange={(e) => updateSetting('sshProgram', e.target.value || null)}
             placeholder="Auto-detect"
           />
         </FormField>
@@ -470,7 +470,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Button
           variant="secondary"
           onClick={handleTestSigning}
-          disabled={!settings.signing_key || isTesting}
+          disabled={!settings.signingKey || isTesting}
         >
           {isTesting ? 'Testing...' : 'Test Signing'}
         </Button>
@@ -499,8 +499,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="number"
           min={0}
           max={20}
-          value={settings.diff_context_lines}
-          onChange={(e) => updateSetting('diff_context_lines', parseInt(e.target.value) || 3)}
+          value={settings.diffContextLines}
+          onChange={(e) => updateSetting('diffContextLines', parseInt(e.target.value) || 3)}
           className={numberInputClass}
         />
       </FormField>
@@ -510,8 +510,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="diff-word-wrap"
           label="Word wrap in diff view"
           description="Wrap long lines in diff view"
-          checked={settings.diff_word_wrap}
-          onCheckedChange={(checked) => updateSetting('diff_word_wrap', checked === true)}
+          checked={settings.diffWordWrap}
+          onCheckedChange={(checked) => updateSetting('diffWordWrap', checked === true)}
         />
       </div>
 
@@ -520,8 +520,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="diff-side-by-side"
           label="Side-by-side diff view"
           description="Show diffs in split view by default"
-          checked={settings.diff_side_by_side}
-          onCheckedChange={(checked) => updateSetting('diff_side_by_side', checked === true)}
+          checked={settings.diffSideBySide}
+          onCheckedChange={(checked) => updateSetting('diffSideBySide', checked === true)}
         />
       </div>
 
@@ -537,8 +537,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="number"
           min={50}
           max={120}
-          value={settings.commit_message_width}
-          onChange={(e) => updateSetting('commit_message_width', parseInt(e.target.value) || 72)}
+          value={settings.commitMessageWidth}
+          onChange={(e) => updateSetting('commitMessageWidth', parseInt(e.target.value) || 72)}
           className={numberInputClass}
         />
       </FormField>
@@ -548,10 +548,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="spell-check-commit-messages"
           label="Spell check commit messages"
           description="Enable spell checking in commit message editor"
-          checked={settings.spell_check_commit_messages}
-          onCheckedChange={(checked) =>
-            updateSetting('spell_check_commit_messages', checked === true)
-          }
+          checked={settings.spellCheckCommitMessages}
+          onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
       </div>
     </div>
@@ -567,8 +565,8 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Input
           id="terminalFont"
           type="text"
-          value={settings.terminal_font_family}
-          onChange={(e) => updateSetting('terminal_font_family', e.target.value)}
+          value={settings.terminalFontFamily}
+          onChange={(e) => updateSetting('terminalFontFamily', e.target.value)}
         />
       </FormField>
 
@@ -582,8 +580,8 @@ function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
           type="number"
           min={10}
           max={24}
-          value={settings.terminal_font_size}
-          onChange={(e) => updateSetting('terminal_font_size', parseInt(e.target.value) || 13)}
+          value={settings.terminalFontSize}
+          onChange={(e) => updateSetting('terminalFontSize', parseInt(e.target.value) || 13)}
           className={numberInputClass}
         />
       </FormField>

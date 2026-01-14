@@ -170,7 +170,7 @@ function FileStatusItem({
   isTreeView = false,
 }: FileStatusItemProps) {
   const { repository } = useRepositoryStore();
-  const status = file.staged_status || file.unstaged_status || file.status;
+  const status = file.stagedStatus || file.unstagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   const handleShowInFinder = async () => {
@@ -335,7 +335,7 @@ function MultiColumnFileItem({
   onUnstage,
   onDiscard,
 }: MultiColumnFileItemProps) {
-  const status = file.staged_status || file.unstaged_status || file.status;
+  const status = file.stagedStatus || file.unstagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   // Check if this is a staged file (has only unstage action)
@@ -545,7 +545,7 @@ function FluidFileItem({
   indent = 0,
 }: FluidFileItemProps) {
   const { repository } = useRepositoryStore();
-  const status = file.staged_status || file.unstaged_status || file.status;
+  const status = file.stagedStatus || file.unstagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   const handleShowInFinder = async () => {
@@ -716,21 +716,21 @@ function FluidTreeView({
 
 function getStatusIcon(status: StatusType) {
   switch (status) {
-    case 'added':
+    case 'Added':
       return Plus;
-    case 'modified':
+    case 'Modified':
       return Pencil;
-    case 'deleted':
+    case 'Deleted':
       return Trash2;
-    case 'untracked':
+    case 'Untracked':
       return FileQuestion;
-    case 'renamed':
+    case 'Renamed':
       return ArrowRightLeft;
-    case 'copied':
+    case 'Copied':
       return Copy;
-    case 'conflicted':
+    case 'Conflicted':
       return AlertTriangle;
-    case 'type_changed':
+    case 'TypeChanged':
       return FileType;
     default:
       return FileQuestion;
@@ -739,16 +739,16 @@ function getStatusIcon(status: StatusType) {
 
 function getStatusColorClass(status: StatusType): string {
   switch (status) {
-    case 'added':
-    case 'untracked':
+    case 'Added':
+    case 'Untracked':
       return 'text-success';
-    case 'modified':
-    case 'renamed':
-    case 'copied':
-    case 'type_changed':
+    case 'Modified':
+    case 'Renamed':
+    case 'Copied':
+    case 'TypeChanged':
       return 'text-warning';
-    case 'deleted':
-    case 'conflicted':
+    case 'Deleted':
+    case 'Conflicted':
       return 'text-error';
     default:
       return '';

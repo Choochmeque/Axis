@@ -46,31 +46,31 @@ vi.mock('../../store/settingsStore', () => ({
 }));
 
 const mockSettings = {
-  theme: 'dark' as const,
-  font_size: 13,
-  show_line_numbers: true,
-  default_branch_name: 'main',
-  auto_fetch_interval: 0,
-  confirm_before_discard: true,
-  sign_commits: false,
-  signing_format: 'gpg' as const,
-  signing_key: undefined,
-  gpg_program: undefined,
-  ssh_program: undefined,
-  diff_context_lines: 3,
-  diff_word_wrap: false,
-  diff_side_by_side: false,
-  commit_message_width: 72,
-  spell_check_commit_messages: false,
-  terminal_font_family: 'monospace',
-  terminal_font_size: 13,
+  theme: 'Dark' as const,
+  fontSize: 13,
+  showLineNumbers: true,
+  defaultBranchName: 'main',
+  autoFetchInterval: 0,
+  confirmBeforeDiscard: true,
+  signCommits: false,
+  signingFormat: 'Gpg' as const,
+  signingKey: null,
+  gpgProgram: null,
+  sshProgram: null,
+  diffContextLines: 3,
+  diffWordWrap: false,
+  diffSideBySide: false,
+  commitMessageWidth: 72,
+  spellCheckCommitMessages: false,
+  terminalFontFamily: 'monospace',
+  terminalFontSize: 13,
 };
 
 describe('SettingsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
-    vi.mocked(settingsApi.save).mockResolvedValue();
+    vi.mocked(settingsApi.save).mockResolvedValue(null);
     mockUpdateSettings.mockResolvedValue(undefined);
   });
 
@@ -183,18 +183,18 @@ describe('SettingsDialog', () => {
 
     // Get the theme select
     const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
-    expect(themeSelect.value).toBe('dark');
+    expect(themeSelect.value).toBe('Dark');
 
     // Change it
-    fireEvent.change(themeSelect, { target: { value: 'light' } });
-    expect(themeSelect.value).toBe('light');
+    fireEvent.change(themeSelect, { target: { value: 'Light' } });
+    expect(themeSelect.value).toBe('Light');
 
     // Click reset
     fireEvent.click(screen.getByRole('button', { name: /Reset/i }));
 
     // Should be back to original
     await waitFor(() => {
-      expect(themeSelect.value).toBe('dark');
+      expect(themeSelect.value).toBe('Dark');
     });
   });
 });

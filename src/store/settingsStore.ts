@@ -16,21 +16,24 @@ interface SettingsState {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'system',
-  font_size: 13,
-  show_line_numbers: true,
-  default_branch_name: 'main',
-  auto_fetch_interval: 0,
-  confirm_before_discard: true,
-  sign_commits: false,
-  signing_format: 'gpg',
-  diff_context_lines: 3,
-  diff_word_wrap: false,
-  diff_side_by_side: false,
-  commit_message_width: 72,
-  spell_check_commit_messages: false,
-  terminal_font_family: 'monospace',
-  terminal_font_size: 13,
+  theme: 'System',
+  fontSize: 13,
+  showLineNumbers: true,
+  defaultBranchName: 'main',
+  autoFetchInterval: 0,
+  confirmBeforeDiscard: true,
+  signCommits: false,
+  signingFormat: 'Gpg',
+  signingKey: null,
+  gpgProgram: null,
+  sshProgram: null,
+  diffContextLines: 3,
+  diffWordWrap: false,
+  diffSideBySide: false,
+  commitMessageWidth: 72,
+  spellCheckCommitMessages: false,
+  terminalFontFamily: 'monospace',
+  terminalFontSize: 13,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -74,11 +77,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   getEffectiveTheme: () => {
     const { settings } = get();
-    const theme = settings?.theme || 'system';
-    if (theme === 'system') {
+    const theme = settings?.theme || 'System';
+    if (theme === 'System') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return theme;
+    return theme === 'Dark' ? 'dark' : 'light';
   },
 
   setShowSettings: (show: boolean) => set({ showSettings: show }),
@@ -86,11 +89,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
 function applyTheme(theme: Theme) {
   const effectiveTheme =
-    theme === 'system'
+    theme === 'System'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
-      : theme;
+      : theme === 'Dark'
+        ? 'dark'
+        : 'light';
 
   document.documentElement.setAttribute('data-theme', effectiveTheme);
 }
@@ -99,8 +104,8 @@ function applyTheme(theme: Theme) {
 if (typeof window !== 'undefined') {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { settings } = useSettingsStore.getState();
-    if (settings?.theme === 'system') {
-      applyTheme('system');
+    if (settings?.theme === 'System') {
+      applyTheme('System');
     }
   });
 }

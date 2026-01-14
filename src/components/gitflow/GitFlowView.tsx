@@ -47,7 +47,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
   // Dialog state
   const [showInitDialog, setShowInitDialog] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
-  const [startType, setStartType] = useState<GitFlowBranchType>('feature');
+  const [startType, setStartType] = useState<GitFlowBranchType>('Feature');
   const [branchName, setBranchName] = useState('');
 
   // Init options
@@ -123,13 +123,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
     try {
       let result: GitFlowResult;
       switch (startType) {
-        case 'feature':
+        case 'Feature':
           result = await gitflowApi.feature.start(branchName);
           break;
-        case 'release':
+        case 'Release':
           result = await gitflowApi.release.start(branchName);
           break;
-        case 'hotfix':
+        case 'Hotfix':
           result = await gitflowApi.hotfix.start(branchName);
           break;
         default:
@@ -159,14 +159,14 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
     try {
       let result: GitFlowResult;
       switch (type) {
-        case 'feature':
-          result = await gitflowApi.feature.finish(name, { no_ff: true });
+        case 'Feature':
+          result = await gitflowApi.feature.finish(name, { noFf: true });
           break;
-        case 'release':
-          result = await gitflowApi.release.finish(name, { no_ff: true });
+        case 'Release':
+          result = await gitflowApi.release.finish(name, { noFf: true });
           break;
-        case 'hotfix':
-          result = await gitflowApi.hotfix.finish(name, { no_ff: true });
+        case 'Hotfix':
+          result = await gitflowApi.hotfix.finish(name, { noFf: true });
           break;
         default:
           throw new Error('Invalid branch type');
@@ -193,13 +193,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
     try {
       let result: GitFlowResult;
       switch (type) {
-        case 'feature':
+        case 'Feature':
           result = await gitflowApi.feature.publish(name);
           break;
-        case 'release':
+        case 'Release':
           result = await gitflowApi.release.publish(name);
           break;
-        case 'hotfix':
+        case 'Hotfix':
           result = await gitflowApi.hotfix.publish(name);
           break;
         default:
@@ -227,11 +227,11 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
 
   const getTypeLabel = (type: GitFlowBranchType) => {
     switch (type) {
-      case 'feature':
+      case 'Feature':
         return 'Feature';
-      case 'release':
+      case 'Release':
         return 'Release';
-      case 'hotfix':
+      case 'Hotfix':
         return 'Hotfix';
       default:
         return type;
@@ -240,11 +240,11 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
 
   const getTypeIcon = (type: GitFlowBranchType) => {
     switch (type) {
-      case 'feature':
+      case 'Feature':
         return <GitBranch size={14} />;
-      case 'release':
+      case 'Release':
         return <Rocket size={14} />;
-      case 'hotfix':
+      case 'Hotfix':
         return <Bug size={14} />;
       default:
         return <GitBranch size={14} />;
@@ -322,7 +322,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               </div>
               <button
                 className={btnIconSmallClass}
-                onClick={() => openStartDialog('feature')}
+                onClick={() => openStartDialog('Feature')}
                 title="Start new feature"
               >
                 <Plus size={14} />
@@ -338,20 +338,20 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.feature_prefix}
+                      {config?.featurePrefix}
                       {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handlePublish('feature', name)}
+                        onClick={() => handlePublish('Feature', name)}
                         title="Publish"
                       >
                         <Upload size={12} />
                       </button>
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handleFinish('feature', name)}
+                        onClick={() => handleFinish('Feature', name)}
                         title="Finish"
                       >
                         <Check size={12} />
@@ -375,7 +375,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               </div>
               <button
                 className={btnIconSmallClass}
-                onClick={() => openStartDialog('release')}
+                onClick={() => openStartDialog('Release')}
                 title="Start new release"
               >
                 <Plus size={14} />
@@ -391,20 +391,20 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.release_prefix}
+                      {config?.releasePrefix}
                       {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handlePublish('release', name)}
+                        onClick={() => handlePublish('Release', name)}
                         title="Publish"
                       >
                         <Upload size={12} />
                       </button>
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handleFinish('release', name)}
+                        onClick={() => handleFinish('Release', name)}
                         title="Finish"
                       >
                         <Check size={12} />
@@ -428,7 +428,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               </div>
               <button
                 className={btnIconSmallClass}
-                onClick={() => openStartDialog('hotfix')}
+                onClick={() => openStartDialog('Hotfix')}
                 title="Start new hotfix"
               >
                 <Plus size={14} />
@@ -444,20 +444,20 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
                     <span className="text-[13px] text-(--text-primary) font-mono">
-                      {config?.hotfix_prefix}
+                      {config?.hotfixPrefix}
                       {name}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handlePublish('hotfix', name)}
+                        onClick={() => handlePublish('Hotfix', name)}
                         title="Publish"
                       >
                         <Upload size={12} />
                       </button>
                       <button
                         className={btnIconSmallClass}
-                        onClick={() => handleFinish('hotfix', name)}
+                        onClick={() => handleFinish('Hotfix', name)}
                         title="Finish"
                       >
                         <Check size={12} />
@@ -532,7 +532,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                 type="text"
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
-                placeholder={startType === 'release' ? '1.0.0' : 'my-feature'}
+                placeholder={startType === 'Release' ? '1.0.0' : 'my-feature'}
                 autoFocus
               />
             </FormField>

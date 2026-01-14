@@ -20,8 +20,8 @@ export function CommitFileList({
   onSelectFile,
   isLoading = false,
 }: CommitFileListProps) {
-  const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
-  const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+  const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
+  const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
   if (isLoading) {
     return (
@@ -58,10 +58,10 @@ export function CommitFileList({
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {files.map((file) => (
           <CommitFileItem
-            key={file.new_path || file.old_path}
+            key={file.newPath || file.oldPath}
             file={file}
             isSelected={
-              selectedFile?.new_path === file.new_path && selectedFile?.old_path === file.old_path
+              selectedFile?.newPath === file.newPath && selectedFile?.oldPath === file.oldPath
             }
             onSelect={() => onSelectFile(file)}
           />
@@ -78,7 +78,7 @@ interface CommitFileItemProps {
 }
 
 function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
-  const path = file.new_path || file.old_path || '';
+  const path = file.newPath || file.oldPath || '';
   const statusColors = getStatusColors(file.status);
   const statusChar = getStatusChar(file.status);
 
@@ -106,8 +106,8 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
           title={path}
         >
           {getFileName(path)}
-          {file.old_path && file.new_path && file.old_path !== file.new_path && (
-            <span className="text-(--text-secondary) text-xs"> ({getFileName(file.old_path)})</span>
+          {file.oldPath && file.newPath && file.oldPath !== file.newPath && (
+            <span className="text-(--text-secondary) text-xs"> ({getFileName(file.oldPath)})</span>
           )}
         </span>
         <span
@@ -117,8 +117,8 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
           {getDirectory(path)}
         </span>
         <span className="flex gap-1 text-[11px] font-medium shrink-0">
-          {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
-          {file.deletions > 0 && <span className="text-error">-{file.deletions}</span>}
+          {file.additions > 0 && <span className="text-success">+{String(file.additions)}</span>}
+          {file.deletions > 0 && <span className="text-error">-{String(file.deletions)}</span>}
         </span>
       </div>
     </HistoryFileContextMenu>
@@ -127,21 +127,21 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
 
 function getStatusChar(status: DiffStatus): string {
   switch (status) {
-    case 'added':
+    case 'Added':
       return 'A';
-    case 'modified':
+    case 'Modified':
       return 'M';
-    case 'deleted':
+    case 'Deleted':
       return 'D';
-    case 'renamed':
+    case 'Renamed':
       return 'R';
-    case 'copied':
+    case 'Copied':
       return 'C';
-    case 'type_changed':
+    case 'TypeChanged':
       return 'T';
-    case 'untracked':
+    case 'Untracked':
       return '?';
-    case 'conflicted':
+    case 'Conflicted':
       return '!';
     default:
       return 'M';
@@ -150,15 +150,15 @@ function getStatusChar(status: DiffStatus): string {
 
 function getStatusColors(status: DiffStatus): { bg: string; text: string } {
   switch (status) {
-    case 'added':
+    case 'Added':
       return { bg: 'bg-success/15', text: 'text-success' };
-    case 'modified':
-    case 'renamed':
-    case 'copied':
-    case 'type_changed':
+    case 'Modified':
+    case 'Renamed':
+    case 'Copied':
+    case 'TypeChanged':
       return { bg: 'bg-warning/15', text: 'text-warning' };
-    case 'deleted':
-    case 'conflicted':
+    case 'Deleted':
+    case 'Conflicted':
       return { bg: 'bg-error/15', text: 'text-error' };
     default:
       return { bg: '', text: '' };

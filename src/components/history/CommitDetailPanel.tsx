@@ -16,7 +16,7 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
     useRepositoryStore();
 
   // Get parent commit OID for image diff comparison (first parent for regular commits)
-  const parentCommitOid = commit.parent_oids.length > 0 ? commit.parent_oids[0] : undefined;
+  const parentCommitOid = commit.parentOids.length > 0 ? commit.parentOids[0] : undefined;
 
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) border-t border-(--border-color)">

@@ -34,10 +34,10 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
 
     try {
       const result = await stashApi.save({
-        message: message || undefined,
-        keep_index: keepStaged,
-        include_untracked: true,
-        include_ignored: false,
+        message: message || null,
+        keepIndex: keepStaged,
+        includeUntracked: true,
+        includeIgnored: false,
       });
 
       if (result.success) {

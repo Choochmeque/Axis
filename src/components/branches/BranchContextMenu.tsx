@@ -37,9 +37,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
   const [isSettingUpstream, setIsSettingUpstream] = useState(false);
 
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
-  const currentBranch = branches.find((b) => b.is_head);
+  const currentBranch = branches.find((b) => b.isHead);
   const hasUpstream = !!branch.upstream;
-  const isCurrentBranch = branch.is_head;
+  const isCurrentBranch = branch.isHead;
 
   // Load remotes and remote branches when menu opens
   const handleMenuOpen = async (open: boolean) => {
@@ -83,7 +83,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     setIsSettingUpstream(true);
     try {
       // Set the upstream for the current branch
-      await branchApi.setUpstream(branch.name, remoteBranch.full_name);
+      await branchApi.setUpstream(branch.name, remoteBranch.fullName);
       await loadBranches();
     } catch (err) {
       console.error('Failed to set upstream:', err);
@@ -185,18 +185,16 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
                   ) : (
                     remoteBranches.map((remoteBranch) => (
                       <ContextMenu.Item
-                        key={remoteBranch.full_name}
+                        key={remoteBranch.fullName}
                         className="menu-item"
                         onSelect={() => handleTrackRemoteBranch(remoteBranch)}
                         disabled={isSettingUpstream}
                       >
-                        {branch.upstream === remoteBranch.full_name && (
+                        {branch.upstream === remoteBranch.fullName && (
                           <Check size={14} className="text-success" />
                         )}
                         <span
-                          className={
-                            branch.upstream === remoteBranch.full_name ? 'font-medium' : ''
-                          }
+                          className={branch.upstream === remoteBranch.fullName ? 'font-medium' : ''}
                         >
                           {remoteBranch.name}
                         </span>

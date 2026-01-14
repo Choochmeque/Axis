@@ -17,7 +17,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handleApply = async () => {
     try {
-      const result = await stashApi.apply({ index: stash.index });
+      const result = await stashApi.apply({ index: stash.index, reinstateIndex: false });
       if (result.success) {
         await refreshRepository();
       } else {
@@ -30,7 +30,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handlePop = async () => {
     try {
-      const result = await stashApi.pop({ index: stash.index });
+      const result = await stashApi.pop({ index: stash.index, reinstateIndex: false });
       if (result.success) {
         clearStashSelection();
         await loadStashes();
@@ -45,7 +45,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handleDrop = async () => {
     try {
-      const result = await stashApi.drop(stash.index);
+      const result = await stashApi.drop(Number(stash.index));
       if (result.success) {
         clearStashSelection();
         await loadStashes();
@@ -60,7 +60,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
   const handleBranch = async (name: string) => {
     if (!name.trim()) return;
     try {
-      const result = await stashApi.branch(name, stash.index);
+      const result = await stashApi.branch(name, Number(stash.index));
       if (result.success) {
         clearStashSelection();
         await loadStashes();

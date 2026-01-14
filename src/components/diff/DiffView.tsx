@@ -100,8 +100,8 @@ function BinaryImageView({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const showBefore = status === 'modified' || status === 'deleted';
-  const showAfter = status === 'modified' || status === 'added' || status === 'untracked';
+  const showBefore = status === 'Modified' || status === 'Deleted';
+  const showAfter = status === 'Modified' || status === 'Added' || status === 'Untracked';
 
   useEffect(() => {
     let mounted = true;
@@ -223,7 +223,7 @@ function BinaryImageView({
   // Single image view for added/deleted
   return (
     <div className="flex items-center justify-center h-full p-6">
-      {status === 'deleted' ? (
+      {status === 'Deleted' ? (
         oldImageUrl ? (
           <img src={oldImageUrl} alt={path} className={imageClass} />
         ) : (
@@ -246,7 +246,7 @@ interface ImageDiffHeaderProps {
 }
 
 function ImageDiffHeader({ diff }: ImageDiffHeaderProps) {
-  const fileName = diff.new_path || diff.old_path || 'Unknown file';
+  const fileName = diff.newPath || diff.oldPath || 'Unknown file';
   const statusText = getStatusText(diff.status);
   const statusColorClass = getStatusColorClass(diff.status);
 
@@ -272,8 +272,8 @@ function ImageDiffHeader({ diff }: ImageDiffHeaderProps) {
 
 // Generate a patch string for a specific hunk
 function generateHunkPatch(diff: FileDiff, hunk: DiffHunk): string {
-  const oldPath = diff.old_path || diff.new_path || '';
-  const newPath = diff.new_path || diff.old_path || '';
+  const oldPath = diff.oldPath || diff.newPath || '';
+  const newPath = diff.newPath || diff.oldPath || '';
 
   let patch = `diff --git a/${oldPath} b/${newPath}\n`;
   patch += `--- a/${oldPath}\n`;
@@ -284,7 +284,7 @@ function generateHunkPatch(diff: FileDiff, hunk: DiffHunk): string {
   }
 
   for (const line of hunk.lines) {
-    const prefix = getLinePrefix(line.line_type);
+    const prefix = getLinePrefix(line.lineType);
     patch += `${prefix}${line.content}\n`;
   }
 
@@ -363,7 +363,7 @@ export function DiffView({
     );
   }
 
-  const filePath = diff.new_path || diff.old_path || '';
+  const filePath = diff.newPath || diff.oldPath || '';
 
   // Show image preview for image files (including SVG which is text-based)
   if (isImageFile(filePath)) {
@@ -373,7 +373,7 @@ export function DiffView({
         <div className="flex-1 overflow-auto">
           <BinaryImageView
             path={filePath}
-            oldPath={diff.old_path || undefined}
+            oldPath={diff.oldPath || undefined}
             commitOid={commitOid}
             parentCommitOid={parentCommitOid}
             status={diff.status}
@@ -448,7 +448,7 @@ function DiffHeader({
   diffSettings,
   onDiffSettingsChange,
 }: DiffHeaderProps) {
-  const fileName = diff.new_path || diff.old_path || 'Unknown file';
+  const fileName = diff.newPath || diff.oldPath || 'Unknown file';
   const statusText = getStatusText(diff.status);
   const statusColorClass = getStatusColorClass(diff.status);
 
@@ -660,13 +660,13 @@ const lineNoClass =
   'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums';
 
 function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
-  const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.line_type);
-  const prefix = getLinePrefix(line.line_type);
+  const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.lineType);
+  const prefix = getLinePrefix(line.lineType);
 
   return (
     <div className={cn('flex leading-5.5 font-mono text-xs', bgClass)}>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.old_line_no ?? ''}</span>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.new_line_no ?? ''}</span>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.oldLineNo ?? ''}</span>
+      <span className={cn(lineNoClass, lineNoBgClass)}>{line.newLineNo ?? ''}</span>
       <span className={cn('shrink-0 w-5 py-0 px-1 text-center select-none', prefixColorClass)}>
         {prefix}
       </span>
@@ -758,8 +758,8 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
   return (
     <>
       {pairs.map((pair, index) => {
-        const leftClasses = getLineClasses(pair.left?.line_type || 'context');
-        const rightClasses = getLineClasses(pair.right?.line_type || 'context');
+        const leftClasses = getLineClasses(pair.left?.lineType || 'Context');
+        const rightClasses = getLineClasses(pair.right?.lineType || 'Context');
         const leftEmpty = pair.left === null;
         const rightEmpty = pair.right === null;
         return (
@@ -776,7 +776,7 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
                   leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.lineNoBgClass
                 )}
               >
-                {pair.left?.old_line_no ?? ''}
+                {pair.left?.oldLineNo ?? ''}
               </span>
               <span className="flex-1 py-0 px-3 whitespace-pre">
                 <code className="font-inherit">{pair.left?.content ?? ''}</code>
@@ -794,7 +794,7 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
                   rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.lineNoBgClass
                 )}
               >
-                {pair.right?.new_line_no ?? ''}
+                {pair.right?.newLineNo ?? ''}
               </span>
               <span className="flex-1 py-0 px-3 whitespace-pre">
                 <code className="font-inherit">{pair.right?.content ?? ''}</code>
@@ -819,20 +819,20 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
   while (i < lines.length) {
     const line = lines[i];
 
-    if (line.line_type === 'context') {
+    if (line.lineType === 'Context') {
       pairs.push({ left: line, right: line });
       i++;
-    } else if (line.line_type === 'deletion') {
+    } else if (line.lineType === 'Deletion') {
       // Collect consecutive deletions
       const deletions: DiffLine[] = [];
-      while (i < lines.length && lines[i].line_type === 'deletion') {
+      while (i < lines.length && lines[i].lineType === 'Deletion') {
         deletions.push(lines[i]);
         i++;
       }
 
       // Collect consecutive additions
       const additions: DiffLine[] = [];
-      while (i < lines.length && lines[i].line_type === 'addition') {
+      while (i < lines.length && lines[i].lineType === 'Addition') {
         additions.push(lines[i]);
         i++;
       }
@@ -845,7 +845,7 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
           right: additions[j] || null,
         });
       }
-    } else if (line.line_type === 'addition') {
+    } else if (line.lineType === 'Addition') {
       pairs.push({ left: null, right: line });
       i++;
     } else {
@@ -862,13 +862,13 @@ function getLineClasses(lineType: DiffLineType): {
   prefixColorClass: string;
 } {
   switch (lineType) {
-    case 'addition':
+    case 'Addition':
       return {
         bgClass: 'bg-(--diff-add-bg)',
         lineNoBgClass: 'bg-(--diff-add-bg)',
         prefixColorClass: 'text-(--diff-add-line)',
       };
-    case 'deletion':
+    case 'Deletion':
       return {
         bgClass: 'bg-(--diff-delete-bg)',
         lineNoBgClass: 'bg-(--diff-delete-bg)',
@@ -885,9 +885,9 @@ function getLineClasses(lineType: DiffLineType): {
 
 function getLinePrefix(lineType: DiffLineType): string {
   switch (lineType) {
-    case 'addition':
+    case 'Addition':
       return '+';
-    case 'deletion':
+    case 'Deletion':
       return '-';
     default:
       return ' ';
@@ -896,21 +896,21 @@ function getLinePrefix(lineType: DiffLineType): string {
 
 function getStatusText(status: string): string {
   switch (status) {
-    case 'added':
+    case 'Added':
       return 'Added';
-    case 'deleted':
+    case 'Deleted':
       return 'Deleted';
-    case 'modified':
+    case 'Modified':
       return 'Modified';
-    case 'renamed':
+    case 'Renamed':
       return 'Renamed';
-    case 'copied':
+    case 'Copied':
       return 'Copied';
-    case 'type_changed':
+    case 'TypeChanged':
       return 'Type Changed';
-    case 'untracked':
+    case 'Untracked':
       return 'Untracked';
-    case 'conflicted':
+    case 'Conflicted':
       return 'Conflicted';
     default:
       return status;
@@ -919,16 +919,16 @@ function getStatusText(status: string): string {
 
 function getStatusColorClass(status: string): string {
   switch (status) {
-    case 'added':
-    case 'untracked':
+    case 'Added':
+    case 'Untracked':
       return 'bg-success/20 text-success';
-    case 'deleted':
-    case 'conflicted':
+    case 'Deleted':
+    case 'Conflicted':
       return 'bg-error/20 text-error';
-    case 'modified':
+    case 'Modified':
       return 'bg-warning/20 text-warning';
-    case 'renamed':
-    case 'copied':
+    case 'Renamed':
+    case 'Copied':
       return 'bg-(--accent-color)/20 text-(--accent-color)';
     default:
       return '';

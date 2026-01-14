@@ -1,171 +1,126 @@
 import { invoke } from '@tauri-apps/api/core';
+import { commands } from '../bindings/api';
 import type {
-  Repository,
-  RepositoryStatus,
-  Commit,
-  Branch,
   BranchType,
-  RecentRepository,
   LogOptions,
-  FileDiff,
   DiffOptions,
-  Remote,
-  FetchResult,
-  PushResult,
   GraphOptions,
-  GraphResult,
   SearchOptions,
-  SearchResult,
-  BlameResult,
   MergeOptions,
-  MergeResult,
   RebaseOptions,
-  RebasePreview,
-  RebaseResult,
   CherryPickOptions,
-  CherryPickResult,
   RevertOptions,
-  RevertResult,
-  ConflictedFile,
-  ConflictContent,
   ConflictResolution,
-  OperationState,
   ResetOptions,
-  StashEntry,
   StashSaveOptions,
   StashApplyOptions,
-  StashResult,
-  Tag,
   CreateTagOptions,
-  TagResult,
-  Submodule,
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
-  SubmoduleResult,
-  GitFlowConfig,
   GitFlowInitOptions,
   GitFlowFinishOptions,
-  GitFlowResult,
   GrepOptions,
-  GrepResult,
   AppSettings,
   SigningConfig,
-  GpgKey,
-  SshKey,
-  SigningTestResult,
   ArchiveOptions,
-  ArchiveResult,
   FormatPatchOptions,
   CreatePatchOptions,
   ApplyPatchOptions,
   ApplyMailboxOptions,
-  PatchResult,
 } from '../types';
 
 export const repositoryApi = {
-  open: (path: string) => invoke<Repository>('open_repository', { path }),
+  open: (path: string) => commands.openRepository(path),
 
-  init: (path: string, bare: boolean = false) =>
-    invoke<Repository>('init_repository', { path, bare }),
+  init: (path: string, bare: boolean = false) => commands.initRepository(path, bare),
 
-  clone: (url: string, path: string) => invoke<Repository>('clone_repository', { url, path }),
+  clone: (url: string, path: string) => commands.cloneRepository(url, path),
 
-  close: () => invoke<void>('close_repository'),
+  close: () => commands.closeRepository(),
 
-  getInfo: () => invoke<Repository>('get_repository_info'),
+  getInfo: () => commands.getRepositoryInfo(),
 
-  getStatus: () => invoke<RepositoryStatus>('get_repository_status'),
+  getStatus: () => commands.getRepositoryStatus(),
 
-  getRecentRepositories: () => invoke<RecentRepository[]>('get_recent_repositories'),
+  getRecentRepositories: () => commands.getRecentRepositories(),
 
-  removeRecentRepository: (path: string) => invoke<void>('remove_recent_repository', { path }),
+  removeRecentRepository: (path: string) => commands.removeRecentRepository(path),
 
-  startFileWatcher: () => invoke<void>('start_file_watcher'),
+  startFileWatcher: () => commands.startFileWatcher(),
 
-  stopFileWatcher: () => invoke<void>('stop_file_watcher'),
+  stopFileWatcher: () => commands.stopFileWatcher(),
 
-  isFileWatcherActive: () => invoke<boolean>('is_file_watcher_active'),
+  isFileWatcherActive: () => commands.isFileWatcherActive(),
 };
 
 export const commitApi = {
   getHistory: (options?: LogOptions) =>
-    invoke<Commit[]>('get_commit_history', {
-      limit: options?.limit,
-      skip: options?.skip,
-      fromRef: options?.from_ref,
-    }),
+    commands.getCommitHistory(
+      options?.limit != null ? BigInt(options.limit) : null,
+      options?.skip != null ? BigInt(options.skip) : null,
+      options?.fromRef ?? null,
+      options?.branchFilter ?? null,
+      options?.includeRemotes ?? null,
+      options?.sortOrder ?? null
+    ),
 
-  getCommit: (oid: string) => invoke<Commit>('get_commit', { oid }),
+  getCommit: (oid: string) => commands.getCommit(oid),
 
   create: (message: string, authorName?: string, authorEmail?: string, sign?: boolean) =>
-    invoke<string>('create_commit', {
-      message,
-      authorName,
-      authorEmail,
-      sign,
-    }),
+    commands.createCommit(message, authorName ?? null, authorEmail ?? null, sign ?? null),
 
-  amend: (message?: string) => invoke<string>('amend_commit', { message }),
+  amend: (message?: string) => commands.amendCommit(message ?? null),
 
-  getUserSignature: () => invoke<[string, string]>('get_user_signature'),
+  getUserSignature: () => commands.getUserSignature(),
 };
 
 export const branchApi = {
   list: (includeLocal: boolean = true, includeRemote: boolean = true) =>
-    invoke<Branch[]>('get_branches', {
-      includeLocal,
-      includeRemote,
-    }),
+    commands.getBranches(includeLocal, includeRemote),
 
   create: (name: string, startPoint?: string, force?: boolean, track?: string) =>
-    invoke<Branch>('create_branch', {
-      name,
-      startPoint,
-      force,
-      track,
-    }),
+    commands.createBranch(name, startPoint ?? null, force ?? null, track ?? null),
 
-  delete: (name: string, force?: boolean) => invoke<void>('delete_branch', { name, force }),
+  delete: (name: string, force?: boolean) => commands.deleteBranch(name, force ?? null),
 
   deleteRemote: (remoteName: string, branchName: string, force?: boolean) =>
-    invoke<void>('delete_remote_branch', { remoteName, branchName, force }),
+    commands.deleteRemoteBranch(remoteName, branchName, force ?? null),
 
   rename: (oldName: string, newName: string, force?: boolean) =>
-    invoke<Branch>('rename_branch', { oldName, newName, force }),
+    commands.renameBranch(oldName, newName, force ?? null),
 
   checkout: (name: string, create?: boolean, force?: boolean, track?: string) =>
-    invoke<void>('checkout_branch', { name, create, force, track }),
+    commands.checkoutBranch(name, create ?? null, force ?? null, track ?? null),
 
   checkoutRemote: (remoteName: string, branchName: string, localName?: string) =>
-    invoke<void>('checkout_remote_branch', { remoteName, branchName, localName }),
+    commands.checkoutRemoteBranch(remoteName, branchName, localName ?? null),
 
-  get: (name: string, branchType: BranchType) => invoke<Branch>('get_branch', { name, branchType }),
+  get: (name: string, branchType: BranchType) => commands.getBranch(name, branchType),
 
   setUpstream: (branchName: string, upstream?: string) =>
-    invoke<void>('set_branch_upstream', { branchName, upstream }),
+    commands.setBranchUpstream(branchName, upstream ?? null),
 };
 
 export const remoteApi = {
-  list: () => invoke<Remote[]>('list_remotes'),
+  list: () => commands.listRemotes(),
 
-  get: (name: string) => invoke<Remote>('get_remote', { name }),
+  get: (name: string) => commands.getRemote(name),
 
-  add: (name: string, url: string) => invoke<Remote>('add_remote', { name, url }),
+  add: (name: string, url: string) => commands.addRemote(name, url),
 
-  remove: (name: string) => invoke<void>('remove_remote', { name }),
+  remove: (name: string) => commands.removeRemote(name),
 
-  rename: (oldName: string, newName: string) =>
-    invoke<string[]>('rename_remote', { oldName, newName }),
+  rename: (oldName: string, newName: string) => commands.renameRemote(oldName, newName),
 
-  setUrl: (name: string, url: string) => invoke<void>('set_remote_url', { name, url }),
+  setUrl: (name: string, url: string) => commands.setRemoteUrl(name, url),
 
-  setPushUrl: (name: string, url: string) => invoke<void>('set_remote_push_url', { name, url }),
+  setPushUrl: (name: string, url: string) => commands.setRemotePushUrl(name, url),
 
   fetch: (remoteName: string, prune?: boolean, tags?: boolean, depth?: number) =>
-    invoke<FetchResult>('fetch_remote', { remoteName, prune, tags, depth }),
+    commands.fetchRemote(remoteName, prune ?? null, tags ?? null, depth ?? null),
 
-  fetchAll: () => invoke<FetchResult[]>('fetch_all'),
+  fetchAll: () => commands.fetchAll(),
 
   push: (
     remoteName: string,
@@ -173,290 +128,265 @@ export const remoteApi = {
     force?: boolean,
     setUpstream?: boolean,
     tags?: boolean
-  ) =>
-    invoke<PushResult>('push_remote', {
-      remoteName,
-      refspecs,
-      force,
-      setUpstream,
-      tags,
-    }),
+  ) => commands.pushRemote(remoteName, refspecs, force ?? null, setUpstream ?? null, tags ?? null),
 
   pushCurrentBranch: (remoteName: string, force?: boolean, setUpstream?: boolean) =>
-    invoke<PushResult>('push_current_branch', {
-      remoteName,
-      force,
-      setUpstream,
-    }),
+    commands.pushCurrentBranch(remoteName, force ?? null, setUpstream ?? null),
 
   pull: (remoteName: string, branchName: string, rebase?: boolean, ffOnly?: boolean) =>
-    invoke<void>('pull_remote', { remoteName, branchName, rebase, ffOnly }),
+    commands.pullRemote(remoteName, branchName, rebase ?? null, ffOnly ?? null),
 };
 
 export const stagingApi = {
-  stageFile: (path: string) => invoke<void>('stage_file', { path }),
+  stageFile: (path: string) => commands.stageFile(path),
 
-  stageFiles: (paths: string[]) => invoke<void>('stage_files', { paths }),
+  stageFiles: (paths: string[]) => commands.stageFiles(paths),
 
-  stageAll: () => invoke<void>('stage_all'),
+  stageAll: () => commands.stageAll(),
 
-  unstageFile: (path: string) => invoke<void>('unstage_file', { path }),
+  unstageFile: (path: string) => commands.unstageFile(path),
 
-  unstageFiles: (paths: string[]) => invoke<void>('unstage_files', { paths }),
+  unstageFiles: (paths: string[]) => commands.unstageFiles(paths),
 
-  unstageAll: () => invoke<void>('unstage_all'),
+  unstageAll: () => commands.unstageAll(),
 
-  discardFile: (path: string) => invoke<void>('discard_file', { path }),
+  discardFile: (path: string) => commands.discardFile(path),
 
-  discardAll: () => invoke<void>('discard_all'),
+  discardAll: () => commands.discardAll(),
 
-  stageHunk: (patch: string) => invoke<void>('stage_hunk', { patch }),
+  stageHunk: (patch: string) => commands.stageHunk(patch),
 
-  unstageHunk: (patch: string) => invoke<void>('unstage_hunk', { patch }),
+  unstageHunk: (patch: string) => commands.unstageHunk(patch),
 
-  discardHunk: (patch: string) => invoke<void>('discard_hunk', { patch }),
+  discardHunk: (patch: string) => commands.discardHunk(patch),
 };
 
 export const diffApi = {
-  getWorkdir: (options?: DiffOptions) => invoke<FileDiff[]>('get_diff_workdir', { options }),
+  getWorkdir: (options?: DiffOptions) => commands.getDiffWorkdir(options ?? null),
 
-  getStaged: (options?: DiffOptions) => invoke<FileDiff[]>('get_diff_staged', { options }),
+  getStaged: (options?: DiffOptions) => commands.getDiffStaged(options ?? null),
 
-  getHead: (options?: DiffOptions) => invoke<FileDiff[]>('get_diff_head', { options }),
+  getHead: (options?: DiffOptions) => commands.getDiffHead(options ?? null),
 
-  getCommit: (oid: string, options?: DiffOptions) =>
-    invoke<FileDiff[]>('get_diff_commit', { oid, options }),
+  getCommit: (oid: string, options?: DiffOptions) => commands.getDiffCommit(oid, options ?? null),
 
   getCommits: (fromOid: string, toOid: string, options?: DiffOptions) =>
-    invoke<FileDiff[]>('get_diff_commits', { fromOid, toOid, options }),
+    commands.getDiffCommits(fromOid, toOid, options ?? null),
 
   getFile: (path: string, staged: boolean, options?: DiffOptions) =>
-    invoke<FileDiff | null>('get_file_diff', { path, staged, options }),
+    commands.getFileDiff(path, staged, options ?? null),
 
   getFileBlob: (path: string, commitOid?: string) =>
-    invoke<ArrayBuffer>('get_file_blob', { path, commitOid }),
+    invoke<ArrayBuffer>('get_file_blob', { path, commitOid: commitOid ?? null }),
 };
 
 export const graphApi = {
-  build: (options?: GraphOptions) => invoke<GraphResult>('build_graph', { options }),
+  build: (options?: GraphOptions) => commands.buildGraph(options ?? null),
 
-  getCommitCount: (fromRef?: string) => invoke<number>('get_commit_count', { fromRef }),
+  getCommitCount: (fromRef?: string) => commands.getCommitCount(fromRef ?? null),
 };
 
 export const searchApi = {
-  commits: (options: SearchOptions) => invoke<SearchResult>('search_commits', { options }),
+  commits: (options: SearchOptions) => commands.searchCommits(options),
 };
 
 export const blameApi = {
-  file: (path: string, commitOid?: string) =>
-    invoke<BlameResult>('blame_file', { path, commitOid }),
+  file: (path: string, commitOid?: string) => commands.blameFile(path, commitOid ?? null),
 };
 
 export const mergeApi = {
-  merge: (options: MergeOptions) => invoke<MergeResult>('merge_branch', { options }),
+  merge: (options: MergeOptions) => commands.mergeBranch(options),
 
-  abort: () => invoke<void>('merge_abort'),
+  abort: () => commands.mergeAbort(),
 
-  continue: () => invoke<MergeResult>('merge_continue'),
+  continue: () => commands.mergeContinue(),
 };
 
 export const rebaseApi = {
-  rebase: (options: RebaseOptions) => invoke<RebaseResult>('rebase_branch', { options }),
+  rebase: (options: RebaseOptions) => commands.rebaseBranch(options),
 
-  abort: () => invoke<void>('rebase_abort'),
+  abort: () => commands.rebaseAbort(),
 
-  continue: () => invoke<RebaseResult>('rebase_continue'),
+  continue: () => commands.rebaseContinue(),
 
-  skip: () => invoke<RebaseResult>('rebase_skip'),
+  skip: () => commands.rebaseSkip(),
 
-  getPreview: (onto: string) => invoke<RebasePreview>('get_rebase_preview', { onto }),
+  getPreview: (onto: string) => commands.getRebasePreview(onto),
 };
 
 export const cherryPickApi = {
-  cherryPick: (options: CherryPickOptions) => invoke<CherryPickResult>('cherry_pick', { options }),
+  cherryPick: (options: CherryPickOptions) => commands.cherryPick(options),
 
-  abort: () => invoke<void>('cherry_pick_abort'),
+  abort: () => commands.cherryPickAbort(),
 
-  continue: () => invoke<CherryPickResult>('cherry_pick_continue'),
+  continue: () => commands.cherryPickContinue(),
 };
 
 export const revertApi = {
-  revert: (options: RevertOptions) => invoke<RevertResult>('revert_commits', { options }),
+  revert: (options: RevertOptions) => commands.revertCommits(options),
 
-  abort: () => invoke<void>('revert_abort'),
+  abort: () => commands.revertAbort(),
 
-  continue: () => invoke<RevertResult>('revert_continue'),
+  continue: () => commands.revertContinue(),
 };
 
 export const conflictApi = {
-  getConflictedFiles: () => invoke<ConflictedFile[]>('get_conflicted_files'),
+  getConflictedFiles: () => commands.getConflictedFiles(),
 
-  getConflictContent: (path: string) => invoke<ConflictContent>('get_conflict_content', { path }),
+  getConflictContent: (path: string) => commands.getConflictContent(path),
 
   resolveConflict: (path: string, resolution: ConflictResolution, customContent?: string) =>
-    invoke<void>('resolve_conflict', { path, resolution, customContent }),
+    commands.resolveConflict(path, resolution, customContent ?? null),
 
-  markResolved: (path: string) => invoke<void>('mark_conflict_resolved', { path }),
+  markResolved: (path: string) => commands.markConflictResolved(path),
 };
 
 export const operationApi = {
-  getState: () => invoke<OperationState>('get_operation_state'),
+  getState: () => commands.getOperationState(),
 
-  reset: (options: ResetOptions) => invoke<void>('reset_to_commit', { options }),
+  reset: (options: ResetOptions) => commands.resetToCommit(options),
 };
 
 export const stashApi = {
-  list: () => invoke<StashEntry[]>('stash_list'),
+  list: () => commands.stashList(),
 
-  save: (options?: StashSaveOptions) =>
-    invoke<StashResult>('stash_save', { options: options ?? {} }),
+  save: (options: StashSaveOptions) => commands.stashSave(options),
 
-  apply: (options?: StashApplyOptions) =>
-    invoke<StashResult>('stash_apply', { options: options ?? {} }),
+  apply: (options: StashApplyOptions) => commands.stashApply(options),
 
-  pop: (options?: StashApplyOptions) =>
-    invoke<StashResult>('stash_pop', { options: options ?? {} }),
+  pop: (options: StashApplyOptions) => commands.stashPop(options),
 
-  drop: (index?: number) => invoke<StashResult>('stash_drop', { index }),
+  drop: (index?: number) => commands.stashDrop(index != null ? BigInt(index) : null),
 
-  clear: () => invoke<StashResult>('stash_clear'),
+  clear: () => commands.stashClear(),
 
   show: (index?: number, statOnly: boolean = false) =>
-    invoke<string>('stash_show', { index, statOnly }),
+    commands.stashShow(index != null ? BigInt(index) : null, statOnly),
 
   branch: (branchName: string, index?: number) =>
-    invoke<StashResult>('stash_branch', { branchName, index }),
+    commands.stashBranch(branchName, index != null ? BigInt(index) : null),
 };
 
 export const tagApi = {
-  list: () => invoke<Tag[]>('tag_list'),
+  list: () => commands.tagList(),
 
-  create: (name: string, options?: CreateTagOptions) =>
-    invoke<TagResult>('tag_create', { name, options: options ?? {} }),
+  create: (name: string, options: CreateTagOptions) => commands.tagCreate(name, options),
 
-  delete: (name: string) => invoke<TagResult>('tag_delete', { name }),
+  delete: (name: string) => commands.tagDelete(name),
 
-  push: (name: string, remote: string) => invoke<TagResult>('tag_push', { name, remote }),
+  push: (name: string, remote: string) => commands.tagPush(name, remote),
 
-  pushAll: (remote: string) => invoke<TagResult>('tag_push_all', { remote }),
+  pushAll: (remote: string) => commands.tagPushAll(remote),
 
-  deleteRemote: (name: string, remote: string) =>
-    invoke<TagResult>('tag_delete_remote', { name, remote }),
+  deleteRemote: (name: string, remote: string) => commands.tagDeleteRemote(name, remote),
 };
 
 export const submoduleApi = {
-  list: () => invoke<Submodule[]>('submodule_list'),
+  list: () => commands.submoduleList(),
 
-  add: (options: AddSubmoduleOptions) => invoke<SubmoduleResult>('submodule_add', { options }),
+  add: (options: AddSubmoduleOptions) => commands.submoduleAdd(options),
 
-  init: (paths: string[] = []) => invoke<SubmoduleResult>('submodule_init', { paths }),
+  init: (paths: string[] = []) => commands.submoduleInit(paths),
 
-  update: (options?: UpdateSubmoduleOptions) =>
-    invoke<SubmoduleResult>('submodule_update', { options: options ?? {} }),
+  update: (options: UpdateSubmoduleOptions) => commands.submoduleUpdate(options),
 
-  sync: (options?: SyncSubmoduleOptions) =>
-    invoke<SubmoduleResult>('submodule_sync', { options: options ?? {} }),
+  sync: (options: SyncSubmoduleOptions) => commands.submoduleSync(options),
 
-  deinit: (paths: string[], force: boolean = false) =>
-    invoke<SubmoduleResult>('submodule_deinit', { paths, force }),
+  deinit: (paths: string[], force: boolean = false) => commands.submoduleDeinit(paths, force),
 
-  remove: (path: string) => invoke<SubmoduleResult>('submodule_remove', { path }),
+  remove: (path: string) => commands.submoduleRemove(path),
 
-  summary: () => invoke<string>('submodule_summary'),
+  summary: () => commands.submoduleSummary(),
 };
 
 export const gitflowApi = {
-  isInitialized: () => invoke<boolean>('gitflow_is_initialized'),
+  isInitialized: () => commands.gitflowIsInitialized(),
 
-  getConfig: () => invoke<GitFlowConfig | null>('gitflow_config'),
+  getConfig: () => commands.gitflowConfig(),
 
-  init: (options?: GitFlowInitOptions) =>
-    invoke<GitFlowResult>('gitflow_init', { options: options ?? {} }),
+  init: (options?: GitFlowInitOptions) => commands.gitflowInit(options ?? {}),
 
   feature: {
-    start: (name: string, base?: string) =>
-      invoke<GitFlowResult>('gitflow_feature_start', { name, base }),
+    start: (name: string, base?: string) => commands.gitflowFeatureStart(name, base ?? null),
 
     finish: (name: string, options?: GitFlowFinishOptions) =>
-      invoke<GitFlowResult>('gitflow_feature_finish', { name, options: options ?? {} }),
+      commands.gitflowFeatureFinish(name, options ?? {}),
 
-    publish: (name: string) => invoke<GitFlowResult>('gitflow_feature_publish', { name }),
+    publish: (name: string) => commands.gitflowFeaturePublish(name),
 
-    list: () => invoke<string[]>('gitflow_feature_list'),
+    list: () => commands.gitflowFeatureList(),
   },
 
   release: {
-    start: (name: string, base?: string) =>
-      invoke<GitFlowResult>('gitflow_release_start', { name, base }),
+    start: (name: string, base?: string) => commands.gitflowReleaseStart(name, base ?? null),
 
     finish: (name: string, options?: GitFlowFinishOptions) =>
-      invoke<GitFlowResult>('gitflow_release_finish', { name, options: options ?? {} }),
+      commands.gitflowReleaseFinish(name, options ?? {}),
 
-    publish: (name: string) => invoke<GitFlowResult>('gitflow_release_publish', { name }),
+    publish: (name: string) => commands.gitflowReleasePublish(name),
 
-    list: () => invoke<string[]>('gitflow_release_list'),
+    list: () => commands.gitflowReleaseList(),
   },
 
   hotfix: {
-    start: (name: string, base?: string) =>
-      invoke<GitFlowResult>('gitflow_hotfix_start', { name, base }),
+    start: (name: string, base?: string) => commands.gitflowHotfixStart(name, base ?? null),
 
     finish: (name: string, options?: GitFlowFinishOptions) =>
-      invoke<GitFlowResult>('gitflow_hotfix_finish', { name, options: options ?? {} }),
+      commands.gitflowHotfixFinish(name, options ?? {}),
 
-    publish: (name: string) => invoke<GitFlowResult>('gitflow_hotfix_publish', { name }),
+    publish: (name: string) => commands.gitflowHotfixPublish(name),
 
-    list: () => invoke<string[]>('gitflow_hotfix_list'),
+    list: () => commands.gitflowHotfixList(),
   },
 };
 
 export const grepApi = {
-  search: (options: GrepOptions) => invoke<GrepResult>('grep_content', { options }),
+  search: (options: GrepOptions) => commands.grepContent(options),
 
   searchCommit: (commitOid: string, options: GrepOptions) =>
-    invoke<GrepResult>('grep_commit', { commitOid, options }),
+    commands.grepCommit(commitOid, options),
 };
 
 export const settingsApi = {
-  get: () => invoke<AppSettings>('get_settings'),
+  get: () => commands.getSettings(),
 
-  save: (settings: AppSettings) => invoke<void>('save_settings', { settings }),
+  save: (settings: AppSettings) => commands.saveSettings(settings),
 };
 
 export const signingApi = {
-  getConfig: () => invoke<SigningConfig>('get_signing_config'),
+  getConfig: () => commands.getSigningConfig(),
 
-  listGpgKeys: () => invoke<GpgKey[]>('list_gpg_keys'),
+  listGpgKeys: () => commands.listGpgKeys(),
 
-  listSshKeys: () => invoke<SshKey[]>('list_ssh_keys'),
+  listSshKeys: () => commands.listSshKeys(),
 
-  testSigning: (config: SigningConfig) => invoke<SigningTestResult>('test_signing', { config }),
+  testSigning: (config: SigningConfig) => commands.testSigning(config),
 
-  isAvailable: (config: SigningConfig) => invoke<boolean>('is_signing_available', { config }),
+  isAvailable: (config: SigningConfig) => commands.isSigningAvailable(config),
 };
 
 export const shellApi = {
-  showInFolder: (path: string) => invoke<void>('show_in_folder', { path }),
+  showInFolder: (path: string) => commands.showInFolder(path),
 
-  openTerminal: (path: string) => invoke<void>('open_terminal', { path }),
+  openTerminal: (path: string) => commands.openTerminal(path),
 };
 
 export const archiveApi = {
-  create: (options: ArchiveOptions) => invoke<ArchiveResult>('create_archive', { options }),
+  create: (options: ArchiveOptions) => commands.createArchive(options),
 };
 
 export const patchApi = {
-  formatPatch: (options: FormatPatchOptions) => invoke<PatchResult>('format_patch', { options }),
+  formatPatch: (options: FormatPatchOptions) => commands.formatPatch(options),
 
-  createPatch: (options: CreatePatchOptions) => invoke<PatchResult>('create_patch', { options }),
+  createPatch: (options: CreatePatchOptions) => commands.createPatch(options),
 
-  applyPatch: (options: ApplyPatchOptions) => invoke<PatchResult>('apply_patch', { options }),
+  applyPatch: (options: ApplyPatchOptions) => commands.applyPatch(options),
 
-  applyMailbox: (options: ApplyMailboxOptions) => invoke<PatchResult>('apply_mailbox', { options }),
+  applyMailbox: (options: ApplyMailboxOptions) => commands.applyMailbox(options),
 
-  abort: () => invoke<PatchResult>('am_abort'),
+  abort: () => commands.amAbort(),
 
-  continue: () => invoke<PatchResult>('am_continue'),
+  continue: () => commands.amContinue(),
 
-  skip: () => invoke<PatchResult>('am_skip'),
+  skip: () => commands.amSkip(),
 };

@@ -14,7 +14,7 @@ export function StatusBar() {
           <>
             <div className="flex items-center gap-1">
               <GitBranch size={14} />
-              <span>{repository.current_branch ?? 'detached'}</span>
+              <span>{repository.currentBranch ?? 'detached'}</span>
             </div>
             {changesCount > 0 ? (
               <span className="flex items-center gap-1 text-warning">{changesCount} changes</span>

@@ -31,11 +31,11 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
     try {
       const result = await grepApi.search({
         pattern,
-        ignore_case: ignoreCase,
-        word_regexp: wordRegexp,
-        extended_regexp: useRegex,
-        show_line_numbers: true,
-        max_count: 1000,
+        ignoreCase: ignoreCase,
+        wordRegexp: wordRegexp,
+        extendedRegexp: useRegex,
+        showLineNumbers: true,
+        maxCount: 1000,
       });
       setResults(result);
 
@@ -70,7 +70,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
   };
 
   const handleMatchClick = (match: GrepMatch) => {
-    onFileSelect?.(match.path, match.line_number ?? undefined);
+    onFileSelect?.(match.path, match.lineNumber != null ? Number(match.lineNumber) : undefined);
   };
 
   // Group results by file
@@ -189,7 +189,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       <div className="flex-1 overflow-y-auto">
         {results && (
           <div className="py-2 px-3 text-xs text-(--text-secondary) border-b border-(--border-color)">
-            {results.total_matches} {results.total_matches === 1 ? 'result' : 'results'} in{' '}
+            {String(results.totalMatches)} {results.totalMatches === 1n ? 'result' : 'results'} in{' '}
             {Object.keys(groupedResults || {}).length} files
           </div>
         )}
@@ -216,9 +216,9 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                       className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
                       onClick={() => handleMatchClick(match)}
                     >
-                      {match.line_number && (
+                      {match.lineNumber && (
                         <span className="w-10 shrink-0 text-(--text-muted) text-right pr-2">
-                          {match.line_number}
+                          {match.lineNumber}
                         </span>
                       )}
                       <span className="flex-1 text-(--text-primary) whitespace-pre overflow-hidden text-ellipsis">
@@ -231,7 +231,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
             </div>
           ))}
 
-        {results && results.total_matches === 0 && (
+        {results && results.totalMatches === 0n && (
           <div className="py-6 text-center text-(--text-muted)">
             No results found for "{pattern}"
           </div>

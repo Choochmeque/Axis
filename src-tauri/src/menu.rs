@@ -1,11 +1,13 @@
+use crate::events::MenuActionEvent;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::str::FromStr;
 use strum::{Display, EnumString};
 use tauri::{
     menu::{Menu, MenuId, MenuItem, PredefinedMenuItem, Submenu},
-    AppHandle, Emitter, Wry,
+    AppHandle, Wry,
 };
+use tauri_specta::Event;
 
 /// Menu item IDs for custom actions
 #[derive(Debug, Display, EnumString, Deserialize, Serialize, Type)]
@@ -379,8 +381,12 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, id: &MenuId) {
     let id_str = id.as_ref();
 
     // Emit event to frontend for handling
-    if let Err(e) = app.emit("menu-action", id_str) {
-        log::error!("[Menu] Failed to emit menu-action event: {:?}", e);
+    if let Err(e) = (MenuActionEvent {
+        action_id: id_str.to_string(),
+    }
+    .emit(app))
+    {
+        log::error!("[Menu] Failed to emit menu action event: {:?}", e);
     }
 
     match MenuAction::from_str(id_str) {

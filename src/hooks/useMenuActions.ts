@@ -1,11 +1,11 @@
 import { useEffect, useCallback } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { remoteApi, stashApi } from '@/services/api';
 import { MenuAction } from '@/types';
+import { events } from '@/bindings/api';
 
 export function useMenuActions() {
   const { openRepository, closeRepository, refreshRepository, repository } = useRepositoryStore();
@@ -144,8 +144,8 @@ export function useMenuActions() {
   );
 
   useEffect(() => {
-    const unlisten = listen<string>('menu-action', (event) => {
-      handleMenuAction(event.payload);
+    const unlisten = events.menuActionEvent.listen((event) => {
+      handleMenuAction(event.payload.actionId);
     });
 
     return () => {

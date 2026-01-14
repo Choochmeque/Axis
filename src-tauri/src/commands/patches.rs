@@ -83,7 +83,7 @@ pub async fn apply_mailbox(
     let patch_paths: Vec<PathBuf> = options
         .patch_paths
         .iter()
-        .map(|p| PathBuf::from(p))
+        .map(PathBuf::from)
         .collect();
     service.apply_mailbox(&patch_paths, options.three_way)
 }

@@ -1678,7 +1678,7 @@ impl GitCliService {
 
         Ok(ArchiveResult {
             success: true,
-            message: format!("Archive created successfully"),
+            message: "Archive created successfully".to_string(),
             output_path: Some(output_path.to_string_lossy().to_string()),
             size_bytes,
         })

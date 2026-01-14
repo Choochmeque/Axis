@@ -156,7 +156,7 @@ impl SigningService {
         let gpg_program = program
             .map(|p| p.to_path_buf())
             .or_else(Self::find_gpg_program)
-            .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
+            .ok_or_else(|| AxisError::FileNotFound("GPG program not found".to_string()))?;
 
         let mut child = Command::new(&gpg_program)
             .args(["--status-fd=2", "-bsau", key_id, "--armor", "--detach-sign"])
@@ -197,14 +197,13 @@ impl SigningService {
         let ssh_program = program
             .map(|p| p.to_path_buf())
             .or_else(Self::find_ssh_program)
-            .ok_or_else(|| AxisError::Other("SSH signing program not found".to_string()))?;
+            .ok_or_else(|| AxisError::FileNotFound("SSH signing program not found".to_string()))?;
 
         let expanded_key_path = expand_path(key_path);
 
         if !Path::new(&expanded_key_path).exists() {
             return Err(AxisError::Other(format!(
-                "SSH key not found: {}",
-                expanded_key_path
+                "SSH key not found: {expanded_key_path}",
             )));
         }
 
@@ -356,8 +355,7 @@ impl SigningService {
         }
 
         let mut keys = Vec::new();
-        let entries = std::fs::read_dir(&ssh_dir)
-            .map_err(|e| AxisError::Other(format!("Failed to read .ssh directory: {}", e)))?;
+        let entries = std::fs::read_dir(ssh_dir)?;
 
         for entry in entries.flatten() {
             let path = entry.path();

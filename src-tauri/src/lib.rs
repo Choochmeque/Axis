@@ -174,6 +174,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::am_skip,
         ])
         .events(collect_events![
+            crate::events::MenuActionEvent,
             crate::events::FilesChangedEvent,
             crate::events::IndexChangedEvent,
             crate::events::RefChangedEvent,

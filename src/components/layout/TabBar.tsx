@@ -1,7 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs';
 import { X, Home } from 'lucide-react';
-import { useTabsStore, type Tab } from '../../store/tabsStore';
-import { cn } from '../../lib/utils';
+import { TabType, useTabsStore, type Tab } from '@/store/tabsStore';
+import { cn } from '@/lib/utils';
 
 interface TabBarProps {
   onTabChange: (tab: Tab) => void;
@@ -44,7 +44,7 @@ export function TabBar({ onTabChange }: TabBarProps) {
               'data-[state=inactive]:bg-(--bg-toolbar)'
             )}
           >
-            {tab.type === 'welcome' ? (
+            {tab.type === TabType.Welcome ? (
               <Home size={14} className="shrink-0 text-(--text-secondary)" />
             ) : (
               <svg width={14} height={14} className="shrink-0">
@@ -59,7 +59,7 @@ export function TabBar({ onTabChange }: TabBarProps) {
               </svg>
             )}
             <span className="text-[13px] text-(--text-primary) truncate max-w-40">{tab.name}</span>
-            {tab.type !== 'welcome' && (
+            {tab.type !== TabType.Welcome && (
               <button
                 className={cn(
                   'flex items-center justify-center w-4 h-4 rounded shrink-0 transition-colors',

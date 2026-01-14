@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Settings, Palette, GitBranch, FileText, Terminal, Save, RotateCcw } from 'lucide-react';
-import { settingsApi, signingApi } from '../../services/api';
-import { useSettingsStore } from '../../store/settingsStore';
-import type { AppSettings, Theme, SigningFormat, GpgKey, SshKey } from '../../types';
-import { cn } from '../../lib/utils';
+import { settingsApi, signingApi } from '@/services/api';
+import { useSettingsStore } from '@/store/settingsStore';
+import { SigningFormat, Theme } from '@/types';
+import type {
+  AppSettings,
+  Theme as ThemeType,
+  SigningFormat as SigningFormatType,
+  GpgKey,
+  SshKey,
+} from '@/types';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -27,14 +34,14 @@ interface SettingsDialogProps {
 type SettingsTab = 'appearance' | 'git' | 'diff' | 'terminal';
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'System',
+  theme: Theme.System,
   fontSize: 13,
   showLineNumbers: true,
   defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
-  signingFormat: 'Gpg',
+  signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
   sshProgram: null,
@@ -212,11 +219,11 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="theme"
           value={settings.theme}
-          onChange={(e) => updateSetting('theme', e.target.value as Theme)}
+          onChange={(e) => updateSetting('theme', e.target.value as ThemeType)}
         >
-          <option value="System">System</option>
-          <option value="Light">Light</option>
-          <option value="Dark">Dark</option>
+          <option value={Theme.System}>System</option>
+          <option value={Theme.Light}>Light</option>
+          <option value={Theme.Dark}>Dark</option>
         </Select>
       </FormField>
 
@@ -318,7 +325,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   };
 
   const availableKeys =
-    settings.signingFormat === 'Gpg'
+    settings.signingFormat === SigningFormat.Gpg
       ? gpgKeys.map((k) => ({ value: k.keyId, label: `${k.keyId} - ${k.userId}` }))
       : sshKeys.map((k) => ({ value: k.path, label: `${k.keyType} - ${k.comment || k.path}` }));
 
@@ -386,13 +393,13 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           id="signingFormat"
           value={settings.signingFormat}
           onChange={(e) => {
-            updateSetting('signingFormat', e.target.value as SigningFormat);
+            updateSetting('signingFormat', e.target.value as SigningFormatType);
             updateSetting('signingKey', null);
             setTestResult(null);
           }}
         >
-          <option value="Gpg">GPG</option>
-          <option value="Ssh">SSH</option>
+          <option value={SigningFormat.Gpg}>GPG</option>
+          <option value={SigningFormat.Ssh}>SSH</option>
         </Select>
       </FormField>
 
@@ -400,7 +407,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         label="Signing Key"
         htmlFor="signingKey"
         hint={
-          settings.signingFormat === 'Gpg'
+          settings.signingFormat === SigningFormat.Gpg
             ? 'Select your GPG key or enter a key ID'
             : 'Select your SSH key file'
         }
@@ -429,12 +436,13 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         </div>
         {!settings.signingKey && availableKeys.length === 0 && !isLoadingKeys && (
           <p className="mt-1.5 text-xs text-warning">
-            No {settings.signingFormat === 'Gpg' ? 'GPG' : 'SSH'} keys found on this system
+            No {settings.signingFormat === SigningFormat.Gpg ? 'GPG' : 'SSH'} keys found on this
+            system
           </p>
         )}
       </FormField>
 
-      {settings.signingFormat === 'Gpg' && (
+      {settings.signingFormat === SigningFormat.Gpg && (
         <FormField
           label="GPG Program (optional)"
           htmlFor="gpgProgram"
@@ -450,7 +458,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         </FormField>
       )}
 
-      {settings.signingFormat === 'Ssh' && (
+      {settings.signingFormat === SigningFormat.Ssh && (
         <FormField
           label="SSH Program (optional)"
           htmlFor="sshProgram"

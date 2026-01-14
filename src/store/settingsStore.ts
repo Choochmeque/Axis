@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { AppSettings, Theme } from '../types';
-import { settingsApi } from '../services/api';
+import { SigningFormat, Theme } from '@/types';
+import type { AppSettings, Theme as ThemeType } from '@/types';
+import { settingsApi } from '@/services/api';
 
 interface SettingsState {
   settings: AppSettings | null;
@@ -10,20 +11,20 @@ interface SettingsState {
 
   loadSettings: () => Promise<void>;
   updateSettings: (settings: AppSettings) => Promise<void>;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: ThemeType) => void;
   getEffectiveTheme: () => 'light' | 'dark';
   setShowSettings: (show: boolean) => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'System',
+  theme: Theme.System,
   fontSize: 13,
   showLineNumbers: true,
   defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
-  signingFormat: 'Gpg',
+  signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
   sshProgram: null,
@@ -67,7 +68,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
-  setTheme: (theme: Theme) => {
+  setTheme: (theme: ThemeType) => {
     const { settings } = get();
     if (settings) {
       set({ settings: { ...settings, theme } });
@@ -77,23 +78,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   getEffectiveTheme: () => {
     const { settings } = get();
-    const theme = settings?.theme || 'System';
-    if (theme === 'System') {
+    const theme = settings?.theme || Theme.System;
+    if (theme === Theme.System) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return theme === 'Dark' ? 'dark' : 'light';
+    return theme === Theme.Dark ? 'dark' : 'light';
   },
 
   setShowSettings: (show: boolean) => set({ showSettings: show }),
 }));
 
-function applyTheme(theme: Theme) {
+function applyTheme(theme: ThemeType) {
   const effectiveTheme =
-    theme === 'System'
+    theme === Theme.System
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
-      : theme === 'Dark'
+      : theme === Theme.Dark
         ? 'dark'
         : 'light';
 
@@ -104,8 +105,8 @@ function applyTheme(theme: Theme) {
 if (typeof window !== 'undefined') {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { settings } = useSettingsStore.getState();
-    if (settings?.theme === 'System') {
-      applyTheme('System');
+    if (settings?.theme === Theme.System) {
+      applyTheme(Theme.System);
     }
   });
 }

@@ -1,5 +1,12 @@
 import { X, Archive, FileCode, Binary } from 'lucide-react';
-import type { StashEntry, FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
+import { DiffLineType, DiffStatus } from '@/types';
+import type {
+  StashEntry,
+  FileDiff,
+  DiffHunk,
+  DiffLine,
+  DiffLineType as DiffLineTypeType,
+} from '@/types';
 import { cn } from '../../lib/utils';
 
 interface StashDiffViewProps {
@@ -187,19 +194,19 @@ function DiffLineRow({ line }: DiffLineRowProps) {
   );
 }
 
-function getLineClasses(lineType: DiffLineType): {
+function getLineClasses(lineType: DiffLineTypeType): {
   bgClass: string;
   lineNoBgClass: string;
   prefixColorClass: string;
 } {
   switch (lineType) {
-    case 'Addition':
+    case DiffLineType.Addition:
       return {
         bgClass: 'bg-(--diff-add-bg)',
         lineNoBgClass: 'bg-(--diff-add-bg)',
         prefixColorClass: 'text-(--diff-add-line)',
       };
-    case 'Deletion':
+    case DiffLineType.Deletion:
       return {
         bgClass: 'bg-(--diff-delete-bg)',
         lineNoBgClass: 'bg-(--diff-delete-bg)',
@@ -214,11 +221,11 @@ function getLineClasses(lineType: DiffLineType): {
   }
 }
 
-function getLinePrefix(lineType: DiffLineType): string {
+function getLinePrefix(lineType: DiffLineTypeType): string {
   switch (lineType) {
-    case 'Addition':
+    case DiffLineType.Addition:
       return '+';
-    case 'Deletion':
+    case DiffLineType.Deletion:
       return '-';
     default:
       return ' ';
@@ -227,21 +234,21 @@ function getLinePrefix(lineType: DiffLineType): string {
 
 function getStatusText(status: string): string {
   switch (status) {
-    case 'Added':
+    case DiffStatus.Added:
       return 'Added';
-    case 'Deleted':
+    case DiffStatus.Deleted:
       return 'Deleted';
-    case 'Modified':
+    case DiffStatus.Modified:
       return 'Modified';
-    case 'Renamed':
+    case DiffStatus.Renamed:
       return 'Renamed';
-    case 'Copied':
+    case DiffStatus.Copied:
       return 'Copied';
-    case 'TypeChanged':
+    case DiffStatus.TypeChanged:
       return 'Type Changed';
-    case 'Untracked':
+    case DiffStatus.Untracked:
       return 'Untracked';
-    case 'Conflicted':
+    case DiffStatus.Conflicted:
       return 'Conflicted';
     default:
       return status;
@@ -250,16 +257,16 @@ function getStatusText(status: string): string {
 
 function getStatusColorClass(status: string): string {
   switch (status) {
-    case 'Added':
-    case 'Untracked':
+    case DiffStatus.Added:
+    case DiffStatus.Untracked:
       return 'bg-success/20 text-success';
-    case 'Deleted':
-    case 'Conflicted':
+    case DiffStatus.Deleted:
+    case DiffStatus.Conflicted:
       return 'bg-error/20 text-error';
-    case 'Modified':
+    case DiffStatus.Modified:
       return 'bg-warning/20 text-warning';
-    case 'Renamed':
-    case 'Copied':
+    case DiffStatus.Renamed:
+    case DiffStatus.Copied:
       return 'bg-(--accent-color)/20 text-(--accent-color)';
     default:
       return '';

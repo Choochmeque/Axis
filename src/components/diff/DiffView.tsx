@@ -19,16 +19,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui';
-import type { FileDiff, DiffHunk, DiffLine, DiffLineType } from '../../types';
+import { DiffLineType, DiffStatus } from '@/types';
+import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
 import { cn } from '../../lib/utils';
-import { diffApi } from '../../services/api';
+import { diffApi } from '@/services/api';
 import {
   useStagingStore,
   type DiffSettings,
   type WhitespaceMode,
   type ContextLines,
   type DiffCompareMode,
-} from '../../store/stagingStore';
+} from '@/store/stagingStore';
 
 // Re-export types for external use
 export type { WhitespaceMode, ContextLines, DiffCompareMode, DiffSettings };
@@ -100,8 +101,11 @@ function BinaryImageView({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const showBefore = status === 'Modified' || status === 'Deleted';
-  const showAfter = status === 'Modified' || status === 'Added' || status === 'Untracked';
+  const showBefore = status === DiffStatus.Modified || status === DiffStatus.Deleted;
+  const showAfter =
+    status === DiffStatus.Modified ||
+    status === DiffStatus.Added ||
+    status === DiffStatus.Untracked;
 
   useEffect(() => {
     let mounted = true;
@@ -223,7 +227,7 @@ function BinaryImageView({
   // Single image view for added/deleted
   return (
     <div className="flex items-center justify-center h-full p-6">
-      {status === 'Deleted' ? (
+      {status === DiffStatus.Deleted ? (
         oldImageUrl ? (
           <img src={oldImageUrl} alt={path} className={imageClass} />
         ) : (
@@ -758,8 +762,8 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
   return (
     <>
       {pairs.map((pair, index) => {
-        const leftClasses = getLineClasses(pair.left?.lineType || 'Context');
-        const rightClasses = getLineClasses(pair.right?.lineType || 'Context');
+        const leftClasses = getLineClasses(pair.left?.lineType || DiffLineType.Context);
+        const rightClasses = getLineClasses(pair.right?.lineType || DiffLineType.Context);
         const leftEmpty = pair.left === null;
         const rightEmpty = pair.right === null;
         return (
@@ -819,20 +823,20 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
   while (i < lines.length) {
     const line = lines[i];
 
-    if (line.lineType === 'Context') {
+    if (line.lineType === DiffLineType.Context) {
       pairs.push({ left: line, right: line });
       i++;
-    } else if (line.lineType === 'Deletion') {
+    } else if (line.lineType === DiffLineType.Deletion) {
       // Collect consecutive deletions
       const deletions: DiffLine[] = [];
-      while (i < lines.length && lines[i].lineType === 'Deletion') {
+      while (i < lines.length && lines[i].lineType === DiffLineType.Deletion) {
         deletions.push(lines[i]);
         i++;
       }
 
       // Collect consecutive additions
       const additions: DiffLine[] = [];
-      while (i < lines.length && lines[i].lineType === 'Addition') {
+      while (i < lines.length && lines[i].lineType === DiffLineType.Addition) {
         additions.push(lines[i]);
         i++;
       }
@@ -845,7 +849,7 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
           right: additions[j] || null,
         });
       }
-    } else if (line.lineType === 'Addition') {
+    } else if (line.lineType === DiffLineType.Addition) {
       pairs.push({ left: null, right: line });
       i++;
     } else {
@@ -856,19 +860,19 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
   return pairs;
 }
 
-function getLineClasses(lineType: DiffLineType): {
+function getLineClasses(lineType: DiffLineTypeType): {
   bgClass: string;
   lineNoBgClass: string;
   prefixColorClass: string;
 } {
   switch (lineType) {
-    case 'Addition':
+    case DiffLineType.Addition:
       return {
         bgClass: 'bg-(--diff-add-bg)',
         lineNoBgClass: 'bg-(--diff-add-bg)',
         prefixColorClass: 'text-(--diff-add-line)',
       };
-    case 'Deletion':
+    case DiffLineType.Deletion:
       return {
         bgClass: 'bg-(--diff-delete-bg)',
         lineNoBgClass: 'bg-(--diff-delete-bg)',
@@ -883,11 +887,11 @@ function getLineClasses(lineType: DiffLineType): {
   }
 }
 
-function getLinePrefix(lineType: DiffLineType): string {
+function getLinePrefix(lineType: DiffLineTypeType): string {
   switch (lineType) {
-    case 'Addition':
+    case DiffLineType.Addition:
       return '+';
-    case 'Deletion':
+    case DiffLineType.Deletion:
       return '-';
     default:
       return ' ';
@@ -896,21 +900,21 @@ function getLinePrefix(lineType: DiffLineType): string {
 
 function getStatusText(status: string): string {
   switch (status) {
-    case 'Added':
+    case DiffStatus.Added:
       return 'Added';
-    case 'Deleted':
+    case DiffStatus.Deleted:
       return 'Deleted';
-    case 'Modified':
+    case DiffStatus.Modified:
       return 'Modified';
-    case 'Renamed':
+    case DiffStatus.Renamed:
       return 'Renamed';
-    case 'Copied':
+    case DiffStatus.Copied:
       return 'Copied';
-    case 'TypeChanged':
+    case DiffStatus.TypeChanged:
       return 'Type Changed';
-    case 'Untracked':
+    case DiffStatus.Untracked:
       return 'Untracked';
-    case 'Conflicted':
+    case DiffStatus.Conflicted:
       return 'Conflicted';
     default:
       return status;
@@ -919,16 +923,16 @@ function getStatusText(status: string): string {
 
 function getStatusColorClass(status: string): string {
   switch (status) {
-    case 'Added':
-    case 'Untracked':
+    case DiffStatus.Added:
+    case DiffStatus.Untracked:
       return 'bg-success/20 text-success';
-    case 'Deleted':
-    case 'Conflicted':
+    case DiffStatus.Deleted:
+    case DiffStatus.Conflicted:
       return 'bg-error/20 text-error';
-    case 'Modified':
+    case DiffStatus.Modified:
       return 'bg-warning/20 text-warning';
-    case 'Renamed':
-    case 'Copied':
+    case DiffStatus.Renamed:
+    case DiffStatus.Copied:
       return 'bg-(--accent-color)/20 text-(--accent-color)';
     default:
       return '';

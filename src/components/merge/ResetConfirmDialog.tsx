@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { RotateCcw, AlertCircle, AlertTriangle } from 'lucide-react';
-import { operationApi } from '../../services/api';
-import type { Commit, ResetMode } from '../../types';
-import { cn } from '../../lib/utils';
+import { operationApi } from '@/services/api';
+import { ResetMode } from '@/types';
+import type { Commit, ResetMode as ResetModeType } from '@/types';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -20,29 +21,30 @@ interface ResetConfirmDialogProps {
   onClose: () => void;
   onResetComplete?: () => void;
   commit: Commit;
-  mode: ResetMode;
+  mode: ResetModeType;
   currentBranch: string;
 }
 
-const modeDescriptions: Record<ResetMode, { title: string; description: string; warning: string }> =
-  {
-    Soft: {
-      title: 'Soft Reset',
-      description: 'Move branch pointer to target commit. All changes will be kept staged.',
-      warning: 'This is a safe operation. No changes will be lost.',
-    },
-    Mixed: {
-      title: 'Mixed Reset',
-      description: 'Move branch pointer to target commit. All changes will be kept but unstaged.',
-      warning: 'This is a safe operation. No changes will be lost.',
-    },
-    Hard: {
-      title: 'Hard Reset',
-      description:
-        'Move branch pointer to target commit. All changes will be permanently discarded.',
-      warning: 'This will permanently delete all uncommitted changes. This cannot be undone!',
-    },
-  };
+const modeDescriptions: Record<
+  ResetModeType,
+  { title: string; description: string; warning: string }
+> = {
+  [ResetMode.Soft]: {
+    title: 'Soft Reset',
+    description: 'Move branch pointer to target commit. All changes will be kept staged.',
+    warning: 'This is a safe operation. No changes will be lost.',
+  },
+  [ResetMode.Mixed]: {
+    title: 'Mixed Reset',
+    description: 'Move branch pointer to target commit. All changes will be kept but unstaged.',
+    warning: 'This is a safe operation. No changes will be lost.',
+  },
+  [ResetMode.Hard]: {
+    title: 'Hard Reset',
+    description: 'Move branch pointer to target commit. All changes will be permanently discarded.',
+    warning: 'This will permanently delete all uncommitted changes. This cannot be undone!',
+  },
+};
 
 export function ResetConfirmDialog({
   isOpen,
@@ -56,7 +58,7 @@ export function ResetConfirmDialog({
   const [error, setError] = useState<string | null>(null);
 
   const modeInfo = modeDescriptions[mode];
-  const isHardReset = mode === 'Hard';
+  const isHardReset = mode === ResetMode.Hard;
 
   const handleReset = async () => {
     setIsLoading(true);

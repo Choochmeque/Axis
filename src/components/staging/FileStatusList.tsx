@@ -26,11 +26,12 @@ import {
   TreeView as UITreeView,
   buildTreeFromPaths,
 } from '@/components/ui';
-import type { FileStatus, StatusType } from '../../types';
-import { cn } from '../../lib/utils';
-import type { StagingViewMode } from './StagingFilters';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { shellApi } from '../../services/api';
+import { StatusType } from '@/types';
+import type { FileStatus, StatusType as StatusTypeType } from '@/types';
+import { cn } from '@/lib/utils';
+import { StagingViewMode } from './StagingFilters';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { shellApi } from '@/services/api';
 import { StagingFileContextMenu } from './StagingFileContextMenu';
 
 // Extended file type for fluid staging
@@ -68,7 +69,7 @@ export function FileStatusList({
   showStageButton = false,
   showUnstageButton = false,
   showDiscardButton = false,
-  viewMode = 'flat_single',
+  viewMode = StagingViewMode.FlatSingle,
 }: FileStatusListProps) {
   if (files.length === 0) {
     return null;
@@ -83,13 +84,13 @@ export function FileStatusList({
       onStage={showStageButton && onStage ? () => onStage(file.path) : undefined}
       onUnstage={showUnstageButton && onUnstage ? () => onUnstage(file.path) : undefined}
       onDiscard={showDiscardButton && onDiscard ? () => onDiscard(file.path) : undefined}
-      compact={viewMode === 'flat_multi'}
+      compact={viewMode === StagingViewMode.FlatMulti}
     />
   );
 
   const renderContent = () => {
     switch (viewMode) {
-      case 'flat_multi':
+      case StagingViewMode.FlatMulti:
         return (
           <div className="flex flex-col flex-1 overflow-y-auto">
             {/* Table header */}
@@ -114,7 +115,7 @@ export function FileStatusList({
             ))}
           </div>
         );
-      case 'tree':
+      case StagingViewMode.Tree:
         return (
           <TreeView
             files={files}
@@ -125,7 +126,7 @@ export function FileStatusList({
             onDiscard={showDiscardButton ? onDiscard : undefined}
           />
         );
-      case 'flat_single':
+      case StagingViewMode.FlatSingle:
       default:
         return (
           <div className="flex flex-col flex-1 overflow-y-auto">{files.map(renderFileItem)}</div>
@@ -486,7 +487,7 @@ export function FluidFileList({
   onStage,
   onUnstage,
   onDiscard,
-  viewMode = 'flat_single',
+  viewMode = StagingViewMode.FlatSingle,
 }: FluidFileListProps) {
   if (files.length === 0) {
     return (
@@ -506,7 +507,7 @@ export function FluidFileList({
     />
   );
 
-  if (viewMode === 'tree') {
+  if (viewMode === StagingViewMode.Tree) {
     return (
       <FluidTreeView
         files={files}
@@ -714,41 +715,41 @@ function FluidTreeView({
   );
 }
 
-function getStatusIcon(status: StatusType) {
+function getStatusIcon(status: StatusTypeType) {
   switch (status) {
-    case 'Added':
+    case StatusType.Added:
       return Plus;
-    case 'Modified':
+    case StatusType.Modified:
       return Pencil;
-    case 'Deleted':
+    case StatusType.Deleted:
       return Trash2;
-    case 'Untracked':
+    case StatusType.Untracked:
       return FileQuestion;
-    case 'Renamed':
+    case StatusType.Renamed:
       return ArrowRightLeft;
-    case 'Copied':
+    case StatusType.Copied:
       return Copy;
-    case 'Conflicted':
+    case StatusType.Conflicted:
       return AlertTriangle;
-    case 'TypeChanged':
+    case StatusType.TypeChanged:
       return FileType;
     default:
       return FileQuestion;
   }
 }
 
-function getStatusColorClass(status: StatusType): string {
+function getStatusColorClass(status: StatusTypeType): string {
   switch (status) {
-    case 'Added':
-    case 'Untracked':
+    case StatusType.Added:
+    case StatusType.Untracked:
       return 'text-success';
-    case 'Modified':
-    case 'Renamed':
-    case 'Copied':
-    case 'TypeChanged':
+    case StatusType.Modified:
+    case StatusType.Renamed:
+    case StatusType.Copied:
+    case StatusType.TypeChanged:
       return 'text-warning';
-    case 'Deleted':
-    case 'Conflicted':
+    case StatusType.Deleted:
+    case StatusType.Conflicted:
       return 'text-error';
     default:
       return '';

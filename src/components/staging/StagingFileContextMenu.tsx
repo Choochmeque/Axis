@@ -22,10 +22,10 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import type { FileStatus } from '../../types';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { shellApi } from '../../services/api';
-import { StatusType } from '../../types';
+import { StatusType } from '@/types';
+import type { FileStatus } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { shellApi } from '@/services/api';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;

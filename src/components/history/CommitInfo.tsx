@@ -1,8 +1,9 @@
 import { Copy, GitCommit, User, Calendar, GitBranch, Tag } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Commit, GraphCommit } from '../../types';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { cn } from '../../lib/utils';
+import { RefType } from '@/types';
+import type { Commit, GraphCommit } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { cn } from '@/lib/utils';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;
@@ -100,13 +101,13 @@ export function CommitInfo({ commit }: CommitInfoProps) {
                   key={idx}
                   className={cn(
                     'inline-flex items-center gap-1 py-0.5 px-2 rounded text-[11px] font-medium',
-                    ref.refType === 'LocalBranch' && 'bg-[#107c10] text-white',
-                    ref.refType === 'RemoteBranch' && 'bg-[#5c2d91] text-white',
-                    ref.refType === 'Tag' && 'bg-[#d83b01] text-white',
+                    ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
+                    ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
+                    ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',
                     ref.isHead && 'font-semibold'
                   )}
                 >
-                  {ref.refType === 'Tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                  {ref.refType === RefType.Tag ? <Tag size={10} /> : <GitBranch size={10} />}
                   {ref.name}
                 </span>
               ))}

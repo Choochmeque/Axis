@@ -15,9 +15,10 @@ import {
   ArrowUpFromLine,
   PenTool,
 } from 'lucide-react';
-import type { GraphCommit, ResetMode } from '../../types';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { branchApi } from '../../services/api';
+import { ResetMode } from '@/types';
+import type { GraphCommit, ResetMode as ResetModeType } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { branchApi } from '@/services/api';
 import { TagDialog } from '../tags/TagDialog';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { CherryPickDialog } from '../merge/CherryPickDialog';
@@ -55,7 +56,7 @@ export function CommitContextMenu({
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [showCherryPickDialog, setShowCherryPickDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetMode, setResetMode] = useState<ResetMode>('Mixed');
+  const [resetMode, setResetMode] = useState<ResetModeType>(ResetMode.Mixed);
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showRebaseDialog, setShowRebaseDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -160,7 +161,7 @@ export function CommitContextMenu({
     await loadStatus();
   };
 
-  const handleReset = (mode: ResetMode) => {
+  const handleReset = (mode: ResetModeType) => {
     if (onReset) {
       onReset(mode);
     } else {
@@ -235,17 +236,23 @@ export function CommitContextMenu({
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('Soft')}>
+                  <ContextMenu.Item
+                    className="menu-item"
+                    onSelect={() => handleReset(ResetMode.Soft)}
+                  >
                     <span>Soft</span>
                     <span className="menu-hint">Keep all changes staged</span>
                   </ContextMenu.Item>
-                  <ContextMenu.Item className="menu-item" onSelect={() => handleReset('Mixed')}>
+                  <ContextMenu.Item
+                    className="menu-item"
+                    onSelect={() => handleReset(ResetMode.Mixed)}
+                  >
                     <span>Mixed</span>
                     <span className="menu-hint">Keep changes unstaged</span>
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className="menu-item-danger"
-                    onSelect={() => handleReset('Hard')}
+                    onSelect={() => handleReset(ResetMode.Hard)}
                   >
                     <span>Hard</span>
                     <span className="menu-hint">Discard all changes</span>

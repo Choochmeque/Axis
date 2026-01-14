@@ -3,9 +3,9 @@ export { FileStatusList } from './FileStatusList';
 export { CommitForm } from './CommitForm';
 export {
   StagingFilters,
-  type StagingSortBy,
-  type StagingShowOnly,
-  type StagingViewMode,
-  type StagingMode,
+  StagingSortBy,
+  StagingShowOnly,
+  StagingViewMode,
+  StagingMode,
 } from './StagingFilters';
 export { StagingFileContextMenu } from './StagingFileContextMenu';

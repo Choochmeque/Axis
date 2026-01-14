@@ -8,7 +8,7 @@ import { TabBar } from './components/layout/TabBar';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
-import { useTabsStore, type Tab } from './store/tabsStore';
+import { TabType, useTabsStore, type Tab } from './store/tabsStore';
 import { useMenuActions } from './hooks';
 import './index.css';
 
@@ -22,10 +22,10 @@ function App() {
 
   // Ensure welcome tab exists on mount (fix stale localStorage)
   useEffect(() => {
-    const hasWelcome = tabs.some((t) => t.type === 'welcome');
+    const hasWelcome = tabs.some((t) => t.type === TabType.Welcome);
     if (!hasWelcome) {
       useTabsStore.setState({
-        tabs: [{ id: 'welcome', type: 'welcome', name: 'Welcome' }, ...tabs],
+        tabs: [{ id: 'welcome', type: TabType.Welcome, name: 'Welcome' }, ...tabs],
         activeTabId: 'welcome',
       });
     }
@@ -43,7 +43,7 @@ function App() {
     if (params.has('repo')) return;
 
     const activeTab = tabs.find((t) => t.id === activeTabId);
-    if (activeTab?.type === 'repository' && activeTab.path && !repository) {
+    if (activeTab?.type === TabType.Repository && activeTab.path && !repository) {
       openRepository(activeTab.path)
         .then(() => useStagingStore.getState().loadStatus())
         .catch(console.error);
@@ -65,7 +65,7 @@ function App() {
             tabs: [
               {
                 id: 'repo-main',
-                type: 'repository',
+                type: TabType.Repository,
                 path: repo.path.toString(),
                 name: repo.name,
                 repository: repo,
@@ -89,7 +89,7 @@ function App() {
     if (
       repository &&
       activeTab &&
-      activeTab.type === 'repository' &&
+      activeTab.type === TabType.Repository &&
       activeTab.path === repository.path.toString()
     ) {
       // Only update if repository data differs
@@ -120,7 +120,7 @@ function App() {
       const repo = useRepositoryStore.getState().repository;
       if (repo) {
         addTab({
-          type: 'repository',
+          type: TabType.Repository,
           path: repo.path.toString(),
           name: repo.name,
           repository: repo,
@@ -136,7 +136,7 @@ function App() {
       // Reset staging store to clear stale data from previous repo
       useStagingStore.getState().reset();
 
-      if (tab.type === 'welcome') {
+      if (tab.type === TabType.Welcome) {
         await closeRepository();
       } else if (tab.path) {
         await openRepository(tab.path);
@@ -154,7 +154,7 @@ function App() {
     ).openRepositoryInTab = handleOpenRepository;
   }, [handleOpenRepository]);
 
-  const isWelcomeTab = activeTab?.type === 'welcome';
+  const isWelcomeTab = activeTab?.type === TabType.Welcome;
 
   const renderView = () => {
     switch (currentView) {

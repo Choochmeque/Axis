@@ -1,18 +1,19 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Trash2 } from 'lucide-react';
-import { useStagingStore } from '../../store/stagingStore';
+import { useStagingStore } from '@/store/stagingStore';
 import { Checkbox } from '@/components/ui';
 import { FileStatusList, FluidFileList, type FluidFile } from './FileStatusList';
 import {
   StagingFilters,
-  type StagingSortBy,
-  type StagingShowOnly,
-  type StagingViewMode,
-  type StagingMode,
+  StagingSortBy,
+  StagingShowOnly,
+  StagingViewMode,
+  StagingMode,
 } from './StagingFilters';
-import { cn, naturalCompare } from '../../lib/utils';
-import type { FileStatus } from '../../types';
+import { StatusType } from '@/types';
+import type { FileStatus, StatusType as StatusTypeType } from '@/types';
+import { cn, naturalCompare } from '@/lib/utils';
 
 // Helper to get filename from path
 function getFilename(path: string): string {
@@ -21,16 +22,16 @@ function getFilename(path: string): string {
 }
 
 // Status priority for sorting
-const statusPriority: Record<string, number> = {
-  conflicted: 0,
-  modified: 1,
-  added: 2,
-  deleted: 3,
-  renamed: 4,
-  copied: 5,
-  type_changed: 6,
-  untracked: 7,
-  ignored: 8,
+const statusPriority: Record<StatusTypeType, number> = {
+  [StatusType.Conflicted]: 0,
+  [StatusType.Modified]: 1,
+  [StatusType.Added]: 2,
+  [StatusType.Deleted]: 3,
+  [StatusType.Renamed]: 4,
+  [StatusType.Copied]: 5,
+  [StatusType.TypeChanged]: 6,
+  [StatusType.Untracked]: 7,
+  [StatusType.Ignored]: 8,
 };
 
 // Sort files based on sortBy option
@@ -38,22 +39,22 @@ function sortFiles(files: FileStatus[], sortBy: StagingSortBy): FileStatus[] {
   const sorted = [...files];
 
   switch (sortBy) {
-    case 'path':
+    case StagingSortBy.Path:
       return sorted.sort((a, b) => naturalCompare(a.path, b.path));
-    case 'path_reversed':
+    case StagingSortBy.PathReversed:
       return sorted.sort((a, b) => naturalCompare(b.path, a.path));
-    case 'filename':
+    case StagingSortBy.Filename:
       return sorted.sort((a, b) => naturalCompare(getFilename(a.path), getFilename(b.path)));
-    case 'filename_reversed':
+    case StagingSortBy.FilenameReversed:
       return sorted.sort((a, b) => naturalCompare(getFilename(b.path), getFilename(a.path)));
-    case 'status':
+    case StagingSortBy.Status:
       return sorted.sort((a, b) => {
         const aPriority = statusPriority[a.status] ?? 99;
         const bPriority = statusPriority[b.status] ?? 99;
         if (aPriority !== bPriority) return aPriority - bPriority;
         return naturalCompare(a.path, b.path);
       });
-    case 'checked':
+    case StagingSortBy.Checked:
       // When sorting by checked, staged files come first (they are "checked")
       // Since we already split staged/unstaged sections, within each section just sort by path
       return sorted.sort((a, b) => naturalCompare(a.path, b.path));
@@ -69,19 +70,21 @@ function filterFiles(
   source: 'staged' | 'unstaged' | 'untracked' | 'conflicted'
 ): FileStatus[] {
   switch (showOnly) {
-    case 'all':
-    case 'pending':
+    case StagingShowOnly.All:
+    case StagingShowOnly.Pending:
       // Show all files (pending means all changes, which is everything we have)
       return files;
-    case 'conflicts':
+    case StagingShowOnly.Conflicts:
       return source === 'conflicted' ? files : files.filter((f) => f.isConflict);
-    case 'untracked':
-      return source === 'untracked' ? files : files.filter((f) => f.status === 'Untracked');
-    case 'modified':
-      return files.filter((f) => f.status === 'Modified');
-    case 'ignored':
-      return files.filter((f) => f.status === 'Ignored');
-    case 'clean':
+    case StagingShowOnly.Untracked:
+      return source === 'untracked'
+        ? files
+        : files.filter((f) => f.status === StatusType.Untracked);
+    case StagingShowOnly.Modified:
+      return files.filter((f) => f.status === StatusType.Modified);
+    case StagingShowOnly.Ignored:
+      return files.filter((f) => f.status === StatusType.Ignored);
+    case StagingShowOnly.Clean:
       // Clean files are not in any of our lists, so return empty
       return [];
     default:
@@ -113,10 +116,10 @@ export function StagingView() {
   } = useStagingStore();
 
   // Filter state (UI only for now, filtering logic to be implemented)
-  const [sortBy, setSortBy] = useState<StagingSortBy>('path');
-  const [showOnly, setShowOnly] = useState<StagingShowOnly>('pending');
-  const [viewMode, setViewMode] = useState<StagingViewMode>('flat_single');
-  const [stagingMode, setStagingMode] = useState<StagingMode>('split_view');
+  const [sortBy, setSortBy] = useState<StagingSortBy>(StagingSortBy.Path);
+  const [showOnly, setShowOnly] = useState<StagingShowOnly>(StagingShowOnly.Pending);
+  const [viewMode, setViewMode] = useState<StagingViewMode>(StagingViewMode.FlatSingle);
+  const [stagingMode, setStagingMode] = useState<StagingMode>(StagingMode.SplitView);
 
   useEffect(() => {
     loadStatus();
@@ -152,7 +155,7 @@ export function StagingView() {
     const combined = [...staged, ...unstaged, ...untracked];
 
     // Apply sorting
-    if (sortBy === 'checked') {
+    if (sortBy === StagingSortBy.Checked) {
       // Staged files first, then unstaged
       return combined.sort((a, b) => {
         if (a.isStaged !== b.isStaged) return a.isStaged ? -1 : 1;
@@ -393,7 +396,7 @@ export function StagingView() {
         onViewModeChange={setViewMode}
         onStagingModeChange={setStagingMode}
       />
-      {stagingMode === 'fluid' ? renderFluidView() : renderSplitView()}
+      {stagingMode === StagingMode.Fluid ? renderFluidView() : renderSplitView()}
     </div>
   );
 }

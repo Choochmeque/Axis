@@ -1,4 +1,5 @@
-import type { FileDiff, DiffStatus } from '../../types';
+import { DiffStatus } from '@/types';
+import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
 import { cn } from '../../lib/utils';
 import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
@@ -125,40 +126,40 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
   );
 }
 
-function getStatusChar(status: DiffStatus): string {
+function getStatusChar(status: DiffStatusType): string {
   switch (status) {
-    case 'Added':
+    case DiffStatus.Added:
       return 'A';
-    case 'Modified':
+    case DiffStatus.Modified:
       return 'M';
-    case 'Deleted':
+    case DiffStatus.Deleted:
       return 'D';
-    case 'Renamed':
+    case DiffStatus.Renamed:
       return 'R';
-    case 'Copied':
+    case DiffStatus.Copied:
       return 'C';
-    case 'TypeChanged':
+    case DiffStatus.TypeChanged:
       return 'T';
-    case 'Untracked':
+    case DiffStatus.Untracked:
       return '?';
-    case 'Conflicted':
+    case DiffStatus.Conflicted:
       return '!';
     default:
       return 'M';
   }
 }
 
-function getStatusColors(status: DiffStatus): { bg: string; text: string } {
+function getStatusColors(status: DiffStatusType): { bg: string; text: string } {
   switch (status) {
-    case 'Added':
+    case DiffStatus.Added:
       return { bg: 'bg-success/15', text: 'text-success' };
-    case 'Modified':
-    case 'Renamed':
-    case 'Copied':
-    case 'TypeChanged':
+    case DiffStatus.Modified:
+    case DiffStatus.Renamed:
+    case DiffStatus.Copied:
+    case DiffStatus.TypeChanged:
       return { bg: 'bg-warning/15', text: 'text-warning' };
-    case 'Deleted':
-    case 'Conflicted':
+    case DiffStatus.Deleted:
+    case DiffStatus.Conflicted:
       return { bg: 'bg-error/15', text: 'text-error' };
     default:
       return { bg: '', text: '' };

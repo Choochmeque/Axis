@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { BranchFilterType, SortOrder } from '@/types';
+import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
 import type {
   Repository,
   GraphCommit,
@@ -10,9 +12,7 @@ import type {
   StashEntry,
   FileDiff,
   Submodule,
-  BranchFilterType,
-  SortOrder,
-} from '../types';
+} from '@/types';
 import {
   repositoryApi,
   graphApi,
@@ -22,7 +22,7 @@ import {
   diffApi,
   commitApi,
   submoduleApi,
-} from '../services/api';
+} from '@/services/api';
 
 export type ViewType = 'file-status' | 'history' | 'search';
 
@@ -42,9 +42,9 @@ interface RepositoryState {
   currentView: ViewType;
 
   // History filters
-  branchFilter: BranchFilterType;
+  branchFilter: BranchFilterTypeType;
   includeRemotes: boolean;
-  sortOrder: SortOrder;
+  sortOrder: SortOrderType;
 
   // Commit detail state
   selectedCommitOid: string | null;
@@ -82,9 +82,9 @@ interface RepositoryState {
   clearError: () => void;
 
   // Filter actions
-  setBranchFilter: (filter: BranchFilterType) => void;
+  setBranchFilter: (filter: BranchFilterTypeType) => void;
   setIncludeRemotes: (include: boolean) => void;
-  setSortOrder: (order: SortOrder) => void;
+  setSortOrder: (order: SortOrderType) => void;
 
   // Commit detail actions
   selectCommit: (oid: string | null) => Promise<void>;
@@ -108,9 +108,9 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   status: null,
   recentRepositories: [],
   currentView: 'file-status',
-  branchFilter: 'All',
+  branchFilter: BranchFilterType.All,
   includeRemotes: true,
-  sortOrder: 'DateOrder',
+  sortOrder: SortOrder.DateOrder,
   selectedCommitOid: null,
   selectedCommitData: null,
   selectedCommitFiles: [],

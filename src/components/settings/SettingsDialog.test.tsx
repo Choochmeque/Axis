@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsDialog } from './SettingsDialog';
-import { settingsApi } from '../../services/api';
+import { settingsApi } from '@/services/api';
+import { SigningFormat, Theme } from '@/types';
 
 // Mock window.matchMedia before importing the settings store
 beforeAll(() => {
@@ -21,7 +22,7 @@ beforeAll(() => {
 });
 
 // Mock the API
-vi.mock('../../services/api', () => ({
+vi.mock('@/services/api', () => ({
   settingsApi: {
     get: vi.fn(),
     save: vi.fn(),
@@ -36,7 +37,7 @@ vi.mock('../../services/api', () => ({
 
 // Mock the settings store
 const mockUpdateSettings = vi.fn();
-vi.mock('../../store/settingsStore', () => ({
+vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: vi.fn((selector) => {
     const state = {
       updateSettings: mockUpdateSettings,
@@ -46,14 +47,14 @@ vi.mock('../../store/settingsStore', () => ({
 }));
 
 const mockSettings = {
-  theme: 'Dark' as const,
+  theme: Theme.Dark,
   fontSize: 13,
   showLineNumbers: true,
   defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
-  signingFormat: 'Gpg' as const,
+  signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
   sshProgram: null,
@@ -143,7 +144,7 @@ describe('SettingsDialog', () => {
 
     // Change a setting to enable save button
     const themeSelect = screen.getByLabelText('Theme');
-    fireEvent.change(themeSelect, { target: { value: 'light' } });
+    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
 
     // Click save
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
@@ -164,7 +165,7 @@ describe('SettingsDialog', () => {
 
     // Change a setting
     const themeSelect = screen.getByLabelText('Theme');
-    fireEvent.change(themeSelect, { target: { value: 'light' } });
+    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
 
     // Click save
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
@@ -183,18 +184,18 @@ describe('SettingsDialog', () => {
 
     // Get the theme select
     const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
-    expect(themeSelect.value).toBe('Dark');
+    expect(themeSelect.value).toBe(Theme.Dark);
 
     // Change it
-    fireEvent.change(themeSelect, { target: { value: 'Light' } });
-    expect(themeSelect.value).toBe('Light');
+    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
+    expect(themeSelect.value).toBe(Theme.Light);
 
     // Click reset
     fireEvent.click(screen.getByRole('button', { name: /Reset/i }));
 
     // Should be back to original
     await waitFor(() => {
-      expect(themeSelect.value).toBe('Dark');
+      expect(themeSelect.value).toBe(Theme.Dark);
     });
   });
 });

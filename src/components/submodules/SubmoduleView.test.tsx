@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmoduleView } from './SubmoduleView';
-import { submoduleApi } from '../../services/api';
+import { submoduleApi } from '@/services/api';
+import { SubmoduleStatus } from '@/types';
 
 // Mock the API
-vi.mock('../../services/api', () => ({
+vi.mock('@/services/api', () => ({
   submoduleApi: {
     list: vi.fn(),
     add: vi.fn(),
@@ -42,7 +43,7 @@ describe('SubmoduleView', () => {
         shortOid: 'abc123d',
         indexedOid: null,
         branch: 'main',
-        status: 'Current' as const,
+        status: SubmoduleStatus.Current,
       },
       {
         name: 'lib/utils',
@@ -52,7 +53,7 @@ describe('SubmoduleView', () => {
         shortOid: 'def456a',
         indexedOid: null,
         branch: 'main',
-        status: 'Modified' as const,
+        status: SubmoduleStatus.Modified,
       },
     ];
 
@@ -76,7 +77,7 @@ describe('SubmoduleView', () => {
         shortOid: 'abc123',
         indexedOid: null,
         branch: 'main',
-        status: 'Current' as const,
+        status: SubmoduleStatus.Current,
       },
     ];
 
@@ -119,7 +120,7 @@ describe('SubmoduleView', () => {
         shortOid: 'abc123',
         indexedOid: null,
         branch: 'main',
-        status: 'Current' as const,
+        status: SubmoduleStatus.Current,
       },
     ];
 
@@ -142,7 +143,7 @@ describe('SubmoduleView', () => {
         shortOid: 'abc123',
         indexedOid: null,
         branch: 'main',
-        status: 'Modified' as const,
+        status: SubmoduleStatus.Modified,
       },
     ];
 
@@ -165,7 +166,7 @@ describe('SubmoduleView', () => {
         shortOid: null,
         indexedOid: null,
         branch: null,
-        status: 'Uninitialized' as const,
+        status: SubmoduleStatus.Uninitialized,
       },
     ];
 
@@ -246,7 +247,7 @@ describe('SubmoduleView', () => {
         shortOid: 'abc123',
         indexedOid: null,
         branch: 'main',
-        status: 'Current' as const,
+        status: SubmoduleStatus.Current,
       },
     ];
 

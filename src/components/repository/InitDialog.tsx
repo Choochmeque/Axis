@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderPlus, FolderOpen } from 'lucide-react';
-import { repositoryApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { useTabsStore } from '../../store/tabsStore';
+import { repositoryApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { TabType, useTabsStore } from '@/store/tabsStore';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +63,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
         setActiveTab(existingTab.id);
       } else {
         addTab({
-          type: 'repository',
+          type: TabType.Repository,
           path: repo.path.toString(),
           name: repo.name,
           repository: repo,

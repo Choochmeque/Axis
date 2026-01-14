@@ -12,15 +12,11 @@ export type {
 
   // Branch types
   Branch,
-  BranchFilterType,
-  SortOrder,
 
   // Diff types
   FileDiff,
   DiffHunk,
   DiffLine,
-  DiffLineType,
-  DiffStatus,
   DiffOptions,
 
   // Remote types
@@ -28,17 +24,13 @@ export type {
   FetchProgress,
   FetchResult,
   UpdatedRef,
-  RefUpdateStatus,
   PushResult,
   PushedRef,
-  PushStatus,
 
   // Graph types
   GraphCommit,
   GraphEdge,
-  EdgeType,
   CommitRef,
-  RefType,
   GraphOptions,
   GraphResult,
 
@@ -56,7 +48,6 @@ export type {
   // Merge types
   MergeOptions,
   MergeResult,
-  MergeType,
 
   // Rebase types
   RebaseOptions,
@@ -74,15 +65,12 @@ export type {
 
   // Conflict types
   ConflictedFile,
-  ConflictType,
   ConflictContent,
-  ConflictResolution,
 
   // Operation state
   OperationState,
 
   // Reset types
-  ResetMode,
   ResetOptions,
 
   // Stash types
@@ -99,7 +87,6 @@ export type {
 
   // Submodule types
   Submodule,
-  SubmoduleStatus,
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
@@ -112,9 +99,7 @@ export type {
   GitFlowResult,
 
   // Settings types
-  Theme,
   AppSettings,
-  SigningFormat,
   SigningConfig,
   GpgKey,
   SshKey,
@@ -135,10 +120,23 @@ export type {
 // Import types used locally
 import type {
   BranchType as BranchTypeType,
-  BranchFilterType,
-  SortOrder,
+  BranchFilterType as BranchFilterTypeType,
+  SortOrder as SortOrderType,
   RepositoryState as RepositoryStateType,
   StatusType as StatusTypeType,
+  DiffStatus as DiffStatusType,
+  DiffLineType as DiffLineTypeType,
+  EdgeType as EdgeTypeType,
+  RefType as RefTypeType,
+  ConflictResolution as ConflictResolutionType,
+  MergeType as MergeTypeType,
+  PushStatus as PushStatusType,
+  RefUpdateStatus as RefUpdateStatusType,
+  ResetMode as ResetModeType,
+  Theme as ThemeType,
+  SigningFormat as SigningFormatType,
+  SubmoduleStatus as SubmoduleStatusType,
+  ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
 } from '../bindings/api';
 
@@ -196,6 +194,22 @@ export const BranchType: { [K in BranchTypeType]: K } = {
 
 export type BranchType = BranchTypeType;
 
+export const BranchFilterType: {
+  [K in Exclude<BranchFilterTypeType, { Specific: string }>]: K;
+} = {
+  All: 'All',
+  Current: 'Current',
+};
+
+export type BranchFilterType = BranchFilterTypeType;
+
+export const SortOrder: { [K in SortOrderType]: K } = {
+  DateOrder: 'DateOrder',
+  AncestorOrder: 'AncestorOrder',
+};
+
+export type SortOrder = SortOrderType;
+
 export const RepositoryState: { [K in RepositoryStateType]: K } = {
   Clean: 'Clean',
   Merging: 'Merging',
@@ -224,6 +238,128 @@ export const StatusType: { [K in StatusTypeType]: K } = {
 
 export type StatusType = StatusTypeType;
 
+export const DiffStatus: { [K in DiffStatusType]: K } = {
+  Added: 'Added',
+  Deleted: 'Deleted',
+  Modified: 'Modified',
+  Renamed: 'Renamed',
+  Copied: 'Copied',
+  TypeChanged: 'TypeChanged',
+  Untracked: 'Untracked',
+  Conflicted: 'Conflicted',
+};
+
+export type DiffStatus = DiffStatusType;
+
+export const DiffLineType: { [K in DiffLineTypeType]: K } = {
+  Context: 'Context',
+  Addition: 'Addition',
+  Deletion: 'Deletion',
+  Header: 'Header',
+  Binary: 'Binary',
+};
+
+export type DiffLineType = DiffLineTypeType;
+
+export const EdgeType: { [K in EdgeTypeType]: K } = {
+  Straight: 'Straight',
+  Merge: 'Merge',
+  Branch: 'Branch',
+};
+
+export type EdgeType = EdgeTypeType;
+
+export const RefType: { [K in RefTypeType]: K } = {
+  LocalBranch: 'LocalBranch',
+  RemoteBranch: 'RemoteBranch',
+  Tag: 'Tag',
+};
+
+export type RefType = RefTypeType;
+
+export const ConflictResolution: { [K in ConflictResolutionType]: K } = {
+  Ours: 'Ours',
+  Theirs: 'Theirs',
+  Merged: 'Merged',
+};
+
+export type ConflictResolution = ConflictResolutionType;
+
+export const MergeType: { [K in MergeTypeType]: K } = {
+  UpToDate: 'UpToDate',
+  FastForward: 'FastForward',
+  Normal: 'Normal',
+  Conflicted: 'Conflicted',
+};
+
+export type MergeType = MergeTypeType;
+
+export const PushStatus: { [K in PushStatusType]: K } = {
+  Ok: 'Ok',
+  Rejected: 'Rejected',
+  UpToDate: 'UpToDate',
+  RemoteRejected: 'RemoteRejected',
+};
+
+export type PushStatus = PushStatusType;
+
+export const RefUpdateStatus: { [K in RefUpdateStatusType]: K } = {
+  FastForward: 'FastForward',
+  Forced: 'Forced',
+  New: 'New',
+  Deleted: 'Deleted',
+  Rejected: 'Rejected',
+  UpToDate: 'UpToDate',
+};
+
+export type RefUpdateStatus = RefUpdateStatusType;
+
+export const ResetMode: { [K in ResetModeType]: K } = {
+  Soft: 'Soft',
+  Mixed: 'Mixed',
+  Hard: 'Hard',
+};
+
+export type ResetMode = ResetModeType;
+
+export const Theme: { [K in ThemeType]: K } = {
+  Light: 'Light',
+  Dark: 'Dark',
+  System: 'System',
+};
+
+export type Theme = ThemeType;
+
+export const SigningFormat: { [K in SigningFormatType]: K } = {
+  Gpg: 'Gpg',
+  Ssh: 'Ssh',
+};
+
+export type SigningFormat = SigningFormatType;
+
+export const SubmoduleStatus: { [K in SubmoduleStatusType]: K } = {
+  Current: 'Current',
+  Modified: 'Modified',
+  Uninitialized: 'Uninitialized',
+  Missing: 'Missing',
+  Conflict: 'Conflict',
+  Dirty: 'Dirty',
+  Unknown: 'Unknown',
+};
+
+export type SubmoduleStatus = SubmoduleStatusType;
+
+export const ConflictType: { [K in ConflictTypeType]: K } = {
+  Content: 'Content',
+  DeleteModify: 'DeleteModify',
+  AddAdd: 'AddAdd',
+  RenameRename: 'RenameRename',
+  RenameModify: 'RenameModify',
+  Binary: 'Binary',
+};
+
+export type ConflictType = ConflictTypeType;
+
 export const MenuAction: { [K in MenuActionType]: K } = {
   NewWindow: 'NewWindow',
   OpenRepository: 'OpenRepository',
@@ -244,3 +380,5 @@ export const MenuAction: { [K in MenuActionType]: K } = {
 };
 
 export type MenuAction = MenuActionType;
+
+/* eslint-enable @typescript-eslint/naming-convention */

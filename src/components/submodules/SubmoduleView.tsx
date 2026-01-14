@@ -11,9 +11,10 @@ import {
   Circle,
   Trash2,
 } from 'lucide-react';
-import { submoduleApi } from '../../services/api';
-import type { Submodule, SubmoduleStatus } from '../../types';
-import { cn } from '../../lib/utils';
+import { submoduleApi } from '@/services/api';
+import { SubmoduleStatus } from '@/types';
+import type { Submodule, SubmoduleStatus as SubmoduleStatusType } from '@/types';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -167,53 +168,53 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
     }
   };
 
-  const getStatusIcon = (status: SubmoduleStatus) => {
+  const getStatusIcon = (status: SubmoduleStatusType) => {
     switch (status) {
-      case 'Current':
+      case SubmoduleStatus.Current:
         return <Check size={14} className="text-success" />;
-      case 'Modified':
+      case SubmoduleStatus.Modified:
         return <AlertTriangle size={14} className="text-warning" />;
-      case 'Uninitialized':
+      case SubmoduleStatus.Uninitialized:
         return <Circle size={14} className="text-(--text-muted)" />;
-      case 'Missing':
+      case SubmoduleStatus.Missing:
         return <AlertCircle size={14} className="text-error" />;
-      case 'Conflict':
+      case SubmoduleStatus.Conflict:
         return <AlertCircle size={14} className="text-error" />;
-      case 'Dirty':
+      case SubmoduleStatus.Dirty:
         return <AlertTriangle size={14} className="text-warning" />;
       default:
         return <Circle size={14} className="text-(--text-muted)" />;
     }
   };
 
-  const getStatusLabel = (status: SubmoduleStatus) => {
+  const getStatusLabel = (status: SubmoduleStatusType) => {
     switch (status) {
-      case 'Current':
+      case SubmoduleStatus.Current:
         return 'Up to date';
-      case 'Modified':
+      case SubmoduleStatus.Modified:
         return 'Modified';
-      case 'Uninitialized':
+      case SubmoduleStatus.Uninitialized:
         return 'Not initialized';
-      case 'Missing':
+      case SubmoduleStatus.Missing:
         return 'Missing';
-      case 'Conflict':
+      case SubmoduleStatus.Conflict:
         return 'Conflict';
-      case 'Dirty':
+      case SubmoduleStatus.Dirty:
         return 'Dirty';
       default:
         return 'Unknown';
     }
   };
 
-  const getStatusClass = (status: SubmoduleStatus) => {
+  const getStatusClass = (status: SubmoduleStatusType) => {
     switch (status) {
-      case 'Current':
+      case SubmoduleStatus.Current:
         return 'text-success';
-      case 'Modified':
-      case 'Dirty':
+      case SubmoduleStatus.Modified:
+      case SubmoduleStatus.Dirty:
         return 'text-warning';
-      case 'Missing':
-      case 'Conflict':
+      case SubmoduleStatus.Missing:
+      case SubmoduleStatus.Conflict:
         return 'text-error';
       default:
         return 'text-(--text-muted)';
@@ -309,7 +310,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
               )}
               {selectedPath === submodule.path && (
                 <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
-                  {submodule.status === 'Uninitialized' && (
+                  {submodule.status === SubmoduleStatus.Uninitialized && (
                     <button
                       className={cn(
                         btnSmallClass,
@@ -332,7 +333,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                       e.stopPropagation();
                       handleUpdate(submodule.path);
                     }}
-                    disabled={submodule.status === 'Uninitialized'}
+                    disabled={submodule.status === SubmoduleStatus.Uninitialized}
                   >
                     <Download size={12} />
                     Update

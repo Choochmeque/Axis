@@ -7,15 +7,15 @@ import {
   createColumnHelper,
   type ColumnResizeMode,
 } from '@tanstack/react-table';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
 import { GitCommit, Loader2, GitBranch, Tag } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import type { GraphCommit, GraphEdge } from '../../types';
+import { cn } from '@/lib/utils';
+import { BranchType, EdgeType, RefType } from '@/types';
+import type { GraphCommit, GraphEdge } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
 import { HistoryFilters } from './HistoryFilters';
-import { BranchType } from '@/types';
 
 const LANE_WIDTH = 18;
 const ROW_HEIGHT = 28;
@@ -123,7 +123,8 @@ function GraphEdgeLine({ edge, fromLane, height }: GraphEdgeLineProps) {
   const toX = parentLane * LANE_WIDTH + LANE_WIDTH / 2;
   const fromY = height / 2;
   const toY = height;
-  const color = edge.edgeType === 'branch' ? getLaneColor(fromLane) : getLaneColor(parentLane);
+  const color =
+    edge.edgeType === EdgeType.Branch ? getLaneColor(fromLane) : getLaneColor(parentLane);
 
   if (fromLane === parentLane) {
     // Straight line down
@@ -339,7 +340,7 @@ export function HistoryView() {
                   {commit.refs.map((ref, idx) => {
                     // Get behind count for local branches
                     const behindCount =
-                      ref.refType === 'LocalBranch'
+                      ref.refType === RefType.LocalBranch
                         ? branches.find(
                             (b) => b.name === ref.name && b.branchType === BranchType.Local
                           )?.behind
@@ -350,13 +351,13 @@ export function HistoryView() {
                         key={idx}
                         className={cn(
                           'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
-                          ref.refType === 'LocalBranch' && 'bg-[#107c10] text-white',
-                          ref.refType === 'RemoteBranch' && 'bg-[#5c2d91] text-white',
-                          ref.refType === 'Tag' && 'bg-[#d83b01] text-white',
+                          ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
+                          ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
+                          ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',
                           ref.isHead && 'font-bold'
                         )}
                       >
-                        {ref.refType === 'Tag' ? <Tag size={10} /> : <GitBranch size={10} />}
+                        {ref.refType === RefType.Tag ? <Tag size={10} /> : <GitBranch size={10} />}
                         {ref.name}
                         {behindCount != null && behindCount > 0 && (
                           <span className="ml-1 pl-1 border-l border-white/30">

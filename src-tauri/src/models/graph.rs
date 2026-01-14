@@ -33,7 +33,7 @@ pub struct GraphEdge {
 
 /// Type of edge in the commit graph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "PascalCase")]
 pub enum EdgeType {
     /// Straight line (same lane)
     Straight,

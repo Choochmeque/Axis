@@ -4,7 +4,7 @@ import type { Repository } from '../types';
 
 export interface Tab {
   id: string;
-  type: 'welcome' | 'repository';
+  type: TabType;
   path?: string;
   name: string;
   repository?: Repository;
@@ -25,9 +25,18 @@ interface TabsState {
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
+/* eslint-disable @typescript-eslint/naming-convention */
+export const TabType = {
+  Welcome: 'welcome',
+  Repository: 'repository',
+} as const;
+/* eslint-enable @typescript-eslint/naming-convention */
+
+export type TabType = (typeof TabType)[keyof typeof TabType];
+
 const WELCOME_TAB: Tab = {
   id: 'welcome',
-  type: 'welcome',
+  type: TabType.Welcome,
   name: 'Welcome',
 };
 
@@ -142,7 +151,7 @@ export const useTabsStore = isRepoWindow()
             let activeTabId = state.activeTabId;
 
             // Ensure welcome tab exists
-            const hasWelcome = tabs.some((t) => t.type === 'welcome');
+            const hasWelcome = tabs.some((t) => t.type === TabType.Welcome);
             if (!hasWelcome) {
               tabs = [WELCOME_TAB, ...tabs];
             }

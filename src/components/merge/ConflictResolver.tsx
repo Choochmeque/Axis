@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
-import { conflictApi, operationApi } from '../../services/api';
-import type { ConflictedFile, ConflictContent, OperationState } from '../../types';
-import { cn } from '../../lib/utils';
+import { conflictApi, operationApi } from '@/services/api';
+import { ConflictResolution } from '@/types';
+import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
+import { cn } from '@/lib/utils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
@@ -78,7 +79,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'Ours');
+      await conflictApi.resolveConflict(selectedFile, ConflictResolution.Ours);
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {
@@ -91,7 +92,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'Theirs');
+      await conflictApi.resolveConflict(selectedFile, ConflictResolution.Theirs);
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {
@@ -104,7 +105,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!selectedFile) return;
 
     try {
-      await conflictApi.resolveConflict(selectedFile, 'Merged', mergedContent);
+      await conflictApi.resolveConflict(selectedFile, ConflictResolution.Merged, mergedContent);
       await loadConflicts();
       setSelectedFile(null);
     } catch (err) {

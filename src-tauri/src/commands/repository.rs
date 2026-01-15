@@ -1,7 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, BranchFilterType, Commit, LogOptions, RecentRepository, Repository,
-    RepositoryStatus, SortOrder,
+    Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
 };
 use crate::services::Git2Service;
 use crate::state::AppState;
@@ -109,36 +108,23 @@ pub async fn get_repository_status(state: State<'_, AppState>) -> Result<Reposit
 #[specta::specta]
 pub async fn get_commit_history(
     state: State<'_, AppState>,
-    limit: Option<usize>,
-    skip: Option<usize>,
-    from_ref: Option<String>,
-    branch_filter: Option<BranchFilterType>,
-    include_remotes: Option<bool>,
-    sort_order: Option<SortOrder>,
+    options: Option<LogOptions>,
 ) -> Result<Vec<Commit>> {
     let service = state.get_service()?;
-    let options = LogOptions {
-        limit,
-        skip,
-        from_ref,
-        branch_filter: branch_filter.unwrap_or_default(),
-        include_remotes: include_remotes.unwrap_or(true),
-        sort_order: sort_order.unwrap_or_default(),
-    };
-    service.log(options)
+    service.log(options.unwrap_or_default())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_branches(
     state: State<'_, AppState>,
-    include_local: Option<bool>,
-    include_remote: Option<bool>,
+    include_local: bool,
+    include_remote: bool,
 ) -> Result<Vec<Branch>> {
     let service = state.get_service()?;
     let filter = BranchFilter {
-        include_local: include_local.unwrap_or(true),
-        include_remote: include_remote.unwrap_or(true),
+        include_local,
+        include_remote,
     };
     service.list_branches(filter)
 }

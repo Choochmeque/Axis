@@ -27,6 +27,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [selectedRemote, setSelectedRemote] = useState('');
   const [force, setForce] = useState(false);
   const [setUpstream, setSetUpstream] = useState(false);
+  const [tags, setTags] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PushResult | null>(null);
@@ -40,7 +41,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
       setResult(null);
       setError(null);
       setForce(false);
-
+      setTags(false);
       // Pre-select upstream remote if available
       if (currentBranch?.upstream) {
         const remoteName = currentBranch.upstream.split('/')[0];
@@ -73,7 +74,11 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
     setResult(null);
 
     try {
-      const pushResult = await remoteApi.pushCurrentBranch(selectedRemote, force, setUpstream);
+      const pushResult = await remoteApi.pushCurrentBranch(selectedRemote, {
+        force,
+        setUpstream,
+        tags,
+      });
 
       setResult(pushResult);
       await loadBranches();
@@ -160,6 +165,13 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
                 label="Set as upstream tracking branch"
                 checked={setUpstream}
                 onCheckedChange={setSetUpstream}
+              />
+
+              <CheckboxField
+                id="tags"
+                label="Include tags"
+                checked={tags}
+                onCheckedChange={setTags}
               />
 
               <CheckboxField

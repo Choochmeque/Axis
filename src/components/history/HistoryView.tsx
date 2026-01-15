@@ -411,7 +411,7 @@ export function HistoryView() {
         ),
       }),
     ],
-    [minGraphWidth]
+    [branches, minGraphWidth]
   );
 
   const columnResizeMode: ColumnResizeMode = 'onChange';

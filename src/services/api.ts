@@ -28,6 +28,8 @@ import type {
   CreatePatchOptions,
   ApplyPatchOptions,
   ApplyMailboxOptions,
+  PushOptions,
+  DiffTarget,
 } from '../types';
 
 export const repositoryApi = {
@@ -55,15 +57,7 @@ export const repositoryApi = {
 };
 
 export const commitApi = {
-  getHistory: (options?: LogOptions) =>
-    commands.getCommitHistory(
-      options?.limit ?? null,
-      options?.skip ?? null,
-      options?.fromRef ?? null,
-      options?.branchFilter ?? null,
-      options?.includeRemotes ?? null,
-      options?.sortOrder ?? null
-    ),
+  getHistory: (options: LogOptions) => commands.getCommitHistory(options),
 
   getCommit: (oid: string) => commands.getCommit(oid),
 
@@ -122,16 +116,11 @@ export const remoteApi = {
 
   fetchAll: () => commands.fetchAll(),
 
-  push: (
-    remoteName: string,
-    refspecs: string[],
-    force?: boolean,
-    setUpstream?: boolean,
-    tags?: boolean
-  ) => commands.pushRemote(remoteName, refspecs, force ?? null, setUpstream ?? null, tags ?? null),
+  push: (remoteName: string, refspecs: string[], options?: PushOptions) =>
+    commands.pushRemote(remoteName, refspecs, options ?? null),
 
-  pushCurrentBranch: (remoteName: string, force?: boolean, setUpstream?: boolean) =>
-    commands.pushCurrentBranch(remoteName, force ?? null, setUpstream ?? null),
+  pushCurrentBranch: (remoteName: string, options?: PushOptions) =>
+    commands.pushCurrentBranch(remoteName, options ?? null),
 
   pull: (remoteName: string, branchName: string, rebase?: boolean, ffOnly?: boolean) =>
     commands.pullRemote(remoteName, branchName, rebase ?? null, ffOnly ?? null),
@@ -162,6 +151,8 @@ export const stagingApi = {
 };
 
 export const diffApi = {
+  getDiff: (target: DiffTarget, options?: DiffOptions) => commands.getDiff(target, options ?? null),
+
   getWorkdir: (options?: DiffOptions) => commands.getDiffWorkdir(options ?? null),
 
   getStaged: (options?: DiffOptions) => commands.getDiffStaged(options ?? null),

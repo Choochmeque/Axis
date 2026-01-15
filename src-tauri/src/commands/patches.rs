@@ -80,11 +80,7 @@ pub async fn apply_mailbox(
     options: ApplyMailboxOptions,
 ) -> Result<PatchResult> {
     let service = state.get_cli_service()?;
-    let patch_paths: Vec<PathBuf> = options
-        .patch_paths
-        .iter()
-        .map(PathBuf::from)
-        .collect();
+    let patch_paths: Vec<PathBuf> = options.patch_paths.iter().map(PathBuf::from).collect();
     service.apply_mailbox(&patch_paths, options.three_way)
 }
 

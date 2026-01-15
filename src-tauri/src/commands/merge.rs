@@ -22,7 +22,10 @@ pub async fn merge_branch(
 
     // Check for ff_only case - use git2 for fast-forward detection
     if options.ff_only {
-        // For now, just try the merge and let git handle ff_only semantics
+        // TODO: For now, just try the merge and let git handle ff_only semantics
+        log::warn!(
+            "Fast-forward only merges are not fully implemented; proceeding with standard merge"
+        );
     }
 
     let result = cli.merge(
@@ -45,7 +48,7 @@ pub async fn merge_branch(
         Ok(MergeResult {
             success: true,
             merge_type,
-            commit_oid: None, // Could parse from output
+            commit_oid: None, // TODO: Could parse from output
             conflicts: Vec::new(),
             message: result.stdout.trim().to_string(),
         })
@@ -114,7 +117,7 @@ pub async fn rebase_branch(
     if result.success {
         Ok(RebaseResult {
             success: true,
-            commits_rebased: 0, // Would need to parse from output
+            commits_rebased: 0, // TODO: Would need to parse from output
             current_commit: None,
             total_commits: None,
             conflicts: Vec::new(),
@@ -496,7 +499,7 @@ fn get_conflicted_files_internal(cli: &GitCliService) -> Result<Vec<ConflictedFi
         .into_iter()
         .map(|path| ConflictedFile {
             path,
-            conflict_type: ConflictType::Content, // Default, would need more parsing
+            conflict_type: ConflictType::Content, // TODO: Default, would need more parsing
             is_resolved: false,
         })
         .collect())

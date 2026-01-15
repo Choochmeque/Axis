@@ -3,9 +3,23 @@ import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
 import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '../types';
 import { useRepositoryStore } from './repositoryStore';
 
-export type WhitespaceMode = 'show' | 'ignore';
+/* eslint-disable @typescript-eslint/naming-convention */
+export const WhitespaceMode = {
+  Show: 'show',
+  Ignore: 'ignore',
+} as const;
+/* eslint-enable @typescript-eslint/naming-convention */
+
+export type WhitespaceMode = (typeof WhitespaceMode)[keyof typeof WhitespaceMode];
 export type ContextLines = 1 | 3 | 6 | 12 | 25 | 50 | 100;
-export type DiffCompareMode = 'parent' | 'merged';
+/* eslint-disable @typescript-eslint/naming-convention */
+export const DiffCompareMode = {
+  Parent: 'parent',
+  Merged: 'merged',
+} as const;
+/* eslint-enable @typescript-eslint/naming-convention */
+
+export type DiffCompareMode = (typeof DiffCompareMode)[keyof typeof DiffCompareMode];
 
 export interface DiffSettings {
   whitespace: WhitespaceMode;
@@ -59,9 +73,9 @@ interface StagingState {
 }
 
 const defaultDiffSettings: DiffSettings = {
-  whitespace: 'show',
+  whitespace: WhitespaceMode.Show,
   contextLines: 3,
-  compareMode: 'parent',
+  compareMode: DiffCompareMode.Parent,
 };
 
 const initialState = {
@@ -82,7 +96,7 @@ const initialState = {
 function toDiffOptions(settings: DiffSettings): DiffOptions {
   return {
     contextLines: settings.contextLines,
-    ignoreWhitespace: settings.whitespace === 'ignore',
+    ignoreWhitespace: settings.whitespace === WhitespaceMode.Ignore,
     ignoreWhitespaceEol: false,
   };
 }

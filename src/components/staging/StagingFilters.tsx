@@ -1,18 +1,10 @@
-import {
-  ChevronDown,
-  Check,
-  List,
-  Columns2,
-  ListTree,
-  Square,
-  Rows3,
-  LayoutPanelTop,
-} from 'lucide-react';
+import { ChevronDown, List, Columns2, ListTree, Square, Rows3, LayoutPanelTop } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui';
@@ -126,23 +118,31 @@ export function StagingFilters({
         <DropdownMenuContent align="start">
           {/* Show Only Section */}
           <DropdownMenuLabel>Show only</DropdownMenuLabel>
-          {showOnlyOptions.map((option) => (
-            <DropdownMenuItem key={option} onSelect={() => onShowOnlyChange(option)}>
-              {showOnly === option && <Check size={12} className="absolute left-2" />}
-              {showOnlyLabels[option]}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuRadioGroup
+            value={showOnly}
+            onValueChange={(value) => onShowOnlyChange(value as StagingShowOnly)}
+          >
+            {showOnlyOptions.map((option) => (
+              <DropdownMenuRadioItem key={option} value={option}>
+                {showOnlyLabels[option]}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Sort By Section */}
           <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-          {sortByOptions.map((option) => (
-            <DropdownMenuItem key={option} onSelect={() => onSortByChange(option)}>
-              {sortBy === option && <Check size={12} className="absolute left-2" />}
-              {sortByLabels[option]}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuRadioGroup
+            value={sortBy}
+            onValueChange={(value) => onSortByChange(value as StagingSortBy)}
+          >
+            {sortByOptions.map((option) => (
+              <DropdownMenuRadioItem key={option} value={option}>
+                {sortByLabels[option]}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -159,49 +159,45 @@ export function StagingFilters({
         <DropdownMenuContent align="start">
           {/* View Mode Section */}
           <DropdownMenuLabel>View</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => onViewModeChange(StagingViewMode.FlatSingle)}>
-            {viewMode === StagingViewMode.FlatSingle && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            <List size={14} className="mr-2" />
-            Flat list (single column)
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onViewModeChange(StagingViewMode.FlatMulti)}>
-            {viewMode === StagingViewMode.FlatMulti && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            <Columns2 size={14} className="mr-2" />
-            Flat list (multiple columns)
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onViewModeChange(StagingViewMode.Tree)}>
-            {viewMode === StagingViewMode.Tree && <Check size={12} className="absolute left-2" />}
-            <ListTree size={14} className="mr-2" />
-            Tree view
-          </DropdownMenuItem>
+          <DropdownMenuRadioGroup
+            value={viewMode}
+            onValueChange={(value) => onViewModeChange(value as StagingViewMode)}
+          >
+            <DropdownMenuRadioItem value={StagingViewMode.FlatSingle}>
+              <List size={14} className="mr-2" />
+              Flat list (single column)
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={StagingViewMode.FlatMulti}>
+              <Columns2 size={14} className="mr-2" />
+              Flat list (multiple columns)
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={StagingViewMode.Tree}>
+              <ListTree size={14} className="mr-2" />
+              Tree view
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Staging Mode Section */}
           <DropdownMenuLabel>Staging</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => onStagingModeChange(StagingMode.NoStaging)}>
-            {stagingMode === StagingMode.NoStaging && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            <Square size={14} className="mr-2" />
-            No staging
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onStagingModeChange(StagingMode.Fluid)}>
-            {stagingMode === StagingMode.Fluid && <Check size={12} className="absolute left-2" />}
-            <Rows3 size={14} className="mr-2" />
-            Fluid staging
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onStagingModeChange(StagingMode.SplitView)}>
-            {stagingMode === StagingMode.SplitView && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            <LayoutPanelTop size={14} className="mr-2" />
-            Split view staging
-          </DropdownMenuItem>
+          <DropdownMenuRadioGroup
+            value={stagingMode}
+            onValueChange={(value) => onStagingModeChange(value as StagingMode)}
+          >
+            <DropdownMenuRadioItem value={StagingMode.NoStaging}>
+              <Square size={14} className="mr-2" />
+              No staging
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={StagingMode.Fluid}>
+              <Rows3 size={14} className="mr-2" />
+              Fluid staging
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={StagingMode.SplitView}>
+              <LayoutPanelTop size={14} className="mr-2" />
+              Split view staging
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

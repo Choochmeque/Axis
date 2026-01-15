@@ -1,16 +1,17 @@
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
 import { BranchFilterType, BranchType, SortOrder } from '@/types';
-import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
+import type { SortOrder as SortOrderType } from '@/types';
 
 export function HistoryFilters() {
   const {
@@ -33,16 +34,35 @@ export function HistoryFilters() {
     return 'All Branches';
   };
 
-  const handleBranchFilterChange = (value: BranchFilterTypeType) => {
-    setBranchFilter(value);
+  const handleBranchFilterChange = (value: string) => {
+    if (value === 'all') {
+      setBranchFilter(BranchFilterType.All);
+      return;
+    }
+    if (value === 'current') {
+      setBranchFilter(BranchFilterType.Current);
+      return;
+    }
+    if (value.startsWith('specific:')) {
+      const name = decodeURIComponent(value.replace('specific:', ''));
+      setBranchFilter({ Specific: name });
+    }
   };
 
-  const handleSortOrderChange = (value: SortOrderType) => {
-    setSortOrder(value);
+  const handleSortOrderChange = (value: string) => {
+    setSortOrder(value as SortOrderType);
   };
 
   // Get local branches for the dropdown
   const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
+  const branchFilterValue =
+    branchFilter === BranchFilterType.All
+      ? 'all'
+      : branchFilter === BranchFilterType.Current
+        ? 'current'
+        : typeof branchFilter === 'object' && 'Specific' in branchFilter
+          ? `specific:${encodeURIComponent(branchFilter.Specific)}`
+          : 'all';
 
   return (
     <div className="flex items-center gap-2 py-1.5 px-3 border-b border-(--border-color) bg-(--bg-secondary)">
@@ -55,35 +75,30 @@ export function HistoryFilters() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onSelect={() => handleBranchFilterChange(BranchFilterType.All)}>
-            {branchFilter === BranchFilterType.All && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            All Branches
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => handleBranchFilterChange(BranchFilterType.Current)}>
-            {branchFilter === BranchFilterType.Current && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            Current Branch
-          </DropdownMenuItem>
+          <DropdownMenuRadioGroup
+            value={branchFilterValue}
+            onValueChange={handleBranchFilterChange}
+          >
+            <DropdownMenuRadioItem value="all">All Branches</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="current">Current Branch</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
           {localBranches.length > 0 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Branches</DropdownMenuLabel>
-              {localBranches.map((branch) => (
-                <DropdownMenuItem
-                  key={branch.name}
-                  onSelect={() => handleBranchFilterChange({ Specific: branch.name })}
-                >
-                  {typeof branchFilter === 'object' &&
-                    'Specific' in branchFilter &&
-                    branchFilter.Specific === branch.name && (
-                      <Check size={12} className="absolute left-2" />
-                    )}
-                  <span className={cn(branch.isHead && 'font-semibold')}>{branch.name}</span>
-                </DropdownMenuItem>
-              ))}
+              <DropdownMenuRadioGroup
+                value={branchFilterValue}
+                onValueChange={handleBranchFilterChange}
+              >
+                {localBranches.map((branch) => (
+                  <DropdownMenuRadioItem
+                    key={branch.name}
+                    value={`specific:${encodeURIComponent(branch.name)}`}
+                  >
+                    <span className={cn(branch.isHead && 'font-semibold')}>{branch.name}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
             </>
           )}
         </DropdownMenuContent>
@@ -98,14 +113,13 @@ export function HistoryFilters() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onSelect={() => setIncludeRemotes(true)}>
-            {includeRemotes && <Check size={12} className="absolute left-2" />}
-            Show Remote Branches
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIncludeRemotes(false)}>
-            {!includeRemotes && <Check size={12} className="absolute left-2" />}
-            Hide Remote Branches
-          </DropdownMenuItem>
+          <DropdownMenuRadioGroup
+            value={includeRemotes ? 'show' : 'hide'}
+            onValueChange={(value) => setIncludeRemotes(value === 'show')}
+          >
+            <DropdownMenuRadioItem value="show">Show Remote Branches</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="hide">Hide Remote Branches</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -118,16 +132,12 @@ export function HistoryFilters() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onSelect={() => handleSortOrderChange(SortOrder.DateOrder)}>
-            {sortOrder === SortOrder.DateOrder && <Check size={12} className="absolute left-2" />}
-            Date Order
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => handleSortOrderChange(SortOrder.AncestorOrder)}>
-            {sortOrder === SortOrder.AncestorOrder && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            Ancestor Order
-          </DropdownMenuItem>
+          <DropdownMenuRadioGroup value={sortOrder} onValueChange={handleSortOrderChange}>
+            <DropdownMenuRadioItem value={SortOrder.DateOrder}>Date Order</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={SortOrder.AncestorOrder}>
+              Ancestor Order
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

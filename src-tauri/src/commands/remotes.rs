@@ -84,17 +84,10 @@ pub async fn push_remote(
     state: State<'_, AppState>,
     remote_name: String,
     refspecs: Vec<String>,
-    force: Option<bool>,
-    set_upstream: Option<bool>,
-    tags: Option<bool>,
+    options: Option<PushOptions>,
 ) -> Result<PushResult> {
     let service = state.get_service()?;
-    let options = PushOptions {
-        force: force.unwrap_or(false),
-        set_upstream: set_upstream.unwrap_or(false),
-        tags: tags.unwrap_or(false),
-    };
-    service.push(&remote_name, &refspecs, &options)
+    service.push(&remote_name, &refspecs, &options.unwrap_or_default())
 }
 
 #[tauri::command]
@@ -102,16 +95,10 @@ pub async fn push_remote(
 pub async fn push_current_branch(
     state: State<'_, AppState>,
     remote_name: String,
-    force: Option<bool>,
-    set_upstream: Option<bool>,
+    options: Option<PushOptions>,
 ) -> Result<PushResult> {
     let service = state.get_service()?;
-    let options = PushOptions {
-        force: force.unwrap_or(false),
-        set_upstream: set_upstream.unwrap_or(false),
-        tags: false,
-    };
-    service.push_current_branch(&remote_name, &options)
+    service.push_current_branch(&remote_name, &options.unwrap_or_default())
 }
 
 #[tauri::command]

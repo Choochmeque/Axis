@@ -8,6 +8,7 @@ export type {
 
   // Commit types
   Commit,
+  LogOptions,
   Signature,
 
   // Branch types
@@ -24,6 +25,7 @@ export type {
   FetchProgress,
   FetchResult,
   UpdatedRef,
+  PushOptions,
   PushResult,
   PushedRef,
 
@@ -124,6 +126,7 @@ import type {
   SortOrder as SortOrderType,
   RepositoryState as RepositoryStateType,
   StatusType as StatusTypeType,
+  DiffTarget as DiffTargetType,
   DiffStatus as DiffStatusType,
   DiffLineType as DiffLineTypeType,
   EdgeType as EdgeTypeType,
@@ -142,15 +145,6 @@ import type {
 
 // Frontend-only types (not generated from Rust)
 
-export interface LogOptions {
-  limit?: number;
-  skip?: number;
-  fromRef?: string;
-  branchFilter?: BranchFilterType;
-  includeRemotes?: boolean;
-  sortOrder?: SortOrder;
-}
-
 export interface CreateBranchOptions {
   startPoint?: string;
   force?: boolean;
@@ -167,12 +161,6 @@ export interface FetchOptions {
   prune?: boolean;
   tags?: boolean;
   depth?: number;
-}
-
-export interface PushOptions {
-  force?: boolean;
-  setUpstream?: boolean;
-  tags?: boolean;
 }
 
 export interface PullOptions {
@@ -223,6 +211,19 @@ export const RepositoryState: { [K in RepositoryStateType]: K } = {
 };
 
 export type RepositoryState = RepositoryStateType;
+
+export const DiffTarget: {
+  [K in Exclude<
+    DiffTargetType,
+    { CommitToCommit: { from: string; to: string } } | { Commit: { oid: string } }
+  >]: K;
+} = {
+  WorkdirToIndex: 'WorkdirToIndex',
+  IndexToHead: 'IndexToHead',
+  WorkdirToHead: 'WorkdirToHead',
+};
+
+export type DiffTarget = DiffTargetType;
 
 export const StatusType: { [K in StatusTypeType]: K } = {
   Untracked: 'Untracked',

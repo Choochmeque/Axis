@@ -46,6 +46,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::unstage_hunk,
             crate::commands::discard_hunk,
             // Diff commands
+            crate::commands::get_diff,
             crate::commands::get_diff_workdir,
             crate::commands::get_diff_staged,
             crate::commands::get_diff_head,

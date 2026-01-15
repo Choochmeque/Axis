@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
-import {
-  Columns,
-  Rows,
-  FileCode,
-  Binary,
-  Plus,
-  Minus,
-  X,
-  ChevronDown,
-  Check,
-  Image,
-} from 'lucide-react';
+import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Image } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui';
@@ -23,16 +14,21 @@ import { DiffLineType, DiffStatus } from '@/types';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
 import { cn } from '../../lib/utils';
 import { diffApi } from '@/services/api';
-import {
-  useStagingStore,
-  type DiffSettings,
-  type WhitespaceMode,
-  type ContextLines,
-  type DiffCompareMode,
+import { useStagingStore, DiffCompareMode, WhitespaceMode } from '@/store/stagingStore';
+import type {
+  DiffSettings,
+  ContextLines,
+  DiffCompareMode as DiffCompareModeType,
+  WhitespaceMode as WhitespaceModeType,
 } from '@/store/stagingStore';
 
 // Re-export types for external use
-export type { WhitespaceMode, ContextLines, DiffCompareMode, DiffSettings };
+export type {
+  WhitespaceModeType as WhitespaceMode,
+  ContextLines,
+  DiffCompareModeType as DiffCompareMode,
+  DiffSettings,
+};
 
 export type DiffMode = 'workdir' | 'staged' | 'commit';
 
@@ -499,56 +495,53 @@ function DiffHeader({
           <DropdownMenuSeparator />
 
           {/* Whitespace */}
-          <DropdownMenuItem
-            onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'show' })}
+          <DropdownMenuRadioGroup
+            value={diffSettings.whitespace}
+            onValueChange={(value) =>
+              onDiffSettingsChange({ ...diffSettings, whitespace: value as WhitespaceModeType })
+            }
           >
-            {diffSettings.whitespace === 'show' && <Check size={12} className="absolute left-2" />}
-            Show whitespace
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => onDiffSettingsChange({ ...diffSettings, whitespace: 'ignore' })}
-          >
-            {diffSettings.whitespace === 'ignore' && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            Ignore whitespace
-          </DropdownMenuItem>
+            <DropdownMenuRadioItem value={WhitespaceMode.Show}>
+              Show whitespace
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={WhitespaceMode.Ignore}>
+              Ignore whitespace
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Lines of Context */}
           <DropdownMenuLabel>Lines of context</DropdownMenuLabel>
-          {contextLineOptions.map((lines) => (
-            <DropdownMenuItem
-              key={lines}
-              onSelect={() => onDiffSettingsChange({ ...diffSettings, contextLines: lines })}
-            >
-              {diffSettings.contextLines === lines && (
-                <Check size={12} className="absolute left-2" />
-              )}
-              {lines}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuRadioGroup
+            value={String(diffSettings.contextLines)}
+            onValueChange={(value) =>
+              onDiffSettingsChange({ ...diffSettings, contextLines: Number(value) as ContextLines })
+            }
+          >
+            {contextLineOptions.map((lines) => (
+              <DropdownMenuRadioItem key={lines} value={String(lines)}>
+                {lines}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Diff Compare Mode */}
-          <DropdownMenuItem
-            onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'parent' })}
+          <DropdownMenuRadioGroup
+            value={diffSettings.compareMode}
+            onValueChange={(value) =>
+              onDiffSettingsChange({ ...diffSettings, compareMode: value as DiffCompareModeType })
+            }
           >
-            {diffSettings.compareMode === 'parent' && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            Diff vs parent
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => onDiffSettingsChange({ ...diffSettings, compareMode: 'merged' })}
-          >
-            {diffSettings.compareMode === 'merged' && (
-              <Check size={12} className="absolute left-2" />
-            )}
-            Diff vs merged
-          </DropdownMenuItem>
+            <DropdownMenuRadioItem value={DiffCompareMode.Parent}>
+              Diff vs parent
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={DiffCompareMode.Merged}>
+              Diff vs merged
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -1,8 +1,27 @@
 use crate::error::Result;
-use crate::models::{DiffOptions, FileDiff};
+use crate::models::{DiffOptions, DiffTarget, FileDiff};
 use crate::state::AppState;
 use tauri::ipc::Response;
 use tauri::State;
+
+/// Get diff based on the specified target
+#[tauri::command]
+#[specta::specta]
+pub async fn get_diff(
+    state: State<'_, AppState>,
+    target: DiffTarget,
+    options: Option<DiffOptions>,
+) -> Result<Vec<FileDiff>> {
+    let service = state.get_service()?;
+    let opts = options.unwrap_or_default();
+    match target {
+        DiffTarget::WorkdirToIndex => service.diff_workdir(&opts),
+        DiffTarget::IndexToHead => service.diff_staged(&opts),
+        DiffTarget::WorkdirToHead => service.diff_head(&opts),
+        DiffTarget::Commit { oid } => service.diff_commit(&oid, &opts),
+        DiffTarget::CommitToCommit { from, to } => service.diff_commits(&from, &to, &opts),
+    }
+}
 
 /// Get diff for unstaged changes (working directory vs index)
 #[tauri::command]

@@ -71,7 +71,11 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     try {
       // Push the specific branch (works for both current and non-current branches)
       const refspec = `refs/heads/${branch.name}:refs/heads/${branch.name}`;
-      await remoteApi.push(remoteName, [refspec], false, !hasUpstream);
+      await remoteApi.push(remoteName, [refspec], {
+        force: false,
+        setUpstream: !hasUpstream,
+        tags: false,
+      });
       await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
     } catch (err) {
       console.error('Push failed:', err);

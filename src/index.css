@@ -311,7 +311,7 @@ code {
 
   /* Radix UI Dialog/Dropdown overrides */
   [data-radix-popper-content-wrapper] {
-    z-index: 1000 !important;
+    z-index: 11000 !important;
   }
 } /* end @layer base */
 

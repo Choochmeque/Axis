@@ -144,7 +144,8 @@ describe('SettingsDialog', () => {
 
     // Change a setting to enable save button
     const themeSelect = screen.getByLabelText('Theme');
-    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
+    fireEvent.click(themeSelect);
+    fireEvent.click(await screen.findByRole('option', { name: 'Light' }));
 
     // Click save
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
@@ -165,7 +166,8 @@ describe('SettingsDialog', () => {
 
     // Change a setting
     const themeSelect = screen.getByLabelText('Theme');
-    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
+    fireEvent.click(themeSelect);
+    fireEvent.click(await screen.findByRole('option', { name: 'Light' }));
 
     // Click save
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
@@ -183,19 +185,20 @@ describe('SettingsDialog', () => {
     });
 
     // Get the theme select
-    const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
-    expect(themeSelect.value).toBe(Theme.Dark);
+    const themeSelect = screen.getByLabelText('Theme');
+    expect(themeSelect).toHaveTextContent('Dark');
 
     // Change it
-    fireEvent.change(themeSelect, { target: { value: Theme.Light } });
-    expect(themeSelect.value).toBe(Theme.Light);
+    fireEvent.click(themeSelect);
+    fireEvent.click(await screen.findByRole('option', { name: 'Light' }));
+    expect(themeSelect).toHaveTextContent('Light');
 
     // Click reset
     fireEvent.click(screen.getByRole('button', { name: /Reset/i }));
 
     // Should be back to original
     await waitFor(() => {
-      expect(themeSelect.value).toBe(Theme.Dark);
+      expect(themeSelect).toHaveTextContent('Dark');
     });
   });
 });

@@ -358,7 +358,10 @@ code {
 
   /* Dialog classes */
   .dialog-content {
-    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-h-[85vh] p-0 overflow-y-auto z-10000;
+    @apply fixed bg-(--bg-primary) rounded-lg shadow-xl w-[90vw] max-h-[85vh] p-0 overflow-y-auto z-10000;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     animation: dialog-in 150ms ease-out;
   }
 

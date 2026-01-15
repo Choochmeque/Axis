@@ -11,8 +11,9 @@ import {
   FolderOpen,
   Terminal,
 } from 'lucide-react';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { shellApi } from '../../services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { shellApi } from '@/services/api';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
@@ -31,6 +32,10 @@ export function Toolbar() {
   const aheadCount = currentBranch?.ahead ?? 0;
   const behindCount = currentBranch?.behind ?? 0;
 
+  // Settings from store (used by menu actions)
+  const showSettings = useSettingsStore((s) => s.showSettings);
+  const setShowSettings = useSettingsStore((s) => s.setShowSettings);
+
   // Dialog states
   const [createBranchOpen, setCreateBranchOpen] = useState(false);
   const [checkoutBranchOpen, setCheckoutBranchOpen] = useState(false);
@@ -38,7 +43,6 @@ export function Toolbar() {
   const [pushOpen, setPushOpen] = useState(false);
   const [pullOpen, setPullOpen] = useState(false);
   const [stashOpen, setStashOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleCommitClick = useCallback(() => {
     setCurrentView('file-status');
@@ -70,7 +74,7 @@ export function Toolbar() {
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
-    onOpenSettings: () => setSettingsOpen(true),
+    onOpenSettings: () => setShowSettings(true),
     onRefresh: handleRefresh,
     onCommit: handleCommitClick,
     onPush: () => repository && setPushOpen(true),
@@ -183,7 +187,7 @@ export function Toolbar() {
         )}
         <button
           className={toolbarButtonClass}
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => setShowSettings(true)}
           title="Settings"
         >
           <Settings size={18} />
@@ -191,7 +195,7 @@ export function Toolbar() {
         </button>
       </div>
 
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

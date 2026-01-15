@@ -46,7 +46,7 @@ impl Default for AppSettings {
         Self {
             // Appearance
             theme: Theme::default(),
-            font_size: 13,
+            font_size: 12,
             show_line_numbers: true,
 
             // Git

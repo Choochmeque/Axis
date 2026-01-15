@@ -51,7 +51,7 @@ vi.mock('@/store/settingsStore', () => ({
 
 const mockSettings = {
   theme: Theme.Dark,
-  fontSize: 13,
+  fontSize: 12,
   showLineNumbers: true,
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,

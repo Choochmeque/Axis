@@ -35,7 +35,7 @@ type SettingsTab = 'appearance' | 'git' | 'diff';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
-  fontSize: 13,
+  fontSize: 12,
   showLineNumbers: true,
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,

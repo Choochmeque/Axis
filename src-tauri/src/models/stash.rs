@@ -52,7 +52,7 @@ pub struct StashApplyOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct StashResult {
-    pub success: bool,
+    /// Message describing the result of the operation
     pub message: String,
     /// Number of files stashed/restored
     pub files_affected: usize,

@@ -55,74 +55,62 @@ export function StashView({ onRefresh }: StashViewProps) {
 
   const handleSave = async () => {
     try {
-      const result = await stashApi.save({
+      await stashApi.save({
         message: stashMessage || null,
         includeUntracked: includeUntracked,
         keepIndex: keepIndex,
         includeIgnored: false,
       });
 
-      if (result.success) {
-        setShowCreateDialog(false);
-        setStashMessage('');
-        setIncludeUntracked(false);
-        setKeepIndex(false);
-        await loadStashes();
-        onRefresh?.();
-      } else {
-        setError(result.message);
-      }
+      setShowCreateDialog(false);
+      setStashMessage('');
+      setIncludeUntracked(false);
+      setKeepIndex(false);
+      await loadStashes();
+      onRefresh?.();
     } catch (err) {
       console.error('Failed to save stash:', err);
-      setError('Failed to save stash');
+      setError(err instanceof Error ? err.message : 'Failed to save stash');
     }
   };
 
   const handleApply = async (index: number) => {
     try {
       const result = await stashApi.apply({ index, reinstateIndex: false });
-      if (result.success) {
-        onRefresh?.();
-      } else if (result.conflicts.length > 0) {
+      if (result.conflicts.length > 0) {
         setError(`Stash applied with conflicts in: ${result.conflicts.join(', ')}`);
       } else {
-        setError(result.message);
+        onRefresh?.();
       }
     } catch (err) {
       console.error('Failed to apply stash:', err);
-      setError('Failed to apply stash');
+      setError(err instanceof Error ? err.message : 'Failed to apply stash');
     }
   };
 
   const handlePop = async (index: number) => {
     try {
       const result = await stashApi.pop({ index, reinstateIndex: false });
-      if (result.success) {
-        await loadStashes();
-        onRefresh?.();
-      } else if (result.conflicts.length > 0) {
+      if (result.conflicts.length > 0) {
         setError(`Stash applied with conflicts (not dropped): ${result.conflicts.join(', ')}`);
       } else {
-        setError(result.message);
+        await loadStashes();
+        onRefresh?.();
       }
     } catch (err) {
       console.error('Failed to pop stash:', err);
-      setError('Failed to pop stash');
+      setError(err instanceof Error ? err.message : 'Failed to pop stash');
     }
   };
 
   const handleDrop = async (index: number) => {
     try {
-      const result = await stashApi.drop(index);
-      if (result.success) {
-        await loadStashes();
-        setSelectedIndex(null);
-      } else {
-        setError(result.message);
-      }
+      await stashApi.drop(index);
+      await loadStashes();
+      setSelectedIndex(null);
     } catch (err) {
       console.error('Failed to drop stash:', err);
-      setError('Failed to drop stash');
+      setError(err instanceof Error ? err.message : 'Failed to drop stash');
     }
   };
 
@@ -131,16 +119,12 @@ export function StashView({ onRefresh }: StashViewProps) {
     if (!branchName) return;
 
     try {
-      const result = await stashApi.branch(branchName, index);
-      if (result.success) {
-        await loadStashes();
-        onRefresh?.();
-      } else {
-        setError(result.message);
-      }
+      await stashApi.branch(branchName, index);
+      await loadStashes();
+      onRefresh?.();
     } catch (err) {
       console.error('Failed to create branch from stash:', err);
-      setError('Failed to create branch from stash');
+      setError(err instanceof Error ? err.message : 'Failed to create branch from stash');
     }
   };
 

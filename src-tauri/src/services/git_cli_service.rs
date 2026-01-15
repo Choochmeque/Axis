@@ -451,25 +451,18 @@ impl GitCliService {
             // Count affected files from output
             let files_affected = result.stdout.lines().count();
             Ok(StashResult {
-                success: true,
                 message: "Stash created successfully".to_string(),
                 files_affected,
                 conflicts: Vec::new(),
             })
         } else if result.stderr.contains("No local changes to save") {
             Ok(StashResult {
-                success: true,
                 message: "No changes to stash".to_string(),
                 files_affected: 0,
                 conflicts: Vec::new(),
             })
         } else {
-            Ok(StashResult {
-                success: false,
-                message: result.stderr.trim().to_string(),
-                files_affected: 0,
-                conflicts: Vec::new(),
-            })
+            Err(AxisError::Other(result.stderr.trim().to_string()))
         }
     }
 
@@ -488,7 +481,6 @@ impl GitCliService {
 
         if result.success {
             Ok(StashResult {
-                success: true,
                 message: "Stash applied successfully".to_string(),
                 files_affected: 0,
                 conflicts: Vec::new(),
@@ -496,19 +488,9 @@ impl GitCliService {
         } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
             // Get conflicted files
             let conflicts = self.get_conflicted_files()?;
-            Ok(StashResult {
-                success: false,
-                message: "Stash applied with conflicts".to_string(),
-                files_affected: 0,
-                conflicts,
-            })
+            Err(AxisError::Other("Stash applied with conflicts".to_string()))
         } else {
-            Ok(StashResult {
-                success: false,
-                message: result.stderr.trim().to_string(),
-                files_affected: 0,
-                conflicts: Vec::new(),
-            })
+            Err(AxisError::Other(result.stderr.trim().to_string()))
         }
     }
 
@@ -527,26 +509,17 @@ impl GitCliService {
 
         if result.success {
             Ok(StashResult {
-                success: true,
                 message: "Stash popped successfully".to_string(),
                 files_affected: 0,
                 conflicts: Vec::new(),
             })
         } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
             let conflicts = self.get_conflicted_files()?;
-            Ok(StashResult {
-                success: false,
-                message: "Stash applied with conflicts (not dropped)".to_string(),
-                files_affected: 0,
-                conflicts,
-            })
+            Err(AxisError::Other(
+                "Stash applied with conflicts (not dropped)".to_string(),
+            ))
         } else {
-            Ok(StashResult {
-                success: false,
-                message: result.stderr.trim().to_string(),
-                files_affected: 0,
-                conflicts: Vec::new(),
-            })
+            Err(AxisError::Other(result.stderr.trim().to_string()))
         }
     }
 
@@ -555,32 +528,30 @@ impl GitCliService {
         let stash_ref = format!("stash@{{{}}}", index.unwrap_or(0));
         let result = self.execute(&["stash", "drop", &stash_ref])?;
 
-        Ok(StashResult {
-            success: result.success,
-            message: if result.success {
-                "Stash dropped successfully".to_string()
-            } else {
-                result.stderr.trim().to_string()
-            },
-            files_affected: 0,
-            conflicts: Vec::new(),
-        })
+        if result.success {
+            Ok(StashResult {
+                message: "Stash dropped successfully".to_string(),
+                files_affected: 0, // TODO: parse from output if needed
+                conflicts: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
     }
 
     /// Clear all stashes
     pub fn stash_clear(&self) -> Result<StashResult> {
         let result = self.execute(&["stash", "clear"])?;
 
-        Ok(StashResult {
-            success: result.success,
-            message: if result.success {
-                "All stashes cleared".to_string()
-            } else {
-                result.stderr.trim().to_string()
-            },
-            files_affected: 0,
-            conflicts: Vec::new(),
-        })
+        if result.success {
+            Ok(StashResult {
+                message: "All stashes cleared".to_string(),
+                files_affected: 0, // TODO: parse from output if needed
+                conflicts: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
     }
 
     /// Show the diff of a stash
@@ -596,7 +567,7 @@ impl GitCliService {
         if result.success {
             Ok(result.stdout)
         } else {
-            Err(AxisError::Other(result.stderr))
+            Err(AxisError::Other(result.stderr.trim().to_string()))
         }
     }
 
@@ -605,16 +576,15 @@ impl GitCliService {
         let stash_ref = format!("stash@{{{}}}", index.unwrap_or(0));
         let result = self.execute(&["stash", "branch", branch_name, &stash_ref])?;
 
-        Ok(StashResult {
-            success: result.success,
-            message: if result.success {
-                format!("Created branch '{}' from stash", branch_name)
-            } else {
-                result.stderr.trim().to_string()
-            },
-            files_affected: 0,
-            conflicts: Vec::new(),
-        })
+        if result.success {
+            Ok(StashResult {
+                message: format!("Created branch '{}' from stash", branch_name),
+                files_affected: 0, // TODO: parse from output if needed
+                conflicts: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
     }
 
     // ==================== Tag Operations (Remote Only) ====================
@@ -1227,7 +1197,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Finished {} '{}'", branch_type.as_str(), name),
+            message: format!("Finished {} '{name}'", branch_type.as_str()),
             branch: Some(target_branch),
         })
     }
@@ -2187,14 +2157,12 @@ mod tests {
             .expect("should add files to staging");
 
         // Stash the changes
-        let result = service
+        let _ = service
             .stash_save(&StashSaveOptions {
                 message: Some("Test stash".to_string()),
                 ..Default::default()
             })
             .expect("should save stash");
-
-        assert!(result.success);
 
         // Verify stash exists
         let stashes = service.stash_list().expect("should list stashes");
@@ -2224,10 +2192,9 @@ mod tests {
         assert!(!tmp.path().join("stash_test.txt").exists());
 
         // Pop the stash
-        let result = service
+        let _ = service
             .stash_pop(&StashApplyOptions::default())
             .expect("should pop stash");
-        assert!(result.success);
 
         // Verify file is back
         assert!(tmp.path().join("stash_test.txt").exists());
@@ -2256,10 +2223,9 @@ mod tests {
             .expect("should save stash");
 
         // Apply the stash
-        let result = service
+        let _ = service
             .stash_apply(&StashApplyOptions::default())
             .expect("should apply stash");
-        assert!(result.success);
 
         // Verify file is back
         assert!(tmp.path().join("apply_test.txt").exists());
@@ -2291,8 +2257,7 @@ mod tests {
         assert_eq!(service.stash_list().expect("should list stashes").len(), 1);
 
         // Drop the stash
-        let result = service.stash_drop(None).expect("should drop stash");
-        assert!(result.success);
+        let _ = service.stash_drop(None).expect("should drop stash");
 
         // Verify stash is gone
         assert!(service
@@ -2323,8 +2288,7 @@ mod tests {
         assert_eq!(service.stash_list().expect("should list stashes").len(), 3);
 
         // Clear all stashes
-        let result = service.stash_clear().expect("should clear all stashes");
-        assert!(result.success);
+        let _ = service.stash_clear().expect("should clear all stashes");
 
         assert!(service
             .stash_list()

@@ -17,12 +17,8 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handleApply = async () => {
     try {
-      const result = await stashApi.apply({ index: stash.index, reinstateIndex: false });
-      if (result.success) {
-        await refreshRepository();
-      } else {
-        console.error('Failed to apply stash:', result.message);
-      }
+      await stashApi.apply({ index: stash.index, reinstateIndex: false });
+      await refreshRepository();
     } catch (err) {
       console.error('Failed to apply stash:', err);
     }
@@ -30,14 +26,10 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handlePop = async () => {
     try {
-      const result = await stashApi.pop({ index: stash.index, reinstateIndex: false });
-      if (result.success) {
-        clearStashSelection();
-        await loadStashes();
-        await refreshRepository();
-      } else {
-        console.error('Failed to pop stash:', result.message);
-      }
+      await stashApi.pop({ index: stash.index, reinstateIndex: false });
+      clearStashSelection();
+      await loadStashes();
+      await refreshRepository();
     } catch (err) {
       console.error('Failed to pop stash:', err);
     }
@@ -45,13 +37,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   const handleDrop = async () => {
     try {
-      const result = await stashApi.drop(Number(stash.index));
-      if (result.success) {
-        clearStashSelection();
-        await loadStashes();
-      } else {
-        console.error('Failed to drop stash:', result.message);
-      }
+      await stashApi.drop(Number(stash.index));
+      clearStashSelection();
+      await loadStashes();
     } catch (err) {
       console.error('Failed to drop stash:', err);
     }
@@ -60,14 +48,10 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
   const handleBranch = async (name: string) => {
     if (!name.trim()) return;
     try {
-      const result = await stashApi.branch(name, Number(stash.index));
-      if (result.success) {
-        clearStashSelection();
-        await loadStashes();
-        await refreshRepository();
-      } else {
-        console.error('Failed to create branch from stash:', result.message);
-      }
+      await stashApi.branch(name, Number(stash.index));
+      clearStashSelection();
+      await loadStashes();
+      await refreshRepository();
     } catch (err) {
       console.error('Failed to create branch from stash:', err);
     }

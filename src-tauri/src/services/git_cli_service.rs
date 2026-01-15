@@ -7,8 +7,14 @@ use crate::models::{
     SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
 };
 use chrono::{DateTime, Utc};
+use std::fs::File;
+use std::io::Read;
 use std::path::Path;
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
+
+use bzip2::write::BzEncoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 
 /// Service for Git operations that require the system Git CLI.
 /// Used for operations that libgit2 doesn't support well:
@@ -1583,93 +1589,64 @@ impl GitCliService {
 
         args.push(reference);
 
-        // For tar.gz and tar.bz2, we need to pipe through compression
+        // For tar.gz and tar.bz2, stream tar output through Rust compressors
         if actual_format == "tar.gz" || actual_format == "tar.bz2" {
-            // Create tar first, then compress
-            let temp_tar = output_path.with_extension("tar");
-            let temp_tar_str = temp_tar.to_string_lossy();
             let prefix_arg_tar = prefix.map(|p| format!("--prefix={}", p));
-
             let mut tar_args = vec!["archive", "--format", "tar"];
             if let Some(ref pa) = prefix_arg_tar {
                 tar_args.push(pa);
             }
-            tar_args.push("-o");
-            tar_args.push(&temp_tar_str);
             tar_args.push(reference);
 
-            let result = self.execute(&tar_args)?;
-            if !result.success {
-                return Ok(ArchiveResult {
-                    success: false,
-                    message: format!("Failed to create archive: {}", result.stderr.trim()),
-                    output_path: None,
-                    size_bytes: None,
-                });
+            let mut child = Command::new("git")
+                .args(&tar_args)
+                .current_dir(&self.repo_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(AxisError::IoError)?;
+
+            let mut stdout = child
+                .stdout
+                .take()
+                .ok_or_else(|| AxisError::Other("Failed to capture git stdout".to_string()))?;
+            let mut stderr = child
+                .stderr
+                .take()
+                .ok_or_else(|| AxisError::Other("Failed to capture git stderr".to_string()))?;
+
+            let stderr_handle = std::thread::spawn(move || {
+                let mut buffer = String::new();
+                let _ = stderr.read_to_string(&mut buffer);
+                buffer
+            });
+
+            let file = File::create(output_path).map_err(AxisError::IoError)?;
+            if actual_format == "tar.gz" {
+                let mut encoder = GzEncoder::new(file, Compression::default());
+                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::IoError)?;
+                encoder.finish().map_err(AxisError::IoError)?;
+            } else {
+                let mut encoder = BzEncoder::new(file, bzip2::Compression::default());
+                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::IoError)?;
+                encoder.finish().map_err(AxisError::IoError)?;
             }
 
-            // Compress the tar file
-            let compress_result = if actual_format == "tar.gz" {
-                Command::new("gzip")
-                    .arg("-f")
-                    .arg(&temp_tar)
-                    .current_dir(&self.repo_path)
-                    .output()
-            } else {
-                Command::new("bzip2")
-                    .arg("-f")
-                    .arg(&temp_tar)
-                    .current_dir(&self.repo_path)
-                    .output()
-            };
-
-            match compress_result {
-                Ok(output) if output.status.success() => {
-                    // Rename compressed file to desired output
-                    let compressed_path = if actual_format == "tar.gz" {
-                        temp_tar.with_extension("tar.gz")
-                    } else {
-                        temp_tar.with_extension("tar.bz2")
-                    };
-
-                    if compressed_path != output_path {
-                        std::fs::rename(&compressed_path, output_path)
-                            .map_err(AxisError::IoError)?;
-                    }
-                }
-                Ok(output) => {
-                    // Clean up temp file
-                    let _ = std::fs::remove_file(&temp_tar);
-                    return Ok(ArchiveResult {
-                        success: false,
-                        message: format!(
-                            "Failed to compress archive: {}",
-                            String::from_utf8_lossy(&output.stderr)
-                        ),
-                        output_path: None,
-                        size_bytes: None,
-                    });
-                }
-                Err(e) => {
-                    // Clean up temp file
-                    let _ = std::fs::remove_file(&temp_tar);
-                    return Ok(ArchiveResult {
-                        success: false,
-                        message: format!("Compression tool not available: {}", e),
-                        output_path: None,
-                        size_bytes: None,
-                    });
-                }
+            let status = child.wait().map_err(AxisError::IoError)?;
+            let stderr = stderr_handle.join().unwrap_or_default();
+            if !status.success() {
+                return Err(AxisError::Other(format!(
+                    "Failed to create archive: {}",
+                    stderr.trim()
+                )));
             }
         } else {
             let result = self.execute(&args)?;
             if !result.success {
-                return Ok(ArchiveResult {
-                    success: false,
-                    message: format!("Failed to create archive: {}", result.stderr.trim()),
-                    output_path: None,
-                    size_bytes: None,
-                });
+                return Err(AxisError::Other(format!(
+                    "Failed to create archive: {}",
+                    result.stderr.trim()
+                )));
             }
         }
 
@@ -1677,7 +1654,6 @@ impl GitCliService {
         let size_bytes = std::fs::metadata(output_path).ok().map(|m| m.len());
 
         Ok(ArchiveResult {
-            success: true,
             message: "Archive created successfully".to_string(),
             output_path: Some(output_path.to_string_lossy().to_string()),
             size_bytes,
@@ -1700,11 +1676,10 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Ok(PatchResult {
-                success: false,
-                message: format!("Failed to create patches: {}", result.stderr.trim()),
-                patches: Vec::new(),
-            });
+            return Err(AxisError::Other(format!(
+                "Failed to create patches: {}",
+                result.stderr.trim()
+            )));
         }
 
         // Parse output to get created patch files
@@ -1716,7 +1691,6 @@ impl GitCliService {
             .collect();
 
         Ok(PatchResult {
-            success: true,
             message: format!("Created {} patch file(s)", patches.len()),
             patches,
         })
@@ -1736,26 +1710,22 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Ok(PatchResult {
-                success: false,
-                message: format!("Failed to create patch: {}", result.stderr.trim()),
-                patches: Vec::new(),
-            });
+            return Err(AxisError::Other(format!(
+                "Failed to create patch: {}",
+                result.stderr.trim()
+            )));
         }
 
         if result.stdout.trim().is_empty() {
-            return Ok(PatchResult {
-                success: false,
-                message: "No changes to create patch from".to_string(),
-                patches: Vec::new(),
-            });
+            return Err(AxisError::Other(
+                "No changes to create patch from".to_string(),
+            ));
         }
 
         // Write patch to file
         std::fs::write(output_path, &result.stdout).map_err(AxisError::IoError)?;
 
         Ok(PatchResult {
-            success: true,
             message: "Patch created successfully".to_string(),
             patches: vec![output_path.to_string_lossy().to_string()],
         })
@@ -1784,15 +1754,13 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Ok(PatchResult {
-                success: false,
-                message: format!("Failed to apply patch: {}", result.stderr.trim()),
-                patches: Vec::new(),
-            });
+            return Err(AxisError::Other(format!(
+                "Failed to apply patch: {}",
+                result.stderr.trim()
+            )));
         }
 
         Ok(PatchResult {
-            success: true,
             message: if check_only {
                 "Patch can be applied cleanly".to_string()
             } else {
@@ -1826,15 +1794,13 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Ok(PatchResult {
-                success: false,
-                message: format!("Failed to apply patches: {}", result.stderr.trim()),
-                patches: Vec::new(),
-            });
+            return Err(AxisError::Other(format!(
+                "Failed to apply patches: {}",
+                result.stderr.trim()
+            )));
         }
 
         Ok(PatchResult {
-            success: true,
             message: format!("Applied {} patch(es) successfully", patch_paths.len()),
             patches: path_strs,
         })
@@ -1844,45 +1810,51 @@ impl GitCliService {
     pub fn am_abort(&self) -> Result<PatchResult> {
         let result = self.execute(&["am", "--abort"])?;
 
-        Ok(PatchResult {
-            success: result.success,
-            message: if result.success {
-                "Patch application aborted".to_string()
-            } else {
-                result.stderr.trim().to_string()
-            },
-            patches: Vec::new(),
-        })
+        if result.success {
+            Ok(PatchResult {
+                message: "Patch application aborted".to_string(),
+                patches: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to abort patch application: {}",
+                result.stderr.trim()
+            )))
+        }
     }
 
     /// Continue git am after resolving conflicts
     pub fn am_continue(&self) -> Result<PatchResult> {
         let result = self.execute(&["am", "--continue"])?;
 
-        Ok(PatchResult {
-            success: result.success,
-            message: if result.success {
-                "Patch application continued".to_string()
-            } else {
-                result.stderr.trim().to_string()
-            },
-            patches: Vec::new(),
-        })
+        if result.success {
+            Ok(PatchResult {
+                message: "Patch application continued".to_string(),
+                patches: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to continue patch application: {}",
+                result.stderr.trim()
+            )))
+        }
     }
 
     /// Skip the current patch in git am
     pub fn am_skip(&self) -> Result<PatchResult> {
         let result = self.execute(&["am", "--skip"])?;
 
-        Ok(PatchResult {
-            success: result.success,
-            message: if result.success {
-                "Patch skipped".to_string()
-            } else {
-                result.stderr.trim().to_string()
-            },
-            patches: Vec::new(),
-        })
+        if result.success {
+            Ok(PatchResult {
+                message: "Patch skipped".to_string(),
+                patches: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to skip current patch: {}",
+                result.stderr.trim()
+            )))
+        }
     }
 }
 

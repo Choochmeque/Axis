@@ -98,11 +98,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
         prefix: prefix || null,
       });
 
-      if (archiveResult.success) {
-        setResult(archiveResult);
-      } else {
-        setError(archiveResult.message);
-      }
+      setResult(archiveResult);
     } catch (err) {
       console.error('Failed to create archive:', err);
       setError(err instanceof Error ? err.message : 'Failed to create archive');
@@ -134,7 +130,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             </Alert>
           )}
 
-          {result && result.success ? (
+          {result ? (
             <Alert variant="success" className="mb-4">
               <Check size={16} />
               <div className="flex flex-col gap-1">
@@ -213,7 +209,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
         </DialogBody>
 
         <DialogFooter>
-          {result && result.success ? (
+          {result ? (
             <Button variant="primary" onClick={onClose}>
               Close
             </Button>

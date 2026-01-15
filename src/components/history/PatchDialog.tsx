@@ -127,12 +127,8 @@ export function PatchDialog({
         });
       }
 
-      if (patchResult.success) {
-        setResult(patchResult);
-        onSuccess?.();
-      } else {
-        setError(patchResult.message);
-      }
+      setResult(patchResult);
+      onSuccess?.();
     } catch (err) {
       console.error('Failed to create patch:', err);
       setError(err instanceof Error ? err.message : 'Failed to create patch');
@@ -168,12 +164,8 @@ export function PatchDialog({
         });
       }
 
-      if (patchResult.success) {
-        setResult(patchResult);
-        onSuccess?.();
-      } else {
-        setError(patchResult.message);
-      }
+      setResult(patchResult);
+      onSuccess?.();
     } catch (err) {
       console.error('Failed to apply patch:', err);
       setError(err instanceof Error ? err.message : 'Failed to apply patch');
@@ -227,7 +219,7 @@ export function PatchDialog({
               </Alert>
             )}
 
-            {result && result.success ? (
+            {result ? (
               <Alert variant="success" className="mb-4">
                 <Check size={16} />
                 <div className="flex flex-col gap-1">
@@ -338,7 +330,7 @@ export function PatchDialog({
         </Tabs.Root>
 
         <DialogFooter>
-          {result && result.success ? (
+          {result ? (
             <Button variant="primary" onClick={onClose}>
               Close
             </Button>

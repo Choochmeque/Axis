@@ -5,7 +5,6 @@ use specta::Type;
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ArchiveResult {
-    pub success: bool,
     pub message: String,
     pub output_path: Option<String>,
     pub size_bytes: Option<u64>,
@@ -29,7 +28,7 @@ pub struct ArchiveOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PatchResult {
-    pub success: bool,
+    /// Message describing the result of the operation
     pub message: String,
     /// Paths to created or applied patch files
     pub patches: Vec<String>,

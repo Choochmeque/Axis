@@ -10,6 +10,7 @@ import {
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { formatDistanceToNow } from 'date-fns';
 import { GitCommit, Loader2, GitBranch, Tag } from 'lucide-react';
+import { Avatar } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { BranchType, EdgeType, RefType } from '@/types';
 import type { GraphCommit, GraphEdge } from '@/types';
@@ -395,7 +396,16 @@ export function HistoryView() {
         minSize: 80,
         maxSize: 300,
         cell: ({ row }) => (
-          <span className="text-xs text-(--text-secondary)">{row.original.commit.author.name}</span>
+          <div className="flex items-center gap-1.5">
+            <Avatar
+              email={row.original.commit.author.email}
+              name={row.original.commit.author.name}
+              size={16}
+            />
+            <span className="text-xs text-(--text-secondary)">
+              {row.original.commit.author.name}
+            </span>
+          </div>
         ),
       }),
       columnHelper.accessor((row) => row.commit.shortOid, {

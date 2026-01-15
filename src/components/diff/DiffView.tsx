@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Image } from 'lucide-react';
 import {
   DropdownMenu,
@@ -12,9 +12,10 @@ import {
 } from '@/components/ui';
 import { DiffLineType, DiffStatus } from '@/types';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 import { diffApi } from '@/services/api';
 import { useStagingStore, DiffCompareMode, WhitespaceMode } from '@/store/stagingStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type {
   DiffSettings,
   ContextLines,
@@ -301,11 +302,33 @@ export function DiffView({
   onUnstageHunk,
   onDiscardHunk,
 }: DiffViewProps) {
-  const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
+  const contextLinesInitialized = useRef(false);
+  const viewModeInitialized = useRef(false);
 
   // Use store for diff settings (persists across file selections and triggers re-fetch)
   const { diffSettings, setDiffSettings } = useStagingStore();
+  const { settings } = useSettingsStore();
+
+  // Initialize viewMode from settings (settings = default, button = session override)
+  const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
+  useEffect(() => {
+    if (!viewModeInitialized.current && settings?.diffSideBySide !== undefined) {
+      viewModeInitialized.current = true;
+      setViewMode(settings.diffSideBySide ? 'split' : 'unified');
+    }
+  }, [settings?.diffSideBySide]);
+
+  // Initialize contextLines from settings once (settings = default, dropdown = session override)
+  useEffect(() => {
+    if (!contextLinesInitialized.current && settings?.diffContextLines !== undefined) {
+      contextLinesInitialized.current = true;
+      const settingsContextLines = settings.diffContextLines as ContextLines;
+      if (diffSettings.contextLines !== settingsContextLines) {
+        setDiffSettings({ ...diffSettings, contextLines: settingsContextLines });
+      }
+    }
+  }, [settings?.diffContextLines, diffSettings, setDiffSettings]);
 
   const handleStageHunk = async (hunkIndex: number) => {
     if (!diff || !onStageHunk) return;
@@ -412,6 +435,8 @@ export function DiffView({
             hunks={diff.hunks}
             mode={mode}
             loadingHunk={loadingHunk}
+            wordWrap={settings?.diffWordWrap}
+            showLineNumbers={settings?.showLineNumbers}
             onStageHunk={onStageHunk ? handleStageHunk : undefined}
             onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
@@ -421,6 +446,8 @@ export function DiffView({
             hunks={diff.hunks}
             mode={mode}
             loadingHunk={loadingHunk}
+            wordWrap={settings?.diffWordWrap}
+            showLineNumbers={settings?.showLineNumbers}
             onStageHunk={onStageHunk ? handleStageHunk : undefined}
             onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
@@ -577,6 +604,8 @@ interface UnifiedDiffProps {
   hunks: DiffHunk[];
   mode: DiffMode;
   loadingHunk: number | null;
+  wordWrap?: boolean;
+  showLineNumbers?: boolean;
   onStageHunk?: (hunkIndex: number) => Promise<void>;
   onUnstageHunk?: (hunkIndex: number) => Promise<void>;
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
@@ -589,12 +618,14 @@ function UnifiedDiff({
   hunks,
   mode,
   loadingHunk,
+  wordWrap,
+  showLineNumbers,
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
 }: UnifiedDiffProps) {
   return (
-    <div className="min-w-fit">
+    <div className={cn(!wordWrap && 'min-w-fit')}>
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
           <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-(--diff-hunk-bg) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
@@ -640,7 +671,12 @@ function UnifiedDiff({
           </div>
           <div className="flex flex-col">
             {hunk.lines.map((line, lineIndex) => (
-              <UnifiedDiffLine key={lineIndex} line={line} />
+              <UnifiedDiffLine
+                key={lineIndex}
+                line={line}
+                wordWrap={wordWrap}
+                showLineNumbers={showLineNumbers}
+              />
             ))}
           </div>
         </div>
@@ -651,23 +687,34 @@ function UnifiedDiff({
 
 interface UnifiedDiffLineProps {
   line: DiffLine;
+  wordWrap?: boolean;
+  showLineNumbers?: boolean;
 }
 
 const lineNoClass =
   'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums';
 
-function UnifiedDiffLine({ line }: UnifiedDiffLineProps) {
+function UnifiedDiffLine({ line, wordWrap, showLineNumbers = true }: UnifiedDiffLineProps) {
   const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.lineType);
   const prefix = getLinePrefix(line.lineType);
 
   return (
-    <div className={cn('flex leading-5.5 font-mono text-xs', bgClass)}>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.oldLineNo ?? ''}</span>
-      <span className={cn(lineNoClass, lineNoBgClass)}>{line.newLineNo ?? ''}</span>
+    <div className={cn('flex leading-5.5 font-mono diff-text', bgClass)}>
+      {showLineNumbers && (
+        <>
+          <span className={cn(lineNoClass, lineNoBgClass)}>{line.oldLineNo ?? ''}</span>
+          <span className={cn(lineNoClass, lineNoBgClass)}>{line.newLineNo ?? ''}</span>
+        </>
+      )}
       <span className={cn('shrink-0 w-5 py-0 px-1 text-center select-none', prefixColorClass)}>
         {prefix}
       </span>
-      <span className="flex-1 py-0 px-3 whitespace-pre">
+      <span
+        className={cn(
+          'flex-1 py-0 px-3',
+          wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'
+        )}
+      >
         <code className="font-inherit">{line.content}</code>
       </span>
     </div>
@@ -678,6 +725,8 @@ interface SplitDiffProps {
   hunks: DiffHunk[];
   mode: DiffMode;
   loadingHunk: number | null;
+  wordWrap?: boolean;
+  showLineNumbers?: boolean;
   onStageHunk?: (hunkIndex: number) => Promise<void>;
   onUnstageHunk?: (hunkIndex: number) => Promise<void>;
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
@@ -687,12 +736,14 @@ function SplitDiff({
   hunks,
   mode,
   loadingHunk,
+  wordWrap,
+  showLineNumbers,
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
 }: SplitDiffProps) {
   return (
-    <div className="min-w-fit">
+    <div className={cn(!wordWrap && 'min-w-fit')}>
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
           <div className="flex items-center gap-2 py-1 px-3 bg-(--diff-hunk-bg) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
@@ -737,7 +788,11 @@ function SplitDiff({
             )}
           </div>
           <div className="flex flex-col">
-            <SplitHunkLines lines={hunk.lines} />
+            <SplitHunkLines
+              lines={hunk.lines}
+              wordWrap={wordWrap}
+              showLineNumbers={showLineNumbers}
+            />
           </div>
         </div>
       ))}
@@ -747,10 +802,13 @@ function SplitDiff({
 
 interface SplitHunkLinesProps {
   lines: DiffLine[];
+  wordWrap?: boolean;
+  showLineNumbers?: boolean;
 }
 
-function SplitHunkLines({ lines }: SplitHunkLinesProps) {
+function SplitHunkLines({ lines, wordWrap, showLineNumbers = true }: SplitHunkLinesProps) {
   const pairs = pairLinesForSplit(lines);
+  const contentClass = wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre';
 
   return (
     <>
@@ -760,40 +818,44 @@ function SplitHunkLines({ lines }: SplitHunkLinesProps) {
         const leftEmpty = pair.left === null;
         const rightEmpty = pair.right === null;
         return (
-          <div key={index} className="flex min-w-fit">
+          <div key={index} className={cn('flex', !wordWrap && 'min-w-fit')}>
             <div
               className={cn(
-                'w-1/2 min-w-80 flex leading-5.5 font-mono text-xs border-r border-(--border-color)',
+                'w-1/2 min-w-80 flex leading-5.5 font-mono diff-text border-r border-(--border-color)',
                 leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.bgClass
               )}
             >
-              <span
-                className={cn(
-                  'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
-                  leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.lineNoBgClass
-                )}
-              >
-                {pair.left?.oldLineNo ?? ''}
-              </span>
-              <span className="flex-1 py-0 px-3 whitespace-pre">
+              {showLineNumbers && (
+                <span
+                  className={cn(
+                    'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
+                    leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.lineNoBgClass
+                  )}
+                >
+                  {pair.left?.oldLineNo ?? ''}
+                </span>
+              )}
+              <span className={cn('flex-1 py-0 px-3', contentClass)}>
                 <code className="font-inherit">{pair.left?.content ?? ''}</code>
               </span>
             </div>
             <div
               className={cn(
-                'w-1/2 min-w-80 flex leading-5.5 font-mono text-xs',
+                'w-1/2 min-w-80 flex leading-5.5 font-mono diff-text',
                 rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.bgClass
               )}
             >
-              <span
-                className={cn(
-                  'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
-                  rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.lineNoBgClass
-                )}
-              >
-                {pair.right?.newLineNo ?? ''}
-              </span>
-              <span className="flex-1 py-0 px-3 whitespace-pre">
+              {showLineNumbers && (
+                <span
+                  className={cn(
+                    'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums',
+                    rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.lineNoBgClass
+                  )}
+                >
+                  {pair.right?.newLineNo ?? ''}
+                </span>
+              )}
+              <span className={cn('flex-1 py-0 px-3', contentClass)}>
                 <code className="font-inherit">{pair.right?.content ?? ''}</code>
               </span>
             </div>

@@ -45,6 +45,7 @@ export function HistoryFilters() {
     }
     if (value.startsWith('specific:')) {
       const name = decodeURIComponent(value.replace('specific:', ''));
+      // eslint-disable-next-line @typescript-eslint/naming-convention -- Matches Rust enum variant
       setBranchFilter({ Specific: name });
     }
   };

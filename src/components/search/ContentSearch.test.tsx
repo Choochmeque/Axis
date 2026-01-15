@@ -1,4 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock window.matchMedia before any imports that might use it
+vi.hoisted(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === '(prefers-color-scheme: dark)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ContentSearch } from './ContentSearch';
 import { grepApi } from '../../services/api';

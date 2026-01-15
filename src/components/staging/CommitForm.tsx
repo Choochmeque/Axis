@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { useStagingStore } from '../../store/stagingStore';
+import { useStagingStore } from '@/store/stagingStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import {
+  Avatar,
   Checkbox,
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,10 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { remoteApi, commitApi, signingApi } from '../../services/api';
-import { cn } from '../../lib/utils';
-import type { SigningConfig } from '../../types';
+import { remoteApi, commitApi, signingApi } from '@/services/api';
+import type { SigningConfig } from '@/types';
 
 export function CommitForm() {
   const {
@@ -27,19 +28,38 @@ export function CommitForm() {
     amendCommit,
   } = useStagingStore();
   const { repository } = useRepositoryStore();
+  const { settings } = useSettingsStore();
 
   const [localMessage, setLocalMessage] = useState(commitMessage);
   const [pushAfterCommit, setPushAfterCommit] = useState(false);
   const [bypassHooks, setBypassHooks] = useState(false);
-  const [signCommit, setSignCommit] = useState(false);
+  // Initialize from settings, can be overridden per-commit
+  const [signCommit, setSignCommit] = useState(settings?.signCommits ?? false);
   const [signOff, setSignOff] = useState(false);
   const [signingAvailable, setSigningAvailable] = useState(false);
   const [signingConfig, setSigningConfig] = useState<SigningConfig | null>(null);
+  const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setLocalMessage(commitMessage);
   }, [commitMessage]);
+
+  // Sync signCommit with settings when settings change
+  useEffect(() => {
+    if (settings?.signCommits !== undefined) {
+      setSignCommit(settings.signCommits);
+    }
+  }, [settings?.signCommits]);
+
+  // Load author info when repository changes
+  useEffect(() => {
+    if (repository) {
+      commitApi.getUserSignature().then(([name, email]) => {
+        setAuthor({ name, email });
+      });
+    }
+  }, [repository]);
 
   // Check signing availability when repository changes
   useEffect(() => {
@@ -133,17 +153,19 @@ export function CommitForm() {
   const stagedCount = status?.staged.length ?? 0;
   const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);
 
-  // Split message into summary and body for character count
-  const lines = localMessage.split('\n');
-  const summary = lines[0] || '';
-  const isSummaryTooLong = summary.length > 72;
-
   return (
     <div className="flex flex-col h-full border-t border-(--border-color) bg-(--bg-secondary)">
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color) shrink-0">
-        <span className="text-xs font-semibold uppercase text-(--text-secondary)">
-          {isAmending ? 'Amend Commit' : 'Commit'}
-        </span>
+        <div className="flex items-center gap-2">
+          {author && (
+            <>
+              <Avatar email={author.email} name={author.name} size={20} />
+              <span className="text-xs text-(--text-primary)">
+                {author.name} &lt;{author.email}&gt;
+              </span>
+            </>
+          )}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1 py-1 px-2 border-none bg-transparent text-(--text-secondary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)">
@@ -184,30 +206,16 @@ export function CommitForm() {
       </div>
 
       <div className="p-3 flex flex-col gap-2 flex-1 min-h-0">
-        <div className="relative flex flex-col flex-1 min-h-0">
-          <textarea
-            ref={textareaRef}
-            className={cn(
-              'w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)',
-              isSummaryTooLong && 'border-warning'
-            )}
-            placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
-            value={localMessage}
-            onChange={handleMessageChange}
-            onKeyDown={handleKeyDown}
-            disabled={isCommitting}
-          />
-          <div className="flex justify-end mt-1 shrink-0">
-            <span
-              className={cn(
-                'text-[11px] text-(--text-tertiary)',
-                isSummaryTooLong && 'text-warning'
-              )}
-            >
-              {summary.length}/72
-            </span>
-          </div>
-        </div>
+        <textarea
+          ref={textareaRef}
+          className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+          placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
+          value={localMessage}
+          onChange={handleMessageChange}
+          onKeyDown={handleKeyDown}
+          disabled={isCommitting}
+          spellCheck={settings?.spellCheckCommitMessages ?? false}
+        />
 
         <div className="flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-1.5">

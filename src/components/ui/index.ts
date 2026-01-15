@@ -1,4 +1,5 @@
 // Core Components
+export { Avatar } from './avatar';
 export { Button, buttonVariants } from './button';
 export {
   Dialog,

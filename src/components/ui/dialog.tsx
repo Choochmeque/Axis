@@ -19,6 +19,7 @@ const DialogOverlay = forwardRef<
 ));
 DialogOverlay.displayName = 'DialogOverlay';
 
+/* eslint-disable @typescript-eslint/naming-convention -- Tailwind CSS size conventions */
 const maxWidthClasses = {
   sm: 'max-w-80',
   md: 'max-w-105',
@@ -26,6 +27,7 @@ const maxWidthClasses = {
   xl: 'max-w-150',
   '2xl': 'max-w-175',
 } as const;
+/* eslint-enable @typescript-eslint/naming-convention */
 
 interface DialogContentProps extends React.ComponentPropsWithoutRef<
   typeof DialogPrimitive.Content
@@ -42,6 +44,7 @@ const DialogContent = forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      aria-describedby={undefined}
       className={cn('dialog-content', maxWidthClasses[maxWidth], className)}
       {...props}
     >

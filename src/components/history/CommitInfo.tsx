@@ -1,4 +1,5 @@
-import { Copy, GitCommit, User, Calendar, GitBranch, Tag } from 'lucide-react';
+import { Copy, GitCommit, Calendar, GitBranch, Tag } from 'lucide-react';
+import { Avatar } from '@/components/ui';
 import { format } from 'date-fns';
 import { RefType } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
@@ -75,7 +76,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         <div className={rowClass}>
           <span className={metaLabelClass}>
-            <User size={12} />
+            <Avatar email={commit.author.email} name={commit.author.name} size={12} />
             Author
           </span>
           <div className={valueClass}>

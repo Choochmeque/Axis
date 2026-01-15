@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Palette, GitBranch, FileText, Terminal, Save, RotateCcw } from 'lucide-react';
+import { Settings, Palette, GitBranch, FileText } from 'lucide-react';
 import { settingsApi, signingApi } from '@/services/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { SigningFormat, Theme } from '@/types';
@@ -31,13 +31,12 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff' | 'terminal';
+type SettingsTab = 'appearance' | 'git' | 'diff';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
   fontSize: 13,
   showLineNumbers: true,
-  defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
@@ -48,10 +47,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffContextLines: 3,
   diffWordWrap: false,
   diffSideBySide: false,
-  commitMessageWidth: 72,
   spellCheckCommitMessages: false,
-  terminalFontFamily: 'monospace',
-  terminalFontSize: 13,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -117,7 +113,6 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
     { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
-    { id: 'terminal', label: 'Terminal', icon: <Terminal size={16} /> },
   ];
 
   return (
@@ -163,9 +158,6 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                 {activeTab === 'diff' && (
                   <DiffSettings settings={settings} updateSetting={updateSetting} />
                 )}
-                {activeTab === 'terminal' && (
-                  <TerminalSettings settings={settings} updateSetting={updateSetting} />
-                )}
               </>
             )}
           </div>
@@ -179,7 +171,6 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
 
         <DialogFooter className="justify-between">
           <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
-            <RotateCcw size={14} />
             Reset
           </Button>
           <div className="flex gap-2">
@@ -189,7 +180,6 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
               </Button>
             </DialogClose>
             <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
-              <Save size={14} />
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
@@ -332,19 +322,6 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   return (
     <div>
       <h3 className={sectionTitleClass}>Git</h3>
-
-      <FormField
-        label="Default Branch Name"
-        htmlFor="defaultBranch"
-        hint="Default branch name for new repositories"
-      >
-        <Input
-          id="defaultBranch"
-          type="text"
-          value={settings.defaultBranchName}
-          onChange={(e) => updateSetting('defaultBranchName', e.target.value)}
-        />
-      </FormField>
 
       <FormField
         label="Auto-fetch Interval (minutes)"
@@ -535,22 +512,6 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
 
       <h3 className={sectionTitleClass}>Commit</h3>
 
-      <FormField
-        label="Commit Message Width"
-        htmlFor="commitWidth"
-        hint="Maximum width for commit messages (50-120)"
-      >
-        <Input
-          id="commitWidth"
-          type="number"
-          min={50}
-          max={120}
-          value={settings.commitMessageWidth}
-          onChange={(e) => updateSetting('commitMessageWidth', parseInt(e.target.value) || 72)}
-          className={numberInputClass}
-        />
-      </FormField>
-
       <div className={groupClass}>
         <CheckboxField
           id="spell-check-commit-messages"
@@ -560,39 +521,6 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
       </div>
-    </div>
-  );
-}
-
-function TerminalSettings({ settings, updateSetting }: SettingsPanelProps) {
-  return (
-    <div>
-      <h3 className={sectionTitleClass}>Terminal</h3>
-
-      <FormField label="Font Family" htmlFor="terminalFont" hint="Font family for terminal output">
-        <Input
-          id="terminalFont"
-          type="text"
-          value={settings.terminalFontFamily}
-          onChange={(e) => updateSetting('terminalFontFamily', e.target.value)}
-        />
-      </FormField>
-
-      <FormField
-        label="Font Size"
-        htmlFor="terminalFontSize"
-        hint="Font size for terminal output (10-24)"
-      >
-        <Input
-          id="terminalFontSize"
-          type="number"
-          min={10}
-          max={24}
-          value={settings.terminalFontSize}
-          onChange={(e) => updateSetting('terminalFontSize', parseInt(e.target.value) || 13)}
-          className={numberInputClass}
-        />
-      </FormField>
     </div>
   );
 }

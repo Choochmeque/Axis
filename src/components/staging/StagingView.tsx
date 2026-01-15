@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Trash2 } from 'lucide-react';
 import { useStagingStore } from '@/store/stagingStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Checkbox } from '@/components/ui';
 import { FileStatusList, FluidFileList, type FluidFile } from './FileStatusList';
 import {
@@ -11,6 +12,7 @@ import {
   StagingViewMode,
   StagingMode,
 } from './StagingFilters';
+import { DiscardConfirmDialog } from './DiscardConfirmDialog';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
 import { cn, naturalCompare } from '@/lib/utils';
@@ -114,12 +116,50 @@ export function StagingView() {
     discardAll,
     clearError,
   } = useStagingStore();
+  const { settings } = useSettingsStore();
 
   // Filter state (UI only for now, filtering logic to be implemented)
   const [sortBy, setSortBy] = useState<StagingSortBy>(StagingSortBy.Path);
   const [showOnly, setShowOnly] = useState<StagingShowOnly>(StagingShowOnly.Pending);
   const [viewMode, setViewMode] = useState<StagingViewMode>(StagingViewMode.FlatSingle);
   const [stagingMode, setStagingMode] = useState<StagingMode>(StagingMode.SplitView);
+
+  // Discard confirmation dialog state
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [discardMode, setDiscardMode] = useState<'file' | 'all'>('all');
+  const [discardFilePath, setDiscardFilePath] = useState<string | undefined>();
+
+  // Handlers for discard with optional confirmation
+  const handleDiscardFile = useCallback(
+    (path: string) => {
+      if (settings?.confirmBeforeDiscard !== false) {
+        setDiscardMode('file');
+        setDiscardFilePath(path);
+        setDiscardDialogOpen(true);
+      } else {
+        discardFile(path);
+      }
+    },
+    [settings?.confirmBeforeDiscard, discardFile]
+  );
+
+  const handleDiscardAll = useCallback(() => {
+    if (settings?.confirmBeforeDiscard !== false) {
+      setDiscardMode('all');
+      setDiscardFilePath(undefined);
+      setDiscardDialogOpen(true);
+    } else {
+      discardAll();
+    }
+  }, [settings?.confirmBeforeDiscard, discardAll]);
+
+  const handleConfirmDiscard = useCallback(() => {
+    if (discardMode === 'all') {
+      discardAll();
+    } else if (discardFilePath) {
+      discardFile(discardFilePath);
+    }
+  }, [discardMode, discardFilePath, discardAll, discardFile]);
 
   useEffect(() => {
     loadStatus();
@@ -227,7 +267,7 @@ export function StagingView() {
         {totalUnstaged > 0 && (
           <button
             className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-            onClick={discardAll}
+            onClick={handleDiscardAll}
             title="Discard all changes"
           >
             <Trash2 size={14} />
@@ -242,7 +282,7 @@ export function StagingView() {
         onSelectFile={selectFile}
         onStage={stageFile}
         onUnstage={unstageFile}
-        onDiscard={discardFile}
+        onDiscard={handleDiscardFile}
         viewMode={viewMode}
       />
 
@@ -335,7 +375,7 @@ export function StagingView() {
             {totalUnstaged > 0 && (
               <button
                 className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-                onClick={discardAll}
+                onClick={handleDiscardAll}
                 title="Discard all changes"
               >
                 <Trash2 size={14} />
@@ -349,7 +389,7 @@ export function StagingView() {
               selectedFile={selectedFile}
               onSelectFile={(file) => selectFile(file, false)}
               onStage={stageFile}
-              onDiscard={discardFile}
+              onDiscard={handleDiscardFile}
               showStageButton
               showDiscardButton
               viewMode={viewMode}
@@ -385,18 +425,28 @@ export function StagingView() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
-      <StagingFilters
-        sortBy={sortBy}
-        showOnly={showOnly}
-        viewMode={viewMode}
-        stagingMode={stagingMode}
-        onSortByChange={setSortBy}
-        onShowOnlyChange={setShowOnly}
-        onViewModeChange={setViewMode}
-        onStagingModeChange={setStagingMode}
+    <>
+      <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
+        <StagingFilters
+          sortBy={sortBy}
+          showOnly={showOnly}
+          viewMode={viewMode}
+          stagingMode={stagingMode}
+          onSortByChange={setSortBy}
+          onShowOnlyChange={setShowOnly}
+          onViewModeChange={setViewMode}
+          onStagingModeChange={setStagingMode}
+        />
+        {stagingMode === StagingMode.Fluid ? renderFluidView() : renderSplitView()}
+      </div>
+
+      <DiscardConfirmDialog
+        isOpen={discardDialogOpen}
+        onClose={() => setDiscardDialogOpen(false)}
+        onConfirm={handleConfirmDiscard}
+        mode={discardMode}
+        filePath={discardFilePath}
       />
-      {stagingMode === StagingMode.Fluid ? renderFluidView() : renderSplitView()}
-    </div>
+    </>
   );
 }

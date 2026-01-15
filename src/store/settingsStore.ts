@@ -20,7 +20,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
   fontSize: 13,
   showLineNumbers: true,
-  defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
@@ -31,10 +30,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffContextLines: 3,
   diffWordWrap: false,
   diffSideBySide: false,
-  commitMessageWidth: 72,
   spellCheckCommitMessages: false,
-  terminalFontFamily: 'monospace',
-  terminalFontSize: 13,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -48,12 +44,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const settings = await settingsApi.get();
       set({ settings, isLoading: false });
-      // Apply theme on load
-      applyTheme(settings.theme);
+      applySettings(settings);
     } catch (error) {
       console.error('Failed to load settings:', error);
       set({ settings: DEFAULT_SETTINGS, isLoading: false, error: 'Failed to load settings' });
-      applyTheme(DEFAULT_SETTINGS.theme);
+      applySettings(DEFAULT_SETTINGS);
     }
   },
 
@@ -61,7 +56,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       await settingsApi.save(settings);
       set({ settings });
-      applyTheme(settings.theme);
+      applySettings(settings);
     } catch (error) {
       console.error('Failed to save settings:', error);
       throw error;
@@ -71,8 +66,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setTheme: (theme: ThemeType) => {
     const { settings } = get();
     if (settings) {
-      set({ settings: { ...settings, theme } });
-      applyTheme(theme);
+      const newSettings = { ...settings, theme };
+      set({ settings: newSettings });
+      applySettings(newSettings);
     }
   },
 
@@ -88,17 +84,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setShowSettings: (show: boolean) => set({ showSettings: show }),
 }));
 
-function applyTheme(theme: ThemeType) {
+function applySettings(settings: AppSettings) {
+  // Apply theme
   const effectiveTheme =
-    theme === Theme.System
+    settings.theme === Theme.System
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
-      : theme === Theme.Dark
+      : settings.theme === Theme.Dark
         ? 'dark'
         : 'light';
 
   document.documentElement.setAttribute('data-theme', effectiveTheme);
+
+  // Apply font size
+  document.documentElement.style.setProperty('--app-font-size', `${settings.fontSize}px`);
 }
 
 // Listen for system theme changes
@@ -106,7 +106,7 @@ if (typeof window !== 'undefined') {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { settings } = useSettingsStore.getState();
     if (settings?.theme === Theme.System) {
-      applyTheme(Theme.System);
+      applySettings(settings);
     }
   });
 }

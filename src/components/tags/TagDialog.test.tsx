@@ -23,9 +23,13 @@ describe('TagDialog', () => {
     expect(screen.queryByPlaceholderText('v1.0.0')).not.toBeInTheDocument();
   });
 
-  it('should render when open', () => {
+  it('should render when open', async () => {
     render(<TagDialog isOpen={true} onClose={() => {}} />);
-    expect(screen.getByPlaceholderText('v1.0.0')).toBeInTheDocument();
+
+    // Wait for async effects to complete
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('v1.0.0')).toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
   });
 
@@ -50,9 +54,14 @@ describe('TagDialog', () => {
     expect(screen.getByText('Initial commit')).toBeInTheDocument();
   });
 
-  it('should call onClose when cancel is clicked', () => {
+  it('should call onClose when cancel is clicked', async () => {
     const onClose = vi.fn();
     render(<TagDialog isOpen={true} onClose={onClose} />);
+
+    // Wait for async effects to complete
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    });
 
     const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     fireEvent.click(cancelButton);
@@ -157,6 +166,11 @@ describe('TagDialog', () => {
 
   it('should disable create button when tag name is empty', async () => {
     render(<TagDialog isOpen={true} onClose={() => {}} />);
+
+    // Wait for async effects to complete
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
+    });
 
     const createButton = screen.getByRole('button', { name: 'Add' });
 

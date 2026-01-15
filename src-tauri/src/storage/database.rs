@@ -242,7 +242,7 @@ mod tests {
 
         let settings = db.get_settings().expect("should get settings");
         assert_eq!(settings.font_size, 13);
-        assert_eq!(settings.default_branch_name, "main");
+        assert!(settings.confirm_before_discard);
     }
 
     #[test]

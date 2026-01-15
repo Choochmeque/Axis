@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
-import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '../types';
-import { useRepositoryStore } from './repositoryStore';
+import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
+import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export const WhitespaceMode = {

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { AppLayout } from './components/layout';
 import { HistoryView } from './components/history';
 import { WorkspaceView } from './components/workspace';
@@ -10,12 +10,14 @@ import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
 import { useMenuActions } from './hooks';
+import { remoteApi } from './services/api';
 import './index.css';
 
 function App() {
   const { repository, currentView, openRepository, closeRepository } = useRepositoryStore();
-  const { loadSettings } = useSettingsStore();
+  const { loadSettings, settings } = useSettingsStore();
   const { tabs, activeTabId, addTab, setActiveTab, updateTab, findTabByPath } = useTabsStore();
+  const autoFetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Handle menu actions from native menu
   useMenuActions();
@@ -35,6 +37,32 @@ function App() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  // Auto-fetch interval
+  useEffect(() => {
+    // Clear existing interval
+    if (autoFetchIntervalRef.current) {
+      clearInterval(autoFetchIntervalRef.current);
+      autoFetchIntervalRef.current = null;
+    }
+
+    const intervalMinutes = settings?.autoFetchInterval ?? 0;
+    if (intervalMinutes > 0 && repository) {
+      const intervalMs = intervalMinutes * 60 * 1000;
+      autoFetchIntervalRef.current = setInterval(() => {
+        remoteApi.fetchAll().catch((err) => {
+          console.error('Auto-fetch failed:', err);
+        });
+      }, intervalMs);
+    }
+
+    return () => {
+      if (autoFetchIntervalRef.current) {
+        clearInterval(autoFetchIntervalRef.current);
+        autoFetchIntervalRef.current = null;
+      }
+    };
+  }, [settings?.autoFetchInterval, repository]);
 
   // Load repository for active tab on startup (after rehydration from localStorage)
   useEffect(() => {

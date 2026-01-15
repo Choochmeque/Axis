@@ -19,6 +19,9 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     })),
   });
+
+  // Mock scrollIntoView for Radix UI Select
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 // Mock the API
@@ -50,7 +53,6 @@ const mockSettings = {
   theme: Theme.Dark,
   fontSize: 13,
   showLineNumbers: true,
-  defaultBranchName: 'main',
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,
   signCommits: false,
@@ -61,10 +63,7 @@ const mockSettings = {
   diffContextLines: 3,
   diffWordWrap: false,
   diffSideBySide: false,
-  commitMessageWidth: 72,
   spellCheckCommitMessages: false,
-  terminalFontFamily: 'monospace',
-  terminalFontSize: 13,
 };
 
 describe('SettingsDialog', () => {
@@ -103,7 +102,6 @@ describe('SettingsDialog', () => {
       expect(screen.getByText('Appearance')).toBeInTheDocument();
       expect(screen.getByText('Git')).toBeInTheDocument();
       expect(screen.getByText('Diff & Editor')).toBeInTheDocument();
-      expect(screen.getByText('Terminal')).toBeInTheDocument();
     });
   });
 
@@ -118,7 +116,7 @@ describe('SettingsDialog', () => {
     fireEvent.click(screen.getByText('Git'));
 
     await waitFor(() => {
-      expect(screen.getByText('Default Branch Name')).toBeInTheDocument();
+      expect(screen.getByText('Auto-fetch Interval (minutes)')).toBeInTheDocument();
     });
   });
 

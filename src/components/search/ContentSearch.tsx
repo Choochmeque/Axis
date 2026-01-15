@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui';
-import { grepApi } from '../../services/api';
-import type { GrepMatch, GrepResult } from '../../types';
+import { grepApi } from '@/services/api';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { GrepMatch, GrepResult } from '@/types';
 
 interface ContentSearchProps {
   onFileSelect?: (path: string, lineNumber?: number) => void;
@@ -14,6 +15,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+  const { settings } = useSettingsStore();
 
   // Search options
   const [ignoreCase, setIgnoreCase] = useState(false);
@@ -216,7 +218,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                       className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
                       onClick={() => handleMatchClick(match)}
                     >
-                      {match.lineNumber && (
+                      {settings?.showLineNumbers !== false && match.lineNumber && (
                         <span className="w-10 shrink-0 text-(--text-muted) text-right pr-2">
                           {match.lineNumber}
                         </span>

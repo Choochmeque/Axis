@@ -63,6 +63,9 @@ export function useFileWatcher() {
           loadTags();
         } else if (refName?.startsWith('refs/heads/') || refName?.startsWith('refs/remotes/')) {
           loadBranches();
+          loadCommits();
+          loadStatus();
+          stagingLoadStatus();
         }
         // Also check for stash refs
         if (refName?.startsWith('refs/stash')) {

@@ -37,6 +37,7 @@ export function TabBar({ onTabChange }: TabBarProps) {
           <Tabs.Trigger
             key={tab.id}
             value={tab.id}
+            asChild
             className={cn(
               'group flex items-center gap-2 h-full px-3 border-r border-(--border-color) cursor-pointer transition-colors min-w-0',
               'hover:bg-(--bg-hover)',
@@ -44,34 +45,38 @@ export function TabBar({ onTabChange }: TabBarProps) {
               'data-[state=inactive]:bg-(--bg-toolbar)'
             )}
           >
-            {tab.type === TabType.Welcome ? (
-              <Home size={14} className="shrink-0 text-(--text-secondary)" />
-            ) : (
-              <svg width={14} height={14} className="shrink-0">
-                <circle
-                  cx={7}
-                  cy={7}
-                  r={5}
-                  fill="var(--bg-toolbar)"
-                  stroke="var(--accent-color)"
-                  strokeWidth={2}
-                />
-              </svg>
-            )}
-            <span className="text-[13px] text-(--text-primary) truncate max-w-40">{tab.name}</span>
-            {tab.type !== TabType.Welcome && (
-              <button
-                className={cn(
-                  'flex items-center justify-center w-4 h-4 rounded shrink-0 transition-colors',
-                  'text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--bg-active)',
-                  'opacity-0 group-hover:opacity-100',
-                  'group-data-[state=active]:opacity-100'
-                )}
-                onClick={(e) => handleCloseTab(e, tab.id)}
-              >
-                <X size={12} />
-              </button>
-            )}
+            <div>
+              {tab.type === TabType.Welcome ? (
+                <Home size={14} className="shrink-0 text-(--text-secondary)" />
+              ) : (
+                <svg width={14} height={14} className="shrink-0">
+                  <circle
+                    cx={7}
+                    cy={7}
+                    r={5}
+                    fill="var(--bg-toolbar)"
+                    stroke="var(--accent-color)"
+                    strokeWidth={2}
+                  />
+                </svg>
+              )}
+              <span className="text-[13px] text-(--text-primary) truncate max-w-40">
+                {tab.name}
+              </span>
+              {tab.type !== TabType.Welcome && (
+                <button
+                  className={cn(
+                    'flex items-center justify-center w-4 h-4 rounded shrink-0 transition-colors',
+                    'text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--bg-active)',
+                    'opacity-0 group-hover:opacity-100',
+                    'group-data-[state=active]:opacity-100'
+                  )}
+                  onClick={(e) => handleCloseTab(e, tab.id)}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
           </Tabs.Trigger>
         ))}
       </Tabs.List>

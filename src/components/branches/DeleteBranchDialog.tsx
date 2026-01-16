@@ -115,10 +115,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <Trash2 size={18} />
-          Delete Branch
-        </DialogTitle>
+        <DialogTitle icon={Trash2}>Delete Branch</DialogTitle>
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">

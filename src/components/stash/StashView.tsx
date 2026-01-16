@@ -269,10 +269,7 @@ export function StashView({ onRefresh }: StashViewProps) {
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle>
-            <Archive size={18} />
-            Create Stash
-          </DialogTitle>
+          <DialogTitle icon={Archive}>Create Stash</DialogTitle>
 
           <DialogBody>
             <FormField label="Message (optional)" htmlFor="stash-message">

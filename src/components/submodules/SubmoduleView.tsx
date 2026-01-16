@@ -359,10 +359,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle>
-            <FolderGit2 size={18} />
-            Add Submodule
-          </DialogTitle>
+          <DialogTitle icon={FolderGit2}>Add Submodule</DialogTitle>
 
           <DialogBody>
             <FormField label="Repository URL" htmlFor="submodule-url">

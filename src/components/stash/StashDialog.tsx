@@ -65,10 +65,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <Archive size={18} />
-          Stash Changes
-        </DialogTitle>
+        <DialogTitle icon={Archive}>Stash Changes</DialogTitle>
 
         <DialogBody>
           <p className="text-base text-(--text-secondary) mb-4">

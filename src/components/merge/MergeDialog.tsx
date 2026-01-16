@@ -106,10 +106,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle>
-          <GitMerge size={18} />
-          Merge Branch
-        </DialogTitle>
+        <DialogTitle icon={GitMerge}>Merge Branch</DialogTitle>
 
         <DialogBody>
           {error && (

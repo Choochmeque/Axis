@@ -38,8 +38,7 @@ export function DiscardConfirmDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-100">
-        <DialogTitle>
-          <AlertTriangle size={18} className="text-warning" />
+        <DialogTitle icon={AlertTriangle} iconClassName="text-warning">
           {title}
         </DialogTitle>
 

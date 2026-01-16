@@ -102,10 +102,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle>
-          <ArrowDownToLine size={18} />
-          Pull from Remote
-        </DialogTitle>
+        <DialogTitle icon={ArrowDownToLine}>Pull from Remote</DialogTitle>
 
         <DialogBody>
           {success ? (

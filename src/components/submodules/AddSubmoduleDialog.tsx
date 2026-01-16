@@ -88,10 +88,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-120">
-        <DialogTitle>
-          <FolderGit2 size={18} />
-          Add Submodule
-        </DialogTitle>
+        <DialogTitle icon={FolderGit2}>Add Submodule</DialogTitle>
 
         <DialogBody>
           <FormField label="Repository URL" htmlFor="submodule-url">

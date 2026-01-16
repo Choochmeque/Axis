@@ -241,13 +241,13 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
   const getTypeIcon = (type: GitFlowBranchType) => {
     switch (type) {
       case 'Feature':
-        return <GitBranch size={14} />;
+        return GitBranch;
       case 'Release':
-        return <Rocket size={14} />;
+        return Rocket;
       case 'Hotfix':
-        return <Bug size={14} />;
+        return Bug;
       default:
-        return <GitBranch size={14} />;
+        return GitBranch;
     }
   };
 
@@ -474,10 +474,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       {/* Initialize Dialog */}
       <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle>
-            <Settings size={18} />
-            Initialize Git Flow
-          </DialogTitle>
+          <DialogTitle icon={Settings}>Initialize Git Flow</DialogTitle>
 
           <DialogBody>
             <FormField label="Production branch" htmlFor="init-master">
@@ -516,10 +513,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       {/* Start Branch Dialog */}
       <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle>
-            {getTypeIcon(startType)}
-            Start {getTypeLabel(startType)}
-          </DialogTitle>
+          <DialogTitle icon={getTypeIcon(startType)}>Start {getTypeLabel(startType)}</DialogTitle>
 
           <DialogBody>
             <FormField

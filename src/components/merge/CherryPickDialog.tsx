@@ -109,10 +109,7 @@ export function CherryPickDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle>
-          <Cherry size={18} />
-          Cherry Pick
-        </DialogTitle>
+        <DialogTitle icon={Cherry}>Cherry Pick</DialogTitle>
 
         <DialogBody>
           {error && (

@@ -117,10 +117,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-112.5">
-        <DialogTitle>
-          <Archive size={18} />
-          Create Archive
-        </DialogTitle>
+        <DialogTitle icon={Archive}>Create Archive</DialogTitle>
 
         <DialogBody>
           {error && (

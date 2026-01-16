@@ -117,10 +117,7 @@ export function TagDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-112.5">
-        <DialogTitle>
-          <TagIcon size={18} />
-          Add Tag
-        </DialogTitle>
+        <DialogTitle icon={TagIcon}>Add Tag</DialogTitle>
 
         <DialogBody>
           {error && (

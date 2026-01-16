@@ -90,10 +90,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-105">
-        <DialogTitle>
-          <FolderPlus size={18} />
-          Initialize Repository
-        </DialogTitle>
+        <DialogTitle icon={FolderPlus}>Initialize Repository</DialogTitle>
 
         <DialogBody>
           <FormField

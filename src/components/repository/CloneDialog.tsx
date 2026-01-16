@@ -112,10 +112,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-110">
-        <DialogTitle>
-          <FolderPlus size={18} />
-          Clone Repository
-        </DialogTitle>
+        <DialogTitle icon={FolderPlus}>Clone Repository</DialogTitle>
 
         <DialogBody>
           <FormField

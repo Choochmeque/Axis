@@ -102,10 +102,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <GitBranch size={18} />
-          Create Branch
-        </DialogTitle>
+        <DialogTitle icon={GitBranch}>Create Branch</DialogTitle>
 
         <DialogBody>
           <FormField label="Branch Name" htmlFor="branch-name" error={validationError ?? undefined}>

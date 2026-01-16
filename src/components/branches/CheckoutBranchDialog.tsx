@@ -69,10 +69,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <GitBranch size={18} />
-          Checkout Branch
-        </DialogTitle>
+        <DialogTitle icon={GitBranch}>Checkout Branch</DialogTitle>
 
         <DialogBody>
           {currentBranch && (

@@ -70,10 +70,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-120">
-        <DialogTitle>
-          <Cloud size={18} />
-          Add Remote
-        </DialogTitle>
+        <DialogTitle icon={Cloud}>Add Remote</DialogTitle>
 
         <DialogBody>
           <FormField label="Remote Name" htmlFor="remote-name">

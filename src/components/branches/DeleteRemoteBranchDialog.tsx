@@ -60,10 +60,7 @@ export function DeleteRemoteBranchDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <Trash2 size={18} />
-          Delete Remote Branch
-        </DialogTitle>
+        <DialogTitle icon={Trash2}>Delete Remote Branch</DialogTitle>
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">

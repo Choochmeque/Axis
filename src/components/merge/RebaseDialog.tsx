@@ -174,10 +174,7 @@ export function RebaseDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle>
-          <GitBranch size={18} />
-          Rebase Branch
-        </DialogTitle>
+        <DialogTitle icon={GitBranch}>Rebase Branch</DialogTitle>
 
         <DialogBody>
           {error && (

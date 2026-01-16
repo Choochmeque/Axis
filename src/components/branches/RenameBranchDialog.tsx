@@ -104,10 +104,7 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>
-          <Pencil size={18} />
-          Rename Branch
-        </DialogTitle>
+        <DialogTitle icon={Pencil}>Rename Branch</DialogTitle>
 
         <DialogBody>
           <div className="dialog-info-box">

@@ -1,5 +1,5 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { X, type LucideIcon } from 'lucide-react';
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -61,12 +61,19 @@ const DialogContent = forwardRef<
 ));
 DialogContent.displayName = 'DialogContent';
 
-const DialogTitle = forwardRef<
-  React.ComponentRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn('dialog-title', className)} {...props} />
-));
+interface DialogTitleProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title> {
+  icon?: LucideIcon;
+  iconClassName?: string;
+}
+
+const DialogTitle = forwardRef<React.ComponentRef<typeof DialogPrimitive.Title>, DialogTitleProps>(
+  ({ className, icon: Icon, iconClassName, children, ...props }, ref) => (
+    <DialogPrimitive.Title ref={ref} className={cn('dialog-title', className)} {...props}>
+      {Icon && <Icon size={18} className={iconClassName} />}
+      {children}
+    </DialogPrimitive.Title>
+  )
+);
 DialogTitle.displayName = 'DialogTitle';
 
 const DialogDescription = forwardRef<

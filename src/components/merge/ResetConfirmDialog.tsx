@@ -89,10 +89,7 @@ export function ResetConfirmDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-125">
-        <DialogTitle>
-          <RotateCcw size={18} />
-          {modeInfo.title}
-        </DialogTitle>
+        <DialogTitle icon={RotateCcw}>{modeInfo.title}</DialogTitle>
 
         <DialogBody>
           {error && (

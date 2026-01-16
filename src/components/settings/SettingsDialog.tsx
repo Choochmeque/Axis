@@ -118,10 +118,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-175 max-h-[80vh] flex flex-col overflow-hidden">
-        <DialogTitle>
-          <Settings size={20} />
-          Settings
-        </DialogTitle>
+        <DialogTitle icon={Settings}>Settings</DialogTitle>
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">

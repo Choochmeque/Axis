@@ -99,10 +99,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle>
-          <ArrowUpFromLine size={18} />
-          Push to Remote
-        </DialogTitle>
+        <DialogTitle icon={ArrowUpFromLine}>Push to Remote</DialogTitle>
 
         <DialogBody>
           {result ? (

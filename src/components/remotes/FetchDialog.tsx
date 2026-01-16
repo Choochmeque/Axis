@@ -86,10 +86,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle>
-          <RefreshCw size={18} />
-          Fetch from Remote
-        </DialogTitle>
+        <DialogTitle icon={RefreshCw}>Fetch from Remote</DialogTitle>
 
         <DialogBody>
           {result ? (

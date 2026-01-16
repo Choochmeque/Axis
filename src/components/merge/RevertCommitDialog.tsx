@@ -101,10 +101,7 @@ export function RevertCommitDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-125">
-        <DialogTitle>
-          <Undo2 size={18} />
-          Revert Commit
-        </DialogTitle>
+        <DialogTitle icon={Undo2}>Revert Commit</DialogTitle>
 
         <DialogBody>
           {error && (

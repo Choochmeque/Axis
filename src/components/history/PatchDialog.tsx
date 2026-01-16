@@ -182,10 +182,7 @@ export function PatchDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-112.5">
-        <DialogTitle>
-          <FileCode size={18} />
-          Patches
-        </DialogTitle>
+        <DialogTitle icon={FileCode}>Patches</DialogTitle>
 
         <Tabs.Root
           value={activeTab}

@@ -129,6 +129,14 @@ export function HistoryView() {
     // Could be used to highlight rows
   }, []);
 
+  // Handle graph column width change
+  const handleGraphWidthChange = useCallback((width: number) => {
+    const graphElem = document.getElementById('commitGraph');
+    if (graphElem) {
+      graphElem.style.width = width + 'px';
+    }
+  }, []);
+
   const emptyStateClass =
     'flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3';
 
@@ -184,6 +192,7 @@ export function HistoryView() {
             mutedCommits={graphData.mutedCommits}
             commitHead={commitHead}
             onCommitClick={handleCommitClick}
+            onGraphWidthChange={handleGraphWidthChange}
           />
         </div>
         {isLoadingMoreCommits && (

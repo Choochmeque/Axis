@@ -2,6 +2,26 @@
 export { Avatar } from './avatar';
 export { Button, buttonVariants } from './button';
 export {
+  ContextMenu,
+  MenuItem,
+  MenuSeparator,
+  SubMenu,
+  // Re-exports for advanced use cases
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuItemIndicator,
+  type ContextMenuProps,
+  type MenuItemProps,
+  type SubMenuProps,
+} from './context-menu';
+export {
   Dialog,
   DialogTrigger,
   DialogContent,

@@ -98,6 +98,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::cherry_pick,
             crate::commands::cherry_pick_abort,
             crate::commands::cherry_pick_continue,
+            crate::commands::cherry_pick_skip,
             // Revert commands
             crate::commands::revert_commits,
             crate::commands::revert_abort,

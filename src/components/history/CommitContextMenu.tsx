@@ -1,12 +1,10 @@
 import { ReactNode, useState } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import {
   GitBranch,
   GitMerge,
   Tag,
   RotateCcw,
   Copy,
-  ChevronRight,
   CherryIcon,
   Undo2,
   Check,
@@ -27,6 +25,7 @@ import { RevertCommitDialog } from '../merge/RevertCommitDialog';
 import { RebaseDialog } from '../merge/RebaseDialog';
 import { ArchiveDialog } from './ArchiveDialog';
 import { PatchDialog } from './PatchDialog';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -179,141 +178,69 @@ export function CommitContextMenu({
 
   return (
     <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu trigger={children}>
+        <MenuItem icon={Check} onSelect={handleCheckout} shortcut={commit.shortOid}>
+          Checkout
+        </MenuItem>
+        <MenuItem icon={ArrowUpFromLine} disabled>
+          Push revision...
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={GitMerge} disabled onSelect={handleMerge}>
+          Merge into {repository?.currentBranch ?? 'current branch'}...
+        </MenuItem>
+        <MenuItem icon={GitMerge} className="[&>svg]:rotate-180" onSelect={handleRebase}>
+          Rebase...
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Tag} onSelect={handleCreateTag}>
+          Tag...
+        </MenuItem>
+        <MenuItem icon={PenTool} disabled>
+          Sign...
+        </MenuItem>
+        <MenuItem icon={GitBranch} onSelect={handleCreateBranch}>
+          Branch...
+        </MenuItem>
+        <MenuSeparator />
 
-        <ContextMenu.Portal>
-          <ContextMenu.Content className="menu-content">
-            <ContextMenu.Item className="menu-item" onSelect={handleCheckout}>
-              <Check size={14} />
-              <span>Checkout</span>
-              <span className="ml-auto text-[11px] text-(--text-tertiary) font-mono">
-                {commit.shortOid}
-              </span>
-            </ContextMenu.Item>
+        <SubMenu icon={RotateCcw} label={`Reset ${repository?.currentBranch ?? 'branch'} to here`}>
+          <MenuItem onSelect={() => handleReset(ResetMode.Soft)} hint="Keep all changes staged">
+            Soft
+          </MenuItem>
+          <MenuItem onSelect={() => handleReset(ResetMode.Mixed)} hint="Keep changes unstaged">
+            Mixed
+          </MenuItem>
+          <MenuItem danger onSelect={() => handleReset(ResetMode.Hard)} hint="Discard all changes">
+            Hard
+          </MenuItem>
+        </SubMenu>
 
-            <ContextMenu.Item className="menu-item" disabled>
-              <ArrowUpFromLine size={14} />
-              <span>Push revision...</span>
-            </ContextMenu.Item>
+        <MenuItem icon={Undo2} onSelect={handleRevert}>
+          Revert commit...
+        </MenuItem>
+        <MenuItem icon={CherryIcon} onSelect={handleCherryPick}>
+          Cherry Pick
+        </MenuItem>
+        <MenuItem icon={FileText} onSelect={() => setShowPatchDialog(true)}>
+          Create Patch...
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Archive} onSelect={() => setShowArchiveDialog(true)}>
+          Archive...
+        </MenuItem>
+        <MenuSeparator />
 
-            <ContextMenu.Separator className="menu-separator" />
-
-            <ContextMenu.Item className="menu-item" disabled onSelect={handleMerge}>
-              <GitMerge size={14} />
-              <span>Merge into {repository?.currentBranch ?? 'current branch'}...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={handleRebase}>
-              <GitMerge size={14} className="rotate-180" />
-              <span>Rebase...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            <ContextMenu.Item className="menu-item" onSelect={handleCreateTag}>
-              <Tag size={14} />
-              <span>Tag...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" disabled>
-              <PenTool size={14} />
-              <span>Sign...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={handleCreateBranch}>
-              <GitBranch size={14} />
-              <span>Branch...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item">
-                <RotateCcw size={14} />
-                <span>Reset {repository?.currentBranch ?? 'branch'} to here</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item
-                    className="menu-item"
-                    onSelect={() => handleReset(ResetMode.Soft)}
-                  >
-                    <span>Soft</span>
-                    <span className="menu-hint">Keep all changes staged</span>
-                  </ContextMenu.Item>
-                  <ContextMenu.Item
-                    className="menu-item"
-                    onSelect={() => handleReset(ResetMode.Mixed)}
-                  >
-                    <span>Mixed</span>
-                    <span className="menu-hint">Keep changes unstaged</span>
-                  </ContextMenu.Item>
-                  <ContextMenu.Item
-                    className="menu-item-danger"
-                    onSelect={() => handleReset(ResetMode.Hard)}
-                  >
-                    <span>Hard</span>
-                    <span className="menu-hint">Discard all changes</span>
-                  </ContextMenu.Item>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-
-            <ContextMenu.Item className="menu-item" onSelect={handleRevert}>
-              <Undo2 size={14} />
-              <span>Revert commit...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={handleCherryPick}>
-              <CherryIcon size={14} />
-              <span>Cherry Pick</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowPatchDialog(true)}>
-              <FileText size={14} />
-              <span>Create Patch...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowArchiveDialog(true)}>
-              <Archive size={14} />
-              <span>Archive...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item">
-                <Copy size={14} />
-                <span>Copy</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content min-w-40">
-                  <ContextMenu.Item className="menu-item" onSelect={handleCopyShortSha}>
-                    <span>Short SHA</span>
-                    <span className="ml-auto text-[11px] text-(--text-secondary) font-mono">
-                      {commit.shortOid}
-                    </span>
-                  </ContextMenu.Item>
-                  <ContextMenu.Item className="menu-item" onSelect={handleCopySha}>
-                    <span>Full SHA</span>
-                  </ContextMenu.Item>
-                  <ContextMenu.Item
-                    className="menu-item"
-                    onSelect={() => navigator.clipboard.writeText(commit.summary)}
-                  >
-                    <span>Commit Message</span>
-                  </ContextMenu.Item>
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+        <SubMenu icon={Copy} label="Copy">
+          <MenuItem onSelect={handleCopyShortSha} shortcut={commit.shortOid}>
+            Short SHA
+          </MenuItem>
+          <MenuItem onSelect={handleCopySha}>Full SHA</MenuItem>
+          <MenuItem onSelect={() => navigator.clipboard.writeText(commit.summary)}>
+            Commit Message
+          </MenuItem>
+        </SubMenu>
+      </ContextMenu>
 
       <TagDialog
         isOpen={showTagDialog}

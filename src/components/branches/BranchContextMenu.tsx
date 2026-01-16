@@ -1,5 +1,4 @@
 import { ReactNode, useState } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import {
   GitBranch,
   GitMerge,
@@ -10,16 +9,16 @@ import {
   Pencil,
   Trash2,
   Copy,
-  ChevronRight,
   Check,
 } from 'lucide-react';
-import type { Branch, Remote } from '../../types';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { remoteApi, branchApi } from '../../services/api';
+import type { Branch, Remote } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { remoteApi, branchApi } from '@/services/api';
 import { RenameBranchDialog } from './RenameBranchDialog';
 import { DeleteBranchDialog } from './DeleteBranchDialog';
 import { PullDialog } from '../remotes/PullDialog';
 import { PushDialog } from '../remotes/PushDialog';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface BranchContextMenuProps {
   branch: Branch;
@@ -58,18 +57,15 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
   };
 
   const handlePullTracked = () => {
-    // Open pull dialog - it will auto-select the upstream
     setShowPullDialog(true);
   };
 
   const handlePushTracked = () => {
-    // Open push dialog - it will auto-select the upstream
     setShowPushDialog(true);
   };
 
   const handlePushToRemote = async (remoteName: string) => {
     try {
-      // Push the specific branch (works for both current and non-current branches)
       const refspec = `refs/heads/${branch.name}:refs/heads/${branch.name}`;
       await remoteApi.push(remoteName, [refspec], {
         force: false,
@@ -86,7 +82,6 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     if (isSettingUpstream) return;
     setIsSettingUpstream(true);
     try {
-      // Set the upstream for the current branch
       await branchApi.setUpstream(branch.name, remoteBranch.fullName);
       await loadBranches();
     } catch (err) {
@@ -98,165 +93,96 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
   return (
     <>
-      <ContextMenu.Root onOpenChange={handleMenuOpen}>
-        <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu trigger={children} onOpenChange={handleMenuOpen}>
+        <MenuItem icon={GitBranch} disabled={isCurrentBranch} onSelect={onCheckout}>
+          Checkout {branch.name}
+        </MenuItem>
+        <MenuItem icon={GitMerge} disabled>
+          Merge {branch.name} into {currentBranch?.name ?? 'current'}
+        </MenuItem>
+        <MenuItem icon={GitMerge} disabled className="[&>svg]:rotate-180">
+          Rebase current changes onto {branch.name}
+        </MenuItem>
+        <MenuSeparator />
 
-        <ContextMenu.Portal>
-          <ContextMenu.Content className="menu-content">
-            {/* Checkout */}
-            <ContextMenu.Item
-              className="menu-item"
-              disabled={isCurrentBranch}
-              onSelect={onCheckout}
-            >
-              <GitBranch size={14} />
-              <span>Checkout {branch.name}</span>
-            </ContextMenu.Item>
+        {hasUpstream && isCurrentBranch && (
+          <MenuItem icon={ArrowDownToLine} onSelect={handlePullTracked}>
+            Pull {branch.upstream} (tracked)
+          </MenuItem>
+        )}
+        {hasUpstream && isCurrentBranch && (
+          <MenuItem icon={ArrowUpFromLine} onSelect={handlePushTracked}>
+            Push to {branch.upstream} (tracked)
+          </MenuItem>
+        )}
 
-            {/* Merge */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <GitMerge size={14} />
-              <span>
-                Merge {branch.name} into {currentBranch?.name ?? 'current'}
-              </span>
-            </ContextMenu.Item>
+        <SubMenu
+          icon={ArrowUpFromLine}
+          label="Push to"
+          disabled={remotes.length === 0}
+          minWidth="md"
+        >
+          {remotes.length === 0 ? (
+            <MenuItem disabled>
+              <span className="text-(--text-tertiary)">No remotes configured</span>
+            </MenuItem>
+          ) : (
+            remotes.map((remote) => (
+              <MenuItem key={remote.name} onSelect={() => handlePushToRemote(remote.name)}>
+                {remote.name}
+              </MenuItem>
+            ))
+          )}
+        </SubMenu>
 
-            {/* Rebase */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <GitMerge size={14} className="rotate-180" />
-              <span>Rebase current changes onto {branch.name}</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Pull (if has upstream) */}
-            {hasUpstream && isCurrentBranch && (
-              <ContextMenu.Item className="menu-item" onSelect={handlePullTracked}>
-                <ArrowDownToLine size={14} />
-                <span>Pull {branch.upstream} (tracked)</span>
-              </ContextMenu.Item>
-            )}
-
-            {/* Push (if has upstream) */}
-            {hasUpstream && isCurrentBranch && (
-              <ContextMenu.Item className="menu-item" onSelect={handlePushTracked}>
-                <ArrowUpFromLine size={14} />
-                <span>Push to {branch.upstream} (tracked)</span>
-              </ContextMenu.Item>
-            )}
-
-            {/* Push to submenu */}
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item" disabled={remotes.length === 0}>
-                <ArrowUpFromLine size={14} />
-                <span>Push to</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content">
-                  {remotes.length === 0 ? (
-                    <ContextMenu.Item className="menu-item" disabled>
-                      <span className="text-(--text-tertiary)">No remotes configured</span>
-                    </ContextMenu.Item>
-                  ) : (
-                    remotes.map((remote) => (
-                      <ContextMenu.Item
-                        key={remote.name}
-                        className="menu-item"
-                        onSelect={() => handlePushToRemote(remote.name)}
-                      >
-                        <span>{remote.name}</span>
-                      </ContextMenu.Item>
-                    ))
-                  )}
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-
-            {/* Track Remote Branch submenu */}
-            <ContextMenu.Sub>
-              <ContextMenu.SubTrigger className="menu-item" disabled={remoteBranches.length === 0}>
-                <GitBranch size={14} />
-                <span>Track Remote Branch</span>
-                <ChevronRight size={14} className="menu-chevron" />
-              </ContextMenu.SubTrigger>
-              <ContextMenu.Portal>
-                <ContextMenu.SubContent className="menu-content max-h-64 overflow-y-auto">
-                  {remoteBranches.length === 0 ? (
-                    <ContextMenu.Item className="menu-item" disabled>
-                      <span className="text-(--text-tertiary)">No remote branches</span>
-                    </ContextMenu.Item>
-                  ) : (
-                    remoteBranches.map((remoteBranch) => (
-                      <ContextMenu.Item
-                        key={remoteBranch.fullName}
-                        className="menu-item"
-                        onSelect={() => handleTrackRemoteBranch(remoteBranch)}
-                        disabled={isSettingUpstream}
-                      >
-                        {branch.upstream === remoteBranch.fullName && (
-                          <Check size={14} className="text-success" />
-                        )}
-                        <span
-                          className={branch.upstream === remoteBranch.fullName ? 'font-medium' : ''}
-                        >
-                          {remoteBranch.name}
-                        </span>
-                      </ContextMenu.Item>
-                    ))
-                  )}
-                </ContextMenu.SubContent>
-              </ContextMenu.Portal>
-            </ContextMenu.Sub>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Diff Against Current */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <Diff size={14} />
-              <span>Diff Against Current</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Rename */}
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowRenameDialog(true)}>
-              <Pencil size={14} />
-              <span>Rename...</span>
-            </ContextMenu.Item>
-
-            {/* Delete */}
-            {!isCurrentBranch && (
-              <ContextMenu.Item
-                className="menu-item-danger"
-                onSelect={() => setShowDeleteDialog(true)}
+        <SubMenu
+          icon={GitBranch}
+          label="Track Remote Branch"
+          disabled={remoteBranches.length === 0}
+          minWidth="md"
+          className="max-h-64 overflow-y-auto"
+        >
+          {remoteBranches.length === 0 ? (
+            <MenuItem disabled>
+              <span className="text-(--text-tertiary)">No remote branches</span>
+            </MenuItem>
+          ) : (
+            remoteBranches.map((remoteBranch) => (
+              <MenuItem
+                key={remoteBranch.fullName}
+                onSelect={() => handleTrackRemoteBranch(remoteBranch)}
+                disabled={isSettingUpstream}
+                icon={branch.upstream === remoteBranch.fullName ? Check : undefined}
+                className={branch.upstream === remoteBranch.fullName ? 'font-medium' : ''}
               >
-                <Trash2 size={14} />
-                <span>Delete {branch.name}</span>
-              </ContextMenu.Item>
-            )}
+                {remoteBranch.name}
+              </MenuItem>
+            ))
+          )}
+        </SubMenu>
 
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Copy Branch Name */}
-            <ContextMenu.Item
-              className="menu-item"
-              onSelect={() => navigator.clipboard.writeText(branch.name)}
-            >
-              <Copy size={14} />
-              <span>Copy Branch Name to Clipboard</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Create Pull Request */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <GitPullRequest size={14} />
-              <span>Create Pull Request...</span>
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+        <MenuSeparator />
+        <MenuItem icon={Diff} disabled>
+          Diff Against Current
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Pencil} onSelect={() => setShowRenameDialog(true)}>
+          Rename...
+        </MenuItem>
+        {!isCurrentBranch && (
+          <MenuItem icon={Trash2} danger onSelect={() => setShowDeleteDialog(true)}>
+            Delete {branch.name}
+          </MenuItem>
+        )}
+        <MenuSeparator />
+        <MenuItem icon={Copy} onSelect={() => navigator.clipboard.writeText(branch.name)}>
+          Copy Branch Name to Clipboard
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={GitPullRequest} disabled>
+          Create Pull Request...
+        </MenuItem>
+      </ContextMenu>
 
       <RenameBranchDialog
         open={showRenameDialog}

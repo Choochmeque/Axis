@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import {
   FileCode,
   FolderOpen,
@@ -18,7 +17,6 @@ import {
   History,
   FileSearch,
   Move,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -26,6 +24,7 @@ import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { shellApi } from '@/services/api';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -71,198 +70,119 @@ export function StagingFileContextMenu({
   };
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+    <ContextMenu trigger={children}>
+      <MenuItem icon={FileCode} disabled>
+        Open
+      </MenuItem>
+      <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
+        Show In Finder
+      </MenuItem>
+      <MenuItem icon={Copy} onSelect={handleCopyPath}>
+        Copy Path To Clipboard
+      </MenuItem>
+      <MenuItem icon={Terminal} disabled>
+        Open In Terminal
+      </MenuItem>
+      <MenuItem icon={Eye} disabled>
+        Quick Look
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Diff} disabled>
+        External Diff
+      </MenuItem>
+      <MenuItem icon={FileText} disabled>
+        Create Patch...
+      </MenuItem>
+      <MenuItem icon={FilePlus} disabled>
+        Apply Patch...
+      </MenuItem>
+      <MenuSeparator />
 
-      <ContextMenu.Portal>
-        <ContextMenu.Content className="menu-content">
-          {/* Open */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <FileCode size={14} />
-            <span>Open</span>
-          </ContextMenu.Item>
+      {/* Stage/Unstage */}
+      {!isStaged && (
+        <MenuItem icon={Plus} disabled={!onStage} onSelect={onStage}>
+          Add to index
+        </MenuItem>
+      )}
+      {isStaged && (
+        <MenuItem icon={Minus} disabled={!onUnstage} onSelect={onUnstage}>
+          Unstage from index
+        </MenuItem>
+      )}
 
-          {/* Show In Finder */}
-          <ContextMenu.Item className="menu-item" onSelect={handleShowInFinder}>
-            <FolderOpen size={14} />
-            <span>Show In Finder</span>
-          </ContextMenu.Item>
+      {/* Delete - only for untracked files */}
+      {canDelete && (
+        <MenuItem icon={XCircle} danger disabled>
+          Delete
+        </MenuItem>
+      )}
 
-          {/* Copy Path To Clipboard */}
-          <ContextMenu.Item className="menu-item" onSelect={handleCopyPath}>
-            <Copy size={14} />
-            <span>Copy Path To Clipboard</span>
-          </ContextMenu.Item>
+      {/* Stop Tracking - only for tracked files */}
+      {isTracked && (
+        <MenuItem icon={EyeOff} disabled>
+          Stop Tracking
+        </MenuItem>
+      )}
 
-          {/* Open In Terminal */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <Terminal size={14} />
-            <span>Open In Terminal</span>
-          </ContextMenu.Item>
+      <MenuItem icon={EyeOff} disabled>
+        Ignore...
+      </MenuItem>
+      <MenuSeparator />
 
-          {/* Quick Look */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <Eye size={14} />
-            <span>Quick Look</span>
-          </ContextMenu.Item>
+      <MenuItem icon={GitCommit} disabled>
+        Commit Selected...
+      </MenuItem>
 
-          <ContextMenu.Separator className="menu-separator" />
+      {/* Reset - only for tracked files */}
+      {isTracked && (
+        <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
+          Reset...
+        </MenuItem>
+      )}
 
-          {/* External Diff */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <Diff size={14} />
-            <span>External Diff</span>
-          </ContextMenu.Item>
+      {/* Reset to Commit - only for tracked files */}
+      {isTracked && (
+        <MenuItem icon={RotateCcw} disabled>
+          Reset to Commit...
+        </MenuItem>
+      )}
 
-          {/* Create Patch */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <FileText size={14} />
-            <span>Create Patch...</span>
-          </ContextMenu.Item>
+      {/* Resolve Conflicts submenu - only for conflicted files */}
+      {isConflicted && (
+        <>
+          <MenuSeparator />
+          <SubMenu icon={Diff} label="Resolve Conflicts">
+            <MenuItem disabled>Mark as Resolved</MenuItem>
+          </SubMenu>
+        </>
+      )}
 
-          {/* Apply Patch */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <FilePlus size={14} />
-            <span>Apply Patch...</span>
-          </ContextMenu.Item>
+      <MenuSeparator />
+      <MenuItem icon={History} disabled>
+        Log Selected...
+      </MenuItem>
+      <MenuItem icon={FileSearch} disabled>
+        Annotate Selected...
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Copy} disabled>
+        Copy...
+      </MenuItem>
+      <MenuItem icon={Move} disabled>
+        Move...
+      </MenuItem>
 
-          <ContextMenu.Separator className="menu-separator" />
-
-          {/* Add to index (Stage) - only show for unstaged files */}
-          {!isStaged && (
-            <ContextMenu.Item className="menu-item" disabled={!onStage} onSelect={onStage}>
-              <Plus size={14} />
-              <span>Add to index</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Unstage from index - only show for staged files */}
-          {isStaged && (
-            <ContextMenu.Item className="menu-item" disabled={!onUnstage} onSelect={onUnstage}>
-              <Minus size={14} />
-              <span>Unstage from index</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Delete - only for untracked files */}
-          {canDelete && (
-            <ContextMenu.Item className="menu-item-danger" disabled>
-              <XCircle size={14} />
-              <span>Delete</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Stop Tracking - only for tracked files */}
-          {isTracked && (
-            <ContextMenu.Item className="menu-item" disabled>
-              <EyeOff size={14} />
-              <span>Stop Tracking</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Ignore */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <EyeOff size={14} />
-            <span>Ignore...</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          {/* Commit Selected */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <GitCommit size={14} />
-            <span>Commit Selected...</span>
-          </ContextMenu.Item>
-
-          {/* Reset - only for tracked files */}
-          {isTracked && (
-            <ContextMenu.Item
-              className="menu-item-danger"
-              disabled={!canReset}
-              onSelect={onDiscard}
-            >
-              <RotateCcw size={14} />
-              <span>Reset...</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Reset to Commit - only for tracked files */}
-          {isTracked && (
-            <ContextMenu.Item className="menu-item" disabled>
-              <RotateCcw size={14} />
-              <span>Reset to Commit...</span>
-            </ContextMenu.Item>
-          )}
-
-          {/* Resolve Conflicts submenu - only for conflicted files */}
-          {isConflicted && (
-            <>
-              <ContextMenu.Separator className="menu-separator" />
-
-              <ContextMenu.Sub>
-                <ContextMenu.SubTrigger className="menu-item">
-                  <Diff size={14} />
-                  <span>Resolve Conflicts</span>
-                  <ChevronRight size={14} className="menu-chevron" />
-                </ContextMenu.SubTrigger>
-                <ContextMenu.Portal>
-                  <ContextMenu.SubContent className="menu-content">
-                    <ContextMenu.Item className="menu-item" disabled>
-                      <span>Mark as Resolved</span>
-                    </ContextMenu.Item>
-                  </ContextMenu.SubContent>
-                </ContextMenu.Portal>
-              </ContextMenu.Sub>
-            </>
-          )}
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          {/* Log Selected */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <History size={14} />
-            <span>Log Selected...</span>
-          </ContextMenu.Item>
-
-          {/* Annotate Selected (Blame) */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <FileSearch size={14} />
-            <span>Annotate Selected...</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          {/* Copy */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <Copy size={14} />
-            <span>Copy...</span>
-          </ContextMenu.Item>
-
-          {/* Move */}
-          <ContextMenu.Item className="menu-item" disabled>
-            <Move size={14} />
-            <span>Move...</span>
-          </ContextMenu.Item>
-
-          {isTreeView && (
-            <>
-              <ContextMenu.Separator className="menu-separator" />
-
-              {/* Expand All */}
-              <ContextMenu.Item className="menu-item" disabled>
-                <ChevronDown size={14} />
-                <span>Expand All</span>
-              </ContextMenu.Item>
-
-              {/* Collapse All */}
-              <ContextMenu.Item className="menu-item" disabled>
-                <ChevronUp size={14} />
-                <span>Collapse All</span>
-              </ContextMenu.Item>
-            </>
-          )}
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
+      {isTreeView && (
+        <>
+          <MenuSeparator />
+          <MenuItem icon={ChevronDown} disabled>
+            Expand All
+          </MenuItem>
+          <MenuItem icon={ChevronUp} disabled>
+            Collapse All
+          </MenuItem>
+        </>
+      )}
+    </ContextMenu>
   );
 }

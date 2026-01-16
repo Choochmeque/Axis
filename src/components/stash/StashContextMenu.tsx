@@ -1,10 +1,19 @@
 import { ReactNode, useState } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { Play, Trash2, GitBranch, Copy, ChevronRight } from 'lucide-react';
-import { Button, Input } from '@/components/ui';
-import type { StashEntry } from '../../types';
-import { stashApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import {
+  Button,
+  Input,
+  ContextMenu,
+  MenuItem,
+  MenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuPortal,
+  ContextMenuSubContent,
+} from '@/components/ui';
+import type { StashEntry } from '@/types';
+import { stashApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
 
 interface StashContextMenuProps {
   stash: StashEntry;
@@ -66,75 +75,59 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
   };
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+    <ContextMenu trigger={children}>
+      <MenuItem icon={Play} onSelect={handleApply} hint="Keep in list">
+        Apply
+      </MenuItem>
+      <MenuItem icon={Play} onSelect={handlePop} hint="Apply & remove">
+        Pop
+      </MenuItem>
+      <MenuSeparator />
 
-      <ContextMenu.Portal>
-        <ContextMenu.Content className="menu-content">
-          <ContextMenu.Item className="menu-item" onSelect={handleApply}>
-            <Play size={14} />
-            <span>Apply</span>
-            <span className="menu-hint">Keep in list</span>
-          </ContextMenu.Item>
+      {/* Custom submenu with input form - using primitives */}
+      <ContextMenuSub>
+        <ContextMenuSubTrigger className="menu-item">
+          <GitBranch size={14} />
+          <span>Create Branch</span>
+          <ChevronRight size={14} className="menu-chevron" />
+        </ContextMenuSubTrigger>
+        <ContextMenuPortal>
+          <ContextMenuSubContent className="menu-content min-w-48">
+            <div className="p-2">
+              <Input
+                placeholder="Branch name..."
+                className="text-sm"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter') {
+                    handleBranch(branchName);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <Button
+                variant="primary"
+                className="w-full mt-2 text-xs"
+                onClick={() => handleBranch(branchName)}
+                disabled={!branchName.trim()}
+              >
+                Create
+              </Button>
+            </div>
+          </ContextMenuSubContent>
+        </ContextMenuPortal>
+      </ContextMenuSub>
 
-          <ContextMenu.Item className="menu-item" onSelect={handlePop}>
-            <Play size={14} />
-            <span>Pop</span>
-            <span className="menu-hint">Apply & remove</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          <ContextMenu.Sub>
-            <ContextMenu.SubTrigger className="menu-item">
-              <GitBranch size={14} />
-              <span>Create Branch</span>
-              <ChevronRight size={14} className="menu-chevron" />
-            </ContextMenu.SubTrigger>
-            <ContextMenu.Portal>
-              <ContextMenu.SubContent className="menu-content min-w-48">
-                <div className="p-2">
-                  <Input
-                    placeholder="Branch name..."
-                    className="text-sm"
-                    value={branchName}
-                    onChange={(e) => setBranchName(e.target.value)}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === 'Enter') {
-                        handleBranch(branchName);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <Button
-                    variant="primary"
-                    className="w-full mt-2 text-xs"
-                    onClick={() => handleBranch(branchName)}
-                    disabled={!branchName.trim()}
-                  >
-                    Create
-                  </Button>
-                </div>
-              </ContextMenu.SubContent>
-            </ContextMenu.Portal>
-          </ContextMenu.Sub>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          <ContextMenu.Item className="menu-item" onSelect={handleCopyMessage}>
-            <Copy size={14} />
-            <span>Copy Message</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          <ContextMenu.Item className="menu-item-danger" onSelect={handleDrop}>
-            <Trash2 size={14} />
-            <span>Drop Stash</span>
-          </ContextMenu.Item>
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
+      <MenuSeparator />
+      <MenuItem icon={Copy} onSelect={handleCopyMessage}>
+        Copy Message
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Trash2} danger onSelect={handleDrop}>
+        Drop Stash
+      </MenuItem>
+    </ContextMenu>
   );
 }

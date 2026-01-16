@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import type { RecentRepository } from '../../types';
-import { repositoryApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import type { RecentRepository } from '@/types';
+import { repositoryApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 
 interface RecentRepoContextMenuProps {
   repo: RecentRepository;
@@ -42,29 +42,17 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
   };
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
-
-      <ContextMenu.Portal>
-        <ContextMenu.Content className="menu-content">
-          <ContextMenu.Item className="menu-item" onSelect={handleOpenInTab}>
-            <FolderOpen size={14} />
-            <span>Open</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Item className="menu-item" onSelect={handleOpenInNewWindow}>
-            <ExternalLink size={14} />
-            <span>Open in New Window</span>
-          </ContextMenu.Item>
-
-          <ContextMenu.Separator className="menu-separator" />
-
-          <ContextMenu.Item className="menu-item-danger" onSelect={handleRemove}>
-            <Trash2 size={14} />
-            <span>Remove from Recent</span>
-          </ContextMenu.Item>
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
+    <ContextMenu trigger={children}>
+      <MenuItem icon={FolderOpen} onSelect={handleOpenInTab}>
+        Open
+      </MenuItem>
+      <MenuItem icon={ExternalLink} onSelect={handleOpenInNewWindow}>
+        Open in New Window
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Trash2} danger onSelect={handleRemove}>
+        Remove from Recent
+      </MenuItem>
+    </ContextMenu>
   );
 }

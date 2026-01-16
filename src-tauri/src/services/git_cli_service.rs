@@ -81,10 +81,14 @@ impl GitCliService {
         message: Option<&str>,
         no_ff: bool,
         squash: bool,
+        ff_only: bool,
     ) -> Result<GitCommandResult> {
         let mut args = vec!["merge"];
 
-        if no_ff {
+        // ff_only and no_ff are mutually exclusive; ff_only takes precedence
+        if ff_only {
+            args.push("--ff-only");
+        } else if no_ff {
             args.push("--no-ff");
         }
 

@@ -211,6 +211,8 @@ export const cherryPickApi = {
   abort: () => commands.cherryPickAbort(),
 
   continue: () => commands.cherryPickContinue(),
+
+  skip: () => commands.cherryPickSkip(),
 };
 
 export const revertApi = {

@@ -90,6 +90,22 @@ export function CherryPickDialog({
     }
   };
 
+  const handleSkip = async () => {
+    setIsLoading(true);
+    try {
+      const skipResult = await cherryPickApi.skip();
+      setResult(skipResult);
+      if (skipResult.success) {
+        onCherryPickComplete?.(skipResult);
+      }
+    } catch (err) {
+      console.error('Failed to skip commit:', err);
+      setError('Failed to skip commit');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
@@ -171,6 +187,9 @@ export function CherryPickDialog({
             <>
               <Button variant="destructive" onClick={handleAbort}>
                 Abort
+              </Button>
+              <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
+                Skip Commit
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
                 Continue

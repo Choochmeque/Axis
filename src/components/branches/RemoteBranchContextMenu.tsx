@@ -1,9 +1,9 @@
 import { ReactNode, useState } from 'react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { GitBranch, GitPullRequest, ArrowDownToLine, Diff, Trash2, Copy } from 'lucide-react';
-import type { Branch } from '../../types';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import type { Branch } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
+import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 
 interface RemoteBranchContextMenuProps {
   branch: Branch;
@@ -22,63 +22,29 @@ export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContex
 
   return (
     <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
-
-        <ContextMenu.Portal>
-          <ContextMenu.Content className="menu-content">
-            {/* Checkout */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <GitBranch size={14} />
-              <span>Checkout...</span>
-            </ContextMenu.Item>
-
-            {/* Pull */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <ArrowDownToLine size={14} />
-              <span>
-                Pull {remoteName}/{branchName} into {currentBranch?.name ?? 'current'}
-              </span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Copy Branch Name */}
-            <ContextMenu.Item
-              className="menu-item"
-              onSelect={() => navigator.clipboard.writeText(branch.name)}
-            >
-              <Copy size={14} />
-              <span>Copy Branch Name to Clipboard</span>
-            </ContextMenu.Item>
-
-            {/* Diff Against Current */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <Diff size={14} />
-              <span>Diff Against Current</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Delete */}
-            <ContextMenu.Item
-              className="menu-item-danger"
-              onSelect={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 size={14} />
-              <span>Delete {branch.name}...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Separator className="menu-separator" />
-
-            {/* Create Pull Request */}
-            <ContextMenu.Item className="menu-item" disabled>
-              <GitPullRequest size={14} />
-              <span>Create Pull Request...</span>
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+      <ContextMenu trigger={children}>
+        <MenuItem icon={GitBranch} disabled>
+          Checkout...
+        </MenuItem>
+        <MenuItem icon={ArrowDownToLine} disabled>
+          Pull {remoteName}/{branchName} into {currentBranch?.name ?? 'current'}
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Copy} onSelect={() => navigator.clipboard.writeText(branch.name)}>
+          Copy Branch Name to Clipboard
+        </MenuItem>
+        <MenuItem icon={Diff} disabled>
+          Diff Against Current
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Trash2} danger onSelect={() => setShowDeleteDialog(true)}>
+          Delete {branch.name}...
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={GitPullRequest} disabled>
+          Create Pull Request...
+        </MenuItem>
+      </ContextMenu>
 
       <DeleteRemoteBranchDialog
         open={showDeleteDialog}

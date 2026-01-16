@@ -13,9 +13,16 @@ import {
   FolderGit2,
   Pointer,
 } from 'lucide-react';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
-import { TreeView, buildTreeFromPaths } from '@/components/ui';
+import {
+  TreeView,
+  buildTreeFromPaths,
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+  MenuItem,
+} from '@/components/ui';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
@@ -267,8 +274,8 @@ export function Sidebar() {
 
   return (
     <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild>
+      <ContextMenuRoot>
+        <ContextMenuTrigger asChild>
           <ScrollArea className="flex flex-col h-full bg-(--bg-sidebar) border-r border-(--border-color) overflow-y-auto">
             <Section title="WORKSPACE" icon={<FileCode />} defaultExpanded={true}>
               <button
@@ -475,32 +482,25 @@ export function Sidebar() {
               )}
             </Section>
           </ScrollArea>
-        </ContextMenu.Trigger>
+        </ContextMenuTrigger>
 
-        <ContextMenu.Portal>
-          <ContextMenu.Content className="menu-content">
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowBranchDialog(true)}>
-              <GitBranch size={14} />
-              <span>New Branch...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowTagDialog(true)}>
-              <Tag size={14} />
-              <span>New Tag...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowRemoteDialog(true)}>
-              <Cloud size={14} />
-              <span>New Remote...</span>
-            </ContextMenu.Item>
-
-            <ContextMenu.Item className="menu-item" onSelect={() => setShowSubmoduleDialog(true)}>
-              <FolderGit2 size={14} />
-              <span>Add Submodule...</span>
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+        <ContextMenuPortal>
+          <ContextMenuContent className="menu-content">
+            <MenuItem icon={GitBranch} onSelect={() => setShowBranchDialog(true)}>
+              New Branch...
+            </MenuItem>
+            <MenuItem icon={Tag} onSelect={() => setShowTagDialog(true)}>
+              New Tag...
+            </MenuItem>
+            <MenuItem icon={Cloud} onSelect={() => setShowRemoteDialog(true)}>
+              New Remote...
+            </MenuItem>
+            <MenuItem icon={FolderGit2} onSelect={() => setShowSubmoduleDialog(true)}>
+              Add Submodule...
+            </MenuItem>
+          </ContextMenuContent>
+        </ContextMenuPortal>
+      </ContextMenuRoot>
 
       <CreateBranchDialog open={showBranchDialog} onOpenChange={setShowBranchDialog} />
 

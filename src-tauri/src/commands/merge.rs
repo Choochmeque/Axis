@@ -20,19 +20,12 @@ pub async fn merge_branch(
 ) -> Result<MergeResult> {
     let cli = state.get_cli_service()?;
 
-    // Check for ff_only case - use git2 for fast-forward detection
-    if options.ff_only {
-        // TODO: For now, just try the merge and let git handle ff_only semantics
-        log::warn!(
-            "Fast-forward only merges are not fully implemented; proceeding with standard merge"
-        );
-    }
-
     let result = cli.merge(
         &options.branch,
         options.message.as_deref(),
         options.no_ff,
         options.squash,
+        options.ff_only,
     )?;
 
     if result.success {
@@ -298,6 +291,37 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
     } else {
         Err(AxisError::Other(format!(
             "Cherry-pick continue failed: {}",
+            result.stderr.trim()
+        )))
+    }
+}
+
+/// Skip the current commit during cherry-pick
+#[tauri::command]
+#[specta::specta]
+pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickResult> {
+    let cli = state.get_cli_service()?;
+    let result = cli.cherry_pick_skip()?;
+
+    if result.success {
+        Ok(CherryPickResult {
+            success: true,
+            commit_oids: Vec::new(),
+            conflicts: Vec::new(),
+            message: "Commit skipped.".to_string(),
+        })
+    } else if result.stderr.contains("CONFLICT") {
+        let conflicts = get_conflicted_files_internal(&cli)?;
+
+        Ok(CherryPickResult {
+            success: false,
+            commit_oids: Vec::new(),
+            conflicts,
+            message: "More conflicts detected. Please resolve and continue.".to_string(),
+        })
+    } else {
+        Err(AxisError::Other(format!(
+            "Cherry-pick skip failed: {}",
             result.stderr.trim()
         )))
     }

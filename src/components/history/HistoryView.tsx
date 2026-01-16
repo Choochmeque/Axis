@@ -22,16 +22,16 @@ const LANE_WIDTH = 18;
 const ROW_HEIGHT = 28;
 const NODE_RADIUS = 4;
 
-// Colors for different lanes
+// Colors for different lanes (use CSS variables for theme support)
 const LANE_COLORS = [
-  '#0078d4', // blue
-  '#107c10', // green
-  '#5c2d91', // purple
-  '#d83b01', // orange
-  '#008272', // teal
-  '#b4009e', // magenta
-  '#004e8c', // dark blue
-  '#498205', // olive
+  'var(--color-lane-1)',
+  'var(--color-lane-2)',
+  'var(--color-lane-3)',
+  'var(--color-lane-4)',
+  'var(--color-lane-5)',
+  'var(--color-lane-6)',
+  'var(--color-lane-7)',
+  'var(--color-lane-8)',
 ];
 
 function getLaneColor(lane: number): string {
@@ -351,12 +351,10 @@ export function HistoryView() {
                       <span
                         key={idx}
                         className={cn(
-                          'inline-flex items-center gap-0.5 text-sm py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
-                          ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
-                          ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
-                          ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',
+                          'inline-flex items-center gap-0.5 text-sm py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0 text-white',
                           ref.isHead && 'font-bold'
                         )}
+                        style={{ backgroundColor: getLaneColor(commit.lane) }}
                       >
                         {ref.refType === RefType.Tag ? <Tag size={10} /> : <GitBranch size={10} />}
                         {ref.name}

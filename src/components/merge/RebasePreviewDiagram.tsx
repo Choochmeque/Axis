@@ -14,15 +14,6 @@ const LANE_OFFSET = 24;
 const TEXT_OFFSET = 16;
 const MAX_COMMITS_SHOWN = 4;
 
-// Colors
-const COLORS = {
-  current: '#0078d4', // Blue - current branch commits
-  target: '#107c10', // Green - target branch
-  rebased: '#5c2d91', // Purple - rebased commits (after)
-  mergeBase: '#6e6e6e', // Gray - merge base
-  line: '#404040', // Line color
-};
-
 export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDiagramProps) {
   const { beforeData, afterData, svgHeight, hasMoreCommits, extraCommitCount } = useMemo(() => {
     const commitsToRebase = preview.commitsToRebase;
@@ -70,7 +61,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET + 20}
           cy={y}
           r={NODE_RADIUS}
-          fill={COLORS.current}
+          fill="var(--accent-color)"
         />
       );
       // Commit label
@@ -94,7 +85,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
             y1={y + NODE_RADIUS}
             x2={LANE_OFFSET + 20}
             y2={y + ROW_HEIGHT - NODE_RADIUS}
-            stroke={COLORS.current}
+            stroke="var(--accent-color)"
             strokeWidth={2}
           />
         );
@@ -122,7 +113,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET + 20}
           cy={y}
           r={3}
-          fill={COLORS.current}
+          fill="var(--accent-color)"
           opacity={0.5}
         />
       );
@@ -137,7 +128,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
             C ${LANE_OFFSET + 20} ${y - ROW_HEIGHT / 2},
               ${LANE_OFFSET} ${y - ROW_HEIGHT / 2},
               ${LANE_OFFSET} ${y - NODE_RADIUS}`}
-        stroke={COLORS.current}
+        stroke="var(--accent-color)"
         strokeWidth={2}
         fill="none"
       />
@@ -150,7 +141,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
         cx={LANE_OFFSET}
         cy={y}
         r={NODE_RADIUS}
-        fill={COLORS.mergeBase}
+        fill="var(--text-muted)"
       />
     );
     elements.push(
@@ -174,7 +165,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           y1={y + NODE_RADIUS}
           x2={LANE_OFFSET}
           y2={y + ROW_HEIGHT * beforeData.targetCommitsShown - NODE_RADIUS}
-          stroke={COLORS.target}
+          stroke="var(--color-branch-local)"
           strokeWidth={2}
         />
       );
@@ -190,7 +181,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET}
           cy={y}
           r={NODE_RADIUS}
-          fill={COLORS.target}
+          fill="var(--color-branch-local)"
         />
       );
       if (i === 0) {
@@ -200,7 +191,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
             x={LANE_OFFSET + TEXT_OFFSET}
             y={y + 4}
             className="rebase-preview-branch-label"
-            fill={COLORS.target}
+            fill="var(--color-branch-local)"
           >
             {preview.target.name}
           </text>
@@ -225,7 +216,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET}
           cy={y}
           r={NODE_RADIUS}
-          fill={COLORS.rebased}
+          fill="var(--color-branch-remote)"
         />
       );
       // Commit label with prime notation
@@ -249,7 +240,9 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           x2={LANE_OFFSET}
           y2={y + ROW_HEIGHT - NODE_RADIUS}
           stroke={
-            i < beforeData.commits.length - 1 || hasMoreCommits ? COLORS.rebased : COLORS.target
+            i < beforeData.commits.length - 1 || hasMoreCommits
+              ? 'var(--color-branch-remote)'
+              : 'var(--color-branch-local)'
           }
           strokeWidth={2}
         />
@@ -277,7 +270,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET}
           cy={y}
           r={3}
-          fill={COLORS.rebased}
+          fill="var(--color-branch-remote)"
           opacity={0.5}
         />
       );
@@ -288,7 +281,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           y1={y + NODE_RADIUS}
           x2={LANE_OFFSET}
           y2={y + ROW_HEIGHT - NODE_RADIUS}
-          stroke={COLORS.target}
+          stroke="var(--color-branch-local)"
           strokeWidth={2}
         />
       );
@@ -297,7 +290,13 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
 
     // Target tip (now the new base)
     elements.push(
-      <circle key="after-target-tip" cx={LANE_OFFSET} cy={y} r={NODE_RADIUS} fill={COLORS.target} />
+      <circle
+        key="after-target-tip"
+        cx={LANE_OFFSET}
+        cy={y}
+        r={NODE_RADIUS}
+        fill="var(--color-branch-local)"
+      />
     );
     elements.push(
       <text
@@ -305,7 +304,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
         x={LANE_OFFSET + TEXT_OFFSET}
         y={y + 4}
         className="rebase-preview-branch-label"
-        fill={COLORS.target}
+        fill="var(--color-branch-local)"
       >
         {preview.target.name}
       </text>
@@ -320,7 +319,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           y1={y + NODE_RADIUS}
           x2={LANE_OFFSET}
           y2={y + ROW_HEIGHT * afterData.targetCommitsShown}
-          stroke={COLORS.target}
+          stroke="var(--color-branch-local)"
           strokeWidth={2}
         />
       );
@@ -336,7 +335,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           cx={LANE_OFFSET}
           cy={y}
           r={NODE_RADIUS}
-          fill={COLORS.target}
+          fill="var(--color-branch-local)"
         />
       );
       y += ROW_HEIGHT;
@@ -361,7 +360,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
       <div className="rebase-preview-panel">
         <div className="rebase-preview-header">Before</div>
         <div className="rebase-preview-branch-info">
-          <span className="rebase-preview-branch-name" style={{ color: COLORS.current }}>
+          <span className="rebase-preview-branch-name" style={{ color: 'var(--accent-color)' }}>
             {currentBranch}
           </span>
         </div>
@@ -377,7 +376,10 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
       <div className="rebase-preview-panel">
         <div className="rebase-preview-header">After</div>
         <div className="rebase-preview-branch-info">
-          <span className="rebase-preview-branch-name" style={{ color: COLORS.rebased }}>
+          <span
+            className="rebase-preview-branch-name"
+            style={{ color: 'var(--color-branch-remote)' }}
+          >
             {currentBranch}
           </span>
         </div>

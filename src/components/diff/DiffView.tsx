@@ -191,7 +191,7 @@ function BinaryImageView({
   }
 
   const imageClass =
-    'max-w-full max-h-full object-contain rounded border border-(--border-color) bg-[repeating-conic-gradient(#808080_0%_25%,transparent_0%_50%)] bg-size-[16px_16px]';
+    'max-w-full max-h-full object-contain rounded border border-(--border-color) bg-[repeating-conic-gradient(var(--color-checkerboard)_0%_25%,transparent_0%_50%)] bg-size-[16px_16px]';
 
   // Side-by-side view for modified images
   if (showBefore && showAfter) {

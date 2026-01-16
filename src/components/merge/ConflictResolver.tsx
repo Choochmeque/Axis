@@ -206,7 +206,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
             <>
               <div className="flex flex-1 min-h-0 border-b border-(--border-color)">
                 <div className="flex-1 flex flex-col min-w-0 border-r border-(--border-color)">
-                  <div className="flex items-center justify-between py-2 px-3 bg-blue-500/10 border-b border-(--border-color) text-xs font-semibold text-blue-500">
+                  <div className="flex items-center justify-between py-2 px-3 bg-(--accent-color)/10 border-b border-(--border-color) text-xs font-semibold text-(--accent-color)">
                     <span>Ours (Current)</span>
                     <button className={btnSmallClass} onClick={handleResolveOurs}>
                       Use This
@@ -218,7 +218,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                 </div>
 
                 <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex items-center justify-between py-2 px-3 bg-purple-500/10 border-b border-(--border-color) text-xs font-semibold text-purple-500">
+                  <div className="flex items-center justify-between py-2 px-3 bg-(--color-branch-remote)/10 border-b border-(--border-color) text-xs font-semibold text-(--color-branch-remote)">
                     <span>Theirs (Incoming)</span>
                     <button className={btnSmallClass} onClick={handleResolveTheirs}>
                       Use This
@@ -231,7 +231,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
               </div>
 
               <div className="flex flex-col h-[40%] min-h-37.5">
-                <div className="flex items-center justify-between py-2 px-3 bg-green-500/10 border-b border-(--border-color) text-xs font-semibold text-green-500">
+                <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success">
                   <span>Merged Result</span>
                   <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
                     Mark Resolved

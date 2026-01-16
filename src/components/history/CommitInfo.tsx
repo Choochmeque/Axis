@@ -97,21 +97,31 @@ export function CommitInfo({ commit }: CommitInfoProps) {
           <div className={rowClass}>
             <span className={metaLabelClass}>Refs</span>
             <div className={cn(valueClass, 'gap-1')}>
-              {commit.refs.map((ref: GraphCommit['refs'][0], idx: number) => (
-                <span
-                  key={idx}
-                  className={cn(
-                    'inline-flex items-center gap-1 py-0.5 px-2 rounded text-sm font-medium',
-                    ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
-                    ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
-                    ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',
-                    ref.isHead && 'font-semibold'
-                  )}
-                >
-                  {ref.refType === RefType.Tag ? <Tag size={10} /> : <GitBranch size={10} />}
-                  {ref.name}
-                </span>
-              ))}
+              {commit.refs.map((ref: GraphCommit['refs'][0], idx: number) => {
+                // Use lane color if available, otherwise fall back to type-based colors
+                const laneColor =
+                  'lane' in commit
+                    ? `var(--color-lane-${(commit.lane % 8) + 1})`
+                    : ref.refType === RefType.LocalBranch
+                      ? 'var(--color-branch-local)'
+                      : ref.refType === RefType.RemoteBranch
+                        ? 'var(--color-branch-remote)'
+                        : 'var(--color-tag)';
+
+                return (
+                  <span
+                    key={idx}
+                    className={cn(
+                      'inline-flex items-center gap-1 py-0.5 px-2 rounded text-sm font-medium text-white',
+                      ref.isHead && 'font-semibold'
+                    )}
+                    style={{ backgroundColor: laneColor }}
+                  >
+                    {ref.refType === RefType.Tag ? <Tag size={10} /> : <GitBranch size={10} />}
+                    {ref.name}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}

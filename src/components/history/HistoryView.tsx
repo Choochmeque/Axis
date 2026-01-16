@@ -6,9 +6,14 @@ import { GitCommit, Loader2 } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { HistoryFilters } from './HistoryFilters';
-import { CommitGraph, defaultGraphConfig, defaultMuteConfig } from './CommitGraph';
+import {
+  CommitGraph,
+  defaultGraphConfig,
+  defaultMuteConfig,
+  buildCommitLookup,
+  createGraph,
+} from './CommitGraph';
 import { CommitTable } from './CommitTable';
-import { Graph } from '@/lib/graph';
 import { RefType } from '@/types';
 
 export function HistoryView() {
@@ -40,17 +45,21 @@ export function HistoryView() {
     return headCommit?.oid ?? null;
   }, [commits]);
 
-  // Build graph data
+  // Build graph data (single Graph instance used for both computation and rendering)
   const graphData = useMemo(() => {
-    const commitLookup: { [hash: string]: number } = {};
-    commits.forEach((c, i) => {
-      commitLookup[c.oid] = i;
-    });
+    const commitLookup = buildCommitLookup(commits);
 
-    // Create dummy elements for computation-only Graph (no rendering)
+    // Create dummy elements for Graph (SVG will be moved to CommitGraph container)
     const dummyElem = document.createElement('div');
-    const graph = new Graph(dummyElem, dummyElem, defaultGraphConfig, defaultMuteConfig);
-    graph.loadCommits(commits, commitHead, commitLookup, false);
+    const graph = createGraph(
+      dummyElem,
+      dummyElem,
+      commits,
+      commitHead,
+      commitLookup,
+      defaultGraphConfig,
+      defaultMuteConfig
+    );
 
     return {
       vertexColours: graph.getVertexColours(),
@@ -151,13 +160,8 @@ export function HistoryView() {
       >
         <div id="commitGraphContent" style={{ position: 'relative' }}>
           <CommitGraph
-            commits={commits}
-            commitHead={commitHead}
+            graph={graphData.graph}
             expandedCommitIndex={null}
-            config={defaultGraphConfig}
-            muteConfig={defaultMuteConfig}
-            onVertexHover={handleVertexHover}
-            findCommitElem={findCommitElem}
           />
           <CommitTable
             commits={commits}

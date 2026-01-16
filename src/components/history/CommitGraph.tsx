@@ -23,28 +23,43 @@ export const defaultMuteConfig: GG.MuteCommitsConfig = {
 	commitsNotAncestorsOfHead: false,
 };
 
+// Build commit lookup map from commits array
+export function buildCommitLookup(commits: GraphCommit[]): { [hash: string]: number } {
+	const lookup: { [hash: string]: number } = {};
+	commits.forEach((c, i) => {
+		lookup[c.oid] = i;
+	});
+	return lookup;
+}
+
+// Create and load a Graph instance (for computing colors/widths and rendering)
+export function createGraph(
+	elem: HTMLElement,
+	viewElem: HTMLElement,
+	commits: GraphCommit[],
+	commitHead: string | null,
+	commitLookup: { [hash: string]: number },
+	config: GG.GraphConfig,
+	muteConfig: GG.MuteCommitsConfig
+): Graph {
+	const graph = new Graph(elem, viewElem, config, muteConfig);
+	graph.loadCommits(commits, commitHead, commitLookup, false);
+	return graph;
+}
+
 interface CommitGraphProps {
-	commits: GraphCommit[];
-	commitHead: string | null;
+	graph: Graph;
 	expandedCommitIndex: number | null;
-	config: GG.GraphConfig;
-	muteConfig: GG.MuteCommitsConfig;
-	onVertexHover?: (index: number | null) => void;
-	findCommitElem?: (index: number) => HTMLElement | null;
 }
 
 export function CommitGraph({
-	commits,
-	commitHead,
+	graph,
 	expandedCommitIndex,
-	config,
-	muteConfig,
 }: CommitGraphProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const graphRef = useRef<Graph | null>(null);
 
 	useEffect(() => {
-		if (!containerRef.current || commits.length === 0) return;
+		if (!containerRef.current) return;
 
 		// Clear previous
 		containerRef.current.innerHTML = '';
@@ -60,15 +75,13 @@ export function CommitGraph({
 			graphContainer.style.top = headerRow.offsetHeight + 'px';
 		}
 
-		// Build commit lookup by oid
-		const commitLookup: { [hash: string]: number } = {};
-		commits.forEach((c, i) => {
-			commitLookup[c.oid] = i;
-		});
+		// Move the SVG from graph to our container
+		const svg = (graph as unknown as { svg: SVGElement }).svg;
+		if (svg && svg.parentElement) {
+			graphContainer.appendChild(svg);
+		}
 
-		// Create graph - pass GraphCommit[] directly
-		const graph = new Graph(graphContainer, containerRef.current, config, muteConfig);
-		graph.loadCommits(commits, commitHead, commitLookup, false);
+		// Render the graph
 		graph.render(expandedCommitIndex !== null ? {
 			index: expandedCommitIndex,
 			commitHash: '',
@@ -84,8 +97,7 @@ export function CommitGraph({
 			loading: false,
 			fileChangesScrollTop: 0
 		} : null);
-		graphRef.current = graph;
-	}, [commits, commitHead, expandedCommitIndex, config, muteConfig]);
+	}, [graph, expandedCommitIndex]);
 
 	return <div ref={containerRef} />;
 }

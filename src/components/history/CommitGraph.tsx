@@ -35,14 +35,13 @@ export function buildCommitLookup(commits: GraphCommit[]): { [hash: string]: num
 // Create and load a Graph instance (for computing colors/widths and rendering)
 export function createGraph(
   elem: HTMLElement,
-  viewElem: HTMLElement,
   commits: GraphCommit[],
   commitHead: string | null,
   commitLookup: { [hash: string]: number },
   config: GG.GraphConfig,
   muteConfig: GG.MuteCommitsConfig
 ): Graph {
-  const graph = new Graph(elem, viewElem, config, muteConfig);
+  const graph = new Graph(elem, config, muteConfig);
   graph.loadCommits(commits, commitHead, commitLookup, false);
   return graph;
 }

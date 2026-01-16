@@ -51,10 +51,9 @@ export function HistoryView() {
   const graphData = useMemo(() => {
     const commitLookup = buildCommitLookup(commits);
 
-    // Create dummy elements for Graph (SVG will be moved to CommitGraph container)
+    // Create dummy element for Graph (SVG will be moved to CommitGraph container)
     const dummyElem = document.createElement('div');
     const graph = createGraph(
-      dummyElem,
       dummyElem,
       commits,
       commitHead,

@@ -479,7 +479,6 @@ export class Graph {
 
   constructor(
     elem: HTMLElement,
-    _viewElem: HTMLElement,
     config: GG.GraphConfig,
     muteConfig: GG.MuteCommitsConfig
   ) {

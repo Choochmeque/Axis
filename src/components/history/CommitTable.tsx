@@ -111,12 +111,16 @@ const CommitRow = memo(function CommitRow({
   );
 
   // Find if any branch is checked out at this commit
-  const branchCheckedOutAtCommit = branchLabels.heads.find((h) => h.isHead)?.name ?? null;
+  const branchCheckedOutAtCommit = useMemo(
+    () => branchLabels.heads.find((h) => h.isHead)?.name ?? null,
+    [branchLabels.heads]
+  );
 
   // Build class name
-  const rowClassName = ['commit', isCurrent ? 'current' : '', isMuted ? 'mute' : '']
-    .filter(Boolean)
-    .join(' ');
+  const rowClassName = useMemo(
+    () => ['commit', isCurrent ? 'current' : '', isMuted ? 'mute' : ''].filter(Boolean).join(' '),
+    [isCurrent, isMuted]
+  );
 
   // Commit dot for HEAD
   const showCommitDot = commit.oid === commitHead;
@@ -204,7 +208,7 @@ interface CommitTableProps {
   tableHeaderRef?: React.RefObject<HTMLTableRowElement | null>;
 }
 
-export function CommitTable({
+export const CommitTable = memo(function CommitTable({
   commits,
   vertexColours,
   widthsAtVertices,
@@ -431,4 +435,4 @@ export function CommitTable({
       </table>
     </div>
   );
-}
+});

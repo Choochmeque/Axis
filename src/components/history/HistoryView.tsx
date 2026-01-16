@@ -140,11 +140,7 @@ export function HistoryView() {
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
-      <div
-        className="flex-1 min-h-0 overflow-y-auto"
-        ref={listRef}
-        onScroll={handleScroll}
-      >
+      <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
         <div id="commitGraphContent">
           <div id="commitGraph" ref={graphContainerRef} />
           <CommitGraph

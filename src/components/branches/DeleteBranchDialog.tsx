@@ -127,11 +127,11 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
           </Alert>
 
           <div className="dialog-info-box">
-            <div className="flex justify-between text-[13px] py-1">
+            <div className="flex justify-between text-base py-1">
               <span className="text-(--text-secondary)">Branch:</span>
               <span className="text-(--text-primary) font-medium">{branch.name}</span>
             </div>
-            <div className="flex justify-between text-[13px] py-1">
+            <div className="flex justify-between text-base py-1">
               <span className="text-(--text-secondary)">Last commit:</span>
               <span className="text-(--text-primary) font-medium">{branch.lastCommitSummary}</span>
             </div>

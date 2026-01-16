@@ -208,7 +208,7 @@ export function CommitForm() {
       <div className="p-3 flex flex-col gap-2 flex-1 min-h-0">
         <textarea
           ref={textareaRef}
-          className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-[13px] resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+          className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
           placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
           value={localMessage}
           onChange={handleMessageChange}

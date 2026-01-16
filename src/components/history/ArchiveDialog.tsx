@@ -146,7 +146,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             <>
               <div className="field">
                 <Label>Source:</Label>
-                <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-[13px]">
+                <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
                   <span className="font-mono text-(--text-secondary)">
                     {commitOid ? commitOid.slice(0, 7) : 'HEAD'}
                   </span>

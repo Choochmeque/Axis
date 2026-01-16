@@ -111,12 +111,12 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
 
         <DialogBody>
           <div className="dialog-info-box">
-            <div className="flex justify-between text-[13px] py-1">
+            <div className="flex justify-between text-base py-1">
               <span className="text-(--text-secondary)">Current name:</span>
               <span className="text-(--text-primary) font-medium">{branch.name}</span>
             </div>
             {branch.isHead && (
-              <div className="flex justify-between text-[13px] py-1">
+              <div className="flex justify-between text-base py-1">
                 <span className="text-(--text-secondary)">Status:</span>
                 <span className="text-(--text-primary) font-medium">Current branch (HEAD)</span>
               </div>

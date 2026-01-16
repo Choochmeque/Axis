@@ -60,9 +60,7 @@ export function TabBar({ onTabChange }: TabBarProps) {
                   />
                 </svg>
               )}
-              <span className="text-[13px] text-(--text-primary) truncate max-w-40">
-                {tab.name}
-              </span>
+              <span className="text-base text-(--text-primary) truncate max-w-40">{tab.name}</span>
               {tab.type !== TabType.Welcome && (
                 <button
                   className={cn(

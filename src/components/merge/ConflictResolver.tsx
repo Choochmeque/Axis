@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 const btnSmallClass =
-  'py-1 px-2.5 text-[11px] font-medium border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)';
+  'py-1 px-2.5 text-sm font-medium border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-primary) cursor-pointer hover:bg-(--bg-hover)';
 const btnPrimarySmallClass =
-  'py-1 px-2.5 text-[11px] font-medium border-none rounded bg-(--accent-color) text-white cursor-pointer hover:opacity-90';
+  'py-1 px-2.5 text-sm font-medium border-none rounded bg-(--accent-color) text-white cursor-pointer hover:opacity-90';
 
 interface ConflictResolverProps {
   onAllResolved?: () => void;
@@ -144,7 +144,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
           <AlertTriangle size={18} className="text-warning" />
           <span>Resolve Conflicts</span>
           {operationState && operationState !== 'None' && (
-            <span className="py-0.5 px-2 text-[11px] font-medium bg-(--bg-secondary) rounded text-(--text-secondary)">
+            <span className="py-0.5 px-2 text-sm font-medium bg-(--bg-secondary) rounded text-(--text-secondary)">
               {getOperationLabel()}
             </span>
           )}
@@ -169,14 +169,14 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
 
       <div className="flex flex-1 min-h-0">
         <div className="w-62.5 border-r border-(--border-color) bg-(--bg-secondary) overflow-y-auto">
-          <div className="py-2 px-3 text-[11px] font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color)">
+          <div className="py-2 px-3 text-sm font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color)">
             {conflicts.length} conflicted file{conflicts.length !== 1 ? 's' : ''}
           </div>
           {conflicts.map((conflict) => (
             <div
               key={conflict.path}
               className={cn(
-                'flex items-center justify-between py-2 px-3 text-[13px] cursor-pointer transition-colors border-b border-(--border-color)',
+                'flex items-center justify-between py-2 px-3 text-base cursor-pointer transition-colors border-b border-(--border-color)',
                 selectedFile === conflict.path
                   ? 'bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5'
                   : 'hover:bg-(--bg-hover)',

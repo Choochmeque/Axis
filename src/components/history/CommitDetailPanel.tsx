@@ -21,7 +21,7 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) border-t border-(--border-color)">
       <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) shrink-0">
-        <span className="flex-1 text-[13px] font-medium text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="flex-1 text-base font-medium text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis">
           {commit.summary}
         </span>
         <button

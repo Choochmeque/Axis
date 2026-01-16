@@ -176,7 +176,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
                     {tag.name}
                   </span>
                   {tag.isAnnotated && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-(--accent-color)/10 text-(--accent-color) rounded">
+                    <span className="px-1.5 py-0.5 text-xs bg-(--accent-color)/10 text-(--accent-color) rounded">
                       annotated
                     </span>
                   )}

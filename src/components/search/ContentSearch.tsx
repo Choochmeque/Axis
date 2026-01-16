@@ -105,7 +105,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
             onChange={(e) => setPattern(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pattern..."
-            className="w-full py-1.5 px-7 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)"
+            className="w-full py-1.5 px-7 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)"
           />
           {pattern && (
             <button
@@ -182,7 +182,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-[13px]">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-base">
           <AlertCircle size={14} />
           <span>{error}</span>
         </div>
@@ -205,8 +205,8 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
               >
                 {expandedFiles.has(path) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 <FileText size={14} />
-                <span className="flex-1 text-[13px] text-(--text-primary) font-mono">{path}</span>
-                <span className="bg-(--bg-secondary) py-0.5 px-1.5 rounded-full text-[11px] text-(--text-secondary)">
+                <span className="flex-1 text-base text-(--text-primary) font-mono">{path}</span>
+                <span className="bg-(--bg-secondary) py-0.5 px-1.5 rounded-full text-sm text-(--text-secondary)">
                   {matches.length}
                 </span>
               </div>

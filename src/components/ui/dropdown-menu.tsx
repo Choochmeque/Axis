@@ -1,5 +1,5 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Check } from 'lucide-react';
+import { Check, ChevronRight, type LucideIcon } from 'lucide-react';
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -26,11 +26,29 @@ const DropdownMenuContent = forwardRef<
 ));
 DropdownMenuContent.displayName = 'DropdownMenuContent';
 
+interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Item
+> {
+  icon?: LucideIcon;
+  danger?: boolean;
+  shortcut?: string;
+}
+
 const DropdownMenuItem = forwardRef<
   React.ComponentRef<typeof DropdownMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Item ref={ref} className={cn('dropdown-item', className)} {...props} />
+  DropdownMenuItemProps
+>(({ className, icon: Icon, danger, shortcut, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.Item
+    ref={ref}
+    className={cn(danger ? 'dropdown-item-danger' : 'dropdown-item', className)}
+    {...props}
+  >
+    {Icon && <Icon size={14} />}
+    <span>{children}</span>
+    {shortcut && (
+      <span className="ml-auto text-sm text-(--text-tertiary) font-mono">{shortcut}</span>
+    )}
+  </DropdownMenuPrimitive.Item>
 ));
 DropdownMenuItem.displayName = 'DropdownMenuItem';
 
@@ -85,6 +103,45 @@ const DropdownMenuSeparator = forwardRef<
 ));
 DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
 
+type DropdownSubMenuWidth = 'sm' | 'md' | 'lg';
+
+const widthClasses: Record<DropdownSubMenuWidth, string> = {
+  sm: 'min-w-32',
+  md: 'min-w-40',
+  lg: 'min-w-48',
+};
+
+interface DropdownSubMenuProps {
+  children: React.ReactNode;
+  icon?: LucideIcon;
+  label: string;
+  disabled?: boolean;
+  minWidth?: DropdownSubMenuWidth;
+  maxHeight?: string;
+  className?: string;
+}
+
+const DropdownSubMenu = forwardRef<HTMLDivElement, DropdownSubMenuProps>(
+  ({ children, icon: Icon, label, disabled, minWidth = 'md', maxHeight, className }, ref) => (
+    <DropdownMenuPrimitive.Sub>
+      <DropdownMenuPrimitive.SubTrigger ref={ref} className="dropdown-item" disabled={disabled}>
+        {Icon && <Icon size={14} />}
+        <span>{label}</span>
+        <ChevronRight size={14} className="ml-auto opacity-60" />
+      </DropdownMenuPrimitive.SubTrigger>
+      <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.SubContent
+          className={cn('dropdown-content', widthClasses[minWidth], className)}
+          style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}
+        >
+          {children}
+        </DropdownMenuPrimitive.SubContent>
+      </DropdownMenuPrimitive.Portal>
+    </DropdownMenuPrimitive.Sub>
+  )
+);
+DropdownSubMenu.displayName = 'DropdownSubMenu';
+
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -98,4 +155,7 @@ export {
   DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuRadioGroup,
+  DropdownSubMenu,
 };
+
+export type { DropdownMenuItemProps, DropdownSubMenuProps };

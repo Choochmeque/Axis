@@ -129,7 +129,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
               <button
                 key={tab.id}
                 className={cn(
-                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-[13px] cursor-pointer text-left transition-colors',
+                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-base cursor-pointer text-left transition-colors',
                   activeTab === tab.id
                     ? 'bg-(--accent-color) text-white'
                     : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
@@ -198,7 +198,7 @@ const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';
 const groupClass = 'mb-5';
 const numberInputClass =
-  'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-[13px] outline-none focus:border-(--accent-color)';
+  'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)';
 
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
   return (

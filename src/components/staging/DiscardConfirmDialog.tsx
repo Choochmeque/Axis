@@ -44,7 +44,7 @@ export function DiscardConfirmDialog({
         </DialogTitle>
 
         <DialogBody>
-          <div className="p-3 bg-warning/10 border border-warning/30 rounded-md text-[13px] text-(--text-primary)">
+          <div className="p-3 bg-warning/10 border border-warning/30 rounded-md text-base text-(--text-primary)">
             {message}
           </div>
         </DialogBody>

@@ -197,14 +197,14 @@ export function PatchDialog({
           <Tabs.List className="flex border-b border-(--border-color) mb-4">
             <Tabs.Trigger
               value="create"
-              className="flex items-center gap-1.5 px-4 py-2 text-[13px] text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-base text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
             >
               <Download size={14} />
               Create Patch
             </Tabs.Trigger>
             <Tabs.Trigger
               value="apply"
-              className="flex items-center gap-1.5 px-4 py-2 text-[13px] text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-base text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
             >
               <Upload size={14} />
               Apply Patch
@@ -241,7 +241,7 @@ export function PatchDialog({
                   {commitOid && (
                     <div className="field">
                       <Label>Source Commit:</Label>
-                      <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-[13px]">
+                      <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
                         <span className="font-mono text-(--text-secondary)">
                           {commitOid.slice(0, 7)}
                         </span>

@@ -25,7 +25,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
     selectCommit(parentOid);
   };
 
-  const rowClass = 'flex items-start gap-3 text-[13px]';
+  const rowClass = 'flex items-start gap-3 text-base';
   const metaLabelClass =
     'flex items-center gap-1 min-w-17.5 text-(--text-secondary) text-xs shrink-0';
   const valueClass = 'flex items-center gap-2 flex-wrap text-(--text-primary) min-w-0';
@@ -101,7 +101,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
                 <span
                   key={idx}
                   className={cn(
-                    'inline-flex items-center gap-1 py-0.5 px-2 rounded text-[11px] font-medium',
+                    'inline-flex items-center gap-1 py-0.5 px-2 rounded text-sm font-medium',
                     ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
                     ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
                     ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',

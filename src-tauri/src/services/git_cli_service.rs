@@ -1961,7 +1961,7 @@ mod tests {
         // Go back to default branch and merge
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", None, false, false)
+            .merge("feature", None, false, false, false)
             .expect("should merge feature branch");
 
         assert!(result.success);
@@ -1981,7 +1981,7 @@ mod tests {
 
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", Some("Merge feature branch"), true, false)
+            .merge("feature", Some("Merge feature branch"), true, false, false)
             .expect("should merge with no-ff");
 
         assert!(result.success);

@@ -51,7 +51,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
         <span>{children}</span>
         {hint && <span className="menu-hint">{hint}</span>}
         {shortcut && (
-          <span className="ml-auto text-[11px] text-(--text-tertiary) font-mono">{shortcut}</span>
+          <span className="ml-auto text-sm text-(--text-tertiary) font-mono">{shortcut}</span>
         )}
       </RadixContextMenu.Item>
     );

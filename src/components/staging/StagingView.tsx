@@ -98,7 +98,7 @@ const sectionHeaderClass =
   'flex items-center justify-between py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0';
 const sectionTitleClass = 'text-xs font-semibold uppercase text-(--text-secondary)';
 const actionBtnClass =
-  'flex items-center gap-1 py-1 px-2 border-none rounded bg-transparent text-(--text-secondary) text-[11px] cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
+  'flex items-center gap-1 py-1 px-2 border-none rounded bg-transparent text-(--text-secondary) text-sm cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 export function StagingView() {
   const {
@@ -259,7 +259,7 @@ export function StagingView() {
           />
           <span className={sectionTitleClass}>Changes</span>
           {totalFiles > 0 && (
-            <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+            <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
               {totalStaged}/{totalFiles}
             </span>
           )}
@@ -292,7 +292,7 @@ export function StagingView() {
           <div className={cn(sectionHeaderClass, 'bg-error/10')}>
             <div className="flex items-center gap-2">
               <span className={sectionTitleClass}>Conflicts</span>
-              <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+              <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                 {conflictedFiles.length}
               </span>
             </div>
@@ -326,7 +326,7 @@ export function StagingView() {
               />
               <span className={sectionTitleClass}>Staged files</span>
               {hasStaged && (
-                <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+                <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {stagedFiles.length}
                 </span>
               )}
@@ -343,7 +343,7 @@ export function StagingView() {
               viewMode={viewMode}
             />
           ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+            <div className="p-4 text-center text-(--text-tertiary) text-base italic">
               No staged changes
             </div>
           )}
@@ -367,7 +367,7 @@ export function StagingView() {
               />
               <span className={sectionTitleClass}>Unstaged files</span>
               {hasUnstaged && (
-                <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+                <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {unstagedFiles.length}
                 </span>
               )}
@@ -395,7 +395,7 @@ export function StagingView() {
               viewMode={viewMode}
             />
           ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">
+            <div className="p-4 text-center text-(--text-tertiary) text-base italic">
               No unstaged changes
             </div>
           )}
@@ -406,7 +406,7 @@ export function StagingView() {
               <div className={cn(sectionHeaderClass, 'bg-error/10')}>
                 <div className="flex items-center gap-2">
                   <span className={sectionTitleClass}>Conflicts</span>
-                  <span className={cn('badge', 'text-[11px] font-normal text-(--text-secondary)')}>
+                  <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                     {conflictedFiles.length}
                   </span>
                 </div>

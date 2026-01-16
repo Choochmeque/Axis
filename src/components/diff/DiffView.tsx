@@ -255,14 +255,11 @@ function ImageDiffHeader({ diff }: ImageDiffHeaderProps) {
     <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <Image size={16} className="text-(--text-secondary) shrink-0" />
-        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="text-base font-medium whitespace-nowrap overflow-hidden text-ellipsis">
           {fileName}
         </span>
         <span
-          className={cn(
-            'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
-            statusColorClass
-          )}
+          className={cn('text-sm py-0.5 px-1.5 rounded uppercase font-medium', statusColorClass)}
         >
           {statusText}
         </span>
@@ -483,14 +480,11 @@ function DiffHeader({
     <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <FileCode size={16} className="text-(--text-secondary) shrink-0" />
-        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="text-base font-medium whitespace-nowrap overflow-hidden text-ellipsis">
           {fileName}
         </span>
         <span
-          className={cn(
-            'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
-            statusColorClass
-          )}
+          className={cn('text-sm py-0.5 px-1.5 rounded uppercase font-medium', statusColorClass)}
         >
           {statusText}
         </span>
@@ -514,9 +508,8 @@ function DiffHeader({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {/* External Diff */}
-          <DropdownMenuItem disabled>
-            <span className="flex-1">External Diff</span>
-            <span className="text-[11px] text-(--text-tertiary)">⌘D</span>
+          <DropdownMenuItem disabled shortcut="⌘D">
+            External Diff
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -612,7 +605,7 @@ interface UnifiedDiffProps {
 }
 
 const hunkActionClass =
-  'flex items-center gap-1 py-0.5 px-2 border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-secondary) text-[11px] font-sans cursor-pointer transition-colors shrink-0 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) hover:not-disabled:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
+  'flex items-center gap-1 py-0.5 px-2 border border-(--border-color) rounded bg-(--bg-secondary) text-(--text-secondary) text-sm font-sans cursor-pointer transition-colors shrink-0 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) hover:not-disabled:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
 
 function UnifiedDiff({
   hunks,

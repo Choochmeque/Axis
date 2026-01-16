@@ -18,7 +18,7 @@ interface SettingsState {
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
-  fontSize: 12,
+  fontSize: 13,
   showLineNumbers: true,
   autoFetchInterval: 0,
   confirmBeforeDiscard: true,

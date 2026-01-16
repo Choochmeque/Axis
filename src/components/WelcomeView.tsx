@@ -96,7 +96,7 @@ export function WelcomeView() {
                       <span className="text-xs text-(--text-secondary) mt-1 break-all">
                         {repo.path}
                       </span>
-                      <span className="text-[11px] text-(--text-tertiary) mt-1">
+                      <span className="text-sm text-(--text-tertiary) mt-1">
                         {formatDistanceToNow(new Date(repo.lastOpened), {
                           addSuffix: true,
                         })}

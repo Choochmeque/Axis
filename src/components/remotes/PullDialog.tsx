@@ -125,12 +125,12 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
             <>
               {currentBranch && (
                 <div className="dialog-info-box">
-                  <div className="flex justify-between text-[13px] py-1">
+                  <div className="flex justify-between text-base py-1">
                     <span className="text-(--text-secondary)">Current branch:</span>
                     <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
                   </div>
                   {currentBranch.behind !== null && currentBranch.behind > 0 && (
-                    <div className="flex justify-between text-[13px] py-1">
+                    <div className="flex justify-between text-base py-1">
                       <span className="text-(--text-secondary)">Commits behind:</span>
                       <span className="text-(--text-primary) font-medium">
                         {currentBranch.behind}
@@ -138,7 +138,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
                     </div>
                   )}
                   {currentBranch.upstream && (
-                    <div className="flex justify-between text-[13px] py-1">
+                    <div className="flex justify-between text-base py-1">
                       <span className="text-(--text-secondary)">Upstream:</span>
                       <span className="text-(--text-primary) font-medium">
                         {currentBranch.upstream}

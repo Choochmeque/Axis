@@ -94,7 +94,7 @@ export function FileStatusList({
         return (
           <div className="flex flex-col flex-1 overflow-y-auto">
             {/* Table header */}
-            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-[11px] font-medium uppercase text-(--text-secondary) sticky top-0">
+            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0">
               <div className="w-6 shrink-0" />
               <div className="w-6 shrink-0" />
               <div className="flex-1 min-w-0 px-2">Filename</div>
@@ -139,7 +139,7 @@ export function FileStatusList({
       {title && (
         <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
           <span>{title}</span>
-          <span className={cn('badge', 'text-[11px] font-normal')}>{files.length}</span>
+          <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
         </div>
       )}
       {renderContent()}
@@ -231,7 +231,7 @@ function FileStatusItem({
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
           {renderStatusIcon()}
-          <span className="flex-1 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
+          <span className="flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
             {getFileName(file.path)}
           </span>
         </div>
@@ -264,7 +264,7 @@ function FileStatusItem({
         />
         {renderStatusIcon()}
         <span
-          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={file.path}
         >
           {getFileName(file.path)}
@@ -282,32 +282,21 @@ function FileStatusItem({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => onStage?.()}>
-                  <Plus size={14} />
-                  <span>Stage file</span>
+                <DropdownMenuItem icon={Plus} onSelect={() => onStage?.()}>
+                  Stage file
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-error hover:bg-error/10 data-highlighted:bg-error/10"
-                  onSelect={() => onDiscard?.()}
-                >
-                  <Trash2 size={14} />
-                  <span>Discard file</span>
+                <DropdownMenuItem icon={Trash2} danger onSelect={() => onDiscard?.()}>
+                  Discard file
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-error hover:bg-error/10 data-highlighted:bg-error/10"
-                  onSelect={() => onDiscard?.()}
-                >
-                  <FileX size={14} />
-                  <span>Remove file</span>
+                <DropdownMenuItem icon={FileX} danger onSelect={() => onDiscard?.()}>
+                  Remove file
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <EyeOff size={14} />
-                  <span>Ignore file</span>
+                <DropdownMenuItem icon={EyeOff} disabled>
+                  Ignore file
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleShowInFinder}>
-                  <FolderOpen size={14} />
-                  <span>Show in Finder</span>
+                <DropdownMenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
+                  Show in Finder
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -381,13 +370,13 @@ function MultiColumnFileItem({
         </div>
         <div className="w-6 shrink-0 flex items-center justify-center">{renderStatusIcon()}</div>
         <div className="flex-1 min-w-0 px-2">
-          <span className="text-[13px] text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
+          <span className="text-base text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
             {getFileName(file.path)}
           </span>
         </div>
         <div className="flex-1 min-w-0 px-2">
           <span
-            className="text-[13px] text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis block"
+            className="text-base text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis block"
             title={file.path}
           >
             {getDirectory(file.path) || '.'}
@@ -442,7 +431,7 @@ function TreeView({
                 <ChevronRight size={14} className="text-(--text-secondary) shrink-0" />
               )}
               <Folder size={14} className="text-(--text-secondary) shrink-0" />
-              <span className="text-[13px] text-(--text-primary)">{node.name}</span>
+              <span className="text-base text-(--text-primary)">{node.name}</span>
             </div>
           );
         }
@@ -491,7 +480,7 @@ export function FluidFileList({
 }: FluidFileListProps) {
   if (files.length === 0) {
     return (
-      <div className="p-4 text-center text-(--text-tertiary) text-[13px] italic">No changes</div>
+      <div className="p-4 text-center text-(--text-tertiary) text-base italic">No changes</div>
     );
   }
 
@@ -596,13 +585,13 @@ function FluidFileItem({
         />
         {renderStatusIcon()}
         <span
-          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={file.path}
         >
           {getFileName(file.path)}
         </span>
         <span
-          className="text-[12px] text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis max-w-40"
+          className="text-sm text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis max-w-40"
           title={file.path}
         >
           {getDirectory(file.path)}
@@ -620,21 +609,15 @@ function FluidFileItem({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={onStage}>
-                  <Plus size={14} />
-                  <span>Stage file</span>
+                <DropdownMenuItem icon={Plus} onSelect={onStage}>
+                  Stage file
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-error hover:bg-error/10 data-highlighted:bg-error/10"
-                  onSelect={onDiscard}
-                >
-                  <Trash2 size={14} />
-                  <span>Discard changes</span>
+                <DropdownMenuItem icon={Trash2} danger onSelect={onDiscard}>
+                  Discard changes
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleShowInFinder}>
-                  <FolderOpen size={14} />
-                  <span>Show in Finder</span>
+                <DropdownMenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
+                  Show in Finder
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -689,7 +672,7 @@ function FluidTreeView({
                 <ChevronRight size={14} className="text-(--text-secondary) shrink-0" />
               )}
               <Folder size={14} className="text-(--text-secondary) shrink-0" />
-              <span className="text-[13px] text-(--text-primary)">{node.name}</span>
+              <span className="text-base text-(--text-primary)">{node.name}</span>
             </div>
           );
         }

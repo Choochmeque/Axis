@@ -37,7 +37,7 @@ import { BranchType } from '@/types';
 
 // Tailwind class constants
 const sidebarItemClass =
-  'flex items-center gap-2 w-full py-1.5 pr-3 pl-10 text-[13px] cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)';
+  'flex items-center gap-2 w-full py-1.5 pr-3 pl-10 text-base cursor-pointer transition-colors bg-transparent border-none text-(--text-primary) text-left hover:bg-(--bg-hover)';
 
 // Remote branches tree using UI TreeView
 interface RemoteTreeProps {

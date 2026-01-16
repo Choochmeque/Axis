@@ -21,7 +21,7 @@ import { SettingsDialog } from '../settings/SettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =
-  'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-[11px] transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
+  'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-sm transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
   const { repository, status, branches, setCurrentView, refreshRepository } = useRepositoryStore();
@@ -93,7 +93,7 @@ export function Toolbar() {
               <div className="relative">
                 <GitCommit size={18} />
                 {stagedCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-xs font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
                     {stagedCount > 99 ? '99+' : stagedCount}
                   </span>
                 )}
@@ -104,7 +104,7 @@ export function Toolbar() {
               <div className="relative">
                 <ArrowDownToLine size={18} />
                 {behindCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-xs font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
                     {behindCount > 99 ? '99+' : behindCount}
                   </span>
                 )}
@@ -115,7 +115,7 @@ export function Toolbar() {
               <div className="relative">
                 <ArrowUpFromLine size={18} />
                 {aheadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-[10px] font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 text-xs font-medium bg-(--accent-color) text-white rounded-full flex items-center justify-center">
                     {aheadCount > 99 ? '99+' : aheadCount}
                   </span>
                 )}

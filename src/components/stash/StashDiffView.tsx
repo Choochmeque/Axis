@@ -26,10 +26,10 @@ export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffVie
       <div className="flex items-center gap-3 py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
         <Archive size={16} className="text-(--text-secondary) shrink-0" />
         <div className="flex-1 min-w-0">
-          <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis block">
+          <span className="text-base font-medium whitespace-nowrap overflow-hidden text-ellipsis block">
             {stash.message || `stash@{${stash.index}}`}
           </span>
-          <span className="text-[11px] text-(--text-tertiary)">
+          <span className="text-sm text-(--text-tertiary)">
             {stash.branch && `on ${stash.branch} · `}
             {stash.author}
           </span>
@@ -88,14 +88,11 @@ function FileDiffSection({ file }: FileDiffSectionProps) {
       <div className="border-b border-(--border-color)">
         <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-header) border-b border-(--border-color)">
           <FileCode size={14} className="text-(--text-secondary) shrink-0" />
-          <span className="text-[13px] font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+          <span className="text-base font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
             {fileName}
           </span>
           <span
-            className={cn(
-              'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
-              statusColorClass
-            )}
+            className={cn('text-sm py-0.5 px-1.5 rounded uppercase font-medium', statusColorClass)}
           >
             {statusText}
           </span>
@@ -113,14 +110,11 @@ function FileDiffSection({ file }: FileDiffSectionProps) {
       {/* File header */}
       <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-header) border-b border-(--border-color)">
         <FileCode size={14} className="text-(--text-secondary) shrink-0" />
-        <span className="text-[13px] font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="text-base font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
           {fileName}
         </span>
         <span
-          className={cn(
-            'text-[11px] py-0.5 px-1.5 rounded uppercase font-medium',
-            statusColorClass
-          )}
+          className={cn('text-sm py-0.5 px-1.5 rounded uppercase font-medium', statusColorClass)}
         >
           {statusText}
         </span>

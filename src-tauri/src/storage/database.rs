@@ -241,7 +241,7 @@ mod tests {
         let db = Database::new(tmp.path()).expect("should create database");
 
         let settings = db.get_settings().expect("should get settings");
-        assert_eq!(settings.font_size, 12);
+        assert_eq!(settings.font_size, 13);
         assert!(settings.confirm_before_discard);
     }
 

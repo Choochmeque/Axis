@@ -351,7 +351,7 @@ export function HistoryView() {
                       <span
                         key={idx}
                         className={cn(
-                          'inline-flex items-center gap-0.5 text-[11px] py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
+                          'inline-flex items-center gap-0.5 text-sm py-0.5 px-1.5 rounded font-medium [&>svg]:shrink-0',
                           ref.refType === RefType.LocalBranch && 'bg-[#107c10] text-white',
                           ref.refType === RefType.RemoteBranch && 'bg-[#5c2d91] text-white',
                           ref.refType === RefType.Tag && 'bg-[#d83b01] text-white',
@@ -370,7 +370,7 @@ export function HistoryView() {
                   })}
                 </span>
               )}
-              <span className="text-[13px]">{commit.summary}</span>
+              <span className="text-base">{commit.summary}</span>
             </>
           );
         },
@@ -415,7 +415,7 @@ export function HistoryView() {
         minSize: 60,
         maxSize: 120,
         cell: ({ row }) => (
-          <code className="font-mono text-[11px] text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
+          <code className="font-mono text-sm text-(--text-secondary) bg-(--bg-code) py-0.5 px-1.5 rounded">
             {row.original.commit.shortOid}
           </code>
         ),
@@ -478,7 +478,7 @@ export function HistoryView() {
               <div
                 key={header.id}
                 className={cn(
-                  'relative overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-semibold uppercase text-(--text-secondary) shrink-0',
+                  'relative overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold uppercase text-(--text-secondary) shrink-0',
                   header.id === 'date' && 'text-right pr-4'
                 )}
                 style={{ width: header.getSize() }}
@@ -538,7 +538,7 @@ export function HistoryView() {
                   )}
                   {column.id === 'description' && (
                     <>
-                      <span className="text-[13px] font-medium text-(--text-uncommitted)">
+                      <span className="text-base font-medium text-(--text-uncommitted)">
                         Uncommitted changes
                       </span>
                       <span className="ml-2 text-xs text-(--text-secondary)">
@@ -553,7 +553,7 @@ export function HistoryView() {
                     <span className="text-xs text-(--text-secondary)">–</span>
                   )}
                   {column.id === 'sha' && (
-                    <code className="font-mono text-[11px] text-(--text-secondary)">*</code>
+                    <code className="font-mono text-sm text-(--text-secondary)">*</code>
                   )}
                 </div>
               );

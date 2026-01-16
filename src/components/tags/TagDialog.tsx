@@ -112,8 +112,7 @@ export function TagDialog({
     }
   };
 
-  const radioLabelClass =
-    'flex items-center gap-2 text-[13px] text-(--text-primary) cursor-pointer';
+  const radioLabelClass = 'flex items-center gap-2 text-base text-(--text-primary) cursor-pointer';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -183,7 +182,7 @@ export function TagDialog({
                         onChange={(e) => setSpecifiedCommit(e.target.value)}
                         placeholder="Commit SHA"
                         disabled={isLoading}
-                        className="font-mono text-[13px]"
+                        className="font-mono text-base"
                       />
                       {targetCommitSummary && (
                         <span className="text-xs text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">
@@ -222,7 +221,7 @@ export function TagDialog({
               <div className="mt-2 border-t border-(--border-color) pt-3">
                 <button
                   type="button"
-                  className="flex items-center gap-1 p-0 bg-transparent border-none text-(--text-secondary) text-[13px] cursor-pointer hover:text-(--text-primary)"
+                  className="flex items-center gap-1 p-0 bg-transparent border-none text-(--text-secondary) text-base cursor-pointer hover:text-(--text-primary)"
                   onClick={() => setShowAdvanced(!showAdvanced)}
                 >
                   {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

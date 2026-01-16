@@ -81,7 +81,7 @@ export function DataTable<TData>({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8 text-(--text-tertiary) text-[13px] italic">
+      <div className="flex items-center justify-center p-8 text-(--text-tertiary) text-base italic">
         {emptyMessage}
       </div>
     );
@@ -96,7 +96,7 @@ export function DataTable<TData>({
       {/* Header */}
       <div
         className={cn(
-          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-[11px] font-medium uppercase text-(--text-secondary) sticky top-0 z-10',
+          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0 z-10',
           headerClassName
         )}
         style={{ width: table.getCenterTotalSize() }}

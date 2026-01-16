@@ -72,11 +72,11 @@ export function DeleteRemoteBranchDialog({
           </Alert>
 
           <div className="dialog-info-box">
-            <div className="flex justify-between text-[13px] py-1">
+            <div className="flex justify-between text-base py-1">
               <span className="text-(--text-secondary)">Remote:</span>
               <span className="text-(--text-primary) font-medium">{remoteName}</span>
             </div>
-            <div className="flex justify-between text-[13px] py-1">
+            <div className="flex justify-between text-base py-1">
               <span className="text-(--text-secondary)">Branch:</span>
               <span className="text-(--text-primary) font-medium">{branchName}</span>
             </div>

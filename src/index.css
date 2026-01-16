@@ -58,6 +58,11 @@ code {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
     'Helvetica Neue', sans-serif;
   --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Font sizes - 3-size scale relative to --app-font-size (default 13px) */
+  --font-size-xs: calc(var(--app-font-size) * 0.769); /* ~10px at 13 base */
+  --font-size-sm: calc(var(--app-font-size) * 0.846); /* ~11px at 13 base */
+  --font-size-base: var(--app-font-size); /* 13px - base */
 }
 
 @layer base {
@@ -165,7 +170,7 @@ code {
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
       'Helvetica Neue', sans-serif;
     --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    --app-font-size: 12px; /* Default, overridden by settings */
+    --app-font-size: 13px; /* Default, overridden by settings */
     font-family: var(--font-sans);
     font-size: var(--app-font-size);
     line-height: 1.4;
@@ -399,13 +404,13 @@ code {
   }
 
   .menu-item {
-    @apply flex items-center gap-2 py-1.5 px-2 rounded text-[13px] text-(--text-primary) cursor-pointer outline-none select-none;
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-base text-(--text-primary) cursor-pointer outline-none select-none;
     @apply hover:bg-(--bg-tertiary) focus:bg-(--bg-tertiary) data-highlighted:bg-(--bg-tertiary);
     @apply data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed;
   }
 
   .menu-item-danger {
-    @apply flex items-center gap-2 py-1.5 px-2 rounded text-[13px] text-error cursor-pointer outline-none select-none;
+    @apply flex items-center gap-2 py-1.5 px-2 rounded text-base text-error cursor-pointer outline-none select-none;
     @apply hover:bg-error/15 focus:bg-error/15 data-highlighted:bg-error/15;
     @apply data-disabled:text-(--text-tertiary) data-disabled:cursor-not-allowed data-disabled:hover:bg-transparent;
   }
@@ -415,7 +420,7 @@ code {
   }
 
   .menu-hint {
-    @apply ml-auto text-[11px] text-(--text-tertiary);
+    @apply ml-auto text-sm text-(--text-tertiary);
   }
 
   .menu-chevron {
@@ -424,11 +429,11 @@ code {
 
   /* Button classes */
   .btn {
-    @apply py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply py-2 px-4 text-base font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-icon {
-    @apply flex items-center gap-1.5 py-2 px-4 text-[13px] font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply flex items-center gap-1.5 py-2 px-4 text-base font-medium rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
@@ -446,7 +451,7 @@ code {
 
   /* Label classes */
   .label {
-    @apply block mb-1.5 text-[13px] font-medium text-(--text-secondary);
+    @apply block mb-1.5 text-base font-medium text-(--text-secondary);
   }
 
   /* Field classes */
@@ -465,12 +470,12 @@ code {
   }
 
   .checkbox-label {
-    @apply text-[13px] text-(--text-primary) cursor-pointer select-none;
+    @apply text-base text-(--text-primary) cursor-pointer select-none;
   }
 
   /* Alert/Message classes */
   .alert {
-    @apply flex items-start gap-2 p-3 rounded-md text-[13px];
+    @apply flex items-start gap-2 p-3 rounded-md text-base;
   }
 
   .alert-error {
@@ -486,7 +491,7 @@ code {
   }
 
   .alert-inline {
-    @apply py-2 px-3 rounded text-[13px];
+    @apply py-2 px-3 rounded text-base;
     -webkit-user-select: text !important;
     user-select: text !important;
     cursor: text;
@@ -502,11 +507,16 @@ code {
   }
 
   .dropdown-item {
-    @apply flex items-center py-1.5 px-2 pl-7 text-[13px] text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+    @apply flex items-center py-1.5 px-2 pl-7 text-base text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+  }
+
+  .dropdown-item-danger {
+    @apply flex items-center py-1.5 px-2 pl-7 text-base rounded cursor-pointer outline-none relative data-disabled:cursor-default;
+    @apply text-error hover:bg-error/10 data-highlighted:bg-error/10 data-disabled:opacity-50;
   }
 
   .dropdown-label {
-    @apply px-2 py-1 text-[11px] text-(--text-tertiary) uppercase;
+    @apply px-2 py-1 text-sm text-(--text-tertiary) uppercase;
   }
 
   .dropdown-separator {
@@ -520,7 +530,7 @@ code {
 
   /* Sidebar section header */
   .sidebar-section-header {
-    @apply flex items-center gap-2 w-full py-2 px-3 bg-transparent border-none text-(--text-secondary) text-[11px] font-semibold uppercase tracking-wide cursor-pointer transition-colors hover:bg-(--bg-hover);
+    @apply flex items-center gap-2 w-full py-2 px-3 bg-transparent border-none text-(--text-secondary) text-sm font-semibold uppercase tracking-wide cursor-pointer transition-colors hover:bg-(--bg-hover);
   }
 
   .sidebar-section-header > svg:nth-child(2) {
@@ -530,7 +540,7 @@ code {
 
   /* Badge */
   .badge {
-    @apply py-0.5 px-1.5 rounded-full text-[10px] font-semibold bg-(--bg-badge) text-(--text-primary);
+    @apply py-0.5 px-1.5 rounded-full text-xs font-semibold bg-(--bg-badge) text-(--text-primary);
   }
 
   /* Rebase Preview Diagram */
@@ -543,7 +553,7 @@ code {
   }
 
   .rebase-preview-header {
-    @apply text-[11px] font-semibold uppercase text-(--text-tertiary) mb-1 text-center tracking-wide;
+    @apply text-sm font-semibold uppercase text-(--text-tertiary) mb-1 text-center tracking-wide;
   }
 
   .rebase-preview-branch-info {
@@ -563,12 +573,12 @@ code {
   }
 
   .rebase-preview-commit-label {
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     font-family: var(--font-mono);
   }
 
   .rebase-preview-branch-label {
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     font-weight: 600;
   }
 

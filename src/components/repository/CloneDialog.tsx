@@ -158,7 +158,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
           )}
 
           {isLoading && (
-            <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-[13px]">
+            <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-base">
               Cloning repository... This may take a while for large repositories.
             </div>
           )}

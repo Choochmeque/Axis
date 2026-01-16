@@ -209,7 +209,7 @@ export function RebaseDialog({
                     <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
                       {targetCommit.shortOid}
                     </span>
-                    <span className="flex-1 text-[13px] text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="flex-1 text-base text-(--text-primary) overflow-hidden text-ellipsis whitespace-nowrap">
                       {targetCommit.summary}
                     </span>
                   </div>
@@ -244,7 +244,7 @@ export function RebaseDialog({
                 <RebasePreviewDiagram preview={preview} currentBranch={currentBranch} />
               )}
 
-              <div className="p-3 bg-(--bg-secondary) rounded-md text-[13px] text-(--text-secondary)">
+              <div className="p-3 bg-(--bg-secondary) rounded-md text-base text-(--text-secondary)">
                 <p className="m-0 mb-2">
                   This will replay all commits from{' '}
                   <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
@@ -264,14 +264,14 @@ export function RebaseDialog({
 
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-              <h4 className="m-0 mb-2 text-[13px] font-semibold text-(--text-primary)">
+              <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
                 Conflicted Files
               </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
                   <li
                     key={conflict.path}
-                    className="py-1.5 text-[13px] font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                    className="py-1.5 text-base font-mono text-warning border-b border-(--border-color) last:border-b-0"
                   >
                     {conflict.path}
                   </li>

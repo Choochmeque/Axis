@@ -275,7 +275,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-[13px]">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-base">
           <AlertCircle size={14} />
           <span className="flex-1">{error}</span>
           <button
@@ -288,7 +288,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       )}
 
       {success && (
-        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-success/10 text-success rounded text-[13px]">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-success/10 text-success rounded text-base">
           <Check size={14} />
           <span className="flex-1">{success}</span>
           <button
@@ -316,7 +316,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <GitBranch size={14} />
                 <span>Features</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-sm text-(--text-secondary)">
                   {features.length}
                 </span>
               </div>
@@ -337,7 +337,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     key={name}
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
-                    <span className="text-[13px] text-(--text-primary) font-mono">
+                    <span className="text-base text-(--text-primary) font-mono">
                       {config?.featurePrefix}
                       {name}
                     </span>
@@ -369,7 +369,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <Rocket size={14} />
                 <span>Releases</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-sm text-(--text-secondary)">
                   {releases.length}
                 </span>
               </div>
@@ -390,7 +390,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     key={name}
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
-                    <span className="text-[13px] text-(--text-primary) font-mono">
+                    <span className="text-base text-(--text-primary) font-mono">
                       {config?.releasePrefix}
                       {name}
                     </span>
@@ -422,7 +422,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
               <div className="flex items-center gap-1.5 text-xs font-medium text-(--text-primary)">
                 <Bug size={14} />
                 <span>Hotfixes</span>
-                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-[11px] text-(--text-secondary)">
+                <span className="px-1.5 py-0.5 bg-(--bg-secondary) rounded-xl text-sm text-(--text-secondary)">
                   {hotfixes.length}
                 </span>
               </div>
@@ -443,7 +443,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
                     key={name}
                     className="flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-(--bg-hover) group"
                   >
-                    <span className="text-[13px] text-(--text-primary) font-mono">
+                    <span className="text-base text-(--text-primary) font-mono">
                       {config?.hotfixPrefix}
                       {name}
                     </span>

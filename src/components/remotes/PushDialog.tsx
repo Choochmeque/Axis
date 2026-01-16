@@ -122,12 +122,12 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
             <>
               {currentBranch && (
                 <div className="dialog-info-box">
-                  <div className="flex justify-between text-[13px] py-1">
+                  <div className="flex justify-between text-base py-1">
                     <span className="text-(--text-secondary)">Current branch:</span>
                     <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
                   </div>
                   {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
-                    <div className="flex justify-between text-[13px] py-1">
+                    <div className="flex justify-between text-base py-1">
                       <span className="text-(--text-secondary)">Commits ahead:</span>
                       <span className="text-(--text-primary) font-medium">
                         {currentBranch.ahead}
@@ -135,7 +135,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
                     </div>
                   )}
                   {currentBranch.upstream && (
-                    <div className="flex justify-between text-[13px] py-1">
+                    <div className="flex justify-between text-base py-1">
                       <span className="text-(--text-secondary)">Upstream:</span>
                       <span className="text-(--text-primary) font-medium">
                         {currentBranch.upstream}

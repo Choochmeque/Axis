@@ -127,7 +127,7 @@ export function TreeView<T>({
               <ChevronRight size={14} className="text-(--text-secondary) shrink-0" />
             )}
             <Folder size={14} className="text-(--text-secondary) shrink-0" />
-            <span className="text-[13px] text-(--text-primary)">{node.name}</span>
+            <span className="text-base text-(--text-primary)">{node.name}</span>
           </div>
           {expanded && node.children!.map((child) => renderNode(child, depth + 1))}
         </div>
@@ -146,7 +146,7 @@ export function TreeView<T>({
         style={{ paddingLeft: `${depth * 16 + 24}px` }}
         onClick={() => onSelect?.(node)}
       >
-        <span className="text-[13px] text-(--text-primary)">{node.name}</span>
+        <span className="text-base text-(--text-primary)">{node.name}</span>
       </div>
     );
   };

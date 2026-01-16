@@ -13,7 +13,7 @@ interface CommitFileListProps {
 const listClass = 'flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)';
 const headerClass =
   'flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0';
-const emptyClass = 'p-6 text-center text-(--text-secondary) text-[13px]';
+const emptyClass = 'p-6 text-center text-(--text-secondary) text-base';
 
 export function CommitFileList({
   files,
@@ -50,8 +50,8 @@ export function CommitFileList({
     <div className={listClass}>
       <div className={headerClass}>
         <span className="flex-1">Changed Files</span>
-        <span className={cn('badge', 'text-[11px] font-normal')}>{files.length}</span>
-        <span className="flex gap-1.5 text-[11px] font-medium">
+        <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
+        <span className="flex gap-1.5 text-sm font-medium">
           <span className="text-success">+{totalAdditions}</span>
           <span className="text-error">-{totalDeletions}</span>
         </span>
@@ -94,7 +94,7 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
       >
         <span
           className={cn(
-            'flex items-center justify-center w-4.5 h-4.5 text-[11px] font-semibold rounded shrink-0',
+            'flex items-center justify-center w-4.5 h-4.5 text-sm font-semibold rounded shrink-0',
             statusColors.bg,
             statusColors.text
           )}
@@ -103,7 +103,7 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
           {statusChar}
         </span>
         <span
-          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={path}
         >
           {getFileName(path)}
@@ -117,7 +117,7 @@ function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
         >
           {getDirectory(path)}
         </span>
-        <span className="flex gap-1 text-[11px] font-medium shrink-0">
+        <span className="flex gap-1 text-sm font-medium shrink-0">
           {file.additions > 0 && <span className="text-success">+{String(file.additions)}</span>}
           {file.deletions > 0 && <span className="text-error">-{String(file.deletions)}</span>}
         </span>

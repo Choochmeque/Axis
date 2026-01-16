@@ -33,25 +33,21 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
     setError(null);
 
     try {
-      const result = await stashApi.save({
+      await stashApi.save({
         message: message || null,
         keepIndex: keepStaged,
         includeUntracked: true,
         includeIgnored: false,
       });
 
-      if (result.success) {
-        setMessage('');
-        setKeepStaged(false);
-        await loadStashes();
-        await refreshRepository();
-        onOpenChange(false);
-      } else {
-        setError(result.message || 'Failed to create stash');
-      }
+      setMessage('');
+      setKeepStaged(false);
+      await loadStashes();
+      await refreshRepository();
+      onOpenChange(false);
     } catch (err) {
       console.error('Failed to save stash:', err);
-      setError('Failed to create stash');
+      setError(err instanceof Error ? err.message : 'Failed to create stash');
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +71,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
         </DialogTitle>
 
         <DialogBody>
-          <p className="text-[13px] text-(--text-secondary) mb-4">
+          <p className="text-base text-(--text-secondary) mb-4">
             This will stash all the changes in your working copy and return it to a clean state.
           </p>
 

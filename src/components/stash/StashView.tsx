@@ -195,7 +195,7 @@ export function StashView({ onRefresh }: StashViewProps) {
                   {stash.stashRef}
                 </span>
                 {stash.branch && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-(--bg-tertiary) rounded text-(--text-secondary)">
+                  <span className="px-1.5 py-0.5 text-xs bg-(--bg-tertiary) rounded text-(--text-secondary)">
                     {stash.branch}
                   </span>
                 )}

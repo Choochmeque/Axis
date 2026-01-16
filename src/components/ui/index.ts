@@ -54,6 +54,9 @@ export {
   DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuRadioGroup,
+  DropdownSubMenu,
+  type DropdownMenuItemProps,
+  type DropdownSubMenuProps,
 } from './dropdown-menu';
 
 // Data Display Components

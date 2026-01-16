@@ -128,6 +128,16 @@ code {
     --color-lane-7: #5a8ab0;
     --color-lane-8: #6a9a5a;
 
+    /* Git graph colors (used by vscode-git-graph code) */
+    --git-graph-color0: #0085d9;
+    --git-graph-color1: #d9b600;
+    --git-graph-color2: #00d97f;
+    --git-graph-color3: #ff7a52;
+    --git-graph-color4: #a481d9;
+    --git-graph-color5: #ff5793;
+    --git-graph-color6: #00d4d4;
+    --git-graph-color7: #85d900;
+
     /* Misc */
     --color-checkerboard: #484848;
 
@@ -194,6 +204,16 @@ code {
     --color-lane-6: #bf3989;
     --color-lane-7: #0550ae;
     --color-lane-8: #2da44e;
+
+    /* Git graph colors (used by vscode-git-graph code) */
+    --git-graph-color0: #0085d9;
+    --git-graph-color1: #d9b600;
+    --git-graph-color2: #00d97f;
+    --git-graph-color3: #ff7a52;
+    --git-graph-color4: #a481d9;
+    --git-graph-color5: #ff5793;
+    --git-graph-color6: #00d4d4;
+    --git-graph-color7: #85d900;
 
     /* Misc */
     --color-checkerboard: #b0b0b0;
@@ -620,5 +640,325 @@ code {
 
   .rebase-preview-empty {
     @apply flex items-center justify-center p-4 bg-(--bg-secondary) rounded-md;
+  }
+
+  /* Commit Graph Styles (from vscode-git-graph) */
+
+  #commitGraphContent {
+    position: relative;
+  }
+
+  #commitGraph {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  #commitGraph circle {
+    pointer-events: all;
+    cursor: pointer;
+  }
+
+  #commitGraph circle.current {
+    fill: var(--bg-primary);
+    stroke-width: 2;
+  }
+
+  #commitGraph circle:not(.current) {
+    stroke: var(--bg-primary);
+    stroke-width: 1;
+    stroke-opacity: 0.75;
+  }
+
+  #commitGraph circle.stashInner {
+    stroke-opacity: 1;
+    pointer-events: none;
+    fill: transparent;
+  }
+
+  #commitGraph path.shadow {
+    fill: none;
+    stroke: var(--bg-primary);
+    stroke-opacity: 0.75;
+    stroke-width: 4;
+  }
+
+  #commitGraph path.line {
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /* Graph Tooltip */
+
+  #graphTooltip {
+    display: block;
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  #graphTooltipPointer {
+    position: absolute;
+    display: block;
+    width: 30px;
+    height: 2px;
+    left: 4px;
+    top: 0;
+    margin-top: -1px;
+    z-index: 4;
+  }
+
+  #graphTooltipContent {
+    position: relative;
+    left: 23px;
+    top: 0;
+    background-color: var(--bg-secondary);
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 22px;
+    white-space: normal;
+    z-index: 5;
+  }
+
+  #graphTooltipShadow {
+    position: absolute;
+    left: 23px;
+    top: 0;
+    border-radius: 5px;
+    box-shadow: 0 0 30px 5px rgba(0, 0, 0, 0.3);
+    z-index: 3;
+  }
+
+  .graphTooltipTitle,
+  .graphTooltipSection {
+    padding: 3px 10px;
+  }
+
+  .graphTooltipTitle {
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .graphTooltipSection {
+    border-top: 1px solid rgba(128, 128, 128, 0.5);
+  }
+
+  .graphTooltipRef,
+  .graphTooltipCombinedRef {
+    display: inline-block;
+    height: 18px;
+    line-height: 18px;
+  }
+
+  .graphTooltipRef {
+    margin: 2px;
+    padding: 0 5px;
+    background-color: rgba(128, 128, 128, 0.15);
+    border-radius: 5px;
+    border: 1px solid rgba(128, 128, 128, 0.75);
+    vertical-align: top;
+    font-size: 12px;
+    cursor: default;
+  }
+
+  .graphTooltipCombinedRef {
+    margin-left: 5px;
+    padding-left: 5px;
+    border-left: 1px solid rgba(128, 128, 128, 0.45);
+    font-style: italic;
+  }
+
+  /* Commit Table */
+
+  #commitTable {
+    z-index: 1;
+  }
+
+  #commitTable table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #commitTable table,
+  #commitTable tbody,
+  #commitTable tr,
+  #commitTable th,
+  #commitTable td {
+    padding: 0;
+    margin: 0;
+  }
+
+  #commitTable th,
+  #commitTable td {
+    white-space: nowrap;
+    font-size: 13px;
+    cursor: default;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  #commitTable td {
+    line-height: 24px;
+    padding: 0 4px;
+  }
+
+  #commitTable th {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+    line-height: 18px;
+    padding: 6px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-primary);
+    z-index: 10;
+  }
+
+  /* Resize handles (from vscode-git-graph) */
+  .resizeCol {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: block;
+    width: 6px;
+    cursor: col-resize;
+  }
+
+  .resizeCol.left {
+    left: 0;
+    border-left: 1px solid rgba(128, 128, 128, 0.25);
+  }
+
+  .resizeCol.right {
+    right: 0;
+  }
+
+  .resizeCol:hover {
+    background-color: rgba(128, 128, 128, 0.2);
+  }
+
+  /* Fixed layout table */
+  #commitTable table.fixedLayout {
+    table-layout: fixed;
+  }
+
+  /* Limit graph width (from vscode-git-graph) */
+  #commitTable table.autoLayout.limitGraphWidth td:first-child,
+  #commitTable table.autoLayout.limitGraphWidth th:first-child {
+    max-width: var(--limitGraphWidth);
+    box-sizing: border-box;
+  }
+
+  /* Description column takes remaining space (from vscode-git-graph) */
+  #commitTable table.autoLayout td:nth-child(2),
+  #commitTable table.autoLayout th:nth-child(2) {
+    width: 100%;
+    max-width: 0;
+  }
+
+  /* Author column max width */
+  #commitTable table.autoLayout td.authorCol,
+  #commitTable table.autoLayout th.authorCol {
+    max-width: 124px;
+  }
+
+  /* Responsive column widths */
+  @media screen and (max-width: 850px) {
+    #commitTable table.autoLayout td.dateCol,
+    #commitTable table.autoLayout th.dateCol,
+    #commitTable table.autoLayout td.authorCol,
+    #commitTable table.autoLayout th.authorCol {
+      max-width: 100px;
+    }
+  }
+
+  @media screen and (max-width: 700px) {
+    #commitTable table.autoLayout td.dateCol,
+    #commitTable table.autoLayout th.dateCol,
+    #commitTable table.autoLayout td.authorCol,
+    #commitTable table.autoLayout th.authorCol {
+      max-width: 80px;
+    }
+  }
+
+  #commitGraph {
+    overflow: hidden;
+  }
+
+  #commitTable tr.commit td {
+    cursor: pointer;
+  }
+
+  #commitTable tr.commit:hover {
+    background-color: var(--bg-hover);
+  }
+
+  #commitTable tr.commit.selected {
+    background-color: var(--bg-active);
+  }
+
+  #commitTable tr.commit.graphVertexActive {
+    background-color: var(--bg-hover);
+  }
+
+  #commitTable tr.commit.current span.description .text {
+    font-weight: bold;
+  }
+
+  #commitTable tr.commit span.description {
+    display: flex;
+  }
+
+  #commitTable tr.commit span.description .commitHeadDot,
+  #commitTable tr.commit td span.description .gitRef {
+    flex-shrink: 0;
+  }
+
+  #commitTable tr.commit span.description .text {
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-grow: 1;
+  }
+
+  #commitTable tr.commit.mute td.text,
+  #commitTable tr.commit.mute span.description .text {
+    opacity: 0.5;
+  }
+
+  /* Git Ref badges */
+
+  .gitRef {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 4px;
+    padding: 0 6px;
+    height: 18px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    vertical-align: middle;
+  }
+
+  .gitRef.head {
+    font-weight: 700;
+  }
+
+  .gitRef svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
   }
 }

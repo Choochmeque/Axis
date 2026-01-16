@@ -1526,6 +1526,75 @@ impl Git2Service {
         let limit = options.limit.unwrap_or(100);
         let mut total_count = 0;
 
+        // Check for uncommitted changes if requested
+        if options.include_uncommitted && skip == 0 {
+            if let Ok(statuses) = self.repo.statuses(None) {
+                let has_changes = statuses.iter().any(|s| {
+                    let status = s.status();
+                    status.intersects(
+                        git2::Status::INDEX_NEW
+                            | git2::Status::INDEX_MODIFIED
+                            | git2::Status::INDEX_DELETED
+                            | git2::Status::INDEX_RENAMED
+                            | git2::Status::INDEX_TYPECHANGE
+                            | git2::Status::WT_NEW
+                            | git2::Status::WT_MODIFIED
+                            | git2::Status::WT_DELETED
+                            | git2::Status::WT_RENAMED
+                            | git2::Status::WT_TYPECHANGE,
+                    )
+                });
+
+                if has_changes {
+                    // Get HEAD commit as parent
+                    let head_oid = self
+                        .repo
+                        .head()
+                        .ok()
+                        .and_then(|h| h.target())
+                        .map(|oid| oid.to_string());
+
+                    let parent_edges = if let Some(ref parent_oid) = head_oid {
+                        // Reserve lane 0 for uncommitted, HEAD continues on lane 0
+                        lane_state.get_lane_for_commit("uncommitted");
+                        vec![GraphEdge {
+                            parent_oid: parent_oid.clone(),
+                            parent_lane: 0,
+                            edge_type: EdgeType::Straight,
+                        }]
+                    } else {
+                        vec![]
+                    };
+
+                    let now = chrono::Utc::now();
+                    graph_commits.push(GraphCommit {
+                        commit: Commit {
+                            oid: "uncommitted".to_string(),
+                            short_oid: "".to_string(),
+                            parent_oids: head_oid.map(|o| vec![o]).unwrap_or_default(),
+                            message: "Uncommitted Changes".to_string(),
+                            summary: "Uncommitted Changes".to_string(),
+                            author: crate::models::Signature {
+                                name: String::new(),
+                                email: String::new(),
+                                timestamp: now,
+                            },
+                            committer: crate::models::Signature {
+                                name: String::new(),
+                                email: String::new(),
+                                timestamp: now,
+                            },
+                            timestamp: now,
+                            is_merge: false,
+                        },
+                        lane: 0,
+                        parent_edges,
+                        refs: vec![],
+                    });
+                }
+            }
+        }
+
         for oid_result in revwalk {
             let oid = oid_result?;
             total_count += 1;

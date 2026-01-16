@@ -83,6 +83,9 @@ pub struct GraphOptions {
     /// Sort order for commits
     #[serde(default)]
     pub sort_order: SortOrder,
+    /// Whether to include uncommitted changes as first entry
+    #[serde(default)]
+    pub include_uncommitted: bool,
 }
 
 fn default_include_remotes() -> bool {
@@ -99,6 +102,7 @@ impl Default for GraphOptions {
             branch_filter: BranchFilterType::default(),
             include_remotes: true,
             sort_order: SortOrder::default(),
+            include_uncommitted: false,
         }
     }
 }

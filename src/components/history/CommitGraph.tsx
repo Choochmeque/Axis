@@ -72,10 +72,8 @@ export function CommitGraph({
     }
 
     // Move the SVG from graph to our container
-    const svg = (graph as unknown as { svg: SVGElement }).svg;
-    if (svg) {
-      containerRef.current.appendChild(svg);
-    }
+    const svg = graph.getSvg();
+    containerRef.current.appendChild(svg);
 
     // Render the graph
     graph.render(

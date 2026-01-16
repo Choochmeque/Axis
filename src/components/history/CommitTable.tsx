@@ -1,5 +1,5 @@
 // Extracted from vscode-git-graph main.ts renderTable()
-import { useRef, useCallback, useLayoutEffect, useMemo } from 'react';
+import { memo, useRef, useCallback, useLayoutEffect, useMemo } from 'react';
 import { GitBranch, Tag } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
@@ -89,7 +89,7 @@ interface CommitRowProps {
   onClick: (e: React.MouseEvent, index: number, commit: GraphCommit) => void;
 }
 
-function CommitRow({
+const CommitRow = memo(function CommitRow({
   commit,
   index,
   vertexColour,
@@ -100,10 +100,15 @@ function CommitRow({
   onClick,
 }: CommitRowProps) {
   const isUncommitted = commit.oid === UNCOMMITTED;
-  const date = formatShortDate(commit.timestamp);
-  const branchLabels = getBranchLabels(commit);
-  const tags = commit.refs?.filter((r) => r.refType === RefType.Tag) ?? [];
   const color = `var(--git-graph-color${vertexColour % 8})`;
+
+  // Memoize expensive computations
+  const date = useMemo(() => formatShortDate(commit.timestamp), [commit.timestamp]);
+  const branchLabels = useMemo(() => getBranchLabels(commit), [commit]);
+  const tags = useMemo(
+    () => commit.refs?.filter((r) => r.refType === RefType.Tag) ?? [],
+    [commit.refs]
+  );
 
   // Find if any branch is checked out at this commit
   const branchCheckedOutAtCommit = branchLabels.heads.find((h) => h.isHead)?.name ?? null;
@@ -186,7 +191,7 @@ function CommitRow({
       </td>
     </tr>
   );
-}
+});
 
 interface CommitTableProps {
   commits: GraphCommit[];

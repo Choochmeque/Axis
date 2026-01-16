@@ -116,15 +116,15 @@ export class Branch {
   /* Rendering */
 
   public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
-    let colour = config.colours[this.colour % config.colours.length],
-      i,
+    const colour = config.colours[this.colour % config.colours.length];
+    const lines: PlacedLine[] = [];
+    const d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8);
+    let i,
       x1,
       y1,
       x2,
       y2,
-      lines: PlacedLine[] = [],
       curPath = '',
-      d = config.grid.y * (config.style === GG.GraphStyle.Angular ? 0.38 : 0.8),
       line,
       nextLine;
 
@@ -487,9 +487,9 @@ export class Graph {
     this.muteConfig = muteConfig;
 
     this.svg = document.createElementNS(SVG_NAMESPACE, 'svg');
-    let defs = this.svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'defs'));
+    const defs = this.svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'defs'));
 
-    let linearGradient = defs.appendChild(
+    const linearGradient = defs.appendChild(
       document.createElementNS(SVG_NAMESPACE, 'linearGradient')
     );
     linearGradient.setAttribute('id', 'GraphGradient');
@@ -502,7 +502,7 @@ export class Graph {
     );
     this.gradientStop2.setAttribute('stop-color', 'black');
 
-    let mask = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'mask'));
+    const mask = defs.appendChild(document.createElementNS(SVG_NAMESPACE, 'mask'));
     mask.setAttribute('id', 'GraphMask');
     this.maskRect = mask.appendChild(document.createElementNS(SVG_NAMESPACE, 'rect'));
     this.maskRect.setAttribute('fill', 'url(#GraphGradient)');
@@ -535,7 +535,7 @@ export class Graph {
     }
     for (i = 0; i < commits.length; i++) {
       for (j = 0; j < commits[i].parentOids.length; j++) {
-        let parentHash = commits[i].parentOids[j];
+        const parentHash = commits[i].parentOids[j];
         if (typeof commitLookup[parentHash] === 'number') {
           // Parent is the <commitLookup[parentHash]>th vertex
           this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
@@ -573,9 +573,9 @@ export class Graph {
 
   public render(expandedCommit: ExpandedCommit | null) {
     this.expandedCommitIndex = expandedCommit !== null ? expandedCommit.index : -1;
-    let group = document.createElementNS(SVG_NAMESPACE, 'g'),
-      i,
-      contentWidth = this.getContentWidth();
+    const group = document.createElementNS(SVG_NAMESPACE, 'g');
+    const contentWidth = this.getContentWidth();
+    let i;
     group.setAttribute('mask', 'url(#GraphMask)');
 
     for (i = 0; i < this.branches.length; i++) {
@@ -620,22 +620,24 @@ export class Graph {
   }
 
   public getVertexColours() {
-    let colours = [],
-      i;
-    for (i = 0; i < this.vertices.length; i++) {
+    const colours: number[] = [];
+    for (let i = 0; i < this.vertices.length; i++) {
       colours[i] = this.vertices[i].getColour() % this.config.colours.length;
     }
     return colours;
   }
 
   public getWidthsAtVertices() {
-    let widths = [],
-      i;
-    for (i = 0; i < this.vertices.length; i++) {
+    const widths: number[] = [];
+    for (let i = 0; i < this.vertices.length; i++) {
       widths[i] =
         this.config.grid.offsetX + this.vertices[i].getNextPoint().x * this.config.grid.x - 2;
     }
     return widths;
+  }
+
+  public getSvg(): SVGElement {
+    return this.svg;
   }
 
   /* Graph Queries */
@@ -656,7 +658,7 @@ export class Graph {
         return null;
       }
 
-      let children = v.getChildren();
+      const children = v.getChildren();
       if (children.length > 1) {
         // Commit has multiple children - fails topological test
         return null;
@@ -697,7 +699,7 @@ export class Graph {
       currentHash !== null &&
       typeof this.commitLookup[currentHash] === 'number'
     ) {
-      let ancestor: boolean[] = [];
+      const ancestor: boolean[] = [];
       for (let i = 0; i < this.commits.length; i++) {
         ancestor[i] = false;
       }
@@ -707,7 +709,7 @@ export class Graph {
         if (vertex.id === NULL_VERTEX_ID || ancestor[vertex.id]) return;
         ancestor[vertex.id] = true;
 
-        let parents = vertex.getParents();
+        const parents = vertex.getParents();
         for (let i = 0; i < parents.length; i++) rec(parents[i]);
       };
       rec(this.vertices[this.commitLookup[currentHash]]);
@@ -822,14 +824,14 @@ export class Graph {
 
   private applyMaxWidth(contentWidth: number) {
     this.setSvgWidth(contentWidth);
-    let offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / contentWidth : 1;
-    let offset2 = this.maxWidth > -1 ? this.maxWidth / contentWidth : 1;
+    const offset1 = this.maxWidth > -1 ? (this.maxWidth - 12) / contentWidth : 1;
+    const offset2 = this.maxWidth > -1 ? this.maxWidth / contentWidth : 1;
     this.gradientStop1.setAttribute('offset', offset1.toString());
     this.gradientStop2.setAttribute('offset', offset2.toString());
   }
 
   private setSvgWidth(contentWidth: number) {
-    let width = this.maxWidth > -1 ? Math.min(contentWidth, this.maxWidth) : contentWidth;
+    const width = this.maxWidth > -1 ? Math.min(contentWidth, this.maxWidth) : contentWidth;
     this.svg.setAttribute('width', width.toString());
   }
 
@@ -851,8 +853,8 @@ export class Graph {
       !parentVertex.isNotOnBranch()
     ) {
       // Branch is a merge between two vertices already on branches
-      let foundPointToParent = false,
-        parentBranch = parentVertex.getBranch()!;
+      let foundPointToParent = false;
+      const parentBranch = parentVertex.getBranch()!;
       for (i = startAt + 1; i < this.vertices.length; i++) {
         curVertex = this.vertices[i];
         curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
@@ -877,7 +879,7 @@ export class Graph {
       }
     } else {
       // Branch is normal
-      let branch = new Branch(this.getAvailableColour(startAt));
+      const branch = new Branch(this.getAvailableColour(startAt));
       vertex.addToBranch(branch, lastPoint.x);
       vertex.registerUnavailablePoint(lastPoint.x, vertex, branch);
       for (i = startAt + 1; i < this.vertices.length; i++) {
@@ -893,7 +895,7 @@ export class Graph {
         if (parentVertex === curVertex) {
           // The parent of <vertex> has been reached, progress <vertex> and <parentVertex> to continue building the branch
           vertex.registerParentProcessed();
-          let parentVertexOnBranch = !parentVertex.isNotOnBranch();
+          const parentVertexOnBranch = !parentVertex.isNotOnBranch();
           parentVertex.addToBranch(branch, curPoint.x);
           vertex = parentVertex;
           parentVertex = vertex.getNextParent();

@@ -1,4 +1,7 @@
 /* Minimal stubs for vscode-git-graph compatibility */
+import type { GraphCommit, CommitRef } from '@/types';
+import { RefType } from '@/types';
+
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const UNCOMMITTED = 'uncommitted';
 const ELLIPSIS = '…';
@@ -21,22 +24,20 @@ export namespace GG {
 		name: string;
 		remote: string | null;
 	}
-	export interface GitCommit {
-		hash: string;
-		parents: string[];
-		author: string;
-		email: string;
-		date: number;
-		message: string;
-		heads: string[];
-		tags: { name: string; annotated: boolean }[];
-		remotes: GitCommitRemote[];
-		stash: { selector: string; baseHash: string } | null;
-	}
 }
 
-// Re-export for convenience
-export type GitCommit = GG.GitCommit;
+// Helper functions to extract refs from GraphCommit
+function getHeads(commit: GraphCommit): string[] {
+	return commit.refs?.filter(r => r.refType === RefType.LocalBranch).map(r => r.name) ?? [];
+}
+
+function getRemotes(commit: GraphCommit): GG.GitCommitRemote[] {
+	return commit.refs?.filter(r => r.refType === RefType.RemoteBranch).map(r => ({ name: r.name, remote: null })) ?? [];
+}
+
+function getTags(commit: GraphCommit): { name: string; annotated: boolean }[] {
+	return commit.refs?.filter(r => r.refType === RefType.Tag).map(r => ({ name: r.name, annotated: false })) ?? [];
+}
 
 export interface ExpandedCommit {
 	index: number;
@@ -422,7 +423,7 @@ export class Graph {
 	private availableColours: number[] = [];
 	private maxWidth: number = -1;
 
-	private commits: ReadonlyArray<GG.GitCommit> = [];
+	private commits: ReadonlyArray<GraphCommit> = [];
 	private commitHead: string | null = null;
 	private commitLookup: { [hash: string]: number } = {};
 	private onlyFollowFirstParent: boolean = false;
@@ -469,7 +470,7 @@ export class Graph {
 
 	/* Graph Operations */
 
-	public loadCommits(commits: ReadonlyArray<GG.GitCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean) {
+	public loadCommits(commits: ReadonlyArray<GraphCommit>, commitHead: string | null, commitLookup: { [hash: string]: number }, onlyFollowFirstParent: boolean) {
 		this.commits = commits;
 		this.commitHead = commitHead;
 		this.commitLookup = commitLookup;
@@ -482,11 +483,11 @@ export class Graph {
 		const nullVertex = new Vertex(NULL_VERTEX_ID, false);
 		let i: number, j: number;
 		for (i = 0; i < commits.length; i++) {
-			this.vertices.push(new Vertex(i, commits[i].stash !== null));
+			this.vertices.push(new Vertex(i, false)); // GraphCommit doesn't have stash
 		}
 		for (i = 0; i < commits.length; i++) {
-			for (j = 0; j < commits[i].parents.length; j++) {
-				let parentHash = commits[i].parents[j];
+			for (j = 0; j < commits[i].parentOids.length; j++) {
+				let parentHash = commits[i].parentOids[j];
 				if (typeof commitLookup[parentHash] === 'number') {
 					// Parent is the <commitLookup[parentHash]>th vertex
 					this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
@@ -498,11 +499,11 @@ export class Graph {
 			}
 		}
 
-		if (commits[0].hash === UNCOMMITTED) {
+		if (commits[0].oid === UNCOMMITTED) {
 			this.vertices[0].setNotCommitted();
 		}
 
-		if (commits[0].hash === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
+		if (commits[0].oid === UNCOMMITTED && this.config.uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges) {
 			this.vertices[0].setCurrent();
 		} else if (commitHead !== null && typeof commitLookup[commitHead] === 'number') {
 			this.vertices[commitLookup[commitHead]].setCurrent();
@@ -604,7 +605,7 @@ export class Graph {
 			}
 
 			// Check if the current vertex is the HEAD if it has no children, or the HEAD has not been found in its recursive children.
-			return this.commits[v.id].hash === this.commitHead;
+			return this.commits[v.id].oid === this.commitHead;
 		};
 
 		return isPossible(this.vertices[i]) || false;
@@ -633,8 +634,8 @@ export class Graph {
 		// Mute any merge commits if the Extension Setting is enabled
 		if (this.muteConfig.mergeCommits) {
 			for (let i = 0; i < this.commits.length; i++) {
-				if (this.vertices[i].isMerge() && this.commits[i].stash === null) {
-					// The commit is a merge, and is not a stash
+				if (this.vertices[i].isMerge()) {
+					// The commit is a merge (GraphCommit doesn't have stash)
 					muted[i] = true;
 				}
 			}
@@ -658,8 +659,8 @@ export class Graph {
 			rec(this.vertices[this.commitLookup[currentHash]]);
 
 			for (let i = 0; i < this.commits.length; i++) {
-				if (!ancestor[i] && (this.commits[i].stash === null || typeof this.commitLookup[this.commits[i].stash!.baseHash] !== 'number' || !ancestor[this.commitLookup[this.commits[i].stash!.baseHash]])) {
-					// Commit i is not an ancestor of currentHash, or a stash based on an ancestor of currentHash
+				if (!ancestor[i]) {
+					// Commit i is not an ancestor of currentHash (GraphCommit doesn't have stash)
 					muted[i] = true;
 				}
 			}
@@ -864,7 +865,7 @@ export class Graph {
 		const commitElem = findCommitElemWithId(getCommitElems(), id);
 		if (commitElem !== null) commitElem.classList.add(CLASS_GRAPH_VERTEX_ACTIVE);
 
-		if (id < this.commits.length && this.commits[id].hash !== UNCOMMITTED) { // Only show tooltip for commits (not the uncommitted changes)
+		if (id < this.commits.length && this.commits[id].oid !== UNCOMMITTED) { // Only show tooltip for commits (not the uncommitted changes)
 			this.tooltipTimeout = setTimeout(() => {
 				this.tooltipTimeout = null;
 				let vertexScreenY = vertexElem.getBoundingClientRect().top + 4; // Get center of the circle
@@ -889,14 +890,17 @@ export class Graph {
 		}
 
 		const children = this.getAllChildren(id);
-		let heads: string[] = [], remotes: GG.GitCommitRemote[] = [], stashes: string[] = [], tags: string[] = [], childrenIncludesHead = false;
+		let heads: string[] = [], remotes: GG.GitCommitRemote[] = [], tags: string[] = [], childrenIncludesHead = false;
 		for (let i = 0; i < children.length; i++) {
 			let commit = this.commits[children[i]];
-			for (let j = 0; j < commit.heads.length; j++) heads.push(commit.heads[j]);
-			for (let j = 0; j < commit.remotes.length; j++) remotes.push(commit.remotes[j]);
-			for (let j = 0; j < commit.tags.length; j++) tags.push(commit.tags[j].name);
-			if (commit.stash !== null) stashes.push(commit.stash.selector.substring(5));
-			if (commit.hash === this.commitHead) childrenIncludesHead = true;
+			let commitHeads = getHeads(commit);
+			let commitRemotes = getRemotes(commit);
+			let commitTags = getTags(commit);
+			for (let j = 0; j < commitHeads.length; j++) heads.push(commitHeads[j]);
+			for (let j = 0; j < commitRemotes.length; j++) remotes.push(commitRemotes[j]);
+			for (let j = 0; j < commitTags.length; j++) tags.push(commitTags[j].name);
+			// GraphCommit doesn't have stash - skipping stash collection
+			if (commit.oid === this.commitHead) childrenIncludesHead = true;
 		}
 
 		const getLimitedRefs = (htmlRefs: string[]) => {
@@ -904,7 +908,7 @@ export class Graph {
 			return htmlRefs.join('');
 		};
 
-		let html = '<div class="graphTooltipTitle">Commit ' + abbrevCommit(this.commits[id].hash) + '</div>';
+		let html = '<div class="graphTooltipTitle">Commit ' + abbrevCommit(this.commits[id].oid) + '</div>';
 		if (this.commitHead !== null && typeof this.commitLookup[this.commitHead] === 'number') {
 			html += '<div class="graphTooltipSection">This commit is ' + (childrenIncludesHead ? '' : '<b><i>not</i></b> ') + 'included in <span class="graphTooltipRef">HEAD</span></div>';
 		}
@@ -921,10 +925,7 @@ export class Graph {
 			let htmlRefs = tags.map((tag) => '<span class="graphTooltipRef">' + escapeHtml(tag) + '</span>');
 			html += '<div class="graphTooltipSection">Tags: ' + getLimitedRefs(htmlRefs) + '</div>';
 		}
-		if (stashes.length > 0) {
-			let htmlRefs = stashes.map((stash) => '<span class="graphTooltipRef">' + escapeHtml(stash) + '</span>');
-			html += '<div class="graphTooltipSection">Stashes: ' + getLimitedRefs(htmlRefs) + '</div>';
-		}
+		// GraphCommit doesn't have stash - stashes section removed
 
 		const point = this.vertices[id].getPoint(), color = 'var(--git-graph-color' + (this.vertices[id].getColour() % this.config.colours.length) + ')';
 		const anchor = document.createElement('div'), pointer = document.createElement('div'), content = document.createElement('div'), shadow = document.createElement('div');

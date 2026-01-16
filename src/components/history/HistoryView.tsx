@@ -8,33 +8,8 @@ import { CommitDetailPanel } from './CommitDetailPanel';
 import { HistoryFilters } from './HistoryFilters';
 import { CommitGraph, defaultGraphConfig, defaultMuteConfig } from './CommitGraph';
 import { CommitTable } from './CommitTable';
-import { Graph, type GitCommit as GGCommit } from '@/lib/graph';
+import { Graph } from '@/lib/graph';
 import { RefType } from '@/types';
-
-// Transform Axis GraphCommit to vscode-git-graph GitCommit format
-function toGitCommit(commit: GraphCommit): GGCommit {
-  return {
-    hash: commit.oid,
-    parents: commit.parentOids,
-    author: commit.author.name,
-    email: commit.author.email,
-    date: new Date(commit.timestamp).getTime(),
-    message: commit.summary,
-    heads:
-      commit.refs
-        ?.filter((r) => r.refType === RefType.LocalBranch)
-        .map((r) => r.name) ?? [],
-    tags:
-      commit.refs
-        ?.filter((r) => r.refType === RefType.Tag)
-        .map((r) => ({ name: r.name, annotated: false })) ?? [],
-    remotes:
-      commit.refs
-        ?.filter((r) => r.refType === RefType.RemoteBranch)
-        .map((r) => ({ name: r.name, remote: null })) ?? [],
-    stash: null,
-  };
-}
 
 export function HistoryView() {
   const {
@@ -67,16 +42,15 @@ export function HistoryView() {
 
   // Build graph data
   const graphData = useMemo(() => {
-    const gitCommits = commits.map(toGitCommit);
     const commitLookup: { [hash: string]: number } = {};
-    gitCommits.forEach((c, i) => {
-      commitLookup[c.hash] = i;
+    commits.forEach((c, i) => {
+      commitLookup[c.oid] = i;
     });
 
     // Create dummy elements for computation-only Graph (no rendering)
     const dummyElem = document.createElement('div');
     const graph = new Graph(dummyElem, dummyElem, defaultGraphConfig, defaultMuteConfig);
-    graph.loadCommits(gitCommits, commitHead, commitLookup, false);
+    graph.loadCommits(commits, commitHead, commitLookup, false);
 
     return {
       vertexColours: graph.getVertexColours(),

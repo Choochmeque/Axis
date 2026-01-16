@@ -135,7 +135,7 @@ function CommitRow({
 			if (b.isHead) return 1;
 			return 0;
 		});
-	}, [branchLabels.heads]);
+	}, [branchLabels]);
 
 	return (
 		<tr
@@ -337,8 +337,8 @@ export function CommitTable({
 
 	// Cleanup on unmount
 	useLayoutEffect(() => {
+		const state = resizeStateRef.current;
 		return () => {
-			const state = resizeStateRef.current;
 			if (state.overlay) {
 				state.overlay.remove();
 				state.overlay = null;

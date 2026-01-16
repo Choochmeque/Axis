@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Graph, GG } from '@/lib/graph';
 import type { GraphCommit } from '@/types';
-import { RefType } from '@/types';
 
 export const defaultGraphConfig: GG.GraphConfig = {
 	colours: [
@@ -61,28 +60,15 @@ export function CommitGraph({
 			graphContainer.style.top = headerRow.offsetHeight + 'px';
 		}
 
-		// Transform commits to GG format
-		const gitCommits: GG.GitCommit[] = commits.map((c) => ({
-			hash: c.oid,
-			parents: c.parentOids,
-			author: c.author.name,
-			email: c.author.email,
-			date: new Date(c.timestamp).getTime(),
-			message: c.summary,
-			heads: c.refs?.filter((r) => r.refType === RefType.LocalBranch).map((r) => r.name) ?? [],
-			tags: c.refs?.filter((r) => r.refType === RefType.Tag).map((r) => ({ name: r.name, annotated: false })) ?? [],
-			remotes: c.refs?.filter((r) => r.refType === RefType.RemoteBranch).map((r) => ({ name: r.name, remote: null })) ?? [],
-			stash: null,
-		}));
-
+		// Build commit lookup by oid
 		const commitLookup: { [hash: string]: number } = {};
-		gitCommits.forEach((c, i) => {
-			commitLookup[c.hash] = i;
+		commits.forEach((c, i) => {
+			commitLookup[c.oid] = i;
 		});
 
-		// Create graph - pass element directly
+		// Create graph - pass GraphCommit[] directly
 		const graph = new Graph(graphContainer, containerRef.current, config, muteConfig);
-		graph.loadCommits(gitCommits, commitHead, commitLookup, false);
+		graph.loadCommits(commits, commitHead, commitLookup, false);
 		graph.render(expandedCommitIndex !== null ? {
 			index: expandedCommitIndex,
 			commitHash: '',

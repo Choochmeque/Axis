@@ -55,7 +55,7 @@ interface GitRefProps {
 function GitRef({ name, type, color, isActive, remotes }: GitRefProps) {
 	const Icon = type === 'tag' ? Tag : type === 'head' ? GitBranch : GitBranch;
 	const className = `gitRef ${type}${isActive ? ' active' : ''}`;
-	const style = type === 'tag' ? { backgroundColor: '#6e6e6e' } : { backgroundColor: color };
+	const style = type === 'tag' ? { backgroundColor: 'var(--color-tag)' } : { backgroundColor: color };
 
 	return (
 		<span className={className} data-name={name} style={style}>
@@ -175,7 +175,7 @@ function CommitRow({
 							key={tag.name}
 							name={tag.name}
 							type="tag"
-							color="#6e6e6e"
+							color="var(--color-tag)"
 						/>
 					))}
 					<span className="text">{commit.summary}</span>

@@ -118,17 +118,7 @@ code {
     --color-branch-remote: #7c54b8;
     --color-tag: #b86a2a;
 
-    /* Lane colors for git graph (muted for dark theme) */
-    --color-lane-1: #4a90c2;
-    --color-lane-2: #48a058;
-    --color-lane-3: #8b6bb8;
-    --color-lane-4: #c87a3a;
-    --color-lane-5: #3a9e92;
-    --color-lane-6: #b05080;
-    --color-lane-7: #5a8ab0;
-    --color-lane-8: #6a9a5a;
-
-    /* Git graph colors (used by vscode-git-graph code) */
+    /* Git graph lane colors */
     --git-graph-color0: #0085d9;
     --git-graph-color1: #d9b600;
     --git-graph-color2: #00d97f;
@@ -195,25 +185,15 @@ code {
     --color-branch-remote: #8250df;
     --color-tag: #bc4c00;
 
-    /* Lane colors for git graph */
-    --color-lane-1: #0969da;
-    --color-lane-2: #1a7f37;
-    --color-lane-3: #8250df;
-    --color-lane-4: #bc4c00;
-    --color-lane-5: #0a766a;
-    --color-lane-6: #bf3989;
-    --color-lane-7: #0550ae;
-    --color-lane-8: #2da44e;
-
-    /* Git graph colors (used by vscode-git-graph code) */
-    --git-graph-color0: #0085d9;
+    /* Git graph lane colors */
+    --git-graph-color0: #0969da;
     --git-graph-color1: #d9b600;
-    --git-graph-color2: #00d97f;
-    --git-graph-color3: #ff7a52;
-    --git-graph-color4: #a481d9;
-    --git-graph-color5: #ff5793;
-    --git-graph-color6: #00d4d4;
-    --git-graph-color7: #85d900;
+    --git-graph-color2: #1a7f37;
+    --git-graph-color3: #bc4c00;
+    --git-graph-color4: #8250df;
+    --git-graph-color5: #bf3989;
+    --git-graph-color6: #0a766a;
+    --git-graph-color7: #0550ae;
 
     /* Misc */
     --color-checkerboard: #b0b0b0;

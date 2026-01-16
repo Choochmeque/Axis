@@ -31,6 +31,8 @@ export function HistoryView() {
   } = useRepositoryStore();
 
   const listRef = useRef<HTMLDivElement>(null);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
+  const tableHeaderRef = useRef<HTMLTableRowElement>(null);
 
   // Use commit from list if available, otherwise fall back to fetched data
   const selectedCommit = selectedCommitOid
@@ -101,31 +103,16 @@ export function HistoryView() {
     }
   }, [selectedCommitOid]);
 
-  // Find commit element by index (for graph hover)
-  const findCommitElem = useCallback((index: number): HTMLElement | null => {
-    if (!listRef.current) return null;
-    return listRef.current.querySelector(`[data-id="${index}"]`);
-  }, []);
-
-  // Handle vertex hover
-  const handleVertexHover = useCallback((index: number | null) => {
-    // Could be used to highlight rows
-  }, []);
-
   // Handle graph column width change
   const handleGraphWidthChange = useCallback((width: number) => {
-    const graphElem = document.getElementById('commitGraph');
-    if (graphElem) {
-      graphElem.style.width = width + 'px';
+    if (graphContainerRef.current) {
+      graphContainerRef.current.style.width = width + 'px';
     }
   }, []);
 
-  const emptyStateClass =
-    'flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3';
-
   if (isLoadingCommits) {
     return (
-      <div className={emptyStateClass}>
+      <div className="historyEmptyState">
         <p>Loading commits...</p>
       </div>
     );
@@ -133,7 +120,7 @@ export function HistoryView() {
 
   if (error) {
     return (
-      <div className={emptyStateClass}>
+      <div className="historyEmptyState">
         <GitCommit size={48} strokeWidth={1} />
         <p>Error loading commits</p>
         <p className="text-xs text-(--text-tertiary)">{error}</p>
@@ -143,7 +130,7 @@ export function HistoryView() {
 
   if (commits.length === 0) {
     return (
-      <div className={emptyStateClass}>
+      <div className="historyEmptyState">
         <GitCommit size={48} strokeWidth={1} />
         <p>No commits yet</p>
       </div>
@@ -158,10 +145,13 @@ export function HistoryView() {
         ref={listRef}
         onScroll={handleScroll}
       >
-        <div id="commitGraphContent" style={{ position: 'relative' }}>
+        <div id="commitGraphContent">
+          <div id="commitGraph" ref={graphContainerRef} />
           <CommitGraph
             graph={graphData.graph}
             expandedCommitIndex={null}
+            containerRef={graphContainerRef}
+            tableHeaderRef={tableHeaderRef}
           />
           <CommitTable
             commits={commits}
@@ -171,6 +161,7 @@ export function HistoryView() {
             commitHead={commitHead}
             onCommitClick={handleCommitClick}
             onGraphWidthChange={handleGraphWidthChange}
+            tableHeaderRef={tableHeaderRef}
           />
         </div>
         {isLoadingMoreCommits && (

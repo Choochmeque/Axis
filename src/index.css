@@ -622,6 +622,10 @@ code {
     @apply flex items-center justify-center p-4 bg-(--bg-secondary) rounded-md;
   }
 
+  .historyEmptyState {
+    @apply flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3;
+  }
+
   /* Commit Graph Styles (from vscode-git-graph) */
 
   #commitGraphContent {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Graph, GG } from '@/lib/graph';
 import type { GraphCommit } from '@/types';
 
@@ -50,35 +50,31 @@ export function createGraph(
 interface CommitGraphProps {
 	graph: Graph;
 	expandedCommitIndex: number | null;
+	containerRef: React.RefObject<HTMLDivElement | null>;
+	tableHeaderRef: React.RefObject<HTMLTableRowElement | null>;
 }
 
 export function CommitGraph({
 	graph,
 	expandedCommitIndex,
+	containerRef,
+	tableHeaderRef,
 }: CommitGraphProps) {
-	const containerRef = useRef<HTMLDivElement>(null);
-
 	useEffect(() => {
 		if (!containerRef.current) return;
 
-		// Clear previous
+		// Clear previous content
 		containerRef.current.innerHTML = '';
 
-		// Create container div for Graph
-		const graphContainer = document.createElement('div');
-		graphContainer.id = 'commitGraph';
-		containerRef.current.appendChild(graphContainer);
-
-		// Position graph below table header (dynamically calculated)
-		const headerRow = document.getElementById('tableColHeaders');
-		if (headerRow) {
-			graphContainer.style.top = headerRow.offsetHeight + 'px';
+		// Position graph below table header
+		if (tableHeaderRef.current) {
+			containerRef.current.style.top = tableHeaderRef.current.offsetHeight + 'px';
 		}
 
 		// Move the SVG from graph to our container
 		const svg = (graph as unknown as { svg: SVGElement }).svg;
-		if (svg && svg.parentElement) {
-			graphContainer.appendChild(svg);
+		if (svg) {
+			containerRef.current.appendChild(svg);
 		}
 
 		// Render the graph
@@ -97,7 +93,7 @@ export function CommitGraph({
 			loading: false,
 			fileChangesScrollTop: 0
 		} : null);
-	}, [graph, expandedCommitIndex]);
+	}, [graph, expandedCommitIndex, containerRef, tableHeaderRef]);
 
-	return <div ref={containerRef} />;
+	return null; // Rendering handled via ref
 }

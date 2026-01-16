@@ -196,6 +196,7 @@ interface CommitTableProps {
 	commitHead: string | null;
 	onCommitClick: (index: number, commit: GraphCommit) => void;
 	onGraphWidthChange?: (width: number) => void;
+	tableHeaderRef?: React.RefObject<HTMLTableRowElement | null>;
 }
 
 export function CommitTable({
@@ -206,6 +207,7 @@ export function CommitTable({
 	commitHead,
 	onCommitClick,
 	onGraphWidthChange,
+	tableHeaderRef,
 }: CommitTableProps) {
 	const tableRef = useRef<HTMLTableElement>(null);
 	const columnWidthsRef = useRef<number[]>([COLUMN_AUTO, COLUMN_AUTO, COLUMN_AUTO, COLUMN_AUTO, COLUMN_AUTO]);
@@ -358,7 +360,11 @@ export function CommitTable({
 		<div id="commitTable">
 			<table ref={tableRef}>
 				<thead>
-					<tr id="tableColHeaders" onMouseDown={handleResizeStart}>
+					<tr
+						id="tableColHeaders"
+						ref={tableHeaderRef as React.RefObject<HTMLTableRowElement>}
+						onMouseDown={handleResizeStart}
+					>
 						<th id="tableHeaderGraphCol" className="tableColHeader" data-col="0">
 							Graph
 							<span className="resizeCol right" data-col="0" />

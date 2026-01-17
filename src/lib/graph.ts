@@ -275,9 +275,11 @@ export class Branch {
       line = svg.appendChild(document.createElementNS(SVG_NAMESPACE, 'path'));
     shadow.setAttribute('class', 'shadow');
     shadow.setAttribute('d', path);
-    line.setAttribute('class', 'line');
+    line.setAttribute('class', isCommitted ? 'line' : 'line uncommitted');
     line.setAttribute('d', path);
-    line.setAttribute('stroke', isCommitted ? colour : '#808080');
+    if (isCommitted) {
+      line.setAttribute('stroke', colour);
+    }
     if (
       !isCommitted &&
       uncommittedChanges === GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit
@@ -419,9 +421,7 @@ export class Vertex {
   public draw(svg: SVGElement, config: GG.GraphConfig, expandOffset: boolean) {
     if (this.onBranch === null) return;
 
-    const colour = this.isCommitted
-      ? config.colours[this.onBranch.getColour() % config.colours.length]
-      : '#808080';
+    const colour = config.colours[this.onBranch.getColour() % config.colours.length];
     const cx = (this.x * config.grid.x + config.grid.offsetX).toString();
     const cy = (
       this.id * config.grid.y +
@@ -435,10 +435,12 @@ export class Vertex {
     circle.setAttribute('cy', cy);
     circle.setAttribute('r', '4');
     if (this.isCurrent) {
-      circle.setAttribute('class', 'current');
+      circle.setAttribute('class', this.isCommitted ? 'current' : 'current uncommitted');
       circle.setAttribute('stroke', colour);
-    } else {
+    } else if (this.isCommitted) {
       circle.setAttribute('fill', colour);
+    } else {
+      circle.setAttribute('class', 'uncommitted');
     }
     svg.appendChild(circle);
 

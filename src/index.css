@@ -127,6 +127,12 @@ code {
     --git-graph-color5: #ff5793;
     --git-graph-color6: #00d4d4;
     --git-graph-color7: #85d900;
+    --git-graph-uncommitted: #808080;
+
+    /* Table */
+    --table-border: rgba(255, 255, 255, 0.15);
+    --table-resize-border: rgba(255, 255, 255, 0.1);
+    --table-resize-hover: rgba(255, 255, 255, 0.1);
 
     /* Misc */
     --color-checkerboard: #484848;
@@ -194,6 +200,12 @@ code {
     --git-graph-color5: #bf3989;
     --git-graph-color6: #0a766a;
     --git-graph-color7: #0550ae;
+    --git-graph-uncommitted: #6e6e6e;
+
+    /* Table */
+    --table-border: rgba(0, 0, 0, 0.15);
+    --table-resize-border: rgba(0, 0, 0, 0.1);
+    --table-resize-hover: rgba(0, 0, 0, 0.08);
 
     /* Misc */
     --color-checkerboard: #b0b0b0;
@@ -675,6 +687,18 @@ code {
     stroke-width: 2;
   }
 
+  #commitGraph path.line.uncommitted {
+    stroke: var(--git-graph-uncommitted);
+  }
+
+  #commitGraph circle.uncommitted {
+    fill: var(--git-graph-uncommitted);
+  }
+
+  #commitGraph circle.current.uncommitted {
+    stroke: var(--git-graph-uncommitted);
+  }
+
   /* Commit Table */
 
   #commitTable {
@@ -710,7 +734,7 @@ code {
   }
 
   #commitTable th {
-    border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+    border-bottom: 1px solid var(--table-border);
     line-height: 18px;
     padding: 6px 12px;
     text-align: left;
@@ -736,7 +760,7 @@ code {
 
   .resizeCol.left {
     left: 0;
-    border-left: 1px solid rgba(128, 128, 128, 0.25);
+    border-left: 1px solid var(--table-resize-border);
   }
 
   .resizeCol.right {
@@ -744,7 +768,7 @@ code {
   }
 
   .resizeCol:hover {
-    background-color: rgba(128, 128, 128, 0.2);
+    background-color: var(--table-resize-hover);
   }
 
   /* Fixed layout table */

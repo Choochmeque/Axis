@@ -626,7 +626,7 @@ code {
     @apply flex flex-col items-center justify-center flex-1 h-full text-(--text-secondary) gap-3;
   }
 
-  /* Commit Graph Styles (from vscode-git-graph) */
+  /* Commit Graph Styles */
 
   #commitGraphContent {
     position: relative;
@@ -724,7 +724,7 @@ code {
     z-index: 10;
   }
 
-  /* Resize handles (from vscode-git-graph) */
+  /* Resize handles */
   .resizeCol {
     position: absolute;
     top: 0;
@@ -752,14 +752,7 @@ code {
     table-layout: fixed;
   }
 
-  /* Limit graph width (from vscode-git-graph) */
-  #commitTable table.autoLayout.limitGraphWidth td:first-child,
-  #commitTable table.autoLayout.limitGraphWidth th:first-child {
-    max-width: var(--limitGraphWidth);
-    box-sizing: border-box;
-  }
-
-  /* Description column takes remaining space (from vscode-git-graph) */
+  /* Description column takes remaining space */
   #commitTable table.autoLayout td:nth-child(2),
   #commitTable table.autoLayout th:nth-child(2) {
     width: 100%;

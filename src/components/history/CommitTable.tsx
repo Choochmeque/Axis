@@ -95,107 +95,117 @@ const CommitRow = memo(
     HTMLTableRowElement,
     CommitRowProps & Omit<React.HTMLAttributes<HTMLTableRowElement>, 'onClick'>
   >(function CommitRow(
-    { commit, index, vertexColour, widthAtVertex, isMuted, isCurrent, commitHead, onClick, ...rest },
+    {
+      commit,
+      index,
+      vertexColour,
+      widthAtVertex,
+      isMuted,
+      isCurrent,
+      commitHead,
+      onClick,
+      ...rest
+    },
     ref
   ) {
-  const isUncommitted = commit.oid === UNCOMMITTED;
-  const color = `var(--git-graph-color${vertexColour % 8})`;
+    const isUncommitted = commit.oid === UNCOMMITTED;
+    const color = `var(--git-graph-color${vertexColour % 8})`;
 
-  // Memoize expensive computations
-  const date = useMemo(() => formatShortDate(commit.timestamp), [commit.timestamp]);
-  const branchLabels = useMemo(() => getBranchLabels(commit), [commit]);
-  const tags = useMemo(
-    () => commit.refs?.filter((r) => r.refType === RefType.Tag) ?? [],
-    [commit.refs]
-  );
+    // Memoize expensive computations
+    const date = useMemo(() => formatShortDate(commit.timestamp), [commit.timestamp]);
+    const branchLabels = useMemo(() => getBranchLabels(commit), [commit]);
+    const tags = useMemo(
+      () => commit.refs?.filter((r) => r.refType === RefType.Tag) ?? [],
+      [commit.refs]
+    );
 
-  // Find if any branch is checked out at this commit
-  const branchCheckedOutAtCommit = useMemo(
-    () => branchLabels.heads.find((h) => h.isHead)?.name ?? null,
-    [branchLabels.heads]
-  );
+    // Find if any branch is checked out at this commit
+    const branchCheckedOutAtCommit = useMemo(
+      () => branchLabels.heads.find((h) => h.isHead)?.name ?? null,
+      [branchLabels.heads]
+    );
 
-  // Build class name
-  const rowClassName = useMemo(
-    () => ['commit', isCurrent ? 'current' : '', isMuted ? 'mute' : ''].filter(Boolean).join(' '),
-    [isCurrent, isMuted]
-  );
+    // Build class name
+    const rowClassName = useMemo(
+      () => ['commit', isCurrent ? 'current' : '', isMuted ? 'mute' : ''].filter(Boolean).join(' '),
+      [isCurrent, isMuted]
+    );
 
-  // Commit dot for HEAD
-  const showCommitDot = commit.oid === commitHead;
-  const commitDotTitle = branchCheckedOutAtCommit
-    ? `The branch "${branchCheckedOutAtCommit}" is currently checked out at this commit.`
-    : 'This commit is currently checked out.';
+    // Commit dot for HEAD
+    const showCommitDot = commit.oid === commitHead;
+    const commitDotTitle = branchCheckedOutAtCommit
+      ? `The branch "${branchCheckedOutAtCommit}" is currently checked out at this commit.`
+      : 'This commit is currently checked out.';
 
-  // Display values
-  const authorDisplay = isUncommitted ? '*' : commit.author.name;
-  const authorTitle = isUncommitted
-    ? 'Uncommitted changes'
-    : `${commit.author.name} <${commit.author.email}>`;
-  const commitDisplay = isUncommitted ? '*' : abbrevCommit(commit.oid);
-  const commitTitle = isUncommitted ? 'Uncommitted changes' : commit.oid;
+    // Display values
+    const authorDisplay = isUncommitted ? '*' : commit.author.name;
+    const authorTitle = isUncommitted
+      ? 'Uncommitted changes'
+      : `${commit.author.name} <${commit.author.email}>`;
+    const commitDisplay = isUncommitted ? '*' : abbrevCommit(commit.oid);
+    const commitTitle = isUncommitted ? 'Uncommitted changes' : commit.oid;
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      onClick(e, index, commit);
-    },
-    [onClick, index, commit]
-  );
+    const handleClick = useCallback(
+      (e: React.MouseEvent) => {
+        onClick(e, index, commit);
+      },
+      [onClick, index, commit]
+    );
 
-  // Sort refs: active branch first
-  const sortedHeads = useMemo(() => {
-    return [...branchLabels.heads].sort((a, b) => {
-      if (a.isHead) return -1;
-      if (b.isHead) return 1;
-      return 0;
-    });
-  }, [branchLabels]);
+    // Sort refs: active branch first
+    const sortedHeads = useMemo(() => {
+      return [...branchLabels.heads].sort((a, b) => {
+        if (a.isHead) return -1;
+        if (b.isHead) return 1;
+        return 0;
+      });
+    }, [branchLabels]);
 
-  return (
-    <tr
-      {...rest}
-      ref={ref}
-      className={rowClassName}
-      id={isUncommitted ? 'uncommittedChanges' : undefined}
-      data-id={index}
-      data-oid={commit.oid}
-      data-color={vertexColour}
-      onClick={handleClick}
-    >
-      <td style={{ minWidth: widthAtVertex }} />
-      <td>
-        <span className="description">
-          {showCommitDot && <span className="commitHeadDot" title={commitDotTitle} />}
-          {sortedHeads.map((head) => (
-            <GitRef
-              key={head.name}
-              name={head.name}
-              type="head"
-              color={color}
-              isActive={head.isHead}
-              remotes={head.remotes}
-            />
-          ))}
-          {branchLabels.remotes.map((remote) => (
-            <GitRef key={remote.name} name={remote.name} type="remote" color={color} />
-          ))}
-          {tags.map((tag) => (
-            <GitRef key={tag.name} name={tag.name} type="tag" color="var(--color-tag)" />
-          ))}
-          <span className="text">{commit.summary}</span>
-        </span>
-      </td>
-      <td className="dateCol text" title={date.title}>
-        {date.formatted}
-      </td>
-      <td className="authorCol text" title={authorTitle}>
-        {authorDisplay}
-      </td>
-      <td className="text" title={commitTitle}>
-        {commitDisplay}
-      </td>
-    </tr>
-  );
+    return (
+      <tr
+        {...rest}
+        ref={ref}
+        className={rowClassName}
+        id={isUncommitted ? 'uncommittedChanges' : undefined}
+        data-id={index}
+        data-oid={commit.oid}
+        data-color={vertexColour}
+        onClick={handleClick}
+      >
+        <td style={{ minWidth: widthAtVertex }} />
+        <td>
+          <span className="description">
+            {showCommitDot && <span className="commitHeadDot" title={commitDotTitle} />}
+            {sortedHeads.map((head) => (
+              <GitRef
+                key={head.name}
+                name={head.name}
+                type="head"
+                color={color}
+                isActive={head.isHead}
+                remotes={head.remotes}
+              />
+            ))}
+            {branchLabels.remotes.map((remote) => (
+              <GitRef key={remote.name} name={remote.name} type="remote" color={color} />
+            ))}
+            {tags.map((tag) => (
+              <GitRef key={tag.name} name={tag.name} type="tag" color="var(--color-tag)" />
+            ))}
+            <span className="text">{commit.summary}</span>
+          </span>
+        </td>
+        <td className="dateCol text" title={date.title}>
+          {date.formatted}
+        </td>
+        <td className="authorCol text" title={authorTitle}>
+          {authorDisplay}
+        </td>
+        <td className="text" title={commitTitle}>
+          {commitDisplay}
+        </td>
+      </tr>
+    );
   })
 );
 
@@ -384,7 +394,6 @@ export const CommitTable = memo(function CommitTable({
     },
     [onCommitClick]
   );
-
 
   return (
     <div id="commitTable">

@@ -477,11 +477,7 @@ export class Graph {
   private readonly gradientStop2: SVGStopElement;
   private group: SVGGElement | null = null;
 
-  constructor(
-    elem: HTMLElement,
-    config: GG.GraphConfig,
-    muteConfig: GG.MuteCommitsConfig
-  ) {
+  constructor(elem: HTMLElement, config: GG.GraphConfig, muteConfig: GG.MuteCommitsConfig) {
     this.config = config;
     this.muteConfig = muteConfig;
 

@@ -1,8 +1,9 @@
 // Extracted from vscode-git-graph main.ts renderTable()
-import { memo, useRef, useCallback, useLayoutEffect, useMemo } from 'react';
+import { memo, useRef, useCallback, useLayoutEffect, useMemo, forwardRef } from 'react';
 import { GitBranch, Tag } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
+import { CommitContextMenu } from './CommitContextMenu';
 
 const UNCOMMITTED = 'uncommitted';
 const COLUMN_MIN_WIDTH = 40;
@@ -89,16 +90,14 @@ interface CommitRowProps {
   onClick: (e: React.MouseEvent, index: number, commit: GraphCommit) => void;
 }
 
-const CommitRow = memo(function CommitRow({
-  commit,
-  index,
-  vertexColour,
-  widthAtVertex,
-  isMuted,
-  isCurrent,
-  commitHead,
-  onClick,
-}: CommitRowProps) {
+const CommitRow = memo(
+  forwardRef<
+    HTMLTableRowElement,
+    CommitRowProps & Omit<React.HTMLAttributes<HTMLTableRowElement>, 'onClick'>
+  >(function CommitRow(
+    { commit, index, vertexColour, widthAtVertex, isMuted, isCurrent, commitHead, onClick, ...rest },
+    ref
+  ) {
   const isUncommitted = commit.oid === UNCOMMITTED;
   const color = `var(--git-graph-color${vertexColour % 8})`;
 
@@ -154,6 +153,8 @@ const CommitRow = memo(function CommitRow({
 
   return (
     <tr
+      {...rest}
+      ref={ref}
       className={rowClassName}
       id={isUncommitted ? 'uncommittedChanges' : undefined}
       data-id={index}
@@ -195,7 +196,8 @@ const CommitRow = memo(function CommitRow({
       </td>
     </tr>
   );
-});
+  })
+);
 
 interface CommitTableProps {
   commits: GraphCommit[];
@@ -383,6 +385,7 @@ export const CommitTable = memo(function CommitTable({
     [onCommitClick]
   );
 
+
   return (
     <div id="commitTable">
       <table ref={tableRef}>
@@ -419,17 +422,18 @@ export const CommitTable = memo(function CommitTable({
         </thead>
         <tbody>
           {commits.map((commit, i) => (
-            <CommitRow
-              key={commit.oid}
-              commit={commit}
-              index={i}
-              vertexColour={vertexColours[i]}
-              widthAtVertex={widthsAtVertices[i]}
-              isMuted={mutedCommits[i]}
-              isCurrent={commit.oid === currentHash}
-              commitHead={commitHead}
-              onClick={handleRowClick}
-            />
+            <CommitContextMenu key={commit.oid} commit={commit}>
+              <CommitRow
+                commit={commit}
+                index={i}
+                vertexColour={vertexColours[i]}
+                widthAtVertex={widthsAtVertices[i]}
+                isMuted={mutedCommits[i]}
+                isCurrent={commit.oid === currentHash}
+                commitHead={commitHead}
+                onClick={handleRowClick}
+              />
+            </CommitContextMenu>
           ))}
         </tbody>
       </table>

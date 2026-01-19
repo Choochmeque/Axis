@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   History,
   RefreshCw,
@@ -14,6 +14,7 @@ import {
   GitBranch,
   Check,
   Copy,
+  Loader2,
 } from 'lucide-react';
 import { reflogApi, branchApi } from '@/services/api';
 import type { ReflogEntry, ReflogAction } from '@/types';
@@ -31,6 +32,7 @@ import {
   Select,
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -109,28 +111,35 @@ const getActionLabel = (action: ReflogAction): string => {
   }
 };
 
+const PAGE_SIZE = 50;
+
 export function ReflogView({ onRefresh }: ReflogViewProps) {
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<ReflogEntry | null>(null);
   const [availableRefs, setAvailableRefs] = useState<string[]>(['HEAD']);
   const [currentRef, setCurrentRef] = useState('HEAD');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [branchName, setBranchName] = useState('');
 
+  const listRef = useRef<HTMLDivElement>(null);
   const { loadBranches, loadCommits } = useRepositoryStore();
 
   const loadReflog = useCallback(async (refname: string) => {
     setIsLoading(true);
     setError(null);
+    setHasMore(true);
     try {
       const reflogEntries = await reflogApi.list({
         refname,
-        limit: null,
+        limit: PAGE_SIZE,
         skip: null,
       });
       setEntries(reflogEntries);
+      setHasMore(reflogEntries.length >= PAGE_SIZE);
     } catch (err) {
       console.error('Failed to load reflog:', err);
       setError('Failed to load reflog');
@@ -139,12 +148,44 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     }
   }, []);
 
+  const loadMoreEntries = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const moreEntries = await reflogApi.list({
+        refname: currentRef,
+        limit: PAGE_SIZE,
+        skip: entries.length,
+      });
+      if (moreEntries.length > 0) {
+        setEntries((prev) => [...prev, ...moreEntries]);
+      }
+      setHasMore(moreEntries.length >= PAGE_SIZE);
+    } catch (err) {
+      console.error('Failed to load more reflog entries:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [currentRef, entries.length, hasMore, isLoadingMore]);
+
+  const handleScroll = useCallback(() => {
+    if (!listRef.current || isLoadingMore || !hasMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    const scrollThreshold = 200;
+
+    if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
+      loadMoreEntries();
+    }
+  }, [isLoadingMore, hasMore, loadMoreEntries]);
+
   const loadAvailableRefs = useCallback(async () => {
     try {
       const refs = await reflogApi.refs();
       setAvailableRefs(refs);
-    } catch {
-      // Silent fail - just keep HEAD
+    } catch (err) {
+      console.error('Failed to load available refs:', err);
     }
   }, []);
 
@@ -166,7 +207,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to checkout:', err);
-      setError(err instanceof Error ? err.message : 'Failed to checkout');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -185,7 +226,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to create branch:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create branch');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -213,7 +254,11 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <History size={16} />
           <span>Reflog</span>
-          <Select value={currentRef} onValueChange={handleRefChange} className="h-6 text-xs min-w-24">
+          <Select
+            value={currentRef}
+            onValueChange={handleRefChange}
+            className="h-6 text-xs min-w-24"
+          >
             {availableRefs.map((ref) => (
               <option key={ref} value={ref}>
                 {getRefDisplayName(ref)}
@@ -247,7 +292,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2" ref={listRef} onScroll={handleScroll}>
         {entries.length === 0 ? (
           <div className="py-6 text-center text-(--text-muted) text-sm">No reflog entries</div>
         ) : (
@@ -328,6 +373,12 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
               </div>
             );
           })
+        )}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
+            <Loader2 size={16} className="animate-spin" />
+            <span>Loading more entries...</span>
+          </div>
         )}
       </div>
 

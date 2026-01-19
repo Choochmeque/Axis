@@ -268,7 +268,7 @@ impl Git2Service {
 
             let oid = oid_result?;
             let commit = self.repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit));
+            commits.push(Commit::from_git2_commit(&commit, &self.repo));
         }
 
         Ok(commits)
@@ -364,7 +364,7 @@ impl Git2Service {
         let oid = git2::Oid::from_str(oid_str)
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         let commit = self.repo.find_commit(oid)?;
-        Ok(Commit::from_git2_commit(&commit))
+        Ok(Commit::from_git2_commit(&commit, &self.repo))
     }
 
     // ==================== Staging Operations ====================
@@ -1586,6 +1586,7 @@ impl Git2Service {
                             },
                             timestamp: now,
                             is_merge: false,
+                            signature: None,
                         },
                         lane: 0,
                         parent_edges,
@@ -1653,7 +1654,7 @@ impl Git2Service {
             let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();
 
             graph_commits.push(GraphCommit {
-                commit: Commit::from_git2_commit(&commit),
+                commit: Commit::from_git2_commit(&commit, &self.repo),
                 lane,
                 parent_edges,
                 refs,
@@ -1790,7 +1791,7 @@ impl Git2Service {
             if is_match {
                 total_matches += 1;
                 if matches.len() < limit {
-                    matches.push(Commit::from_git2_commit(&commit));
+                    matches.push(Commit::from_git2_commit(&commit, &self.repo));
                 }
             }
         }
@@ -2069,7 +2070,7 @@ impl Git2Service {
         for oid_result in revwalk {
             let oid = oid_result?;
             let commit = self.repo.find_commit(oid)?;
-            commits_to_rebase.push(Commit::from_git2_commit(&commit));
+            commits_to_rebase.push(Commit::from_git2_commit(&commit, &self.repo));
         }
 
         // Count commits on target since merge-base
@@ -2083,7 +2084,7 @@ impl Git2Service {
 
         Ok(RebasePreview {
             commits_to_rebase,
-            merge_base: Commit::from_git2_commit(&merge_base_commit),
+            merge_base: Commit::from_git2_commit(&merge_base_commit, &self.repo),
             target: RebaseTarget {
                 name: target_name,
                 oid: target_commit.id().to_string(),

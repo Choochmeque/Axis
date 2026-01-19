@@ -14,6 +14,18 @@ pub struct Commit {
     pub parent_oids: Vec<String>,
     pub timestamp: DateTime<Utc>,
     pub is_merge: bool,
+    /// Signature info if the commit is signed
+    pub signature: Option<CommitSignature>,
+}
+
+/// Information about a commit's cryptographic signature
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CommitSignature {
+    /// The type of signature (GPG or SSH)
+    pub format: String,
+    /// The signer's key ID or fingerprint (if available)
+    pub signer: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -24,9 +36,11 @@ pub struct Signature {
 }
 
 impl Commit {
-    pub fn from_git2_commit(commit: &git2::Commit) -> Self {
+    pub fn from_git2_commit(commit: &git2::Commit, repo: &git2::Repository) -> Self {
         let author = commit.author();
         let committer = commit.committer();
+
+        let signature = Self::extract_signature(repo, commit.id());
 
         Commit {
             oid: commit.id().to_string(),
@@ -40,7 +54,40 @@ impl Commit {
                 .unwrap_or_default()
                 .with_timezone(&Utc),
             is_merge: commit.parent_count() > 1,
+            signature,
         }
+    }
+
+    fn extract_signature(repo: &git2::Repository, oid: git2::Oid) -> Option<CommitSignature> {
+        use crate::services::SigningService;
+
+        let (sig_buf, signed_data) = repo.extract_signature(&oid, Some("gpgsig")).ok()?;
+        let sig_str = std::str::from_utf8(&sig_buf).ok()?;
+        let data_string = String::from_utf8(signed_data.to_vec()).ok();
+
+        let is_gpg = sig_str.contains("-----BEGIN PGP SIGNATURE-----");
+        let is_ssh = sig_str.contains("-----BEGIN SSH SIGNATURE-----");
+
+        let format = if is_gpg {
+            "gpg"
+        } else if is_ssh {
+            "ssh"
+        } else {
+            "unknown"
+        };
+
+        let signer = match (data_string.as_deref(), is_gpg, is_ssh) {
+            (Some(data), true, _) => SigningService::verify_gpg_signature(sig_str, data),
+            (Some(data), _, true) => {
+                SigningService::verify_ssh_signature(sig_str, data, repo.path())
+            }
+            _ => None,
+        };
+
+        Some(CommitSignature {
+            format: format.to_string(),
+            signer,
+        })
     }
 }
 

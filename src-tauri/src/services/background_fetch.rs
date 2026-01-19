@@ -4,8 +4,8 @@ use crate::state::RepositoryCache;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::AppHandle;
 use tauri::async_runtime::JoinHandle;
+use tauri::AppHandle;
 use tauri_specta::Event;
 
 /// Background service for periodically fetching all cached repositories

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { FileCode, AlertCircle, Check, FolderOpen, Upload, Download } from 'lucide-react';
+import { FileCode, AlertCircle, FolderOpen, Upload, Download } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { patchApi } from '../../services/api';
 import type { PatchResult } from '../../types';
 import {
@@ -50,7 +52,6 @@ export function PatchDialog({
   // Common state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PatchResult | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,7 +62,6 @@ export function PatchDialog({
       setThreeWay(false);
       setUseAm(false);
       setError(null);
-      setResult(null);
     }
   }, [isOpen, initialMode]);
 
@@ -127,11 +127,11 @@ export function PatchDialog({
         });
       }
 
-      setResult(patchResult);
       onSuccess?.();
+      onClose();
+      toast.success(patchResult.message || 'Patch created');
     } catch (err) {
-      console.error('Failed to create patch:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create patch');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -164,11 +164,11 @@ export function PatchDialog({
         });
       }
 
-      setResult(patchResult);
       onSuccess?.();
+      onClose();
+      toast.success(patchResult.message || (checkOnly ? 'Patch is valid' : 'Patch applied'));
     } catch (err) {
-      console.error('Failed to apply patch:', err);
-      setError(err instanceof Error ? err.message : 'Failed to apply patch');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +176,6 @@ export function PatchDialog({
 
   const resetState = () => {
     setError(null);
-    setResult(null);
   };
 
   return (
@@ -216,146 +215,110 @@ export function PatchDialog({
               </Alert>
             )}
 
-            {result ? (
-              <Alert variant="success" className="mb-4">
-                <Check size={16} />
-                <div className="flex flex-col gap-1">
-                  <span>{result.message}</span>
-                  {result.patches.length > 0 && (
-                    <div className="text-xs opacity-80 mt-1">
-                      {result.patches.map((p, i) => (
-                        <div key={i} className="font-mono truncate">
-                          {p.split('/').pop()}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Alert>
-            ) : (
-              <>
-                <Tabs.Content value="create">
-                  {commitOid && (
-                    <div className="field">
-                      <Label>Source Commit:</Label>
-                      <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
-                        <span className="font-mono text-(--text-secondary)">
-                          {commitOid.slice(0, 7)}
-                        </span>
-                        {commitSummary && (
-                          <span className="text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">
-                            - {commitSummary}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <FormField label="Output Directory:" htmlFor="output-dir">
-                    <div className="flex gap-2">
-                      <Input
-                        id="output-dir"
-                        type="text"
-                        value={outputDir}
-                        onChange={(e) => setOutputDir(e.target.value)}
-                        placeholder="Select directory..."
-                        disabled={isLoading}
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="secondary"
-                        onClick={handleBrowseOutputDir}
-                        disabled={isLoading}
-                      >
-                        <FolderOpen size={14} />
-                      </Button>
-                    </div>
-                  </FormField>
-                </Tabs.Content>
-
-                <Tabs.Content value="apply">
-                  <FormField label="Patch File:" htmlFor="patch-path">
-                    <div className="flex gap-2">
-                      <Input
-                        id="patch-path"
-                        type="text"
-                        value={patchPath}
-                        onChange={(e) => setPatchPath(e.target.value)}
-                        placeholder="Select patch file..."
-                        disabled={isLoading}
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="secondary"
-                        onClick={handleBrowsePatchFile}
-                        disabled={isLoading}
-                      >
-                        <FolderOpen size={14} />
-                      </Button>
-                    </div>
-                  </FormField>
-
-                  <div className="flex flex-col gap-3 mt-4">
-                    <CheckboxField
-                      id="use-am"
-                      label="Create commit from patch (git am)"
-                      checked={useAm}
-                      disabled={isLoading}
-                      onCheckedChange={setUseAm}
-                    />
-
-                    <CheckboxField
-                      id="check-only"
-                      label="Check only (don't apply)"
-                      checked={checkOnly}
-                      disabled={isLoading || useAm}
-                      onCheckedChange={setCheckOnly}
-                    />
-
-                    <CheckboxField
-                      id="three-way"
-                      label="Use 3-way merge if patch fails"
-                      checked={threeWay}
-                      disabled={isLoading}
-                      onCheckedChange={setThreeWay}
-                    />
+            <Tabs.Content value="create">
+              {commitOid && (
+                <div className="field">
+                  <Label>Source Commit:</Label>
+                  <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
+                    <span className="font-mono text-(--text-secondary)">
+                      {commitOid.slice(0, 7)}
+                    </span>
+                    {commitSummary && (
+                      <span className="text-(--text-tertiary) overflow-hidden text-ellipsis whitespace-nowrap">
+                        - {commitSummary}
+                      </span>
+                    )}
                   </div>
-                </Tabs.Content>
-              </>
-            )}
+                </div>
+              )}
+
+              <FormField label="Output Directory:" htmlFor="output-dir">
+                <div className="flex gap-2">
+                  <Input
+                    id="output-dir"
+                    type="text"
+                    value={outputDir}
+                    onChange={(e) => setOutputDir(e.target.value)}
+                    placeholder="Select directory..."
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                  <Button variant="secondary" onClick={handleBrowseOutputDir} disabled={isLoading}>
+                    <FolderOpen size={14} />
+                  </Button>
+                </div>
+              </FormField>
+            </Tabs.Content>
+
+            <Tabs.Content value="apply">
+              <FormField label="Patch File:" htmlFor="patch-path">
+                <div className="flex gap-2">
+                  <Input
+                    id="patch-path"
+                    type="text"
+                    value={patchPath}
+                    onChange={(e) => setPatchPath(e.target.value)}
+                    placeholder="Select patch file..."
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                  <Button variant="secondary" onClick={handleBrowsePatchFile} disabled={isLoading}>
+                    <FolderOpen size={14} />
+                  </Button>
+                </div>
+              </FormField>
+
+              <div className="flex flex-col gap-3 mt-4">
+                <CheckboxField
+                  id="use-am"
+                  label="Create commit from patch (git am)"
+                  checked={useAm}
+                  disabled={isLoading}
+                  onCheckedChange={setUseAm}
+                />
+
+                <CheckboxField
+                  id="check-only"
+                  label="Check only (don't apply)"
+                  checked={checkOnly}
+                  disabled={isLoading || useAm}
+                  onCheckedChange={setCheckOnly}
+                />
+
+                <CheckboxField
+                  id="three-way"
+                  label="Use 3-way merge if patch fails"
+                  checked={threeWay}
+                  disabled={isLoading}
+                  onCheckedChange={setThreeWay}
+                />
+              </div>
+            </Tabs.Content>
           </DialogBody>
         </Tabs.Root>
 
         <DialogFooter>
-          {result ? (
-            <Button variant="primary" onClick={onClose}>
-              Close
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={isLoading}>
+              Cancel
+            </Button>
+          </DialogClose>
+          {activeTab === 'create' ? (
+            <Button
+              variant="primary"
+              onClick={handleCreatePatch}
+              disabled={isLoading || !outputDir.trim()}
+            >
+              {isLoading ? 'Creating...' : 'Create Patch'}
             </Button>
           ) : (
-            <>
-              <DialogClose asChild>
-                <Button variant="secondary" disabled={isLoading}>
-                  Cancel
-                </Button>
-              </DialogClose>
-              {activeTab === 'create' ? (
-                <Button
-                  variant="primary"
-                  onClick={handleCreatePatch}
-                  disabled={isLoading || !outputDir.trim()}
-                >
-                  {isLoading ? 'Creating...' : 'Create Patch'}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={handleApplyPatch}
-                  disabled={isLoading || !patchPath.trim()}
-                >
-                  {isLoading ? 'Applying...' : checkOnly ? 'Check Patch' : 'Apply Patch'}
-                </Button>
-              )}
-            </>
+            <Button
+              variant="primary"
+              onClick={handleApplyPatch}
+              disabled={isLoading || !patchPath.trim()}
+            >
+              {isLoading ? 'Applying...' : checkOnly ? 'Check Patch' : 'Apply Patch'}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

@@ -5,6 +5,8 @@ import type { RecentRepository } from '@/types';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface RecentRepoContextMenuProps {
   repo: RecentRepository;
@@ -28,7 +30,7 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
     });
 
     webview.once('tauri://error', (e) => {
-      console.error('Failed to create window:', e);
+      toast.error('Open window failed', getErrorMessage(e));
     });
   };
 
@@ -37,7 +39,7 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
       await repositoryApi.removeRecentRepository(repo.path);
       await loadRecentRepositories();
     } catch (err) {
-      console.error('Failed to remove recent repository:', err);
+      toast.error('Remove repository failed', getErrorMessage(err));
     }
   };
 

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Palette, GitBranch, FileText } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { settingsApi, signingApi } from '@/services/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { SigningFormat, Theme } from '@/types';
@@ -48,6 +50,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  notificationHistoryCapacity: 50,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -78,8 +81,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
       setSettings(loaded);
       setOriginalSettings(loaded);
     } catch (err) {
-      console.error('Failed to load settings:', err);
-      setError('Failed to load settings');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +95,9 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
       setOriginalSettings(settings);
       onSettingsChange?.(settings);
       onClose();
+      toast.success('Settings saved');
     } catch (err) {
-      console.error('Failed to save settings:', err);
-      setError('Failed to save settings');
+      setError(getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -239,6 +241,29 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
       </div>
+
+      <h3 className={sectionTitleClass}>Notifications</h3>
+
+      <FormField
+        label="Notification History Capacity"
+        htmlFor="notificationHistoryCapacity"
+        hint="Maximum number of notifications to keep in history (10-200)"
+      >
+        <Input
+          id="notificationHistoryCapacity"
+          type="number"
+          min={10}
+          max={200}
+          value={settings.notificationHistoryCapacity}
+          onChange={(e) =>
+            updateSetting(
+              'notificationHistoryCapacity',
+              Math.min(200, Math.max(10, parseInt(e.target.value) || 50))
+            )
+          }
+          className={numberInputClass}
+        />
+      </FormField>
     </div>
   );
 }

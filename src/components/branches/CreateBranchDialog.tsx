@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GitBranch } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import {
@@ -86,8 +88,9 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
       setBranchName('');
       setBaseBranch('');
       onOpenChange(false);
+      toast.success(`Branch "${branchName.trim()}" created`);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

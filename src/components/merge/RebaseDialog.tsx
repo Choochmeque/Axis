@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { GitBranch, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { GitBranch, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi, branchApi } from '../../services/api';
 import {
   BranchType,
@@ -72,8 +74,7 @@ export function RebaseDialog({
       try {
         const previewData = await rebaseApi.getPreview(rebaseTarget);
         setPreview(previewData);
-      } catch (err) {
-        console.error('Failed to load rebase preview:', err);
+      } catch {
         setPreview(null);
       } finally {
         setIsLoadingPreview(false);
@@ -90,8 +91,7 @@ export function RebaseDialog({
       const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
       setBranches(otherBranches);
     } catch (err) {
-      console.error('Failed to load branches:', err);
-      setError('Failed to load branches');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -114,14 +114,18 @@ export function RebaseDialog({
         autosquash: false,
       });
 
-      setResult(rebaseResult);
-
-      if (rebaseResult.success) {
+      if (rebaseResult.success && rebaseResult.conflicts.length === 0) {
         onRebaseComplete?.(rebaseResult);
+        onClose();
+        toast.success('Rebase complete');
+      } else {
+        setResult(rebaseResult);
+        if (rebaseResult.success) {
+          onRebaseComplete?.(rebaseResult);
+        }
       }
     } catch (err) {
-      console.error('Rebase failed:', err);
-      setError(err instanceof Error ? err.message : 'Rebase failed');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -134,8 +138,7 @@ export function RebaseDialog({
       setError(null);
       onClose();
     } catch (err) {
-      console.error('Failed to abort rebase:', err);
-      setError('Failed to abort rebase');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -143,13 +146,18 @@ export function RebaseDialog({
     setIsLoading(true);
     try {
       const continueResult = await rebaseApi.continue();
-      setResult(continueResult);
-      if (continueResult.success) {
+      if (continueResult.success && continueResult.conflicts.length === 0) {
         onRebaseComplete?.(continueResult);
+        onClose();
+        toast.success('Rebase complete');
+      } else {
+        setResult(continueResult);
+        if (continueResult.success) {
+          onRebaseComplete?.(continueResult);
+        }
       }
     } catch (err) {
-      console.error('Failed to continue rebase:', err);
-      setError('Failed to continue rebase');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -159,13 +167,18 @@ export function RebaseDialog({
     setIsLoading(true);
     try {
       const skipResult = await rebaseApi.skip();
-      setResult(skipResult);
-      if (skipResult.success) {
+      if (skipResult.success && skipResult.conflicts.length === 0) {
         onRebaseComplete?.(skipResult);
+        onClose();
+        toast.success('Rebase complete');
+      } else {
+        setResult(skipResult);
+        if (skipResult.success) {
+          onRebaseComplete?.(skipResult);
+        }
       }
     } catch (err) {
-      console.error('Failed to skip commit:', err);
-      setError('Failed to skip commit');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -185,8 +198,8 @@ export function RebaseDialog({
           )}
 
           {result && (
-            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
-              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle size={16} />
               <span>{result.message}</span>
             </Alert>
           )}
@@ -279,7 +292,7 @@ export function RebaseDialog({
         </DialogBody>
 
         <DialogFooter>
-          {result && !result.success ? (
+          {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
                 Abort Rebase
@@ -291,10 +304,6 @@ export function RebaseDialog({
                 Continue
               </Button>
             </>
-          ) : result && result.success ? (
-            <Button variant="primary" onClick={onClose}>
-              Close
-            </Button>
           ) : (
             <>
               <DialogClose asChild>

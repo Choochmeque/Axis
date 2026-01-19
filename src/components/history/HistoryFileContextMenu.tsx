@@ -4,6 +4,8 @@ import type { FileDiff } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { shellApi } from '@/services/api';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface HistoryFileContextMenuProps {
   file: FileDiff;
@@ -14,8 +16,13 @@ export function HistoryFileContextMenu({ file, children }: HistoryFileContextMen
   const { repository } = useRepositoryStore();
   const filePath = file.newPath || file.oldPath || '';
 
-  const handleCopyPath = () => {
-    navigator.clipboard.writeText(filePath);
+  const handleCopyPath = async () => {
+    try {
+      await navigator.clipboard.writeText(filePath);
+      toast.success('Copied to clipboard');
+    } catch (err) {
+      toast.error('Copy failed', getErrorMessage(err));
+    }
   };
 
   const handleShowInFinder = async () => {
@@ -24,7 +31,7 @@ export function HistoryFileContextMenu({ file, children }: HistoryFileContextMen
       try {
         await shellApi.showInFolder(fullPath);
       } catch (err) {
-        console.error('Failed to show in finder:', err);
+        toast.error('Show in Finder failed', getErrorMessage(err));
       }
     }
   };

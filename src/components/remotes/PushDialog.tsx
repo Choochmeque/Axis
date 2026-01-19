@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpFromLine, Check } from 'lucide-react';
+import { ArrowUpFromLine } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import type { Remote, PushResult } from '../../types';
+import type { Remote } from '../../types';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +32,6 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [tags, setTags] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PushResult | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.isHead);
@@ -38,7 +39,6 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   useEffect(() => {
     if (open) {
       loadRemotes();
-      setResult(null);
       setError(null);
       setForce(false);
       setTags(false);
@@ -71,27 +71,26 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
     setIsLoading(true);
     setError(null);
-    setResult(null);
 
     try {
-      const pushResult = await remoteApi.pushCurrentBranch(selectedRemote, {
+      await remoteApi.pushCurrentBranch(selectedRemote, {
         force,
         setUpstream,
         tags,
       });
 
-      setResult(pushResult);
       await loadBranches();
       await refreshRepository();
+      onOpenChange(false);
+      toast.success('Push complete');
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    setResult(null);
     setError(null);
     onOpenChange(false);
   };
@@ -102,110 +101,78 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
         <DialogTitle icon={ArrowUpFromLine}>Push to Remote</DialogTitle>
 
         <DialogBody>
-          {result ? (
-            <div>
-              <Alert variant="success" className="mb-4">
-                <Check size={16} />
-                Push completed successfully
-              </Alert>
-              <div className="p-3 bg-(--bg-secondary) rounded">
-                <strong className="block mb-1 text-(--text-primary)">
-                  Pushed to {result.remote}
-                </strong>
-                <div className="text-xs text-(--text-secondary)">Branch: {currentBranch?.name}</div>
+          {currentBranch && (
+            <div className="dialog-info-box">
+              <div className="flex justify-between text-base py-1">
+                <span className="text-(--text-secondary)">Current branch:</span>
+                <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
               </div>
-            </div>
-          ) : (
-            <>
-              {currentBranch && (
-                <div className="dialog-info-box">
-                  <div className="flex justify-between text-base py-1">
-                    <span className="text-(--text-secondary)">Current branch:</span>
-                    <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
-                  </div>
-                  {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
-                    <div className="flex justify-between text-base py-1">
-                      <span className="text-(--text-secondary)">Commits ahead:</span>
-                      <span className="text-(--text-primary) font-medium">
-                        {currentBranch.ahead}
-                      </span>
-                    </div>
-                  )}
-                  {currentBranch.upstream && (
-                    <div className="flex justify-between text-base py-1">
-                      <span className="text-(--text-secondary)">Upstream:</span>
-                      <span className="text-(--text-primary) font-medium">
-                        {currentBranch.upstream}
-                      </span>
-                    </div>
-                  )}
+              {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
+                <div className="flex justify-between text-base py-1">
+                  <span className="text-(--text-secondary)">Commits ahead:</span>
+                  <span className="text-(--text-primary) font-medium">{currentBranch.ahead}</span>
                 </div>
               )}
-
-              <FormField label="Push to Remote" htmlFor="remote-select">
-                <Select
-                  id="remote-select"
-                  value={selectedRemote}
-                  onChange={(e) => setSelectedRemote(e.target.value)}
-                  disabled={remotes.length === 0}
-                >
-                  {remotes.map((remote) => (
-                    <option key={remote.name} value={remote.name}>
-                      {remote.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-
-              <CheckboxField
-                id="set-upstream"
-                label="Set as upstream tracking branch"
-                checked={setUpstream}
-                onCheckedChange={setSetUpstream}
-              />
-
-              <CheckboxField
-                id="tags"
-                label="Include tags"
-                checked={tags}
-                onCheckedChange={setTags}
-              />
-
-              <CheckboxField
-                id="force-push"
-                label="Force push (overwrites remote changes)"
-                checked={force}
-                onCheckedChange={setForce}
-              />
-
-              {error && (
-                <Alert variant="error" inline className="mt-3">
-                  {error}
-                </Alert>
+              {currentBranch.upstream && (
+                <div className="flex justify-between text-base py-1">
+                  <span className="text-(--text-secondary)">Upstream:</span>
+                  <span className="text-(--text-primary) font-medium">
+                    {currentBranch.upstream}
+                  </span>
+                </div>
               )}
-            </>
+            </div>
+          )}
+
+          <FormField label="Push to Remote" htmlFor="remote-select">
+            <Select
+              id="remote-select"
+              value={selectedRemote}
+              onChange={(e) => setSelectedRemote(e.target.value)}
+              disabled={remotes.length === 0}
+            >
+              {remotes.map((remote) => (
+                <option key={remote.name} value={remote.name}>
+                  {remote.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <CheckboxField
+            id="set-upstream"
+            label="Set as upstream tracking branch"
+            checked={setUpstream}
+            onCheckedChange={setSetUpstream}
+          />
+
+          <CheckboxField id="tags" label="Include tags" checked={tags} onCheckedChange={setTags} />
+
+          <CheckboxField
+            id="force-push"
+            label="Force push (overwrites remote changes)"
+            checked={force}
+            onCheckedChange={setForce}
+          />
+
+          {error && (
+            <Alert variant="error" inline className="mt-3">
+              {error}
+            </Alert>
           )}
         </DialogBody>
 
         <DialogFooter>
-          {result ? (
-            <Button variant="primary" onClick={handleClose}>
-              Done
-            </Button>
-          ) : (
-            <>
-              <DialogClose asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button
-                variant="primary"
-                onClick={handlePush}
-                disabled={isLoading || !selectedRemote || !currentBranch}
-              >
-                {isLoading ? 'Pushing...' : 'Push'}
-              </Button>
-            </>
-          )}
+          <DialogClose asChild>
+            <Button variant="secondary">Cancel</Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handlePush}
+            disabled={isLoading || !selectedRemote || !currentBranch}
+          >
+            {isLoading ? 'Pushing...' : 'Push'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

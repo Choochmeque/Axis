@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Archive } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { stashApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import {
@@ -45,9 +47,9 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
       await loadStashes();
       await refreshRepository();
       onOpenChange(false);
+      toast.success('Changes stashed');
     } catch (err) {
-      console.error('Failed to save stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create stash');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

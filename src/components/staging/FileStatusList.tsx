@@ -33,6 +33,8 @@ import { StagingViewMode } from './StagingFilters';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { shellApi } from '@/services/api';
 import { StagingFileContextMenu } from './StagingFileContextMenu';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 // Extended file type for fluid staging
 export interface FluidFile extends FileStatus {
@@ -180,7 +182,7 @@ function FileStatusItem({
       try {
         await shellApi.showInFolder(fullPath);
       } catch (err) {
-        console.error('Failed to show in finder:', err);
+        toast.error('Show in Finder failed', getErrorMessage(err));
       }
     }
   };
@@ -544,7 +546,7 @@ function FluidFileItem({
       try {
         await shellApi.showInFolder(fullPath);
       } catch (err) {
-        console.error('Failed to show in finder:', err);
+        toast.error('Show in Finder failed', getErrorMessage(err));
       }
     }
   };

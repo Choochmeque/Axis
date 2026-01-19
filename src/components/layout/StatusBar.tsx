@@ -1,5 +1,7 @@
 import { GitBranch } from 'lucide-react';
-import { useRepositoryStore } from '../../store/repositoryStore';
+
+import { ToastHistoryDropdown } from '@/components/ui/toast';
+import { useRepositoryStore } from '@/store/repositoryStore';
 
 export function StatusBar() {
   const { repository, status, isLoading } = useRepositoryStore();
@@ -34,6 +36,7 @@ export function StatusBar() {
             {repository.path}
           </span>
         )}
+        <ToastHistoryDropdown />
       </div>
     </div>
   );

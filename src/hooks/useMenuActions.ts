@@ -1,11 +1,15 @@
 import { useEffect, useCallback } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useStagingStore } from '@/store/stagingStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { remoteApi, stashApi } from '@/services/api';
-import { MenuAction } from '@/types';
+
 import { events } from '@/bindings/api';
+import { notifyNewCommits } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { remoteApi, stashApi } from '@/services/api';
+import { notify } from '@/services/nativeNotification';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useStagingStore } from '@/store/stagingStore';
+import { MenuAction } from '@/types';
 
 export function useMenuActions() {
   const { openRepository, closeRepository, refreshRepository, repository } = useRepositoryStore();
@@ -48,8 +52,9 @@ export function useMenuActions() {
             try {
               await remoteApi.fetchAll();
               await refreshRepository();
+              notifyNewCommits(useRepositoryStore.getState().branches);
             } catch (err) {
-              console.error('Fetch failed:', err);
+              notify('Fetch failed', getErrorMessage(err));
             }
           }
           break;
@@ -60,8 +65,9 @@ export function useMenuActions() {
               const branchName = repository.currentBranch || 'main';
               await remoteApi.pull('origin', branchName);
               await refreshRepository();
+              notify('Pull complete');
             } catch (err) {
-              console.error('Pull failed:', err);
+              notify('Pull failed', getErrorMessage(err));
             }
           }
           break;
@@ -71,8 +77,9 @@ export function useMenuActions() {
             try {
               await remoteApi.pushCurrentBranch('origin');
               await refreshRepository();
+              notify('Push complete');
             } catch (err) {
-              console.error('Push failed:', err);
+              notify('Push failed', getErrorMessage(err));
             }
           }
           break;
@@ -110,8 +117,9 @@ export function useMenuActions() {
                 includeIgnored: false,
               });
               await refreshRepository();
+              notify('Changes stashed');
             } catch (err) {
-              console.error('Stash failed:', err);
+              notify('Stash failed', getErrorMessage(err));
             }
           }
           break;
@@ -121,8 +129,9 @@ export function useMenuActions() {
             try {
               await stashApi.pop({ index: 0, reinstateIndex: false });
               await refreshRepository();
+              notify('Stash applied');
             } catch (err) {
-              console.error('Pop stash failed:', err);
+              notify('Pop stash failed', getErrorMessage(err));
             }
           }
           break;

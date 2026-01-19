@@ -20,11 +20,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { copyToClipboard, showInFinder } from '@/lib/actions';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { shellApi } from '@/services/api';
-import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -55,17 +55,12 @@ export function StagingFileContextMenu({
   const canDelete = isUntracked;
 
   const handleCopyPath = () => {
-    navigator.clipboard.writeText(file.path);
+    copyToClipboard(file.path);
   };
 
-  const handleShowInFinder = async () => {
+  const handleShowInFinder = () => {
     if (repository?.path) {
-      const fullPath = `${repository.path}/${file.path}`;
-      try {
-        await shellApi.showInFolder(fullPath);
-      } catch (err) {
-        console.error('Failed to show in finder:', err);
-      }
+      showInFinder(`${repository.path}/${file.path}`);
     }
   };
 

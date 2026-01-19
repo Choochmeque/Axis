@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Undo2, AlertCircle, Check } from 'lucide-react';
+import { Undo2, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { revertApi } from '../../services/api';
 import type { Commit, RevertResult } from '../../types';
 import {
@@ -48,14 +50,18 @@ export function RevertCommitDialog({
         noCommit: noCommit,
       });
 
-      setResult(revertResult);
-
-      if (revertResult.success) {
+      if (revertResult.success && revertResult.conflicts.length === 0) {
         onRevertComplete?.(revertResult);
+        onClose();
+        toast.success('Revert complete');
+      } else {
+        setResult(revertResult);
+        if (revertResult.success) {
+          onRevertComplete?.(revertResult);
+        }
       }
     } catch (err) {
-      console.error('Revert failed:', err);
-      setError(err instanceof Error ? err.message : 'Revert failed');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -68,8 +74,7 @@ export function RevertCommitDialog({
       setError(null);
       onClose();
     } catch (err) {
-      console.error('Failed to abort revert:', err);
-      setError('Failed to abort revert');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -77,13 +82,18 @@ export function RevertCommitDialog({
     setIsLoading(true);
     try {
       const continueResult = await revertApi.continue();
-      setResult(continueResult);
-      if (continueResult.success) {
+      if (continueResult.success && continueResult.conflicts.length === 0) {
         onRevertComplete?.(continueResult);
+        onClose();
+        toast.success('Revert complete');
+      } else {
+        setResult(continueResult);
+        if (continueResult.success) {
+          onRevertComplete?.(continueResult);
+        }
       }
     } catch (err) {
-      console.error('Failed to continue revert:', err);
-      setError('Failed to continue revert');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +122,8 @@ export function RevertCommitDialog({
           )}
 
           {result && (
-            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
-              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle size={16} />
               <span>{result.message}</span>
             </Alert>
           )}
@@ -177,7 +187,7 @@ export function RevertCommitDialog({
         </DialogBody>
 
         <DialogFooter>
-          {result && !result.success ? (
+          {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
                 Abort
@@ -186,10 +196,6 @@ export function RevertCommitDialog({
                 Continue
               </Button>
             </>
-          ) : result && result.success ? (
-            <Button variant="primary" onClick={onClose}>
-              Close
-            </Button>
           ) : (
             <>
               <DialogClose asChild>

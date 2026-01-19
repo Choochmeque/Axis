@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { GitMerge, AlertCircle, Check } from 'lucide-react';
+import { GitMerge, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { mergeApi, branchApi } from '../../services/api';
 import { BranchType, type Branch, type MergeResult } from '../../types';
 import { cn } from '../../lib/utils';
@@ -55,8 +57,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
       setBranches(otherBranches);
     } catch (err) {
-      console.error('Failed to load branches:', err);
-      setError('Failed to load branches');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -78,14 +79,18 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
         squash,
       });
 
-      setResult(mergeResult);
-
-      if (mergeResult.success) {
+      if (mergeResult.success && mergeResult.conflicts.length === 0) {
         onMergeComplete?.(mergeResult);
+        onClose();
+        toast.success(`Merged "${selectedBranch}" into ${currentBranch}`);
+      } else {
+        setResult(mergeResult);
+        if (mergeResult.success) {
+          onMergeComplete?.(mergeResult);
+        }
       }
     } catch (err) {
-      console.error('Merge failed:', err);
-      setError(err instanceof Error ? err.message : 'Merge failed');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -98,8 +103,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       setError(null);
       onClose();
     } catch (err) {
-      console.error('Failed to abort merge:', err);
-      setError('Failed to abort merge');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -117,8 +121,8 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
           )}
 
           {result && (
-            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
-              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle size={16} />
               <span>{result.message}</span>
             </Alert>
           )}
@@ -203,7 +207,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
         </DialogBody>
 
         <DialogFooter>
-          {result && !result.success ? (
+          {result ? (
             <>
               <Button variant="secondary" onClick={handleAbort}>
                 Abort Merge
@@ -212,10 +216,6 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 Resolve Conflicts
               </Button>
             </>
-          ) : result && result.success ? (
-            <Button variant="primary" onClick={onClose}>
-              Close
-            </Button>
           ) : (
             <>
               <DialogClose asChild>

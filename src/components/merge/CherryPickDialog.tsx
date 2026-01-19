@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Cherry, AlertCircle, Check } from 'lucide-react';
+import { Cherry, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { cherryPickApi } from '../../services/api';
 import type { Commit, CherryPickResult } from '../../types';
 import {
@@ -49,14 +51,18 @@ export function CherryPickDialog({
         allowEmpty: false,
       });
 
-      setResult(cherryPickResult);
-
-      if (cherryPickResult.success) {
+      if (cherryPickResult.success && cherryPickResult.conflicts.length === 0) {
         onCherryPickComplete?.(cherryPickResult);
+        onClose();
+        toast.success('Cherry pick complete');
+      } else {
+        setResult(cherryPickResult);
+        if (cherryPickResult.success) {
+          onCherryPickComplete?.(cherryPickResult);
+        }
       }
     } catch (err) {
-      console.error('Cherry-pick failed:', err);
-      setError(err instanceof Error ? err.message : 'Cherry-pick failed');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +75,7 @@ export function CherryPickDialog({
       setError(null);
       onClose();
     } catch (err) {
-      console.error('Failed to abort cherry-pick:', err);
-      setError('Failed to abort cherry-pick');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -78,13 +83,18 @@ export function CherryPickDialog({
     setIsLoading(true);
     try {
       const continueResult = await cherryPickApi.continue();
-      setResult(continueResult);
-      if (continueResult.success) {
+      if (continueResult.success && continueResult.conflicts.length === 0) {
         onCherryPickComplete?.(continueResult);
+        onClose();
+        toast.success('Cherry pick complete');
+      } else {
+        setResult(continueResult);
+        if (continueResult.success) {
+          onCherryPickComplete?.(continueResult);
+        }
       }
     } catch (err) {
-      console.error('Failed to continue cherry-pick:', err);
-      setError('Failed to continue cherry-pick');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -94,13 +104,18 @@ export function CherryPickDialog({
     setIsLoading(true);
     try {
       const skipResult = await cherryPickApi.skip();
-      setResult(skipResult);
-      if (skipResult.success) {
+      if (skipResult.success && skipResult.conflicts.length === 0) {
         onCherryPickComplete?.(skipResult);
+        onClose();
+        toast.success('Cherry pick complete');
+      } else {
+        setResult(skipResult);
+        if (skipResult.success) {
+          onCherryPickComplete?.(skipResult);
+        }
       }
     } catch (err) {
-      console.error('Failed to skip commit:', err);
-      setError('Failed to skip commit');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -120,8 +135,8 @@ export function CherryPickDialog({
           )}
 
           {result && (
-            <Alert variant={result.success ? 'success' : 'warning'} className="mb-4">
-              {result.success ? <Check size={16} /> : <AlertCircle size={16} />}
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle size={16} />
               <span>{result.message}</span>
             </Alert>
           )}
@@ -180,7 +195,7 @@ export function CherryPickDialog({
         </DialogBody>
 
         <DialogFooter>
-          {result && !result.success ? (
+          {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
                 Abort
@@ -192,10 +207,6 @@ export function CherryPickDialog({
                 Continue
               </Button>
             </>
-          ) : result && result.success ? (
-            <Button variant="primary" onClick={onClose}>
-              Close
-            </Button>
           ) : (
             <>
               <DialogClose asChild>

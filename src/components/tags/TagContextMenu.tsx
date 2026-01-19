@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { Copy, Check, Info, GitCompare, Upload, Trash2 } from 'lucide-react';
 import type { Tag, Remote } from '@/types';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface TagContextMenuProps {
   tag: Tag;
@@ -27,8 +29,9 @@ export function TagContextMenu({
   const handleCopyName = async () => {
     try {
       await navigator.clipboard.writeText(tag.name);
+      toast.success('Copied to clipboard');
     } catch (err) {
-      console.error('Failed to copy:', err);
+      toast.error('Copy failed', getErrorMessage(err));
     }
   };
 

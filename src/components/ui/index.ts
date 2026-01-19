@@ -40,6 +40,7 @@ export { Select } from './select';
 export { Label } from './label';
 export { FormField } from './form-field';
 export { Alert, alertVariants } from './alert';
+export { ToastContainer, ToastHistoryDropdown } from './toast';
 export { Badge, badgeVariants } from './badge';
 export {
   DropdownMenu,

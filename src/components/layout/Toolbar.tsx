@@ -14,6 +14,8 @@ import {
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { shellApi } from '@/services/api';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
@@ -57,7 +59,7 @@ export function Toolbar() {
       try {
         await shellApi.showInFolder(repository.path);
       } catch (err) {
-        console.error('Failed to show in finder:', err);
+        toast.error('Show in Finder failed', getErrorMessage(err));
       }
     }
   }, [repository]);
@@ -67,7 +69,7 @@ export function Toolbar() {
       try {
         await shellApi.openTerminal(repository.path);
       } catch (err) {
-        console.error('Failed to open terminal:', err);
+        toast.error('Open terminal failed', getErrorMessage(err));
       }
     }
   }, [repository]);

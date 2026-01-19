@@ -1595,6 +1595,8 @@ impl Git2Service {
             }
         }
 
+        let mut has_more = false;
+
         for oid_result in revwalk {
             let oid = oid_result?;
             total_count += 1;
@@ -1604,7 +1606,9 @@ impl Git2Service {
             }
 
             if graph_commits.len() >= limit {
-                continue; // Keep counting for total
+                // We have enough commits, just mark that there's more
+                has_more = true;
+                break;
             }
 
             let commit = self.repo.find_commit(oid)?;
@@ -1657,7 +1661,6 @@ impl Git2Service {
         }
 
         let max_lane = graph_commits.iter().map(|c| c.lane).max().unwrap_or(0);
-        let has_more = total_count > skip + graph_commits.len();
 
         Ok(GraphResult {
             commits: graph_commits,

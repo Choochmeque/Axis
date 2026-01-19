@@ -197,6 +197,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notifications::init())
         .invoke_handler(move |invoke| match invoke.message.command() {
             "get_file_blob" => extra_handler(invoke),
             _ => specta_handler(invoke),

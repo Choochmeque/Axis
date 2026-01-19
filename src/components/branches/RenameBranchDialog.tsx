@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Branch } from '../../types';
@@ -81,8 +83,9 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
       await loadBranches();
       await refreshRepository();
       onOpenChange(false);
+      toast.success(`Branch renamed to "${newName.trim()}"`);
     } catch (err) {
-      const errorMsg = String(err);
+      const errorMsg = getErrorMessage(err);
       if (errorMsg.includes('already exists') && !force) {
         setError('A branch with this name already exists. Check "Force rename" to overwrite.');
       } else {

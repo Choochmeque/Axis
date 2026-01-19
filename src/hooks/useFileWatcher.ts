@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { UnlistenFn } from '@tauri-apps/api/event';
-import { repositoryApi } from '../services/api';
-import { useRepositoryStore } from '../store/repositoryStore';
-import { useStagingStore } from '../store/stagingStore';
+
 import { events } from '@/bindings/api';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { repositoryApi } from '@/services/api';
+import { notify } from '@/services/nativeNotification';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useStagingStore } from '@/store/stagingStore';
 
 export function useFileWatcher() {
   const repository = useRepositoryStore((state) => state.repository);
@@ -29,7 +32,7 @@ export function useFileWatcher() {
       try {
         await repositoryApi.startFileWatcher();
       } catch (err) {
-        console.error('Failed to start file watcher:', err);
+        notify('Failed to start file watcher', getErrorMessage(err));
         return;
       }
 
@@ -75,7 +78,7 @@ export function useFileWatcher() {
 
       // Listen for watch errors
       const unlistenError = await events.watchErrorEvent.listen((event) => {
-        console.error('File watcher error:', event.payload.message);
+        notify('File watcher error', event.payload.message);
       });
 
       unlistenRefs.current = [
@@ -93,7 +96,9 @@ export function useFileWatcher() {
     return () => {
       unlistenRefs.current.forEach((unlisten) => unlisten());
       unlistenRefs.current = [];
-      repositoryApi.stopFileWatcher().catch(console.error);
+      repositoryApi.stopFileWatcher().catch((err) => {
+        notify('Failed to stop file watcher', getErrorMessage(err));
+      });
     };
   }, [repository, loadStatus, loadCommits, loadBranches, loadTags, loadStashes, stagingLoadStatus]);
 }

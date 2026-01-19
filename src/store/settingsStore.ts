@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+
+import { settingsApi } from '@/services/api';
+import { useToastStore } from '@/store/toastStore';
 import { SigningFormat, Theme } from '@/types';
 import type { AppSettings, Theme as ThemeType } from '@/types';
-import { settingsApi } from '@/services/api';
 
 interface SettingsState {
   settings: AppSettings | null;
@@ -31,6 +33,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  notificationHistoryCapacity: 50,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -99,6 +102,9 @@ function applySettings(settings: AppSettings) {
 
   // Apply font size
   document.documentElement.style.setProperty('--app-font-size', `${settings.fontSize}px`);
+
+  // Apply notification history capacity
+  useToastStore.getState().setHistoryCapacity(settings.notificationHistoryCapacity);
 }
 
 // Listen for system theme changes

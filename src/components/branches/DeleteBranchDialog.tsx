@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Trash2, AlertTriangle } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { BranchType, type Branch } from '../../types';
@@ -98,8 +100,9 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
       await loadBranches();
       await refreshRepository();
       onOpenChange(false);
+      toast.success(`Branch "${branch.name}" deleted`);
     } catch (err) {
-      const errorMsg = String(err);
+      const errorMsg = getErrorMessage(err);
       if (errorMsg.includes('not fully merged') && !force) {
         setError('Branch is not fully merged. Check "Force delete" to delete anyway.');
       } else {

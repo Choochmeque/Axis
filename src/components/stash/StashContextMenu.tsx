@@ -14,6 +14,8 @@ import {
 import type { StashEntry } from '@/types';
 import { stashApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface StashContextMenuProps {
   stash: StashEntry;
@@ -28,8 +30,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
     try {
       await stashApi.apply({ index: stash.index, reinstateIndex: false });
       await refreshRepository();
+      toast.success('Stash applied');
     } catch (err) {
-      console.error('Failed to apply stash:', err);
+      toast.error('Apply stash failed', getErrorMessage(err));
     }
   };
 
@@ -39,8 +42,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       clearStashSelection();
       await loadStashes();
       await refreshRepository();
+      toast.success('Stash popped');
     } catch (err) {
-      console.error('Failed to pop stash:', err);
+      toast.error('Pop stash failed', getErrorMessage(err));
     }
   };
 
@@ -49,8 +53,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       await stashApi.drop(Number(stash.index));
       clearStashSelection();
       await loadStashes();
+      toast.success('Stash dropped');
     } catch (err) {
-      console.error('Failed to drop stash:', err);
+      toast.error('Drop stash failed', getErrorMessage(err));
     }
   };
 
@@ -61,16 +66,18 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       clearStashSelection();
       await loadStashes();
       await refreshRepository();
+      toast.success('Branch created from stash');
     } catch (err) {
-      console.error('Failed to create branch from stash:', err);
+      toast.error('Create branch failed', getErrorMessage(err));
     }
   };
 
   const handleCopyMessage = async () => {
     try {
       await navigator.clipboard.writeText(stash.message);
+      toast.success('Copied to clipboard');
     } catch (err) {
-      console.error('Failed to copy:', err);
+      toast.error('Copy failed', getErrorMessage(err));
     }
   };
 

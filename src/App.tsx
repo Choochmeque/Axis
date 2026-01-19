@@ -1,16 +1,20 @@
 import { useEffect, useCallback, useRef } from 'react';
+
 import { AppLayout } from './components/layout';
 import { HistoryView } from './components/history';
 import { WorkspaceView } from './components/workspace';
 import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { TabBar } from './components/layout/TabBar';
+import { useMenuActions } from './hooks';
+import { notifyNewCommits } from './lib/actions';
+import { getErrorMessage } from './lib/errorUtils';
+import { remoteApi } from './services/api';
+import { notify } from './services/nativeNotification';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
-import { useMenuActions } from './hooks';
-import { remoteApi } from './services/api';
 import './index.css';
 
 function App() {
@@ -49,10 +53,14 @@ function App() {
     const intervalMinutes = settings?.autoFetchInterval ?? 0;
     if (intervalMinutes > 0 && repository) {
       const intervalMs = intervalMinutes * 60 * 1000;
-      autoFetchIntervalRef.current = setInterval(() => {
-        remoteApi.fetchAll().catch((err) => {
-          console.error('Auto-fetch failed:', err);
-        });
+      autoFetchIntervalRef.current = setInterval(async () => {
+        try {
+          await remoteApi.fetchAll();
+          await useRepositoryStore.getState().loadBranches();
+          notifyNewCommits(useRepositoryStore.getState().branches);
+        } catch (err) {
+          notify('Auto-fetch failed', getErrorMessage(err));
+        }
       }, intervalMs);
     }
 
@@ -74,7 +82,7 @@ function App() {
     if (activeTab?.type === TabType.Repository && activeTab.path && !repository) {
       openRepository(activeTab.path)
         .then(() => useStagingStore.getState().loadStatus())
-        .catch(console.error);
+        .catch((err) => notify('Failed to open repository', getErrorMessage(err)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

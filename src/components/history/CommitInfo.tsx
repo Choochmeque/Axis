@@ -5,6 +5,8 @@ import { RefType } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;
@@ -16,8 +18,9 @@ export function CommitInfo({ commit }: CommitInfoProps) {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard');
     } catch (err) {
-      console.error('Failed to copy:', err);
+      toast.error('Copy failed', getErrorMessage(err));
     }
   };
 

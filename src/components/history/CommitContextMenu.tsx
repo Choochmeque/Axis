@@ -13,10 +13,14 @@ import {
   ArrowUpFromLine,
   PenTool,
 } from 'lucide-react';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { toast } from '@/hooks';
+import { copyToClipboard } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { branchApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { ResetMode } from '@/types';
 import type { GraphCommit, ResetMode as ResetModeType } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { branchApi } from '@/services/api';
 import { TagDialog } from '../tags/TagDialog';
 import { CreateBranchDialog } from '../branches/CreateBranchDialog';
 import { CherryPickDialog } from '../merge/CherryPickDialog';
@@ -25,7 +29,6 @@ import { RevertCommitDialog } from '../merge/RevertCommitDialog';
 import { RebaseDialog } from '../merge/RebaseDialog';
 import { ArchiveDialog } from './ArchiveDialog';
 import { PatchDialog } from './PatchDialog';
-import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -61,20 +64,12 @@ export function CommitContextMenu({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showPatchDialog, setShowPatchDialog] = useState(false);
 
-  const handleCopySha = async () => {
-    try {
-      await navigator.clipboard.writeText(commit.oid);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+  const handleCopySha = () => {
+    copyToClipboard(commit.oid);
   };
 
-  const handleCopyShortSha = async () => {
-    try {
-      await navigator.clipboard.writeText(commit.shortOid);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+  const handleCopyShortSha = () => {
+    copyToClipboard(commit.shortOid);
   };
 
   const handleCheckout = async () => {
@@ -87,7 +82,7 @@ export function CommitContextMenu({
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        console.error('Checkout failed:', err);
+        toast.error('Checkout failed', getErrorMessage(err));
       }
     }
   };
@@ -236,9 +231,7 @@ export function CommitContextMenu({
             Short SHA
           </MenuItem>
           <MenuItem onSelect={handleCopySha}>Full SHA</MenuItem>
-          <MenuItem onSelect={() => navigator.clipboard.writeText(commit.summary)}>
-            Commit Message
-          </MenuItem>
+          <MenuItem onSelect={() => copyToClipboard(commit.summary)}>Commit Message</MenuItem>
         </SubMenu>
       </ContextMenu>
 

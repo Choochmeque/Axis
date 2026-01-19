@@ -34,6 +34,8 @@ import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
 import { BranchType } from '@/types';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 // Tailwind class constants
 const sidebarItemClass =
@@ -165,7 +167,10 @@ export function Sidebar() {
   // Load remotes for tag context menu
   useEffect(() => {
     if (repository) {
-      remoteApi.list().then(setRemotes).catch(console.error);
+      remoteApi
+        .list()
+        .then(setRemotes)
+        .catch((err) => toast.error('Load remotes failed', getErrorMessage(err)));
     }
   }, [repository]);
 
@@ -177,7 +182,7 @@ export function Sidebar() {
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        console.error('Failed to checkout branch:', err);
+        toast.error('Checkout branch failed', getErrorMessage(err));
       }
     },
     [loadBranches, loadCommits, loadStatus]
@@ -191,7 +196,7 @@ export function Sidebar() {
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        console.error('Failed to checkout tag:', err);
+        toast.error('Checkout tag failed', getErrorMessage(err));
       }
     },
     [loadBranches, loadCommits, loadStatus]
@@ -200,8 +205,9 @@ export function Sidebar() {
   const handleTagPush = useCallback(async (tagName: string, remote: string) => {
     try {
       await tagApi.push(tagName, remote);
+      toast.success('Tag pushed');
     } catch (err) {
-      console.error('Failed to push tag:', err);
+      toast.error('Push tag failed', getErrorMessage(err));
     }
   }, []);
 
@@ -211,8 +217,9 @@ export function Sidebar() {
       try {
         await tagApi.delete(tagName);
         await loadTags();
+        toast.success('Tag deleted');
       } catch (err) {
-        console.error('Failed to delete tag:', err);
+        toast.error('Delete tag failed', getErrorMessage(err));
       }
     },
     [loadTags]

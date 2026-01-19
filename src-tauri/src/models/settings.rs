@@ -29,6 +29,9 @@ pub struct AppSettings {
 
     // Commit
     pub spell_check_commit_messages: bool,
+
+    // Notifications
+    pub notification_history_capacity: u32,
 }
 
 #[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
@@ -67,6 +70,9 @@ impl Default for AppSettings {
 
             // Commit
             spell_check_commit_messages: false,
+
+            // Notifications
+            notification_history_capacity: 50,
         }
     }
 }

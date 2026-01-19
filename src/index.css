@@ -545,6 +545,158 @@ code {
     cursor: text;
   }
 
+  /* Toast notifications */
+  .toast-container {
+    @apply fixed bottom-10 right-4 z-[9999] flex flex-col gap-2 max-w-sm;
+  }
+
+  .toast {
+    @apply relative flex items-start gap-2 p-3 pr-8 rounded-md shadow-lg border text-sm;
+    @apply bg-(--bg-secondary) border-(--border-color);
+    animation: toast-in 0.2s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast {
+      animation: none;
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .toast-error {
+    @apply bg-error/10 border-error text-error;
+  }
+
+  .toast-success {
+    @apply bg-success/10 border-success text-success;
+  }
+
+  .toast-warning {
+    @apply bg-warning/10 border-warning text-warning;
+  }
+
+  .toast-info {
+    @apply bg-(--accent-color)/10 border-(--accent-color) text-(--accent-color);
+  }
+
+  .toast-icon {
+    @apply shrink-0 mt-0.5;
+  }
+
+  .toast-content {
+    @apply flex flex-col gap-0.5 flex-1 min-w-0;
+  }
+
+  .toast-title {
+    @apply font-medium;
+  }
+
+  .toast-description {
+    @apply text-xs opacity-80;
+  }
+
+  .toast-dismiss {
+    @apply absolute top-2 right-2 p-1 rounded opacity-60 cursor-pointer transition-opacity;
+    @apply hover:opacity-100;
+    @apply bg-transparent border-none;
+    color: inherit;
+  }
+
+  .toast-progress-track {
+    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-black/10 rounded-b-md overflow-hidden;
+  }
+
+  .toast-progress {
+    @apply h-full transition-[width] duration-100 ease-linear;
+    background: currentColor;
+    opacity: 0.3;
+  }
+
+  /* Toast history dropdown */
+  .toast-history-wrapper {
+    @apply relative;
+  }
+
+  .toast-history-trigger {
+    @apply flex items-center justify-center w-6 h-6 p-0 rounded cursor-pointer transition-colors;
+    @apply bg-transparent border-none text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover);
+  }
+
+  .toast-history-badge {
+    @apply absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[10px] font-medium;
+    @apply bg-(--accent-color) text-white flex items-center justify-center;
+  }
+
+  .toast-history-dropdown {
+    @apply absolute bottom-full right-0 mb-2 w-80 max-h-96 overflow-hidden;
+    @apply bg-(--bg-secondary) border border-(--border-color) rounded-md shadow-lg;
+    @apply flex flex-col;
+  }
+
+  .toast-history-empty {
+    @apply p-4 text-center text-(--text-tertiary) text-sm;
+  }
+
+  .toast-history-list {
+    @apply flex-1 overflow-y-auto;
+  }
+
+  .toast-history-item {
+    @apply flex items-start gap-2 p-2 border-b border-(--border-color) last:border-b-0;
+  }
+
+  .toast-history-item-error {
+    @apply text-error;
+  }
+
+  .toast-history-item-success {
+    @apply text-success;
+  }
+
+  .toast-history-item-warning {
+    @apply text-warning;
+  }
+
+  .toast-history-item-info {
+    @apply text-(--accent-color);
+  }
+
+  .toast-history-item-icon {
+    @apply shrink-0 mt-0.5;
+  }
+
+  .toast-history-item-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .toast-history-item-title {
+    @apply text-sm font-medium truncate;
+  }
+
+  .toast-history-item-description {
+    @apply text-xs opacity-70 truncate;
+  }
+
+  .toast-history-item-time {
+    @apply text-xs text-(--text-tertiary) shrink-0;
+  }
+
+  .toast-history-clear {
+    @apply w-full p-2 text-sm text-center cursor-pointer transition-colors;
+    @apply bg-(--bg-tertiary) border-none border-t border-(--border-color) text-(--text-secondary);
+    @apply hover:bg-(--bg-hover) hover:text-(--text-primary);
+  }
+
   /* Dropdown classes (Radix UI) */
   .dropdown-button {
     @apply flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover);

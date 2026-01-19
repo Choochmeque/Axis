@@ -11,14 +11,17 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import type { Branch, Remote } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { toast } from '@/hooks';
+import { copyToClipboard } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, branchApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { Branch, Remote } from '@/types';
 import { RenameBranchDialog } from './RenameBranchDialog';
 import { DeleteBranchDialog } from './DeleteBranchDialog';
 import { PullDialog } from '../remotes/PullDialog';
 import { PushDialog } from '../remotes/PushDialog';
-import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 
 interface BranchContextMenuProps {
   branch: Branch;
@@ -51,7 +54,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         setRemotes(remotesData);
         setRemoteBranches(branchesData);
       } catch (err) {
-        console.error('Failed to load remotes/branches:', err);
+        toast.error('Load remotes failed', getErrorMessage(err));
       }
     }
   };
@@ -73,8 +76,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         tags: false,
       });
       await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
+      toast.success('Push completed');
     } catch (err) {
-      console.error('Push failed:', err);
+      toast.error('Push failed', getErrorMessage(err));
     }
   };
 
@@ -84,8 +88,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     try {
       await branchApi.setUpstream(branch.name, remoteBranch.fullName);
       await loadBranches();
+      toast.success('Upstream set');
     } catch (err) {
-      console.error('Failed to set upstream:', err);
+      toast.error('Set upstream failed', getErrorMessage(err));
     } finally {
       setIsSettingUpstream(false);
     }
@@ -175,7 +180,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
           </MenuItem>
         )}
         <MenuSeparator />
-        <MenuItem icon={Copy} onSelect={() => navigator.clipboard.writeText(branch.name)}>
+        <MenuItem icon={Copy} onSelect={() => copyToClipboard(branch.name)}>
           Copy Branch Name to Clipboard
         </MenuItem>
         <MenuSeparator />

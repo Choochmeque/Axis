@@ -103,8 +103,14 @@ export function CommitInfo({ commit }: CommitInfoProps) {
               Signed
             </span>
             <div className={valueClass}>
-              <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium bg-success/20 text-success">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium',
+                  commit.signature.verified ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
+                )}
+              >
                 {commit.signature.format.toUpperCase()}
+                {commit.signature.verified ? ' (Verified)' : ' (Unverified)'}
               </span>
               {commit.signature.signer && (
                 <span className="text-sm text-(--text-secondary)">{commit.signature.signer}</span>

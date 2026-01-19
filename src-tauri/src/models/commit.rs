@@ -24,7 +24,9 @@ pub struct Commit {
 pub struct CommitSignature {
     /// The type of signature (GPG or SSH)
     pub format: String,
-    /// The signer's key ID or fingerprint (if available)
+    /// Whether the signature was verified
+    pub verified: bool,
+    /// The signer info (if verified)
     pub signer: Option<String>,
 }
 
@@ -86,6 +88,7 @@ impl Commit {
 
         Some(CommitSignature {
             format: format.to_string(),
+            verified: signer.is_some(),
             signer,
         })
     }

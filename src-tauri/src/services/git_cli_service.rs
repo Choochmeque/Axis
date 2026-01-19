@@ -1846,9 +1846,10 @@ impl GitCliService {
     pub fn bisect_start(&self, bad: Option<&str>, good: &str) -> Result<GitCommandResult> {
         let mut args = vec!["bisect", "start"];
 
-        if let Some(bad_commit) = bad {
-            args.push(bad_commit);
-        }
+        // git bisect start <bad> <good> - first arg is bad, second is good
+        // If bad is not provided, use HEAD as the bad commit
+        let bad_commit = bad.unwrap_or("HEAD");
+        args.push(bad_commit);
         args.push(good);
 
         self.execute(&args)

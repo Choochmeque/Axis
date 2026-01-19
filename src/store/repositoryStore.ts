@@ -27,7 +27,7 @@ import {
   submoduleApi,
 } from '@/services/api';
 
-export type ViewType = 'file-status' | 'history' | 'search';
+export type ViewType = 'file-status' | 'history' | 'search' | 'reflog';
 
 interface RepositoryState {
   // Data

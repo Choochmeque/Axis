@@ -12,6 +12,7 @@ import {
   Folder,
   FolderGit2,
   Pointer,
+  RotateCcw,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -315,6 +316,16 @@ export function Sidebar() {
               >
                 <Search size={12} />
                 <span>Search</span>
+              </button>
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  currentView === 'reflog' && 'bg-(--bg-active) font-medium'
+                )}
+                onClick={() => handleViewClick('reflog')}
+              >
+                <RotateCcw size={12} />
+                <span>Reflog</span>
               </button>
             </Section>
 

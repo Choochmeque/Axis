@@ -2,8 +2,8 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, EdgeType,
     FileStatus, GraphCommit, GraphEdge, GraphResult, LaneState, LogOptions, RebasePreview,
-    RebaseTarget, Repository, RepositoryState, RepositoryStatus, SigningConfig, SortOrder, Tag,
-    TagResult, TagSignature,
+    RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository, RepositoryState,
+    RepositoryStatus, SigningConfig, SortOrder, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -2272,6 +2272,123 @@ impl Git2Service {
 
         let diffs = self.parse_diff(&diff)?;
         Ok(diffs.into_iter().next())
+    }
+
+    // ==================== Reflog Operations ====================
+
+    /// Get reflog entries for a reference
+    pub fn get_reflog(&self, options: &ReflogOptions) -> Result<Vec<ReflogEntry>> {
+        let refname = options.refname.as_deref().unwrap_or("HEAD");
+        let reflog = self
+            .repo
+            .reflog(refname)
+            .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
+
+        let skip = options.skip.unwrap_or(0);
+        let limit = options.limit.unwrap_or(100);
+
+        let entries: Vec<ReflogEntry> = reflog
+            .iter()
+            .enumerate()
+            .skip(skip)
+            .take(limit)
+            .map(|(index, entry)| {
+                let message = entry.message().unwrap_or("").to_string();
+                let action = Self::parse_reflog_action(&message);
+                let new_oid = entry.id_new().to_string();
+                let old_oid = entry.id_old().to_string();
+
+                ReflogEntry {
+                    index: skip + index,
+                    reflog_ref: format!("{refname}@{{{}}}", skip + index),
+                    short_new_oid: new_oid.chars().take(7).collect(),
+                    new_oid,
+                    short_old_oid: old_oid.chars().take(7).collect(),
+                    old_oid,
+                    action,
+                    message,
+                    committer_name: entry.committer().name().unwrap_or("Unknown").to_string(),
+                    committer_email: entry.committer().email().unwrap_or("").to_string(),
+                    timestamp: DateTime::from_timestamp(entry.committer().when().seconds(), 0)
+                        .unwrap_or_default()
+                        .with_timezone(&Utc),
+                }
+            })
+            .collect();
+
+        Ok(entries)
+    }
+
+    /// Get list of available reflogs (references that have reflog)
+    pub fn list_reflogs(&self) -> Result<Vec<String>> {
+        let mut reflogs = vec!["HEAD".to_string()];
+
+        // Add local branches
+        let branches = self.repo.branches(Some(git2::BranchType::Local))?;
+        for branch_result in branches {
+            if let Ok((branch, _)) = branch_result {
+                if let Ok(Some(name)) = branch.name() {
+                    let refname = format!("refs/heads/{name}");
+                    // Check if reflog exists by trying to open it
+                    if self.repo.reflog(&refname).is_ok() {
+                        reflogs.push(refname);
+                    }
+                }
+            }
+        }
+
+        Ok(reflogs)
+    }
+
+    /// Checkout to a reflog entry (creates detached HEAD)
+    pub fn checkout_reflog_entry(&self, reflog_ref: &str) -> Result<()> {
+        let obj = self
+            .repo
+            .revparse_single(reflog_ref)
+            .map_err(|_| AxisError::InvalidReference(reflog_ref.to_string()))?;
+
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        checkout_builder.safe();
+
+        self.repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
+        self.repo.set_head_detached(obj.id())?;
+
+        Ok(())
+    }
+
+    /// Parse reflog message to determine action type
+    fn parse_reflog_action(message: &str) -> ReflogAction {
+        let lower = message.to_lowercase();
+
+        if lower.starts_with("commit (initial)") {
+            ReflogAction::CommitInitial
+        } else if lower.starts_with("commit (amend)") {
+            ReflogAction::CommitAmend
+        } else if lower.starts_with("commit") {
+            ReflogAction::Commit
+        } else if lower.starts_with("checkout") {
+            ReflogAction::Checkout
+        } else if lower.starts_with("merge") {
+            ReflogAction::Merge
+        } else if lower.starts_with("rebase") {
+            ReflogAction::Rebase
+        } else if lower.starts_with("reset") {
+            ReflogAction::Reset
+        } else if lower.starts_with("cherry-pick") {
+            ReflogAction::CherryPick
+        } else if lower.starts_with("revert") {
+            ReflogAction::Revert
+        } else if lower.starts_with("pull") {
+            ReflogAction::Pull
+        } else if lower.starts_with("clone") {
+            ReflogAction::Clone
+        } else if lower.starts_with("branch") {
+            ReflogAction::Branch
+        } else if lower.contains("stash") {
+            ReflogAction::Stash
+        } else {
+            ReflogAction::Other(message.split(':').next().unwrap_or("unknown").to_string())
+        }
     }
 }
 

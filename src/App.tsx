@@ -5,6 +5,7 @@ import { HistoryView } from './components/history';
 import { WorkspaceView } from './components/workspace';
 import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
+import { ReflogView } from './components/reflog';
 import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
@@ -212,6 +213,8 @@ function App() {
         return <HistoryView />;
       case 'search':
         return <ContentSearch />;
+      case 'reflog':
+        return <ReflogView />;
       default:
         return <WorkspaceView />;
     }

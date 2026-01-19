@@ -86,6 +86,11 @@ export type {
   StashApplyOptions,
   StashResult,
 
+  // Reflog types
+  ReflogEntry,
+  ReflogAction,
+  ReflogOptions,
+
   // Tag types
   Tag,
   TagSignature,

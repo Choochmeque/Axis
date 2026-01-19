@@ -15,6 +15,7 @@ import type {
   ResetOptions,
   StashSaveOptions,
   StashApplyOptions,
+  ReflogOptions,
   CreateTagOptions,
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
@@ -256,6 +257,14 @@ export const stashApi = {
   show: (index?: number, statOnly: boolean = false) => commands.stashShow(index ?? null, statOnly),
 
   branch: (branchName: string, index?: number) => commands.stashBranch(branchName, index ?? null),
+};
+
+export const reflogApi = {
+  list: (options: ReflogOptions) => commands.reflogList(options),
+
+  refs: () => commands.reflogRefs(),
+
+  checkout: (reflogRef: string) => commands.reflogCheckout(reflogRef),
 };
 
 export const tagApi = {

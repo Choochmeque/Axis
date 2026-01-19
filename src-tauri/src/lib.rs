@@ -121,6 +121,10 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::stash_clear,
             crate::commands::stash_show,
             crate::commands::stash_branch,
+            // Reflog commands
+            crate::commands::reflog_list,
+            crate::commands::reflog_refs,
+            crate::commands::reflog_checkout,
             // Tag commands
             crate::commands::tag_list,
             crate::commands::tag_create,

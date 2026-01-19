@@ -12,6 +12,7 @@ import {
   FileText,
   ArrowUpFromLine,
   PenTool,
+  Search,
 } from 'lucide-react';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { toast } from '@/hooks';
@@ -27,6 +28,7 @@ import { CherryPickDialog } from '../merge/CherryPickDialog';
 import { ResetConfirmDialog } from '../merge/ResetConfirmDialog';
 import { RevertCommitDialog } from '../merge/RevertCommitDialog';
 import { RebaseDialog } from '../merge/RebaseDialog';
+import { BisectDialog } from '../merge/BisectDialog';
 import { ArchiveDialog } from './ArchiveDialog';
 import { PatchDialog } from './PatchDialog';
 
@@ -61,6 +63,8 @@ export function CommitContextMenu({
   const [resetMode, setResetMode] = useState<ResetModeType>(ResetMode.Mixed);
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showRebaseDialog, setShowRebaseDialog] = useState(false);
+  const [showBisectDialog, setShowBisectDialog] = useState(false);
+  const [bisectGoodCommit, setBisectGoodCommit] = useState<string | undefined>();
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showPatchDialog, setShowPatchDialog] = useState(false);
 
@@ -125,6 +129,17 @@ export function CommitContextMenu({
     await loadCommits();
     await loadStatus();
     await loadBranches();
+  };
+
+  const handleBisectGood = () => {
+    setBisectGoodCommit(commit.oid);
+    setShowBisectDialog(true);
+  };
+
+  const handleBisectComplete = async () => {
+    setShowBisectDialog(false);
+    await loadCommits();
+    await loadStatus();
   };
 
   const handleRevert = () => {
@@ -217,6 +232,9 @@ export function CommitContextMenu({
         <MenuItem icon={CherryIcon} onSelect={handleCherryPick}>
           Cherry Pick
         </MenuItem>
+        <MenuItem icon={Search} onSelect={handleBisectGood}>
+          Bisect from here (good)...
+        </MenuItem>
         <MenuItem icon={FileText} onSelect={() => setShowPatchDialog(true)}>
           Create Patch...
         </MenuItem>
@@ -293,6 +311,13 @@ export function CommitContextMenu({
         mode="create"
         commitOid={commit.oid}
         commitSummary={commit.summary}
+      />
+
+      <BisectDialog
+        isOpen={showBisectDialog}
+        onClose={() => setShowBisectDialog(false)}
+        onBisectComplete={handleBisectComplete}
+        goodCommit={bisectGoodCommit}
       />
     </>
   );

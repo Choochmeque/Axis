@@ -1,4 +1,5 @@
 mod ai;
+mod bisect;
 mod branches;
 mod diff;
 mod gitflow;
@@ -17,6 +18,7 @@ mod submodules;
 mod tags;
 
 pub use ai::*;
+pub use bisect::*;
 pub use branches::*;
 pub use diff::*;
 pub use gitflow::*;

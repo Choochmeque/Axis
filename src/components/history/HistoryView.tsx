@@ -14,6 +14,7 @@ import {
   createGraph,
 } from './CommitGraph';
 import { CommitTable } from './CommitTable';
+import { BisectBanner } from '../merge/BisectBanner';
 import { RefType } from '@/types';
 
 export function HistoryView() {
@@ -28,6 +29,8 @@ export function HistoryView() {
     selectCommit,
     clearCommitSelection,
     loadMoreCommits,
+    loadCommits,
+    loadStatus,
   } = useRepositoryStore();
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -136,9 +139,15 @@ export function HistoryView() {
     );
   }
 
+  const handleBisectComplete = async () => {
+    await loadCommits();
+    await loadStatus();
+  };
+
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
+      <BisectBanner onComplete={handleBisectComplete} />
       <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
         <div id="commitGraphContent">
           <div id="commitGraph" ref={graphContainerRef} />

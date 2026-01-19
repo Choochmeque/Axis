@@ -1,4 +1,5 @@
 mod ai;
+mod bisect;
 mod branch;
 mod commit;
 mod diff;
@@ -17,6 +18,7 @@ mod submodule;
 mod tag;
 
 pub use ai::*;
+pub use bisect::*;
 pub use branch::*;
 pub use commit::*;
 pub use diff::*;

@@ -532,6 +532,12 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
         Ok(OperationState::CherryPicking { commit: None })
     } else if cli.is_reverting()? {
         Ok(OperationState::Reverting { commit: None })
+    } else if cli.is_bisecting()? {
+        let bisect_state = cli.get_bisect_state()?;
+        Ok(OperationState::Bisecting {
+            current_commit: bisect_state.current_commit,
+            steps_remaining: bisect_state.steps_remaining,
+        })
     } else {
         Ok(OperationState::None)
     }

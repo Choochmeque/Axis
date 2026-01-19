@@ -110,6 +110,12 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::mark_conflict_resolved,
             // Operation state
             crate::commands::get_operation_state,
+            // Bisect commands
+            crate::commands::bisect_start,
+            crate::commands::bisect_mark,
+            crate::commands::bisect_reset,
+            crate::commands::bisect_state,
+            crate::commands::bisect_log,
             // Reset commands
             crate::commands::reset_to_commit,
             // Stash commands

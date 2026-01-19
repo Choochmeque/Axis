@@ -33,6 +33,8 @@ import type {
   PushOptions,
   DiffTarget,
   CreateBranchOptions,
+  BisectStartOptions,
+  BisectMarkType,
 } from '../types';
 
 export const repositoryApi = {
@@ -239,6 +241,18 @@ export const operationApi = {
   getState: () => commands.getOperationState(),
 
   reset: (options: ResetOptions) => commands.resetToCommit(options),
+};
+
+export const bisectApi = {
+  start: (options: BisectStartOptions) => commands.bisectStart(options),
+
+  mark: (mark: BisectMarkType, commit?: string) => commands.bisectMark(mark, commit ?? null),
+
+  reset: (commit?: string) => commands.bisectReset(commit ?? null),
+
+  getState: () => commands.bisectState(),
+
+  getLog: () => commands.bisectLog(),
 };
 
 export const stashApi = {

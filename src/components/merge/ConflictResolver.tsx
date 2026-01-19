@@ -130,6 +130,10 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if ('Reverting' in operationState) {
       return 'Reverting';
     }
+    if ('Bisecting' in operationState) {
+      const { steps_remaining } = operationState.Bisecting;
+      return `Bisecting${steps_remaining != null ? ` (~${String(steps_remaining)} steps)` : ''}`;
+    }
     return '';
   };
 

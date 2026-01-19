@@ -77,6 +77,11 @@ export type {
   // Operation state
   OperationState,
 
+  // Bisect types
+  BisectStartOptions,
+  BisectResult,
+  BisectState,
+
   // Reset types
   ResetOptions,
 
@@ -152,6 +157,7 @@ import type {
   SubmoduleStatus as SubmoduleStatusType,
   ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
+  BisectMarkType as BisectMarkTypeType,
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
@@ -394,5 +400,13 @@ export const MenuAction: { [K in MenuActionType]: K } = {
 };
 
 export type MenuAction = MenuActionType;
+
+export const BisectMarkType: { [K in BisectMarkTypeType]: K } = {
+  Good: 'Good',
+  Bad: 'Bad',
+  Skip: 'Skip',
+};
+
+export type BisectMarkType = BisectMarkTypeType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

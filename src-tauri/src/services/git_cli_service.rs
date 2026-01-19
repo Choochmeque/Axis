@@ -1,10 +1,10 @@
 use crate::error::{AxisError, Result};
 use crate::models::ResetMode;
 use crate::models::{
-    AddSubmoduleOptions, ArchiveResult, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
-    GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, PatchResult,
-    StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult,
-    SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
+    AddSubmoduleOptions, ArchiveResult, BisectState, GitFlowBranchType, GitFlowConfig,
+    GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult,
+    PatchResult, StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule,
+    SubmoduleResult, SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
 };
 use chrono::{DateTime, Utc};
 use std::fs::File;
@@ -32,6 +32,7 @@ pub enum OperationType {
     Rebase,
     CherryPick,
     Revert,
+    Bisect,
 }
 
 #[derive(Debug)]
@@ -344,6 +345,8 @@ impl GitCliService {
             Ok(Some(OperationType::CherryPick))
         } else if self.is_reverting()? {
             Ok(Some(OperationType::Revert))
+        } else if self.is_bisecting()? {
+            Ok(Some(OperationType::Bisect))
         } else {
             Ok(None)
         }
@@ -1829,6 +1832,150 @@ impl GitCliService {
                 result.stderr.trim()
             )))
         }
+    }
+
+    // ==================== Bisect Operations ====================
+
+    /// Check if we're in a bisect state
+    pub fn is_bisecting(&self) -> Result<bool> {
+        let bisect_start = self.repo_path.join(".git/BISECT_START");
+        Ok(bisect_start.exists())
+    }
+
+    /// Start a bisect session
+    pub fn bisect_start(&self, bad: Option<&str>, good: &str) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "start"];
+
+        if let Some(bad_commit) = bad {
+            args.push(bad_commit);
+        }
+        args.push(good);
+
+        self.execute(&args)
+    }
+
+    /// Mark the current commit as good
+    pub fn bisect_good(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "good"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Mark the current commit as bad
+    pub fn bisect_bad(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "bad"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Skip the current commit (cannot be tested)
+    pub fn bisect_skip(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "skip"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Reset/abort the bisect session
+    pub fn bisect_reset(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "reset"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute_checked(&args)
+    }
+
+    /// Get the bisect log
+    pub fn bisect_log(&self) -> Result<GitCommandResult> {
+        self.execute(&["bisect", "log"])
+    }
+
+    /// Get visualize data for bisect (commits remaining to test)
+    pub fn bisect_visualize(&self) -> Result<GitCommandResult> {
+        self.execute(&["bisect", "visualize", "--oneline"])
+    }
+
+    /// Parse bisect state from git files
+    pub fn get_bisect_state(&self) -> Result<BisectState> {
+        let is_active = self.is_bisecting()?;
+
+        if !is_active {
+            return Ok(BisectState {
+                is_active: false,
+                current_commit: None,
+                steps_remaining: None,
+                total_commits: None,
+                bad_commit: None,
+                good_commits: Vec::new(),
+                skipped_commits: Vec::new(),
+                first_bad_commit: None,
+            });
+        }
+
+        // Read BISECT_START for the bad commit
+        let bad_commit = std::fs::read_to_string(self.repo_path.join(".git/BISECT_START"))
+            .ok()
+            .map(|s| s.trim().to_string());
+
+        // Parse good commits from refs/bisect/good-*
+        let bisect_refs_path = self.repo_path.join(".git/refs/bisect");
+        let mut good_commits = Vec::new();
+        let mut skipped_commits = Vec::new();
+
+        if bisect_refs_path.exists() {
+            if let Ok(entries) = std::fs::read_dir(&bisect_refs_path) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if name.starts_with("good-") {
+                        if let Ok(oid) = std::fs::read_to_string(entry.path()) {
+                            good_commits.push(oid.trim().to_string());
+                        }
+                    } else if name.starts_with("skip-") {
+                        if let Ok(oid) = std::fs::read_to_string(entry.path()) {
+                            skipped_commits.push(oid.trim().to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get current HEAD
+        let head_result = self.execute(&["rev-parse", "HEAD"])?;
+        let current_commit = if head_result.success {
+            Some(head_result.stdout.trim().to_string())
+        } else {
+            None
+        };
+
+        // Estimate steps remaining using bisect visualize
+        let viz_result = self.bisect_visualize()?;
+        let (steps_remaining, total_commits) = if viz_result.success {
+            let count = viz_result.stdout.lines().count();
+            let steps = if count > 0 {
+                Some((count as f64).log2().ceil() as usize)
+            } else {
+                Some(0)
+            };
+            (steps, Some(count))
+        } else {
+            (None, None)
+        };
+
+        Ok(BisectState {
+            is_active,
+            current_commit,
+            steps_remaining,
+            total_commits,
+            bad_commit,
+            good_commits,
+            skipped_commits,
+            first_bad_commit: None,
+        })
     }
 }
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderPlus, FolderOpen } from 'lucide-react';
+
+import { useOperation } from '@/hooks';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { TabType, useTabsStore } from '@/store/tabsStore';
@@ -30,6 +32,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
 
   const { loadRecentRepositories } = useRepositoryStore();
   const { addTab, findTabByPath, setActiveTab } = useTabsStore();
+  const { trackOperation } = useOperation();
 
   // Extract repo name from URL for default folder name
   const getRepoNameFromUrl = (repoUrl: string): string => {
@@ -76,8 +79,14 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
     setError(null);
 
     try {
-      const repo = await repositoryApi.clone(url.trim(), path.trim());
-      await loadRecentRepositories();
+      const repo = await trackOperation(
+        { name: 'Clone', description: `Cloning ${url.trim()}`, category: 'git' },
+        async () => {
+          const cloned = await repositoryApi.clone(url.trim(), path.trim());
+          await loadRecentRepositories();
+          return cloned;
+        }
+      );
 
       // Create tab for cloned repository
       const existingTab = findTabByPath(repo.path.toString());

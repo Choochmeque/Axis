@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TagDialog } from './TagDialog';
 import { tagApi } from '../../services/api';
+import { toast } from '@/hooks';
 
 // Mock the API
 vi.mock('../../services/api', () => ({
@@ -10,6 +11,14 @@ vi.mock('../../services/api', () => ({
   },
   remoteApi: {
     list: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+// Mock the toast hook
+vi.mock('@/hooks', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -211,7 +220,7 @@ describe('TagDialog', () => {
     fireEvent.click(createButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Tag 'v1.0.0' created successfully")).toBeInTheDocument();
+      expect(toast.success).toHaveBeenCalledWith('Tag "v1.0.0" created');
     });
   });
 });

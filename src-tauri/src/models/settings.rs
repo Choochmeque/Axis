@@ -53,7 +53,7 @@ impl Default for AppSettings {
             show_line_numbers: true,
 
             // Git
-            auto_fetch_interval: 0,
+            auto_fetch_interval: 5,
             confirm_before_discard: true,
             sign_commits: false,
 

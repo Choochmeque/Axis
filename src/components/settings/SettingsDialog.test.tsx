@@ -1,28 +1,8 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsDialog } from './SettingsDialog';
 import { settingsApi } from '@/services/api';
 import { SigningFormat, Theme } from '@/types';
-
-// Mock window.matchMedia before importing the settings store
-beforeAll(() => {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation((query) => ({
-      matches: query === '(prefers-color-scheme: dark)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-
-  // Mock scrollIntoView for Radix UI Select
-  Element.prototype.scrollIntoView = vi.fn();
-});
 
 // Mock the API
 vi.mock('@/services/api', () => ({
@@ -53,7 +33,7 @@ const mockSettings = {
   theme: Theme.Dark,
   fontSize: 12,
   showLineNumbers: true,
-  autoFetchInterval: 0,
+  autoFetchInterval: 5,
   confirmBeforeDiscard: true,
   signCommits: false,
   signingFormat: SigningFormat.Gpg,
@@ -64,6 +44,7 @@ const mockSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  notificationHistoryCapacity: 50,
 };
 
 describe('SettingsDialog', () => {
@@ -171,7 +152,7 @@ describe('SettingsDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to save settings')).toBeInTheDocument();
+      expect(screen.getByText('Save failed')).toBeInTheDocument();
     });
   });
 

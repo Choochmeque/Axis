@@ -39,7 +39,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
   fontSize: 12,
   showLineNumbers: true,
-  autoFetchInterval: 0,
+  autoFetchInterval: 5,
   confirmBeforeDiscard: true,
   signCommits: false,
   signingFormat: SigningFormat.Gpg,

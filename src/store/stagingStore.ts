@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+
+import { operations } from '@/store/operationStore';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
 import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
@@ -105,6 +107,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
   ...initialState,
 
   loadStatus: async () => {
+    const opId = operations.start('Loading status', { category: 'file' });
     set({ isLoadingStatus: true, error: null });
     try {
       const status = await repositoryApi.getStatus();
@@ -114,6 +117,8 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         error: String(error),
         isLoadingStatus: false,
       });
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -123,6 +128,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       return;
     }
 
+    const opId = operations.start('Loading diff', { category: 'file' });
     set({ selectedFile: file, isSelectedFileStaged: staged, isLoadingDiff: true, error: null });
     try {
       const options = toDiffOptions(get().diffSettings);
@@ -134,6 +140,8 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         selectedFileDiff: null,
         isLoadingDiff: false,
       });
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -293,6 +301,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       throw new Error('Commit message is required');
     }
 
+    const opId = operations.start('Creating commit', { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
       const oid = await commitApi.create(commitMessage, undefined, undefined, sign);
@@ -311,12 +320,15 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         isCommitting: false,
       });
       throw error;
+    } finally {
+      operations.complete(opId);
     }
   },
 
   amendCommit: async () => {
     const { commitMessage } = get();
 
+    const opId = operations.start('Amending commit', { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
       const oid = await commitApi.amend(commitMessage || undefined);
@@ -336,6 +348,8 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         isCommitting: false,
       });
       throw error;
+    } finally {
+      operations.complete(opId);
     }
   },
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowUpFromLine } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -34,6 +35,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
+  const { trackOperation } = useOperation();
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
@@ -73,14 +75,19 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
     setError(null);
 
     try {
-      await remoteApi.pushCurrentBranch(selectedRemote, {
-        force,
-        setUpstream,
-        tags,
-      });
+      await trackOperation(
+        { name: 'Push', description: `Pushing to ${selectedRemote}`, category: 'git' },
+        async () => {
+          await remoteApi.pushCurrentBranch(selectedRemote, {
+            force,
+            setUpstream,
+            tags,
+          });
 
-      await loadBranches();
-      await refreshRepository();
+          await loadBranches();
+          await refreshRepository();
+        }
+      );
       onOpenChange(false);
       toast.success('Push complete');
     } catch (err) {

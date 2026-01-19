@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GitMerge, AlertCircle } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { mergeApi, branchApi } from '../../services/api';
 import { BranchType, type Branch, type MergeResult } from '../../types';
@@ -36,6 +37,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MergeResult | null>(null);
+  const { trackOperation } = useOperation();
 
   useEffect(() => {
     if (isOpen) {
@@ -71,13 +73,17 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
     setError(null);
 
     try {
-      const mergeResult = await mergeApi.merge({
-        branch: selectedBranch,
-        message: customMessage || null,
-        noFf: noFastForward,
-        ffOnly: false,
-        squash,
-      });
+      const mergeResult = await trackOperation(
+        { name: 'Merge', description: `Merging ${selectedBranch}`, category: 'git' },
+        () =>
+          mergeApi.merge({
+            branch: selectedBranch,
+            message: customMessage || null,
+            noFf: noFastForward,
+            ffOnly: false,
+            squash,
+          })
+      );
 
       if (mergeResult.success && mergeResult.conflicts.length === 0) {
         onMergeComplete?.(mergeResult);

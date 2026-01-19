@@ -697,6 +697,63 @@ code {
     @apply hover:bg-(--bg-hover) hover:text-(--text-primary);
   }
 
+  /* Operations Indicator */
+  .operations-wrapper {
+    @apply relative;
+  }
+
+  .operations-trigger {
+    @apply flex items-center justify-center w-6 h-6 p-0 rounded cursor-pointer transition-colors;
+    @apply bg-transparent border-none text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-hover);
+  }
+
+  .operations-spinner {
+    @apply animate-spin;
+  }
+
+  .operations-badge {
+    @apply absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[10px] font-medium;
+    @apply bg-warning text-white flex items-center justify-center;
+  }
+
+  .operations-dropdown {
+    @apply absolute bottom-full right-0 mb-2 w-72 max-h-80 overflow-hidden;
+    @apply bg-(--bg-secondary) border border-(--border-color) rounded-md shadow-lg;
+    @apply flex flex-col;
+  }
+
+  .operations-header {
+    @apply px-3 py-2 text-sm font-semibold text-(--text-primary) border-b border-(--border-color);
+  }
+
+  .operations-list {
+    @apply flex-1 overflow-y-auto;
+  }
+
+  .operations-item {
+    @apply flex items-start gap-2 p-2 border-b border-(--border-color) last:border-b-0;
+  }
+
+  .operations-item-spinner {
+    @apply shrink-0 mt-0.5 text-(--accent-color) animate-spin;
+  }
+
+  .operations-item-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .operations-item-name {
+    @apply text-sm font-medium text-(--text-primary) truncate;
+  }
+
+  .operations-item-description {
+    @apply text-xs text-(--text-secondary) truncate;
+  }
+
+  .operations-item-time {
+    @apply text-xs text-(--text-tertiary) shrink-0;
+  }
+
   /* Dropdown classes (Radix UI) */
   .dropdown-button {
     @apply flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover);

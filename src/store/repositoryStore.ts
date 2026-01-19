@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+
+import { operations } from '@/store/operationStore';
 import { BranchFilterType, SortOrder } from '@/types';
 import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
 import type {
@@ -127,6 +129,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   error: null,
 
   openRepository: async (path: string) => {
+    const opId = operations.start('Opening repository', { category: 'file' });
     set({ isLoading: true, error: null });
     try {
       const repository = await repositoryApi.open(path);
@@ -144,6 +147,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     } catch (err) {
       set({ error: String(err), isLoading: false });
       throw err;
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -191,6 +196,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
 
   loadCommits: async (limit = 100, skip = 0) => {
     const { branchFilter, includeRemotes, sortOrder } = get();
+    const opId = operations.start('Loading commits', { category: 'file' });
     set({ isLoadingCommits: true });
     try {
       const result = await graphApi.build({
@@ -210,6 +216,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       });
     } catch (err) {
       set({ error: String(err), isLoadingCommits: false });
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -224,6 +232,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     } = get();
     if (!hasMoreCommits || isLoadingMoreCommits) return;
 
+    const opId = operations.start('Loading more commits', { category: 'file' });
     set({ isLoadingMoreCommits: true });
     try {
       const result = await graphApi.build({
@@ -242,6 +251,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       });
     } catch (err) {
       set({ error: String(err), isLoadingMoreCommits: false });
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -335,6 +346,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     const { commits } = get();
     const commitInList = commits.find((c) => c.oid === oid);
 
+    const opId = operations.start('Loading commit details', { category: 'file' });
     set({
       selectedCommitOid: oid,
       selectedCommitData: null,
@@ -358,6 +370,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       });
     } catch (err) {
       set({ error: String(err), isLoadingCommitFiles: false });
+    } finally {
+      operations.complete(opId);
     }
   },
 
@@ -383,6 +397,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       return;
     }
 
+    const opId = operations.start('Loading stash details', { category: 'file' });
     // Clear commit selection when selecting a stash
     set({
       selectedStash: stash,
@@ -404,6 +419,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       });
     } catch (err) {
       set({ error: String(err), isLoadingStashFiles: false });
+    } finally {
+      operations.complete(opId);
     }
   },
 

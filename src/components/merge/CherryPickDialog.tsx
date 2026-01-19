@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Cherry, AlertCircle } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { cherryPickApi } from '../../services/api';
 import type { Commit, CherryPickResult } from '../../types';
@@ -34,6 +35,7 @@ export function CherryPickDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CherryPickResult | null>(null);
+  const { trackOperation } = useOperation();
 
   const handleCherryPick = async () => {
     if (commits.length === 0) {
@@ -45,11 +47,19 @@ export function CherryPickDialog({
     setError(null);
 
     try {
-      const cherryPickResult = await cherryPickApi.cherryPick({
-        commits: commits.map((c) => c.oid),
-        noCommit: noCommit,
-        allowEmpty: false,
-      });
+      const cherryPickResult = await trackOperation(
+        {
+          name: 'Cherry-pick',
+          description: `Cherry-picking ${commits.length} commit${commits.length > 1 ? 's' : ''}`,
+          category: 'git',
+        },
+        () =>
+          cherryPickApi.cherryPick({
+            commits: commits.map((c) => c.oid),
+            noCommit: noCommit,
+            allowEmpty: false,
+          })
+      );
 
       if (cherryPickResult.success && cherryPickResult.conflicts.length === 0) {
         onCherryPickComplete?.(cherryPickResult);

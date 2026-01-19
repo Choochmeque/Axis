@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Archive } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { stashApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -25,6 +26,7 @@ interface StashDialogProps {
 
 export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   const { refreshRepository, loadStashes } = useRepositoryStore();
+  const { trackOperation } = useOperation();
   const [message, setMessage] = useState('');
   const [keepStaged, setKeepStaged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,17 +37,23 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
     setError(null);
 
     try {
-      await stashApi.save({
-        message: message || null,
-        keepIndex: keepStaged,
-        includeUntracked: true,
-        includeIgnored: false,
-      });
+      await trackOperation(
+        { name: 'Stash', description: 'Stashing changes', category: 'git' },
+        async () => {
+          await stashApi.save({
+            message: message || null,
+            keepIndex: keepStaged,
+            includeUntracked: true,
+            includeIgnored: false,
+          });
+
+          await loadStashes();
+          await refreshRepository();
+        }
+      );
 
       setMessage('');
       setKeepStaged(false);
-      await loadStashes();
-      await refreshRepository();
       onOpenChange(false);
       toast.success('Changes stashed');
     } catch (err) {

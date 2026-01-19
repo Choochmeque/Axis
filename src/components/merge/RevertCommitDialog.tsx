@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Undo2, AlertCircle } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { revertApi } from '../../services/api';
 import type { Commit, RevertResult } from '../../types';
@@ -34,6 +35,7 @@ export function RevertCommitDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RevertResult | null>(null);
+  const { trackOperation } = useOperation();
 
   const handleRevert = async () => {
     if (commits.length === 0) {
@@ -45,10 +47,18 @@ export function RevertCommitDialog({
     setError(null);
 
     try {
-      const revertResult = await revertApi.revert({
-        commits: commits.map((c) => c.oid),
-        noCommit: noCommit,
-      });
+      const revertResult = await trackOperation(
+        {
+          name: 'Revert',
+          description: `Reverting ${commits.length} commit${commits.length > 1 ? 's' : ''}`,
+          category: 'git',
+        },
+        () =>
+          revertApi.revert({
+            commits: commits.map((c) => c.oid),
+            noCommit: noCommit,
+          })
+      );
 
       if (revertResult.success && revertResult.conflicts.length === 0) {
         onRevertComplete?.(revertResult);

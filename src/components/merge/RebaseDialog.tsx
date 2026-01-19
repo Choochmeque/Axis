@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GitBranch, AlertCircle, Loader2 } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi, branchApi } from '../../services/api';
 import {
@@ -47,6 +48,7 @@ export function RebaseDialog({
   const [result, setResult] = useState<RebaseResult | null>(null);
   const [preview, setPreview] = useState<RebasePreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const { trackOperation } = useOperation();
 
   useEffect(() => {
     if (isOpen) {
@@ -107,12 +109,16 @@ export function RebaseDialog({
     setError(null);
 
     try {
-      const rebaseResult = await rebaseApi.rebase({
-        onto: rebaseTarget,
-        interactive: false,
-        preserveMerges: false,
-        autosquash: false,
-      });
+      const rebaseResult = await trackOperation(
+        { name: 'Rebase', description: `Rebasing onto ${rebaseTarget}`, category: 'git' },
+        () =>
+          rebaseApi.rebase({
+            onto: rebaseTarget,
+            interactive: false,
+            preserveMerges: false,
+            autosquash: false,
+          })
+      );
 
       if (rebaseResult.success && rebaseResult.conflicts.length === 0) {
         onRebaseComplete?.(rebaseResult);

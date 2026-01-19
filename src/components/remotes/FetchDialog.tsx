@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
@@ -34,6 +35,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
+  const { trackOperation } = useOperation();
 
   useEffect(() => {
     if (open) {
@@ -59,15 +61,24 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
     setError(null);
 
     try {
-      if (fetchAll) {
-        await remoteApi.fetchAll();
-      } else {
-        await remoteApi.fetch(selectedRemote, prune);
-      }
+      await trackOperation(
+        {
+          name: 'Fetch',
+          description: fetchAll ? 'Fetching all remotes' : `Fetching ${selectedRemote}`,
+          category: 'git',
+        },
+        async () => {
+          if (fetchAll) {
+            await remoteApi.fetchAll();
+          } else {
+            await remoteApi.fetch(selectedRemote, prune);
+          }
 
-      await loadBranches();
-      await refreshRepository();
-      notifyNewCommits(useRepositoryStore.getState().branches);
+          await loadBranches();
+          await refreshRepository();
+          notifyNewCommits(useRepositoryStore.getState().branches);
+        }
+      );
       onOpenChange(false);
       toast.success('Fetch complete');
     } catch (err) {

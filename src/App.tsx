@@ -10,6 +10,7 @@ import { useMenuActions, toast } from './hooks';
 import { notifyNewCommits } from './lib/actions';
 import { getErrorMessage } from './lib/errorUtils';
 import { remoteApi } from './services/api';
+import { operations } from './store/operationStore';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
@@ -53,12 +54,15 @@ function App() {
     if (intervalMinutes > 0 && repository) {
       const intervalMs = intervalMinutes * 60 * 1000;
       autoFetchIntervalRef.current = setInterval(async () => {
+        const opId = operations.start('Auto-fetching remotes', { category: 'git' });
         try {
           await remoteApi.fetchAll();
           await useRepositoryStore.getState().loadBranches();
           notifyNewCommits(useRepositoryStore.getState().branches);
         } catch (err) {
           toast.error(getErrorMessage(err));
+        } finally {
+          operations.complete(opId);
         }
       }, intervalMs);
     }

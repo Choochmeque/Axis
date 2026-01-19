@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowDownToLine } from 'lucide-react';
-import { toast } from '@/hooks';
+
+import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -33,6 +34,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
+  const { trackOperation } = useOperation();
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
@@ -70,11 +72,16 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
     setError(null);
 
     try {
-      await remoteApi.pull(selectedRemote, currentBranch.name, rebase, ffOnly);
+      await trackOperation(
+        { name: 'Pull', description: `Pulling from ${selectedRemote}`, category: 'git' },
+        async () => {
+          await remoteApi.pull(selectedRemote, currentBranch.name, rebase, ffOnly);
 
-      await loadBranches();
-      await loadCommits();
-      await refreshRepository();
+          await loadBranches();
+          await loadCommits();
+          await refreshRepository();
+        }
+      );
       onOpenChange(false);
       toast.success('Pull complete');
     } catch (err) {

@@ -105,6 +105,11 @@ impl FileWatcher {
                         let active = is_active.load(Ordering::SeqCst);
 
                         for path in event.paths {
+                            // Skip paths outside this repo
+                            if !path.starts_with(&repo_path) {
+                                continue;
+                            }
+
                             if active {
                                 // Active repo: emit detailed events
                                 if path.starts_with(&git_dir) {

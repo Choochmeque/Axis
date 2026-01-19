@@ -1,7 +1,7 @@
 import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { format } from 'date-fns';
-import { RefType } from '@/types';
+import { RefType, SigningFormat } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
@@ -99,17 +99,25 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         {commit.signature && (
           <div className={rowClass}>
             <span className={metaLabelClass}>
-              {commit.signature.format === 'gpg' ? <Key size={12} /> : <ShieldCheck size={12} />}
+              {commit.signature.format === SigningFormat.Gpg ? (
+                <Key size={12} />
+              ) : commit.signature.format === SigningFormat.Ssh ? (
+                <ShieldCheck size={12} />
+              ) : (
+                <ShieldCheck size={12} />
+              )}
               Signed
             </span>
             <div className={valueClass}>
               <span
                 className={cn(
                   'inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium',
-                  commit.signature.verified ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
+                  commit.signature.verified
+                    ? 'bg-success/20 text-success'
+                    : 'bg-warning/20 text-warning'
                 )}
               >
-                {commit.signature.format.toUpperCase()}
+                {commit.signature.format?.toUpperCase() ?? 'UNKNOWN'}
                 {commit.signature.verified ? ' (Verified)' : ' (Unverified)'}
               </span>
               {commit.signature.signer && (

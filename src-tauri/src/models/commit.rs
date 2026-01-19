@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::models::SigningFormat;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Commit {
@@ -22,8 +24,8 @@ pub struct Commit {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CommitSignature {
-    /// The type of signature (GPG or SSH)
-    pub format: String,
+    /// The type of signature (GPG or SSH), None if unknown
+    pub format: Option<SigningFormat>,
     /// Whether the signature was verified
     pub verified: bool,
     /// The signer info (if verified)
@@ -71,11 +73,11 @@ impl Commit {
         let is_ssh = sig_str.contains("-----BEGIN SSH SIGNATURE-----");
 
         let format = if is_gpg {
-            "gpg"
+            Some(SigningFormat::Gpg)
         } else if is_ssh {
-            "ssh"
+            Some(SigningFormat::Ssh)
         } else {
-            "unknown"
+            None
         };
 
         let signer = match (data_string.as_deref(), is_gpg, is_ssh) {
@@ -87,7 +89,7 @@ impl Commit {
         };
 
         Some(CommitSignature {
-            format: format.to_string(),
+            format,
             verified: signer.is_some(),
             signer,
         })

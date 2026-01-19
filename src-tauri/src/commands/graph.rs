@@ -1,5 +1,8 @@
 use crate::error::Result;
-use crate::models::{BlameResult, GraphOptions, GraphResult, SearchOptions, SearchResult};
+use crate::models::{
+    BlameResult, DiffOptions, FileDiff, FileLogOptions, FileLogResult, GraphOptions, GraphResult,
+    SearchOptions, SearchResult,
+};
 use crate::state::AppState;
 use tauri::State;
 
@@ -50,4 +53,30 @@ pub async fn get_commit_count(
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_commit_count(from_ref.as_deref()))
+}
+
+/// Get commit history for specific files
+#[tauri::command]
+#[specta::specta]
+pub async fn get_file_history(
+    state: State<'_, AppState>,
+    options: FileLogOptions,
+) -> Result<FileLogResult> {
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_file_history(options))
+}
+
+/// Get diff for a specific file in a specific commit
+#[tauri::command]
+#[specta::specta]
+pub async fn get_file_diff_in_commit(
+    state: State<'_, AppState>,
+    commit_oid: String,
+    path: String,
+    options: Option<DiffOptions>,
+) -> Result<Option<FileDiff>> {
+    state.get_git_service()?.with_git2(|git2| {
+        git2.get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
+    })
 }

@@ -47,10 +47,10 @@ export function CommitForm() {
 
   // Sync signCommit with settings when settings change
   useEffect(() => {
-    if (settings?.signCommits !== undefined) {
+    if (settings) {
       setSignCommit(settings.signCommits);
     }
-  }, [settings?.signCommits]);
+  }, [settings]);
 
   // Load author info when repository changes
   useEffect(() => {

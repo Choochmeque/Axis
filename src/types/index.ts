@@ -48,6 +48,10 @@ export type {
   GrepMatch,
   GrepResult,
 
+  // File log types
+  FileLogOptions,
+  FileLogResult,
+
   // Merge types
   MergeOptions,
   MergeResult,

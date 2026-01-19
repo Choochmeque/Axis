@@ -6,6 +6,7 @@ import type {
   DiffOptions,
   GraphOptions,
   SearchOptions,
+  FileLogOptions,
   MergeOptions,
   RebaseOptions,
   CherryPickOptions,
@@ -169,6 +170,11 @@ export const graphApi = {
   build: (options?: GraphOptions) => commands.buildGraph(options ?? null),
 
   getCommitCount: (fromRef?: string) => commands.getCommitCount(fromRef ?? null),
+
+  getFileHistory: (options: FileLogOptions) => commands.getFileHistory(options),
+
+  getFileDiffInCommit: (commitOid: string, path: string, options?: DiffOptions) =>
+    commands.getFileDiffInCommit(commitOid, path, options ?? null),
 };
 
 export const searchApi = {

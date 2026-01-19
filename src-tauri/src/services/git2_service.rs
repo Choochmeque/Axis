@@ -2114,6 +2114,165 @@ impl Git2Service {
         // Fall back to the spec itself (could be a commit hash or other ref)
         spec.to_string()
     }
+
+    // ==================== File History Operations ====================
+
+    /// Get commit history for specific files
+    pub fn get_file_history(
+        &self,
+        options: crate::models::FileLogOptions,
+    ) -> Result<crate::models::FileLogResult> {
+        use crate::models::FileLogResult;
+
+        let limit = options.limit.unwrap_or(50);
+        let skip = options.skip.unwrap_or(0);
+
+        if options.paths.is_empty() {
+            return Ok(FileLogResult {
+                commits: Vec::new(),
+                has_more: false,
+            });
+        }
+
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push_head()?;
+        revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
+
+        let mut commits = Vec::new();
+        let mut skipped = 0;
+        let mut found = 0;
+
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+
+            // Check if this commit touches any of the specified paths
+            if self.commit_touches_paths(&commit, &options.paths, options.follow_renames)? {
+                if skipped < skip {
+                    skipped += 1;
+                    continue;
+                }
+
+                found += 1;
+                if found <= limit {
+                    commits.push(Commit::from_git2_commit(&commit, &self.repo));
+                } else {
+                    // We found one more than limit, so there are more
+                    return Ok(FileLogResult {
+                        commits,
+                        has_more: true,
+                    });
+                }
+            }
+        }
+
+        Ok(FileLogResult {
+            commits,
+            has_more: false,
+        })
+    }
+
+    /// Check if a commit modified any of the specified paths
+    fn commit_touches_paths(
+        &self,
+        commit: &git2::Commit,
+        paths: &[String],
+        follow_renames: bool,
+    ) -> Result<bool> {
+        let tree = commit.tree()?;
+
+        let parent_tree = if commit.parent_count() > 0 {
+            Some(commit.parent(0)?.tree()?)
+        } else {
+            None
+        };
+
+        let mut diff_opts = git2::DiffOptions::new();
+
+        // Add paths to pathspec
+        for path in paths {
+            diff_opts.pathspec(path);
+        }
+
+        let diff =
+            self.repo
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+
+        // If follow_renames is enabled, find renames and check old paths too
+        if follow_renames && diff.stats()?.files_changed() == 0 {
+            // No direct match, check for renames by looking at full diff
+            let mut full_diff_opts = git2::DiffOptions::new();
+            let full_diff = self.repo.diff_tree_to_tree(
+                parent_tree.as_ref(),
+                Some(&tree),
+                Some(&mut full_diff_opts),
+            )?;
+
+            let mut find_opts = git2::DiffFindOptions::new();
+            find_opts.renames(true);
+            find_opts.copies(false);
+
+            let mut full_diff = full_diff;
+            full_diff.find_similar(Some(&mut find_opts))?;
+
+            let mut found = false;
+            full_diff.foreach(
+                &mut |delta, _| {
+                    // Check if either old or new path matches our targets
+                    if let Some(new_path) = delta.new_file().path() {
+                        if paths.iter().any(|p| new_path.to_string_lossy() == *p) {
+                            found = true;
+                            return false; // Stop iteration
+                        }
+                    }
+                    if let Some(old_path) = delta.old_file().path() {
+                        if paths.iter().any(|p| old_path.to_string_lossy() == *p) {
+                            found = true;
+                            return false; // Stop iteration
+                        }
+                    }
+                    true
+                },
+                None,
+                None,
+                None,
+            )?;
+
+            return Ok(found);
+        }
+
+        Ok(diff.stats()?.files_changed() > 0)
+    }
+
+    /// Get diff for a specific file in a specific commit
+    pub fn get_file_diff_in_commit(
+        &self,
+        commit_oid: &str,
+        path: &str,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Option<crate::models::FileDiff>> {
+        let oid = git2::Oid::from_str(commit_oid)
+            .map_err(|_| AxisError::InvalidReference(commit_oid.to_string()))?;
+        let commit = self.repo.find_commit(oid)?;
+        let tree = commit.tree()?;
+
+        let parent_tree = if commit.parent_count() > 0 {
+            Some(commit.parent(0)?.tree()?)
+        } else {
+            None
+        };
+
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+        diff_opts.pathspec(path);
+
+        let diff =
+            self.repo
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+
+        let diffs = self.parse_diff(&diff)?;
+        Ok(diffs.into_iter().next())
+    }
 }
 
 #[cfg(test)]

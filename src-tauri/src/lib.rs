@@ -82,6 +82,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::search_commits,
             crate::commands::blame_file,
             crate::commands::get_commit_count,
+            crate::commands::get_file_history,
+            crate::commands::get_file_diff_in_commit,
             // Merge commands
             crate::commands::merge_branch,
             crate::commands::merge_abort,

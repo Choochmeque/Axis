@@ -58,7 +58,7 @@ const DropdownMenuCheckboxItem = forwardRef<
 >(({ className, children, checked, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
-    className={cn('dropdown-item', className)}
+    className={cn('dropdown-item pl-7', className)}
     checked={checked}
     {...props}
   >
@@ -74,7 +74,11 @@ const DropdownMenuRadioItem = forwardRef<
   React.ComponentRef<typeof DropdownMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
 >(({ className, children, ...props }, ref) => (
-  <DropdownMenuPrimitive.RadioItem ref={ref} className={cn('dropdown-item', className)} {...props}>
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn('dropdown-item pl-7', className)}
+    {...props}
+  >
     <DropdownMenuPrimitive.ItemIndicator className="absolute left-2">
       <Check size={12} />
     </DropdownMenuPrimitive.ItemIndicator>

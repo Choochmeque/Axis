@@ -157,6 +157,42 @@ pub struct SearchResult {
     pub total_matches: usize,
 }
 
+/// Options for file history (log for specific files)
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct FileLogOptions {
+    /// Paths to filter commits by
+    pub paths: Vec<String>,
+    /// Maximum number of commits to return
+    pub limit: Option<usize>,
+    /// Number of commits to skip (for pagination)
+    pub skip: Option<usize>,
+    /// Follow file renames
+    #[serde(default)]
+    pub follow_renames: bool,
+}
+
+impl Default for FileLogOptions {
+    fn default() -> Self {
+        FileLogOptions {
+            paths: Vec::new(),
+            limit: Some(50),
+            skip: None,
+            follow_renames: false,
+        }
+    }
+}
+
+/// Result of file history query
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct FileLogResult {
+    /// Commits that modified the specified files
+    pub commits: Vec<Commit>,
+    /// Whether there are more commits
+    pub has_more: bool,
+}
+
 /// Blame information for a file
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

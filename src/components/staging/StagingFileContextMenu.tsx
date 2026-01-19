@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   FileCode,
   FolderOpen,
@@ -25,6 +25,7 @@ import { copyToClipboard, showInFinder } from '@/lib/actions';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
+import { FileLogDialog } from '../history/FileLogDialog';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -46,6 +47,7 @@ export function StagingFileContextMenu({
   onDiscard,
 }: StagingFileContextMenuProps) {
   const { repository } = useRepositoryStore();
+  const [showFileLog, setShowFileLog] = useState(false);
 
   // Computed flags for menu item visibility
   const isUntracked = file.status === StatusType.Untracked;
@@ -65,119 +67,129 @@ export function StagingFileContextMenu({
   };
 
   return (
-    <ContextMenu trigger={children}>
-      <MenuItem icon={FileCode} disabled>
-        Open
-      </MenuItem>
-      <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
-        Show In Finder
-      </MenuItem>
-      <MenuItem icon={Copy} onSelect={handleCopyPath}>
-        Copy Path To Clipboard
-      </MenuItem>
-      <MenuItem icon={Terminal} disabled>
-        Open In Terminal
-      </MenuItem>
-      <MenuItem icon={Eye} disabled>
-        Quick Look
-      </MenuItem>
-      <MenuSeparator />
-      <MenuItem icon={Diff} disabled>
-        External Diff
-      </MenuItem>
-      <MenuItem icon={FileText} disabled>
-        Create Patch...
-      </MenuItem>
-      <MenuItem icon={FilePlus} disabled>
-        Apply Patch...
-      </MenuItem>
-      <MenuSeparator />
-
-      {/* Stage/Unstage */}
-      {!isStaged && (
-        <MenuItem icon={Plus} disabled={!onStage} onSelect={onStage}>
-          Add to index
+    <>
+      <ContextMenu trigger={children}>
+        <MenuItem icon={FileCode} disabled>
+          Open
         </MenuItem>
-      )}
-      {isStaged && (
-        <MenuItem icon={Minus} disabled={!onUnstage} onSelect={onUnstage}>
-          Unstage from index
+        <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
+          Show In Finder
         </MenuItem>
-      )}
-
-      {/* Delete - only for untracked files */}
-      {canDelete && (
-        <MenuItem icon={XCircle} danger disabled>
-          Delete
+        <MenuItem icon={Copy} onSelect={handleCopyPath}>
+          Copy Path To Clipboard
         </MenuItem>
-      )}
+        <MenuItem icon={Terminal} disabled>
+          Open In Terminal
+        </MenuItem>
+        <MenuItem icon={Eye} disabled>
+          Quick Look
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Diff} disabled>
+          External Diff
+        </MenuItem>
+        <MenuItem icon={FileText} disabled>
+          Create Patch...
+        </MenuItem>
+        <MenuItem icon={FilePlus} disabled>
+          Apply Patch...
+        </MenuItem>
+        <MenuSeparator />
 
-      {/* Stop Tracking - only for tracked files */}
-      {isTracked && (
+        {/* Stage/Unstage */}
+        {!isStaged && (
+          <MenuItem icon={Plus} disabled={!onStage} onSelect={onStage}>
+            Add to index
+          </MenuItem>
+        )}
+        {isStaged && (
+          <MenuItem icon={Minus} disabled={!onUnstage} onSelect={onUnstage}>
+            Unstage from index
+          </MenuItem>
+        )}
+
+        {/* Delete - only for untracked files */}
+        {canDelete && (
+          <MenuItem icon={XCircle} danger disabled>
+            Delete
+          </MenuItem>
+        )}
+
+        {/* Stop Tracking - only for tracked files */}
+        {isTracked && (
+          <MenuItem icon={EyeOff} disabled>
+            Stop Tracking
+          </MenuItem>
+        )}
+
         <MenuItem icon={EyeOff} disabled>
-          Stop Tracking
+          Ignore...
         </MenuItem>
-      )}
+        <MenuSeparator />
 
-      <MenuItem icon={EyeOff} disabled>
-        Ignore...
-      </MenuItem>
-      <MenuSeparator />
-
-      <MenuItem icon={GitCommit} disabled>
-        Commit Selected...
-      </MenuItem>
-
-      {/* Reset - only for tracked files */}
-      {isTracked && (
-        <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
-          Reset...
+        <MenuItem icon={GitCommit} disabled>
+          Commit Selected...
         </MenuItem>
-      )}
 
-      {/* Reset to Commit - only for tracked files */}
-      {isTracked && (
-        <MenuItem icon={RotateCcw} disabled>
-          Reset to Commit...
-        </MenuItem>
-      )}
-
-      {/* Resolve Conflicts submenu - only for conflicted files */}
-      {isConflicted && (
-        <>
-          <MenuSeparator />
-          <SubMenu icon={Diff} label="Resolve Conflicts">
-            <MenuItem disabled>Mark as Resolved</MenuItem>
-          </SubMenu>
-        </>
-      )}
-
-      <MenuSeparator />
-      <MenuItem icon={History} disabled>
-        Log Selected...
-      </MenuItem>
-      <MenuItem icon={FileSearch} disabled>
-        Annotate Selected...
-      </MenuItem>
-      <MenuSeparator />
-      <MenuItem icon={Copy} disabled>
-        Copy...
-      </MenuItem>
-      <MenuItem icon={Move} disabled>
-        Move...
-      </MenuItem>
-
-      {isTreeView && (
-        <>
-          <MenuSeparator />
-          <MenuItem icon={ChevronDown} disabled>
-            Expand All
+        {/* Reset - only for tracked files */}
+        {isTracked && (
+          <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
+            Reset...
           </MenuItem>
-          <MenuItem icon={ChevronUp} disabled>
-            Collapse All
+        )}
+
+        {/* Reset to Commit - only for tracked files */}
+        {isTracked && (
+          <MenuItem icon={RotateCcw} disabled>
+            Reset to Commit...
           </MenuItem>
-        </>
-      )}
-    </ContextMenu>
+        )}
+
+        {/* Resolve Conflicts submenu - only for conflicted files */}
+        {isConflicted && (
+          <>
+            <MenuSeparator />
+            <SubMenu icon={Diff} label="Resolve Conflicts">
+              <MenuItem disabled>Mark as Resolved</MenuItem>
+            </SubMenu>
+          </>
+        )}
+
+        <MenuSeparator />
+        {isTracked && (
+          <MenuItem icon={History} onSelect={() => setShowFileLog(true)}>
+            Log Selected...
+          </MenuItem>
+        )}
+        <MenuItem icon={FileSearch} disabled>
+          Annotate Selected...
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem icon={Copy} disabled>
+          Copy...
+        </MenuItem>
+        <MenuItem icon={Move} disabled>
+          Move...
+        </MenuItem>
+
+        {isTreeView && (
+          <>
+            <MenuSeparator />
+            <MenuItem icon={ChevronDown} disabled>
+              Expand All
+            </MenuItem>
+            <MenuItem icon={ChevronUp} disabled>
+              Collapse All
+            </MenuItem>
+          </>
+        )}
+      </ContextMenu>
+
+      <FileLogDialog
+        isOpen={showFileLog}
+        onClose={() => setShowFileLog(false)}
+        filePaths={[file.path]}
+      />
+    </>
   );
 }

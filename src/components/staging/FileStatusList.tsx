@@ -173,7 +173,12 @@ function FileStatusItem({
   isTreeView = false,
 }: FileStatusItemProps) {
   const { repository } = useRepositoryStore();
-  const status = file.stagedStatus || file.unstagedStatus || file.status;
+  // Determine if displaying in staged or unstaged context based on available actions
+  const isInStagedContext = onUnstage && !onStage;
+  // Use appropriate status based on context
+  const status = isInStagedContext
+    ? file.stagedStatus || file.unstagedStatus || file.status
+    : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   const handleShowInFinder = async () => {
@@ -194,8 +199,8 @@ function FileStatusItem({
 
   // Check if this is an unstaged file (has stage and discard actions)
   const isUnstaged = onStage && onDiscard;
-  // Check if this is a staged file (has only unstage action)
-  const isStaged = onUnstage && !onStage;
+  // Reuse the context check for isStaged
+  const isStaged = isInStagedContext;
 
   const handleCheckboxChange = (checked: boolean) => {
     if (checked) {
@@ -327,11 +332,16 @@ function MultiColumnFileItem({
   onUnstage,
   onDiscard,
 }: MultiColumnFileItemProps) {
-  const status = file.stagedStatus || file.unstagedStatus || file.status;
+  // Determine if displaying in staged or unstaged context based on available actions
+  const isInStagedContext = onUnstage && !onStage;
+  // Use appropriate status based on context
+  const status = isInStagedContext
+    ? file.stagedStatus || file.unstagedStatus || file.status
+    : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   // Check if this is a staged file (has only unstage action)
-  const isStaged = onUnstage && !onStage;
+  const isStaged = isInStagedContext;
 
   const handleCheckboxChange = (checked: boolean) => {
     if (checked) {
@@ -537,7 +547,10 @@ function FluidFileItem({
   indent = 0,
 }: FluidFileItemProps) {
   const { repository } = useRepositoryStore();
-  const status = file.stagedStatus || file.unstagedStatus || file.status;
+  // Use appropriate status based on whether file is staged
+  const status = file.isStaged
+    ? file.stagedStatus || file.unstagedStatus || file.status
+    : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
   const handleShowInFinder = async () => {

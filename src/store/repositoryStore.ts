@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { commands } from '@/bindings/api';
 import { operations } from '@/store/operationStore';
 import { BranchFilterType, SortOrder } from '@/types';
 import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
@@ -70,6 +71,7 @@ interface RepositoryState {
 
   // Actions
   openRepository: (path: string) => Promise<void>;
+  switchRepository: (path: string) => Promise<void>;
   closeRepository: () => Promise<void>;
   refreshRepository: () => Promise<void>;
   loadCommits: (limit?: number, skip?: number) => Promise<void>;
@@ -149,6 +151,27 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       throw err;
     } finally {
       operations.complete(opId);
+    }
+  },
+
+  switchRepository: async (path: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const repository = await commands.switchActiveRepository(path);
+      set({ repository, isLoading: false });
+
+      // Load data in parallel
+      await Promise.all([
+        get().loadCommits(),
+        get().loadBranches(),
+        get().loadTags(),
+        get().loadStashes(),
+        get().loadSubmodules(),
+        get().loadStatus(),
+      ]);
+    } catch (err) {
+      set({ error: String(err), isLoading: false });
+      throw err;
     }
   },
 

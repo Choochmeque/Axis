@@ -48,12 +48,6 @@ export const repositoryApi = {
   getRecentRepositories: () => commands.getRecentRepositories(),
 
   removeRecentRepository: (path: string) => commands.removeRecentRepository(path),
-
-  startFileWatcher: () => commands.startFileWatcher(),
-
-  stopFileWatcher: () => commands.stopFileWatcher(),
-
-  isFileWatcherActive: () => commands.isFileWatcherActive(),
 };
 
 export const commitApi = {

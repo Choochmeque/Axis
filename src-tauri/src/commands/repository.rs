@@ -17,11 +17,12 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
     }
 
-    let service = Git2Service::open(&path)?;
-    let repo_info = service.get_repository_info()?;
+    // Use switch_active_repository to add to cache and set as active
+    state.switch_active_repository(&path)?;
 
-    // Store the path in app state
-    state.set_current_repository_path(path.clone());
+    // Get repo info from the cached service
+    let handle = state.get_git_service()?;
+    let repo_info = handle.with_git2(|git2| git2.get_repository_info())?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -38,11 +39,12 @@ pub async fn init_repository(
 ) -> Result<Repository> {
     let path = PathBuf::from(&path);
 
+    // Initialize the repository first (this creates a new Git2Service internally)
     let service = Git2Service::init(&path, bare)?;
     let repo_info = service.get_repository_info()?;
 
-    // Store the path in app state
-    state.set_current_repository_path(path.clone());
+    // Now add to cache via switch_active_repository
+    state.switch_active_repository(&path)?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -71,11 +73,12 @@ pub async fn clone_repository(
         ));
     }
 
+    // Clone the repository first (this creates a new Git2Service internally)
     let service = Git2Service::clone(&url, &path)?;
     let repo_info = service.get_repository_info()?;
 
-    // Store the path in app state
-    state.set_current_repository_path(path.clone());
+    // Now add to cache via switch_active_repository
+    state.switch_active_repository(&path)?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -92,16 +95,39 @@ pub async fn close_repository(state: State<'_, AppState>) -> Result<()> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn switch_active_repository(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<Repository> {
+    let path = PathBuf::from(&path);
+
+    if !path.exists() {
+        return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
+    }
+
+    state.switch_active_repository(&path)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn close_repository_path(state: State<'_, AppState>, path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+    state.close_repository(&path);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repository> {
-    let service = state.get_service()?;
-    service.get_repository_info()
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_repository_info())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    let service = state.get_service()?;
-    service.status()
+    state.get_git_service()?.with_git2(|git2| git2.status())
 }
 
 #[tauri::command]
@@ -110,8 +136,9 @@ pub async fn get_commit_history(
     state: State<'_, AppState>,
     options: Option<LogOptions>,
 ) -> Result<Vec<Commit>> {
-    let service = state.get_service()?;
-    service.log(options.unwrap_or_default())
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.log(options.unwrap_or_default()))
 }
 
 #[tauri::command]
@@ -121,19 +148,21 @@ pub async fn get_branches(
     include_local: bool,
     include_remote: bool,
 ) -> Result<Vec<Branch>> {
-    let service = state.get_service()?;
     let filter = BranchFilter {
         include_local,
         include_remote,
     };
-    service.list_branches(filter)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.list_branches(filter))
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
-    let service = state.get_service()?;
-    service.get_commit(&oid)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_commit(&oid))
 }
 
 #[tauri::command]
@@ -147,25 +176,6 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 pub async fn remove_recent_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
     state.remove_recent_repository(&path)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn start_file_watcher(state: State<'_, AppState>, app_handle: AppHandle) -> Result<()> {
-    state.start_file_watcher(app_handle)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn stop_file_watcher(state: State<'_, AppState>) -> Result<()> {
-    state.stop_file_watcher();
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn is_file_watcher_active(state: State<'_, AppState>) -> Result<bool> {
-    Ok(state.is_watching())
 }
 
 #[tauri::command]

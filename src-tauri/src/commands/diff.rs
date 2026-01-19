@@ -12,14 +12,17 @@ pub async fn get_diff(
     target: DiffTarget,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let git2 = guard.git2();
+
     match target {
-        DiffTarget::WorkdirToIndex => service.diff_workdir(&opts),
-        DiffTarget::IndexToHead => service.diff_staged(&opts),
-        DiffTarget::WorkdirToHead => service.diff_head(&opts),
-        DiffTarget::Commit { oid } => service.diff_commit(&oid, &opts),
-        DiffTarget::CommitToCommit { from, to } => service.diff_commits(&from, &to, &opts),
+        DiffTarget::WorkdirToIndex => git2.diff_workdir(&opts),
+        DiffTarget::IndexToHead => git2.diff_staged(&opts),
+        DiffTarget::WorkdirToHead => git2.diff_head(&opts),
+        DiffTarget::Commit { oid } => git2.diff_commit(&oid, &opts),
+        DiffTarget::CommitToCommit { from, to } => git2.diff_commits(&from, &to, &opts),
     }
 }
 
@@ -30,9 +33,10 @@ pub async fn get_diff_workdir(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_workdir(&opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_workdir(&opts))
 }
 
 /// Get diff for staged changes (index vs HEAD)
@@ -42,9 +46,10 @@ pub async fn get_diff_staged(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_staged(&opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_staged(&opts))
 }
 
 /// Get diff for all uncommitted changes (working directory vs HEAD)
@@ -54,9 +59,10 @@ pub async fn get_diff_head(
     state: State<'_, AppState>,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_head(&opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_head(&opts))
 }
 
 /// Get diff for a specific commit (commit vs its parent)
@@ -67,9 +73,10 @@ pub async fn get_diff_commit(
     oid: String,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_commit(&oid, &opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_commit(&oid, &opts))
 }
 
 /// Get diff between two commits
@@ -81,9 +88,10 @@ pub async fn get_diff_commits(
     to_oid: String,
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_commits(&from_oid, &to_oid, &opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_commits(&from_oid, &to_oid, &opts))
 }
 
 /// Get diff for a single file (staged or unstaged)
@@ -95,9 +103,10 @@ pub async fn get_file_diff(
     staged: bool,
     options: Option<DiffOptions>,
 ) -> Result<Option<FileDiff>> {
-    let service = state.get_service()?;
     let opts = options.unwrap_or_default();
-    service.diff_file(&path, staged, &opts)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.diff_file(&path, staged, &opts))
 }
 
 /// Get blob content as raw bytes for a file at a specific commit
@@ -109,7 +118,8 @@ pub async fn get_file_blob(
     path: String,
     commit_oid: Option<String>,
 ) -> Result<Response> {
-    let service = state.get_service()?;
-    let data = service.get_file_blob(&path, commit_oid.as_deref())?;
+    let data = state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_file_blob(&path, commit_oid.as_deref()))?;
     Ok(Response::new(data))
 }

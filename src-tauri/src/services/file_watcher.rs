@@ -1,9 +1,11 @@
 use crate::events::{
-    FilesChangedEvent, HeadChangedEvent, IndexChangedEvent, RefChangedEvent, WatchErrorEvent,
+    FilesChangedEvent, HeadChangedEvent, IndexChangedEvent, RefChangedEvent, RepositoryDirtyEvent,
+    WatchErrorEvent,
 };
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use parking_lot::Mutex;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
@@ -11,66 +13,79 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tauri_specta::Event as _;
 
-pub struct FileWatcherService {
+/// Per-repository file watcher that emits events based on active status.
+/// Active repos get detailed events; inactive repos get a single RepositoryDirtyEvent.
+pub struct FileWatcher {
+    repo_path: PathBuf,
+    is_active: Arc<AtomicBool>,
     watcher: Arc<Mutex<Option<RecommendedWatcher>>>,
     receiver_handle: Arc<Mutex<Option<thread::JoinHandle<()>>>>,
 }
 
-impl FileWatcherService {
-    pub fn new() -> Self {
-        FileWatcherService {
-            watcher: Arc::new(Mutex::new(None)),
-            receiver_handle: Arc::new(Mutex::new(None)),
-        }
-    }
-
-    /// Start watching a repository path
-    pub fn start_watching(&self, repo_path: PathBuf, app_handle: AppHandle) -> notify::Result<()> {
-        // Stop any existing watcher
-        self.stop_watching();
+impl FileWatcher {
+    /// Create a new file watcher for a repository
+    pub fn new(repo_path: PathBuf, app_handle: AppHandle, is_active: bool) -> notify::Result<Self> {
+        let is_active_flag = Arc::new(AtomicBool::new(is_active));
 
         let (tx, rx) = channel::<notify::Result<Event>>();
 
         // Create watcher with debouncing
         let config = Config::default().with_poll_interval(Duration::from_millis(500));
-
         let mut watcher = RecommendedWatcher::new(tx, config)?;
 
         // Watch the repository directory
         watcher.watch(&repo_path, RecursiveMode::Recursive)?;
 
-        // Store the watcher
-        *self.watcher.lock() = Some(watcher);
+        let watcher_arc = Arc::new(Mutex::new(Some(watcher)));
 
         // Spawn thread to handle events
-        let handle = self.spawn_event_handler(rx, repo_path, app_handle);
-        *self.receiver_handle.lock() = Some(handle);
+        let handle = Self::spawn_event_handler(
+            rx,
+            repo_path.clone(),
+            app_handle,
+            Arc::clone(&is_active_flag),
+        );
+        let handle_arc = Arc::new(Mutex::new(Some(handle)));
 
-        Ok(())
+        Ok(Self {
+            repo_path,
+            is_active: is_active_flag,
+            watcher: watcher_arc,
+            receiver_handle: handle_arc,
+        })
     }
 
-    /// Stop watching
-    pub fn stop_watching(&self) {
-        // Drop the watcher
+    /// Set whether this repo is the active one (affects event emission mode)
+    pub fn set_active(&self, active: bool) {
+        self.is_active.store(active, Ordering::SeqCst);
+    }
+
+    /// Check if this watcher is for the active repository
+    pub fn is_active(&self) -> bool {
+        self.is_active.load(Ordering::SeqCst)
+    }
+
+    /// Get the repository path
+    pub fn repo_path(&self) -> &PathBuf {
+        &self.repo_path
+    }
+
+    /// Stop watching and clean up resources
+    pub fn stop(&self) {
+        // Drop the watcher to close the channel
         *self.watcher.lock() = None;
 
         // The receiver thread will exit when the channel is closed
         if let Some(handle) = self.receiver_handle.lock().take() {
-            // Don't wait for the thread, just let it finish
             drop(handle);
         }
     }
 
-    /// Check if currently watching
-    pub fn is_watching(&self) -> bool {
-        self.watcher.lock().is_some()
-    }
-
     fn spawn_event_handler(
-        &self,
         rx: Receiver<notify::Result<Event>>,
         repo_path: PathBuf,
         app_handle: AppHandle,
+        is_active: Arc<AtomicBool>,
     ) -> thread::JoinHandle<()> {
         let git_dir = repo_path.join(".git");
 
@@ -80,29 +95,43 @@ impl FileWatcherService {
             let mut last_emit = std::time::Instant::now();
             let debounce_duration = Duration::from_millis(100);
 
+            // Track if we've already emitted a dirty event (for inactive repos)
+            let mut dirty_emitted = false;
+
             loop {
                 // Use timeout to allow periodic flushing
                 match rx.recv_timeout(debounce_duration) {
                     Ok(Ok(event)) => {
-                        for path in event.paths {
-                            // Categorize the event
-                            if path.starts_with(&git_dir) {
-                                // Git internal changes
-                                let relative = path.strip_prefix(&git_dir).unwrap_or(&path);
-                                let relative_str = relative.to_string_lossy();
+                        let active = is_active.load(Ordering::SeqCst);
 
-                                if relative_str == "index" || relative_str == "index.lock" {
-                                    let _ = IndexChangedEvent {}.emit(&app_handle);
-                                } else if relative_str == "HEAD" || relative_str == "HEAD.lock" {
-                                    let _ = HeadChangedEvent {}.emit(&app_handle);
-                                } else if relative_str.starts_with("refs/") {
-                                    let ref_name = relative_str.to_string();
-                                    let _ = RefChangedEvent { ref_name }.emit(&app_handle);
+                        for path in event.paths {
+                            if active {
+                                // Active repo: emit detailed events
+                                if path.starts_with(&git_dir) {
+                                    let relative = path.strip_prefix(&git_dir).unwrap_or(&path);
+                                    let relative_str = relative.to_string_lossy();
+
+                                    if relative_str == "index" || relative_str == "index.lock" {
+                                        let _ = IndexChangedEvent {}.emit(&app_handle);
+                                    } else if relative_str == "HEAD" || relative_str == "HEAD.lock"
+                                    {
+                                        let _ = HeadChangedEvent {}.emit(&app_handle);
+                                    } else if relative_str.starts_with("refs/") {
+                                        let ref_name = relative_str.to_string();
+                                        let _ = RefChangedEvent { ref_name }.emit(&app_handle);
+                                    }
+                                } else {
+                                    pending_changes.push(path);
                                 }
-                                // Ignore other .git internal files
                             } else {
-                                // Working directory changes
-                                pending_changes.push(path);
+                                // Inactive repo: emit dirty event once per batch
+                                if !dirty_emitted {
+                                    let _ = RepositoryDirtyEvent {
+                                        path: repo_path.to_string_lossy().to_string(),
+                                    }
+                                    .emit(&app_handle);
+                                    dirty_emitted = true;
+                                }
                             }
                         }
                     }
@@ -113,7 +142,8 @@ impl FileWatcherService {
                         .emit(&app_handle);
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                        // Timeout - flush pending changes if any
+                        // Timeout - flush pending changes if any and reset dirty flag
+                        dirty_emitted = false;
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
                         // Channel closed, exit the thread
@@ -121,7 +151,7 @@ impl FileWatcherService {
                     }
                 }
 
-                // Emit pending changes if debounce period has passed
+                // Emit pending changes if debounce period has passed (only for active repo)
                 if !pending_changes.is_empty() && last_emit.elapsed() >= debounce_duration {
                     let paths: Vec<String> = pending_changes
                         .drain(..)
@@ -142,8 +172,8 @@ impl FileWatcherService {
     }
 }
 
-impl Default for FileWatcherService {
-    fn default() -> Self {
-        Self::new()
+impl Drop for FileWatcher {
+    fn drop(&mut self) {
+        self.stop();
     }
 }

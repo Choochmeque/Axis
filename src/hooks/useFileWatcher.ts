@@ -3,8 +3,6 @@ import { UnlistenFn } from '@tauri-apps/api/event';
 
 import { events } from '@/bindings/api';
 import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
 
@@ -28,13 +26,7 @@ export function useFileWatcher() {
     }
 
     const setupListeners = async () => {
-      // Start the file watcher
-      try {
-        await repositoryApi.startFileWatcher();
-      } catch (err) {
-        toast.error(getErrorMessage(err));
-        return;
-      }
+      // File watcher is now automatic per-repo, just setup event listeners
 
       // Listen for files_changed events (working directory changes)
       const unlistenFiles = await events.filesChangedEvent.listen(() => {
@@ -96,9 +88,6 @@ export function useFileWatcher() {
     return () => {
       unlistenRefs.current.forEach((unlisten) => unlisten());
       unlistenRefs.current = [];
-      repositoryApi.stopFileWatcher().catch((err) => {
-        toast.error(getErrorMessage(err));
-      });
     };
   }, [repository, loadStatus, loadCommits, loadBranches, loadTags, loadStashes, stagingLoadStatus]);
 }

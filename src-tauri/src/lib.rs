@@ -21,6 +21,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::init_repository,
             crate::commands::clone_repository,
             crate::commands::close_repository,
+            crate::commands::switch_active_repository,
+            crate::commands::close_repository_path,
             crate::commands::get_repository_info,
             crate::commands::get_repository_status,
             crate::commands::get_commit_history,
@@ -53,10 +55,6 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_diff_commit,
             crate::commands::get_diff_commits,
             crate::commands::get_file_diff,
-            // File watcher commands
-            crate::commands::start_file_watcher,
-            crate::commands::stop_file_watcher,
-            crate::commands::is_file_watcher_active,
             // Branch commands
             crate::commands::create_branch,
             crate::commands::delete_branch,
@@ -181,7 +179,9 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::IndexChangedEvent,
             crate::events::RefChangedEvent,
             crate::events::HeadChangedEvent,
-            crate::events::WatchErrorEvent
+            crate::events::WatchErrorEvent,
+            crate::events::RepositoryDirtyEvent,
+            crate::events::RemoteFetchedEvent
         ])
 }
 
@@ -213,7 +213,22 @@ pub fn run() {
 
             let database = Database::new(&app_data_dir).expect("Failed to initialize database");
 
+            // Get auto_fetch_interval from settings before creating AppState
+            let auto_fetch_interval = database
+                .get_settings()
+                .map(|s| s.auto_fetch_interval)
+                .unwrap_or(5);
+
             let app_state = AppState::new(database);
+
+            // Set the app handle so GitService can create file watchers
+            app_state.set_app_handle(app.handle().clone());
+
+            // Start background fetch service with configured interval
+            if let Err(e) = app_state.start_background_fetch(auto_fetch_interval) {
+                log::warn!("Failed to start background fetch service: {e}");
+            }
+
             app.manage(app_state);
 
             // Create and set the application menu

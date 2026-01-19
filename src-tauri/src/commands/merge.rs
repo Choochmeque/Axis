@@ -18,7 +18,9 @@ pub async fn merge_branch(
     state: State<'_, AppState>,
     options: MergeOptions,
 ) -> Result<MergeResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     let result = cli.merge(
         &options.branch,
@@ -48,7 +50,7 @@ pub async fn merge_branch(
     } else if result.stderr.contains("CONFLICT") || result.stderr.contains("Automatic merge failed")
     {
         // Merge has conflicts
-        let conflicts = get_conflicted_files_internal(&cli)?;
+        let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(MergeResult {
             success: false,
@@ -69,8 +71,9 @@ pub async fn merge_branch(
 #[tauri::command]
 #[specta::specta]
 pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.merge_abort()?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.merge_abort())?;
     Ok(())
 }
 
@@ -78,8 +81,9 @@ pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
-    let cli = state.get_cli_service()?;
-    let result = cli.merge_continue()?;
+    let result = state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.merge_continue())?;
 
     Ok(MergeResult {
         success: result.success,
@@ -103,7 +107,9 @@ pub async fn rebase_branch(
     state: State<'_, AppState>,
     options: RebaseOptions,
 ) -> Result<RebaseResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     let result = cli.rebase(&options.onto, options.interactive)?;
 
@@ -117,7 +123,7 @@ pub async fn rebase_branch(
             message: result.stdout.trim().to_string(),
         })
     } else if result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&cli)?;
+        let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(RebaseResult {
             success: false,
@@ -140,8 +146,9 @@ pub async fn rebase_branch(
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.rebase_abort()?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.rebase_abort())?;
     Ok(())
 }
 
@@ -149,7 +156,10 @@ pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
+
     let result = cli.rebase_continue()?;
 
     if result.success {
@@ -162,7 +172,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
             message: "Rebase continued successfully.".to_string(),
         })
     } else if result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&cli)?;
+        let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(RebaseResult {
             success: false,
@@ -184,8 +194,9 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
-    let cli = state.get_cli_service()?;
-    let result = cli.rebase_skip()?;
+    let result = state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.rebase_skip())?;
 
     Ok(RebaseResult {
         success: result.success,
@@ -205,8 +216,9 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
-    let service = state.get_service()?;
-    service.get_rebase_preview(&onto)
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_rebase_preview(&onto))
 }
 
 // ==================== Cherry-pick Commands ====================
@@ -218,7 +230,9 @@ pub async fn cherry_pick(
     state: State<'_, AppState>,
     options: CherryPickOptions,
 ) -> Result<CherryPickResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
@@ -230,7 +244,7 @@ pub async fn cherry_pick(
         if !result.success {
             all_success = false;
             if result.stderr.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(&cli)?);
+                all_conflicts.extend(get_conflicted_files_internal(cli)?);
                 break; // Stop on first conflict
             } else {
                 return Err(AxisError::Other(format!(
@@ -260,8 +274,9 @@ pub async fn cherry_pick(
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.cherry_pick_abort()?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.cherry_pick_abort())?;
     Ok(())
 }
 
@@ -269,7 +284,10 @@ pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPickResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
+
     let result = cli.cherry_pick_continue()?;
 
     if result.success {
@@ -280,7 +298,7 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
             message: "Cherry-pick completed successfully.".to_string(),
         })
     } else if result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&cli)?;
+        let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(CherryPickResult {
             success: false,
@@ -300,7 +318,10 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
+
     let result = cli.cherry_pick_skip()?;
 
     if result.success {
@@ -311,7 +332,7 @@ pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickRe
             message: "Commit skipped.".to_string(),
         })
     } else if result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&cli)?;
+        let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(CherryPickResult {
             success: false,
@@ -336,7 +357,9 @@ pub async fn revert_commits(
     state: State<'_, AppState>,
     options: RevertOptions,
 ) -> Result<RevertResult> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
@@ -347,7 +370,7 @@ pub async fn revert_commits(
         if !result.success {
             all_success = false;
             if result.stderr.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(&cli)?);
+                all_conflicts.extend(get_conflicted_files_internal(cli)?);
                 break;
             } else {
                 return Err(AxisError::Other(format!(
@@ -374,8 +397,9 @@ pub async fn revert_commits(
 #[tauri::command]
 #[specta::specta]
 pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.revert_abort()?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.revert_abort())?;
     Ok(())
 }
 
@@ -383,8 +407,9 @@ pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult> {
-    let cli = state.get_cli_service()?;
-    let result = cli.revert_continue()?;
+    let result = state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.revert_continue())?;
 
     Ok(RevertResult {
         success: result.success,
@@ -404,8 +429,10 @@ pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult>
 #[tauri::command]
 #[specta::specta]
 pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<ConflictedFile>> {
-    let cli = state.get_cli_service()?;
-    get_conflicted_files_internal(&cli)
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
+    get_conflicted_files_internal(cli)
 }
 
 /// Get three-way content for a conflicted file
@@ -415,8 +442,10 @@ pub async fn get_conflict_content(
     state: State<'_, AppState>,
     path: String,
 ) -> Result<ConflictContent> {
-    let cli = state.get_cli_service()?;
     let repo_path = state.ensure_repository_open()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     let base = cli.get_conflict_base(&path).ok();
     let ours = cli.get_conflict_ours(&path).ok();
@@ -443,8 +472,10 @@ pub async fn resolve_conflict(
     resolution: ConflictResolution,
     custom_content: Option<String>,
 ) -> Result<()> {
-    let cli = state.get_cli_service()?;
     let repo_path = state.ensure_repository_open()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     match resolution {
         ConflictResolution::Ours => {
@@ -473,8 +504,9 @@ pub async fn resolve_conflict(
 #[tauri::command]
 #[specta::specta]
 pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.mark_resolved(&path)?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.mark_resolved(&path))?;
     Ok(())
 }
 
@@ -484,7 +516,9 @@ pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) ->
 #[tauri::command]
 #[specta::specta]
 pub async fn get_operation_state(state: State<'_, AppState>) -> Result<OperationState> {
-    let cli = state.get_cli_service()?;
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
 
     if cli.is_rebasing()? {
         Ok(OperationState::Rebasing {
@@ -509,8 +543,9 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
 #[tauri::command]
 #[specta::specta]
 pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) -> Result<()> {
-    let cli = state.get_cli_service()?;
-    cli.reset(&options.target, options.mode)?;
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.reset(&options.target, options.mode))?;
     Ok(())
 }
 

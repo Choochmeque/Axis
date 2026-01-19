@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { commands } from '../bindings/api';
+import { commands, type AiProvider } from '../bindings/api';
 import type {
   BranchType,
   LogOptions,
@@ -389,4 +389,18 @@ export const patchApi = {
   continue: () => commands.amContinue(),
 
   skip: () => commands.amSkip(),
+};
+
+export const aiApi = {
+  generateCommitMessage: () => commands.generateCommitMessage(),
+
+  setApiKey: (provider: AiProvider, apiKey: string) => commands.setAiApiKey(provider, apiKey),
+
+  hasApiKey: (provider: AiProvider) => commands.hasAiApiKey(provider),
+
+  deleteApiKey: (provider: AiProvider) => commands.deleteAiApiKey(provider),
+
+  testConnection: (provider: AiProvider) => commands.testAiConnection(provider),
+
+  listOllamaModels: (ollamaUrl?: string) => commands.listOllamaModels(ollamaUrl ?? null),
 };

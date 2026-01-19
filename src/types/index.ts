@@ -131,6 +131,7 @@ export type {
 
 // Import types used locally
 import type {
+  AiProvider as AiProviderType,
   BranchType as BranchTypeType,
   BranchFilterType as BranchFilterTypeType,
   SortOrder as SortOrderType,
@@ -178,6 +179,14 @@ export type ArchiveFormat = 'zip' | 'tar' | 'tar.gz' | 'tar.bz2';
 
 // Re-export the type for type annotations
 /* eslint-disable @typescript-eslint/naming-convention */
+
+export const AiProvider: { [K in AiProviderType]: K } = {
+  OpenAi: 'OpenAi',
+  Anthropic: 'Anthropic',
+  Ollama: 'Ollama',
+};
+
+export type AiProvider = AiProviderType;
 
 export const BranchType: { [K in BranchTypeType]: K } = {
   Local: 'Local',

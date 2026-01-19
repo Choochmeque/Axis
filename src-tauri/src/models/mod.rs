@@ -1,3 +1,4 @@
+mod ai;
 mod branch;
 mod commit;
 mod diff;
@@ -15,6 +16,7 @@ mod stash;
 mod submodule;
 mod tag;
 
+pub use ai::*;
 pub use branch::*;
 pub use commit::*;
 pub use diff::*;

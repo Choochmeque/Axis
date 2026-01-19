@@ -1,3 +1,4 @@
+mod ai;
 mod branches;
 mod diff;
 mod gitflow;
@@ -15,6 +16,7 @@ mod stash;
 mod submodules;
 mod tags;
 
+pub use ai::*;
 pub use branches::*;
 pub use diff::*;
 pub use gitflow::*;

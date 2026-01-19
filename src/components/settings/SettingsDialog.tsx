@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Settings, Palette, GitBranch, FileText } from 'lucide-react';
+import { Settings, Palette, GitBranch, FileText, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi } from '@/services/api';
+import { settingsApi, signingApi, aiApi } from '@/services/api';
 import { useSettingsStore } from '@/store/settingsStore';
-import { SigningFormat, Theme } from '@/types';
+import { SigningFormat, Theme, AiProvider } from '@/types';
 import type {
   AppSettings,
   Theme as ThemeType,
   SigningFormat as SigningFormatType,
+  AiProvider as AiProviderType,
   GpgKey,
   SshKey,
 } from '@/types';
@@ -33,7 +34,7 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff';
+type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
@@ -51,6 +52,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffSideBySide: false,
   spellCheckCommitMessages: false,
   notificationHistoryCapacity: 50,
+  aiEnabled: false,
+  aiProvider: AiProvider.OpenAi,
+  aiModel: null,
+  aiOllamaUrl: null,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -115,6 +120,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
     { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
+    { id: 'ai', label: 'AI', icon: <Sparkles size={16} /> },
   ];
 
   return (
@@ -156,6 +162,9 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                 )}
                 {activeTab === 'diff' && (
                   <DiffSettings settings={settings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'ai' && (
+                  <AiSettings settings={settings} updateSetting={updateSetting} />
                 )}
               </>
             )}
@@ -542,6 +551,266 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           checked={settings.spellCheckCommitMessages}
           onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
+      </div>
+    </div>
+  );
+}
+
+function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const [apiKey, setApiKey] = useState('');
+  const [hasKey, setHasKey] = useState(false);
+  const [isLoadingKey, setIsLoadingKey] = useState(false);
+  const [isSavingKey, setIsSavingKey] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if (settings.aiProvider === AiProvider.Ollama) {
+        setHasKey(true);
+        return;
+      }
+      setIsLoadingKey(true);
+      try {
+        const has = await aiApi.hasApiKey(settings.aiProvider);
+        setHasKey(has);
+      } catch (err) {
+        console.error('Failed to check API key:', err);
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    checkApiKey();
+  }, [settings.aiProvider]);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
+        setOllamaModels(models);
+      } catch (err) {
+        console.error('Failed to load Ollama models:', err);
+        setOllamaModels([]);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+    if (settings.aiProvider === AiProvider.Ollama) {
+      loadModels();
+    }
+  }, [settings.aiProvider, settings.aiOllamaUrl]);
+
+  const loadOllamaModels = async () => {
+    setIsLoadingModels(true);
+    try {
+      const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
+      setOllamaModels(models);
+    } catch (err) {
+      console.error('Failed to load Ollama models:', err);
+      setOllamaModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) return;
+    setIsSavingKey(true);
+    setTestResult(null);
+    try {
+      await aiApi.setApiKey(settings.aiProvider, apiKey.trim());
+      setHasKey(true);
+      setApiKey('');
+      toast.success('API key saved');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsSavingKey(false);
+    }
+  };
+
+  const handleDeleteApiKey = async () => {
+    try {
+      await aiApi.deleteApiKey(settings.aiProvider);
+      setHasKey(false);
+      setTestResult(null);
+      toast.success('API key deleted');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const success = await aiApi.testConnection(settings.aiProvider);
+      if (success) {
+        setTestResult({ success: true, message: 'Connection successful' });
+      } else {
+        setTestResult({ success: false, message: 'Connection failed' });
+      }
+    } catch (err) {
+      setTestResult({ success: false, message: getErrorMessage(err) });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const providerRequiresApiKey = settings.aiProvider !== AiProvider.Ollama;
+
+  const defaultModels: Record<string, string> = {
+    [AiProvider.OpenAi]: 'gpt-4o-mini',
+    [AiProvider.Anthropic]: 'claude-3-5-haiku-latest',
+    [AiProvider.Ollama]: 'llama3.2',
+  };
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>AI Commit Messages</h3>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="ai-enabled"
+          label="Enable AI commit messages"
+          description="Generate commit messages from staged changes using AI"
+          checked={settings.aiEnabled}
+          onCheckedChange={(checked) => updateSetting('aiEnabled', checked === true)}
+        />
+      </div>
+
+      <FormField label="Provider" htmlFor="aiProvider" hint="Choose your AI provider">
+        <Select
+          id="aiProvider"
+          value={settings.aiProvider}
+          onChange={(e) => {
+            updateSetting('aiProvider', e.target.value as AiProviderType);
+            updateSetting('aiModel', null);
+            setTestResult(null);
+          }}
+        >
+          <option value={AiProvider.OpenAi}>OpenAI</option>
+          <option value={AiProvider.Anthropic}>Anthropic</option>
+          <option value={AiProvider.Ollama}>Ollama (Local)</option>
+        </Select>
+      </FormField>
+
+      {providerRequiresApiKey && (
+        <FormField
+          label="API Key"
+          htmlFor="aiApiKey"
+          hint={hasKey ? 'API key is configured' : 'Enter your API key'}
+        >
+          <div className="flex gap-2">
+            {hasKey ? (
+              <>
+                <Input
+                  id="aiApiKey"
+                  type="password"
+                  value="••••••••••••••••"
+                  disabled
+                  className="flex-1"
+                />
+                <Button variant="secondary" onClick={handleDeleteApiKey}>
+                  Remove
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  id="aiApiKey"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter API key..."
+                  className="flex-1"
+                  disabled={isLoadingKey}
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleSaveApiKey}
+                  disabled={!apiKey.trim() || isSavingKey}
+                >
+                  {isSavingKey ? 'Saving...' : 'Save'}
+                </Button>
+              </>
+            )}
+          </div>
+        </FormField>
+      )}
+
+      {settings.aiProvider === AiProvider.Ollama && (
+        <FormField
+          label="Ollama URL"
+          htmlFor="aiOllamaUrl"
+          hint="URL of your Ollama server (default: http://localhost:11434)"
+        >
+          <Input
+            id="aiOllamaUrl"
+            type="text"
+            value={settings.aiOllamaUrl || ''}
+            onChange={(e) => updateSetting('aiOllamaUrl', e.target.value || null)}
+            placeholder="http://localhost:11434"
+          />
+        </FormField>
+      )}
+
+      <FormField
+        label="Model"
+        htmlFor="aiModel"
+        hint={`Default: ${defaultModels[settings.aiProvider]}`}
+      >
+        {settings.aiProvider === AiProvider.Ollama ? (
+          <div className="flex gap-2">
+            <Select
+              id="aiModel"
+              value={settings.aiModel || ''}
+              onChange={(e) => updateSetting('aiModel', e.target.value || null)}
+              className="flex-1"
+              disabled={isLoadingModels}
+            >
+              <option value="">
+                {isLoadingModels
+                  ? 'Loading models...'
+                  : `Default (${defaultModels[settings.aiProvider]})`}
+              </option>
+              {ollamaModels.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </Select>
+            <Button variant="secondary" onClick={loadOllamaModels} disabled={isLoadingModels}>
+              Refresh
+            </Button>
+          </div>
+        ) : (
+          <Input
+            id="aiModel"
+            type="text"
+            value={settings.aiModel || ''}
+            onChange={(e) => updateSetting('aiModel', e.target.value || null)}
+            placeholder={defaultModels[settings.aiProvider]}
+          />
+        )}
+      </FormField>
+
+      <div className={groupClass}>
+        <Button
+          variant="secondary"
+          onClick={handleTestConnection}
+          disabled={isTesting || (providerRequiresApiKey && !hasKey)}
+        >
+          {isTesting ? 'Testing...' : 'Test Connection'}
+        </Button>
+        {testResult && (
+          <p className={cn('mt-2 text-xs', testResult.success ? 'text-success' : 'text-error')}>
+            {testResult.message}
+          </p>
+        )}
       </div>
     </div>
   );

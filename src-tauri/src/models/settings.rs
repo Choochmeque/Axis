@@ -1,4 +1,4 @@
-use crate::models::SigningFormat;
+use crate::models::{AiProvider, SigningFormat};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::{Display, EnumString};
@@ -29,6 +29,12 @@ pub struct AppSettings {
 
     // Commit
     pub spell_check_commit_messages: bool,
+
+    // AI
+    pub ai_enabled: bool,
+    pub ai_provider: AiProvider,
+    pub ai_model: Option<String>,
+    pub ai_ollama_url: Option<String>,
 
     // Notifications
     pub notification_history_capacity: u32,
@@ -70,6 +76,12 @@ impl Default for AppSettings {
 
             // Commit
             spell_check_commit_messages: false,
+
+            // AI
+            ai_enabled: false,
+            ai_provider: AiProvider::default(),
+            ai_model: None,
+            ai_ollama_url: None,
 
             // Notifications
             notification_history_capacity: 50,

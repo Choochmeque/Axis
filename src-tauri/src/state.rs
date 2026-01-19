@@ -235,6 +235,22 @@ impl AppState {
         self.database.save_settings(settings)
     }
 
+    pub fn get_secret(&self, key: &str) -> Result<Option<String>> {
+        self.database.get_secret(key)
+    }
+
+    pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
+        self.database.set_secret(key, value)
+    }
+
+    pub fn has_secret(&self, key: &str) -> Result<bool> {
+        self.database.has_secret(key)
+    }
+
+    pub fn delete_secret(&self, key: &str) -> Result<()> {
+        self.database.delete_secret(key)
+    }
+
     /// Start the background fetch service
     pub fn start_background_fetch(&self, interval_minutes: u32) -> Result<()> {
         let app_handle = self.get_app_handle()?;

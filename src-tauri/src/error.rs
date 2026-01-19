@@ -72,6 +72,15 @@ pub enum AxisError {
     #[error("Authentication failed: {0}")]
     AuthenticationFailed(String),
 
+    #[error("AI service error: {0}")]
+    AiServiceError(String),
+
+    #[error("API key not configured for {0}")]
+    ApiKeyNotConfigured(String),
+
+    #[error("Diff too large: {0} bytes")]
+    DiffTooLarge(usize),
+
     #[error("{0}")]
     Other(String),
 }

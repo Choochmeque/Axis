@@ -178,6 +178,13 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::am_abort,
             crate::commands::am_continue,
             crate::commands::am_skip,
+            // AI commands
+            crate::commands::generate_commit_message,
+            crate::commands::set_ai_api_key,
+            crate::commands::has_ai_api_key,
+            crate::commands::delete_ai_api_key,
+            crate::commands::test_ai_connection,
+            crate::commands::list_ollama_models,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,

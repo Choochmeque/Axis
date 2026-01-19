@@ -1,3 +1,4 @@
+pub mod ai;
 mod background_fetch;
 mod file_watcher;
 mod git2_service;

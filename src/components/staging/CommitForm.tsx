@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { operations } from '@/store/operationStore';
 import {
   Avatar,
   Checkbox,
@@ -13,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui';
-import { remoteApi, commitApi, signingApi } from '@/services/api';
+import { remoteApi, commitApi, signingApi, aiApi } from '@/services/api';
 import type { SigningConfig } from '@/types';
 
 export function CommitForm() {
@@ -39,6 +42,7 @@ export function CommitForm() {
   const [signingAvailable, setSigningAvailable] = useState(false);
   const [signingConfig, setSigningConfig] = useState<SigningConfig | null>(null);
   const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
+  const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -150,6 +154,27 @@ export function CommitForm() {
     }
   };
 
+  const handleGenerateMessage = async () => {
+    const opId = operations.start('Generating commit message', {
+      category: 'network',
+      description: 'Generating AI commit message from staged changes',
+    });
+
+    try {
+      setIsGeneratingMessage(true);
+      const response = await aiApi.generateCommitMessage();
+      setLocalMessage(response.message);
+      setCommitMessage(response.message);
+      toast.success(`Generated with ${response.modelUsed}`);
+    } catch (err) {
+      console.error('Failed to generate commit message:', err);
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsGeneratingMessage(false);
+      operations.complete(opId);
+    }
+  };
+
   const stagedCount = status?.staged.length ?? 0;
   const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);
 
@@ -199,6 +224,14 @@ export function CommitForm() {
             <DropdownMenuCheckboxItem checked={signOff} onCheckedChange={setSignOff}>
               Sign off
             </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleGenerateMessage}
+              disabled={!settings?.aiEnabled || stagedCount === 0 || isGeneratingMessage}
+              icon={Sparkles}
+            >
+              {isGeneratingMessage ? 'Generating...' : 'Generate with AI'}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>Create pull request</DropdownMenuItem>
           </DropdownMenuContent>

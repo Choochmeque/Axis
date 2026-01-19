@@ -43,7 +43,7 @@ const DropdownMenuItem = forwardRef<
     className={cn(danger ? 'dropdown-item-danger' : 'dropdown-item', className)}
     {...props}
   >
-    {Icon && <Icon size={14} />}
+    {Icon && <Icon size={14} className={danger ? undefined : 'text-(--text-secondary)'} />}
     <span>{children}</span>
     {shortcut && (
       <span className="ml-auto text-sm text-(--text-tertiary) font-mono">{shortcut}</span>

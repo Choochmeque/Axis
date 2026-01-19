@@ -764,11 +764,11 @@ code {
   }
 
   .dropdown-item {
-    @apply flex items-center py-1.5 px-2 pl-7 text-base text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+    @apply flex items-center gap-2 py-1.5 px-2 text-base text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
   }
 
   .dropdown-item-danger {
-    @apply flex items-center py-1.5 px-2 pl-7 text-base rounded cursor-pointer outline-none relative data-disabled:cursor-default;
+    @apply flex items-center gap-2 py-1.5 px-2 text-base rounded cursor-pointer outline-none relative data-disabled:cursor-default;
     @apply text-error hover:bg-error/10 data-highlighted:bg-error/10 data-disabled:opacity-50;
   }
 

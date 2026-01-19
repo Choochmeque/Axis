@@ -9,15 +9,8 @@ use tauri::State;
 pub async fn create_branch(
     state: State<'_, AppState>,
     name: String,
-    start_point: Option<String>,
-    force: Option<bool>,
-    track: Option<String>,
+    options: CreateBranchOptions,
 ) -> Result<Branch> {
-    let options = CreateBranchOptions {
-        start_point,
-        force: force.unwrap_or(false),
-        track,
-    };
     state
         .get_git_service()?
         .with_git2(|git2| git2.create_branch(&name, &options))

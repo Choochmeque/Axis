@@ -76,7 +76,11 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
     setError(null);
 
     try {
-      await branchApi.create(branchName.trim(), baseBranch || undefined, false);
+      await branchApi.create(branchName.trim(), {
+        startPoint: baseBranch || null,
+        force: false,
+        track: null,
+      });
 
       if (checkout) {
         await branchApi.checkout(branchName.trim());

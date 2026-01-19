@@ -30,6 +30,7 @@ import type {
   ApplyMailboxOptions,
   PushOptions,
   DiffTarget,
+  CreateBranchOptions,
 } from '../types';
 
 export const repositoryApi = {
@@ -67,8 +68,7 @@ export const branchApi = {
   list: (includeLocal: boolean = true, includeRemote: boolean = true) =>
     commands.getBranches(includeLocal, includeRemote),
 
-  create: (name: string, startPoint?: string, force?: boolean, track?: string) =>
-    commands.createBranch(name, startPoint ?? null, force ?? null, track ?? null),
+  create: (name: string, options: CreateBranchOptions) => commands.createBranch(name, options),
 
   delete: (name: string, force?: boolean) => commands.deleteBranch(name, force ?? null),
 

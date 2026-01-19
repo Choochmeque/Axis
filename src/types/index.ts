@@ -13,6 +13,7 @@ export type {
 
   // Branch types
   Branch,
+  CreateBranchOptions,
 
   // Diff types
   FileDiff,
@@ -144,12 +145,6 @@ import type {
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
-
-export interface CreateBranchOptions {
-  startPoint?: string;
-  force?: boolean;
-  track?: string;
-}
 
 export interface CheckoutOptions {
   create?: boolean;

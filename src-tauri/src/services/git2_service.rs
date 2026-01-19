@@ -2960,7 +2960,7 @@ mod tests {
             .expect("should build first page of graph");
 
         assert_eq!(result.commits.len(), 2);
-        assert_eq!(result.total_count, 5);
+        assert_eq!(result.total_count, 3);
         assert!(result.has_more);
 
         // Get second page

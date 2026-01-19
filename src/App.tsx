@@ -6,11 +6,10 @@ import { WorkspaceView } from './components/workspace';
 import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { TabBar } from './components/layout/TabBar';
-import { useMenuActions } from './hooks';
+import { useMenuActions, toast } from './hooks';
 import { notifyNewCommits } from './lib/actions';
 import { getErrorMessage } from './lib/errorUtils';
 import { remoteApi } from './services/api';
-import { notify } from './services/nativeNotification';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
@@ -59,7 +58,7 @@ function App() {
           await useRepositoryStore.getState().loadBranches();
           notifyNewCommits(useRepositoryStore.getState().branches);
         } catch (err) {
-          notify('Auto-fetch failed', getErrorMessage(err));
+          toast.error(getErrorMessage(err));
         }
       }, intervalMs);
     }
@@ -82,7 +81,7 @@ function App() {
     if (activeTab?.type === TabType.Repository && activeTab.path && !repository) {
       openRepository(activeTab.path)
         .then(() => useStagingStore.getState().loadStatus())
-        .catch((err) => notify('Failed to open repository', getErrorMessage(err)));
+        .catch((err) => toast.error(getErrorMessage(err)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

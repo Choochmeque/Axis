@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { UnlistenFn } from '@tauri-apps/api/event';
 
 import { events } from '@/bindings/api';
+import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { repositoryApi } from '@/services/api';
-import { notify } from '@/services/nativeNotification';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
 
@@ -32,7 +32,7 @@ export function useFileWatcher() {
       try {
         await repositoryApi.startFileWatcher();
       } catch (err) {
-        notify('Failed to start file watcher', getErrorMessage(err));
+        toast.error(getErrorMessage(err));
         return;
       }
 
@@ -78,7 +78,7 @@ export function useFileWatcher() {
 
       // Listen for watch errors
       const unlistenError = await events.watchErrorEvent.listen((event) => {
-        notify('File watcher error', event.payload.message);
+        toast.error(event.payload.message);
       });
 
       unlistenRefs.current = [
@@ -97,7 +97,7 @@ export function useFileWatcher() {
       unlistenRefs.current.forEach((unlisten) => unlisten());
       unlistenRefs.current = [];
       repositoryApi.stopFileWatcher().catch((err) => {
-        notify('Failed to stop file watcher', getErrorMessage(err));
+        toast.error(getErrorMessage(err));
       });
     };
   }, [repository, loadStatus, loadCommits, loadBranches, loadTags, loadStashes, stagingLoadStatus]);

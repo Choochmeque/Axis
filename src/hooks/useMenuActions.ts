@@ -2,10 +2,10 @@ import { useEffect, useCallback } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { events } from '@/bindings/api';
+import { toast } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, stashApi } from '@/services/api';
-import { notify } from '@/services/nativeNotification';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useStagingStore } from '@/store/stagingStore';
@@ -54,7 +54,7 @@ export function useMenuActions() {
               await refreshRepository();
               notifyNewCommits(useRepositoryStore.getState().branches);
             } catch (err) {
-              notify('Fetch failed', getErrorMessage(err));
+              toast.error(getErrorMessage(err));
             }
           }
           break;
@@ -65,9 +65,9 @@ export function useMenuActions() {
               const branchName = repository.currentBranch || 'main';
               await remoteApi.pull('origin', branchName);
               await refreshRepository();
-              notify('Pull complete');
+              toast.success('Pull complete');
             } catch (err) {
-              notify('Pull failed', getErrorMessage(err));
+              toast.error(getErrorMessage(err));
             }
           }
           break;
@@ -77,9 +77,9 @@ export function useMenuActions() {
             try {
               await remoteApi.pushCurrentBranch('origin');
               await refreshRepository();
-              notify('Push complete');
+              toast.success('Push complete');
             } catch (err) {
-              notify('Push failed', getErrorMessage(err));
+              toast.error(getErrorMessage(err));
             }
           }
           break;
@@ -117,9 +117,9 @@ export function useMenuActions() {
                 includeIgnored: false,
               });
               await refreshRepository();
-              notify('Changes stashed');
+              toast.success('Changes stashed');
             } catch (err) {
-              notify('Stash failed', getErrorMessage(err));
+              toast.error(getErrorMessage(err));
             }
           }
           break;
@@ -129,9 +129,9 @@ export function useMenuActions() {
             try {
               await stashApi.pop({ index: 0, reinstateIndex: false });
               await refreshRepository();
-              notify('Stash applied');
+              toast.success('Stash applied');
             } catch (err) {
-              notify('Pop stash failed', getErrorMessage(err));
+              toast.error(getErrorMessage(err));
             }
           }
           break;

@@ -51,6 +51,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  conventionalCommitsEnabled: false,
+  conventionalCommitsScopes: null,
   notificationHistoryCapacity: 50,
   aiEnabled: false,
   aiProvider: AiProvider.OpenAi,
@@ -552,6 +554,39 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
       </div>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="conventional-commits-enabled"
+          label="Enable conventional commits"
+          description="Use structured commit message format (type[scope]: description)"
+          checked={settings.conventionalCommitsEnabled}
+          onCheckedChange={(checked) =>
+            updateSetting('conventionalCommitsEnabled', checked === true)
+          }
+        />
+      </div>
+
+      <FormField
+        label="Custom Scopes"
+        htmlFor="conventionalCommitsScopes"
+        hint="Comma-separated list of scopes for quick access (e.g., ui, api, auth)"
+      >
+        <Input
+          id="conventionalCommitsScopes"
+          type="text"
+          value={settings.conventionalCommitsScopes?.join(', ') || ''}
+          onChange={(e) => {
+            const scopes = e.target.value
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+            updateSetting('conventionalCommitsScopes', scopes.length > 0 ? scopes : null);
+          }}
+          placeholder="ui, api, auth, core"
+          disabled={!settings.conventionalCommitsEnabled}
+        />
+      </FormField>
     </div>
   );
 }

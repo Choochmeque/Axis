@@ -89,6 +89,7 @@ pub async fn generate_commit_message(
             api_key.as_deref(),
             settings.ai_model.as_deref(),
             settings.ai_ollama_url.as_deref(),
+            settings.conventional_commits_enabled,
         )
         .await?;
 

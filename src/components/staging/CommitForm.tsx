@@ -15,9 +15,19 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
   DropdownMenuItem,
+  Input,
+  Select,
 } from '@/components/ui';
 import { remoteApi, commitApi, signingApi, aiApi } from '@/services/api';
 import type { SigningConfig } from '@/types';
+import {
+  COMMIT_TYPES,
+  formatConventionalCommit,
+  parseConventionalCommit,
+  getEmptyCommitParts,
+  type ConventionalCommitParts,
+  type CommitType,
+} from '@/lib/conventionalCommits';
 
 export function CommitForm() {
   const {
@@ -44,6 +54,10 @@ export function CommitForm() {
   const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Conventional commits state
+  const [structuredMode, setStructuredMode] = useState(false);
+  const [commitParts, setCommitParts] = useState<ConventionalCommitParts>(getEmptyCommitParts());
 
   useEffect(() => {
     setLocalMessage(commitMessage);
@@ -103,6 +117,44 @@ export function CommitForm() {
     const value = e.target.value;
     setLocalMessage(value);
     setCommitMessage(value);
+  };
+
+  const handleStructuredModeToggle = (enabled: boolean) => {
+    if (!settings?.conventionalCommitsEnabled) {
+      toast.info('Enable conventional commits in settings');
+      return;
+    }
+
+    if (enabled) {
+      // Try to parse existing message into structured parts
+      const parsed = parseConventionalCommit(localMessage);
+      if (parsed) {
+        setCommitParts(parsed);
+      } else {
+        // Reset to empty if can't parse
+        setCommitParts(getEmptyCommitParts());
+      }
+    } else {
+      // Format structured parts back to message
+      const formatted = formatConventionalCommit(commitParts);
+      if (formatted) {
+        setLocalMessage(formatted);
+        setCommitMessage(formatted);
+      }
+    }
+    setStructuredMode(enabled);
+  };
+
+  const handleCommitPartChange = <K extends keyof ConventionalCommitParts>(
+    key: K,
+    value: ConventionalCommitParts[K]
+  ) => {
+    const newParts = { ...commitParts, [key]: value };
+    setCommitParts(newParts);
+    // Update the message in real-time
+    const formatted = formatConventionalCommit(newParts);
+    setLocalMessage(formatted);
+    setCommitMessage(formatted);
   };
 
   const handleCommit = async () => {
@@ -165,6 +217,15 @@ export function CommitForm() {
       const response = await aiApi.generateCommitMessage();
       setLocalMessage(response.message);
       setCommitMessage(response.message);
+
+      // If in structured mode, try to parse the generated message
+      if (structuredMode) {
+        const parsed = parseConventionalCommit(response.message);
+        if (parsed) {
+          setCommitParts(parsed);
+        }
+      }
+
       toast.success(`Generated with ${response.modelUsed}`);
     } catch (err) {
       console.error('Failed to generate commit message:', err);
@@ -174,6 +235,20 @@ export function CommitForm() {
       operations.complete(opId);
     }
   };
+
+  // Parse message when entering amend mode in structured mode
+  useEffect(() => {
+    if (isAmending && structuredMode && localMessage) {
+      const parsed = parseConventionalCommit(localMessage);
+      if (parsed) {
+        setCommitParts(parsed);
+      } else {
+        // Fall back to free-form if message doesn't parse
+        setStructuredMode(false);
+        toast.info('Existing message is not in conventional format');
+      }
+    }
+  }, [isAmending]);
 
   const stagedCount = status?.staged.length ?? 0;
   const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);
@@ -224,6 +299,13 @@ export function CommitForm() {
             <DropdownMenuCheckboxItem checked={signOff} onCheckedChange={setSignOff}>
               Sign off
             </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={structuredMode}
+              onCheckedChange={handleStructuredModeToggle}
+              disabled={!settings?.conventionalCommitsEnabled}
+            >
+              Structured format
+            </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleGenerateMessage}
@@ -239,16 +321,96 @@ export function CommitForm() {
       </div>
 
       <div className="p-3 flex flex-col gap-2 flex-1 min-h-0">
-        <textarea
-          ref={textareaRef}
-          className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
-          placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
-          value={localMessage}
-          onChange={handleMessageChange}
-          onKeyDown={handleKeyDown}
-          disabled={isCommitting}
-          spellCheck={settings?.spellCheckCommitMessages ?? false}
-        />
+        {structuredMode ? (
+          <div className="cc-form">
+            <div className="cc-row">
+              <Select
+                value={commitParts.type}
+                onChange={(e) => handleCommitPartChange('type', e.target.value as CommitType | '')}
+                className="cc-type-select"
+                disabled={isCommitting}
+              >
+                <option value="">type</option>
+                {COMMIT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value} title={t.description}>
+                    {t.label}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                type="text"
+                value={commitParts.scope}
+                onChange={(e) => handleCommitPartChange('scope', e.target.value)}
+                placeholder="scope"
+                className="cc-scope-input"
+                disabled={isCommitting}
+                list="cc-scopes"
+              />
+              <datalist id="cc-scopes">
+                {settings?.conventionalCommitsScopes?.map((scope) => (
+                  <option key={scope} value={scope} />
+                ))}
+              </datalist>
+              <label className="cc-breaking-label">
+                <Checkbox
+                  checked={commitParts.breaking}
+                  onCheckedChange={(checked) =>
+                    handleCommitPartChange('breaking', checked === true)
+                  }
+                  disabled={isCommitting}
+                />
+                <span>!</span>
+              </label>
+            </div>
+            <Input
+              type="text"
+              value={commitParts.subject}
+              onChange={(e) => handleCommitPartChange('subject', e.target.value)}
+              placeholder="subject"
+              className="cc-subject-input"
+              disabled={isCommitting}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCommit();
+                }
+              }}
+            />
+            <div className="cc-char-count">
+              <span
+                className={
+                  commitParts.subject.length > 72
+                    ? 'text-error'
+                    : commitParts.subject.length > 50
+                      ? 'text-warning'
+                      : ''
+                }
+              >
+                {commitParts.subject.length}
+              </span>
+              /72
+            </div>
+            <textarea
+              className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-sm resize-none cc-body focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+              placeholder="body (optional)"
+              value={commitParts.body}
+              onChange={(e) => handleCommitPartChange('body', e.target.value)}
+              disabled={isCommitting}
+              spellCheck={settings?.spellCheckCommitMessages ?? false}
+            />
+          </div>
+        ) : (
+          <textarea
+            ref={textareaRef}
+            className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+            placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
+            value={localMessage}
+            onChange={handleMessageChange}
+            onKeyDown={handleKeyDown}
+            disabled={isCommitting}
+            spellCheck={settings?.spellCheckCommitMessages ?? false}
+          />
+        )}
 
         <div className="flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-1.5">

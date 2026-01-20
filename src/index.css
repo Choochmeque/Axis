@@ -1089,4 +1089,62 @@ code {
     height: 10px;
     flex-shrink: 0;
   }
+
+  /* Conventional Commits Form */
+  .cc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .cc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .cc-type-select {
+    width: 6rem;
+    flex-shrink: 0;
+  }
+
+  .cc-scope-input {
+    width: 7rem;
+    flex-shrink: 0;
+  }
+
+  .cc-subject-input {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .cc-breaking-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .cc-breaking-label span {
+    font-weight: 600;
+    color: var(--color-warning);
+  }
+
+  .cc-char-count {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .cc-body {
+    min-height: 3rem;
+    flex: 1;
+  }
 }

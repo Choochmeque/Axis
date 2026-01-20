@@ -10,6 +10,7 @@ pub trait AiProviderTrait: Send + Sync {
         api_key: Option<&str>,
         model: Option<&str>,
         base_url: Option<&str>,
+        conventional_commits: bool,
     ) -> Result<(String, String)>;
 
     fn default_model(&self) -> &'static str;

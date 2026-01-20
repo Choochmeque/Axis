@@ -44,12 +44,13 @@ impl AiProviderTrait for OpenAiProvider {
         api_key: Option<&str>,
         model: Option<&str>,
         _base_url: Option<&str>,
+        conventional_commits: bool,
     ) -> Result<(String, String)> {
         let api_key =
             api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("OpenAI".to_string()))?;
 
         let model = model.unwrap_or(self.default_model()).to_string();
-        let (system_prompt, user_prompt) = build_prompt(diff);
+        let (system_prompt, user_prompt) = build_prompt(diff, conventional_commits);
 
         let request = OpenAiRequest {
             model: model.clone(),

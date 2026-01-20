@@ -29,6 +29,8 @@ pub struct AppSettings {
 
     // Commit
     pub spell_check_commit_messages: bool,
+    pub conventional_commits_enabled: bool,
+    pub conventional_commits_scopes: Option<Vec<String>>,
 
     // AI
     pub ai_enabled: bool,
@@ -76,6 +78,8 @@ impl Default for AppSettings {
 
             // Commit
             spell_check_commit_messages: false,
+            conventional_commits_enabled: false,
+            conventional_commits_scopes: None,
 
             // AI
             ai_enabled: false,

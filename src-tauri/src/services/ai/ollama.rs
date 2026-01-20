@@ -96,10 +96,11 @@ impl AiProviderTrait for OllamaProvider {
         _api_key: Option<&str>,
         model: Option<&str>,
         base_url: Option<&str>,
+        conventional_commits: bool,
     ) -> Result<(String, String)> {
         let base_url = base_url.unwrap_or(&self.base_url);
         let model = model.unwrap_or(self.default_model()).to_string();
-        let (system_prompt, user_prompt) = build_prompt(diff);
+        let (system_prompt, user_prompt) = build_prompt(diff, conventional_commits);
 
         let request = OllamaRequest {
             model: model.clone(),

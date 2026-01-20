@@ -367,6 +367,13 @@ export const settingsApi = {
   save: (settings: AppSettings) => commands.saveSettings(settings),
 };
 
+export const repoSettingsApi = {
+  get: () => commands.getRepositorySettings(),
+
+  saveUserConfig: (userName: string | null, userEmail: string | null) =>
+    commands.saveRepositoryUserConfig(userName, userEmail),
+};
+
 export const signingApi = {
   getConfig: () => commands.getSigningConfig(),
 

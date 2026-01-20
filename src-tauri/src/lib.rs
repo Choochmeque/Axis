@@ -169,6 +169,9 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Settings commands
             crate::commands::get_settings,
             crate::commands::save_settings,
+            // Repository settings commands
+            crate::commands::get_repository_settings,
+            crate::commands::save_repository_user_config,
             // Signing commands
             crate::commands::get_signing_config,
             crate::commands::list_gpg_keys,

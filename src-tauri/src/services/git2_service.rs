@@ -1052,6 +1052,56 @@ impl Git2Service {
         Ok(())
     }
 
+    /// Get repository-local user.name and user.email from .git/config
+    pub fn get_repo_user_config(&self) -> Result<(Option<String>, Option<String>)> {
+        let config = self.repo.config()?;
+
+        let user_name = config
+            .get_entry("user.name")
+            .ok()
+            .filter(|e| e.level() == git2::ConfigLevel::Local)
+            .and_then(|e| e.value().map(|s| s.to_string()));
+
+        let user_email = config
+            .get_entry("user.email")
+            .ok()
+            .filter(|e| e.level() == git2::ConfigLevel::Local)
+            .and_then(|e| e.value().map(|s| s.to_string()));
+
+        Ok((user_name, user_email))
+    }
+
+    /// Get global user.name and user.email
+    pub fn get_global_user_config(&self) -> Result<(Option<String>, Option<String>)> {
+        let config = self.repo.config()?;
+
+        let user_name = config.get_string("user.name").ok();
+        let user_email = config.get_string("user.email").ok();
+
+        Ok((user_name, user_email))
+    }
+
+    /// Set repository-local user.name and user.email in .git/config
+    pub fn set_repo_user_config(&self, name: Option<&str>, email: Option<&str>) -> Result<()> {
+        let mut config = self.repo.config()?.open_level(git2::ConfigLevel::Local)?;
+
+        match name {
+            Some(n) if !n.is_empty() => config.set_str("user.name", n)?,
+            _ => {
+                let _ = config.remove("user.name");
+            }
+        }
+
+        match email {
+            Some(e) if !e.is_empty() => config.set_str("user.email", e)?,
+            _ => {
+                let _ = config.remove("user.email");
+            }
+        }
+
+        Ok(())
+    }
+
     /// Fetch from a remote
     pub fn fetch(
         &self,

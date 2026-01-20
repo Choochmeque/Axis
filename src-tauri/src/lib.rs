@@ -64,6 +64,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::checkout_remote_branch,
             crate::commands::get_branch,
             crate::commands::set_branch_upstream,
+            crate::commands::compare_branches,
             // Remote commands
             crate::commands::list_remotes,
             crate::commands::get_remote,

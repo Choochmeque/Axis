@@ -92,6 +92,8 @@ export const branchApi = {
 
   setUpstream: (branchName: string, upstream?: string) =>
     commands.setBranchUpstream(branchName, upstream ?? null),
+
+  compare: (baseRef: string, compareRef: string) => commands.compareBranches(baseRef, compareRef),
 };
 
 export const remoteApi = {

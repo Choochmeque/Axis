@@ -1,5 +1,7 @@
 use crate::error::Result;
-use crate::models::{Branch, BranchType, CheckoutOptions, CreateBranchOptions};
+use crate::models::{
+    Branch, BranchCompareResult, BranchType, CheckoutOptions, CreateBranchOptions,
+};
 use crate::state::AppState;
 use tauri::State;
 
@@ -115,4 +117,17 @@ pub async fn delete_remote_branch(
     state.get_git_service()?.with_git2(|git2| {
         git2.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false))
     })
+}
+
+/// Compare two branches to find commits ahead/behind and file differences
+#[tauri::command]
+#[specta::specta]
+pub async fn compare_branches(
+    state: State<'_, AppState>,
+    base_ref: String,
+    compare_ref: String,
+) -> Result<BranchCompareResult> {
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.compare_branches(&base_ref, &compare_ref))
 }

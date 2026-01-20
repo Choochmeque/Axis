@@ -952,6 +952,82 @@ impl Git2Service {
         })
     }
 
+    /// Compare two branches to find commits ahead/behind and file differences
+    pub fn compare_branches(
+        &self,
+        base_ref: &str,
+        compare_ref: &str,
+    ) -> Result<crate::models::BranchCompareResult> {
+        // Resolve refs to OIDs
+        let base_obj = self
+            .repo
+            .revparse_single(base_ref)
+            .map_err(|_| AxisError::InvalidReference(base_ref.to_string()))?;
+        let compare_obj = self
+            .repo
+            .revparse_single(compare_ref)
+            .map_err(|_| AxisError::InvalidReference(compare_ref.to_string()))?;
+
+        let base_oid = base_obj.id();
+        let compare_oid = compare_obj.id();
+
+        // Find merge base (common ancestor)
+        let merge_base_oid = self.repo.merge_base(base_oid, compare_oid).ok();
+
+        // Get commits ahead (in base/current but not in compare)
+        // These are commits the current branch has that the compare branch doesn't
+        let ahead_commits = self.commits_between(merge_base_oid, base_oid)?;
+
+        // Get commits behind (in compare but not in base/current)
+        // These are commits the compare branch has that the current branch doesn't
+        let behind_commits = self.commits_between(merge_base_oid, compare_oid)?;
+
+        // Get aggregate file diff (changes in base/current branch since merge_base)
+        // This shows what the current branch introduces relative to the compare branch
+        let diff_from = merge_base_oid.unwrap_or(compare_oid);
+        let files = self.diff_commits(
+            &diff_from.to_string(),
+            &base_oid.to_string(),
+            &crate::models::DiffOptions::default(),
+        )?;
+
+        Ok(crate::models::BranchCompareResult {
+            base_ref: base_ref.to_string(),
+            compare_ref: compare_ref.to_string(),
+            base_oid: base_oid.to_string(),
+            compare_oid: compare_oid.to_string(),
+            merge_base_oid: merge_base_oid.map(|oid| oid.to_string()),
+            ahead_commits,
+            behind_commits,
+            files,
+        })
+    }
+
+    /// Get commits between two points (from merge_base to target)
+    fn commits_between(
+        &self,
+        from_oid: Option<git2::Oid>,
+        to_oid: git2::Oid,
+    ) -> Result<Vec<Commit>> {
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
+        revwalk.push(to_oid)?;
+
+        // Hide everything reachable from merge_base (if it exists)
+        if let Some(from) = from_oid {
+            let _ = revwalk.hide(from);
+        }
+
+        let mut commits = Vec::new();
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+            commits.push(Commit::from_git2_commit(&commit, &self.repo));
+        }
+
+        Ok(commits)
+    }
+
     // ==================== Remote Operations ====================
 
     /// List all remotes

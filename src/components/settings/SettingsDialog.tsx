@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Settings, Palette, GitBranch, FileText, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi, aiApi } from '@/services/api';
+import { settingsApi, signingApi, aiApi, lfsApi } from '@/services/api';
+import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { SigningFormat, Theme, AiProvider } from '@/types';
 import type {
@@ -286,10 +287,25 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   const [isDetecting, setIsDetecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [gitEnv, setGitEnv] = useState<GitEnvironment | null>(null);
+  const [isLoadingEnv, setIsLoadingEnv] = useState(false);
 
   useEffect(() => {
     loadKeys();
+    loadGitEnvironment();
   }, []);
+
+  const loadGitEnvironment = async () => {
+    setIsLoadingEnv(true);
+    try {
+      const env = await lfsApi.getGitEnvironment();
+      setGitEnv(env);
+    } catch (err) {
+      console.error('Failed to load git environment:', err);
+    } finally {
+      setIsLoadingEnv(false);
+    }
+  };
 
   const loadKeys = async () => {
     setIsLoadingKeys(true);
@@ -498,6 +514,50 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           </p>
         )}
       </div>
+
+      <h3 className={sectionTitleClass}>Environment</h3>
+
+      {isLoadingEnv ? (
+        <p className="text-sm text-(--text-muted)">Loading environment info...</p>
+      ) : gitEnv ? (
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <span className="text-(--text-secondary)">Git CLI:</span>
+          <span className="text-(--text-primary) font-mono">
+            {gitEnv.gitVersion || 'Not found'}
+          </span>
+
+          <span className="text-(--text-secondary)">Git Path:</span>
+          <span className="text-(--text-primary) font-mono text-xs break-all">
+            {gitEnv.gitPath || 'Not found'}
+          </span>
+
+          <span className="text-(--text-secondary)">libgit2:</span>
+          <span className="text-(--text-primary) font-mono">{gitEnv.libgit2Version}</span>
+
+          <span className="text-(--text-secondary)">Git LFS:</span>
+          <span className="text-(--text-primary)">
+            {gitEnv.lfsInstalled ? (
+              <span className="font-mono">
+                {gitEnv.lfsVersion} <span className="text-success">✓</span>
+              </span>
+            ) : (
+              <span className="text-(--text-muted)">
+                Not installed{' '}
+                <a
+                  href="https://git-lfs.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-(--accent-color) hover:underline"
+                >
+                  Install
+                </a>
+              </span>
+            )}
+          </span>
+        </div>
+      ) : (
+        <p className="text-sm text-(--text-muted)">Failed to load environment info</p>
+      )}
     </div>
   );
 }

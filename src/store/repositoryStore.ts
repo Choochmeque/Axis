@@ -29,7 +29,7 @@ import {
   worktreeApi,
 } from '@/services/api';
 
-export type ViewType = 'file-status' | 'history' | 'search' | 'reflog';
+export type ViewType = 'file-status' | 'history' | 'search' | 'reflog' | 'lfs';
 
 interface RepositoryState {
   // Data

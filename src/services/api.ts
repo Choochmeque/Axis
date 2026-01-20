@@ -1,5 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
-import { commands, type AiProvider } from '../bindings/api';
+import {
+  commands,
+  type AiProvider,
+  type LfsFetchOptions,
+  type LfsPullOptions,
+  type LfsPushOptions,
+  type LfsMigrateOptions,
+  type LfsPruneOptions,
+} from '../bindings/api';
 import type {
   BranchType,
   LogOptions,
@@ -442,4 +450,36 @@ export const aiApi = {
   testConnection: (provider: AiProvider) => commands.testAiConnection(provider),
 
   listOllamaModels: (ollamaUrl?: string) => commands.listOllamaModels(ollamaUrl ?? null),
+};
+
+export const lfsApi = {
+  checkInstalled: () => commands.lfsCheckInstalled(),
+
+  getGitEnvironment: () => commands.getGitEnvironment(),
+
+  getStatus: () => commands.lfsStatus(),
+
+  install: () => commands.lfsInstall(),
+
+  track: (pattern: string) => commands.lfsTrack(pattern),
+
+  untrack: (pattern: string) => commands.lfsUntrack(pattern),
+
+  listPatterns: () => commands.lfsListPatterns(),
+
+  listFiles: () => commands.lfsListFiles(),
+
+  fetch: (options: LfsFetchOptions) => commands.lfsFetch(options),
+
+  pull: (options: LfsPullOptions) => commands.lfsPull(options),
+
+  push: (options: LfsPushOptions) => commands.lfsPush(options),
+
+  migrate: (options: LfsMigrateOptions) => commands.lfsMigrate(options),
+
+  getEnv: () => commands.lfsEnv(),
+
+  isPointer: (path: string) => commands.lfsIsPointer(path),
+
+  prune: (options: LfsPruneOptions) => commands.lfsPrune(options),
 };

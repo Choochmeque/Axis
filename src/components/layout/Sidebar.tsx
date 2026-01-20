@@ -15,6 +15,7 @@ import {
   Pointer,
   RotateCcw,
   Lock,
+  HardDrive,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
+import { useLfsStore } from '../../store/lfsStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
@@ -178,6 +180,15 @@ export function Sidebar() {
         .list()
         .then(setRemotes)
         .catch((err) => toast.error('Load remotes failed', getErrorMessage(err)));
+    }
+  }, [repository]);
+
+  // Load LFS status when repository changes
+  useEffect(() => {
+    if (repository) {
+      useLfsStore.getState().loadStatus();
+    } else {
+      useLfsStore.getState().reset();
     }
   }, [repository]);
 
@@ -344,6 +355,17 @@ export function Sidebar() {
               >
                 <RotateCcw size={12} />
                 <span>Reflog</span>
+              </button>
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  currentView === 'lfs' && 'bg-(--bg-active) font-medium'
+                )}
+                onClick={() => handleViewClick('lfs')}
+              >
+                <HardDrive size={12} />
+                <span>Git LFS</span>
+                <LfsStatusBadge />
               </button>
             </Section>
 
@@ -603,4 +625,23 @@ export function Sidebar() {
       <AddWorktreeDialog open={showWorktreeDialog} onOpenChange={setShowWorktreeDialog} />
     </>
   );
+}
+
+function LfsStatusBadge() {
+  const { status } = useLfsStore();
+
+  if (!status?.isInstalled) {
+    return null;
+  }
+
+  if (!status.isInitialized) {
+    return <span className="badge bg-(--bg-tertiary) text-(--text-muted)">off</span>;
+  }
+
+  const total = status.lfsFilesCount;
+  if (total > 0) {
+    return <span className="badge bg-(--accent-color)/20 text-(--accent-color)">{total}</span>;
+  }
+
+  return null;
 }

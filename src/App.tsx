@@ -6,6 +6,7 @@ import { WorkspaceView } from './components/workspace';
 import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { ReflogView } from './components/reflog';
+import { LfsView } from './components/lfs';
 import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
@@ -215,6 +216,8 @@ function App() {
         return <ContentSearch />;
       case 'reflog':
         return <ReflogView />;
+      case 'lfs':
+        return <LfsView />;
       default:
         return <WorkspaceView />;
     }

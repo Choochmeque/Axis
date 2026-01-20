@@ -202,6 +202,22 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::delete_ai_api_key,
             crate::commands::test_ai_connection,
             crate::commands::list_ollama_models,
+            // LFS commands
+            crate::commands::lfs_check_installed,
+            crate::commands::get_git_environment,
+            crate::commands::lfs_status,
+            crate::commands::lfs_install,
+            crate::commands::lfs_track,
+            crate::commands::lfs_untrack,
+            crate::commands::lfs_list_patterns,
+            crate::commands::lfs_list_files,
+            crate::commands::lfs_fetch,
+            crate::commands::lfs_pull,
+            crate::commands::lfs_push,
+            crate::commands::lfs_migrate,
+            crate::commands::lfs_env,
+            crate::commands::lfs_is_pointer,
+            crate::commands::lfs_prune,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,

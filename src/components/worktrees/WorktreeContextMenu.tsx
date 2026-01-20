@@ -92,7 +92,7 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
           </MenuItem>
         )}
 
-        {!worktree.isMain && (
+        {!worktree.isMain && !worktree.isLocked && (
           <>
             <MenuSeparator />
             <MenuItem icon={Trash2} danger onSelect={() => setShowRemoveDialog(true)}>

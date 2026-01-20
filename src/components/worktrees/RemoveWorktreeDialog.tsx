@@ -101,8 +101,8 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
           <DialogClose asChild>
             <Button variant="secondary">Cancel</Button>
           </DialogClose>
-          <Button variant="danger" onClick={handleRemove} disabled={isLoading}>
-            {isLoading ? 'Removing...' : 'Remove Worktree'}
+          <Button variant="destructive" onClick={handleRemove} disabled={isLoading}>
+            {isLoading ? 'Removing...' : 'Remove'}
           </Button>
         </DialogFooter>
       </DialogContent>

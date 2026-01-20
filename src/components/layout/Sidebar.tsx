@@ -27,6 +27,7 @@ import {
   MenuItem,
 } from '@/components/ui';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
+import { useStagingStore } from '../../store/stagingStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
@@ -253,6 +254,8 @@ export function Sidebar() {
 
   const handleWorktreeSwitch = useCallback(async (worktreePath: string) => {
     try {
+      // Reset staging store to clear old worktree's state
+      useStagingStore.getState().reset();
       const { switchRepository } = useRepositoryStore.getState();
       await switchRepository(worktreePath);
       toast.success('Switched to worktree');
@@ -483,29 +486,39 @@ export function Sidebar() {
 
             <Section title="WORKTREES" icon={<GitFork />} defaultExpanded={false}>
               {worktrees.length > 0 ? (
-                worktrees.map((worktree) => (
-                  <WorktreeContextMenu
-                    key={worktree.path}
-                    worktree={worktree}
-                    onSwitch={() => !worktree.isMain && handleWorktreeSwitch(worktree.path)}
-                  >
-                    <button
-                      className={cn(sidebarItemClass, worktree.isMain && 'font-medium')}
-                      onClick={() => !worktree.isMain && handleWorktreeSwitch(worktree.path)}
+                worktrees.map((worktree) => {
+                  // Normalize paths for comparison (remove trailing slashes)
+                  const normalizePath = (p: string) => p.replace(/\/+$/, '');
+                  const isCurrent = normalizePath(worktree.path) === normalizePath(repository.path);
+                  return (
+                    <WorktreeContextMenu
+                      key={worktree.path}
+                      worktree={worktree}
+                      onSwitch={() => !isCurrent && handleWorktreeSwitch(worktree.path)}
                     >
-                      <GitFork size={12} />
-                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {worktree.branch || `(${worktree.shortOid})`}
-                      </span>
-                      {worktree.isMain && (
-                        <span className="badge bg-(--bg-tertiary) text-(--text-secondary)">
-                          main
+                      <button
+                        className={cn(
+                          sidebarItemClass,
+                          isCurrent && 'bg-(--bg-active) font-medium'
+                        )}
+                        onClick={() => !isCurrent && handleWorktreeSwitch(worktree.path)}
+                      >
+                        <GitFork size={12} />
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {worktree.branch || `(${worktree.shortOid})`}
                         </span>
-                      )}
-                      {worktree.isLocked && <Lock size={10} className="text-(--text-secondary)" />}
-                    </button>
-                  </WorktreeContextMenu>
-                ))
+                        {worktree.isMain && (
+                          <span className="badge bg-(--bg-tertiary) text-(--text-secondary)">
+                            main
+                          </span>
+                        )}
+                        {worktree.isLocked && (
+                          <Lock size={10} className="text-(--text-secondary)" />
+                        )}
+                      </button>
+                    </WorktreeContextMenu>
+                  );
+                })
               ) : (
                 <div
                   className={cn(

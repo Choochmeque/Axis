@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   GitBranch,
+  GitFork,
   Tag,
   Cloud,
   Archive,
@@ -13,6 +14,7 @@ import {
   FolderGit2,
   Pointer,
   RotateCcw,
+  Lock,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -33,6 +35,7 @@ import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
+import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
 import { BranchType } from '@/types';
 import { toast } from '@/hooks';
@@ -147,6 +150,7 @@ export function Sidebar() {
     tags,
     stashes,
     submodules,
+    worktrees,
     status,
     currentView,
     setCurrentView,
@@ -163,6 +167,7 @@ export function Sidebar() {
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showRemoteDialog, setShowRemoteDialog] = useState(false);
   const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
+  const [showWorktreeDialog, setShowWorktreeDialog] = useState(false);
   const [remotes, setRemotes] = useState<Remote[]>([]);
 
   // Load remotes for tag context menu
@@ -245,6 +250,16 @@ export function Sidebar() {
 
   const changesCount =
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);
+
+  const handleWorktreeSwitch = useCallback(async (worktreePath: string) => {
+    try {
+      const { switchRepository } = useRepositoryStore.getState();
+      await switchRepository(worktreePath);
+      toast.success('Switched to worktree');
+    } catch (err) {
+      toast.error('Switch worktree failed', getErrorMessage(err));
+    }
+  }, []);
 
   if (!repository) {
     return (
@@ -466,6 +481,43 @@ export function Sidebar() {
               )}
             </Section>
 
+            <Section title="WORKTREES" icon={<GitFork />} defaultExpanded={false}>
+              {worktrees.length > 0 ? (
+                worktrees.map((worktree) => (
+                  <WorktreeContextMenu
+                    key={worktree.path}
+                    worktree={worktree}
+                    onSwitch={() => !worktree.isMain && handleWorktreeSwitch(worktree.path)}
+                  >
+                    <button
+                      className={cn(sidebarItemClass, worktree.isMain && 'font-medium')}
+                      onClick={() => !worktree.isMain && handleWorktreeSwitch(worktree.path)}
+                    >
+                      <GitFork size={12} />
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {worktree.branch || `(${worktree.shortOid})`}
+                      </span>
+                      {worktree.isMain && (
+                        <span className="badge bg-(--bg-tertiary) text-(--text-secondary)">
+                          main
+                        </span>
+                      )}
+                      {worktree.isLocked && <Lock size={10} className="text-(--text-secondary)" />}
+                    </button>
+                  </WorktreeContextMenu>
+                ))
+              ) : (
+                <div
+                  className={cn(
+                    sidebarItemClass,
+                    'text-(--text-secondary) italic cursor-default hover:bg-transparent'
+                  )}
+                >
+                  No worktrees
+                </div>
+              )}
+            </Section>
+
             <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
               {submodules.length > 0 ? (
                 [...submodules]
@@ -516,6 +568,9 @@ export function Sidebar() {
             <MenuItem icon={FolderGit2} onSelect={() => setShowSubmoduleDialog(true)}>
               Add Submodule...
             </MenuItem>
+            <MenuItem icon={GitFork} onSelect={() => setShowWorktreeDialog(true)}>
+              Add Worktree...
+            </MenuItem>
           </ContextMenuContent>
         </ContextMenuPortal>
       </ContextMenuRoot>
@@ -531,6 +586,8 @@ export function Sidebar() {
       <AddRemoteDialog open={showRemoteDialog} onOpenChange={setShowRemoteDialog} />
 
       <AddSubmoduleDialog open={showSubmoduleDialog} onOpenChange={setShowSubmoduleDialog} />
+
+      <AddWorktreeDialog open={showWorktreeDialog} onOpenChange={setShowWorktreeDialog} />
     </>
   );
 }

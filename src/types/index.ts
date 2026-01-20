@@ -109,6 +109,12 @@ export type {
   SyncSubmoduleOptions,
   SubmoduleResult,
 
+  // Worktree types
+  Worktree,
+  AddWorktreeOptions,
+  RemoveWorktreeOptions,
+  WorktreeResult,
+
   // Git-flow types
   GitFlowConfig,
   GitFlowInitOptions,

@@ -1,10 +1,11 @@
 use crate::error::{AxisError, Result};
 use crate::models::ResetMode;
 use crate::models::{
-    AddSubmoduleOptions, ArchiveResult, BisectState, GitFlowBranchType, GitFlowConfig,
-    GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult,
-    PatchResult, StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule,
-    SubmoduleResult, SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
+    AddSubmoduleOptions, AddWorktreeOptions, ArchiveResult, BisectState, GitFlowBranchType,
+    GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions,
+    GrepResult, PatchResult, RemoveWorktreeOptions, StashApplyOptions, StashEntry, StashResult,
+    StashSaveOptions, Submodule, SubmoduleResult, SubmoduleStatus, SyncSubmoduleOptions, TagResult,
+    UpdateSubmoduleOptions, Worktree, WorktreeResult,
 };
 use chrono::{DateTime, Utc};
 use std::fs::File;
@@ -1977,6 +1978,239 @@ impl GitCliService {
             skipped_commits,
             first_bad_commit: None,
         })
+    }
+
+    // ==================== Worktree Operations ====================
+
+    /// List all worktrees
+    pub fn worktree_list(&self) -> Result<Vec<Worktree>> {
+        // Use --porcelain for machine-readable output
+        let result = self.execute(&["worktree", "list", "--porcelain"])?;
+
+        if !result.success {
+            return Err(AxisError::Other(format!(
+                "Failed to list worktrees: {}",
+                result.stderr.trim()
+            )));
+        }
+
+        let mut worktrees = Vec::new();
+        let mut current_path: Option<String> = None;
+        let mut head_oid: Option<String> = None;
+        let mut branch: Option<String> = None;
+        let mut is_locked = false;
+        let mut lock_reason: Option<String> = None;
+        let mut is_bare = false;
+        let mut is_prunable = false;
+
+        // Parse porcelain output format:
+        // worktree /path/to/worktree
+        // HEAD abc123...
+        // branch refs/heads/main
+        // (blank line between entries)
+        for line in result.stdout.lines() {
+            if line.starts_with("worktree ") {
+                // Save previous worktree if any
+                if let Some(path) = current_path.take() {
+                    let oid = head_oid.take().unwrap_or_default();
+                    worktrees.push(Worktree {
+                        path,
+                        branch: branch.take(),
+                        head_oid: oid.clone(),
+                        short_oid: oid.chars().take(7).collect(),
+                        is_locked,
+                        lock_reason: lock_reason.take(),
+                        is_main: is_bare || worktrees.is_empty(),
+                        is_prunable,
+                    });
+                    is_locked = false;
+                    is_bare = false;
+                    is_prunable = false;
+                }
+                current_path = Some(line.trim_start_matches("worktree ").to_string());
+            } else if line.starts_with("HEAD ") {
+                head_oid = Some(line.trim_start_matches("HEAD ").to_string());
+            } else if line.starts_with("branch ") {
+                // refs/heads/main -> main
+                let full_ref = line.trim_start_matches("branch ");
+                branch = Some(full_ref.trim_start_matches("refs/heads/").to_string());
+            } else if line == "bare" {
+                is_bare = true;
+            } else if line.starts_with("locked") {
+                is_locked = true;
+                // Lock reason may follow after space
+                let rest = line.trim_start_matches("locked").trim();
+                if !rest.is_empty() {
+                    lock_reason = Some(rest.to_string());
+                }
+            } else if line == "prunable" {
+                is_prunable = true;
+            }
+            // "detached" line is implicit when branch is None
+        }
+
+        // Don't forget the last entry
+        if let Some(path) = current_path.take() {
+            let oid = head_oid.take().unwrap_or_default();
+            worktrees.push(Worktree {
+                path,
+                branch: branch.take(),
+                head_oid: oid.clone(),
+                short_oid: oid.chars().take(7).collect(),
+                is_locked,
+                lock_reason: lock_reason.take(),
+                is_main: is_bare || worktrees.is_empty(),
+                is_prunable,
+            });
+        }
+
+        // Mark first entry as main worktree if not already marked
+        let has_main = worktrees.iter().any(|w| w.is_main);
+        if !has_main {
+            if let Some(first) = worktrees.first_mut() {
+                first.is_main = true;
+            }
+        }
+
+        Ok(worktrees)
+    }
+
+    /// Add a new worktree
+    pub fn worktree_add(&self, options: &AddWorktreeOptions) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "add"];
+
+        if options.force {
+            args.push("--force");
+        }
+
+        if options.detach {
+            args.push("--detach");
+            args.push(&options.path);
+            if let Some(ref base) = options.base {
+                args.push(base);
+            }
+        } else if options.create_branch {
+            args.push("-b");
+            if let Some(ref branch_name) = options.branch {
+                args.push(branch_name);
+            } else {
+                return Err(AxisError::Other(
+                    "Branch name required when creating new branch".to_string(),
+                ));
+            }
+            args.push(&options.path);
+            if let Some(ref base) = options.base {
+                args.push(base);
+            }
+        } else {
+            // Checkout existing branch
+            args.push(&options.path);
+            if let Some(ref branch_name) = options.branch {
+                args.push(branch_name);
+            }
+        }
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree created at {}", options.path),
+                path: Some(options.path.clone()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Remove a worktree
+    pub fn worktree_remove(&self, options: &RemoveWorktreeOptions) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "remove"];
+
+        if options.force {
+            args.push("--force");
+        }
+
+        args.push(&options.path);
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree removed: {}", options.path),
+                path: Some(options.path.clone()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Lock a worktree to prevent deletion
+    pub fn worktree_lock(&self, path: &str, reason: Option<&str>) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "lock"];
+
+        let reason_owned: String;
+        if let Some(r) = reason {
+            args.push("--reason");
+            reason_owned = r.to_string();
+            args.push(&reason_owned);
+        }
+
+        args.push(path);
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree locked: {path}"),
+                path: Some(path.to_string()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Unlock a worktree
+    pub fn worktree_unlock(&self, path: &str) -> Result<WorktreeResult> {
+        let result = self.execute(&["worktree", "unlock", path])?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree unlocked: {path}"),
+                path: Some(path.to_string()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Prune stale worktree references
+    pub fn worktree_prune(&self, dry_run: bool) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "prune", "-v"];
+
+        if dry_run {
+            args.push("--dry-run");
+        }
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            let pruned_count = result.stderr.lines().count();
+            Ok(WorktreeResult {
+                success: true,
+                message: if dry_run {
+                    format!("Would prune {pruned_count} stale worktree(s)")
+                } else {
+                    format!("Pruned {pruned_count} stale worktree(s)")
+                },
+                path: None,
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
     }
 }
 

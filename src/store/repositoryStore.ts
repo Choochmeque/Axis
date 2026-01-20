@@ -15,6 +15,7 @@ import type {
   StashEntry,
   FileDiff,
   Submodule,
+  Worktree,
 } from '@/types';
 import {
   repositoryApi,
@@ -25,6 +26,7 @@ import {
   diffApi,
   commitApi,
   submoduleApi,
+  worktreeApi,
 } from '@/services/api';
 
 export type ViewType = 'file-status' | 'history' | 'search' | 'reflog';
@@ -38,6 +40,7 @@ interface RepositoryState {
   tags: Tag[];
   stashes: StashEntry[];
   submodules: Submodule[];
+  worktrees: Worktree[];
   status: RepositoryStatus | null;
   recentRepositories: RecentRepository[];
 
@@ -80,6 +83,7 @@ interface RepositoryState {
   loadTags: () => Promise<void>;
   loadStashes: () => Promise<void>;
   loadSubmodules: () => Promise<void>;
+  loadWorktrees: () => Promise<void>;
   loadStatus: () => Promise<void>;
   loadRecentRepositories: () => Promise<void>;
   setCurrentView: (view: ViewType) => void;
@@ -109,6 +113,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   tags: [],
   stashes: [],
   submodules: [],
+  worktrees: [],
   status: null,
   recentRepositories: [],
   currentView: 'file-status',
@@ -144,6 +149,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadTags(),
         get().loadStashes(),
         get().loadSubmodules(),
+        get().loadWorktrees(),
         get().loadStatus(),
       ]);
     } catch (err) {
@@ -167,6 +173,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadTags(),
         get().loadStashes(),
         get().loadSubmodules(),
+        get().loadWorktrees(),
         get().loadStatus(),
       ]);
     } catch (err) {
@@ -186,6 +193,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         tags: [],
         stashes: [],
         submodules: [],
+        worktrees: [],
         status: null,
         error: null,
         selectedCommitOid: null,
@@ -209,6 +217,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadTags(),
         get().loadStashes(),
         get().loadSubmodules(),
+        get().loadWorktrees(),
         get().loadStatus(),
       ]);
       set({ repository: updatedRepo });
@@ -313,6 +322,16 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     } catch {
       // Silently ignore - repo may not have submodules
       set({ submodules: [] });
+    }
+  },
+
+  loadWorktrees: async () => {
+    try {
+      const worktrees = await worktreeApi.list();
+      set({ worktrees });
+    } catch {
+      // Silently ignore - repo may not support worktrees or git version too old
+      set({ worktrees: [] });
     }
   },
 

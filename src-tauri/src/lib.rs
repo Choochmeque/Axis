@@ -148,6 +148,13 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::submodule_deinit,
             crate::commands::submodule_remove,
             crate::commands::submodule_summary,
+            // Worktree commands
+            crate::commands::worktree_list,
+            crate::commands::worktree_add,
+            crate::commands::worktree_remove,
+            crate::commands::worktree_lock,
+            crate::commands::worktree_unlock,
+            crate::commands::worktree_prune,
             // Git-flow commands
             crate::commands::gitflow_is_initialized,
             crate::commands::gitflow_config,

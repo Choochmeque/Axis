@@ -17,6 +17,7 @@ mod signing;
 mod stash;
 mod submodule;
 mod tag;
+mod worktree;
 
 pub use ai::*;
 pub use bisect::*;
@@ -37,3 +38,4 @@ pub use signing::*;
 pub use stash::*;
 pub use submodule::*;
 pub use tag::*;
+pub use worktree::*;

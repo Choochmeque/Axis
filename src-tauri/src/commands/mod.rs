@@ -17,6 +17,7 @@ mod staging;
 mod stash;
 mod submodules;
 mod tags;
+mod worktrees;
 
 pub use ai::*;
 pub use bisect::*;
@@ -37,3 +38,4 @@ pub use staging::*;
 pub use stash::*;
 pub use submodules::*;
 pub use tags::*;
+pub use worktrees::*;

@@ -20,6 +20,8 @@ import type {
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
+  AddWorktreeOptions,
+  RemoveWorktreeOptions,
   GitFlowInitOptions,
   GitFlowFinishOptions,
   GrepOptions,
@@ -313,6 +315,20 @@ export const submoduleApi = {
   remove: (path: string) => commands.submoduleRemove(path),
 
   summary: () => commands.submoduleSummary(),
+};
+
+export const worktreeApi = {
+  list: () => commands.worktreeList(),
+
+  add: (options: AddWorktreeOptions) => commands.worktreeAdd(options),
+
+  remove: (options: RemoveWorktreeOptions) => commands.worktreeRemove(options),
+
+  lock: (path: string, reason?: string) => commands.worktreeLock(path, reason ?? null),
+
+  unlock: (path: string) => commands.worktreeUnlock(path),
+
+  prune: (dryRun: boolean = false) => commands.worktreePrune(dryRun),
 };
 
 export const gitflowApi = {

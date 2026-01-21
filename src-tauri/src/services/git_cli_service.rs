@@ -1,10 +1,14 @@
 use crate::error::{AxisError, Result};
 use crate::models::ResetMode;
 use crate::models::{
-    AddSubmoduleOptions, ArchiveResult, GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions,
-    GitFlowInitOptions, GitFlowResult, GrepMatch, GrepOptions, GrepResult, PatchResult,
+    AddSubmoduleOptions, AddWorktreeOptions, ArchiveResult, BisectState, GitEnvironment,
+    GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult,
+    GrepMatch, GrepOptions, GrepResult, LfsEnvironment, LfsFetchOptions, LfsFile, LfsFileStatus,
+    LfsMigrateMode, LfsMigrateOptions, LfsPruneOptions, LfsPruneResult, LfsPullOptions,
+    LfsPushOptions, LfsResult, LfsStatus, LfsTrackedPattern, PatchResult, RemoveWorktreeOptions,
     StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult,
-    SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions,
+    SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions, Worktree,
+    WorktreeResult,
 };
 use chrono::{DateTime, Utc};
 use std::fs::File;
@@ -32,6 +36,7 @@ pub enum OperationType {
     Rebase,
     CherryPick,
     Revert,
+    Bisect,
 }
 
 #[derive(Debug)]
@@ -344,6 +349,8 @@ impl GitCliService {
             Ok(Some(OperationType::CherryPick))
         } else if self.is_reverting()? {
             Ok(Some(OperationType::Revert))
+        } else if self.is_bisecting()? {
+            Ok(Some(OperationType::Bisect))
         } else {
             Ok(None)
         }
@@ -1829,6 +1836,919 @@ impl GitCliService {
                 result.stderr.trim()
             )))
         }
+    }
+
+    // ==================== Bisect Operations ====================
+
+    /// Check if we're in a bisect state
+    pub fn is_bisecting(&self) -> Result<bool> {
+        let bisect_start = self.repo_path.join(".git/BISECT_START");
+        Ok(bisect_start.exists())
+    }
+
+    /// Start a bisect session
+    pub fn bisect_start(&self, bad: Option<&str>, good: &str) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "start"];
+
+        // git bisect start <bad> <good> - first arg is bad, second is good
+        // If bad is not provided, use HEAD as the bad commit
+        let bad_commit = bad.unwrap_or("HEAD");
+        args.push(bad_commit);
+        args.push(good);
+
+        self.execute(&args)
+    }
+
+    /// Mark the current commit as good
+    pub fn bisect_good(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "good"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Mark the current commit as bad
+    pub fn bisect_bad(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "bad"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Skip the current commit (cannot be tested)
+    pub fn bisect_skip(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "skip"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute(&args)
+    }
+
+    /// Reset/abort the bisect session
+    pub fn bisect_reset(&self, commit: Option<&str>) -> Result<GitCommandResult> {
+        let mut args = vec!["bisect", "reset"];
+        if let Some(c) = commit {
+            args.push(c);
+        }
+        self.execute_checked(&args)
+    }
+
+    /// Get the bisect log
+    pub fn bisect_log(&self) -> Result<GitCommandResult> {
+        self.execute(&["bisect", "log"])
+    }
+
+    /// Get visualize data for bisect (commits remaining to test)
+    pub fn bisect_visualize(&self) -> Result<GitCommandResult> {
+        self.execute(&["bisect", "visualize", "--oneline"])
+    }
+
+    /// Parse bisect state from git files
+    pub fn get_bisect_state(&self) -> Result<BisectState> {
+        let is_active = self.is_bisecting()?;
+
+        if !is_active {
+            return Ok(BisectState {
+                is_active: false,
+                current_commit: None,
+                steps_remaining: None,
+                total_commits: None,
+                bad_commit: None,
+                good_commits: Vec::new(),
+                skipped_commits: Vec::new(),
+                first_bad_commit: None,
+            });
+        }
+
+        // Read BISECT_START for the bad commit
+        let bad_commit = std::fs::read_to_string(self.repo_path.join(".git/BISECT_START"))
+            .ok()
+            .map(|s| s.trim().to_string());
+
+        // Parse good commits from refs/bisect/good-*
+        let bisect_refs_path = self.repo_path.join(".git/refs/bisect");
+        let mut good_commits = Vec::new();
+        let mut skipped_commits = Vec::new();
+
+        if bisect_refs_path.exists() {
+            if let Ok(entries) = std::fs::read_dir(&bisect_refs_path) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if name.starts_with("good-") {
+                        if let Ok(oid) = std::fs::read_to_string(entry.path()) {
+                            good_commits.push(oid.trim().to_string());
+                        }
+                    } else if name.starts_with("skip-") {
+                        if let Ok(oid) = std::fs::read_to_string(entry.path()) {
+                            skipped_commits.push(oid.trim().to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get current HEAD
+        let head_result = self.execute(&["rev-parse", "HEAD"])?;
+        let current_commit = if head_result.success {
+            Some(head_result.stdout.trim().to_string())
+        } else {
+            None
+        };
+
+        // Estimate steps remaining using bisect visualize
+        let viz_result = self.bisect_visualize()?;
+        let (steps_remaining, total_commits) = if viz_result.success {
+            let count = viz_result.stdout.lines().count();
+            let steps = if count > 0 {
+                Some((count as f64).log2().ceil() as usize)
+            } else {
+                Some(0)
+            };
+            (steps, Some(count))
+        } else {
+            (None, None)
+        };
+
+        Ok(BisectState {
+            is_active,
+            current_commit,
+            steps_remaining,
+            total_commits,
+            bad_commit,
+            good_commits,
+            skipped_commits,
+            first_bad_commit: None,
+        })
+    }
+
+    // ==================== Worktree Operations ====================
+
+    /// List all worktrees
+    pub fn worktree_list(&self) -> Result<Vec<Worktree>> {
+        // Use --porcelain for machine-readable output
+        let result = self.execute(&["worktree", "list", "--porcelain"])?;
+
+        if !result.success {
+            return Err(AxisError::Other(format!(
+                "Failed to list worktrees: {}",
+                result.stderr.trim()
+            )));
+        }
+
+        let mut worktrees = Vec::new();
+        let mut current_path: Option<String> = None;
+        let mut head_oid: Option<String> = None;
+        let mut branch: Option<String> = None;
+        let mut is_locked = false;
+        let mut lock_reason: Option<String> = None;
+        let mut is_bare = false;
+        let mut is_prunable = false;
+
+        // Parse porcelain output format:
+        // worktree /path/to/worktree
+        // HEAD abc123...
+        // branch refs/heads/main
+        // (blank line between entries)
+        for line in result.stdout.lines() {
+            if line.starts_with("worktree ") {
+                // Save previous worktree if any
+                if let Some(path) = current_path.take() {
+                    let oid = head_oid.take().unwrap_or_default();
+                    worktrees.push(Worktree {
+                        path,
+                        branch: branch.take(),
+                        head_oid: oid.clone(),
+                        short_oid: oid.chars().take(7).collect(),
+                        is_locked,
+                        lock_reason: lock_reason.take(),
+                        is_main: is_bare || worktrees.is_empty(),
+                        is_prunable,
+                    });
+                    is_locked = false;
+                    is_bare = false;
+                    is_prunable = false;
+                }
+                current_path = Some(line.trim_start_matches("worktree ").to_string());
+            } else if line.starts_with("HEAD ") {
+                head_oid = Some(line.trim_start_matches("HEAD ").to_string());
+            } else if line.starts_with("branch ") {
+                // refs/heads/main -> main
+                let full_ref = line.trim_start_matches("branch ");
+                branch = Some(full_ref.trim_start_matches("refs/heads/").to_string());
+            } else if line == "bare" {
+                is_bare = true;
+            } else if line.starts_with("locked") {
+                is_locked = true;
+                // Lock reason may follow after space
+                let rest = line.trim_start_matches("locked").trim();
+                if !rest.is_empty() {
+                    lock_reason = Some(rest.to_string());
+                }
+            } else if line == "prunable" {
+                is_prunable = true;
+            }
+            // "detached" line is implicit when branch is None
+        }
+
+        // Don't forget the last entry
+        if let Some(path) = current_path.take() {
+            let oid = head_oid.take().unwrap_or_default();
+            worktrees.push(Worktree {
+                path,
+                branch: branch.take(),
+                head_oid: oid.clone(),
+                short_oid: oid.chars().take(7).collect(),
+                is_locked,
+                lock_reason: lock_reason.take(),
+                is_main: is_bare || worktrees.is_empty(),
+                is_prunable,
+            });
+        }
+
+        // Mark first entry as main worktree if not already marked
+        let has_main = worktrees.iter().any(|w| w.is_main);
+        if !has_main {
+            if let Some(first) = worktrees.first_mut() {
+                first.is_main = true;
+            }
+        }
+
+        Ok(worktrees)
+    }
+
+    /// Add a new worktree
+    pub fn worktree_add(&self, options: &AddWorktreeOptions) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "add"];
+
+        if options.force {
+            args.push("--force");
+        }
+
+        if options.detach {
+            args.push("--detach");
+            args.push(&options.path);
+            if let Some(ref base) = options.base {
+                args.push(base);
+            }
+        } else if options.create_branch {
+            args.push("-b");
+            if let Some(ref branch_name) = options.branch {
+                args.push(branch_name);
+            } else {
+                return Err(AxisError::Other(
+                    "Branch name required when creating new branch".to_string(),
+                ));
+            }
+            args.push(&options.path);
+            if let Some(ref base) = options.base {
+                args.push(base);
+            }
+        } else {
+            // Checkout existing branch
+            args.push(&options.path);
+            if let Some(ref branch_name) = options.branch {
+                args.push(branch_name);
+            }
+        }
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree created at {}", options.path),
+                path: Some(options.path.clone()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Remove a worktree
+    pub fn worktree_remove(&self, options: &RemoveWorktreeOptions) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "remove"];
+
+        if options.force {
+            args.push("--force");
+        }
+
+        args.push(&options.path);
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree removed: {}", options.path),
+                path: Some(options.path.clone()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Lock a worktree to prevent deletion
+    pub fn worktree_lock(&self, path: &str, reason: Option<&str>) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "lock"];
+
+        let reason_owned: String;
+        if let Some(r) = reason {
+            args.push("--reason");
+            reason_owned = r.to_string();
+            args.push(&reason_owned);
+        }
+
+        args.push(path);
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree locked: {path}"),
+                path: Some(path.to_string()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Unlock a worktree
+    pub fn worktree_unlock(&self, path: &str) -> Result<WorktreeResult> {
+        let result = self.execute(&["worktree", "unlock", path])?;
+
+        if result.success {
+            Ok(WorktreeResult {
+                success: true,
+                message: format!("Worktree unlocked: {path}"),
+                path: Some(path.to_string()),
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    /// Prune stale worktree references
+    pub fn worktree_prune(&self, dry_run: bool) -> Result<WorktreeResult> {
+        let mut args = vec!["worktree", "prune", "-v"];
+
+        if dry_run {
+            args.push("--dry-run");
+        }
+
+        let result = self.execute(&args)?;
+
+        if result.success {
+            let pruned_count = result.stderr.lines().count();
+            Ok(WorktreeResult {
+                success: true,
+                message: if dry_run {
+                    format!("Would prune {pruned_count} stale worktree(s)")
+                } else {
+                    format!("Pruned {pruned_count} stale worktree(s)")
+                },
+                path: None,
+            })
+        } else {
+            Err(AxisError::Other(result.stderr.trim().to_string()))
+        }
+    }
+
+    // ==================== Git LFS Operations ====================
+
+    /// Check if git-lfs is installed on the system
+    pub fn lfs_check_installed() -> Result<(bool, Option<String>)> {
+        let output = Command::new("git")
+            .args(["lfs", "version"])
+            .output()
+            .map_err(AxisError::IoError)?;
+
+        if output.status.success() {
+            let version_str = String::from_utf8_lossy(&output.stdout);
+            // Parse version from "git-lfs/3.4.0 (GitHub; darwin arm64; go 1.21.3)"
+            let version = version_str
+                .split('/')
+                .nth(1)
+                .and_then(|s| s.split_whitespace().next())
+                .map(|s| s.to_string());
+            Ok((true, version))
+        } else {
+            Ok((false, None))
+        }
+    }
+
+    /// Get Git environment information including versions and paths
+    pub fn get_git_environment() -> Result<GitEnvironment> {
+        // Get Git CLI version and path
+        let (git_version, git_path) = Self::get_git_version_and_path()?;
+
+        // Get libgit2 version using libgit2_version() method
+        let libgit2_version = git2::Version::get();
+        let (major, minor, rev) = libgit2_version.libgit2_version();
+        let libgit2_version_str = format!("{major}.{minor}.{rev}");
+
+        // Get LFS info
+        let (lfs_installed, lfs_version) = Self::lfs_check_installed()?;
+
+        Ok(GitEnvironment {
+            git_version,
+            git_path,
+            libgit2_version: libgit2_version_str,
+            lfs_installed,
+            lfs_version,
+        })
+    }
+
+    /// Get Git CLI version and path
+    fn get_git_version_and_path() -> Result<(Option<String>, Option<String>)> {
+        // Get git version
+        let version_output = Command::new("git")
+            .args(["--version"])
+            .output()
+            .map_err(AxisError::IoError)?;
+
+        let version = if version_output.status.success() {
+            let version_str = String::from_utf8_lossy(&version_output.stdout);
+            // Parse from "git version 2.43.0"
+            version_str
+                .trim()
+                .strip_prefix("git version ")
+                .map(|s| s.split_whitespace().next().unwrap_or(s).to_string())
+        } else {
+            None
+        };
+
+        // Get git path - cross-platform
+        let path_cmd = if cfg!(target_os = "windows") {
+            "where"
+        } else {
+            "which"
+        };
+
+        let path_output = Command::new(path_cmd)
+            .args(["git"])
+            .output()
+            .map_err(AxisError::IoError)?;
+
+        let path = if path_output.status.success() {
+            let path_str = String::from_utf8_lossy(&path_output.stdout);
+            Some(path_str.lines().next().unwrap_or("").trim().to_string())
+        } else {
+            None
+        };
+
+        Ok((version, path))
+    }
+
+    /// Get comprehensive LFS status for the repository
+    pub fn lfs_status(&self) -> Result<LfsStatus> {
+        let (is_installed, version) = Self::lfs_check_installed()?;
+
+        if !is_installed {
+            return Ok(LfsStatus {
+                is_installed: false,
+                version: None,
+                is_initialized: false,
+                tracked_patterns_count: 0,
+                lfs_files_count: 0,
+            });
+        }
+
+        // Check if LFS is initialized (check for .git/lfs directory)
+        let lfs_dir = self.repo_path.join(".git").join("lfs");
+        let is_initialized = lfs_dir.exists();
+
+        // Count tracked patterns
+        let patterns = self.lfs_list_tracked_patterns().unwrap_or_default();
+        let tracked_patterns_count = patterns.len();
+
+        // Count LFS files
+        let files = self.lfs_list_files().unwrap_or_default();
+        let lfs_files_count = files.len();
+
+        Ok(LfsStatus {
+            is_installed: true,
+            version,
+            is_initialized,
+            tracked_patterns_count,
+            lfs_files_count,
+        })
+    }
+
+    /// Initialize LFS in the repository
+    pub fn lfs_install(&self) -> Result<LfsResult> {
+        let result = self.execute(&["lfs", "install"])?;
+
+        if result.success {
+            Ok(LfsResult {
+                success: true,
+                message: "Git LFS initialized successfully".to_string(),
+                affected_files: Vec::new(),
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to initialize LFS: {}",
+                result.stderr.trim()
+            )))
+        }
+    }
+
+    /// Track a pattern with LFS
+    pub fn lfs_track(&self, pattern: &str) -> Result<LfsResult> {
+        let result = self.execute(&["lfs", "track", pattern])?;
+
+        if result.success {
+            Ok(LfsResult {
+                success: true,
+                message: format!("Tracking pattern: {pattern}"),
+                affected_files: vec![".gitattributes".to_string()],
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to track pattern: {}",
+                result.stderr.trim()
+            )))
+        }
+    }
+
+    /// Untrack a pattern from LFS
+    pub fn lfs_untrack(&self, pattern: &str) -> Result<LfsResult> {
+        let result = self.execute(&["lfs", "untrack", pattern])?;
+
+        if result.success {
+            Ok(LfsResult {
+                success: true,
+                message: format!("Untracked pattern: {pattern}"),
+                affected_files: vec![".gitattributes".to_string()],
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Failed to untrack pattern: {}",
+                result.stderr.trim()
+            )))
+        }
+    }
+
+    /// List all tracked patterns
+    pub fn lfs_list_tracked_patterns(&self) -> Result<Vec<LfsTrackedPattern>> {
+        let result = self.execute(&["lfs", "track"])?;
+
+        if !result.success {
+            return Ok(Vec::new());
+        }
+
+        let mut patterns = Vec::new();
+        let mut current_source = String::new();
+
+        for line in result.stdout.lines() {
+            let line = line.trim();
+
+            // Lines like "Listing tracked patterns" or empty lines
+            if line.is_empty() || line.starts_with("Listing") {
+                continue;
+            }
+
+            // Source file lines like "    (default): .gitattributes"
+            if line.contains(".gitattributes") || line.contains("(") {
+                current_source = if line.contains(".gitattributes") {
+                    ".gitattributes".to_string()
+                } else {
+                    line.trim().to_string()
+                };
+                continue;
+            }
+
+            // Pattern lines like "    *.psd"
+            if !line.is_empty() {
+                patterns.push(LfsTrackedPattern {
+                    pattern: line.to_string(),
+                    source_file: current_source.clone(),
+                });
+            }
+        }
+
+        Ok(patterns)
+    }
+
+    /// List all LFS files in the repository
+    pub fn lfs_list_files(&self) -> Result<Vec<LfsFile>> {
+        // Use --long format to get OID and size
+        let result = self.execute(&["lfs", "ls-files", "--long", "--size"])?;
+
+        if !result.success {
+            return Ok(Vec::new());
+        }
+
+        let mut files = Vec::new();
+
+        for line in result.stdout.lines() {
+            // Format: "oid - path" or "oid * path" (* means downloaded, - means pointer)
+            // With --size: "oid - path (size)"
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+
+            let parts: Vec<&str> = line.splitn(3, |c| c == '-' || c == '*').collect();
+            if parts.len() >= 2 {
+                let oid = parts[0].trim().to_string();
+                let is_downloaded = line.contains(" * ");
+
+                let path_and_size = parts.last().unwrap_or(&"").trim();
+                let (path, size) = if path_and_size.ends_with(')') {
+                    // Has size info
+                    if let Some(paren_pos) = path_and_size.rfind('(') {
+                        let path = path_and_size[..paren_pos].trim();
+                        let size_str = &path_and_size[paren_pos + 1..path_and_size.len() - 1];
+                        let size = Self::parse_size(size_str);
+                        (path.to_string(), size)
+                    } else {
+                        (path_and_size.to_string(), 0)
+                    }
+                } else {
+                    (path_and_size.to_string(), 0)
+                };
+
+                files.push(LfsFile {
+                    path,
+                    oid,
+                    size,
+                    is_downloaded,
+                    status: if is_downloaded {
+                        LfsFileStatus::Downloaded
+                    } else {
+                        LfsFileStatus::Pointer
+                    },
+                });
+            }
+        }
+
+        Ok(files)
+    }
+
+    /// Parse size string like "1.5 MB" to bytes
+    fn parse_size(size_str: &str) -> u64 {
+        let parts: Vec<&str> = size_str.trim().split_whitespace().collect();
+        if parts.len() != 2 {
+            return 0;
+        }
+
+        let value: f64 = parts[0].parse().unwrap_or(0.0);
+        let multiplier: u64 = match parts[1].to_uppercase().as_str() {
+            "B" => 1,
+            "KB" => 1024,
+            "MB" => 1024 * 1024,
+            "GB" => 1024 * 1024 * 1024,
+            "TB" => 1024_u64 * 1024 * 1024 * 1024,
+            _ => 1,
+        };
+
+        (value * multiplier as f64) as u64
+    }
+
+    /// Fetch LFS objects from remote
+    pub fn lfs_fetch(&self, options: &LfsFetchOptions) -> Result<LfsResult> {
+        let mut args = vec!["lfs", "fetch"];
+
+        if options.all {
+            args.push("--all");
+        }
+
+        if options.recent {
+            args.push("--recent");
+        }
+
+        let remote_owned: String;
+        if let Some(ref remote) = options.remote {
+            remote_owned = remote.clone();
+            args.push(&remote_owned);
+        }
+
+        let result = self.execute(&args)?;
+
+        Ok(LfsResult {
+            success: result.success,
+            message: if result.success {
+                "LFS objects fetched successfully".to_string()
+            } else {
+                format!("LFS fetch failed: {}", result.stderr.trim())
+            },
+            affected_files: Vec::new(),
+        })
+    }
+
+    /// Pull LFS objects (fetch + checkout)
+    pub fn lfs_pull(&self, options: &LfsPullOptions) -> Result<LfsResult> {
+        let mut args = vec!["lfs", "pull"];
+
+        let remote_owned: String;
+        if let Some(ref remote) = options.remote {
+            remote_owned = remote.clone();
+            args.push(&remote_owned);
+        }
+
+        let result = self.execute(&args)?;
+
+        Ok(LfsResult {
+            success: result.success,
+            message: if result.success {
+                "LFS objects pulled successfully".to_string()
+            } else {
+                format!("LFS pull failed: {}", result.stderr.trim())
+            },
+            affected_files: Vec::new(),
+        })
+    }
+
+    /// Push LFS objects to remote
+    pub fn lfs_push(&self, options: &LfsPushOptions) -> Result<LfsResult> {
+        let mut args = vec!["lfs", "push"];
+
+        if options.all {
+            args.push("--all");
+        }
+
+        if options.dry_run {
+            args.push("--dry-run");
+        }
+
+        let remote_owned: String;
+        if let Some(ref remote) = options.remote {
+            remote_owned = remote.clone();
+            args.push(&remote_owned);
+        } else {
+            args.push("origin");
+        }
+
+        // Need to specify the branch
+        args.push("HEAD");
+
+        let result = self.execute(&args)?;
+
+        Ok(LfsResult {
+            success: result.success,
+            message: if result.success {
+                if options.dry_run {
+                    "LFS push dry run completed".to_string()
+                } else {
+                    "LFS objects pushed successfully".to_string()
+                }
+            } else {
+                format!("LFS push failed: {}", result.stderr.trim())
+            },
+            affected_files: Vec::new(),
+        })
+    }
+
+    /// Migrate files to/from LFS
+    pub fn lfs_migrate(&self, options: &LfsMigrateOptions) -> Result<LfsResult> {
+        let mut args = vec!["lfs", "migrate"];
+
+        match options.mode {
+            LfsMigrateMode::Import => args.push("import"),
+            LfsMigrateMode::Export => args.push("export"),
+            LfsMigrateMode::Info => args.push("info"),
+        }
+
+        if options.everything {
+            args.push("--everything");
+        }
+
+        // Build include patterns
+        let include_patterns: Vec<String> = options
+            .include
+            .iter()
+            .map(|p| format!("--include={p}"))
+            .collect();
+        for pattern in &include_patterns {
+            args.push(pattern);
+        }
+
+        // Build exclude patterns
+        let exclude_patterns: Vec<String> = options
+            .exclude
+            .iter()
+            .map(|p| format!("--exclude={p}"))
+            .collect();
+        for pattern in &exclude_patterns {
+            args.push(pattern);
+        }
+
+        // Size threshold
+        let above_str: String;
+        if let Some(above) = options.above {
+            above_str = format!("--above={above}b");
+            args.push(&above_str);
+        }
+
+        let result = self.execute(&args)?;
+
+        Ok(LfsResult {
+            success: result.success,
+            message: if result.success {
+                match options.mode {
+                    LfsMigrateMode::Import => "Files migrated to LFS".to_string(),
+                    LfsMigrateMode::Export => "Files migrated from LFS".to_string(),
+                    LfsMigrateMode::Info => result.stdout.clone(),
+                }
+            } else {
+                format!("LFS migrate failed: {}", result.stderr.trim())
+            },
+            affected_files: Vec::new(),
+        })
+    }
+
+    /// Get LFS environment information
+    pub fn lfs_env(&self) -> Result<LfsEnvironment> {
+        let result = self.execute(&["lfs", "env"])?;
+
+        if !result.success {
+            return Err(AxisError::Other(
+                "Failed to get LFS environment".to_string(),
+            ));
+        }
+
+        let (_, version) = Self::lfs_check_installed()?;
+
+        let mut endpoint = None;
+        let mut storage_path = None;
+        let mut uses_ssh = false;
+
+        for line in result.stdout.lines() {
+            if line.contains("Endpoint=") {
+                endpoint = line.split('=').nth(1).map(|s| s.trim().to_string());
+                uses_ssh = line.contains("ssh://");
+            }
+            if line.contains("LocalMediaDir=") {
+                storage_path = line.split('=').nth(1).map(|s| s.trim().to_string());
+            }
+        }
+
+        Ok(LfsEnvironment {
+            version: version.unwrap_or_default(),
+            endpoint,
+            storage_path,
+            uses_ssh,
+        })
+    }
+
+    /// Check if a file is an LFS pointer
+    pub fn lfs_is_pointer(&self, path: &str) -> Result<bool> {
+        let result = self.execute(&["lfs", "pointer", "--check", "--file", path])?;
+        Ok(result.success)
+    }
+
+    /// Prune old LFS objects
+    pub fn lfs_prune(&self, options: &LfsPruneOptions) -> Result<LfsPruneResult> {
+        let mut args = vec!["lfs", "prune"];
+
+        if options.dry_run {
+            args.push("--dry-run");
+        }
+
+        if options.verify_remote {
+            args.push("--verify-remote");
+        }
+
+        let result = self.execute(&args)?;
+
+        // Parse output to extract counts
+        let mut objects_pruned = 0;
+        let mut space_reclaimed = 0u64;
+
+        for line in result.stdout.lines() {
+            // Parse lines like "prune: 5 local objects, 10.5 MB"
+            if line.contains("local objects") {
+                if let Some(count_str) = line.split_whitespace().nth(1) {
+                    objects_pruned = count_str.parse().unwrap_or(0);
+                }
+                // Try to extract size
+                if let Some(size_part) = line.split(',').nth(1) {
+                    space_reclaimed = Self::parse_size(size_part.trim());
+                }
+            }
+        }
+
+        Ok(LfsPruneResult {
+            success: result.success,
+            message: if options.dry_run {
+                format!(
+                    "Would prune {objects_pruned} objects, reclaiming {} bytes",
+                    space_reclaimed
+                )
+            } else if result.success {
+                format!(
+                    "Pruned {objects_pruned} objects, reclaimed {} bytes",
+                    space_reclaimed
+                )
+            } else {
+                format!("LFS prune failed: {}", result.stderr.trim())
+            },
+            objects_pruned,
+            space_reclaimed,
+        })
     }
 }
 

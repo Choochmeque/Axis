@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogClose,
   Button,
+  Alert,
 } from '@/components/ui';
 
 interface DiscardConfirmDialogProps {
@@ -43,9 +44,7 @@ export function DiscardConfirmDialog({
         </DialogTitle>
 
         <DialogBody>
-          <div className="p-3 bg-warning/10 border border-warning/30 rounded-md text-base text-(--text-primary)">
-            {message}
-          </div>
+          <Alert variant="warning">{message}</Alert>
         </DialogBody>
 
         <DialogFooter>

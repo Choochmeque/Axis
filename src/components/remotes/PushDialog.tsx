@@ -16,6 +16,7 @@ import {
   Button,
   FormField,
   Select,
+  SelectItem,
   CheckboxField,
   Alert,
 } from '@/components/ui';
@@ -64,7 +65,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
         setSelectedRemote(data[0].name);
       }
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   };
 
@@ -135,13 +136,13 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
             <Select
               id="remote-select"
               value={selectedRemote}
-              onChange={(e) => setSelectedRemote(e.target.value)}
+              onValueChange={setSelectedRemote}
               disabled={remotes.length === 0}
             >
               {remotes.map((remote) => (
-                <option key={remote.name} value={remote.name}>
+                <SelectItem key={remote.name} value={remote.name}>
                   {remote.name}
-                </option>
+                </SelectItem>
               ))}
             </Select>
           </FormField>

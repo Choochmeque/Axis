@@ -11,8 +11,9 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_list(state: State<'_, AppState>) -> Result<Vec<Submodule>> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_list()
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_list())
 }
 
 /// Add a new submodule
@@ -22,8 +23,9 @@ pub async fn submodule_add(
     state: State<'_, AppState>,
     options: AddSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_add(&options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_add(&options))
 }
 
 /// Initialize submodules
@@ -33,8 +35,9 @@ pub async fn submodule_init(
     state: State<'_, AppState>,
     paths: Vec<String>,
 ) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_init(&paths)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_init(&paths))
 }
 
 /// Update submodules
@@ -44,8 +47,9 @@ pub async fn submodule_update(
     state: State<'_, AppState>,
     options: UpdateSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_update(&options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_update(&options))
 }
 
 /// Sync submodule URLs from .gitmodules
@@ -55,8 +59,9 @@ pub async fn submodule_sync(
     state: State<'_, AppState>,
     options: SyncSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_sync(&options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_sync(&options))
 }
 
 /// Deinitialize submodules
@@ -67,22 +72,25 @@ pub async fn submodule_deinit(
     paths: Vec<String>,
     force: bool,
 ) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_deinit(&paths, force)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_deinit(&paths, force))
 }
 
 /// Remove a submodule completely
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Result<SubmoduleResult> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_remove(&path)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_remove(&path))
 }
 
 /// Get summary of submodule changes
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_summary(state: State<'_, AppState>) -> Result<String> {
-    let cli = state.get_cli_service()?;
-    cli.submodule_summary()
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.submodule_summary())
 }

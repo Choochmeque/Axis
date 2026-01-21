@@ -46,6 +46,14 @@ impl Database {
             [],
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS secrets (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )",
+            [],
+        )?;
+
         // Clean up duplicate paths (with/without trailing slash)
         // Keep the one with the most recent last_opened
         conn.execute(
@@ -174,6 +182,72 @@ impl Database {
             "DELETE FROM recent_repositories WHERE path = ?1",
             params![path_str],
         )?;
+        Ok(())
+    }
+
+    pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+
+        let encoded = STANDARD.encode(value);
+        conn.execute(
+            "INSERT INTO secrets (key, value) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![key, encoded],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn get_secret(&self, key: &str) -> Result<Option<String>> {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+
+        let mut stmt = conn.prepare("SELECT value FROM secrets WHERE key = ?1")?;
+        let result: std::result::Result<String, _> = stmt.query_row(params![key], |row| row.get(0));
+
+        match result {
+            Ok(encoded) => {
+                let decoded = STANDARD
+                    .decode(&encoded)
+                    .map_err(|e| AxisError::Other(format!("Failed to decode secret: {e}")))?;
+                let value = String::from_utf8(decoded)
+                    .map_err(|e| AxisError::Other(format!("Invalid UTF-8 in secret: {e}")))?;
+                Ok(Some(value))
+            }
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    pub fn has_secret(&self, key: &str) -> Result<bool> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+
+        let mut stmt = conn.prepare("SELECT 1 FROM secrets WHERE key = ?1")?;
+        let exists = stmt.exists(params![key])?;
+
+        Ok(exists)
+    }
+
+    pub fn delete_secret(&self, key: &str) -> Result<()> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AxisError::Other(e.to_string()))?;
+
+        conn.execute("DELETE FROM secrets WHERE key = ?1", params![key])?;
+
         Ok(())
     }
 }

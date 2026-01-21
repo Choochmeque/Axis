@@ -49,16 +49,21 @@ export function TabBar({ onTabChange }: TabBarProps) {
               {tab.type === TabType.Welcome ? (
                 <Home size={14} className="shrink-0 text-(--text-secondary)" />
               ) : (
-                <svg width={14} height={14} className="shrink-0">
-                  <circle
-                    cx={7}
-                    cy={7}
-                    r={5}
-                    fill="var(--bg-toolbar)"
-                    stroke="var(--accent-color)"
-                    strokeWidth={2}
-                  />
-                </svg>
+                <div className="relative shrink-0">
+                  <svg width={14} height={14}>
+                    <circle
+                      cx={7}
+                      cy={7}
+                      r={5}
+                      fill="var(--bg-toolbar)"
+                      stroke="var(--accent-color)"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                  {tab.isDirty && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full" />
+                  )}
+                </div>
               )}
               <span className="text-base text-(--text-primary) truncate max-w-40">{tab.name}</span>
               {tab.type !== TabType.Welcome && (

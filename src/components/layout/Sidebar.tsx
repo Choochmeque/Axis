@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   GitBranch,
+  GitFork,
   Tag,
   Cloud,
   Archive,
@@ -12,6 +13,15 @@ import {
   Folder,
   FolderGit2,
   Pointer,
+  RotateCcw,
+  Lock,
+  HardDrive,
+  Link2,
+  GitPullRequest,
+  CircleDot,
+  Play,
+  Bell,
+  Github,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -24,6 +34,9 @@ import {
   MenuItem,
 } from '@/components/ui';
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
+import { useStagingStore } from '../../store/stagingStore';
+import { useLfsStore } from '../../store/lfsStore';
+import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
@@ -32,8 +45,9 @@ import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
+import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
-import { BranchType } from '@/types';
+import { BranchType, PrState, IssueState, CIRunStatus } from '@/types';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 
@@ -146,6 +160,7 @@ export function Sidebar() {
     tags,
     stashes,
     submodules,
+    worktrees,
     status,
     currentView,
     setCurrentView,
@@ -162,6 +177,7 @@ export function Sidebar() {
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showRemoteDialog, setShowRemoteDialog] = useState(false);
   const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
+  const [showWorktreeDialog, setShowWorktreeDialog] = useState(false);
   const [remotes, setRemotes] = useState<Remote[]>([]);
 
   // Load remotes for tag context menu
@@ -171,6 +187,25 @@ export function Sidebar() {
         .list()
         .then(setRemotes)
         .catch((err) => toast.error('Load remotes failed', getErrorMessage(err)));
+    }
+  }, [repository]);
+
+  // Load LFS status when repository changes
+  useEffect(() => {
+    if (repository) {
+      useLfsStore.getState().loadStatus();
+    } else {
+      useLfsStore.getState().reset();
+    }
+  }, [repository]);
+
+  // Initialize integration listeners and detect provider
+  useEffect(() => {
+    initIntegrationListeners();
+    if (repository) {
+      useIntegrationStore.getState().detectProvider();
+    } else {
+      useIntegrationStore.getState().reset();
     }
   }, [repository]);
 
@@ -245,6 +280,18 @@ export function Sidebar() {
   const changesCount =
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);
 
+  const handleWorktreeSwitch = useCallback(async (worktreePath: string) => {
+    try {
+      // Reset staging store to clear old worktree's state
+      useStagingStore.getState().reset();
+      const { switchRepository } = useRepositoryStore.getState();
+      await switchRepository(worktreePath);
+      toast.success('Switched to worktree');
+    } catch (err) {
+      toast.error('Switch worktree failed', getErrorMessage(err));
+    }
+  }, []);
+
   if (!repository) {
     return (
       <div className="flex flex-col h-full items-center justify-center bg-(--bg-sidebar) border-r border-(--border-color) text-(--text-secondary) text-center p-6">
@@ -315,6 +362,27 @@ export function Sidebar() {
               >
                 <Search size={12} />
                 <span>Search</span>
+              </button>
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  currentView === 'reflog' && 'bg-(--bg-active) font-medium'
+                )}
+                onClick={() => handleViewClick('reflog')}
+              >
+                <RotateCcw size={12} />
+                <span>Reflog</span>
+              </button>
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  currentView === 'lfs' && 'bg-(--bg-active) font-medium'
+                )}
+                onClick={() => handleViewClick('lfs')}
+              >
+                <HardDrive size={12} />
+                <span>Git LFS</span>
+                <LfsStatusBadge />
               </button>
             </Section>
 
@@ -455,6 +523,55 @@ export function Sidebar() {
               )}
             </Section>
 
+            <Section title="WORKTREES" icon={<GitFork />} defaultExpanded={false}>
+              {worktrees.length > 0 ? (
+                worktrees.map((worktree) => {
+                  // Normalize paths for comparison (remove trailing slashes)
+                  const normalizePath = (p: string) => p.replace(/\/+$/, '');
+                  const isCurrent = normalizePath(worktree.path) === normalizePath(repository.path);
+                  return (
+                    <WorktreeContextMenu
+                      key={worktree.path}
+                      worktree={worktree}
+                      onSwitch={() => !isCurrent && handleWorktreeSwitch(worktree.path)}
+                    >
+                      <button
+                        className={cn(
+                          sidebarItemClass,
+                          isCurrent && 'bg-(--bg-active) font-medium'
+                        )}
+                        onClick={() => !isCurrent && handleWorktreeSwitch(worktree.path)}
+                      >
+                        <GitFork size={12} />
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {worktree.branch || `(${worktree.shortOid})`}
+                        </span>
+                        {worktree.isMain && (
+                          <span className="badge bg-(--bg-tertiary) text-(--text-secondary)">
+                            main
+                          </span>
+                        )}
+                        {worktree.isLocked && (
+                          <Lock size={10} className="text-(--text-secondary)" />
+                        )}
+                      </button>
+                    </WorktreeContextMenu>
+                  );
+                })
+              ) : (
+                <div
+                  className={cn(
+                    sidebarItemClass,
+                    'text-(--text-secondary) italic cursor-default hover:bg-transparent'
+                  )}
+                >
+                  No worktrees
+                </div>
+              )}
+            </Section>
+
+            <IntegrationsSection />
+
             <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
               {submodules.length > 0 ? (
                 [...submodules]
@@ -505,6 +622,9 @@ export function Sidebar() {
             <MenuItem icon={FolderGit2} onSelect={() => setShowSubmoduleDialog(true)}>
               Add Submodule...
             </MenuItem>
+            <MenuItem icon={GitFork} onSelect={() => setShowWorktreeDialog(true)}>
+              Add Worktree...
+            </MenuItem>
           </ContextMenuContent>
         </ContextMenuPortal>
       </ContextMenuRoot>
@@ -520,6 +640,309 @@ export function Sidebar() {
       <AddRemoteDialog open={showRemoteDialog} onOpenChange={setShowRemoteDialog} />
 
       <AddSubmoduleDialog open={showSubmoduleDialog} onOpenChange={setShowSubmoduleDialog} />
+
+      <AddWorktreeDialog open={showWorktreeDialog} onOpenChange={setShowWorktreeDialog} />
     </>
+  );
+}
+
+function LfsStatusBadge() {
+  const { status } = useLfsStore();
+
+  if (!status?.isInstalled) {
+    return null;
+  }
+
+  if (!status.isInitialized) {
+    return <span className="badge bg-(--bg-tertiary) text-(--text-muted)">off</span>;
+  }
+
+  const total = status.lfsFilesCount;
+  if (total > 0) {
+    return <span className="badge bg-(--accent-color)/20 text-(--accent-color)">{total}</span>;
+  }
+
+  return null;
+}
+
+// Type for IntegrationsSection tree items
+type IntegrationItem = {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  view?: string;
+  badge?: { count: number; className: string };
+  disabled?: boolean;
+  onClick?: () => void;
+};
+
+function getProviderName(provider: string) {
+  switch (provider) {
+    case 'github':
+      return 'GitHub';
+    case 'gitlab':
+      return 'GitLab';
+    case 'bitbucket':
+      return 'Bitbucket';
+    case 'gitea':
+      return 'Gitea';
+    default:
+      return provider;
+  }
+}
+
+function getProviderIcon(provider: string, size: number = 12) {
+  switch (provider) {
+    case 'github':
+      return <Github size={size} />;
+    case 'gitlab':
+    case 'bitbucket':
+    case 'gitea':
+    default:
+      return <Cloud size={size} />;
+  }
+}
+
+function IntegrationsSection() {
+  const { currentView, setCurrentView } = useRepositoryStore();
+  const {
+    detectedProvider,
+    connectionStatus,
+    pullRequests,
+    issues,
+    ciRuns,
+    unreadCount,
+    isLoadingPrs,
+    isLoadingIssues,
+    isLoadingCiRuns,
+    isLoadingNotifications,
+    loadPullRequests,
+    loadIssues,
+    loadCiRuns,
+    loadNotifications,
+  } = useIntegrationStore();
+
+  const openPrCount = pullRequests.filter((pr) => pr.state === PrState.Open).length;
+  const openIssueCount = issues.filter((issue) => issue.state === IssueState.Open).length;
+  const runningCiCount = ciRuns.filter((run) => run.status === CIRunStatus.InProgress).length;
+
+  // Build tree data for TreeView - must be before early return
+  const treeData = useMemo(() => {
+    if (!detectedProvider) return [];
+
+    const children = connectionStatus?.connected
+      ? [
+          {
+            id: 'pull-requests',
+            name: 'pull-requests',
+            data: {
+              id: 'pull-requests',
+              label: 'Pull Requests',
+              icon: <GitPullRequest size={12} />,
+              view: 'pull-requests',
+              badge:
+                openPrCount > 0
+                  ? {
+                      count: openPrCount,
+                      className: 'bg-(--accent-color)/20 text-(--accent-color)',
+                    }
+                  : undefined,
+              disabled: isLoadingPrs,
+              onClick: () => {
+                useIntegrationStore.getState().clearPrView();
+                setCurrentView('pull-requests');
+              },
+            },
+          },
+          {
+            id: 'issues',
+            name: 'issues',
+            data: {
+              id: 'issues',
+              label: 'Issues',
+              icon: <CircleDot size={12} />,
+              view: 'issues',
+              badge:
+                openIssueCount > 0
+                  ? {
+                      count: openIssueCount,
+                      className: 'bg-(--bg-tertiary) text-(--text-secondary)',
+                    }
+                  : undefined,
+              disabled: isLoadingIssues,
+              onClick: () => {
+                useIntegrationStore.getState().clearIssueView();
+                setCurrentView('issues');
+              },
+            },
+          },
+          {
+            id: 'ci',
+            name: 'ci',
+            data: {
+              id: 'ci',
+              label: 'CI / Actions',
+              icon: <Play size={12} />,
+              view: 'ci',
+              badge:
+                runningCiCount > 0
+                  ? { count: runningCiCount, className: 'bg-warning/20 text-warning' }
+                  : undefined,
+              disabled: isLoadingCiRuns,
+              onClick: () => {
+                useIntegrationStore.getState().clearCiView();
+                setCurrentView('ci');
+              },
+            },
+          },
+          {
+            id: 'notifications',
+            name: 'notifications',
+            data: {
+              id: 'notifications',
+              label: 'Notifications',
+              icon: <Bell size={12} />,
+              view: 'notifications',
+              badge:
+                unreadCount > 0
+                  ? { count: unreadCount, className: 'bg-(--accent-color) text-white' }
+                  : undefined,
+              disabled: isLoadingNotifications,
+              onClick: () => {
+                useIntegrationStore.setState({
+                  notifications: [],
+                  isLoadingNotifications: false,
+                });
+                setCurrentView('notifications');
+              },
+            },
+          },
+        ]
+      : [
+          {
+            id: 'not-connected',
+            name: 'not-connected',
+            data: {
+              id: 'not-connected',
+              label: 'Connect in Settings to view data',
+              icon: null,
+              disabled: true,
+            },
+          },
+        ];
+
+    return [
+      {
+        id: `provider-${detectedProvider.provider}`,
+        name: getProviderName(detectedProvider.provider),
+        children,
+      },
+    ];
+  }, [
+    connectionStatus?.connected,
+    detectedProvider,
+    openPrCount,
+    openIssueCount,
+    runningCiCount,
+    unreadCount,
+    isLoadingPrs,
+    isLoadingIssues,
+    isLoadingCiRuns,
+    isLoadingNotifications,
+    setCurrentView,
+  ]);
+
+  // Load data when connected
+  useEffect(() => {
+    if (connectionStatus?.connected && detectedProvider) {
+      loadPullRequests();
+      loadIssues();
+      loadCiRuns();
+      loadNotifications();
+    }
+  }, [
+    connectionStatus?.connected,
+    detectedProvider,
+    loadPullRequests,
+    loadIssues,
+    loadCiRuns,
+    loadNotifications,
+  ]);
+
+  // Don't show section if no provider detected
+  if (!detectedProvider) {
+    return null;
+  }
+
+  return (
+    <Section title="INTEGRATIONS" icon={<Link2 />} defaultExpanded={true}>
+      <TreeView<IntegrationItem>
+        data={treeData}
+        defaultExpandAll={connectionStatus?.connected}
+        renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+          const paddingLeft = 40 + depth * 16;
+
+          // Provider folder node
+          if (node.children) {
+            return (
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  '[&>svg:first-child]:shrink-0 [&>svg:first-child]:opacity-70'
+                )}
+                style={{ paddingLeft }}
+                onClick={toggleExpand}
+              >
+                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {getProviderIcon(detectedProvider?.provider ?? '', 12)}
+                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {node.name}
+                </span>
+                {!connectionStatus?.connected && (
+                  <span className="badge bg-(--bg-tertiary) text-(--text-muted)">
+                    not connected
+                  </span>
+                )}
+              </button>
+            );
+          }
+
+          // Leaf item node
+          if (node.data) {
+            const item = node.data;
+            // "Not connected" placeholder
+            if (item.id === 'not-connected') {
+              return (
+                <div
+                  className={cn(
+                    sidebarItemClass,
+                    'text-(--text-secondary) italic cursor-default hover:bg-transparent'
+                  )}
+                  style={{ paddingLeft }}
+                >
+                  {item.label}
+                </div>
+              );
+            }
+            return (
+              <button
+                className={cn(sidebarItemClass, currentView === item.view && 'bg-(--bg-hover)')}
+                style={{ paddingLeft }}
+                disabled={item.disabled}
+                onClick={item.onClick}
+              >
+                {item.icon}
+                <span className="flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className={cn('badge', item.badge.className)}>{item.badge.count}</span>
+                )}
+              </button>
+            );
+          }
+
+          return null;
+        }}
+      />
+    </Section>
   );
 }

@@ -1,11 +1,26 @@
 import { invoke } from '@tauri-apps/api/core';
-import { commands } from '../bindings/api';
+import {
+  commands,
+  type AiProvider,
+  type LfsFetchOptions,
+  type LfsPullOptions,
+  type LfsPushOptions,
+  type LfsMigrateOptions,
+  type LfsPruneOptions,
+  type ProviderType,
+  type PrState,
+  type IssueState,
+  type CreatePrOptions,
+  type MergePrOptions,
+  type CreateIssueOptions,
+} from '../bindings/api';
 import type {
   BranchType,
   LogOptions,
   DiffOptions,
   GraphOptions,
   SearchOptions,
+  FileLogOptions,
   MergeOptions,
   RebaseOptions,
   CherryPickOptions,
@@ -14,10 +29,13 @@ import type {
   ResetOptions,
   StashSaveOptions,
   StashApplyOptions,
+  ReflogOptions,
   CreateTagOptions,
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
+  AddWorktreeOptions,
+  RemoveWorktreeOptions,
   GitFlowInitOptions,
   GitFlowFinishOptions,
   GrepOptions,
@@ -30,6 +48,9 @@ import type {
   ApplyMailboxOptions,
   PushOptions,
   DiffTarget,
+  CreateBranchOptions,
+  BisectStartOptions,
+  BisectMarkType,
 } from '../types';
 
 export const repositoryApi = {
@@ -48,12 +69,6 @@ export const repositoryApi = {
   getRecentRepositories: () => commands.getRecentRepositories(),
 
   removeRecentRepository: (path: string) => commands.removeRecentRepository(path),
-
-  startFileWatcher: () => commands.startFileWatcher(),
-
-  stopFileWatcher: () => commands.stopFileWatcher(),
-
-  isFileWatcherActive: () => commands.isFileWatcherActive(),
 };
 
 export const commitApi = {
@@ -73,8 +88,7 @@ export const branchApi = {
   list: (includeLocal: boolean = true, includeRemote: boolean = true) =>
     commands.getBranches(includeLocal, includeRemote),
 
-  create: (name: string, startPoint?: string, force?: boolean, track?: string) =>
-    commands.createBranch(name, startPoint ?? null, force ?? null, track ?? null),
+  create: (name: string, options: CreateBranchOptions) => commands.createBranch(name, options),
 
   delete: (name: string, force?: boolean) => commands.deleteBranch(name, force ?? null),
 
@@ -94,6 +108,8 @@ export const branchApi = {
 
   setUpstream: (branchName: string, upstream?: string) =>
     commands.setBranchUpstream(branchName, upstream ?? null),
+
+  compare: (baseRef: string, compareRef: string) => commands.compareBranches(baseRef, compareRef),
 };
 
 export const remoteApi = {
@@ -116,11 +132,11 @@ export const remoteApi = {
 
   fetchAll: () => commands.fetchAll(),
 
-  push: (remoteName: string, refspecs: string[], options?: PushOptions) =>
-    commands.pushRemote(remoteName, refspecs, options ?? null),
+  push: (remoteName: string, refspecs: string[], options: PushOptions) =>
+    commands.pushRemote(remoteName, refspecs, options),
 
-  pushCurrentBranch: (remoteName: string, options?: PushOptions) =>
-    commands.pushCurrentBranch(remoteName, options ?? null),
+  pushCurrentBranch: (remoteName: string, options: PushOptions) =>
+    commands.pushCurrentBranch(remoteName, options),
 
   pull: (remoteName: string, branchName: string, rebase?: boolean, ffOnly?: boolean) =>
     commands.pullRemote(remoteName, branchName, rebase ?? null, ffOnly ?? null),
@@ -142,6 +158,8 @@ export const stagingApi = {
   discardFile: (path: string) => commands.discardFile(path),
 
   discardAll: () => commands.discardAll(),
+
+  deleteFile: (path: string) => commands.deleteFile(path),
 
   stageHunk: (patch: string) => commands.stageHunk(patch),
 
@@ -175,6 +193,11 @@ export const graphApi = {
   build: (options?: GraphOptions) => commands.buildGraph(options ?? null),
 
   getCommitCount: (fromRef?: string) => commands.getCommitCount(fromRef ?? null),
+
+  getFileHistory: (options: FileLogOptions) => commands.getFileHistory(options),
+
+  getFileDiffInCommit: (commitOid: string, path: string, options?: DiffOptions) =>
+    commands.getFileDiffInCommit(commitOid, path, options ?? null),
 };
 
 export const searchApi = {
@@ -240,6 +263,18 @@ export const operationApi = {
   reset: (options: ResetOptions) => commands.resetToCommit(options),
 };
 
+export const bisectApi = {
+  start: (options: BisectStartOptions) => commands.bisectStart(options),
+
+  mark: (mark: BisectMarkType, commit?: string) => commands.bisectMark(mark, commit ?? null),
+
+  reset: (commit?: string) => commands.bisectReset(commit ?? null),
+
+  getState: () => commands.bisectState(),
+
+  getLog: () => commands.bisectLog(),
+};
+
 export const stashApi = {
   list: () => commands.stashList(),
 
@@ -256,6 +291,14 @@ export const stashApi = {
   show: (index?: number, statOnly: boolean = false) => commands.stashShow(index ?? null, statOnly),
 
   branch: (branchName: string, index?: number) => commands.stashBranch(branchName, index ?? null),
+};
+
+export const reflogApi = {
+  list: (options: ReflogOptions) => commands.reflogList(options),
+
+  refs: () => commands.reflogRefs(),
+
+  checkout: (reflogRef: string) => commands.reflogCheckout(reflogRef),
 };
 
 export const tagApi = {
@@ -288,6 +331,20 @@ export const submoduleApi = {
   remove: (path: string) => commands.submoduleRemove(path),
 
   summary: () => commands.submoduleSummary(),
+};
+
+export const worktreeApi = {
+  list: () => commands.worktreeList(),
+
+  add: (options: AddWorktreeOptions) => commands.worktreeAdd(options),
+
+  remove: (options: RemoveWorktreeOptions) => commands.worktreeRemove(options),
+
+  lock: (path: string, reason?: string) => commands.worktreeLock(path, reason ?? null),
+
+  unlock: (path: string) => commands.worktreeUnlock(path),
+
+  prune: (dryRun: boolean = false) => commands.worktreePrune(dryRun),
 };
 
 export const gitflowApi = {
@@ -344,6 +401,13 @@ export const settingsApi = {
   save: (settings: AppSettings) => commands.saveSettings(settings),
 };
 
+export const repoSettingsApi = {
+  get: () => commands.getRepositorySettings(),
+
+  saveUserConfig: (userName: string | null, userEmail: string | null) =>
+    commands.saveRepositoryUserConfig(userName, userEmail),
+};
+
 export const signingApi = {
   getConfig: () => commands.getSigningConfig(),
 
@@ -360,6 +424,8 @@ export const shellApi = {
   showInFolder: (path: string) => commands.showInFolder(path),
 
   openTerminal: (path: string) => commands.openTerminal(path),
+
+  openUrl: (url: string) => commands.openUrl(url),
 };
 
 export const archiveApi = {
@@ -380,4 +446,126 @@ export const patchApi = {
   continue: () => commands.amContinue(),
 
   skip: () => commands.amSkip(),
+};
+
+export const aiApi = {
+  generateCommitMessage: () => commands.generateCommitMessage(),
+
+  setApiKey: (provider: AiProvider, apiKey: string) => commands.setAiApiKey(provider, apiKey),
+
+  hasApiKey: (provider: AiProvider) => commands.hasAiApiKey(provider),
+
+  deleteApiKey: (provider: AiProvider) => commands.deleteAiApiKey(provider),
+
+  testConnection: (provider: AiProvider) => commands.testAiConnection(provider),
+
+  listOllamaModels: (ollamaUrl?: string) => commands.listOllamaModels(ollamaUrl ?? null),
+};
+
+export const lfsApi = {
+  checkInstalled: () => commands.lfsCheckInstalled(),
+
+  getGitEnvironment: () => commands.getGitEnvironment(),
+
+  getStatus: () => commands.lfsStatus(),
+
+  install: () => commands.lfsInstall(),
+
+  track: (pattern: string) => commands.lfsTrack(pattern),
+
+  untrack: (pattern: string) => commands.lfsUntrack(pattern),
+
+  listPatterns: () => commands.lfsListPatterns(),
+
+  listFiles: () => commands.lfsListFiles(),
+
+  fetch: (options: LfsFetchOptions) => commands.lfsFetch(options),
+
+  pull: (options: LfsPullOptions) => commands.lfsPull(options),
+
+  push: (options: LfsPushOptions) => commands.lfsPush(options),
+
+  migrate: (options: LfsMigrateOptions) => commands.lfsMigrate(options),
+
+  getEnv: () => commands.lfsEnv(),
+
+  isPointer: (path: string) => commands.lfsIsPointer(path),
+
+  prune: (options: LfsPruneOptions) => commands.lfsPrune(options),
+};
+
+export const integrationApi = {
+  // OAuth / Connection
+  setGithubClientId: (clientId: string) => commands.integrationSetGithubClientId(clientId),
+
+  startOauth: () => commands.integrationStartOauth(),
+
+  cancelOauth: () => commands.integrationCancelOauth(),
+
+  isConnected: (provider: ProviderType) => commands.integrationIsConnected(provider),
+
+  getStatus: (provider: ProviderType) => commands.integrationGetStatus(provider),
+
+  disconnect: (provider: ProviderType) => commands.integrationDisconnect(provider),
+
+  // Provider Detection
+  detectProvider: () => commands.integrationDetectProvider(),
+
+  // Repository
+  getRepoInfo: (owner: string, repo: string) => commands.integrationGetRepoInfo(owner, repo),
+
+  // Pull Requests
+  listPrs: (owner: string, repo: string, state: PrState, page: number) =>
+    commands.integrationListPrs(owner, repo, state, page),
+
+  getPr: (owner: string, repo: string, number: number) =>
+    commands.integrationGetPr(owner, repo, number),
+
+  createPr: (owner: string, repo: string, options: CreatePrOptions) =>
+    commands.integrationCreatePr(owner, repo, options),
+
+  mergePr: (owner: string, repo: string, number: number, options: MergePrOptions) =>
+    commands.integrationMergePr(owner, repo, number, options),
+
+  // Issues
+  listIssues: (owner: string, repo: string, state: IssueState, page: number) =>
+    commands.integrationListIssues(owner, repo, state, page),
+
+  getIssue: (owner: string, repo: string, number: number) =>
+    commands.integrationGetIssue(owner, repo, number),
+
+  createIssue: (owner: string, repo: string, options: CreateIssueOptions) =>
+    commands.integrationCreateIssue(owner, repo, options),
+
+  // CI/CD
+  listCiRuns: (owner: string, repo: string, page: number) =>
+    commands.integrationListCiRuns(owner, repo, page),
+
+  getCommitStatus: (owner: string, repo: string, sha: string) =>
+    commands.integrationGetCommitStatus(owner, repo, sha),
+
+  // Notifications
+  listNotifications: (all: boolean, page: number) =>
+    commands.integrationListNotifications(all, page),
+
+  markNotificationRead: (threadId: string) => commands.integrationMarkNotificationRead(threadId),
+
+  markAllNotificationsRead: () => commands.integrationMarkAllNotificationsRead(),
+
+  getUnreadCount: () => commands.integrationGetUnreadCount(),
+};
+
+export const gitignoreApi = {
+  addPattern: (pattern: string, gitignorePath: string) =>
+    commands.addToGitignore(pattern, gitignorePath),
+
+  addToGlobal: (pattern: string) => commands.addToGlobalGitignore(pattern),
+
+  getOptions: (filePath: string) => commands.getIgnoreOptions(filePath),
+};
+
+export const avatarApi = {
+  get: (email: string, sha?: string) => commands.getAvatar(email, sha ?? null),
+
+  clearCache: () => commands.clearAvatarCache(),
 };

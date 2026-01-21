@@ -398,6 +398,103 @@ impl SigningService {
         Ok(keys)
     }
 
+    /// Verify a GPG signature and extract signer info
+    pub fn verify_gpg_signature(signature: &str, data: &str) -> Option<String> {
+        let gpg_program = Self::find_gpg_program()?;
+
+        let mut sig_file = NamedTempFile::new().ok()?;
+        let mut data_file = NamedTempFile::new().ok()?;
+
+        sig_file.write_all(signature.as_bytes()).ok()?;
+        data_file.write_all(data.as_bytes()).ok()?;
+
+        let output = Command::new(&gpg_program)
+            .args([
+                "--status-fd=1",
+                "--verify",
+                sig_file.path().to_str()?,
+                data_file.path().to_str()?,
+            ])
+            .output()
+            .ok()?;
+
+        let status = String::from_utf8_lossy(&output.stdout);
+
+        // Look for GOODSIG line: [GNUPG:] GOODSIG <keyid> <username>
+        for line in status.lines() {
+            if line.contains("GOODSIG") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    return Some(parts[3..].join(" "));
+                }
+            }
+        }
+
+        // Try to get key ID from ERRSIG if not verified
+        for line in status.lines() {
+            if line.contains("ERRSIG") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 3 {
+                    return Some(format!("Key: {}", parts[2]));
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Verify an SSH signature and extract signer info
+    pub fn verify_ssh_signature(signature: &str, data: &str, repo_path: &Path) -> Option<String> {
+        let ssh_program = Self::find_ssh_program()?;
+
+        // Get allowed signers file from git config
+        let repo = git2::Repository::open(repo_path).ok()?;
+        let config = repo.config().ok()?;
+        let allowed_signers = config.get_string("gpg.ssh.allowedSignersFile").ok()?;
+        let allowed_signers = expand_path(&allowed_signers);
+
+        if !Path::new(&allowed_signers).exists() {
+            return None;
+        }
+
+        let mut sig_file = NamedTempFile::new().ok()?;
+        let mut data_file = NamedTempFile::new().ok()?;
+
+        sig_file.write_all(signature.as_bytes()).ok()?;
+        data_file.write_all(data.as_bytes()).ok()?;
+
+        // ssh-keygen -Y verify -f <allowed_signers> -I <identity> -n git -s <sig> < <data>
+        let output = Command::new(&ssh_program)
+            .args([
+                "-Y",
+                "verify",
+                "-f",
+                &allowed_signers,
+                "-I",
+                "*", // Match any identity
+                "-n",
+                "git",
+                "-s",
+                sig_file.path().to_str()?,
+            ])
+            .stdin(std::fs::File::open(data_file.path()).ok()?)
+            .output()
+            .ok()?;
+
+        if output.status.success() {
+            // Extract principal from output
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                if line.contains("Good") {
+                    return Some(line.to_string());
+                }
+            }
+            return Some("Verified".to_string());
+        }
+
+        None
+    }
+
     /// Test signing with the given configuration
     pub fn test_signing(&self, config: &SigningConfig) -> SigningTestResult {
         let test_content = "test signing content";

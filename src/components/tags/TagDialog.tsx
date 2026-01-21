@@ -16,6 +16,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
   Textarea,
   CheckboxField,
   Alert,
@@ -195,16 +196,16 @@ export function TagDialog({
             />
             <Select
               value={selectedRemote}
-              onChange={(e) => setSelectedRemote(e.target.value)}
+              onValueChange={setSelectedRemote}
               disabled={isLoading || !pushTag}
               className="flex-1"
             >
               {remotes.map((remote) => (
-                <option key={remote.name} value={remote.name}>
+                <SelectItem key={remote.name} value={remote.name}>
                   {remote.name}
-                </option>
+                </SelectItem>
               ))}
-              {remotes.length === 0 && <option value="origin">origin</option>}
+              {remotes.length === 0 && <SelectItem value="origin">origin</SelectItem>}
             </Select>
           </div>
 

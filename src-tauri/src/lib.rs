@@ -21,6 +21,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::init_repository,
             crate::commands::clone_repository,
             crate::commands::close_repository,
+            crate::commands::switch_active_repository,
+            crate::commands::close_repository_path,
             crate::commands::get_repository_info,
             crate::commands::get_repository_status,
             crate::commands::get_commit_history,
@@ -29,6 +31,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_recent_repositories,
             crate::commands::remove_recent_repository,
             crate::commands::show_in_folder,
+            crate::commands::open_url,
             crate::commands::open_terminal,
             // Staging commands
             crate::commands::stage_file,
@@ -45,6 +48,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::stage_hunk,
             crate::commands::unstage_hunk,
             crate::commands::discard_hunk,
+            crate::commands::delete_file,
             // Diff commands
             crate::commands::get_diff,
             crate::commands::get_diff_workdir,
@@ -53,10 +57,6 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_diff_commit,
             crate::commands::get_diff_commits,
             crate::commands::get_file_diff,
-            // File watcher commands
-            crate::commands::start_file_watcher,
-            crate::commands::stop_file_watcher,
-            crate::commands::is_file_watcher_active,
             // Branch commands
             crate::commands::create_branch,
             crate::commands::delete_branch,
@@ -66,6 +66,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::checkout_remote_branch,
             crate::commands::get_branch,
             crate::commands::set_branch_upstream,
+            crate::commands::compare_branches,
             // Remote commands
             crate::commands::list_remotes,
             crate::commands::get_remote,
@@ -84,6 +85,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::search_commits,
             crate::commands::blame_file,
             crate::commands::get_commit_count,
+            crate::commands::get_file_history,
+            crate::commands::get_file_diff_in_commit,
             // Merge commands
             crate::commands::merge_branch,
             crate::commands::merge_abort,
@@ -110,6 +113,12 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::mark_conflict_resolved,
             // Operation state
             crate::commands::get_operation_state,
+            // Bisect commands
+            crate::commands::bisect_start,
+            crate::commands::bisect_mark,
+            crate::commands::bisect_reset,
+            crate::commands::bisect_state,
+            crate::commands::bisect_log,
             // Reset commands
             crate::commands::reset_to_commit,
             // Stash commands
@@ -121,6 +130,10 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::stash_clear,
             crate::commands::stash_show,
             crate::commands::stash_branch,
+            // Reflog commands
+            crate::commands::reflog_list,
+            crate::commands::reflog_refs,
+            crate::commands::reflog_checkout,
             // Tag commands
             crate::commands::tag_list,
             crate::commands::tag_create,
@@ -137,6 +150,13 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::submodule_deinit,
             crate::commands::submodule_remove,
             crate::commands::submodule_summary,
+            // Worktree commands
+            crate::commands::worktree_list,
+            crate::commands::worktree_add,
+            crate::commands::worktree_remove,
+            crate::commands::worktree_lock,
+            crate::commands::worktree_unlock,
+            crate::commands::worktree_prune,
             // Git-flow commands
             crate::commands::gitflow_is_initialized,
             crate::commands::gitflow_config,
@@ -159,6 +179,9 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Settings commands
             crate::commands::get_settings,
             crate::commands::save_settings,
+            // Repository settings commands
+            crate::commands::get_repository_settings,
+            crate::commands::save_repository_user_config,
             // Signing commands
             crate::commands::get_signing_config,
             crate::commands::list_gpg_keys,
@@ -174,6 +197,58 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::am_abort,
             crate::commands::am_continue,
             crate::commands::am_skip,
+            // AI commands
+            crate::commands::generate_commit_message,
+            crate::commands::set_ai_api_key,
+            crate::commands::has_ai_api_key,
+            crate::commands::delete_ai_api_key,
+            crate::commands::test_ai_connection,
+            crate::commands::list_ollama_models,
+            // Gitignore commands
+            crate::commands::add_to_gitignore,
+            crate::commands::add_to_global_gitignore,
+            crate::commands::get_ignore_options,
+            // LFS commands
+            crate::commands::lfs_check_installed,
+            crate::commands::get_git_environment,
+            crate::commands::lfs_status,
+            crate::commands::lfs_install,
+            crate::commands::lfs_track,
+            crate::commands::lfs_untrack,
+            crate::commands::lfs_list_patterns,
+            crate::commands::lfs_list_files,
+            crate::commands::lfs_fetch,
+            crate::commands::lfs_pull,
+            crate::commands::lfs_push,
+            crate::commands::lfs_migrate,
+            crate::commands::lfs_env,
+            crate::commands::lfs_is_pointer,
+            crate::commands::lfs_prune,
+            // Integration commands
+            crate::commands::integration_set_github_client_id,
+            crate::commands::integration_start_oauth,
+            crate::commands::integration_cancel_oauth,
+            crate::commands::integration_is_connected,
+            crate::commands::integration_get_status,
+            crate::commands::integration_disconnect,
+            crate::commands::integration_detect_provider,
+            crate::commands::integration_get_repo_info,
+            crate::commands::integration_list_prs,
+            crate::commands::integration_get_pr,
+            crate::commands::integration_create_pr,
+            crate::commands::integration_merge_pr,
+            crate::commands::integration_list_issues,
+            crate::commands::integration_get_issue,
+            crate::commands::integration_create_issue,
+            crate::commands::integration_list_ci_runs,
+            crate::commands::integration_get_commit_status,
+            crate::commands::integration_list_notifications,
+            crate::commands::integration_mark_notification_read,
+            crate::commands::integration_mark_all_notifications_read,
+            crate::commands::integration_get_unread_count,
+            // Avatar commands
+            crate::commands::get_avatar,
+            crate::commands::clear_avatar_cache,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,
@@ -181,7 +256,11 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::IndexChangedEvent,
             crate::events::RefChangedEvent,
             crate::events::HeadChangedEvent,
-            crate::events::WatchErrorEvent
+            crate::events::WatchErrorEvent,
+            crate::events::RepositoryDirtyEvent,
+            crate::events::RemoteFetchedEvent,
+            crate::events::OAuthCallbackEvent,
+            crate::events::IntegrationStatusChangedEvent
         ])
 }
 
@@ -213,7 +292,22 @@ pub fn run() {
 
             let database = Database::new(&app_data_dir).expect("Failed to initialize database");
 
+            // Get auto_fetch_interval from settings before creating AppState
+            let auto_fetch_interval = database
+                .get_settings()
+                .map(|s| s.auto_fetch_interval)
+                .unwrap_or(5);
+
             let app_state = AppState::new(database);
+
+            // Set the app handle so GitService can create file watchers
+            app_state.set_app_handle(app.handle().clone());
+
+            // Start background fetch service with configured interval
+            if let Err(e) = app_state.start_background_fetch(auto_fetch_interval) {
+                log::warn!("Failed to start background fetch service: {e}");
+            }
+
             app.manage(app_state);
 
             // Create and set the application menu

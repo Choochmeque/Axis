@@ -32,3 +32,18 @@ pub struct HeadChangedEvent;
 pub struct WatchErrorEvent {
     pub message: String,
 }
+
+/// Repository has changes (for inactive repo tab badges)
+#[derive(Clone, Serialize, Type, Event)]
+#[serde(rename_all = "camelCase")]
+pub struct RepositoryDirtyEvent {
+    pub path: String,
+}
+
+/// Remote fetch completed with new commits
+#[derive(Clone, Serialize, Type, Event)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteFetchedEvent {
+    pub path: String,
+    pub new_commits: u32,
+}

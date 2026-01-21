@@ -3,6 +3,7 @@ import { memo, useRef, useCallback, useLayoutEffect, useMemo, forwardRef } from 
 import { GitBranch, Tag } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
+import { Avatar } from '@/components/ui';
 import { CommitContextMenu } from './CommitContextMenu';
 
 const UNCOMMITTED = 'uncommitted';
@@ -86,6 +87,7 @@ interface CommitRowProps {
   widthAtVertex: number;
   isMuted: boolean;
   isCurrent: boolean;
+  isSelected: boolean;
   commitHead: string | null;
   onClick: (e: React.MouseEvent, index: number, commit: GraphCommit) => void;
 }
@@ -102,6 +104,7 @@ const CommitRow = memo(
       widthAtVertex,
       isMuted,
       isCurrent,
+      isSelected,
       commitHead,
       onClick,
       ...rest
@@ -127,8 +130,11 @@ const CommitRow = memo(
 
     // Build class name
     const rowClassName = useMemo(
-      () => ['commit', isCurrent ? 'current' : '', isMuted ? 'mute' : ''].filter(Boolean).join(' '),
-      [isCurrent, isMuted]
+      () =>
+        ['commit', isCurrent ? 'current' : '', isSelected ? 'selected' : '', isMuted ? 'mute' : '']
+          .filter(Boolean)
+          .join(' '),
+      [isCurrent, isSelected, isMuted]
     );
 
     // Commit dot for HEAD
@@ -199,7 +205,17 @@ const CommitRow = memo(
           {date.formatted}
         </td>
         <td className="authorCol text" title={authorTitle}>
-          {authorDisplay}
+          <span className="authorCell">
+            {!isUncommitted && (
+              <Avatar
+                email={commit.author.email}
+                sha={commit.oid}
+                name={commit.author.name}
+                size={16}
+              />
+            )}
+            {authorDisplay}
+          </span>
         </td>
         <td className="text" title={commitTitle}>
           {commitDisplay}
@@ -215,6 +231,7 @@ interface CommitTableProps {
   widthsAtVertices: number[];
   mutedCommits: boolean[];
   commitHead: string | null;
+  selectedCommitOid: string | null;
   onCommitClick: (index: number, commit: GraphCommit) => void;
   onGraphWidthChange?: (width: number) => void;
   tableHeaderRef?: React.RefObject<HTMLTableRowElement | null>;
@@ -226,6 +243,7 @@ export const CommitTable = memo(function CommitTable({
   widthsAtVertices,
   mutedCommits,
   commitHead,
+  selectedCommitOid,
   onCommitClick,
   onGraphWidthChange,
   tableHeaderRef,
@@ -439,6 +457,7 @@ export const CommitTable = memo(function CommitTable({
                 widthAtVertex={widthsAtVertices[i]}
                 isMuted={mutedCommits[i]}
                 isCurrent={commit.oid === currentHash}
+                isSelected={commit.oid === selectedCommitOid}
                 commitHead={commitHead}
                 onClick={handleRowClick}
               />

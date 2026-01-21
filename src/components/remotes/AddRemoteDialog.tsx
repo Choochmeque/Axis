@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Cloud } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -55,7 +56,7 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
       await loadBranches();
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

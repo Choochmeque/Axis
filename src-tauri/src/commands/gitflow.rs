@@ -11,16 +11,18 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_is_initialized(state: State<'_, AppState>) -> Result<bool> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_is_initialized()
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_is_initialized())
 }
 
 /// Get git-flow configuration
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_config(state: State<'_, AppState>) -> Result<Option<GitFlowConfig>> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_config()
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_config())
 }
 
 /// Initialize git-flow
@@ -30,8 +32,9 @@ pub async fn gitflow_init(
     state: State<'_, AppState>,
     options: GitFlowInitOptions,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_init(&options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_init(&options))
 }
 
 /// Start a feature branch
@@ -42,8 +45,9 @@ pub async fn gitflow_feature_start(
     name: String,
     base: Option<String>,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_start(GitFlowBranchType::Feature, &name, base.as_deref())
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_start(GitFlowBranchType::Feature, &name, base.as_deref()))
 }
 
 /// Finish a feature branch
@@ -54,8 +58,9 @@ pub async fn gitflow_feature_finish(
     name: String,
     options: GitFlowFinishOptions,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_finish(GitFlowBranchType::Feature, &name, &options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_finish(GitFlowBranchType::Feature, &name, &options))
 }
 
 /// Publish a feature branch
@@ -65,16 +70,18 @@ pub async fn gitflow_feature_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_publish(GitFlowBranchType::Feature, &name)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_publish(GitFlowBranchType::Feature, &name))
 }
 
 /// List feature branches
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_feature_list(state: State<'_, AppState>) -> Result<Vec<String>> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_list(GitFlowBranchType::Feature)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_list(GitFlowBranchType::Feature))
 }
 
 /// Start a release branch
@@ -85,8 +92,9 @@ pub async fn gitflow_release_start(
     name: String,
     base: Option<String>,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_start(GitFlowBranchType::Release, &name, base.as_deref())
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_start(GitFlowBranchType::Release, &name, base.as_deref()))
 }
 
 /// Finish a release branch
@@ -97,8 +105,9 @@ pub async fn gitflow_release_finish(
     name: String,
     options: GitFlowFinishOptions,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_finish(GitFlowBranchType::Release, &name, &options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_finish(GitFlowBranchType::Release, &name, &options))
 }
 
 /// Publish a release branch
@@ -108,16 +117,18 @@ pub async fn gitflow_release_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_publish(GitFlowBranchType::Release, &name)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_publish(GitFlowBranchType::Release, &name))
 }
 
 /// List release branches
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_release_list(state: State<'_, AppState>) -> Result<Vec<String>> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_list(GitFlowBranchType::Release)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_list(GitFlowBranchType::Release))
 }
 
 /// Start a hotfix branch
@@ -128,8 +139,9 @@ pub async fn gitflow_hotfix_start(
     name: String,
     base: Option<String>,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_start(GitFlowBranchType::Hotfix, &name, base.as_deref())
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_start(GitFlowBranchType::Hotfix, &name, base.as_deref()))
 }
 
 /// Finish a hotfix branch
@@ -140,8 +152,9 @@ pub async fn gitflow_hotfix_finish(
     name: String,
     options: GitFlowFinishOptions,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_finish(GitFlowBranchType::Hotfix, &name, &options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_finish(GitFlowBranchType::Hotfix, &name, &options))
 }
 
 /// Publish a hotfix branch
@@ -151,14 +164,16 @@ pub async fn gitflow_hotfix_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_publish(GitFlowBranchType::Hotfix, &name)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_publish(GitFlowBranchType::Hotfix, &name))
 }
 
 /// List hotfix branches
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_hotfix_list(state: State<'_, AppState>) -> Result<Vec<String>> {
-    let cli = state.get_cli_service()?;
-    cli.gitflow_list(GitFlowBranchType::Hotfix)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.gitflow_list(GitFlowBranchType::Hotfix))
 }

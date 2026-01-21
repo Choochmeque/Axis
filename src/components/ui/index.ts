@@ -36,7 +36,7 @@ export {
 export { Checkbox, CheckboxField } from './checkbox';
 export { Input } from './input';
 export { Textarea } from './textarea';
-export { Select } from './select';
+export { Select, SelectItem, SelectGroup, SelectLabel, SelectSeparator } from './select';
 export { Label } from './label';
 export { FormField } from './form-field';
 export { Alert, alertVariants } from './alert';

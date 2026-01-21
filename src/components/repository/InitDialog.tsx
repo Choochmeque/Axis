@@ -4,6 +4,7 @@ import { FolderPlus, FolderOpen } from 'lucide-react';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { TabType, useTabsStore } from '@/store/tabsStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -75,7 +76,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
       setBare(false);
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

@@ -16,6 +16,7 @@ import {
   Button,
   FormField,
   Select,
+  SelectItem,
   Textarea,
   CheckboxField,
   Alert,
@@ -145,15 +146,15 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 <Select
                   id="merge-branch"
                   value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  onValueChange={setSelectedBranch}
                   disabled={isLoading}
+                  placeholder="Select a branch..."
                 >
-                  <option value="">Select a branch...</option>
                   {branches.map((branch) => (
-                    <option key={branch.fullName} value={branch.name}>
+                    <SelectItem key={branch.fullName} value={branch.name}>
                       {branch.name}
                       {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
-                    </option>
+                    </SelectItem>
                   ))}
                 </Select>
               </FormField>

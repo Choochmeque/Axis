@@ -13,6 +13,7 @@ export type {
 
   // Branch types
   Branch,
+  CreateBranchOptions,
 
   // Diff types
   FileDiff,
@@ -47,6 +48,10 @@ export type {
   GrepMatch,
   GrepResult,
 
+  // File log types
+  FileLogOptions,
+  FileLogResult,
+
   // Merge types
   MergeOptions,
   MergeResult,
@@ -72,6 +77,11 @@ export type {
   // Operation state
   OperationState,
 
+  // Bisect types
+  BisectStartOptions,
+  BisectResult,
+  BisectState,
+
   // Reset types
   ResetOptions,
 
@@ -80,6 +90,10 @@ export type {
   StashSaveOptions,
   StashApplyOptions,
   StashResult,
+
+  // Reflog types
+  ReflogEntry,
+  ReflogOptions,
 
   // Tag types
   Tag,
@@ -93,6 +107,12 @@ export type {
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
   SubmoduleResult,
+
+  // Worktree types
+  Worktree,
+  AddWorktreeOptions,
+  RemoveWorktreeOptions,
+  WorktreeResult,
 
   // Git-flow types
   GitFlowConfig,
@@ -117,10 +137,56 @@ export type {
   ApplyPatchOptions,
   ApplyMailboxOptions,
   PatchResult,
+
+  // Gitignore types
+  IgnoreOptions,
+  IgnoreResult,
+  IgnoreSuggestion,
+  IgnoreSuggestionType,
+
+  // Integration types
+  DetectedProvider,
+  IntegrationStatus,
+  IntegrationRepoInfo,
+  PullRequest,
+  PullRequestDetail,
+  Issue,
+  IssueDetail,
+  CIRun,
+  CommitStatus,
+  Notification,
+  CreatePrOptions,
+  MergePrOptions,
+  CreateIssueOptions,
+  IntegrationUser,
+  IntegrationLabel,
+  CiRunsPage,
+  PullRequestsPage,
+  IssuesPage,
+  NotificationsPage,
+
+  // Avatar types
+  AvatarResponse,
+  AvatarSource,
+
+  // LFS types
+  LfsStatus,
+  LfsTrackedPattern,
+  LfsFile,
+  LfsFetchOptions,
+  LfsPullOptions,
+  LfsPushOptions,
+  LfsMigrateOptions,
+  LfsResult,
+  LfsEnvironment,
+  GitEnvironment,
+  LfsPruneOptions,
+  LfsPruneResult,
 } from '../bindings/api';
 
 // Import types used locally
 import type {
+  AiProvider as AiProviderType,
   BranchType as BranchTypeType,
   BranchFilterType as BranchFilterTypeType,
   SortOrder as SortOrderType,
@@ -141,15 +207,24 @@ import type {
   SubmoduleStatus as SubmoduleStatusType,
   ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
+  BisectMarkType as BisectMarkTypeType,
+  // Integration types
+  PrState as PrStateType,
+  IssueState as IssueStateType,
+  MergeMethod as MergeMethodType,
+  ProviderType as ProviderTypeType,
+  CIRunStatus as CIRunStatusType,
+  CIConclusion as CIConclusionType,
+  CommitStatusState as CommitStatusStateType,
+  NotificationReason as NotificationReasonType,
+  // LFS types
+  LfsFileStatus as LfsFileStatusType,
+  LfsMigrateMode as LfsMigrateModeType,
+  // Reflog types
+  ReflogAction as ReflogActionType,
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
-
-export interface CreateBranchOptions {
-  startPoint?: string;
-  force?: boolean;
-  track?: string;
-}
 
 export interface CheckoutOptions {
   create?: boolean;
@@ -174,6 +249,14 @@ export type ArchiveFormat = 'zip' | 'tar' | 'tar.gz' | 'tar.bz2';
 
 // Re-export the type for type annotations
 /* eslint-disable @typescript-eslint/naming-convention */
+
+export const AiProvider: { [K in AiProviderType]: K } = {
+  OpenAi: 'OpenAi',
+  Anthropic: 'Anthropic',
+  Ollama: 'Ollama',
+};
+
+export type AiProvider = AiProviderType;
 
 export const BranchType: { [K in BranchTypeType]: K } = {
   Local: 'Local',
@@ -381,5 +464,133 @@ export const MenuAction: { [K in MenuActionType]: K } = {
 };
 
 export type MenuAction = MenuActionType;
+
+export const BisectMarkType: { [K in BisectMarkTypeType]: K } = {
+  Good: 'Good',
+  Bad: 'Bad',
+  Skip: 'Skip',
+};
+
+export type BisectMarkType = BisectMarkTypeType;
+
+// Integration enum helpers
+export const PrState: { [K in PrStateType]: K } = {
+  Open: 'Open',
+  Closed: 'Closed',
+  Merged: 'Merged',
+  All: 'All',
+};
+
+export type PrState = PrStateType;
+
+export const IssueState: { [K in IssueStateType]: K } = {
+  Open: 'Open',
+  Closed: 'Closed',
+  All: 'All',
+};
+
+export type IssueState = IssueStateType;
+
+export const MergeMethod: { [K in MergeMethodType]: K } = {
+  Merge: 'Merge',
+  Squash: 'Squash',
+  Rebase: 'Rebase',
+};
+
+export type MergeMethod = MergeMethodType;
+
+export const ProviderType: { [K in ProviderTypeType]: K } = {
+  GitHub: 'GitHub',
+  GitLab: 'GitLab',
+  Bitbucket: 'Bitbucket',
+  Gitea: 'Gitea',
+};
+
+export type ProviderType = ProviderTypeType;
+
+export const CIRunStatus: { [K in CIRunStatusType]: K } = {
+  Queued: 'Queued',
+  InProgress: 'InProgress',
+  Completed: 'Completed',
+};
+
+export type CIRunStatus = CIRunStatusType;
+
+export const CIConclusion: { [K in CIConclusionType]: K } = {
+  Success: 'Success',
+  Failure: 'Failure',
+  Cancelled: 'Cancelled',
+  Skipped: 'Skipped',
+  Neutral: 'Neutral',
+  TimedOut: 'TimedOut',
+  ActionRequired: 'ActionRequired',
+};
+
+export type CIConclusion = CIConclusionType;
+
+export const CommitStatusState: { [K in CommitStatusStateType]: K } = {
+  Pending: 'Pending',
+  Success: 'Success',
+  Failure: 'Failure',
+  Error: 'Error',
+};
+
+export type CommitStatusState = CommitStatusStateType;
+
+export const NotificationReason: { [K in NotificationReasonType]: K } = {
+  Assigned: 'Assigned',
+  Author: 'Author',
+  Comment: 'Comment',
+  Invitation: 'Invitation',
+  Manual: 'Manual',
+  Mention: 'Mention',
+  ReviewRequested: 'ReviewRequested',
+  SecurityAlert: 'SecurityAlert',
+  StateChange: 'StateChange',
+  Subscribed: 'Subscribed',
+  TeamMention: 'TeamMention',
+  CiActivity: 'CiActivity',
+};
+
+export type NotificationReason = NotificationReasonType;
+
+// LFS enum helpers
+export const LfsFileStatus: { [K in LfsFileStatusType]: K } = {
+  Downloaded: 'Downloaded',
+  Pointer: 'Pointer',
+  NotLfs: 'NotLfs',
+  Unknown: 'Unknown',
+};
+
+export type LfsFileStatus = LfsFileStatusType;
+
+export const LfsMigrateMode: { [K in LfsMigrateModeType]: K } = {
+  Import: 'Import',
+  Export: 'Export',
+  Info: 'Info',
+};
+
+export type LfsMigrateMode = LfsMigrateModeType;
+
+// Reflog enum helper (excluding Other variant which has data)
+export const ReflogAction: {
+  [K in Exclude<ReflogActionType, { Other: string }>]: K;
+} = {
+  Commit: 'Commit',
+  CommitAmend: 'CommitAmend',
+  CommitInitial: 'CommitInitial',
+  Checkout: 'Checkout',
+  Merge: 'Merge',
+  Rebase: 'Rebase',
+  Reset: 'Reset',
+  CherryPick: 'CherryPick',
+  Revert: 'Revert',
+  Pull: 'Pull',
+  Clone: 'Clone',
+  Branch: 'Branch',
+  Stash: 'Stash',
+};
+
+export type ReflogAction = ReflogActionType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

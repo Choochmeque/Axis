@@ -11,6 +11,10 @@ const FALLBACK_MESSAGES: Partial<Record<AxisError['type'], string>> = {
   CannotFastForward: 'Cannot fast-forward, merge or rebase required',
   RebaseRequired: 'Rebase required',
   MergeConflict: 'Merge conflict detected',
+  OAuthError: 'OAuth authentication failed',
+  OAuthCancelled: 'OAuth flow was cancelled',
+  IntegrationError: 'Integration error',
+  IntegrationNotConnected: 'Integration not connected',
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 

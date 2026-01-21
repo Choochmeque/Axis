@@ -17,6 +17,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
   Label,
   Alert,
 } from '@/components/ui';
@@ -138,13 +139,13 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             <Select
               id="archive-format"
               value={format}
-              onChange={(e) => setFormat(e.target.value as ArchiveFormat)}
+              onValueChange={(value) => setFormat(value as ArchiveFormat)}
               disabled={isLoading}
             >
               {ARCHIVE_FORMATS.map((f) => (
-                <option key={f.value} value={f.value}>
+                <SelectItem key={f.value} value={f.value}>
                   {f.label} ({f.extension})
-                </option>
+                </SelectItem>
               ))}
             </Select>
           </FormField>

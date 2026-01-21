@@ -248,6 +248,13 @@ pub enum OperationState {
         /// Commit being reverted
         commit: Option<String>,
     },
+    /// Bisect in progress
+    Bisecting {
+        /// Current commit being tested
+        current_commit: Option<String>,
+        /// Approximate steps remaining
+        steps_remaining: Option<usize>,
+    },
 }
 
 /// Reset mode for reset operations

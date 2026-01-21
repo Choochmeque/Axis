@@ -764,11 +764,11 @@ code {
   }
 
   .dropdown-item {
-    @apply flex items-center py-1.5 px-2 pl-7 text-base text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
+    @apply flex items-center gap-2 py-1.5 px-2 text-base text-(--text-primary) rounded cursor-pointer outline-none relative hover:bg-(--bg-hover) data-[highlighted]:bg-(--bg-hover) data-disabled:text-(--text-tertiary) data-disabled:cursor-default;
   }
 
   .dropdown-item-danger {
-    @apply flex items-center py-1.5 px-2 pl-7 text-base rounded cursor-pointer outline-none relative data-disabled:cursor-default;
+    @apply flex items-center gap-2 py-1.5 px-2 text-base rounded cursor-pointer outline-none relative data-disabled:cursor-default;
     @apply text-error hover:bg-error/10 data-highlighted:bg-error/10 data-disabled:opacity-50;
   }
 
@@ -998,6 +998,13 @@ code {
     max-width: 124px;
   }
 
+  /* Author cell with avatar */
+  #commitTable .authorCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   /* Responsive column widths */
   @media screen and (max-width: 850px) {
     #commitTable table.autoLayout td.dateCol,
@@ -1088,5 +1095,63 @@ code {
     width: 10px;
     height: 10px;
     flex-shrink: 0;
+  }
+
+  /* Conventional Commits Form */
+  .cc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .cc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .cc-type-select {
+    width: 6rem;
+    flex-shrink: 0;
+  }
+
+  .cc-scope-input {
+    width: 7rem;
+    flex-shrink: 0;
+  }
+
+  .cc-subject-input {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .cc-breaking-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .cc-breaking-label span {
+    font-weight: 600;
+    color: var(--color-warning);
+  }
+
+  .cc-char-count {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .cc-body {
+    min-height: 3rem;
+    flex: 1;
   }
 }

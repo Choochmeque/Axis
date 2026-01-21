@@ -29,14 +29,6 @@ export function StatusBar() {
       </div>
       <div className="flex items-center gap-4">
         {isLoading && <span className="flex items-center gap-1">Loading...</span>}
-        {repository && (
-          <span
-            className="flex items-center gap-1 max-w-75 overflow-hidden text-ellipsis whitespace-nowrap"
-            title={repository.path}
-          >
-            {repository.path}
-          </span>
-        )}
         <OperationsIndicator />
         <ToastHistoryDropdown />
       </div>

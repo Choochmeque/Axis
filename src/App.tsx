@@ -1,28 +1,39 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 
 import { AppLayout } from './components/layout';
 import { HistoryView } from './components/history';
 import { WorkspaceView } from './components/workspace';
 import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
+import { ReflogView } from './components/reflog';
+import { LfsView } from './components/lfs';
+import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, toast } from './hooks';
-import { notifyNewCommits } from './lib/actions';
 import { getErrorMessage } from './lib/errorUtils';
-import { remoteApi } from './services/api';
-import { operations } from './store/operationStore';
+import { notifyNewCommits } from './lib/actions';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
+import { useIntegrationStore } from './store/integrationStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
+import { events } from '@/bindings/api';
 import './index.css';
 
 function App() {
-  const { repository, currentView, openRepository, closeRepository } = useRepositoryStore();
-  const { loadSettings, settings } = useSettingsStore();
-  const { tabs, activeTabId, addTab, setActiveTab, updateTab, findTabByPath } = useTabsStore();
-  const autoFetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
+  const { repository, currentView, openRepository, switchRepository, closeRepository } =
+    useRepositoryStore();
+  const { loadSettings } = useSettingsStore();
+  const {
+    tabs,
+    activeTabId,
+    addTab,
+    setActiveTab,
+    updateTab,
+    findTabByPath,
+    markTabDirty,
+    clearTabDirty,
+  } = useTabsStore();
   // Handle menu actions from native menu
   useMenuActions();
 
@@ -42,38 +53,34 @@ function App() {
     loadSettings();
   }, [loadSettings]);
 
-  // Auto-fetch interval
+  // Listen for RepositoryDirtyEvent (inactive repos have changes)
   useEffect(() => {
-    // Clear existing interval
-    if (autoFetchIntervalRef.current) {
-      clearInterval(autoFetchIntervalRef.current);
-      autoFetchIntervalRef.current = null;
-    }
-
-    const intervalMinutes = settings?.autoFetchInterval ?? 0;
-    if (intervalMinutes > 0 && repository) {
-      const intervalMs = intervalMinutes * 60 * 1000;
-      autoFetchIntervalRef.current = setInterval(async () => {
-        const opId = operations.start('Auto-fetching remotes', { category: 'git' });
-        try {
-          await remoteApi.fetchAll();
-          await useRepositoryStore.getState().loadBranches();
-          notifyNewCommits(useRepositoryStore.getState().branches);
-        } catch (err) {
-          toast.error(getErrorMessage(err));
-        } finally {
-          operations.complete(opId);
-        }
-      }, intervalMs);
-    }
-
+    const unlisten = events.repositoryDirtyEvent.listen((event) => {
+      markTabDirty(event.payload.path);
+    });
     return () => {
-      if (autoFetchIntervalRef.current) {
-        clearInterval(autoFetchIntervalRef.current);
-        autoFetchIntervalRef.current = null;
-      }
+      unlisten.then((fn) => fn());
     };
-  }, [settings?.autoFetchInterval, repository]);
+  }, [markTabDirty]);
+
+  // Listen for RemoteFetchedEvent (background fetch found new commits)
+  useEffect(() => {
+    const unlisten = events.remoteFetchedEvent.listen(async (event) => {
+      const { path } = event.payload;
+
+      // Mark tab as having remote changes
+      markTabDirty(path);
+
+      // If this is the active repo, reload branches and notify
+      if (useRepositoryStore.getState().repository?.path.toString() === path) {
+        await useRepositoryStore.getState().loadBranches();
+        notifyNewCommits(useRepositoryStore.getState().branches);
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [markTabDirty]);
 
   // Load repository for active tab on startup (after rehydration from localStorage)
   useEffect(() => {
@@ -107,7 +114,6 @@ function App() {
                 type: TabType.Repository,
                 path: repo.path.toString(),
                 name: repo.name,
-                repository: repo,
               },
             ],
             activeTabId: 'repo-main',
@@ -123,7 +129,7 @@ function App() {
   // Derive active tab from tabs and activeTabId
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
-  // Sync repository changes with tabs (only when repository actually changes)
+  // Sync repository name changes with tabs
   useEffect(() => {
     if (
       repository &&
@@ -131,12 +137,9 @@ function App() {
       activeTab.type === TabType.Repository &&
       activeTab.path === repository.path.toString()
     ) {
-      // Only update if repository data differs
-      if (
-        activeTab.repository?.currentBranch !== repository.currentBranch ||
-        activeTab.name !== repository.name
-      ) {
-        updateTab(activeTab.id, { repository, name: repository.name });
+      // Only update if name differs
+      if (activeTab.name !== repository.name) {
+        updateTab(activeTab.id, { name: repository.name });
       }
     }
   }, [repository, activeTab, updateTab]);
@@ -162,7 +165,6 @@ function App() {
           type: TabType.Repository,
           path: repo.path.toString(),
           name: repo.name,
-          repository: repo,
         });
       }
     },
@@ -172,18 +174,31 @@ function App() {
   // Handle tab switching
   const handleTabChange = useCallback(
     async (tab: Tab) => {
-      // Reset staging store to clear stale data from previous repo
-      useStagingStore.getState().reset();
-
       if (tab.type === TabType.Welcome) {
         await closeRepository();
-      } else if (tab.path) {
+        return;
+      }
+
+      if (!tab.path) return;
+
+      // Switch repository (uses backend cache for fast switching)
+      try {
+        useStagingStore.getState().reset();
+        // Clear integration data when switching repos
+        useIntegrationStore.getState().reset();
+        await switchRepository(tab.path);
+        await useStagingStore.getState().loadStatus();
+      } catch {
+        // Fallback to openRepository if switchRepository fails
         await openRepository(tab.path);
-        // Reload staging status for the new repository
         await useStagingStore.getState().loadStatus();
       }
+
+      if (tab.isDirty) {
+        clearTabDirty(tab.path);
+      }
     },
-    [closeRepository, openRepository]
+    [closeRepository, switchRepository, openRepository, clearTabDirty]
   );
 
   // Expose handleOpenRepository globally for other components
@@ -203,6 +218,18 @@ function App() {
         return <HistoryView />;
       case 'search':
         return <ContentSearch />;
+      case 'reflog':
+        return <ReflogView />;
+      case 'lfs':
+        return <LfsView />;
+      case 'pull-requests':
+        return <PullRequestsView key="pull-requests" />;
+      case 'issues':
+        return <IssuesView key="issues" />;
+      case 'ci':
+        return <CIView key="ci" />;
+      case 'notifications':
+        return <NotificationsView key="notifications" />;
       default:
         return <WorkspaceView />;
     }

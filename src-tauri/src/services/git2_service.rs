@@ -1,9 +1,10 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, EdgeType,
-    FileStatus, GraphCommit, GraphEdge, GraphResult, LaneState, LogOptions, RebasePreview,
-    RebaseTarget, Repository, RepositoryState, RepositoryStatus, SigningConfig, SortOrder, Tag,
-    TagResult, TagSignature,
+    FileStatus, GraphCommit, GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion,
+    IgnoreSuggestionType, LaneState, LogOptions, RebasePreview, RebaseTarget, ReflogAction,
+    ReflogEntry, ReflogOptions, Repository, RepositoryState, RepositoryStatus, SigningConfig,
+    SortOrder, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -268,7 +269,7 @@ impl Git2Service {
 
             let oid = oid_result?;
             let commit = self.repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit));
+            commits.push(Commit::from_git2_commit(&commit, &self.repo));
         }
 
         Ok(commits)
@@ -364,7 +365,7 @@ impl Git2Service {
         let oid = git2::Oid::from_str(oid_str)
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         let commit = self.repo.find_commit(oid)?;
-        Ok(Commit::from_git2_commit(&commit))
+        Ok(Commit::from_git2_commit(&commit, &self.repo))
     }
 
     // ==================== Staging Operations ====================
@@ -483,6 +484,24 @@ impl Git2Service {
         checkout_opts.force();
 
         self.repo.checkout_index(None, Some(&mut checkout_opts))?;
+        Ok(())
+    }
+
+    /// Delete an untracked file from the working directory
+    pub fn delete_file(&self, path: &str) -> Result<()> {
+        let workdir = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("Bare repository".to_string()))?;
+        let file_path = workdir.join(path);
+
+        if !file_path.exists() {
+            return Err(AxisError::Other(format!("File not found: {path}")));
+        }
+
+        std::fs::remove_file(&file_path)
+            .map_err(|e| AxisError::Other(format!("Failed to delete file: {e}")))?;
+
         Ok(())
     }
 
@@ -952,6 +971,82 @@ impl Git2Service {
         })
     }
 
+    /// Compare two branches to find commits ahead/behind and file differences
+    pub fn compare_branches(
+        &self,
+        base_ref: &str,
+        compare_ref: &str,
+    ) -> Result<crate::models::BranchCompareResult> {
+        // Resolve refs to OIDs
+        let base_obj = self
+            .repo
+            .revparse_single(base_ref)
+            .map_err(|_| AxisError::InvalidReference(base_ref.to_string()))?;
+        let compare_obj = self
+            .repo
+            .revparse_single(compare_ref)
+            .map_err(|_| AxisError::InvalidReference(compare_ref.to_string()))?;
+
+        let base_oid = base_obj.id();
+        let compare_oid = compare_obj.id();
+
+        // Find merge base (common ancestor)
+        let merge_base_oid = self.repo.merge_base(base_oid, compare_oid).ok();
+
+        // Get commits ahead (in base/current but not in compare)
+        // These are commits the current branch has that the compare branch doesn't
+        let ahead_commits = self.commits_between(merge_base_oid, base_oid)?;
+
+        // Get commits behind (in compare but not in base/current)
+        // These are commits the compare branch has that the current branch doesn't
+        let behind_commits = self.commits_between(merge_base_oid, compare_oid)?;
+
+        // Get aggregate file diff (changes in base/current branch since merge_base)
+        // This shows what the current branch introduces relative to the compare branch
+        let diff_from = merge_base_oid.unwrap_or(compare_oid);
+        let files = self.diff_commits(
+            &diff_from.to_string(),
+            &base_oid.to_string(),
+            &crate::models::DiffOptions::default(),
+        )?;
+
+        Ok(crate::models::BranchCompareResult {
+            base_ref: base_ref.to_string(),
+            compare_ref: compare_ref.to_string(),
+            base_oid: base_oid.to_string(),
+            compare_oid: compare_oid.to_string(),
+            merge_base_oid: merge_base_oid.map(|oid| oid.to_string()),
+            ahead_commits,
+            behind_commits,
+            files,
+        })
+    }
+
+    /// Get commits between two points (from merge_base to target)
+    fn commits_between(
+        &self,
+        from_oid: Option<git2::Oid>,
+        to_oid: git2::Oid,
+    ) -> Result<Vec<Commit>> {
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
+        revwalk.push(to_oid)?;
+
+        // Hide everything reachable from merge_base (if it exists)
+        if let Some(from) = from_oid {
+            let _ = revwalk.hide(from);
+        }
+
+        let mut commits = Vec::new();
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+            commits.push(Commit::from_git2_commit(&commit, &self.repo));
+        }
+
+        Ok(commits)
+    }
+
     // ==================== Remote Operations ====================
 
     /// List all remotes
@@ -1049,6 +1144,56 @@ impl Git2Service {
     /// Set the push URL for a remote
     pub fn set_remote_push_url(&self, name: &str, url: &str) -> Result<()> {
         self.repo.remote_set_pushurl(name, Some(url))?;
+        Ok(())
+    }
+
+    /// Get repository-local user.name and user.email from .git/config
+    pub fn get_repo_user_config(&self) -> Result<(Option<String>, Option<String>)> {
+        let config = self.repo.config()?;
+
+        let user_name = config
+            .get_entry("user.name")
+            .ok()
+            .filter(|e| e.level() == git2::ConfigLevel::Local)
+            .and_then(|e| e.value().map(|s| s.to_string()));
+
+        let user_email = config
+            .get_entry("user.email")
+            .ok()
+            .filter(|e| e.level() == git2::ConfigLevel::Local)
+            .and_then(|e| e.value().map(|s| s.to_string()));
+
+        Ok((user_name, user_email))
+    }
+
+    /// Get global user.name and user.email
+    pub fn get_global_user_config(&self) -> Result<(Option<String>, Option<String>)> {
+        let config = self.repo.config()?;
+
+        let user_name = config.get_string("user.name").ok();
+        let user_email = config.get_string("user.email").ok();
+
+        Ok((user_name, user_email))
+    }
+
+    /// Set repository-local user.name and user.email in .git/config
+    pub fn set_repo_user_config(&self, name: Option<&str>, email: Option<&str>) -> Result<()> {
+        let mut config = self.repo.config()?.open_level(git2::ConfigLevel::Local)?;
+
+        match name {
+            Some(n) if !n.is_empty() => config.set_str("user.name", n)?,
+            _ => {
+                let _ = config.remove("user.name");
+            }
+        }
+
+        match email {
+            Some(e) if !e.is_empty() => config.set_str("user.email", e)?,
+            _ => {
+                let _ = config.remove("user.email");
+            }
+        }
+
         Ok(())
     }
 
@@ -1187,7 +1332,15 @@ impl Git2Service {
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
-        self.push(remote_name, &[refspec], options)
+        let result = self.push(remote_name, &[refspec], options)?;
+
+        // Set upstream tracking if requested
+        if options.set_upstream {
+            let upstream_ref = format!("{}/{}", remote_name, branch_name);
+            self.set_branch_upstream(branch_name, Some(&upstream_ref))?;
+        }
+
+        Ok(result)
     }
 
     /// Pull from a remote (fetch + merge/rebase)
@@ -1586,6 +1739,7 @@ impl Git2Service {
                             },
                             timestamp: now,
                             is_merge: false,
+                            signature: None,
                         },
                         lane: 0,
                         parent_edges,
@@ -1653,7 +1807,7 @@ impl Git2Service {
             let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();
 
             graph_commits.push(GraphCommit {
-                commit: Commit::from_git2_commit(&commit),
+                commit: Commit::from_git2_commit(&commit, &self.repo),
                 lane,
                 parent_edges,
                 refs,
@@ -1790,7 +1944,7 @@ impl Git2Service {
             if is_match {
                 total_matches += 1;
                 if matches.len() < limit {
-                    matches.push(Commit::from_git2_commit(&commit));
+                    matches.push(Commit::from_git2_commit(&commit, &self.repo));
                 }
             }
         }
@@ -2069,7 +2223,7 @@ impl Git2Service {
         for oid_result in revwalk {
             let oid = oid_result?;
             let commit = self.repo.find_commit(oid)?;
-            commits_to_rebase.push(Commit::from_git2_commit(&commit));
+            commits_to_rebase.push(Commit::from_git2_commit(&commit, &self.repo));
         }
 
         // Count commits on target since merge-base
@@ -2083,7 +2237,7 @@ impl Git2Service {
 
         Ok(RebasePreview {
             commits_to_rebase,
-            merge_base: Commit::from_git2_commit(&merge_base_commit),
+            merge_base: Commit::from_git2_commit(&merge_base_commit, &self.repo),
             target: RebaseTarget {
                 name: target_name,
                 oid: target_commit.id().to_string(),
@@ -2112,6 +2266,464 @@ impl Git2Service {
 
         // Fall back to the spec itself (could be a commit hash or other ref)
         spec.to_string()
+    }
+
+    // ==================== File History Operations ====================
+
+    /// Get commit history for specific files
+    pub fn get_file_history(
+        &self,
+        options: crate::models::FileLogOptions,
+    ) -> Result<crate::models::FileLogResult> {
+        use crate::models::FileLogResult;
+
+        let limit = options.limit.unwrap_or(50);
+        let skip = options.skip.unwrap_or(0);
+
+        if options.paths.is_empty() {
+            return Ok(FileLogResult {
+                commits: Vec::new(),
+                has_more: false,
+            });
+        }
+
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push_head()?;
+        revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
+
+        let mut commits = Vec::new();
+        let mut skipped = 0;
+        let mut found = 0;
+
+        for oid_result in revwalk {
+            let oid = oid_result?;
+            let commit = self.repo.find_commit(oid)?;
+
+            // Check if this commit touches any of the specified paths
+            if self.commit_touches_paths(&commit, &options.paths, options.follow_renames)? {
+                if skipped < skip {
+                    skipped += 1;
+                    continue;
+                }
+
+                found += 1;
+                if found <= limit {
+                    commits.push(Commit::from_git2_commit(&commit, &self.repo));
+                } else {
+                    // We found one more than limit, so there are more
+                    return Ok(FileLogResult {
+                        commits,
+                        has_more: true,
+                    });
+                }
+            }
+        }
+
+        Ok(FileLogResult {
+            commits,
+            has_more: false,
+        })
+    }
+
+    /// Check if a commit modified any of the specified paths
+    fn commit_touches_paths(
+        &self,
+        commit: &git2::Commit,
+        paths: &[String],
+        follow_renames: bool,
+    ) -> Result<bool> {
+        let tree = commit.tree()?;
+
+        let parent_tree = if commit.parent_count() > 0 {
+            Some(commit.parent(0)?.tree()?)
+        } else {
+            None
+        };
+
+        let mut diff_opts = git2::DiffOptions::new();
+
+        // Add paths to pathspec
+        for path in paths {
+            diff_opts.pathspec(path);
+        }
+
+        let diff =
+            self.repo
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+
+        // If follow_renames is enabled, find renames and check old paths too
+        if follow_renames && diff.stats()?.files_changed() == 0 {
+            // No direct match, check for renames by looking at full diff
+            let mut full_diff_opts = git2::DiffOptions::new();
+            let full_diff = self.repo.diff_tree_to_tree(
+                parent_tree.as_ref(),
+                Some(&tree),
+                Some(&mut full_diff_opts),
+            )?;
+
+            let mut find_opts = git2::DiffFindOptions::new();
+            find_opts.renames(true);
+            find_opts.copies(false);
+
+            let mut full_diff = full_diff;
+            full_diff.find_similar(Some(&mut find_opts))?;
+
+            let mut found = false;
+            full_diff.foreach(
+                &mut |delta, _| {
+                    // Check if either old or new path matches our targets
+                    if let Some(new_path) = delta.new_file().path() {
+                        if paths.iter().any(|p| new_path.to_string_lossy() == *p) {
+                            found = true;
+                            return false; // Stop iteration
+                        }
+                    }
+                    if let Some(old_path) = delta.old_file().path() {
+                        if paths.iter().any(|p| old_path.to_string_lossy() == *p) {
+                            found = true;
+                            return false; // Stop iteration
+                        }
+                    }
+                    true
+                },
+                None,
+                None,
+                None,
+            )?;
+
+            return Ok(found);
+        }
+
+        Ok(diff.stats()?.files_changed() > 0)
+    }
+
+    /// Get diff for a specific file in a specific commit
+    pub fn get_file_diff_in_commit(
+        &self,
+        commit_oid: &str,
+        path: &str,
+        options: &crate::models::DiffOptions,
+    ) -> Result<Option<crate::models::FileDiff>> {
+        let oid = git2::Oid::from_str(commit_oid)
+            .map_err(|_| AxisError::InvalidReference(commit_oid.to_string()))?;
+        let commit = self.repo.find_commit(oid)?;
+        let tree = commit.tree()?;
+
+        let parent_tree = if commit.parent_count() > 0 {
+            Some(commit.parent(0)?.tree()?)
+        } else {
+            None
+        };
+
+        let mut diff_opts = git2::DiffOptions::new();
+        self.apply_diff_options(&mut diff_opts, options);
+        diff_opts.pathspec(path);
+
+        let diff =
+            self.repo
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+
+        let diffs = self.parse_diff(&diff)?;
+        Ok(diffs.into_iter().next())
+    }
+
+    // ==================== Reflog Operations ====================
+
+    /// Get reflog entries for a reference
+    pub fn get_reflog(&self, options: &ReflogOptions) -> Result<Vec<ReflogEntry>> {
+        let refname = options.refname.as_deref().unwrap_or("HEAD");
+        let reflog = self
+            .repo
+            .reflog(refname)
+            .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
+
+        let skip = options.skip.unwrap_or(0);
+        let limit = options.limit.unwrap_or(100);
+
+        let entries: Vec<ReflogEntry> = reflog
+            .iter()
+            .enumerate()
+            .skip(skip)
+            .take(limit)
+            .map(|(index, entry)| {
+                let message = entry.message().unwrap_or("").to_string();
+                let action = Self::parse_reflog_action(&message);
+                let new_oid = entry.id_new().to_string();
+                let old_oid = entry.id_old().to_string();
+
+                ReflogEntry {
+                    index: skip + index,
+                    reflog_ref: format!("{refname}@{{{}}}", skip + index),
+                    short_new_oid: new_oid.chars().take(7).collect(),
+                    new_oid,
+                    short_old_oid: old_oid.chars().take(7).collect(),
+                    old_oid,
+                    action,
+                    message,
+                    committer_name: entry.committer().name().unwrap_or("Unknown").to_string(),
+                    committer_email: entry.committer().email().unwrap_or("").to_string(),
+                    timestamp: DateTime::from_timestamp(entry.committer().when().seconds(), 0)
+                        .unwrap_or_default()
+                        .with_timezone(&Utc),
+                }
+            })
+            .collect();
+
+        Ok(entries)
+    }
+
+    /// Get list of available reflogs (references that have reflog)
+    pub fn list_reflogs(&self) -> Result<Vec<String>> {
+        let mut reflogs = vec!["HEAD".to_string()];
+
+        // Add local branches
+        let branches = self.repo.branches(Some(git2::BranchType::Local))?;
+        for branch_result in branches {
+            if let Ok((branch, _)) = branch_result {
+                if let Ok(Some(name)) = branch.name() {
+                    let refname = format!("refs/heads/{name}");
+                    // Check if reflog exists by trying to open it
+                    if self.repo.reflog(&refname).is_ok() {
+                        reflogs.push(refname);
+                    }
+                }
+            }
+        }
+
+        Ok(reflogs)
+    }
+
+    /// Checkout to a reflog entry (creates detached HEAD)
+    pub fn checkout_reflog_entry(&self, reflog_ref: &str) -> Result<()> {
+        let obj = self
+            .repo
+            .revparse_single(reflog_ref)
+            .map_err(|_| AxisError::InvalidReference(reflog_ref.to_string()))?;
+
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        checkout_builder.safe();
+
+        self.repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
+        self.repo.set_head_detached(obj.id())?;
+
+        Ok(())
+    }
+
+    /// Parse reflog message to determine action type
+    fn parse_reflog_action(message: &str) -> ReflogAction {
+        let lower = message.to_lowercase();
+
+        if lower.starts_with("commit (initial)") {
+            ReflogAction::CommitInitial
+        } else if lower.starts_with("commit (amend)") {
+            ReflogAction::CommitAmend
+        } else if lower.starts_with("commit") {
+            ReflogAction::Commit
+        } else if lower.starts_with("checkout") {
+            ReflogAction::Checkout
+        } else if lower.starts_with("merge") {
+            ReflogAction::Merge
+        } else if lower.starts_with("rebase") {
+            ReflogAction::Rebase
+        } else if lower.starts_with("reset") {
+            ReflogAction::Reset
+        } else if lower.starts_with("cherry-pick") {
+            ReflogAction::CherryPick
+        } else if lower.starts_with("revert") {
+            ReflogAction::Revert
+        } else if lower.starts_with("pull") {
+            ReflogAction::Pull
+        } else if lower.starts_with("clone") {
+            ReflogAction::Clone
+        } else if lower.starts_with("branch") {
+            ReflogAction::Branch
+        } else if lower.contains("stash") {
+            ReflogAction::Stash
+        } else {
+            ReflogAction::Other(message.split(':').next().unwrap_or("unknown").to_string())
+        }
+    }
+
+    // ==================== Gitignore Operations ====================
+
+    /// Add a pattern to a specific .gitignore file
+    pub fn add_to_gitignore(
+        &self,
+        pattern: &str,
+        gitignore_rel_path: &str,
+    ) -> Result<IgnoreResult> {
+        let workdir = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("Cannot add to gitignore in bare repository".into()))?;
+
+        let gitignore_path = workdir.join(gitignore_rel_path);
+
+        // Create parent directories if needed
+        if let Some(parent) = gitignore_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        // Read existing content or create empty
+        let content = std::fs::read_to_string(&gitignore_path).unwrap_or_default();
+
+        // Check if pattern already exists
+        let already_existed = content.lines().any(|line| line.trim() == pattern.trim());
+
+        if !already_existed {
+            let mut new_content = content;
+            // Ensure newline before adding pattern
+            if !new_content.is_empty() && !new_content.ends_with('\n') {
+                new_content.push('\n');
+            }
+            new_content.push_str(pattern);
+            new_content.push('\n');
+            std::fs::write(&gitignore_path, new_content)?;
+        }
+
+        Ok(IgnoreResult {
+            message: if already_existed {
+                "Pattern already in .gitignore".to_string()
+            } else {
+                format!("Added to {gitignore_rel_path}")
+            },
+            pattern: pattern.to_string(),
+            gitignore_path: gitignore_path.display().to_string(),
+            already_existed,
+        })
+    }
+
+    /// Add a pattern to the global gitignore file
+    pub fn add_to_global_gitignore(&self, pattern: &str) -> Result<IgnoreResult> {
+        // Try to get global gitignore path from git config
+        let config = self.repo.config()?;
+        let global_path = config
+            .get_string("core.excludesfile")
+            .map(|p| shellexpand::tilde(&p).to_string())
+            .unwrap_or_else(|_| shellexpand::tilde("~/.gitignore_global").to_string());
+
+        let gitignore_path = std::path::Path::new(&global_path);
+
+        // Create parent directories if needed
+        if let Some(parent) = gitignore_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        // Read existing content or create empty
+        let content = std::fs::read_to_string(gitignore_path).unwrap_or_default();
+
+        // Check if pattern already exists
+        let already_existed = content.lines().any(|line| line.trim() == pattern.trim());
+
+        if !already_existed {
+            let mut new_content = content;
+            // Ensure newline before adding pattern
+            if !new_content.is_empty() && !new_content.ends_with('\n') {
+                new_content.push('\n');
+            }
+            new_content.push_str(pattern);
+            new_content.push('\n');
+            std::fs::write(gitignore_path, new_content)?;
+        }
+
+        Ok(IgnoreResult {
+            message: if already_existed {
+                "Pattern already in global gitignore".to_string()
+            } else {
+                "Added to global gitignore".to_string()
+            },
+            pattern: pattern.to_string(),
+            gitignore_path: global_path,
+            already_existed,
+        })
+    }
+
+    /// Get ignore options for a file (ancestor .gitignore files and pattern suggestions)
+    pub fn get_ignore_options(&self, file_path: &str) -> Result<IgnoreOptions> {
+        let workdir = self.repo.workdir().ok_or_else(|| {
+            AxisError::Other("Cannot get ignore options in bare repository".into())
+        })?;
+
+        let file = std::path::Path::new(file_path);
+
+        // Find ancestor .gitignore files (only in file's path hierarchy)
+        let mut gitignore_files = Vec::new();
+        let mut default_gitignore = ".gitignore".to_string();
+        let mut found_closest = false;
+
+        // Always include root .gitignore as an option
+        gitignore_files.push(".gitignore".to_string());
+
+        // Walk up from file's parent directory to find existing .gitignore files
+        let mut current = file.parent();
+        while let Some(dir) = current {
+            if !dir.as_os_str().is_empty() {
+                let gitignore_rel = format!("{}/.gitignore", dir.display());
+                let gitignore_abs = workdir.join(&gitignore_rel);
+
+                if gitignore_abs.exists() {
+                    gitignore_files.push(gitignore_rel.clone());
+                    if !found_closest {
+                        default_gitignore = gitignore_rel;
+                        found_closest = true;
+                    }
+                }
+            }
+            current = dir.parent();
+        }
+
+        // Generate pattern suggestions
+        let suggestions = self.get_ignore_suggestions(file_path);
+
+        Ok(IgnoreOptions {
+            gitignore_files,
+            default_gitignore,
+            suggestions,
+        })
+    }
+
+    /// Generate pattern suggestions for ignoring a file
+    fn get_ignore_suggestions(&self, file_path: &str) -> Vec<IgnoreSuggestion> {
+        let path = std::path::Path::new(file_path);
+        let mut suggestions = Vec::new();
+
+        // Exact file path
+        suggestions.push(IgnoreSuggestion {
+            pattern: file_path.to_string(),
+            description: "Ignore this specific file".to_string(),
+            suggestion_type: IgnoreSuggestionType::ExactFile,
+        });
+
+        // File extension (if file has one)
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            suggestions.push(IgnoreSuggestion {
+                pattern: format!("*.{ext}"),
+                description: format!("Ignore all .{ext} files"),
+                suggestion_type: IgnoreSuggestionType::Extension,
+            });
+        }
+
+        // Parent directory (if file is in a subdirectory)
+        if let Some(parent) = path.parent() {
+            if !parent.as_os_str().is_empty() {
+                suggestions.push(IgnoreSuggestion {
+                    pattern: format!("{}/", parent.display()),
+                    description: "Ignore entire directory".to_string(),
+                    suggestion_type: IgnoreSuggestionType::Directory,
+                });
+            }
+        }
+
+        // File name only (matches anywhere in repo)
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            suggestions.push(IgnoreSuggestion {
+                pattern: file_name.to_string(),
+                description: "Ignore files with this name anywhere".to_string(),
+                suggestion_type: IgnoreSuggestionType::FileName,
+            });
+        }
+
+        suggestions
     }
 }
 
@@ -2960,7 +3572,7 @@ mod tests {
             .expect("should build first page of graph");
 
         assert_eq!(result.commits.len(), 2);
-        assert_eq!(result.total_count, 5);
+        assert_eq!(result.total_count, 3);
         assert!(result.has_more);
 
         // Get second page

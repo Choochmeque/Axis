@@ -20,6 +20,7 @@ import { useRepositoryStore } from '@/store/repositoryStore';
 import type { Branch, Remote } from '@/types';
 import { RenameBranchDialog } from './RenameBranchDialog';
 import { DeleteBranchDialog } from './DeleteBranchDialog';
+import { BranchCompareDialog } from './BranchCompareDialog';
 import { PullDialog } from '../remotes/PullDialog';
 import { PushDialog } from '../remotes/PushDialog';
 
@@ -34,6 +35,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPullDialog, setShowPullDialog] = useState(false);
   const [showPushDialog, setShowPushDialog] = useState(false);
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [remoteBranches, setRemoteBranches] = useState<Branch[]>([]);
   const [isSettingUpstream, setIsSettingUpstream] = useState(false);
@@ -167,10 +169,12 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         </SubMenu>
 
         <MenuSeparator />
-        <MenuItem icon={Diff} disabled>
-          Diff Against Current
-        </MenuItem>
-        <MenuSeparator />
+        {!isCurrentBranch && (
+          <MenuItem icon={Diff} onSelect={() => setShowCompareDialog(true)}>
+            Diff Against Current
+          </MenuItem>
+        )}
+        {!isCurrentBranch && <MenuSeparator />}
         <MenuItem icon={Pencil} onSelect={() => setShowRenameDialog(true)}>
           Rename...
         </MenuItem>
@@ -203,6 +207,13 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         branch={branch}
+      />
+
+      <BranchCompareDialog
+        open={showCompareDialog}
+        onOpenChange={setShowCompareDialog}
+        baseBranch={currentBranch ?? null}
+        compareBranch={branch}
       />
     </>
   );

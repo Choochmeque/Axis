@@ -66,6 +66,7 @@ interface StagingState {
   discardHunk: (patch: string) => Promise<void>;
   discardFile: (path: string) => Promise<void>;
   discardAll: () => Promise<void>;
+  deleteFile: (path: string) => Promise<void>;
   setCommitMessage: (message: string) => void;
   setIsAmending: (isAmending: boolean) => void;
   createCommit: (sign?: boolean) => Promise<string>;
@@ -281,6 +282,18 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.discardAll();
       await get().loadStatus();
       set({ selectedFile: null, selectedFileDiff: null });
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  deleteFile: async (path: string) => {
+    try {
+      await stagingApi.deleteFile(path);
+      await get().loadStatus();
+      if (get().selectedFile?.path === path) {
+        set({ selectedFile: null, selectedFileDiff: null });
+      }
     } catch (error) {
       set({ error: String(error) });
     }

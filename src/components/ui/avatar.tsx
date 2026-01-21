@@ -1,31 +1,55 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User } from 'lucide-react';
-import md5 from 'crypto-js/md5';
+
 import { cn } from '@/lib/utils';
+import { useAvatarStore, getAvatarSrcUrl } from '@/store/avatarStore';
+import type { AvatarResponse } from '@/types';
 
 interface AvatarProps {
   email?: string;
+  sha?: string;
   name?: string;
   size?: number;
   className?: string;
 }
 
-export function Avatar({ email, name, size = 24, className }: AvatarProps) {
-  const [imgError, setImgError] = useState(false);
+export function Avatar({ email, sha, name, size = 24, className }: AvatarProps) {
+  const [avatarResponse, setAvatarResponse] = useState<AvatarResponse | null>(null);
+  // Track which URL failed to load, so error is automatically cleared when URL changes
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const getAvatar = useAvatarStore((state) => state.getAvatar);
 
-  const gravatarUrl = email
-    ? `https://www.gravatar.com/avatar/${md5(email.toLowerCase().trim()).toString()}?s=${size * 2}&d=404`
-    : null;
+  useEffect(() => {
+    if (!email) {
+      return;
+    }
 
-  if (gravatarUrl && !imgError) {
+    let cancelled = false;
+
+    getAvatar(email, sha).then((response) => {
+      if (!cancelled) {
+        setAvatarResponse(response);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      setAvatarResponse(null);
+    };
+  }, [email, sha, getAvatar]);
+
+  const avatarUrl = getAvatarSrcUrl(avatarResponse);
+  const hasError = avatarUrl !== null && avatarUrl === failedUrl;
+
+  if (avatarUrl && !hasError) {
     return (
       <img
-        src={gravatarUrl}
+        src={avatarUrl}
         alt={name || 'avatar'}
         width={size}
         height={size}
         className={cn('rounded-full', className)}
-        onError={() => setImgError(true)}
+        onError={() => setFailedUrl(avatarUrl)}
       />
     );
   }

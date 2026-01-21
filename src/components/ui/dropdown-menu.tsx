@@ -43,7 +43,7 @@ const DropdownMenuItem = forwardRef<
     className={cn(danger ? 'dropdown-item-danger' : 'dropdown-item', className)}
     {...props}
   >
-    {Icon && <Icon size={14} />}
+    {Icon && <Icon size={14} className={danger ? undefined : 'text-(--text-secondary)'} />}
     <span>{children}</span>
     {shortcut && (
       <span className="ml-auto text-sm text-(--text-tertiary) font-mono">{shortcut}</span>
@@ -58,7 +58,7 @@ const DropdownMenuCheckboxItem = forwardRef<
 >(({ className, children, checked, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
-    className={cn('dropdown-item', className)}
+    className={cn('dropdown-item pl-7', className)}
     checked={checked}
     {...props}
   >
@@ -74,7 +74,11 @@ const DropdownMenuRadioItem = forwardRef<
   React.ComponentRef<typeof DropdownMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
 >(({ className, children, ...props }, ref) => (
-  <DropdownMenuPrimitive.RadioItem ref={ref} className={cn('dropdown-item', className)} {...props}>
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn('dropdown-item pl-7', className)}
+    {...props}
+  >
     <DropdownMenuPrimitive.ItemIndicator className="absolute left-2">
       <Check size={12} />
     </DropdownMenuPrimitive.ItemIndicator>

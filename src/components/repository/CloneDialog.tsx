@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { FolderPlus, FolderOpen } from 'lucide-react';
 
 import { useOperation } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { TabType, useTabsStore } from '@/store/tabsStore';
@@ -106,7 +107,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
       setPath('');
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

@@ -9,8 +9,9 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn grep_content(state: State<'_, AppState>, options: GrepOptions) -> Result<GrepResult> {
-    let cli = state.get_cli_service()?;
-    cli.grep(&options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.grep(&options))
 }
 
 /// Search for content in a specific commit
@@ -21,6 +22,7 @@ pub async fn grep_commit(
     commit_oid: String,
     options: GrepOptions,
 ) -> Result<GrepResult> {
-    let cli = state.get_cli_service()?;
-    cli.grep_commit(&commit_oid, &options)
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.grep_commit(&commit_oid, &options))
 }

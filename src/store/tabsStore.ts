@@ -1,13 +1,12 @@
 import { create, StateCreator } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Repository } from '../types';
 
 export interface Tab {
   id: string;
   type: TabType;
   path?: string;
   name: string;
-  repository?: Repository;
+  isDirty?: boolean;
 }
 
 interface TabsState {
@@ -21,6 +20,8 @@ interface TabsState {
   updateTab: (id: string, updates: Partial<Tab>) => void;
   getActiveTab: () => Tab | undefined;
   findTabByPath: (path: string) => Tab | undefined;
+  markTabDirty: (path: string) => void;
+  clearTabDirty: (path: string) => void;
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -125,6 +126,24 @@ const createTabsSlice: StateCreator<TabsState> = (set, get) => ({
     const normalizedPath = path.replace(/\/$/, '');
     return get().tabs.find((t) => t.path?.replace(/\/$/, '') === normalizedPath);
   },
+
+  markTabDirty: (path) => {
+    const normalizedPath = path.replace(/\/$/, '');
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        tab.path?.replace(/\/$/, '') === normalizedPath ? { ...tab, isDirty: true } : tab
+      ),
+    }));
+  },
+
+  clearTabDirty: (path) => {
+    const normalizedPath = path.replace(/\/$/, '');
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        tab.path?.replace(/\/$/, '') === normalizedPath ? { ...tab, isDirty: false } : tab
+      ),
+    }));
+  },
 });
 
 // Create store: use localStorage persistence only for main window
@@ -136,7 +155,7 @@ export const useTabsStore = isRepoWindow()
         name: 'axis-tabs',
         storage: createJSONStorage(() => localStorage),
         partialize: (state) => ({
-          // Only persist tab structure, not full repository data
+          // Only persist tab structure, not isDirty state
           tabs: state.tabs.map((t) => ({
             id: t.id,
             type: t.type,

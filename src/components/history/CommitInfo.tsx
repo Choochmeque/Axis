@@ -1,7 +1,7 @@
-import { Copy, GitCommit, Calendar, GitBranch, Tag } from 'lucide-react';
+import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { format } from 'date-fns';
-import { RefType } from '@/types';
+import { RefType, SigningFormat } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
@@ -79,7 +79,12 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         <div className={rowClass}>
           <span className={metaLabelClass}>
-            <Avatar email={commit.author.email} name={commit.author.name} size={12} />
+            <Avatar
+              email={commit.author.email}
+              sha={commit.oid}
+              name={commit.author.name}
+              size={12}
+            />
             Author
           </span>
           <div className={valueClass}>
@@ -95,6 +100,37 @@ export function CommitInfo({ commit }: CommitInfoProps) {
           </span>
           <div className={valueClass}>{format(new Date(commit.timestamp), 'PPpp')}</div>
         </div>
+
+        {commit.signature && (
+          <div className={rowClass}>
+            <span className={metaLabelClass}>
+              {commit.signature.format === SigningFormat.Gpg ? (
+                <Key size={12} />
+              ) : commit.signature.format === SigningFormat.Ssh ? (
+                <ShieldCheck size={12} />
+              ) : (
+                <ShieldCheck size={12} />
+              )}
+              Signed
+            </span>
+            <div className={valueClass}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium',
+                  commit.signature.verified
+                    ? 'bg-success/20 text-success'
+                    : 'bg-warning/20 text-warning'
+                )}
+              >
+                {commit.signature.format?.toUpperCase() ?? 'UNKNOWN'}
+                {commit.signature.verified ? ' (Verified)' : ' (Unverified)'}
+              </span>
+              {commit.signature.signer && (
+                <span className="text-sm text-(--text-secondary)">{commit.signature.signer}</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {'refs' in commit && commit.refs.length > 0 && (
           <div className={rowClass}>

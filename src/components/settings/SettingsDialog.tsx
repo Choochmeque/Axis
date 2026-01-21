@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Settings, Palette, GitBranch, FileText } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
+import { Settings, Palette, GitBranch, FileText, Sparkles, Link2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi } from '@/services/api';
+import { settingsApi, signingApi, aiApi, lfsApi, avatarApi } from '@/services/api';
+import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
-import { SigningFormat, Theme } from '@/types';
+import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
+import { SigningFormat, Theme, AiProvider } from '@/types';
 import type {
   AppSettings,
   Theme as ThemeType,
   SigningFormat as SigningFormatType,
+  AiProvider as AiProviderType,
   GpgKey,
   SshKey,
 } from '@/types';
@@ -23,6 +26,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
   CheckboxField,
   Alert,
 } from '@/components/ui';
@@ -33,7 +37,7 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff';
+type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
@@ -50,7 +54,14 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  conventionalCommitsEnabled: false,
+  conventionalCommitsScopes: null,
   notificationHistoryCapacity: 50,
+  aiEnabled: false,
+  aiProvider: AiProvider.OpenAi,
+  aiModel: null,
+  aiOllamaUrl: null,
+  gravatarEnabled: false,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -115,6 +126,8 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
     { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
+    { id: 'ai', label: 'AI', icon: <Sparkles size={16} /> },
+    { id: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
   ];
 
   return (
@@ -157,6 +170,10 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                 {activeTab === 'diff' && (
                   <DiffSettings settings={settings} updateSetting={updateSetting} />
                 )}
+                {activeTab === 'ai' && (
+                  <AiSettings settings={settings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'integrations' && <IntegrationsSettings />}
               </>
             )}
           </div>
@@ -200,6 +217,20 @@ const numberInputClass =
   'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)';
 
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const handleClearAvatarCache = async () => {
+    setIsClearingCache(true);
+    try {
+      await avatarApi.clearCache();
+      toast.success('Avatar cache cleared');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
+
   return (
     <div>
       <h3 className={sectionTitleClass}>Appearance</h3>
@@ -208,11 +239,11 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="theme"
           value={settings.theme}
-          onChange={(e) => updateSetting('theme', e.target.value as ThemeType)}
+          onValueChange={(value) => updateSetting('theme', value as ThemeType)}
         >
-          <option value={Theme.System}>System</option>
-          <option value={Theme.Light}>Light</option>
-          <option value={Theme.Dark}>Dark</option>
+          <SelectItem value={Theme.System}>System</SelectItem>
+          <SelectItem value={Theme.Light}>Light</SelectItem>
+          <SelectItem value={Theme.Dark}>Dark</SelectItem>
         </Select>
       </FormField>
 
@@ -240,6 +271,27 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           checked={settings.showLineNumbers}
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
+      </div>
+
+      <h3 className={sectionTitleClass}>Avatars</h3>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="gravatar-enabled"
+          label="Enable Gravatar"
+          description="Show Gravatar avatars for commit authors when integration is not connected"
+          checked={settings.gravatarEnabled}
+          onCheckedChange={(checked) => updateSetting('gravatarEnabled', checked === true)}
+        />
+      </div>
+
+      <div className={groupClass}>
+        <Button variant="secondary" onClick={handleClearAvatarCache} disabled={isClearingCache}>
+          {isClearingCache ? 'Clearing...' : 'Clear Avatar Cache'}
+        </Button>
+        <p className="mt-1.5 text-xs text-(--text-muted)">
+          Remove all cached avatar images. They will be re-fetched as needed.
+        </p>
       </div>
 
       <h3 className={sectionTitleClass}>Notifications</h3>
@@ -275,10 +327,25 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   const [isDetecting, setIsDetecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [gitEnv, setGitEnv] = useState<GitEnvironment | null>(null);
+  const [isLoadingEnv, setIsLoadingEnv] = useState(false);
 
   useEffect(() => {
     loadKeys();
+    loadGitEnvironment();
   }, []);
+
+  const loadGitEnvironment = async () => {
+    setIsLoadingEnv(true);
+    try {
+      const env = await lfsApi.getGitEnvironment();
+      setGitEnv(env);
+    } catch (err) {
+      console.error('Failed to load git environment:', err);
+    } finally {
+      setIsLoadingEnv(false);
+    }
+  };
 
   const loadKeys = async () => {
     setIsLoadingKeys(true);
@@ -391,14 +458,14 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="signingFormat"
           value={settings.signingFormat}
-          onChange={(e) => {
-            updateSetting('signingFormat', e.target.value as SigningFormatType);
+          onValueChange={(value) => {
+            updateSetting('signingFormat', value as SigningFormatType);
             updateSetting('signingKey', null);
             setTestResult(null);
           }}
         >
-          <option value={SigningFormat.Gpg}>GPG</option>
-          <option value={SigningFormat.Ssh}>SSH</option>
+          <SelectItem value={SigningFormat.Gpg}>GPG</SelectItem>
+          <SelectItem value={SigningFormat.Ssh}>SSH</SelectItem>
         </Select>
       </FormField>
 
@@ -415,18 +482,18 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           <Select
             id="signingKey"
             value={settings.signingKey || ''}
-            onChange={(e) => {
-              updateSetting('signingKey', e.target.value || null);
+            onValueChange={(value) => {
+              updateSetting('signingKey', value || null);
               setTestResult(null);
             }}
             className="flex-1"
             disabled={isLoadingKeys}
+            placeholder={isLoadingKeys ? 'Loading keys...' : 'Select a key...'}
           >
-            <option value="">{isLoadingKeys ? 'Loading keys...' : 'Select a key...'}</option>
             {availableKeys.map((key) => (
-              <option key={key.value} value={key.value}>
+              <SelectItem key={key.value} value={key.value}>
                 {key.label}
-              </option>
+              </SelectItem>
             ))}
           </Select>
           <Button variant="secondary" onClick={handleDetectConfig} disabled={isDetecting}>
@@ -487,6 +554,50 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           </p>
         )}
       </div>
+
+      <h3 className={sectionTitleClass}>Environment</h3>
+
+      {isLoadingEnv ? (
+        <p className="text-sm text-(--text-muted)">Loading environment info...</p>
+      ) : gitEnv ? (
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <span className="text-(--text-secondary)">Git CLI:</span>
+          <span className="text-(--text-primary) font-mono">
+            {gitEnv.gitVersion || 'Not found'}
+          </span>
+
+          <span className="text-(--text-secondary)">Git Path:</span>
+          <span className="text-(--text-primary) font-mono text-xs break-all">
+            {gitEnv.gitPath || 'Not found'}
+          </span>
+
+          <span className="text-(--text-secondary)">libgit2:</span>
+          <span className="text-(--text-primary) font-mono">{gitEnv.libgit2Version}</span>
+
+          <span className="text-(--text-secondary)">Git LFS:</span>
+          <span className="text-(--text-primary)">
+            {gitEnv.lfsInstalled ? (
+              <span className="font-mono">
+                {gitEnv.lfsVersion} <span className="text-success">✓</span>
+              </span>
+            ) : (
+              <span className="text-(--text-muted)">
+                Not installed{' '}
+                <a
+                  href="https://git-lfs.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-(--accent-color) hover:underline"
+                >
+                  Install
+                </a>
+              </span>
+            )}
+          </span>
+        </div>
+      ) : (
+        <p className="text-sm text-(--text-muted)">Failed to load environment info</p>
+      )}
     </div>
   );
 }
@@ -542,6 +653,477 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
           checked={settings.spellCheckCommitMessages}
           onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
+      </div>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="conventional-commits-enabled"
+          label="Enable conventional commits"
+          description="Use structured commit message format (type[scope]: description)"
+          checked={settings.conventionalCommitsEnabled}
+          onCheckedChange={(checked) =>
+            updateSetting('conventionalCommitsEnabled', checked === true)
+          }
+        />
+      </div>
+
+      <FormField
+        label="Custom Scopes"
+        htmlFor="conventionalCommitsScopes"
+        hint="Comma-separated list of scopes for quick access (e.g., ui, api, auth)"
+      >
+        <Input
+          id="conventionalCommitsScopes"
+          type="text"
+          value={settings.conventionalCommitsScopes?.join(', ') || ''}
+          onChange={(e) => {
+            const scopes = e.target.value
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+            updateSetting('conventionalCommitsScopes', scopes.length > 0 ? scopes : null);
+          }}
+          placeholder="ui, api, auth, core"
+          disabled={!settings.conventionalCommitsEnabled}
+        />
+      </FormField>
+    </div>
+  );
+}
+
+function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const [apiKey, setApiKey] = useState('');
+  const [hasKey, setHasKey] = useState(false);
+  const [isLoadingKey, setIsLoadingKey] = useState(false);
+  const [isSavingKey, setIsSavingKey] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if (settings.aiProvider === AiProvider.Ollama) {
+        setHasKey(true);
+        return;
+      }
+      setIsLoadingKey(true);
+      try {
+        const has = await aiApi.hasApiKey(settings.aiProvider);
+        setHasKey(has);
+      } catch (err) {
+        console.error('Failed to check API key:', err);
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    checkApiKey();
+  }, [settings.aiProvider]);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
+        setOllamaModels(models);
+      } catch (err) {
+        console.error('Failed to load Ollama models:', err);
+        setOllamaModels([]);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+    if (settings.aiProvider === AiProvider.Ollama) {
+      loadModels();
+    }
+  }, [settings.aiProvider, settings.aiOllamaUrl]);
+
+  const loadOllamaModels = async () => {
+    setIsLoadingModels(true);
+    try {
+      const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
+      setOllamaModels(models);
+    } catch (err) {
+      console.error('Failed to load Ollama models:', err);
+      setOllamaModels([]);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) return;
+    setIsSavingKey(true);
+    setTestResult(null);
+    try {
+      await aiApi.setApiKey(settings.aiProvider, apiKey.trim());
+      setHasKey(true);
+      setApiKey('');
+      toast.success('API key saved');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsSavingKey(false);
+    }
+  };
+
+  const handleDeleteApiKey = async () => {
+    try {
+      await aiApi.deleteApiKey(settings.aiProvider);
+      setHasKey(false);
+      setTestResult(null);
+      toast.success('API key deleted');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const success = await aiApi.testConnection(settings.aiProvider);
+      if (success) {
+        setTestResult({ success: true, message: 'Connection successful' });
+      } else {
+        setTestResult({ success: false, message: 'Connection failed' });
+      }
+    } catch (err) {
+      setTestResult({ success: false, message: getErrorMessage(err) });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const providerRequiresApiKey = settings.aiProvider !== AiProvider.Ollama;
+
+  const defaultModels: Record<string, string> = {
+    [AiProvider.OpenAi]: 'gpt-4o-mini',
+    [AiProvider.Anthropic]: 'claude-3-5-haiku-latest',
+    [AiProvider.Ollama]: 'llama3.2',
+  };
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>AI Commit Messages</h3>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="ai-enabled"
+          label="Enable AI commit messages"
+          description="Generate commit messages from staged changes using AI"
+          checked={settings.aiEnabled}
+          onCheckedChange={(checked) => updateSetting('aiEnabled', checked === true)}
+        />
+      </div>
+
+      <FormField label="Provider" htmlFor="aiProvider" hint="Choose your AI provider">
+        <Select
+          id="aiProvider"
+          value={settings.aiProvider}
+          onValueChange={(value) => {
+            updateSetting('aiProvider', value as AiProviderType);
+            updateSetting('aiModel', null);
+            setTestResult(null);
+          }}
+        >
+          <SelectItem value={AiProvider.OpenAi}>OpenAI</SelectItem>
+          <SelectItem value={AiProvider.Anthropic}>Anthropic</SelectItem>
+          <SelectItem value={AiProvider.Ollama}>Ollama (Local)</SelectItem>
+        </Select>
+      </FormField>
+
+      {providerRequiresApiKey && (
+        <FormField
+          label="API Key"
+          htmlFor="aiApiKey"
+          hint={hasKey ? 'API key is configured' : 'Enter your API key'}
+        >
+          <div className="flex gap-2">
+            {hasKey ? (
+              <>
+                <Input
+                  id="aiApiKey"
+                  type="password"
+                  value="••••••••••••••••"
+                  disabled
+                  className="flex-1"
+                />
+                <Button variant="secondary" onClick={handleDeleteApiKey}>
+                  Remove
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  id="aiApiKey"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter API key..."
+                  className="flex-1"
+                  disabled={isLoadingKey}
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleSaveApiKey}
+                  disabled={!apiKey.trim() || isSavingKey}
+                >
+                  {isSavingKey ? 'Saving...' : 'Save'}
+                </Button>
+              </>
+            )}
+          </div>
+        </FormField>
+      )}
+
+      {settings.aiProvider === AiProvider.Ollama && (
+        <FormField
+          label="Ollama URL"
+          htmlFor="aiOllamaUrl"
+          hint="URL of your Ollama server (default: http://localhost:11434)"
+        >
+          <Input
+            id="aiOllamaUrl"
+            type="text"
+            value={settings.aiOllamaUrl || ''}
+            onChange={(e) => updateSetting('aiOllamaUrl', e.target.value || null)}
+            placeholder="http://localhost:11434"
+          />
+        </FormField>
+      )}
+
+      <FormField
+        label="Model"
+        htmlFor="aiModel"
+        hint={`Default: ${defaultModels[settings.aiProvider]}`}
+      >
+        {settings.aiProvider === AiProvider.Ollama ? (
+          <div className="flex gap-2">
+            <Select
+              id="aiModel"
+              value={settings.aiModel || ''}
+              onValueChange={(value) => updateSetting('aiModel', value || null)}
+              className="flex-1"
+              disabled={isLoadingModels}
+              placeholder={
+                isLoadingModels
+                  ? 'Loading models...'
+                  : `Default (${defaultModels[settings.aiProvider]})`
+              }
+            >
+              {ollamaModels.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model}
+                </SelectItem>
+              ))}
+            </Select>
+            <Button variant="secondary" onClick={loadOllamaModels} disabled={isLoadingModels}>
+              Refresh
+            </Button>
+          </div>
+        ) : (
+          <Input
+            id="aiModel"
+            type="text"
+            value={settings.aiModel || ''}
+            onChange={(e) => updateSetting('aiModel', e.target.value || null)}
+            placeholder={defaultModels[settings.aiProvider]}
+          />
+        )}
+      </FormField>
+
+      <div className={groupClass}>
+        <Button
+          variant="secondary"
+          onClick={handleTestConnection}
+          disabled={isTesting || (providerRequiresApiKey && !hasKey)}
+        >
+          {isTesting ? 'Testing...' : 'Test Connection'}
+        </Button>
+        {testResult && (
+          <p className={cn('mt-2 text-xs', testResult.success ? 'text-success' : 'text-error')}>
+            {testResult.message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type ProviderTab = 'github' | 'gitlab' | 'bitbucket' | 'gitea';
+
+const PROVIDERS: { id: ProviderTab; name: string; supported: boolean }[] = [
+  { id: 'github', name: 'GitHub', supported: true },
+  { id: 'gitlab', name: 'GitLab', supported: false },
+  { id: 'bitbucket', name: 'Bitbucket', supported: false },
+  { id: 'gitea', name: 'Gitea', supported: false },
+];
+
+function IntegrationsSettings() {
+  const {
+    detectedProvider,
+    connectionStatus,
+    isConnecting,
+    error,
+    detectProvider,
+    startOAuth,
+    cancelOAuth,
+    disconnect,
+    clearError,
+  } = useIntegrationStore();
+
+  // Compute initial tab based on detected provider
+  const initialTab = useMemo((): ProviderTab => {
+    if (detectedProvider?.provider) {
+      const providerTab = detectedProvider.provider as ProviderTab;
+      if (PROVIDERS.some((p) => p.id === providerTab)) {
+        return providerTab;
+      }
+    }
+    return 'github';
+  }, [detectedProvider]);
+
+  const [activeTab, setActiveTab] = useState<ProviderTab>(initialTab);
+  const hasSetInitialTab = useRef(false);
+
+  useEffect(() => {
+    initIntegrationListeners();
+    detectProvider();
+  }, [detectProvider]);
+
+  // Update tab when detected provider changes (only once)
+  useEffect(() => {
+    if (!hasSetInitialTab.current && detectedProvider?.provider) {
+      const providerTab = detectedProvider.provider as ProviderTab;
+      if (PROVIDERS.some((p) => p.id === providerTab)) {
+        hasSetInitialTab.current = true;
+        startTransition(() => {
+          setActiveTab(providerTab);
+        });
+      }
+    }
+  }, [detectedProvider]);
+
+  const handleConnect = async () => {
+    clearError();
+    await startOAuth();
+  };
+
+  const handleDisconnect = async () => {
+    clearError();
+    await disconnect();
+  };
+
+  const activeProvider = PROVIDERS.find((p) => p.id === activeTab);
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>Integrations</h3>
+
+      {/* Provider Tabs */}
+      <div className="flex border-b border-(--border-color) mb-4">
+        {PROVIDERS.map((provider) => (
+          <button
+            key={provider.id}
+            onClick={() => setActiveTab(provider.id)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === provider.id
+                ? 'border-(--accent-primary) text-(--accent-primary)'
+                : 'border-transparent text-(--text-muted) hover:text-(--text-primary)'
+            }`}
+          >
+            {provider.name}
+            {detectedProvider?.provider === provider.id && (
+              <span className="ml-2 w-2 h-2 inline-block rounded-full bg-(--accent-primary)" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Provider Content */}
+      {!activeProvider?.supported ? (
+        <div className="py-4 text-(--text-muted) text-sm">
+          <p>{activeProvider?.name} integration is coming soon.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-(--bg-tertiary) rounded-lg border border-(--border-color)">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-(--bg-primary) flex items-center justify-center">
+                {connectionStatus?.avatarUrl ? (
+                  <img
+                    src={connectionStatus.avatarUrl}
+                    alt={connectionStatus.username || ''}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <Link2 size={20} className="text-(--text-muted)" />
+                )}
+              </div>
+              <div>
+                <div className="font-medium text-(--text-primary)">{activeProvider?.name}</div>
+                {connectionStatus?.connected && connectionStatus.username && (
+                  <div className="text-sm text-(--text-muted)">
+                    Connected as {connectionStatus.username}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {connectionStatus?.connected ? (
+                <Button variant="secondary" onClick={handleDisconnect}>
+                  Disconnect
+                </Button>
+              ) : isConnecting ? (
+                <Button variant="secondary" onClick={cancelOAuth}>
+                  Cancel
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={handleConnect}>
+                  Connect
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {error && <Alert variant="error">{error}</Alert>}
+
+          {connectionStatus?.connected && (
+            <div className="text-sm text-(--text-secondary)">
+              <p>
+                Connected to {activeProvider?.name}. You can now view pull requests, issues, and CI
+                status in the sidebar.
+              </p>
+            </div>
+          )}
+
+          {!connectionStatus?.connected && (
+            <div className="text-sm text-(--text-muted)">
+              <p>
+                Connect to {activeProvider?.name} to access pull requests, issues, CI/CD status, and
+                notifications.
+              </p>
+              <p className="mt-2">
+                <strong>Note:</strong> You will be redirected to {activeProvider?.name} to authorize
+                Axis. After authorization, you will be returned to the app automatically.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <h3 className={sectionTitleClass}>About Integrations</h3>
+
+      <div className="text-sm text-(--text-secondary) space-y-2">
+        <p>Axis can connect to your Git hosting provider to show additional information:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Pull/Merge Requests - view, create, and merge PRs</li>
+          <li>Issues - view and create issues</li>
+          <li>CI/CD Status - see build and test status for commits</li>
+          <li>Notifications - stay updated on activity</li>
+        </ul>
       </div>
     </div>
   );

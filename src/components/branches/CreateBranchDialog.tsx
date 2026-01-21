@@ -15,6 +15,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
   CheckboxField,
   Alert,
 } from '@/components/ui';
@@ -76,7 +77,11 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
     setError(null);
 
     try {
-      await branchApi.create(branchName.trim(), baseBranch || undefined, false);
+      await branchApi.create(branchName.trim(), {
+        startPoint: baseBranch || null,
+        force: false,
+        track: null,
+      });
 
       if (checkout) {
         await branchApi.checkout(branchName.trim());
@@ -124,18 +129,18 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
             <Select
               id="base-branch"
               value={baseBranch}
-              onChange={(e) => setBaseBranch(e.target.value)}
+              onValueChange={setBaseBranch}
+              placeholder="Current HEAD"
             >
-              <option value="">Current HEAD</option>
               {startPoint && !localBranches.some((b) => b.name === startPoint) && (
-                <option value={startPoint}>
+                <SelectItem value={startPoint}>
                   {startPoint.length > 8 ? startPoint.slice(0, 8) : startPoint} (commit)
-                </option>
+                </SelectItem>
               )}
               {localBranches.map((branch) => (
-                <option key={branch.name} value={branch.name}>
+                <SelectItem key={branch.name} value={branch.name}>
                   {branch.name} {branch.isHead && '(current)'}
-                </option>
+                </SelectItem>
               ))}
             </Select>
           </FormField>

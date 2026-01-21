@@ -20,6 +20,7 @@ import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
 import { SettingsDialog } from '../settings/SettingsDialog';
+import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =
@@ -45,6 +46,7 @@ export function Toolbar() {
   const [pushOpen, setPushOpen] = useState(false);
   const [pullOpen, setPullOpen] = useState(false);
   const [stashOpen, setStashOpen] = useState(false);
+  const [repoSettingsOpen, setRepoSettingsOpen] = useState(false);
 
   const handleCommitClick = useCallback(() => {
     setCurrentView('file-status');
@@ -170,34 +172,37 @@ export function Toolbar() {
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-0.5">
-        {repository && (
-          <>
-            <button
-              className={toolbarButtonClass}
-              onClick={handleShowInFinder}
-              title="Show in Finder"
-            >
-              <FolderOpen size={18} />
-              <span>Show in Finder</span>
-            </button>
-            <button className={toolbarButtonClass} onClick={handleOpenTerminal} title="Terminal">
-              <Terminal size={18} />
-              <span>Terminal</span>
-            </button>
-          </>
-        )}
-        <button
-          className={toolbarButtonClass}
-          onClick={() => setShowSettings(true)}
-          title="Settings"
-        >
-          <Settings size={18} />
-          <span>Settings</span>
-        </button>
-      </div>
+      {repository && (
+        <div className="flex items-center gap-0.5">
+          <button
+            className={toolbarButtonClass}
+            onClick={handleShowInFinder}
+            title="Show in Finder"
+          >
+            <FolderOpen size={18} />
+            <span>Show in Finder</span>
+          </button>
+          <button className={toolbarButtonClass} onClick={handleOpenTerminal} title="Terminal">
+            <Terminal size={18} />
+            <span>Terminal</span>
+          </button>
+          <button
+            className={toolbarButtonClass}
+            onClick={() => setRepoSettingsOpen(true)}
+            title="Repository Settings"
+          >
+            <Settings size={18} />
+            <span>Settings</span>
+          </button>
+        </div>
+      )}
 
+      {/* App Settings - accessible via Cmd+, keyboard shortcut */}
       <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <RepositorySettingsDialog
+        isOpen={repoSettingsOpen}
+        onClose={() => setRepoSettingsOpen(false)}
+      />
     </div>
   );
 }

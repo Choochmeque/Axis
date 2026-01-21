@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FolderGit2 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -73,7 +74,7 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
       await loadSubmodules();
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

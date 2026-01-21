@@ -7,6 +7,7 @@ import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { ReflogView } from './components/reflog';
 import { LfsView } from './components/lfs';
+import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
@@ -14,6 +15,7 @@ import { notifyNewCommits } from './lib/actions';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
+import { useIntegrationStore } from './store/integrationStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
 import { events } from '@/bindings/api';
 import './index.css';
@@ -182,6 +184,8 @@ function App() {
       // Switch repository (uses backend cache for fast switching)
       try {
         useStagingStore.getState().reset();
+        // Clear integration data when switching repos
+        useIntegrationStore.getState().reset();
         await switchRepository(tab.path);
         await useStagingStore.getState().loadStatus();
       } catch {
@@ -218,6 +222,14 @@ function App() {
         return <ReflogView />;
       case 'lfs':
         return <LfsView />;
+      case 'pull-requests':
+        return <PullRequestsView key="pull-requests" />;
+      case 'issues':
+        return <IssuesView key="issues" />;
+      case 'ci':
+        return <CIView key="ci" />;
+      case 'notifications':
+        return <NotificationsView key="notifications" />;
       default:
         return <WorkspaceView />;
     }

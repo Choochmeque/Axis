@@ -40,10 +40,12 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 thiserror = "1"
 anyhow = "1"
 
+# Environment
+dotenvy_macro = "0.15"
+
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
-parking_lot = "0.12"
 log = "0.4"
 env_logger = "0.11"
 shellexpand = "3.1"
@@ -52,11 +54,21 @@ tempfile = "3"
 flate2 = "1"
 bzip2 = "0.6"
 base64 = "0.22"
+sha2 = "0.10"
+rand = "0.8"
 async-trait = "0.1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 # File watching
 notify = "6"
+
+# GitHub/GitLab integrations
+octocrab = "0.49"
+url = "2"
+urlencoding = "2"
+http-body-util = "0.1"
+bytes = "1"
+http = "1"
 
 # Typescript generation
 tauri-specta = { version = "2.0.0-rc.21", features = ["derive", "typescript"] }

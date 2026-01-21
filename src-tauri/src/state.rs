@@ -2,10 +2,9 @@ use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
 use crate::services::{BackgroundFetchService, GitService};
 use crate::storage::Database;
-use parking_lot::{Mutex, MutexGuard, RwLock};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 use tauri::AppHandle;
 
 /// Wrapper that holds an Arc<Mutex<GitService>> and provides access
@@ -22,7 +21,7 @@ impl GitServiceHandle {
     }
 
     pub fn lock(&self) -> MutexGuard<'_, GitService> {
-        self.inner.lock()
+        self.inner.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     /// Access git2 service directly (convenience method)
@@ -30,7 +29,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::Git2Service) -> R,
     {
-        let guard = self.inner.lock();
+        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         f(guard.git2())
     }
 
@@ -39,7 +38,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::GitCliService) -> R,
     {
-        let guard = self.inner.lock();
+        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         f(guard.git_cli())
     }
 }
@@ -59,7 +58,7 @@ impl RepositoryCache {
 
     /// Get an existing cached service handle (without opening if not cached)
     pub fn get(&self, path: &Path) -> Option<GitServiceHandle> {
-        let repos = self.repos.read();
+        let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
         repos.get(path).cloned()
     }
 
@@ -72,7 +71,7 @@ impl RepositoryCache {
     ) -> Result<GitServiceHandle> {
         // Check if already cached
         {
-            let repos = self.repos.read();
+            let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
             if let Some(handle) = repos.get(path) {
                 return Ok(handle.clone());
             }
@@ -82,7 +81,7 @@ impl RepositoryCache {
         let service = GitService::open(path, app_handle.clone(), is_active)?;
         let handle = GitServiceHandle::new(service);
 
-        let mut repos = self.repos.write();
+        let mut repos = self.repos.write().unwrap_or_else(|e| e.into_inner());
         repos.insert(path.to_path_buf(), handle.clone());
 
         Ok(handle)
@@ -90,7 +89,7 @@ impl RepositoryCache {
 
     /// Set the active repository, updating all cached services
     pub fn set_active(&self, active_path: &Path) {
-        let repos = self.repos.read();
+        let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
         for (path, handle) in repos.iter() {
             let service = handle.lock();
             service.set_active(path == active_path);
@@ -99,27 +98,41 @@ impl RepositoryCache {
 
     /// Remove a repository from the cache
     pub fn remove(&self, path: &Path) {
-        self.repos.write().remove(path);
+        self.repos
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(path);
     }
 
     /// List all cached repository paths
     pub fn list_paths(&self) -> Vec<PathBuf> {
-        self.repos.read().keys().cloned().collect()
+        self.repos
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .keys()
+            .cloned()
+            .collect()
     }
 
     /// Check if a repository is cached
     pub fn contains(&self, path: &Path) -> bool {
-        self.repos.read().contains_key(path)
+        self.repos
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains_key(path)
     }
 
     /// Get the number of cached repositories
     pub fn len(&self) -> usize {
-        self.repos.read().len()
+        self.repos.read().unwrap_or_else(|e| e.into_inner()).len()
     }
 
     /// Check if cache is empty
     pub fn is_empty(&self) -> bool {
-        self.repos.read().is_empty()
+        self.repos
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
     }
 }
 
@@ -150,13 +163,14 @@ impl AppState {
 
     /// Set the app handle (must be called after Tauri setup)
     pub fn set_app_handle(&self, app_handle: AppHandle) {
-        *self.app_handle.write() = Some(app_handle);
+        *self.app_handle.write().unwrap_or_else(|e| e.into_inner()) = Some(app_handle);
     }
 
     /// Get the app handle
     pub fn get_app_handle(&self) -> Result<AppHandle> {
         self.app_handle
             .read()
+            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("App handle not set".to_string()))
     }
@@ -164,6 +178,11 @@ impl AppState {
     /// Get the repository cache (for background fetch service)
     pub fn repository_cache(&self) -> Arc<RepositoryCache> {
         Arc::clone(&self.repository_cache)
+    }
+
+    /// Get the database Arc (for integration providers that need 'static closures)
+    pub fn database(&self) -> Arc<Database> {
+        Arc::clone(&self.database)
     }
 
     /// Set/switch the active repository (adds to cache if needed)
@@ -176,7 +195,10 @@ impl AppState {
         // Update active flags
         self.repository_cache.set_active(path);
 
-        *self.active_repository_path.write() = Some(path.to_path_buf());
+        *self
+            .active_repository_path
+            .write()
+            .unwrap_or_else(|e| e.into_inner()) = Some(path.to_path_buf());
 
         // Return repo info
         let guard = handle.lock();
@@ -184,11 +206,17 @@ impl AppState {
     }
 
     pub fn get_current_repository_path(&self) -> Option<PathBuf> {
-        self.active_repository_path.read().clone()
+        self.active_repository_path
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     pub fn close_current_repository(&self) {
-        let mut repo_path = self.active_repository_path.write();
+        let mut repo_path = self
+            .active_repository_path
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         *repo_path = None;
     }
 
@@ -197,7 +225,10 @@ impl AppState {
         self.repository_cache.remove(path);
 
         // Clear active if this was it
-        let mut active = self.active_repository_path.write();
+        let mut active = self
+            .active_repository_path
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         if active.as_ref().map(|p| p.as_path()) == Some(path) {
             *active = None;
         }

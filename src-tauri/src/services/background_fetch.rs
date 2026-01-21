@@ -1,8 +1,7 @@
 use crate::events::RemoteFetchedEvent;
 use crate::models::FetchOptions;
 use crate::state::RepositoryCache;
-use parking_lot::Mutex;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::async_runtime::JoinHandle;
 use tauri::AppHandle;
@@ -98,14 +97,22 @@ impl BackgroundFetchService {
             }
         });
 
-        *self.interval_handle.lock() = Some(handle);
+        if let Ok(mut guard) = self.interval_handle.lock() {
+            *guard = Some(handle);
+        } else {
+            log::error!("Failed to acquire lock for background fetch handle");
+        }
     }
 
     /// Stop the background fetch task
     pub fn stop(&self) {
-        if let Some(handle) = self.interval_handle.lock().take() {
-            log::info!("Stopping background fetch service");
-            handle.abort();
+        if let Ok(mut guard) = self.interval_handle.lock() {
+            if let Some(handle) = guard.take() {
+                log::info!("Stopping background fetch service");
+                handle.abort();
+            }
+        } else {
+            log::error!("Failed to acquire lock to stop background fetch");
         }
     }
 
@@ -122,7 +129,11 @@ impl BackgroundFetchService {
 
     /// Check if the background fetch service is running
     pub fn is_running(&self) -> bool {
-        self.interval_handle.lock().is_some()
+        if let Ok(guard) = self.interval_handle.lock() {
+            guard.is_some()
+        } else {
+            false
+        }
     }
 }
 

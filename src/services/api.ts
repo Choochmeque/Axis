@@ -7,6 +7,12 @@ import {
   type LfsPushOptions,
   type LfsMigrateOptions,
   type LfsPruneOptions,
+  type ProviderType,
+  type PrState,
+  type IssueState,
+  type CreatePrOptions,
+  type MergePrOptions,
+  type CreateIssueOptions,
 } from '../bindings/api';
 import type {
   BranchType,
@@ -416,6 +422,8 @@ export const shellApi = {
   showInFolder: (path: string) => commands.showInFolder(path),
 
   openTerminal: (path: string) => commands.openTerminal(path),
+
+  openUrl: (url: string) => commands.openUrl(url),
 };
 
 export const archiveApi = {
@@ -482,4 +490,65 @@ export const lfsApi = {
   isPointer: (path: string) => commands.lfsIsPointer(path),
 
   prune: (options: LfsPruneOptions) => commands.lfsPrune(options),
+};
+
+export const integrationApi = {
+  // OAuth / Connection
+  setGithubClientId: (clientId: string) => commands.integrationSetGithubClientId(clientId),
+
+  startOauth: () => commands.integrationStartOauth(),
+
+  cancelOauth: () => commands.integrationCancelOauth(),
+
+  isConnected: (provider: ProviderType) => commands.integrationIsConnected(provider),
+
+  getStatus: (provider: ProviderType) => commands.integrationGetStatus(provider),
+
+  disconnect: (provider: ProviderType) => commands.integrationDisconnect(provider),
+
+  // Provider Detection
+  detectProvider: () => commands.integrationDetectProvider(),
+
+  // Repository
+  getRepoInfo: (owner: string, repo: string) => commands.integrationGetRepoInfo(owner, repo),
+
+  // Pull Requests
+  listPrs: (owner: string, repo: string, state: PrState, page: number) =>
+    commands.integrationListPrs(owner, repo, state, page),
+
+  getPr: (owner: string, repo: string, number: number) =>
+    commands.integrationGetPr(owner, repo, number),
+
+  createPr: (owner: string, repo: string, options: CreatePrOptions) =>
+    commands.integrationCreatePr(owner, repo, options),
+
+  mergePr: (owner: string, repo: string, number: number, options: MergePrOptions) =>
+    commands.integrationMergePr(owner, repo, number, options),
+
+  // Issues
+  listIssues: (owner: string, repo: string, state: IssueState, page: number) =>
+    commands.integrationListIssues(owner, repo, state, page),
+
+  getIssue: (owner: string, repo: string, number: number) =>
+    commands.integrationGetIssue(owner, repo, number),
+
+  createIssue: (owner: string, repo: string, options: CreateIssueOptions) =>
+    commands.integrationCreateIssue(owner, repo, options),
+
+  // CI/CD
+  listCiRuns: (owner: string, repo: string, page: number) =>
+    commands.integrationListCiRuns(owner, repo, page),
+
+  getCommitStatus: (owner: string, repo: string, sha: string) =>
+    commands.integrationGetCommitStatus(owner, repo, sha),
+
+  // Notifications
+  listNotifications: (all: boolean, page: number) =>
+    commands.integrationListNotifications(all, page),
+
+  markNotificationRead: (threadId: string) => commands.integrationMarkNotificationRead(threadId),
+
+  markAllNotificationsRead: () => commands.integrationMarkAllNotificationsRead(),
+
+  getUnreadCount: () => commands.integrationGetUnreadCount(),
 };

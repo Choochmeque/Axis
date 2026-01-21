@@ -16,6 +16,11 @@ import {
   RotateCcw,
   Lock,
   HardDrive,
+  Link2,
+  GitPullRequest,
+  CircleDot,
+  Play,
+  Bell,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -30,6 +35,7 @@ import {
 import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
 import { useLfsStore } from '../../store/lfsStore';
+import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch, Remote } from '../../types';
 import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
@@ -189,6 +195,16 @@ export function Sidebar() {
       useLfsStore.getState().loadStatus();
     } else {
       useLfsStore.getState().reset();
+    }
+  }, [repository]);
+
+  // Initialize integration listeners and detect provider
+  useEffect(() => {
+    initIntegrationListeners();
+    if (repository) {
+      useIntegrationStore.getState().detectProvider();
+    } else {
+      useIntegrationStore.getState().reset();
     }
   }, [repository]);
 
@@ -553,6 +569,8 @@ export function Sidebar() {
               )}
             </Section>
 
+            <IntegrationsSection />
+
             <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
               {submodules.length > 0 ? (
                 [...submodules]
@@ -644,4 +662,274 @@ function LfsStatusBadge() {
   }
 
   return null;
+}
+
+// Type for IntegrationsSection tree items
+type IntegrationItem = {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  view?: string;
+  badge?: { count: number; className: string };
+  disabled?: boolean;
+  onClick?: () => void;
+};
+
+function getProviderName(provider: string) {
+  switch (provider) {
+    case 'github':
+      return 'GitHub';
+    case 'gitlab':
+      return 'GitLab';
+    case 'bitbucket':
+      return 'Bitbucket';
+    case 'gitea':
+      return 'Gitea';
+    default:
+      return provider;
+  }
+}
+
+function IntegrationsSection() {
+  const { currentView, setCurrentView } = useRepositoryStore();
+  const {
+    detectedProvider,
+    connectionStatus,
+    pullRequests,
+    issues,
+    ciRuns,
+    unreadCount,
+    isLoadingPrs,
+    isLoadingIssues,
+    isLoadingCiRuns,
+    isLoadingNotifications,
+    loadPullRequests,
+    loadIssues,
+    loadCiRuns,
+    loadNotifications,
+  } = useIntegrationStore();
+
+  const openPrCount = pullRequests.filter((pr) => pr.state === 'open').length;
+  const openIssueCount = issues.filter((issue) => issue.state === 'open').length;
+  const runningCiCount = ciRuns.filter((run) => run.status === 'inprogress').length;
+
+  // Build tree data for TreeView - must be before early return
+  const treeData = useMemo(() => {
+    if (!detectedProvider) return [];
+
+    const children = connectionStatus?.connected
+      ? [
+          {
+            id: 'pull-requests',
+            name: 'pull-requests',
+            data: {
+              id: 'pull-requests',
+              label: 'Pull Requests',
+              icon: <GitPullRequest size={12} />,
+              view: 'pull-requests',
+              badge:
+                openPrCount > 0
+                  ? {
+                      count: openPrCount,
+                      className: 'bg-(--accent-color)/20 text-(--accent-color)',
+                    }
+                  : undefined,
+              disabled: isLoadingPrs,
+              onClick: () => {
+                useIntegrationStore.getState().clearPrView();
+                setCurrentView('pull-requests');
+              },
+            },
+          },
+          {
+            id: 'issues',
+            name: 'issues',
+            data: {
+              id: 'issues',
+              label: 'Issues',
+              icon: <CircleDot size={12} />,
+              view: 'issues',
+              badge:
+                openIssueCount > 0
+                  ? {
+                      count: openIssueCount,
+                      className: 'bg-(--bg-tertiary) text-(--text-secondary)',
+                    }
+                  : undefined,
+              disabled: isLoadingIssues,
+              onClick: () => {
+                useIntegrationStore.getState().clearIssueView();
+                setCurrentView('issues');
+              },
+            },
+          },
+          {
+            id: 'ci',
+            name: 'ci',
+            data: {
+              id: 'ci',
+              label: 'CI / Actions',
+              icon: <Play size={12} />,
+              view: 'ci',
+              badge:
+                runningCiCount > 0
+                  ? { count: runningCiCount, className: 'bg-warning/20 text-warning' }
+                  : undefined,
+              disabled: isLoadingCiRuns,
+              onClick: () => {
+                useIntegrationStore.getState().clearCiView();
+                setCurrentView('ci');
+              },
+            },
+          },
+          {
+            id: 'notifications',
+            name: 'notifications',
+            data: {
+              id: 'notifications',
+              label: 'Notifications',
+              icon: <Bell size={12} />,
+              view: 'notifications',
+              badge:
+                unreadCount > 0
+                  ? { count: unreadCount, className: 'bg-(--accent-color) text-white' }
+                  : undefined,
+              disabled: isLoadingNotifications,
+              onClick: () => {
+                useIntegrationStore.setState({
+                  notifications: [],
+                  isLoadingNotifications: false,
+                });
+                setCurrentView('notifications');
+              },
+            },
+          },
+        ]
+      : [
+          {
+            id: 'not-connected',
+            name: 'not-connected',
+            data: {
+              id: 'not-connected',
+              label: 'Connect in Settings to view data',
+              icon: null,
+              disabled: true,
+            },
+          },
+        ];
+
+    return [
+      {
+        id: `provider-${detectedProvider.provider}`,
+        name: getProviderName(detectedProvider.provider),
+        children,
+      },
+    ];
+  }, [
+    connectionStatus?.connected,
+    detectedProvider,
+    openPrCount,
+    openIssueCount,
+    runningCiCount,
+    unreadCount,
+    isLoadingPrs,
+    isLoadingIssues,
+    isLoadingCiRuns,
+    isLoadingNotifications,
+    setCurrentView,
+  ]);
+
+  // Load data when connected
+  useEffect(() => {
+    if (connectionStatus?.connected && detectedProvider) {
+      loadPullRequests();
+      loadIssues();
+      loadCiRuns();
+      loadNotifications();
+    }
+  }, [
+    connectionStatus?.connected,
+    detectedProvider,
+    loadPullRequests,
+    loadIssues,
+    loadCiRuns,
+    loadNotifications,
+  ]);
+
+  // Don't show section if no provider detected
+  if (!detectedProvider) {
+    return null;
+  }
+
+  return (
+    <Section title="INTEGRATIONS" icon={<Link2 />} defaultExpanded={true}>
+      <TreeView<IntegrationItem>
+        data={treeData}
+        defaultExpandAll={connectionStatus?.connected}
+        renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+          const paddingLeft = 40 + depth * 16;
+
+          // Provider folder node
+          if (node.children) {
+            return (
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  '[&>svg:first-child]:shrink-0 [&>svg:first-child]:opacity-70'
+                )}
+                style={{ paddingLeft }}
+                onClick={toggleExpand}
+              >
+                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <Folder size={12} />
+                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {node.name}
+                </span>
+                {!connectionStatus?.connected && (
+                  <span className="badge bg-(--bg-tertiary) text-(--text-muted)">
+                    not connected
+                  </span>
+                )}
+              </button>
+            );
+          }
+
+          // Leaf item node
+          if (node.data) {
+            const item = node.data;
+            // "Not connected" placeholder
+            if (item.id === 'not-connected') {
+              return (
+                <div
+                  className={cn(
+                    sidebarItemClass,
+                    'text-(--text-secondary) italic cursor-default hover:bg-transparent'
+                  )}
+                  style={{ paddingLeft }}
+                >
+                  {item.label}
+                </div>
+              );
+            }
+            return (
+              <button
+                className={cn(sidebarItemClass, currentView === item.view && 'bg-(--bg-hover)')}
+                style={{ paddingLeft }}
+                disabled={item.disabled}
+                onClick={item.onClick}
+              >
+                {item.icon}
+                <span className="flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className={cn('badge', item.badge.className)}>{item.badge.count}</span>
+                )}
+              </button>
+            );
+          }
+
+          return null;
+        }}
+      />
+    </Section>
+  );
 }

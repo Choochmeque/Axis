@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings, Palette, GitBranch, FileText, Sparkles } from 'lucide-react';
+import { Settings, Palette, GitBranch, FileText, Sparkles, Link2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { settingsApi, signingApi, aiApi, lfsApi } from '@/services/api';
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
 import { SigningFormat, Theme, AiProvider } from '@/types';
 import type {
   AppSettings,
@@ -35,7 +36,7 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai';
+type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
@@ -124,6 +125,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
     { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
     { id: 'ai', label: 'AI', icon: <Sparkles size={16} /> },
+    { id: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
   ];
 
   return (
@@ -169,6 +171,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                 {activeTab === 'ai' && (
                   <AiSettings settings={settings} updateSetting={updateSetting} />
                 )}
+                {activeTab === 'integrations' && <IntegrationsSettings />}
               </>
             )}
           </div>
@@ -906,6 +909,187 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
             {testResult.message}
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+type ProviderTab = 'github' | 'gitlab' | 'bitbucket' | 'gitea';
+
+const PROVIDERS: { id: ProviderTab; name: string; supported: boolean }[] = [
+  { id: 'github', name: 'GitHub', supported: true },
+  { id: 'gitlab', name: 'GitLab', supported: false },
+  { id: 'bitbucket', name: 'Bitbucket', supported: false },
+  { id: 'gitea', name: 'Gitea', supported: false },
+];
+
+function IntegrationsSettings() {
+  const [activeTab, setActiveTab] = useState<ProviderTab>('github');
+  const {
+    detectedProvider,
+    connectionStatus,
+    isConnecting,
+    error,
+    detectProvider,
+    startOAuth,
+    cancelOAuth,
+    disconnect,
+    clearError,
+  } = useIntegrationStore();
+
+  useEffect(() => {
+    initIntegrationListeners();
+    detectProvider();
+  }, [detectProvider]);
+
+  // Switch to detected provider tab if it matches
+  useEffect(() => {
+    if (detectedProvider?.provider) {
+      const providerTab = detectedProvider.provider as ProviderTab;
+      if (PROVIDERS.some((p) => p.id === providerTab)) {
+        setActiveTab(providerTab);
+      }
+    }
+  }, [detectedProvider]);
+
+  const handleConnect = async () => {
+    clearError();
+    await startOAuth();
+  };
+
+  const handleDisconnect = async () => {
+    clearError();
+    await disconnect();
+  };
+
+  const activeProvider = PROVIDERS.find((p) => p.id === activeTab);
+  const isDetectedProvider = detectedProvider?.provider === activeTab;
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>Integrations</h3>
+
+      {/* Provider Tabs */}
+      <div className="flex border-b border-(--border-color) mb-4">
+        {PROVIDERS.map((provider) => (
+          <button
+            key={provider.id}
+            onClick={() => setActiveTab(provider.id)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === provider.id
+                ? 'border-(--accent-primary) text-(--accent-primary)'
+                : 'border-transparent text-(--text-muted) hover:text-(--text-primary)'
+            }`}
+          >
+            {provider.name}
+            {detectedProvider?.provider === provider.id && (
+              <span className="ml-2 w-2 h-2 inline-block rounded-full bg-(--accent-primary)" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Provider Content */}
+      {!activeProvider?.supported ? (
+        <div className="py-4 text-(--text-muted) text-sm">
+          <p>{activeProvider?.name} integration is coming soon.</p>
+        </div>
+      ) : !isDetectedProvider ? (
+        <div className="py-4 text-(--text-muted) text-sm">
+          <p>
+            The current repository is not hosted on {activeProvider?.name}.
+            {detectedProvider && (
+              <span>
+                {' '}
+                It appears to be hosted on{' '}
+                {PROVIDERS.find((p) => p.id === detectedProvider.provider)?.name ||
+                  detectedProvider.provider}
+                .
+              </span>
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-(--bg-tertiary) rounded-lg border border-(--border-color)">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-(--bg-primary) flex items-center justify-center">
+                {connectionStatus?.avatarUrl ? (
+                  <img
+                    src={connectionStatus.avatarUrl}
+                    alt={connectionStatus.username || ''}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <Link2 size={20} className="text-(--text-muted)" />
+                )}
+              </div>
+              <div>
+                <div className="font-medium text-(--text-primary)">{activeProvider?.name}</div>
+                <div className="text-sm text-(--text-secondary)">
+                  {detectedProvider.owner}/{detectedProvider.repo}
+                </div>
+                {connectionStatus?.connected && connectionStatus.username && (
+                  <div className="text-xs text-(--text-muted) mt-0.5">
+                    Connected as {connectionStatus.username}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {connectionStatus?.connected ? (
+                <Button variant="secondary" onClick={handleDisconnect}>
+                  Disconnect
+                </Button>
+              ) : isConnecting ? (
+                <Button variant="secondary" onClick={cancelOAuth}>
+                  Cancel
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={handleConnect}>
+                  Connect
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {error && <Alert variant="error">{error}</Alert>}
+
+          {connectionStatus?.connected && (
+            <div className="text-sm text-(--text-secondary)">
+              <p>
+                Connected to {activeProvider?.name}. You can now view pull requests, issues, and CI
+                status in the sidebar.
+              </p>
+            </div>
+          )}
+
+          {!connectionStatus?.connected && (
+            <div className="text-sm text-(--text-muted)">
+              <p>
+                Connect to {activeProvider?.name} to access pull requests, issues, CI/CD status, and
+                notifications.
+              </p>
+              <p className="mt-2">
+                <strong>Note:</strong> You will be redirected to {activeProvider?.name} to authorize
+                Axis. After authorization, you will be returned to the app automatically.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <h3 className={sectionTitleClass}>About Integrations</h3>
+
+      <div className="text-sm text-(--text-secondary) space-y-2">
+        <p>Axis can connect to your Git hosting provider to show additional information:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Pull/Merge Requests - view, create, and merge PRs</li>
+          <li>Issues - view and create issues</li>
+          <li>CI/CD Status - see build and test status for commits</li>
+          <li>Notifications - stay updated on activity</li>
+        </ul>
       </div>
     </div>
   );

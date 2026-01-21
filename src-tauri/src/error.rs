@@ -83,6 +83,21 @@ pub enum AxisError {
 
     #[error("{0}")]
     Other(String),
+
+    #[error("Integration not connected: {0}")]
+    IntegrationNotConnected(String),
+
+    #[error("Integration error: {0}")]
+    IntegrationError(String),
+
+    #[error("Provider not detected")]
+    ProviderNotDetected,
+
+    #[error("OAuth error: {0}")]
+    OAuthError(String),
+
+    #[error("OAuth flow cancelled")]
+    OAuthCancelled,
 }
 
 pub type Result<T> = std::result::Result<T, AxisError>;

@@ -31,6 +31,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_recent_repositories,
             crate::commands::remove_recent_repository,
             crate::commands::show_in_folder,
+            crate::commands::open_url,
             crate::commands::open_terminal,
             // Staging commands
             crate::commands::stage_file,
@@ -218,6 +219,28 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::lfs_env,
             crate::commands::lfs_is_pointer,
             crate::commands::lfs_prune,
+            // Integration commands
+            crate::commands::integration_set_github_client_id,
+            crate::commands::integration_start_oauth,
+            crate::commands::integration_cancel_oauth,
+            crate::commands::integration_is_connected,
+            crate::commands::integration_get_status,
+            crate::commands::integration_disconnect,
+            crate::commands::integration_detect_provider,
+            crate::commands::integration_get_repo_info,
+            crate::commands::integration_list_prs,
+            crate::commands::integration_get_pr,
+            crate::commands::integration_create_pr,
+            crate::commands::integration_merge_pr,
+            crate::commands::integration_list_issues,
+            crate::commands::integration_get_issue,
+            crate::commands::integration_create_issue,
+            crate::commands::integration_list_ci_runs,
+            crate::commands::integration_get_commit_status,
+            crate::commands::integration_list_notifications,
+            crate::commands::integration_mark_notification_read,
+            crate::commands::integration_mark_all_notifications_read,
+            crate::commands::integration_get_unread_count,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,
@@ -227,7 +250,9 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::HeadChangedEvent,
             crate::events::WatchErrorEvent,
             crate::events::RepositoryDirtyEvent,
-            crate::events::RemoteFetchedEvent
+            crate::events::RemoteFetchedEvent,
+            crate::events::OAuthCallbackEvent,
+            crate::events::IntegrationStatusChangedEvent
         ])
 }
 

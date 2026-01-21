@@ -195,6 +195,15 @@ pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn open_url(app_handle: AppHandle, url: String) -> Result<()> {
+    app_handle
+        .opener()
+        .open_url(&url, None::<&str>)
+        .map_err(|e| AxisError::Other(e.to_string()))
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn open_terminal(path: String) -> Result<()> {
     let path = PathBuf::from(&path);
 

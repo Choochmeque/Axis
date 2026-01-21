@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GitBranch, AlertCircle, Loader2 } from 'lucide-react';
+import { GitBranch, Loader2 } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -199,15 +199,13 @@ export function RebaseDialog({
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 
           {result && (
             <Alert variant="warning" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{result.message}</span>
+              {result.message}
             </Alert>
           )}
 

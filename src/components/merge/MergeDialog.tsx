@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GitMerge, AlertCircle } from 'lucide-react';
+import { GitMerge } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -122,15 +122,13 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 
           {result && (
             <Alert variant="warning" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{result.message}</span>
+              {result.message}
             </Alert>
           )}
 

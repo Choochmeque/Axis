@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -65,7 +65,6 @@ export function DeleteRemoteBranchDialog({
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">
-            <AlertTriangle size={16} className="shrink-0" />
             This will delete the branch from the remote server.
           </Alert>
 

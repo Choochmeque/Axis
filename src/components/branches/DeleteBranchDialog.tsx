@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
@@ -122,7 +122,6 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">
-            <AlertTriangle size={16} className="shrink-0" />
             This action cannot be undone.
           </Alert>
 

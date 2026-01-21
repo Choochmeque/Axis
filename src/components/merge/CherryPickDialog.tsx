@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cherry, AlertCircle } from 'lucide-react';
+import { Cherry } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -139,15 +139,13 @@ export function CherryPickDialog({
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 
           {result && (
             <Alert variant="warning" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{result.message}</span>
+              {result.message}
             </Alert>
           )}
 

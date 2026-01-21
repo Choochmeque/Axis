@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, AlertCircle, FolderOpen } from 'lucide-react';
+import { Archive, FolderOpen } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -116,8 +116,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 

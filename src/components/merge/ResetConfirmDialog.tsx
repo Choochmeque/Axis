@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, AlertCircle, AlertTriangle } from 'lucide-react';
+import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { operationApi } from '@/services/api';
 import { ResetMode } from '@/types';
 import type { Commit, ResetMode as ResetModeType } from '@/types';
@@ -94,8 +94,7 @@ export function ResetConfirmDialog({
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 

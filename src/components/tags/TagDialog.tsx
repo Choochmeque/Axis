@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Tag as TagIcon, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Tag as TagIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { tagApi, remoteApi } from '../../services/api';
@@ -123,8 +123,7 @@ export function TagDialog({
         <DialogBody>
           {error && (
             <Alert variant="error" className="mb-4">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              {error}
             </Alert>
           )}
 

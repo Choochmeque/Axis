@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { FileCode, AlertCircle, FolderOpen, Upload, Download } from 'lucide-react';
+import { FileCode, FolderOpen, Upload, Download } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -210,8 +210,7 @@ export function PatchDialog({
           <DialogBody className="pt-0">
             {error && (
               <Alert variant="error" className="mb-4">
-                <AlertCircle size={16} />
-                <span>{error}</span>
+                {error}
               </Alert>
             )}
 

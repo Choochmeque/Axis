@@ -14,6 +14,7 @@ import {
   Textarea,
   CheckboxField,
   Select,
+  SelectItem,
   Alert,
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
@@ -117,24 +118,32 @@ export function CreatePullRequestDialog({
           )}
 
           <FormField label="From (source)" htmlFor="pr-source">
-            <Select id="pr-source" value={sourceBranch} onValueChange={setSourceBranch}>
-              <option value="">Select branch</option>
+            <Select
+              id="pr-source"
+              value={sourceBranch}
+              onValueChange={setSourceBranch}
+              placeholder="Select branch"
+            >
               {localBranches.map((branch) => (
-                <option key={branch.name} value={branch.name}>
+                <SelectItem key={branch.name} value={branch.name}>
                   {branch.name}
                   {branch.isHead ? ' (current)' : ''}
-                </option>
+                </SelectItem>
               ))}
             </Select>
           </FormField>
 
           <FormField label="Into (target)" htmlFor="pr-target">
-            <Select id="pr-target" value={targetBranch} onValueChange={setTargetBranch}>
-              <option value="">Select branch</option>
+            <Select
+              id="pr-target"
+              value={targetBranch}
+              onValueChange={setTargetBranch}
+              placeholder="Select branch"
+            >
               {localBranches.map((branch) => (
-                <option key={branch.name} value={branch.name}>
+                <SelectItem key={branch.name} value={branch.name}>
                   {branch.name}
-                </option>
+                </SelectItem>
               ))}
             </Select>
           </FormField>

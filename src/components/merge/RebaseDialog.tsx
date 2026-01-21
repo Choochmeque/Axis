@@ -22,6 +22,7 @@ import {
   Button,
   FormField,
   Select,
+  SelectItem,
   Label,
   Alert,
 } from '@/components/ui';
@@ -235,15 +236,15 @@ export function RebaseDialog({
                   <Select
                     id="rebase-branch"
                     value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    onValueChange={setSelectedBranch}
                     disabled={isLoading}
+                    placeholder="Select a branch..."
                   >
-                    <option value="">Select a branch...</option>
                     {branches.map((branch) => (
-                      <option key={branch.fullName} value={branch.name}>
+                      <SelectItem key={branch.fullName} value={branch.name}>
                         {branch.name}
                         {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
-                      </option>
+                      </SelectItem>
                     ))}
                   </Select>
                 </FormField>

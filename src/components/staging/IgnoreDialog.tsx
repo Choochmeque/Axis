@@ -10,6 +10,7 @@ import {
   Button,
   FormField,
   Select,
+  SelectItem,
   Input,
   CheckboxField,
 } from '@/components/ui';
@@ -96,14 +97,14 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
                 <Select
                   id="ignore-pattern"
                   value={selectedPattern}
-                  onChange={(e) => setSelectedPattern(e.target.value)}
+                  onValueChange={setSelectedPattern}
                 >
                   {options.suggestions.map((suggestion) => (
-                    <option key={suggestion.pattern} value={suggestion.pattern}>
+                    <SelectItem key={suggestion.pattern} value={suggestion.pattern}>
                       {getSuggestionLabel(suggestion)}
-                    </option>
+                    </SelectItem>
                   ))}
-                  <option value="custom">Custom pattern...</option>
+                  <SelectItem value="custom">Custom pattern...</SelectItem>
                 </Select>
               </FormField>
 
@@ -123,13 +124,13 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
                 <Select
                   id="target-gitignore"
                   value={selectedGitignore}
-                  onChange={(e) => setSelectedGitignore(e.target.value)}
+                  onValueChange={setSelectedGitignore}
                   disabled={useGlobal}
                 >
                   {options.gitignoreFiles.map((file) => (
-                    <option key={file} value={file}>
+                    <SelectItem key={file} value={file}>
                       {file}
-                    </option>
+                    </SelectItem>
                   ))}
                 </Select>
               </FormField>

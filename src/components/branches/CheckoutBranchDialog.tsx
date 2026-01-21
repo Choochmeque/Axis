@@ -12,6 +12,9 @@ import {
   Button,
   FormField,
   Select,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
   Alert,
 } from '@/components/ui';
 import { BranchType } from '@/types';
@@ -85,30 +88,31 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
             <Select
               id="branch-select"
               value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
+              onValueChange={setSelectedBranch}
+              placeholder="-- Select a branch --"
             >
-              <option value="">-- Select a branch --</option>
-
               {localBranches.length > 0 && (
-                <optgroup label="Local Branches">
+                <SelectGroup>
+                  <SelectLabel>Local Branches</SelectLabel>
                   {localBranches
                     .filter((b) => !b.isHead)
                     .map((branch) => (
-                      <option key={branch.name} value={branch.name}>
+                      <SelectItem key={branch.name} value={branch.name}>
                         {branch.name}
-                      </option>
+                      </SelectItem>
                     ))}
-                </optgroup>
+                </SelectGroup>
               )}
 
               {remoteBranches.length > 0 && (
-                <optgroup label="Remote Branches">
+                <SelectGroup>
+                  <SelectLabel>Remote Branches</SelectLabel>
                   {remoteBranches.map((branch) => (
-                    <option key={branch.fullName} value={branch.name}>
+                    <SelectItem key={branch.fullName} value={branch.name}>
                       {branch.name}
-                    </option>
+                    </SelectItem>
                   ))}
-                </optgroup>
+                </SelectGroup>
               )}
             </Select>
           </FormField>

@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   Input,
   Select,
+  SelectItem,
 } from '@/components/ui';
 import { remoteApi, commitApi, signingApi, aiApi } from '@/services/api';
 import type { SigningConfig } from '@/types';
@@ -326,15 +327,15 @@ export function CommitForm() {
             <div className="cc-row">
               <Select
                 value={commitParts.type}
-                onChange={(e) => handleCommitPartChange('type', e.target.value as CommitType | '')}
+                onValueChange={(value) => handleCommitPartChange('type', value as CommitType | '')}
                 className="cc-type-select"
                 disabled={isCommitting}
+                placeholder="type"
               >
-                <option value="">type</option>
                 {COMMIT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value} title={t.description}>
+                  <SelectItem key={t.value} value={t.value}>
                     {t.label}
-                  </option>
+                  </SelectItem>
                 ))}
               </Select>
               <Input

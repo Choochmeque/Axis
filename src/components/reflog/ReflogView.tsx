@@ -31,6 +31,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -261,9 +262,9 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
             className="h-6 text-xs min-w-24"
           >
             {availableRefs.map((ref) => (
-              <option key={ref} value={ref}>
+              <SelectItem key={ref} value={ref}>
                 {getRefDisplayName(ref)}
-              </option>
+              </SelectItem>
             ))}
           </Select>
           <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">

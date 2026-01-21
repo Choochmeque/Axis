@@ -4,44 +4,18 @@ import * as React from 'react';
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-type SelectProps = Omit<
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
-  'onChange'
-> & {
+type SelectProps = {
   children?: React.ReactNode;
   value?: string;
   defaultValue?: string;
-  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  placeholder?: React.ReactNode;
   onValueChange?: (value: string) => void;
   name?: string;
   required?: boolean;
   disabled?: boolean;
+  className?: string;
+  id?: string;
 };
-
-type SelectOptionNode = {
-  value: string;
-  label: React.ReactNode;
-  disabled?: boolean;
-};
-
-type OptionElement = React.ReactElement<React.OptionHTMLAttributes<HTMLOptionElement>>;
-type OptGroupElement = React.ReactElement<React.OptgroupHTMLAttributes<HTMLOptGroupElement>>;
-
-function isOptionElement(node: React.ReactNode): node is OptionElement {
-  return React.isValidElement(node) && node.type === 'option';
-}
-
-function isOptGroupElement(node: React.ReactNode): node is OptGroupElement {
-  return React.isValidElement(node) && node.type === 'optgroup';
-}
-
-function getOptionNode(element: OptionElement): SelectOptionNode {
-  return {
-    value: String(element.props.value ?? ''),
-    label: element.props.children,
-    disabled: Boolean(element.props.disabled),
-  };
-}
 
 const SelectItem = forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Item>,
@@ -81,94 +55,28 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
       children,
       value,
       defaultValue,
-      onChange,
+      placeholder,
       onValueChange,
       name,
       required,
       disabled,
-      ...triggerProps
+      id,
     },
     ref
   ) => {
-    let placeholder: React.ReactNode | undefined;
-    const items: React.ReactNode[] = [];
-
-    React.Children.forEach(children, (child, index) => {
-      if (!React.isValidElement(child)) return;
-
-      if (isOptionElement(child)) {
-        const option = getOptionNode(child);
-        if (option.value === '' && placeholder === undefined) {
-          placeholder = option.label;
-        }
-        if (option.value !== '') {
-          items.push(
-            <SelectItem
-              key={`${option.value}-${index}`}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </SelectItem>
-          );
-        }
-        return;
-      }
-
-      if (isOptGroupElement(child)) {
-        const groupLabel = child.props.label;
-        const groupItems: React.ReactNode[] = [];
-
-        React.Children.forEach(child.props.children, (groupChild, groupIndex) => {
-          if (!React.isValidElement(groupChild) || !isOptionElement(groupChild)) return;
-          const option = getOptionNode(groupChild);
-          if (option.value === '' && placeholder === undefined) {
-            placeholder = option.label;
-          }
-          if (option.value !== '') {
-            groupItems.push(
-              <SelectItem
-                key={`${option.value}-${groupIndex}`}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </SelectItem>
-            );
-          }
-        });
-
-        if (groupItems.length > 0) {
-          items.push(
-            <SelectGroup key={`group-${groupLabel ?? index}`}>
-              {groupLabel ? <SelectLabel>{groupLabel}</SelectLabel> : null}
-              {groupItems}
-            </SelectGroup>
-          );
-        }
-      }
-    });
-
-    const handleValueChange = (nextValue: string) => {
-      onValueChange?.(nextValue);
-      if (onChange) {
-        onChange({ target: { value: nextValue } } as React.ChangeEvent<HTMLSelectElement>);
-      }
-    };
-
     return (
       <SelectPrimitive.Root
         value={value}
         defaultValue={defaultValue}
-        onValueChange={handleValueChange}
+        onValueChange={onValueChange}
         disabled={disabled}
         name={name}
         required={required}
       >
         <SelectPrimitive.Trigger
           ref={ref}
+          id={id}
           className={cn('input flex items-center justify-between gap-2', className)}
-          {...triggerProps}
         >
           <SelectPrimitive.Value placeholder={placeholder} />
           <SelectPrimitive.Icon className="text-(--text-tertiary)">
@@ -183,7 +91,7 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
             <SelectPrimitive.ScrollUpButton className="flex items-center justify-center py-1 text-(--text-tertiary)">
               <ChevronUp size={14} />
             </SelectPrimitive.ScrollUpButton>
-            <SelectPrimitive.Viewport>{items}</SelectPrimitive.Viewport>
+            <SelectPrimitive.Viewport>{children}</SelectPrimitive.Viewport>
             <SelectPrimitive.ScrollDownButton className="flex items-center justify-center py-1 text-(--text-tertiary)">
               <ChevronDown size={14} />
             </SelectPrimitive.ScrollDownButton>
@@ -195,4 +103,4 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
 );
 Select.displayName = 'Select';
 
-export { Select };
+export { Select, SelectItem, SelectGroup, SelectLabel, SelectSeparator };

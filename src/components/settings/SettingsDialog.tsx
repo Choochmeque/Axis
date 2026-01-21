@@ -26,6 +26,7 @@ import {
   FormField,
   Input,
   Select,
+  SelectItem,
   CheckboxField,
   Alert,
 } from '@/components/ui';
@@ -223,11 +224,11 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="theme"
           value={settings.theme}
-          onChange={(e) => updateSetting('theme', e.target.value as ThemeType)}
+          onValueChange={(value) => updateSetting('theme', value as ThemeType)}
         >
-          <option value={Theme.System}>System</option>
-          <option value={Theme.Light}>Light</option>
-          <option value={Theme.Dark}>Dark</option>
+          <SelectItem value={Theme.System}>System</SelectItem>
+          <SelectItem value={Theme.Light}>Light</SelectItem>
+          <SelectItem value={Theme.Dark}>Dark</SelectItem>
         </Select>
       </FormField>
 
@@ -421,14 +422,14 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="signingFormat"
           value={settings.signingFormat}
-          onChange={(e) => {
-            updateSetting('signingFormat', e.target.value as SigningFormatType);
+          onValueChange={(value) => {
+            updateSetting('signingFormat', value as SigningFormatType);
             updateSetting('signingKey', null);
             setTestResult(null);
           }}
         >
-          <option value={SigningFormat.Gpg}>GPG</option>
-          <option value={SigningFormat.Ssh}>SSH</option>
+          <SelectItem value={SigningFormat.Gpg}>GPG</SelectItem>
+          <SelectItem value={SigningFormat.Ssh}>SSH</SelectItem>
         </Select>
       </FormField>
 
@@ -445,18 +446,18 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           <Select
             id="signingKey"
             value={settings.signingKey || ''}
-            onChange={(e) => {
-              updateSetting('signingKey', e.target.value || null);
+            onValueChange={(value) => {
+              updateSetting('signingKey', value || null);
               setTestResult(null);
             }}
             className="flex-1"
             disabled={isLoadingKeys}
+            placeholder={isLoadingKeys ? 'Loading keys...' : 'Select a key...'}
           >
-            <option value="">{isLoadingKeys ? 'Loading keys...' : 'Select a key...'}</option>
             {availableKeys.map((key) => (
-              <option key={key.value} value={key.value}>
+              <SelectItem key={key.value} value={key.value}>
                 {key.label}
-              </option>
+              </SelectItem>
             ))}
           </Select>
           <Button variant="secondary" onClick={handleDetectConfig} disabled={isDetecting}>
@@ -784,15 +785,15 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
         <Select
           id="aiProvider"
           value={settings.aiProvider}
-          onChange={(e) => {
-            updateSetting('aiProvider', e.target.value as AiProviderType);
+          onValueChange={(value) => {
+            updateSetting('aiProvider', value as AiProviderType);
             updateSetting('aiModel', null);
             setTestResult(null);
           }}
         >
-          <option value={AiProvider.OpenAi}>OpenAI</option>
-          <option value={AiProvider.Anthropic}>Anthropic</option>
-          <option value={AiProvider.Ollama}>Ollama (Local)</option>
+          <SelectItem value={AiProvider.OpenAi}>OpenAI</SelectItem>
+          <SelectItem value={AiProvider.Anthropic}>Anthropic</SelectItem>
+          <SelectItem value={AiProvider.Ollama}>Ollama (Local)</SelectItem>
         </Select>
       </FormField>
 
@@ -866,19 +867,19 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
             <Select
               id="aiModel"
               value={settings.aiModel || ''}
-              onChange={(e) => updateSetting('aiModel', e.target.value || null)}
+              onValueChange={(value) => updateSetting('aiModel', value || null)}
               className="flex-1"
               disabled={isLoadingModels}
-            >
-              <option value="">
-                {isLoadingModels
+              placeholder={
+                isLoadingModels
                   ? 'Loading models...'
-                  : `Default (${defaultModels[settings.aiProvider]})`}
-              </option>
+                  : `Default (${defaultModels[settings.aiProvider]})`
+              }
+            >
               {ollamaModels.map((model) => (
-                <option key={model} value={model}>
+                <SelectItem key={model} value={model}>
                   {model}
-                </option>
+                </SelectItem>
               ))}
             </Select>
             <Button variant="secondary" onClick={loadOllamaModels} disabled={isLoadingModels}>

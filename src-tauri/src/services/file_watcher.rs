@@ -101,6 +101,11 @@ impl FileWatcher {
             // Track if we've already emitted a dirty event (for inactive repos)
             let mut dirty_emitted = false;
 
+            // Track pending git events for debouncing
+            let mut pending_index_changed = false;
+            let mut pending_head_changed = false;
+            let mut pending_refs: Vec<String> = Vec::new();
+
             loop {
                 // Use timeout to allow periodic flushing
                 match rx.recv_timeout(debounce_duration) {
@@ -120,13 +125,15 @@ impl FileWatcher {
                                     let relative_str = relative.to_string_lossy();
 
                                     if relative_str == "index" || relative_str == "index.lock" {
-                                        let _ = IndexChangedEvent {}.emit(&app_handle);
+                                        pending_index_changed = true;
                                     } else if relative_str == "HEAD" || relative_str == "HEAD.lock"
                                     {
-                                        let _ = HeadChangedEvent {}.emit(&app_handle);
+                                        pending_head_changed = true;
                                     } else if relative_str.starts_with("refs/") {
                                         let ref_name = relative_str.to_string();
-                                        let _ = RefChangedEvent { ref_name }.emit(&app_handle);
+                                        if !pending_refs.contains(&ref_name) {
+                                            pending_refs.push(ref_name);
+                                        }
                                     }
                                 } else {
                                     pending_changes.push(path);
@@ -159,19 +166,40 @@ impl FileWatcher {
                     }
                 }
 
-                // Emit pending changes if debounce period has passed (only for active repo)
-                if !pending_changes.is_empty() && last_emit.elapsed() >= debounce_duration {
-                    let paths: Vec<String> = pending_changes
-                        .drain(..)
-                        .filter_map(|p| {
-                            p.strip_prefix(&repo_path)
-                                .ok()
-                                .map(|r| r.to_string_lossy().to_string())
-                        })
-                        .collect();
+                // Emit pending events if debounce period has passed
+                let has_pending = !pending_changes.is_empty()
+                    || pending_index_changed
+                    || pending_head_changed
+                    || !pending_refs.is_empty();
 
-                    if !paths.is_empty() {
-                        let _ = FilesChangedEvent { paths }.emit(&app_handle);
+                if has_pending && last_emit.elapsed() >= debounce_duration {
+                    // Emit git events
+                    if pending_index_changed {
+                        let _ = IndexChangedEvent {}.emit(&app_handle);
+                        pending_index_changed = false;
+                    }
+                    if pending_head_changed {
+                        let _ = HeadChangedEvent {}.emit(&app_handle);
+                        pending_head_changed = false;
+                    }
+                    for ref_name in pending_refs.drain(..) {
+                        let _ = RefChangedEvent { ref_name }.emit(&app_handle);
+                    }
+
+                    // Emit file changes
+                    if !pending_changes.is_empty() {
+                        let paths: Vec<String> = pending_changes
+                            .drain(..)
+                            .filter_map(|p| {
+                                p.strip_prefix(&repo_path)
+                                    .ok()
+                                    .map(|r| r.to_string_lossy().to_string())
+                            })
+                            .collect();
+
+                        if !paths.is_empty() {
+                            let _ = FilesChangedEvent { paths }.emit(&app_handle);
+                        }
                     }
                     last_emit = std::time::Instant::now();
                 }

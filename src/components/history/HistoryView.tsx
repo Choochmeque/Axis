@@ -163,6 +163,7 @@ export function HistoryView() {
             widthsAtVertices={graphData.widthsAtVertices}
             mutedCommits={graphData.mutedCommits}
             commitHead={commitHead}
+            selectedCommitOid={selectedCommitOid}
             onCommitClick={handleCommitClick}
             onGraphWidthChange={handleGraphWidthChange}
             tableHeaderRef={tableHeaderRef}

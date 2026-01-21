@@ -998,6 +998,13 @@ code {
     max-width: 124px;
   }
 
+  /* Author cell with avatar */
+  #commitTable .authorCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   /* Responsive column widths */
   @media screen and (max-width: 850px) {
     #commitTable table.autoLayout td.dateCol,

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import { Settings, Palette, GitBranch, FileText, Sparkles, Link2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi, aiApi, lfsApi } from '@/services/api';
+import { settingsApi, signingApi, aiApi, lfsApi, avatarApi } from '@/services/api';
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
@@ -61,6 +61,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   aiProvider: AiProvider.OpenAi,
   aiModel: null,
   aiOllamaUrl: null,
+  gravatarEnabled: false,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -216,6 +217,20 @@ const numberInputClass =
   'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)';
 
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const handleClearAvatarCache = async () => {
+    setIsClearingCache(true);
+    try {
+      await avatarApi.clearCache();
+      toast.success('Avatar cache cleared');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
+
   return (
     <div>
       <h3 className={sectionTitleClass}>Appearance</h3>
@@ -256,6 +271,27 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           checked={settings.showLineNumbers}
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
+      </div>
+
+      <h3 className={sectionTitleClass}>Avatars</h3>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="gravatar-enabled"
+          label="Enable Gravatar"
+          description="Show Gravatar avatars for commit authors when integration is not connected"
+          checked={settings.gravatarEnabled}
+          onCheckedChange={(checked) => updateSetting('gravatarEnabled', checked === true)}
+        />
+      </div>
+
+      <div className={groupClass}>
+        <Button variant="secondary" onClick={handleClearAvatarCache} disabled={isClearingCache}>
+          {isClearingCache ? 'Clearing...' : 'Clear Avatar Cache'}
+        </Button>
+        <p className="mt-1.5 text-xs text-(--text-muted)">
+          Remove all cached avatar images. They will be re-fetched as needed.
+        </p>
       </div>
 
       <h3 className={sectionTitleClass}>Notifications</h3>
@@ -980,7 +1016,6 @@ function IntegrationsSettings() {
   };
 
   const activeProvider = PROVIDERS.find((p) => p.id === activeTab);
-  const isDetectedProvider = detectedProvider?.provider === activeTab;
 
   return (
     <div>
@@ -1011,21 +1046,6 @@ function IntegrationsSettings() {
         <div className="py-4 text-(--text-muted) text-sm">
           <p>{activeProvider?.name} integration is coming soon.</p>
         </div>
-      ) : !isDetectedProvider ? (
-        <div className="py-4 text-(--text-muted) text-sm">
-          <p>
-            The current repository is not hosted on {activeProvider?.name}.
-            {detectedProvider && (
-              <span>
-                {' '}
-                It appears to be hosted on{' '}
-                {PROVIDERS.find((p) => p.id === detectedProvider.provider)?.name ||
-                  detectedProvider.provider}
-                .
-              </span>
-            )}
-          </p>
-        </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-(--bg-tertiary) rounded-lg border border-(--border-color)">
@@ -1043,11 +1063,8 @@ function IntegrationsSettings() {
               </div>
               <div>
                 <div className="font-medium text-(--text-primary)">{activeProvider?.name}</div>
-                <div className="text-sm text-(--text-secondary)">
-                  {detectedProvider.owner}/{detectedProvider.repo}
-                </div>
                 {connectionStatus?.connected && connectionStatus.username && (
-                  <div className="text-xs text-(--text-muted) mt-0.5">
+                  <div className="text-sm text-(--text-muted)">
                     Connected as {connectionStatus.username}
                   </div>
                 )}

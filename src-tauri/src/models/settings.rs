@@ -40,6 +40,9 @@ pub struct AppSettings {
 
     // Notifications
     pub notification_history_capacity: u32,
+
+    // Avatars
+    pub gravatar_enabled: bool,
 }
 
 #[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
@@ -89,6 +92,9 @@ impl Default for AppSettings {
 
             // Notifications
             notification_history_capacity: 50,
+
+            // Avatars
+            gravatar_enabled: false,
         }
     }
 }

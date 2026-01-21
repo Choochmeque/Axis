@@ -33,11 +33,14 @@ const DEFAULT_SETTINGS: AppSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  conventionalCommitsEnabled: false,
+  conventionalCommitsScopes: null,
   aiEnabled: false,
   aiProvider: AiProvider.OpenAi,
   aiModel: null,
   aiOllamaUrl: null,
   notificationHistoryCapacity: 50,
+  gravatarEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

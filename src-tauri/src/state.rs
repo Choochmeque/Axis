@@ -1,11 +1,11 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
-use crate::services::{BackgroundFetchService, GitService};
+use crate::services::{AvatarService, BackgroundFetchService, GitService};
 use crate::storage::Database;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 /// Wrapper that holds an Arc<Mutex<GitService>> and provides access
 #[derive(Clone)]
@@ -148,6 +148,7 @@ pub struct AppState {
     database: Arc<Database>,
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
+    avatar_service: RwLock<Option<Arc<AvatarService>>>,
 }
 
 impl AppState {
@@ -158,11 +159,21 @@ impl AppState {
             database: Arc::new(database),
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
+            avatar_service: RwLock::new(None),
         }
     }
 
     /// Set the app handle (must be called after Tauri setup)
     pub fn set_app_handle(&self, app_handle: AppHandle) {
+        // Initialize avatar service with app data dir
+        if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
+            let avatar_service = AvatarService::new(&app_data_dir);
+            *self
+                .avatar_service
+                .write()
+                .unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(avatar_service));
+        }
+
         *self.app_handle.write().unwrap_or_else(|e| e.into_inner()) = Some(app_handle);
     }
 
@@ -183,6 +194,15 @@ impl AppState {
     /// Get the database Arc (for integration providers that need 'static closures)
     pub fn database(&self) -> Arc<Database> {
         Arc::clone(&self.database)
+    }
+
+    /// Get the avatar service
+    pub fn avatar_service(&self) -> Result<Arc<AvatarService>> {
+        self.avatar_service
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+            .ok_or_else(|| AxisError::Other("Avatar service not initialized".to_string()))
     }
 
     /// Set/switch the active repository (adds to cache if needed)

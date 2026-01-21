@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, GitCommit } from 'lucide-react';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui';
 import type { Commit } from '@/types';
 
 interface CommitCompareListProps {
@@ -172,6 +173,12 @@ function CommitItem({ commit, isSelected, onSelect }: CommitItemProps) {
         <div className="flex items-center gap-2 text-xs text-(--text-tertiary)">
           <span className="font-mono">{commit.shortOid}</span>
           <span>•</span>
+          <Avatar
+            email={commit.author.email}
+            sha={commit.oid}
+            name={commit.author.name}
+            size={14}
+          />
           <span>{commit.author.name}</span>
           <span>•</span>
           <span>{formatDistanceToNow(new Date(commit.timestamp), { addSuffix: true })}</span>

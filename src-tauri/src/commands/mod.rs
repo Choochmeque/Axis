@@ -1,4 +1,5 @@
 mod ai;
+mod avatar;
 mod bisect;
 mod branches;
 mod diff;
@@ -23,6 +24,7 @@ mod tags;
 mod worktrees;
 
 pub use ai::*;
+pub use avatar::*;
 pub use bisect::*;
 pub use branches::*;
 pub use diff::*;

@@ -246,6 +246,9 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::integration_mark_notification_read,
             crate::commands::integration_mark_all_notifications_read,
             crate::commands::integration_get_unread_count,
+            // Avatar commands
+            crate::commands::get_avatar,
+            crate::commands::clear_avatar_cache,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,

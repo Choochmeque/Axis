@@ -79,7 +79,12 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         <div className={rowClass}>
           <span className={metaLabelClass}>
-            <Avatar email={commit.author.email} name={commit.author.name} size={12} />
+            <Avatar
+              email={commit.author.email}
+              sha={commit.oid}
+              name={commit.author.name}
+              size={12}
+            />
             Author
           </span>
           <div className={valueClass}>

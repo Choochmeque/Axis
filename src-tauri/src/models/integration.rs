@@ -329,3 +329,11 @@ pub struct DetectedProvider {
     pub owner: String,
     pub repo: String,
 }
+
+/// Commit information from integration provider (for avatar fetching)
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntegrationCommit {
+    pub sha: String,
+    pub author_avatar_url: Option<String>,
+}

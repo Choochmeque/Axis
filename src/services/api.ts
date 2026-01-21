@@ -563,3 +563,9 @@ export const gitignoreApi = {
 
   getOptions: (filePath: string) => commands.getIgnoreOptions(filePath),
 };
+
+export const avatarApi = {
+  get: (email: string, sha?: string) => commands.getAvatar(email, sha ?? null),
+
+  clearCache: () => commands.clearAvatarCache(),
+};

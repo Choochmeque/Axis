@@ -315,8 +315,6 @@ export function CommitForm() {
             >
               {isGeneratingMessage ? 'Generating...' : 'Generate with AI'}
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>Create pull request</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

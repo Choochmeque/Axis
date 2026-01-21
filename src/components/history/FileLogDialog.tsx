@@ -8,7 +8,14 @@ import { cn } from '@/lib/utils';
 import { CommitInfo } from './CommitInfo';
 import { DiffView } from '../diff';
 import type { Commit, FileDiff } from '@/types';
-import { Dialog, DialogContent, DialogTitle, DialogBody, CheckboxField } from '@/components/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogBody,
+  CheckboxField,
+  Avatar,
+} from '@/components/ui';
 
 interface FileLogDialogProps {
   isOpen: boolean;
@@ -262,7 +269,15 @@ function FileLogCommitRow({ commit, isSelected, onClick }: FileLogCommitRowProps
         {format(new Date(commit.timestamp), 'MMM d, yyyy')}
       </td>
       <td className="py-2 px-3 whitespace-nowrap text-xs text-(--text-secondary) max-w-32 truncate">
-        {commit.author.name}
+        <span className="flex items-center gap-1.5">
+          <Avatar
+            email={commit.author.email}
+            sha={commit.oid}
+            name={commit.author.name}
+            size={14}
+          />
+          {commit.author.name}
+        </span>
       </td>
       <td className="py-2 px-3 truncate max-w-xs">{commit.summary}</td>
     </tr>

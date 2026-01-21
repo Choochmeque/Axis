@@ -2,9 +2,10 @@ use async_trait::async_trait;
 
 use crate::error::Result;
 use crate::models::{
-    CiRunsPage, CommitStatus, CreateIssueOptions, CreatePrOptions, IntegrationRepoInfo,
-    IntegrationStatus, Issue, IssueDetail, IssueState, IssuesPage, MergePrOptions,
-    NotificationsPage, PrState, ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
+    CiRunsPage, CommitStatus, CreateIssueOptions, CreatePrOptions, IntegrationCommit,
+    IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState, IssuesPage,
+    MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest, PullRequestDetail,
+    PullRequestsPage,
 };
 
 /// Trait for integration providers (GitHub, GitLab, Bitbucket, Gitea)
@@ -31,6 +32,10 @@ pub trait IntegrationProvider: Send + Sync {
     // Repository operations
     /// Get repository information
     async fn get_repo_info(&self, owner: &str, repo: &str) -> Result<IntegrationRepoInfo>;
+
+    // Commit operations
+    /// Get commit information (for avatar fetching)
+    async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> Result<IntegrationCommit>;
 
     // Pull Request operations
     /// List pull requests with pagination

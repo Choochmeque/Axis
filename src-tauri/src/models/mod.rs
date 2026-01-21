@@ -1,4 +1,5 @@
 mod ai;
+mod avatar;
 mod bisect;
 mod branch;
 mod commit;
@@ -23,6 +24,7 @@ mod tag;
 mod worktree;
 
 pub use ai::*;
+pub use avatar::*;
 pub use bisect::*;
 pub use branch::*;
 pub use commit::*;

@@ -165,6 +165,10 @@ export type {
   IssuesPage,
   NotificationsPage,
 
+  // Avatar types
+  AvatarResponse,
+  AvatarSource,
+
   // LFS types
   LfsStatus,
   LfsTrackedPattern,

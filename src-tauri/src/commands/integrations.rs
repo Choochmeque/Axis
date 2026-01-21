@@ -21,7 +21,7 @@ static GITHUB_PROVIDER: std::sync::OnceLock<Arc<RwLock<Option<GitHubProvider>>>>
 /// Global OAuth flow instance for cancellation support
 static OAUTH_FLOW: std::sync::OnceLock<Arc<RwLock<Option<OAuthFlow>>>> = std::sync::OnceLock::new();
 
-fn get_github_provider() -> &'static Arc<RwLock<Option<GitHubProvider>>> {
+pub fn get_github_provider() -> &'static Arc<RwLock<Option<GitHubProvider>>> {
     GITHUB_PROVIDER.get_or_init(|| Arc::new(RwLock::new(None)))
 }
 

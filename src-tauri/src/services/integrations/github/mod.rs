@@ -15,10 +15,10 @@ use std::time::Duration;
 use crate::error::{AxisError, Result};
 use crate::models::{
     CIConclusion, CIRun, CIRunStatus, CiRunsPage, CommitStatus, CommitStatusState,
-    CreateIssueOptions, CreatePrOptions, IntegrationLabel, IntegrationRepoInfo, IntegrationStatus,
-    IntegrationUser, Issue, IssueDetail, IssueState, IssuesPage, MergeMethod, MergePrOptions,
-    Notification, NotificationReason, NotificationSubjectType, NotificationsPage, PrState,
-    ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
+    CreateIssueOptions, CreatePrOptions, IntegrationCommit, IntegrationLabel, IntegrationRepoInfo,
+    IntegrationStatus, IntegrationUser, Issue, IssueDetail, IssueState, IssuesPage, MergeMethod,
+    MergePrOptions, Notification, NotificationReason, NotificationSubjectType, NotificationsPage,
+    PrState, ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
 };
 use crate::services::integrations::{IntegrationProvider, TtlCache};
 
@@ -373,6 +373,25 @@ impl IntegrationProvider for GitHubProvider {
         self.repo_info_cache.set(cache_key, info.clone());
 
         Ok(info)
+    }
+
+    async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> Result<IntegrationCommit> {
+        let client = self.get_client()?;
+
+        let route = format!("/repos/{owner}/{repo}/commits/{sha}");
+        let http_response = client
+            ._get(&route)
+            .await
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to get commit: {e}")))?;
+
+        let response: serde_json::Value = Self::parse_response(http_response).await?;
+
+        let author_avatar_url = response["author"]["avatar_url"].as_str().map(String::from);
+
+        Ok(IntegrationCommit {
+            sha: response["sha"].as_str().unwrap_or(sha).to_string(),
+            author_avatar_url,
+        })
     }
 
     async fn list_pull_requests(

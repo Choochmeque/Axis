@@ -40,7 +40,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
     return (
       <div ref={ref} className={cn(alertVariants({ variant, inline, className }))} {...props}>
         {showIcon && !inline && <Icon size={16} className="shrink-0" />}
-        <span>{children}</span>
+        <span className="wrap-break-word">{children}</span>
       </div>
     );
   }

@@ -159,6 +159,8 @@ export const stagingApi = {
 
   discardAll: () => commands.discardAll(),
 
+  deleteFile: (path: string) => commands.deleteFile(path),
+
   stageHunk: (patch: string) => commands.stageHunk(patch),
 
   unstageHunk: (patch: string) => commands.unstageHunk(patch),

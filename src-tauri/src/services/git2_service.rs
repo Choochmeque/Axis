@@ -487,6 +487,24 @@ impl Git2Service {
         Ok(())
     }
 
+    /// Delete an untracked file from the working directory
+    pub fn delete_file(&self, path: &str) -> Result<()> {
+        let workdir = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("Bare repository".to_string()))?;
+        let file_path = workdir.join(path);
+
+        if !file_path.exists() {
+            return Err(AxisError::Other(format!("File not found: {path}")));
+        }
+
+        std::fs::remove_file(&file_path)
+            .map_err(|e| AxisError::Other(format!("Failed to delete file: {e}")))?;
+
+        Ok(())
+    }
+
     // ==================== Commit Operations ====================
 
     /// Create a new commit (optionally signed)

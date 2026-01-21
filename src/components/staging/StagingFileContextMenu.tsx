@@ -23,10 +23,12 @@ import {
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { copyToClipboard, showInFinder } from '@/lib/actions';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useStagingStore } from '@/store/stagingStore';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
 import { FileLogDialog } from '../history/FileLogDialog';
 import { IgnoreDialog } from './IgnoreDialog';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -48,8 +50,10 @@ export function StagingFileContextMenu({
   onDiscard,
 }: StagingFileContextMenuProps) {
   const { repository } = useRepositoryStore();
+  const deleteFile = useStagingStore((s) => s.deleteFile);
   const [showFileLog, setShowFileLog] = useState(false);
   const [showIgnoreDialog, setShowIgnoreDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Computed flags for menu item visibility
   const isUntracked = file.status === StatusType.Untracked;
@@ -112,7 +116,7 @@ export function StagingFileContextMenu({
 
         {/* Delete - only for untracked files */}
         {canDelete && (
-          <MenuItem icon={XCircle} danger disabled>
+          <MenuItem icon={XCircle} danger onSelect={() => setShowDeleteDialog(true)}>
             Delete
           </MenuItem>
         )}
@@ -196,6 +200,13 @@ export function StagingFileContextMenu({
       <IgnoreDialog
         isOpen={showIgnoreDialog}
         onClose={() => setShowIgnoreDialog(false)}
+        filePath={file.path}
+      />
+
+      <DeleteConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={() => deleteFile(file.path)}
         filePath={file.path}
       />
     </>

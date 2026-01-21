@@ -11,30 +11,13 @@ import {
   ChevronRight,
   ChevronDown,
   Folder,
-  MoreHorizontal,
-  FileX,
-  EyeOff,
-  FolderOpen,
 } from 'lucide-react';
-import {
-  Checkbox,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  TreeView as UITreeView,
-  buildTreeFromPaths,
-} from '@/components/ui';
+import { Checkbox, TreeView as UITreeView, buildTreeFromPaths } from '@/components/ui';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
 import { cn } from '@/lib/utils';
 import { StagingViewMode } from './StagingFilters';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { shellApi } from '@/services/api';
 import { StagingFileContextMenu } from './StagingFileContextMenu';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
 
 // Extended file type for fluid staging
 export interface FluidFile extends FileStatus {
@@ -43,8 +26,6 @@ export interface FluidFile extends FileStatus {
 
 const fileItemClass =
   'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
-const fileActionClass =
-  'flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 interface FileStatusListProps {
   files: FileStatus[];
@@ -172,7 +153,6 @@ function FileStatusItem({
   indent = 0,
   isTreeView = false,
 }: FileStatusItemProps) {
-  const { repository } = useRepositoryStore();
   // Determine if displaying in staged or unstaged context based on available actions
   const isInStagedContext = onUnstage && !onStage;
   // Use appropriate status based on context
@@ -181,24 +161,11 @@ function FileStatusItem({
     : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
 
-  const handleShowInFinder = async () => {
-    if (repository?.path) {
-      const fullPath = `${repository.path}/${file.path}`;
-      try {
-        await shellApi.showInFolder(fullPath);
-      } catch (err) {
-        toast.error('Show in Finder failed', getErrorMessage(err));
-      }
-    }
-  };
-
   const renderStatusIcon = () => {
     const Icon = getStatusIcon(status);
     return <Icon className={cn('shrink-0', statusColorClass)} size={compact ? 12 : 14} />;
   };
 
-  // Check if this is an unstaged file (has stage and discard actions)
-  const isUnstaged = onStage && onDiscard;
   // Reuse the context check for isStaged
   const isStaged = isInStagedContext;
 
@@ -276,39 +243,6 @@ function FileStatusItem({
         >
           {getFileName(file.path)}
         </span>
-        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 [.flex:hover_&]:opacity-100">
-          {isUnstaged && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={fileActionClass}
-                  onClick={(e) => e.stopPropagation()}
-                  title="Actions"
-                >
-                  <MoreHorizontal size={14} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem icon={Plus} onSelect={() => onStage?.()}>
-                  Stage file
-                </DropdownMenuItem>
-                <DropdownMenuItem icon={Trash2} danger onSelect={() => onDiscard?.()}>
-                  Discard file
-                </DropdownMenuItem>
-                <DropdownMenuItem icon={FileX} danger onSelect={() => onDiscard?.()}>
-                  Remove file
-                </DropdownMenuItem>
-                <DropdownMenuItem icon={EyeOff} disabled>
-                  Ignore file
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
-                  Show in Finder
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
       </div>
     </StagingFileContextMenu>
   );
@@ -546,23 +480,11 @@ function FluidFileItem({
   onDiscard,
   indent = 0,
 }: FluidFileItemProps) {
-  const { repository } = useRepositoryStore();
   // Use appropriate status based on whether file is staged
   const status = file.isStaged
     ? file.stagedStatus || file.unstagedStatus || file.status
     : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
-
-  const handleShowInFinder = async () => {
-    if (repository?.path) {
-      const fullPath = `${repository.path}/${file.path}`;
-      try {
-        await shellApi.showInFolder(fullPath);
-      } catch (err) {
-        toast.error('Show in Finder failed', getErrorMessage(err));
-      }
-    }
-  };
 
   const handleCheckboxChange = (checked: boolean) => {
     if (checked) {
@@ -611,33 +533,6 @@ function FluidFileItem({
         >
           {getDirectory(file.path)}
         </span>
-        {!file.isStaged && (
-          <div className="flex gap-1 opacity-0 transition-opacity [.flex:hover_&]:opacity-100">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={fileActionClass}
-                  onClick={(e) => e.stopPropagation()}
-                  title="Actions"
-                >
-                  <MoreHorizontal size={14} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem icon={Plus} onSelect={onStage}>
-                  Stage file
-                </DropdownMenuItem>
-                <DropdownMenuItem icon={Trash2} danger onSelect={onDiscard}>
-                  Discard changes
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
-                  Show in Finder
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
       </div>
     </StagingFileContextMenu>
   );

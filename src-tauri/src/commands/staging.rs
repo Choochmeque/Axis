@@ -136,3 +136,11 @@ pub async fn discard_hunk(state: State<'_, AppState>, patch: String) -> Result<(
         .get_git_service()?
         .with_git_cli(|cli| cli.discard_hunk(&patch))
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_file(state: State<'_, AppState>, path: String) -> Result<()> {
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.delete_file(&path))
+}

@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Trash2 } from 'lucide-react';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { Checkbox } from '@/components/ui';
@@ -97,8 +96,6 @@ function filterFiles(
 const sectionHeaderClass =
   'flex items-center justify-between py-2 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0';
 const sectionTitleClass = 'text-xs font-semibold uppercase text-(--text-secondary)';
-const actionBtnClass =
-  'flex items-center gap-1 py-1 px-2 border-none rounded bg-transparent text-(--text-secondary) text-sm cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 export function StagingView() {
   const {
@@ -113,7 +110,6 @@ export function StagingView() {
     unstageFile,
     unstageAll,
     discardFile,
-    discardAll,
     clearError,
   } = useStagingStore();
   const { settings } = useSettingsStore();
@@ -126,7 +122,7 @@ export function StagingView() {
 
   // Discard confirmation dialog state
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
-  const [discardMode, setDiscardMode] = useState<'file' | 'all'>('all');
+  const [discardMode, setDiscardMode] = useState<'file' | 'all'>('file');
   const [discardFilePath, setDiscardFilePath] = useState<string | undefined>();
 
   // Handlers for discard with optional confirmation
@@ -143,23 +139,11 @@ export function StagingView() {
     [settings?.confirmBeforeDiscard, discardFile]
   );
 
-  const handleDiscardAll = useCallback(() => {
-    if (settings?.confirmBeforeDiscard !== false) {
-      setDiscardMode('all');
-      setDiscardFilePath(undefined);
-      setDiscardDialogOpen(true);
-    } else {
-      discardAll();
-    }
-  }, [settings?.confirmBeforeDiscard, discardAll]);
-
   const handleConfirmDiscard = useCallback(() => {
-    if (discardMode === 'all') {
-      discardAll();
-    } else if (discardFilePath) {
+    if (discardFilePath) {
       discardFile(discardFilePath);
     }
-  }, [discardMode, discardFilePath, discardAll, discardFile]);
+  }, [discardFilePath, discardFile]);
 
   useEffect(() => {
     loadStatus();
@@ -206,8 +190,6 @@ export function StagingView() {
     return sortFiles(combined, sortBy) as FluidFile[];
   }, [status?.staged, status?.unstaged, status?.untracked, sortBy]);
 
-  // Original count for discard all action (before filtering)
-  const totalUnstaged = (status?.unstaged?.length ?? 0) + (status?.untracked?.length ?? 0);
   const totalStaged = status?.staged?.length ?? 0;
 
   if (isLoadingStatus && !status) {
@@ -264,15 +246,6 @@ export function StagingView() {
             </span>
           )}
         </div>
-        {totalUnstaged > 0 && (
-          <button
-            className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-            onClick={handleDiscardAll}
-            title="Discard all changes"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
       </div>
 
       {/* File list */}
@@ -372,15 +345,6 @@ export function StagingView() {
                 </span>
               )}
             </div>
-            {totalUnstaged > 0 && (
-              <button
-                className={cn(actionBtnClass, 'hover:bg-error/10 hover:text-error')}
-                onClick={handleDiscardAll}
-                title="Discard all changes"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
           </div>
 
           {hasUnstaged ? (

@@ -12,28 +12,42 @@ import {
   FileCode,
   Plus,
   Minus,
+  ChevronDown,
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
-import { Button } from '@/components/ui';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { shellApi } from '@/services/api';
-import { PrState } from '@/types';
-import type { PullRequestDetail as PullRequestDetailType, MergeMethod } from '@/types';
+import { PrState, MergeMethod } from '@/types';
+import type { PullRequestDetail as PullRequestDetailType } from '@/types';
 
 interface PullRequestDetailProps {
   prDetail: PullRequestDetailType | null;
   onClose: () => void;
 }
 
+const MERGE_METHOD_LABELS: Record<MergeMethod, string> = {
+  [MergeMethod.Merge]: 'Merge',
+  [MergeMethod.Squash]: 'Squash',
+  [MergeMethod.Rebase]: 'Rebase',
+};
+
 export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps) {
   const { mergePullRequest } = useIntegrationStore();
   const [isMerging, setIsMerging] = useState(false);
-  const [showMergeOptions, setShowMergeOptions] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<MergeMethod>(MergeMethod.Merge);
 
   const handleMerge = useCallback(
     async (method: MergeMethod) => {
@@ -47,7 +61,6 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
           commitMessage: null,
         });
         toast.success(`PR #${prDetail.number} merged successfully`);
-        setShowMergeOptions(false);
         onClose();
       } catch (error) {
         toast.error(`Failed to merge PR: ${error}`);
@@ -74,11 +87,11 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
 
   const getStateIcon = () => {
     switch (prDetail.state) {
-      case 'open':
+      case PrState.Open:
         return <GitPullRequest size={20} className="text-success" />;
-      case 'merged':
+      case PrState.Merged:
         return <GitMerge size={20} className="text-purple-500" />;
-      case 'closed':
+      case PrState.Closed:
         return <XCircle size={20} className="text-error" />;
       default:
         return <GitPullRequest size={20} />;
@@ -88,11 +101,11 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
   const getStateBadge = () => {
     const baseClass = 'px-2 py-0.5 text-xs rounded-full font-medium';
     switch (prDetail.state) {
-      case 'open':
+      case PrState.Open:
         return <span className={cn(baseClass, 'bg-success/20 text-success')}>Open</span>;
-      case 'merged':
+      case PrState.Merged:
         return <span className={cn(baseClass, 'bg-purple-500/20 text-purple-500')}>Merged</span>;
-      case 'closed':
+      case PrState.Closed:
         return <span className={cn(baseClass, 'bg-error/20 text-error')}>Closed</span>;
       default:
         return null;
@@ -253,46 +266,42 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
               </div>
 
               {prDetail.mergeable !== false && !prDetail.draft && (
-                <div className="relative">
+                <div className="flex">
                   <Button
                     variant="primary"
-                    onClick={() => setShowMergeOptions(!showMergeOptions)}
+                    className="rounded-r-none"
+                    onClick={() => handleMerge(selectedMethod)}
                     disabled={isMerging}
                   >
-                    {isMerging ? 'Merging...' : 'Merge PR'}
+                    {isMerging ? 'Merging...' : MERGE_METHOD_LABELS[selectedMethod]}
                   </Button>
-
-                  {showMergeOptions && (
-                    <div className="absolute right-0 top-full mt-1 py-1 bg-(--bg-primary) border border-(--border-color) rounded-lg shadow-lg z-10 min-w-48">
-                      <button
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-(--bg-hover)"
-                        onClick={() => handleMerge('merge')}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="primary"
+                        className="rounded-l-none border-l border-l-white/20 px-2"
+                        disabled={isMerging}
                       >
-                        <div className="font-medium">Create a merge commit</div>
-                        <div className="text-xs text-(--text-muted)">
-                          All commits will be added with a merge commit
-                        </div>
-                      </button>
-                      <button
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-(--bg-hover)"
-                        onClick={() => handleMerge('squash')}
+                        <ChevronDown size={14} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuRadioGroup
+                        value={selectedMethod}
+                        onValueChange={(value) => setSelectedMethod(value as MergeMethod)}
                       >
-                        <div className="font-medium">Squash and merge</div>
-                        <div className="text-xs text-(--text-muted)">
-                          Combine all commits into one commit
-                        </div>
-                      </button>
-                      <button
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-(--bg-hover)"
-                        onClick={() => handleMerge('rebase')}
-                      >
-                        <div className="font-medium">Rebase and merge</div>
-                        <div className="text-xs text-(--text-muted)">
-                          Add all commits to the base branch
-                        </div>
-                      </button>
-                    </div>
-                  )}
+                        <DropdownMenuRadioItem value={MergeMethod.Merge}>
+                          Create a merge commit
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value={MergeMethod.Squash}>
+                          Squash and merge
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value={MergeMethod.Rebase}>
+                          Rebase and merge
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
             </div>

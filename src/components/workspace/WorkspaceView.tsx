@@ -5,9 +5,11 @@ import { DiffView, type DiffMode } from '../diff';
 import { StashDiffView } from '../stash';
 import { useStagingStore } from '../../store/stagingStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { StatusType } from '@/types';
 
 export function WorkspaceView() {
   const {
+    selectedFile,
     selectedFileDiff,
     isLoadingDiff,
     isSelectedFileStaged,
@@ -15,6 +17,10 @@ export function WorkspaceView() {
     unstageHunk,
     discardHunk,
   } = useStagingStore();
+
+  // Don't show discard for untracked files (they can only be deleted, not discarded)
+  const isUntracked = selectedFile?.status === StatusType.Untracked;
+  const canDiscard = !isUntracked;
 
   const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection, commits } =
     useRepositoryStore();
@@ -53,7 +59,7 @@ export function WorkspaceView() {
                 parentCommitOid={headCommitOid}
                 onStageHunk={stageHunk}
                 onUnstageHunk={unstageHunk}
-                onDiscardHunk={discardHunk}
+                onDiscardHunk={canDiscard ? discardHunk : undefined}
               />
             </Panel>
           </PanelGroup>

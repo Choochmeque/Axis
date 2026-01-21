@@ -65,7 +65,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
         setSelectedRemote(data[0].name);
       }
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   };
 

@@ -62,7 +62,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
         setSelectedRemote(data[0].name);
       }
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import type { Branch } from '../../types';
 import {
   Dialog,
@@ -49,7 +50,7 @@ export function DeleteRemoteBranchDialog({
       await refreshRepository();
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

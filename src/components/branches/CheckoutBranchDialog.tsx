@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GitBranch } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +64,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
       setSelectedBranch('');
       onOpenChange(false);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

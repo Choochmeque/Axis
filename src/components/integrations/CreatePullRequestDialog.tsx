@@ -19,6 +19,7 @@ import {
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useIntegrationStore } from '@/store/integrationStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from '@/hooks';
 
 interface CreatePullRequestDialogProps {
@@ -99,7 +100,7 @@ export function CreatePullRequestDialog({
       toast.success('Pull request created successfully');
       onCreated();
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

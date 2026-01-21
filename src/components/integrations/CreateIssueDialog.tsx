@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CircleDot } from 'lucide-react';
 
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,7 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
       toast.success('Issue created successfully');
       onCreated();
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

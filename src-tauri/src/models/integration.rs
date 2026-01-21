@@ -1,26 +1,16 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use strum::Display;
 
 /// Supported integration providers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Display)]
 #[serde(rename_all = "PascalCase")]
 pub enum ProviderType {
     GitHub,
     GitLab,
     Bitbucket,
     Gitea,
-}
-
-impl std::fmt::Display for ProviderType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ProviderType::GitHub => write!(f, "GitHub"),
-            ProviderType::GitLab => write!(f, "GitLab"),
-            ProviderType::Bitbucket => write!(f, "Bitbucket"),
-            ProviderType::Gitea => write!(f, "Gitea"),
-        }
-    }
 }
 
 /// Repository information from the integration provider

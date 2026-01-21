@@ -1,22 +1,15 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use strum::Display;
 
 /// Signing format - GPG (OpenPGP) or SSH
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "lowercase")]
 pub enum SigningFormat {
     #[default]
     Gpg,
     Ssh,
-}
-
-impl std::fmt::Display for SigningFormat {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SigningFormat::Gpg => write!(f, "gpg"),
-            SigningFormat::Ssh => write!(f, "ssh"),
-        }
-    }
 }
 
 impl std::str::FromStr for SigningFormat {

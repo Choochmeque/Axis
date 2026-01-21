@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, Sparkles } from 'lucide-react';
-import { toast } from '@/hooks';
+import { toast, useReferenceMention } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useIntegrationStore } from '@/store/integrationStore';
 import { operations } from '@/store/operationStore';
+import { ReferenceMention } from './ReferenceMention';
 import {
   Avatar,
   Checkbox,
@@ -60,6 +62,33 @@ export function CommitForm() {
   // Conventional commits state
   const [structuredMode, setStructuredMode] = useState(false);
   const [commitParts, setCommitParts] = useState<ConventionalCommitParts>(getEmptyCommitParts());
+
+  // Integration state for reference mentions
+  const {
+    connectionStatus,
+    detectedProvider,
+    issues,
+    pullRequests,
+    isLoadingIssues,
+    isLoadingPrs,
+    loadIssues,
+    loadPullRequests,
+  } = useIntegrationStore();
+
+  const isIntegrationConnected = !!(connectionStatus?.connected && detectedProvider);
+
+  const loadIntegrationData = useCallback(() => {
+    loadIssues();
+    loadPullRequests();
+  }, [loadIssues, loadPullRequests]);
+
+  const referenceMention = useReferenceMention({
+    issues,
+    pullRequests,
+    isConnected: isIntegrationConnected,
+    isLoading: isLoadingIssues || isLoadingPrs,
+    onLoadData: loadIntegrationData,
+  });
 
   useEffect(() => {
     setLocalMessage(commitMessage);
@@ -117,8 +146,10 @@ export function CommitForm() {
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
+    const cursorPosition = e.target.selectionStart ?? 0;
     setLocalMessage(value);
     setCommitMessage(value);
+    referenceMention.handleInputChange(value, cursorPosition);
   };
 
   const handleStructuredModeToggle = (enabled: boolean) => {
@@ -207,6 +238,19 @@ export function CommitForm() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Check if reference mention should handle the key
+    if (referenceMention.handleKeyDown(e)) {
+      // Handle selection on Enter/Tab
+      if ((e.key === 'Enter' || e.key === 'Tab') && referenceMention.items[referenceMention.selectedIndex]) {
+        const newValue = referenceMention.handleSelect(referenceMention.items[referenceMention.selectedIndex]);
+        if (newValue !== null) {
+          setLocalMessage(newValue);
+          setCommitMessage(newValue);
+        }
+      }
+      return;
+    }
+
     // Ctrl/Cmd + Enter to commit
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -406,16 +450,33 @@ export function CommitForm() {
             />
           </div>
         ) : (
-          <textarea
-            ref={textareaRef}
-            className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none flex-1 min-h-15 focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
-            placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
-            value={localMessage}
-            onChange={handleMessageChange}
-            onKeyDown={handleKeyDown}
-            disabled={isCommitting}
-            spellCheck={settings?.spellCheckCommitMessages ?? false}
-          />
+          <div className="relative flex-1 min-h-15 overflow-visible">
+            <textarea
+              ref={textareaRef}
+              className="w-full h-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+              placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
+              value={localMessage}
+              onChange={handleMessageChange}
+              onKeyDown={handleKeyDown}
+              disabled={isCommitting}
+              spellCheck={settings?.spellCheckCommitMessages ?? false}
+            />
+            <ReferenceMention
+              isOpen={referenceMention.isOpen}
+              items={referenceMention.items}
+              selectedIndex={referenceMention.selectedIndex}
+              anchorElement={textareaRef.current}
+              cursorPosition={referenceMention.cursorPosition}
+              onSelect={(item) => {
+                const newValue = referenceMention.handleSelect(item);
+                if (newValue !== null) {
+                  setLocalMessage(newValue);
+                  setCommitMessage(newValue);
+                }
+              }}
+              onClose={referenceMention.close}
+            />
+          </div>
         )}
 
         <div className="flex items-center justify-between gap-2 shrink-0">

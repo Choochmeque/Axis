@@ -780,6 +780,36 @@ code {
     @apply h-px bg-(--border-color) my-1;
   }
 
+  /* Reference Mention Dropdown */
+  .reference-mention-dropdown {
+    @apply fixed bg-(--bg-secondary) border border-(--border-color) rounded-md shadow-lg p-1;
+    z-index: 11000;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 320px;
+  }
+
+  .reference-mention-item {
+    @apply flex items-center gap-2 py-1.5 px-2 text-sm rounded cursor-pointer;
+    @apply hover:bg-(--bg-hover) data-[selected=true]:bg-(--bg-hover);
+  }
+
+  .reference-mention-icon {
+    @apply shrink-0 text-(--text-tertiary);
+  }
+
+  .reference-mention-number {
+    @apply font-mono text-(--text-secondary) shrink-0;
+  }
+
+  .reference-mention-title {
+    @apply flex-1 truncate text-(--text-primary);
+  }
+
+  .reference-mention-empty {
+    @apply py-3 px-2 text-center text-(--text-tertiary) text-sm;
+  }
+
   /* Close button */
   .btn-close {
     @apply flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary);

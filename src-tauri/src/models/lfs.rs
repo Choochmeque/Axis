@@ -29,7 +29,7 @@ pub struct LfsTrackedPattern {
 
 /// Status of an LFS file
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Type)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum LfsFileStatus {
     /// File content is downloaded locally
     Downloaded,
@@ -111,7 +111,7 @@ pub struct LfsMigrateOptions {
 
 /// LFS migration mode
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Type)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum LfsMigrateMode {
     /// Import files into LFS
     Import,

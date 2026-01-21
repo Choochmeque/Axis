@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { commands, events } from '@/bindings/api';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { PrState, IssueState } from '@/types';
 import type {
   DetectedProvider,
   IntegrationStatus,
@@ -13,12 +14,10 @@ import type {
   CIRun,
   CommitStatus,
   Notification,
-  PrState,
-  IssueState,
   CreatePrOptions,
   MergePrOptions,
   CreateIssueOptions,
-} from '@/bindings/api';
+} from '@/types';
 
 interface IntegrationState {
   // Connection status
@@ -116,7 +115,7 @@ const initialState = {
   repoInfo: null,
   pullRequests: [],
   selectedPr: null,
-  prFilter: 'open' as PrState,
+  prFilter: PrState.Open,
   prsPage: 1,
   prsHasMore: false,
   prsTotalCount: 0,
@@ -124,7 +123,7 @@ const initialState = {
   isLoadingMorePrs: false,
   issues: [],
   selectedIssue: null,
-  issueFilter: 'open' as IssueState,
+  issueFilter: IssueState.Open,
   issuesPage: 1,
   issuesHasMore: false,
   issuesTotalCount: 0,

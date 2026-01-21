@@ -7,7 +7,8 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { IssueList } from './IssueList';
 import { IssueDetail } from './IssueDetail';
 import { CreateIssueDialog } from './CreateIssueDialog';
-import type { Issue } from '@/bindings/api';
+import { IssueState } from '@/types';
+import type { Issue } from '@/types';
 
 export function IssuesView() {
   const {
@@ -76,31 +77,31 @@ export function IssuesView() {
         <div className="flex items-center gap-1 ml-4">
           <button
             className={`px-2 py-1 text-xs rounded ${
-              issueFilter === 'open'
+              issueFilter === IssueState.Open
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setIssueFilter('open')}
+            onClick={() => setIssueFilter(IssueState.Open)}
           >
             Open
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
-              issueFilter === 'closed'
+              issueFilter === IssueState.Closed
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setIssueFilter('closed')}
+            onClick={() => setIssueFilter(IssueState.Closed)}
           >
             Closed
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
-              issueFilter === 'all'
+              issueFilter === IssueState.All
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setIssueFilter('all')}
+            onClick={() => setIssueFilter(IssueState.All)}
           >
             All
           </button>

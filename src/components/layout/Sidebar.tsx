@@ -47,7 +47,7 @@ import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
 import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
-import { BranchType } from '@/types';
+import { BranchType, PrState, IssueState, CIRunStatus } from '@/types';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 
@@ -722,9 +722,9 @@ function IntegrationsSection() {
     loadNotifications,
   } = useIntegrationStore();
 
-  const openPrCount = pullRequests.filter((pr) => pr.state === 'open').length;
-  const openIssueCount = issues.filter((issue) => issue.state === 'open').length;
-  const runningCiCount = ciRuns.filter((run) => run.status === 'inprogress').length;
+  const openPrCount = pullRequests.filter((pr) => pr.state === PrState.Open).length;
+  const openIssueCount = issues.filter((issue) => issue.state === IssueState.Open).length;
+  const runningCiCount = ciRuns.filter((run) => run.status === CIRunStatus.InProgress).length;
 
   // Build tree data for TreeView - must be before early return
   const treeData = useMemo(() => {

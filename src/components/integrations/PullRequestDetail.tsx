@@ -22,7 +22,8 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { shellApi } from '@/services/api';
-import type { PullRequestDetail as PullRequestDetailType, MergeMethod } from '@/bindings/api';
+import { PrState } from '@/types';
+import type { PullRequestDetail as PullRequestDetailType, MergeMethod } from '@/types';
 
 interface PullRequestDetailProps {
   prDetail: PullRequestDetailType | null;
@@ -238,7 +239,7 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
         )}
 
         {/* Merge status */}
-        {prDetail.state === 'open' && (
+        {prDetail.state === PrState.Open && (
           <div className="p-4 bg-(--bg-primary) rounded-lg border border-(--border-color)">
             <div className="flex items-center justify-between">
               <div>

@@ -17,7 +17,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { reflogApi, branchApi } from '@/services/api';
-import type { ReflogEntry, ReflogAction } from '@/types';
+import { ReflogAction } from '@/types';
+import type { ReflogEntry } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -43,68 +44,68 @@ interface ReflogViewProps {
   onRefresh?: () => void;
 }
 
-const getActionIcon = (action: ReflogAction): React.ElementType => {
-  if (typeof action === 'object' && 'other' in action) {
+const getActionIcon = (action: ReflogEntry['action']): React.ElementType => {
+  if (typeof action === 'object' && 'Other' in action) {
     return GitCommit;
   }
   switch (action) {
-    case 'commit':
-    case 'commitAmend':
-    case 'commitInitial':
+    case ReflogAction.Commit:
+    case ReflogAction.CommitAmend:
+    case ReflogAction.CommitInitial:
       return GitCommit;
-    case 'checkout':
+    case ReflogAction.Checkout:
       return ArrowLeftRight;
-    case 'merge':
-    case 'rebase':
+    case ReflogAction.Merge:
+    case ReflogAction.Rebase:
       return GitMerge;
-    case 'reset':
+    case ReflogAction.Reset:
       return RotateCcw;
-    case 'cherryPick':
+    case ReflogAction.CherryPick:
       return GitCommit;
-    case 'revert':
+    case ReflogAction.Revert:
       return Undo2;
-    case 'pull':
-    case 'clone':
+    case ReflogAction.Pull:
+    case ReflogAction.Clone:
       return Download;
-    case 'branch':
+    case ReflogAction.Branch:
       return GitBranch;
-    case 'stash':
+    case ReflogAction.Stash:
       return Archive;
     default:
       return GitCommit;
   }
 };
 
-const getActionLabel = (action: ReflogAction): string => {
-  if (typeof action === 'object' && 'other' in action) {
-    return action.other;
+const getActionLabel = (action: ReflogEntry['action']): string => {
+  if (typeof action === 'object' && 'Other' in action) {
+    return action.Other;
   }
   switch (action) {
-    case 'commit':
+    case ReflogAction.Commit:
       return 'commit';
-    case 'commitAmend':
+    case ReflogAction.CommitAmend:
       return 'amend';
-    case 'commitInitial':
+    case ReflogAction.CommitInitial:
       return 'initial';
-    case 'checkout':
+    case ReflogAction.Checkout:
       return 'checkout';
-    case 'merge':
+    case ReflogAction.Merge:
       return 'merge';
-    case 'rebase':
+    case ReflogAction.Rebase:
       return 'rebase';
-    case 'reset':
+    case ReflogAction.Reset:
       return 'reset';
-    case 'cherryPick':
+    case ReflogAction.CherryPick:
       return 'cherry-pick';
-    case 'revert':
+    case ReflogAction.Revert:
       return 'revert';
-    case 'pull':
+    case ReflogAction.Pull:
       return 'pull';
-    case 'clone':
+    case ReflogAction.Clone:
       return 'clone';
-    case 'branch':
+    case ReflogAction.Branch:
       return 'branch';
-    case 'stash':
+    case ReflogAction.Stash:
       return 'stash';
     default:
       return 'other';

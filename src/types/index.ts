@@ -93,7 +93,6 @@ export type {
 
   // Reflog types
   ReflogEntry,
-  ReflogAction,
   ReflogOptions,
 
   // Tag types
@@ -144,6 +143,41 @@ export type {
   IgnoreResult,
   IgnoreSuggestion,
   IgnoreSuggestionType,
+
+  // Integration types
+  DetectedProvider,
+  IntegrationStatus,
+  IntegrationRepoInfo,
+  PullRequest,
+  PullRequestDetail,
+  Issue,
+  IssueDetail,
+  CIRun,
+  CommitStatus,
+  Notification,
+  CreatePrOptions,
+  MergePrOptions,
+  CreateIssueOptions,
+  IntegrationUser,
+  IntegrationLabel,
+  CiRunsPage,
+  PullRequestsPage,
+  IssuesPage,
+  NotificationsPage,
+
+  // LFS types
+  LfsStatus,
+  LfsTrackedPattern,
+  LfsFile,
+  LfsFetchOptions,
+  LfsPullOptions,
+  LfsPushOptions,
+  LfsMigrateOptions,
+  LfsResult,
+  LfsEnvironment,
+  GitEnvironment,
+  LfsPruneOptions,
+  LfsPruneResult,
 } from '../bindings/api';
 
 // Import types used locally
@@ -170,6 +204,20 @@ import type {
   ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
   BisectMarkType as BisectMarkTypeType,
+  // Integration types
+  PrState as PrStateType,
+  IssueState as IssueStateType,
+  MergeMethod as MergeMethodType,
+  ProviderType as ProviderTypeType,
+  CIRunStatus as CIRunStatusType,
+  CIConclusion as CIConclusionType,
+  CommitStatusState as CommitStatusStateType,
+  NotificationReason as NotificationReasonType,
+  // LFS types
+  LfsFileStatus as LfsFileStatusType,
+  LfsMigrateMode as LfsMigrateModeType,
+  // Reflog types
+  ReflogAction as ReflogActionType,
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
@@ -420,5 +468,125 @@ export const BisectMarkType: { [K in BisectMarkTypeType]: K } = {
 };
 
 export type BisectMarkType = BisectMarkTypeType;
+
+// Integration enum helpers
+export const PrState: { [K in PrStateType]: K } = {
+  Open: 'Open',
+  Closed: 'Closed',
+  Merged: 'Merged',
+  All: 'All',
+};
+
+export type PrState = PrStateType;
+
+export const IssueState: { [K in IssueStateType]: K } = {
+  Open: 'Open',
+  Closed: 'Closed',
+  All: 'All',
+};
+
+export type IssueState = IssueStateType;
+
+export const MergeMethod: { [K in MergeMethodType]: K } = {
+  Merge: 'Merge',
+  Squash: 'Squash',
+  Rebase: 'Rebase',
+};
+
+export type MergeMethod = MergeMethodType;
+
+export const ProviderType: { [K in ProviderTypeType]: K } = {
+  GitHub: 'GitHub',
+  GitLab: 'GitLab',
+  Bitbucket: 'Bitbucket',
+  Gitea: 'Gitea',
+};
+
+export type ProviderType = ProviderTypeType;
+
+export const CIRunStatus: { [K in CIRunStatusType]: K } = {
+  Queued: 'Queued',
+  InProgress: 'InProgress',
+  Completed: 'Completed',
+};
+
+export type CIRunStatus = CIRunStatusType;
+
+export const CIConclusion: { [K in CIConclusionType]: K } = {
+  Success: 'Success',
+  Failure: 'Failure',
+  Cancelled: 'Cancelled',
+  Skipped: 'Skipped',
+  Neutral: 'Neutral',
+  TimedOut: 'TimedOut',
+  ActionRequired: 'ActionRequired',
+};
+
+export type CIConclusion = CIConclusionType;
+
+export const CommitStatusState: { [K in CommitStatusStateType]: K } = {
+  Pending: 'Pending',
+  Success: 'Success',
+  Failure: 'Failure',
+  Error: 'Error',
+};
+
+export type CommitStatusState = CommitStatusStateType;
+
+export const NotificationReason: { [K in NotificationReasonType]: K } = {
+  Assigned: 'Assigned',
+  Author: 'Author',
+  Comment: 'Comment',
+  Invitation: 'Invitation',
+  Manual: 'Manual',
+  Mention: 'Mention',
+  ReviewRequested: 'ReviewRequested',
+  SecurityAlert: 'SecurityAlert',
+  StateChange: 'StateChange',
+  Subscribed: 'Subscribed',
+  TeamMention: 'TeamMention',
+  CiActivity: 'CiActivity',
+};
+
+export type NotificationReason = NotificationReasonType;
+
+// LFS enum helpers
+export const LfsFileStatus: { [K in LfsFileStatusType]: K } = {
+  Downloaded: 'Downloaded',
+  Pointer: 'Pointer',
+  NotLfs: 'NotLfs',
+  Unknown: 'Unknown',
+};
+
+export type LfsFileStatus = LfsFileStatusType;
+
+export const LfsMigrateMode: { [K in LfsMigrateModeType]: K } = {
+  Import: 'Import',
+  Export: 'Export',
+  Info: 'Info',
+};
+
+export type LfsMigrateMode = LfsMigrateModeType;
+
+// Reflog enum helper (excluding Other variant which has data)
+export const ReflogAction: {
+  [K in Exclude<ReflogActionType, { Other: string }>]: K;
+} = {
+  Commit: 'Commit',
+  CommitAmend: 'CommitAmend',
+  CommitInitial: 'CommitInitial',
+  Checkout: 'Checkout',
+  Merge: 'Merge',
+  Rebase: 'Rebase',
+  Reset: 'Reset',
+  CherryPick: 'CherryPick',
+  Revert: 'Revert',
+  Pull: 'Pull',
+  Clone: 'Clone',
+  Branch: 'Branch',
+  Stash: 'Stash',
+};
+
+export type ReflogAction = ReflogActionType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

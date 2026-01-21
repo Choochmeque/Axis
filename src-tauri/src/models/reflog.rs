@@ -32,7 +32,7 @@ pub struct ReflogEntry {
 
 /// Parsed reflog action type for categorization and UI display
 #[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum ReflogAction {
     Commit,
     CommitAmend,

@@ -7,7 +7,8 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { PullRequestList } from './PullRequestList';
 import { PullRequestDetail } from './PullRequestDetail';
 import { CreatePullRequestDialog } from './CreatePullRequestDialog';
-import type { PullRequest } from '@/bindings/api';
+import { PrState } from '@/types';
+import type { PullRequest } from '@/types';
 
 export function PullRequestsView() {
   const {
@@ -76,31 +77,31 @@ export function PullRequestsView() {
         <div className="flex items-center gap-1 ml-4">
           <button
             className={`px-2 py-1 text-xs rounded ${
-              prFilter === 'open'
+              prFilter === PrState.Open
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setPrFilter('open')}
+            onClick={() => setPrFilter(PrState.Open)}
           >
             Open
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
-              prFilter === 'closed'
+              prFilter === PrState.Closed
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setPrFilter('closed')}
+            onClick={() => setPrFilter(PrState.Closed)}
           >
             Closed
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
-              prFilter === 'all'
+              prFilter === PrState.All
                 ? 'bg-(--accent-color) text-white'
                 : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
             }`}
-            onClick={() => setPrFilter('all')}
+            onClick={() => setPrFilter(PrState.All)}
           >
             All
           </button>

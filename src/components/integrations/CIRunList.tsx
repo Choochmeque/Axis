@@ -14,7 +14,8 @@ import {
 
 import { cn } from '@/lib/utils';
 import { shellApi } from '@/services/api';
-import type { CIRun } from '@/bindings/api';
+import { CIRunStatus, CIConclusion } from '@/types';
+import type { CIRun } from '@/types';
 
 interface CIRunListProps {
   ciRuns: CIRun[];
@@ -58,27 +59,27 @@ export function CIRunList({
   }, [hasMore, isLoadingMore, onLoadMore]);
 
   const getStatusIcon = useCallback((status: string, conclusion: string | null) => {
-    if (status === 'queued') {
+    if (status === CIRunStatus.Queued) {
       return <Clock size={16} className="text-(--text-muted)" />;
     }
-    if (status === 'inprogress') {
+    if (status === CIRunStatus.InProgress) {
       return <Loader2 size={16} className="text-warning animate-spin" />;
     }
     // completed
     switch (conclusion) {
-      case 'success':
+      case CIConclusion.Success:
         return <CheckCircle2 size={16} className="text-success" />;
-      case 'failure':
+      case CIConclusion.Failure:
         return <XCircle size={16} className="text-error" />;
-      case 'cancelled':
+      case CIConclusion.Cancelled:
         return <MinusCircle size={16} className="text-(--text-muted)" />;
-      case 'skipped':
+      case CIConclusion.Skipped:
         return <MinusCircle size={16} className="text-(--text-muted)" />;
-      case 'neutral':
+      case CIConclusion.Neutral:
         return <MinusCircle size={16} className="text-(--text-secondary)" />;
-      case 'timedout':
+      case CIConclusion.TimedOut:
         return <AlertCircle size={16} className="text-warning" />;
-      case 'actionrequired':
+      case CIConclusion.ActionRequired:
         return <AlertCircle size={16} className="text-warning" />;
       default:
         return <Clock size={16} className="text-(--text-muted)" />;
@@ -86,8 +87,8 @@ export function CIRunList({
   }, []);
 
   const getStatusText = useCallback((status: string, conclusion: string | null) => {
-    if (status === 'queued') return 'Queued';
-    if (status === 'inprogress') return 'In Progress';
+    if (status === CIRunStatus.Queued) return 'Queued';
+    if (status === CIRunStatus.InProgress) return 'In Progress';
     if (conclusion) {
       return conclusion.charAt(0).toUpperCase() + conclusion.slice(1);
     }
@@ -95,12 +96,12 @@ export function CIRunList({
   }, []);
 
   const getStatusColor = useCallback((status: string, conclusion: string | null) => {
-    if (status === 'queued') return 'text-(--text-muted)';
-    if (status === 'inprogress') return 'text-warning';
+    if (status === CIRunStatus.Queued) return 'text-(--text-muted)';
+    if (status === CIRunStatus.InProgress) return 'text-warning';
     switch (conclusion) {
-      case 'success':
+      case CIConclusion.Success:
         return 'text-success';
-      case 'failure':
+      case CIConclusion.Failure:
         return 'text-error';
       default:
         return 'text-(--text-muted)';
@@ -191,7 +192,7 @@ export function CIRunList({
 
                   <div className="flex items-center gap-3 mt-1 text-xs text-(--text-muted)">
                     <span>Started {formatDate(run.createdAt)}</span>
-                    {run.status === 'completed' && (
+                    {run.status === CIRunStatus.Completed && (
                       <span>Finished {formatDate(run.updatedAt)}</span>
                     )}
                   </div>

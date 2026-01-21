@@ -4,7 +4,7 @@ use specta::Type;
 
 /// Supported integration providers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum ProviderType {
     GitHub,
     GitLab,
@@ -42,7 +42,7 @@ pub struct IntegrationRepoInfo {
 
 /// Pull request state
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Default)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum PrState {
     #[default]
     Open,
@@ -108,7 +108,7 @@ pub struct MergePrOptions {
 
 /// Merge method for pull requests
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Default)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum MergeMethod {
     #[default]
     Merge,
@@ -118,7 +118,7 @@ pub enum MergeMethod {
 
 /// Issue state
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Default)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum IssueState {
     #[default]
     Open,
@@ -165,7 +165,7 @@ pub struct CreateIssueOptions {
 
 /// CI/CD run status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum CIRunStatus {
     Queued,
     InProgress,
@@ -174,7 +174,7 @@ pub enum CIRunStatus {
 
 /// CI/CD run conclusion
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum CIConclusion {
     Success,
     Failure,
@@ -239,7 +239,7 @@ pub struct NotificationsPage {
 
 /// Combined commit status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum CommitStatusState {
     Pending,
     Success,
@@ -258,7 +258,7 @@ pub struct CommitStatus {
 
 /// Notification reason
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "PascalCase")]
 pub enum NotificationReason {
     Assigned,
     Author,

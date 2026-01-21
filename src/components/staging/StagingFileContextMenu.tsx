@@ -26,6 +26,7 @@ import { useRepositoryStore } from '@/store/repositoryStore';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
 import { FileLogDialog } from '../history/FileLogDialog';
+import { IgnoreDialog } from './IgnoreDialog';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -48,6 +49,7 @@ export function StagingFileContextMenu({
 }: StagingFileContextMenuProps) {
   const { repository } = useRepositoryStore();
   const [showFileLog, setShowFileLog] = useState(false);
+  const [showIgnoreDialog, setShowIgnoreDialog] = useState(false);
 
   // Computed flags for menu item visibility
   const isUntracked = file.status === StatusType.Untracked;
@@ -122,7 +124,7 @@ export function StagingFileContextMenu({
           </MenuItem>
         )}
 
-        <MenuItem icon={EyeOff} disabled>
+        <MenuItem icon={EyeOff} onSelect={() => setShowIgnoreDialog(true)}>
           Ignore...
         </MenuItem>
         <MenuSeparator />
@@ -189,6 +191,12 @@ export function StagingFileContextMenu({
         isOpen={showFileLog}
         onClose={() => setShowFileLog(false)}
         filePaths={[file.path]}
+      />
+
+      <IgnoreDialog
+        isOpen={showIgnoreDialog}
+        onClose={() => setShowIgnoreDialog(false)}
+        filePath={file.path}
       />
     </>
   );

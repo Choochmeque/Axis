@@ -1,9 +1,10 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
     Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, EdgeType,
-    FileStatus, GraphCommit, GraphEdge, GraphResult, LaneState, LogOptions, RebasePreview,
-    RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository, RepositoryState,
-    RepositoryStatus, SigningConfig, SortOrder, Tag, TagResult, TagSignature,
+    FileStatus, GraphCommit, GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion,
+    IgnoreSuggestionType, LaneState, LogOptions, RebasePreview, RebaseTarget, ReflogAction,
+    ReflogEntry, ReflogOptions, Repository, RepositoryState, RepositoryStatus, SigningConfig,
+    SortOrder, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -2515,6 +2516,188 @@ impl Git2Service {
         } else {
             ReflogAction::Other(message.split(':').next().unwrap_or("unknown").to_string())
         }
+    }
+
+    // ==================== Gitignore Operations ====================
+
+    /// Add a pattern to a specific .gitignore file
+    pub fn add_to_gitignore(
+        &self,
+        pattern: &str,
+        gitignore_rel_path: &str,
+    ) -> Result<IgnoreResult> {
+        let workdir = self
+            .repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("Cannot add to gitignore in bare repository".into()))?;
+
+        let gitignore_path = workdir.join(gitignore_rel_path);
+
+        // Create parent directories if needed
+        if let Some(parent) = gitignore_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        // Read existing content or create empty
+        let content = std::fs::read_to_string(&gitignore_path).unwrap_or_default();
+
+        // Check if pattern already exists
+        let already_existed = content.lines().any(|line| line.trim() == pattern.trim());
+
+        if !already_existed {
+            let mut new_content = content;
+            // Ensure newline before adding pattern
+            if !new_content.is_empty() && !new_content.ends_with('\n') {
+                new_content.push('\n');
+            }
+            new_content.push_str(pattern);
+            new_content.push('\n');
+            std::fs::write(&gitignore_path, new_content)?;
+        }
+
+        Ok(IgnoreResult {
+            message: if already_existed {
+                "Pattern already in .gitignore".to_string()
+            } else {
+                format!("Added to {gitignore_rel_path}")
+            },
+            pattern: pattern.to_string(),
+            gitignore_path: gitignore_path.display().to_string(),
+            already_existed,
+        })
+    }
+
+    /// Add a pattern to the global gitignore file
+    pub fn add_to_global_gitignore(&self, pattern: &str) -> Result<IgnoreResult> {
+        // Try to get global gitignore path from git config
+        let config = self.repo.config()?;
+        let global_path = config
+            .get_string("core.excludesfile")
+            .map(|p| shellexpand::tilde(&p).to_string())
+            .unwrap_or_else(|_| shellexpand::tilde("~/.gitignore_global").to_string());
+
+        let gitignore_path = std::path::Path::new(&global_path);
+
+        // Create parent directories if needed
+        if let Some(parent) = gitignore_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        // Read existing content or create empty
+        let content = std::fs::read_to_string(gitignore_path).unwrap_or_default();
+
+        // Check if pattern already exists
+        let already_existed = content.lines().any(|line| line.trim() == pattern.trim());
+
+        if !already_existed {
+            let mut new_content = content;
+            // Ensure newline before adding pattern
+            if !new_content.is_empty() && !new_content.ends_with('\n') {
+                new_content.push('\n');
+            }
+            new_content.push_str(pattern);
+            new_content.push('\n');
+            std::fs::write(gitignore_path, new_content)?;
+        }
+
+        Ok(IgnoreResult {
+            message: if already_existed {
+                "Pattern already in global gitignore".to_string()
+            } else {
+                "Added to global gitignore".to_string()
+            },
+            pattern: pattern.to_string(),
+            gitignore_path: global_path,
+            already_existed,
+        })
+    }
+
+    /// Get ignore options for a file (ancestor .gitignore files and pattern suggestions)
+    pub fn get_ignore_options(&self, file_path: &str) -> Result<IgnoreOptions> {
+        let workdir = self.repo.workdir().ok_or_else(|| {
+            AxisError::Other("Cannot get ignore options in bare repository".into())
+        })?;
+
+        let file = std::path::Path::new(file_path);
+
+        // Find ancestor .gitignore files (only in file's path hierarchy)
+        let mut gitignore_files = Vec::new();
+        let mut default_gitignore = ".gitignore".to_string();
+        let mut found_closest = false;
+
+        // Always include root .gitignore as an option
+        gitignore_files.push(".gitignore".to_string());
+
+        // Walk up from file's parent directory to find existing .gitignore files
+        let mut current = file.parent();
+        while let Some(dir) = current {
+            if !dir.as_os_str().is_empty() {
+                let gitignore_rel = format!("{}/.gitignore", dir.display());
+                let gitignore_abs = workdir.join(&gitignore_rel);
+
+                if gitignore_abs.exists() {
+                    gitignore_files.push(gitignore_rel.clone());
+                    if !found_closest {
+                        default_gitignore = gitignore_rel;
+                        found_closest = true;
+                    }
+                }
+            }
+            current = dir.parent();
+        }
+
+        // Generate pattern suggestions
+        let suggestions = self.get_ignore_suggestions(file_path);
+
+        Ok(IgnoreOptions {
+            gitignore_files,
+            default_gitignore,
+            suggestions,
+        })
+    }
+
+    /// Generate pattern suggestions for ignoring a file
+    fn get_ignore_suggestions(&self, file_path: &str) -> Vec<IgnoreSuggestion> {
+        let path = std::path::Path::new(file_path);
+        let mut suggestions = Vec::new();
+
+        // Exact file path
+        suggestions.push(IgnoreSuggestion {
+            pattern: file_path.to_string(),
+            description: "Ignore this specific file".to_string(),
+            suggestion_type: IgnoreSuggestionType::ExactFile,
+        });
+
+        // File extension (if file has one)
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            suggestions.push(IgnoreSuggestion {
+                pattern: format!("*.{ext}"),
+                description: format!("Ignore all .{ext} files"),
+                suggestion_type: IgnoreSuggestionType::Extension,
+            });
+        }
+
+        // Parent directory (if file is in a subdirectory)
+        if let Some(parent) = path.parent() {
+            if !parent.as_os_str().is_empty() {
+                suggestions.push(IgnoreSuggestion {
+                    pattern: format!("{}/", parent.display()),
+                    description: "Ignore entire directory".to_string(),
+                    suggestion_type: IgnoreSuggestionType::Directory,
+                });
+            }
+        }
+
+        // File name only (matches anywhere in repo)
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            suggestions.push(IgnoreSuggestion {
+                pattern: file_name.to_string(),
+                description: "Ignore files with this name anywhere".to_string(),
+                suggestion_type: IgnoreSuggestionType::FileName,
+            });
+        }
+
+        suggestions
     }
 }
 

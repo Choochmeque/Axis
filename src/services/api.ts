@@ -552,3 +552,12 @@ export const integrationApi = {
 
   getUnreadCount: () => commands.integrationGetUnreadCount(),
 };
+
+export const gitignoreApi = {
+  addPattern: (pattern: string, gitignorePath: string) =>
+    commands.addToGitignore(pattern, gitignorePath),
+
+  addToGlobal: (pattern: string) => commands.addToGlobalGitignore(pattern),
+
+  getOptions: (filePath: string) => commands.getIgnoreOptions(filePath),
+};

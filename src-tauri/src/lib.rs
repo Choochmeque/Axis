@@ -203,6 +203,10 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::delete_ai_api_key,
             crate::commands::test_ai_connection,
             crate::commands::list_ollama_models,
+            // Gitignore commands
+            crate::commands::add_to_gitignore,
+            crate::commands::add_to_global_gitignore,
+            crate::commands::get_ignore_options,
             // LFS commands
             crate::commands::lfs_check_installed,
             crate::commands::get_git_environment,

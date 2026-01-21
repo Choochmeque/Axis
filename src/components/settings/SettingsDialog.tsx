@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import { Settings, Palette, GitBranch, FileText, Sparkles, Link2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -924,7 +924,6 @@ const PROVIDERS: { id: ProviderTab; name: string; supported: boolean }[] = [
 ];
 
 function IntegrationsSettings() {
-  const [activeTab, setActiveTab] = useState<ProviderTab>('github');
   const {
     detectedProvider,
     connectionStatus,
@@ -937,17 +936,34 @@ function IntegrationsSettings() {
     clearError,
   } = useIntegrationStore();
 
+  // Compute initial tab based on detected provider
+  const initialTab = useMemo((): ProviderTab => {
+    if (detectedProvider?.provider) {
+      const providerTab = detectedProvider.provider as ProviderTab;
+      if (PROVIDERS.some((p) => p.id === providerTab)) {
+        return providerTab;
+      }
+    }
+    return 'github';
+  }, [detectedProvider]);
+
+  const [activeTab, setActiveTab] = useState<ProviderTab>(initialTab);
+  const hasSetInitialTab = useRef(false);
+
   useEffect(() => {
     initIntegrationListeners();
     detectProvider();
   }, [detectProvider]);
 
-  // Switch to detected provider tab if it matches
+  // Update tab when detected provider changes (only once)
   useEffect(() => {
-    if (detectedProvider?.provider) {
+    if (!hasSetInitialTab.current && detectedProvider?.provider) {
       const providerTab = detectedProvider.provider as ProviderTab;
       if (PROVIDERS.some((p) => p.id === providerTab)) {
-        setActiveTab(providerTab);
+        hasSetInitialTab.current = true;
+        startTransition(() => {
+          setActiveTab(providerTab);
+        });
       }
     }
   }, [detectedProvider]);

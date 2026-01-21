@@ -21,6 +21,7 @@ import {
   CircleDot,
   Play,
   Bell,
+  Github,
 } from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
@@ -690,6 +691,18 @@ function getProviderName(provider: string) {
   }
 }
 
+function getProviderIcon(provider: string, size: number = 12) {
+  switch (provider) {
+    case 'github':
+      return <Github size={size} />;
+    case 'gitlab':
+    case 'bitbucket':
+    case 'gitea':
+    default:
+      return <Cloud size={size} />;
+  }
+}
+
 function IntegrationsSection() {
   const { currentView, setCurrentView } = useRepositoryStore();
   const {
@@ -881,7 +894,7 @@ function IntegrationsSection() {
                 onClick={toggleExpand}
               >
                 {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                <Folder size={12} />
+                {getProviderIcon(detectedProvider?.provider ?? '', 12)}
                 <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                   {node.name}
                 </span>

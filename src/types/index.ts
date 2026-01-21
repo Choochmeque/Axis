@@ -138,6 +138,12 @@ export type {
   ApplyPatchOptions,
   ApplyMailboxOptions,
   PatchResult,
+
+  // Gitignore types
+  IgnoreOptions,
+  IgnoreResult,
+  IgnoreSuggestion,
+  IgnoreSuggestionType,
 } from '../bindings/api';
 
 // Import types used locally

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import { CIRunStatus, CIConclusion } from '@/types';
 import type { CIRun } from '@/types';
@@ -108,21 +109,6 @@ export function CIRunList({
     }
   }, []);
 
-  const formatDate = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  }, []);
-
   const openInBrowser = useCallback((url: string, e: React.MouseEvent) => {
     e.stopPropagation();
     shellApi.openUrl(url);
@@ -191,9 +177,9 @@ export function CIRunList({
                   </div>
 
                   <div className="flex items-center gap-3 mt-1 text-xs text-(--text-muted)">
-                    <span>Started {formatDate(run.createdAt)}</span>
+                    <span>Started {formatRelativeTime(run.createdAt)}</span>
                     {run.status === CIRunStatus.Completed && (
-                      <span>Finished {formatDate(run.updatedAt)}</span>
+                      <span>Finished {formatRelativeTime(run.updatedAt)}</span>
                     )}
                   </div>
                 </div>

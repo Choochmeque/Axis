@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { CircleDot, CheckCircle2, Clock, User, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import type { Issue, IssueDetail } from '@/bindings/api';
 
 interface IssueListProps {
@@ -61,26 +62,6 @@ export function IssueList({
     }
   }, []);
 
-  const formatDate = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        return `${diffMins}m ago`;
-      }
-      return `${diffHours}h ago`;
-    }
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-    return date.toLocaleDateString();
-  }, []);
-
   if (isLoading && issues.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -135,7 +116,7 @@ export function IssueList({
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
-                      {formatDate(issue.createdAt)}
+                      {formatRelativeTime(issue.createdAt)}
                     </span>
                   </div>
 

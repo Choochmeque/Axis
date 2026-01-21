@@ -17,6 +17,7 @@ import remarkGfm from 'remark-gfm';
 
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import type { IssueDetail as IssueDetailType } from '@/bindings/api';
 
@@ -63,16 +64,6 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary)">
       {/* Header */}
@@ -110,11 +101,11 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Created: {formatDate(issueDetail.createdAt)}</span>
+            <span>Created: {formatDateTime(issueDetail.createdAt)}</span>
           </div>
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Updated: {formatDate(issueDetail.updatedAt)}</span>
+            <span>Updated: {formatDateTime(issueDetail.updatedAt)}</span>
           </div>
         </div>
 

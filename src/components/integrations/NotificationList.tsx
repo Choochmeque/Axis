@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import { useIntegrationStore } from '@/store/integrationStore';
 import type { Notification } from '@/bindings/api';
@@ -113,21 +114,6 @@ export function NotificationList({
     }
   }, []);
 
-  const formatDate = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  }, []);
-
   const handleClick = useCallback(
     async (notification: Notification) => {
       if (notification.unread) {
@@ -204,7 +190,7 @@ export function NotificationList({
                     <span>•</span>
                     <span>{getReasonText(notification.reason)}</span>
                     <span>•</span>
-                    <span>{formatDate(notification.updatedAt)}</span>
+                    <span>{formatRelativeTime(notification.updatedAt)}</span>
                   </div>
                 </div>
 

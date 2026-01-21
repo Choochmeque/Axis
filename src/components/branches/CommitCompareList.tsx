@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, GitCommit } from 'lucide-react';
 import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/dateUtils';
 import { Avatar } from '@/components/ui';
 import type { Commit } from '@/types';
 
@@ -181,7 +181,7 @@ function CommitItem({ commit, isSelected, onSelect }: CommitItemProps) {
           />
           <span>{commit.author.name}</span>
           <span>•</span>
-          <span>{formatDistanceToNow(new Date(commit.timestamp), { addSuffix: true })}</span>
+          <span>{formatTimeAgo(commit.timestamp)}</span>
         </div>
       </div>
     </div>

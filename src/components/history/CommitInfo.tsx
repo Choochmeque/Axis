@@ -1,6 +1,6 @@
 import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
 import { Avatar } from '@/components/ui';
-import { format } from 'date-fns';
+import { formatFullDateTime } from '@/lib/dateUtils';
 import { RefType, SigningFormat } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
@@ -98,7 +98,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
             <Calendar size={12} />
             Date
           </span>
-          <div className={valueClass}>{format(new Date(commit.timestamp), 'PPpp')}</div>
+          <div className={valueClass}>{formatFullDateTime(commit.timestamp)}</div>
         </div>
 
         {commit.signature && (

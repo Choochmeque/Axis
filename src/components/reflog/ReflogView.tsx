@@ -20,6 +20,7 @@ import { reflogApi, branchApi } from '@/services/api';
 import { ReflogAction } from '@/types';
 import type { ReflogEntry } from '@/types';
 import { cn } from '@/lib/utils';
+import { formatTimestamp } from '@/lib/dateUtils';
 import {
   Dialog,
   DialogContent,
@@ -238,11 +239,6 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
 
   const getRefDisplayName = (ref: string) => {

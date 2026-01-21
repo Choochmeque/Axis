@@ -3,6 +3,7 @@ import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } fro
 import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
+import { formatTimestamp } from '@/lib/dateUtils';
 import {
   Dialog,
   DialogContent,
@@ -126,11 +127,6 @@ export function StashView({ onRefresh }: StashViewProps) {
       console.error('Failed to create branch from stash:', err);
       setError(err instanceof Error ? err.message : 'Failed to create branch from stash');
     }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
 
   return (

@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { GitPullRequest, GitMerge, XCircle, Clock, User, Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import type { PullRequest, PullRequestDetail } from '@/bindings/api';
 
 interface PullRequestListProps {
@@ -61,26 +62,6 @@ export function PullRequestList({
       default:
         return <GitPullRequest size={16} className="text-(--text-muted)" />;
     }
-  }, []);
-
-  const formatDate = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        return `${diffMins}m ago`;
-      }
-      return `${diffHours}h ago`;
-    }
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-    return date.toLocaleDateString();
   }, []);
 
   if (isLoading && pullRequests.length === 0) {
@@ -144,7 +125,7 @@ export function PullRequestList({
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
-                      {formatDate(pr.createdAt)}
+                      {formatRelativeTime(pr.createdAt)}
                     </span>
                   </div>
 

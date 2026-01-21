@@ -5,6 +5,7 @@ import type { Tag, Remote } from '../../types';
 import { TagDialog } from './TagDialog';
 import { TagContextMenu } from './TagContextMenu';
 import { cn } from '../../lib/utils';
+import { formatTimestamp } from '@/lib/dateUtils';
 import { useRepositoryStore } from '../../store/repositoryStore';
 
 const btnIconClass =
@@ -97,12 +98,6 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
     setShowCreateDialog(false);
     await loadTags();
     onRefresh?.();
-  };
-
-  const formatTimestamp = (timestamp: string | null) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleDateString();
   };
 
   return (

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { History, GitCommit, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
 import { graphApi } from '@/services/api';
+import { formatMediumDate } from '@/lib/dateUtils';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { cn } from '@/lib/utils';
 import { CommitInfo } from './CommitInfo';
@@ -266,7 +266,7 @@ function FileLogCommitRow({ commit, isSelected, onClick }: FileLogCommitRowProps
         <code className="font-mono text-xs">{commit.oid.substring(0, 7)}</code>
       </td>
       <td className="py-2 px-3 whitespace-nowrap text-xs text-(--text-secondary)">
-        {format(new Date(commit.timestamp), 'MMM d, yyyy')}
+        {formatMediumDate(commit.timestamp)}
       </td>
       <td className="py-2 px-3 whitespace-nowrap text-xs text-(--text-secondary) max-w-32 truncate">
         <span className="flex items-center gap-1.5">

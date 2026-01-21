@@ -4,6 +4,7 @@ import { GitBranch, Tag } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
 import { Avatar } from '@/components/ui';
+import { formatShortDate } from '@/lib/dateUtils';
 import { CommitContextMenu } from './CommitContextMenu';
 
 const UNCOMMITTED = 'uncommitted';
@@ -13,14 +14,6 @@ const COLUMN_AUTO = -101;
 
 function abbrevCommit(hash: string): string {
   return hash.substring(0, 7);
-}
-
-function formatShortDate(timestamp: string): { formatted: string; title: string } {
-  const date = new Date(timestamp);
-  return {
-    formatted: date.toLocaleDateString(),
-    title: date.toLocaleString(),
-  };
 }
 
 interface BranchLabel {

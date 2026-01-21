@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FolderOpen, FolderPlus, GitBranchPlus, Clock } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useRepositoryStore } from '../store/repositoryStore';
-import { formatDistanceToNow } from 'date-fns';
+import { formatTimeAgo } from '@/lib/dateUtils';
 import { CloneDialog } from './repository/CloneDialog';
 import { InitDialog } from './repository/InitDialog';
 import { RecentRepoContextMenu } from './repository/RecentRepoContextMenu';
@@ -97,9 +97,7 @@ export function WelcomeView() {
                         {repo.path}
                       </span>
                       <span className="text-sm text-(--text-tertiary) mt-1">
-                        {formatDistanceToNow(new Date(repo.lastOpened), {
-                          addSuffix: true,
-                        })}
+                        {formatTimeAgo(repo.lastOpened)}
                       </span>
                     </button>
                   </RecentRepoContextMenu>

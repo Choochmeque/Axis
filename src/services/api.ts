@@ -132,11 +132,11 @@ export const remoteApi = {
 
   fetchAll: () => commands.fetchAll(),
 
-  push: (remoteName: string, refspecs: string[], options?: PushOptions) =>
-    commands.pushRemote(remoteName, refspecs, options ?? null),
+  push: (remoteName: string, refspecs: string[], options: PushOptions) =>
+    commands.pushRemote(remoteName, refspecs, options),
 
-  pushCurrentBranch: (remoteName: string, options?: PushOptions) =>
-    commands.pushCurrentBranch(remoteName, options ?? null),
+  pushCurrentBranch: (remoteName: string, options: PushOptions) =>
+    commands.pushCurrentBranch(remoteName, options),
 
   pull: (remoteName: string, branchName: string, rebase?: boolean, ffOnly?: boolean) =>
     commands.pullRemote(remoteName, branchName, rebase ?? null, ffOnly ?? null),

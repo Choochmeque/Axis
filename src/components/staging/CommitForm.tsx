@@ -41,7 +41,8 @@ export function CommitForm() {
     createCommit,
     amendCommit,
   } = useStagingStore();
-  const { repository } = useRepositoryStore();
+  const { repository, branches } = useRepositoryStore();
+  const currentBranch = branches.find((b) => b.isHead);
   const { settings } = useSettingsStore();
 
   const [localMessage, setLocalMessage] = useState(commitMessage);
@@ -189,7 +190,13 @@ export function CommitForm() {
 
       if (pushAfterCommit) {
         try {
-          await remoteApi.pushCurrentBranch('origin');
+          // Set upstream tracking if branch doesn't have one yet
+          const needsUpstream = !currentBranch?.upstream;
+          await remoteApi.pushCurrentBranch('origin', {
+            force: false,
+            setUpstream: needsUpstream,
+            tags: false,
+          });
         } catch (err) {
           console.error('Push failed:', err);
         }

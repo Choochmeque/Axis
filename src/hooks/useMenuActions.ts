@@ -12,9 +12,11 @@ import { useStagingStore } from '@/store/stagingStore';
 import { MenuAction } from '@/types';
 
 export function useMenuActions() {
-  const { openRepository, closeRepository, refreshRepository, repository } = useRepositoryStore();
+  const { openRepository, closeRepository, refreshRepository, repository, branches } =
+    useRepositoryStore();
   const { stageAll, unstageAll } = useStagingStore();
   const { setShowSettings, showSettings } = useSettingsStore();
+  const currentBranch = branches.find((b) => b.isHead);
 
   const handleMenuAction = useCallback(
     async (action: string) => {
@@ -75,7 +77,13 @@ export function useMenuActions() {
         case MenuAction.Push:
           if (repository) {
             try {
-              await remoteApi.pushCurrentBranch('origin');
+              // Set upstream tracking if branch doesn't have one yet
+              const needsUpstream = !currentBranch?.upstream;
+              await remoteApi.pushCurrentBranch('origin', {
+                force: false,
+                setUpstream: needsUpstream,
+                tags: false,
+              });
               await refreshRepository();
               toast.success('Push complete');
             } catch (err) {
@@ -145,6 +153,7 @@ export function useMenuActions() {
       closeRepository,
       refreshRepository,
       repository,
+      currentBranch,
       stageAll,
       unstageAll,
       setShowSettings,

@@ -1332,7 +1332,15 @@ impl Git2Service {
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
-        self.push(remote_name, &[refspec], options)
+        let result = self.push(remote_name, &[refspec], options)?;
+
+        // Set upstream tracking if requested
+        if options.set_upstream {
+            let upstream_ref = format!("{}/{}", remote_name, branch_name);
+            self.set_branch_upstream(branch_name, Some(&upstream_ref))?;
+        }
+
+        Ok(result)
     }
 
     /// Pull from a remote (fetch + merge/rebase)

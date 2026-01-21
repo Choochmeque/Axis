@@ -33,7 +33,7 @@ export function CreatePullRequestDialog({
   onClose,
   onCreated,
 }: CreatePullRequestDialogProps) {
-  const { branches } = useRepositoryStore();
+  const { branches, loadBranches } = useRepositoryStore();
   const { createPullRequest } = useIntegrationStore();
 
   const [title, setTitle] = useState('');
@@ -55,25 +55,32 @@ export function CreatePullRequestDialog({
     () => localBranches.find((b) => b.name === sourceBranch),
     [localBranches, sourceBranch]
   );
-  const isSourceBranchPushed = sourceBranchData?.upstream !== null;
+  const isSourceBranchPushed = !!sourceBranchData?.upstream;
 
   // Common target branches
   const defaultTargetBranches = useMemo(() => ['main', 'master', 'develop', 'dev'], []);
 
-  // Reset form when dialog opens
+  // Reload branches when dialog opens
   useEffect(() => {
     if (isOpen) {
+      loadBranches();
+    }
+  }, [isOpen, loadBranches]);
+
+  // Reset form when dialog opens (separate effect to avoid loop)
+  useEffect(() => {
+    if (isOpen && localBranches.length > 0) {
       setTitle('');
       setBody('');
       setSourceBranch(currentBranch?.name ?? '');
-      // Default to main or master if exists
       const defaultTarget =
         localBranches.find((b) => defaultTargetBranches.includes(b.name))?.name ?? '';
       setTargetBranch(defaultTarget);
       setIsDraft(false);
       setError(null);
     }
-  }, [isOpen, currentBranch, localBranches, defaultTargetBranches]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Clear target if it matches the new source
   useEffect(() => {
@@ -118,7 +125,16 @@ export function CreatePullRequestDialog({
     } finally {
       setIsSubmitting(false);
     }
-  }, [title, body, sourceBranch, targetBranch, isDraft, createPullRequest, onCreated]);
+  }, [
+    title,
+    body,
+    sourceBranch,
+    targetBranch,
+    isDraft,
+    isSourceBranchPushed,
+    createPullRequest,
+    onCreated,
+  ]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

@@ -92,11 +92,11 @@ pub async fn push_remote(
     state: State<'_, AppState>,
     remote_name: String,
     refspecs: Vec<String>,
-    options: Option<PushOptions>,
+    options: PushOptions,
 ) -> Result<PushResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.push(&remote_name, &refspecs, &options.unwrap_or_default()))
+        .with_git2(|git2| git2.push(&remote_name, &refspecs, &options))
 }
 
 #[tauri::command]
@@ -104,11 +104,11 @@ pub async fn push_remote(
 pub async fn push_current_branch(
     state: State<'_, AppState>,
     remote_name: String,
-    options: Option<PushOptions>,
+    options: PushOptions,
 ) -> Result<PushResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.push_current_branch(&remote_name, &options.unwrap_or_default()))
+        .with_git2(|git2| git2.push_current_branch(&remote_name, &options))
 }
 
 #[tauri::command]

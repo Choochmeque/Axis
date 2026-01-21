@@ -241,8 +241,13 @@ export function CommitForm() {
     // Check if reference mention should handle the key
     if (referenceMention.handleKeyDown(e)) {
       // Handle selection on Enter/Tab
-      if ((e.key === 'Enter' || e.key === 'Tab') && referenceMention.items[referenceMention.selectedIndex]) {
-        const newValue = referenceMention.handleSelect(referenceMention.items[referenceMention.selectedIndex]);
+      if (
+        (e.key === 'Enter' || e.key === 'Tab') &&
+        referenceMention.items[referenceMention.selectedIndex]
+      ) {
+        const newValue = referenceMention.handleSelect(
+          referenceMention.items[referenceMention.selectedIndex]
+        );
         if (newValue !== null) {
           setLocalMessage(newValue);
           setCommitMessage(newValue);

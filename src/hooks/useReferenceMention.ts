@@ -23,15 +23,15 @@ interface UseReferenceMentionReturn {
   selectedIndex: number;
   filterText: string;
   cursorPosition: number;
-  anchorElement: HTMLTextAreaElement | HTMLInputElement | null;
-  setActiveInput: (el: HTMLTextAreaElement | HTMLInputElement | null) => void;
   handleInputChange: (value: string, cursorPosition: number) => void;
   handleKeyDown: (e: React.KeyboardEvent) => boolean;
   handleSelect: (item: ReferenceItem) => string | null;
   close: () => void;
 }
 
-export function useReferenceMention(options: UseReferenceMentionOptions): UseReferenceMentionReturn {
+export function useReferenceMention(
+  options: UseReferenceMentionOptions
+): UseReferenceMentionReturn {
   const { issues, pullRequests, isConnected, isLoading, onLoadData } = options;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -41,12 +41,7 @@ export function useReferenceMention(options: UseReferenceMentionOptions): UseRef
   const [currentValue, setCurrentValue] = useState('');
   const [cursorPos, setCursorPos] = useState(0);
 
-  const activeInputRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
   const dataLoadedRef = useRef(false);
-
-  const setActiveInput = useCallback((el: HTMLTextAreaElement | HTMLInputElement | null) => {
-    activeInputRef.current = el;
-  }, []);
 
   const handleInputChange = useCallback(
     (value: string, cursorPosition: number) => {
@@ -110,11 +105,6 @@ export function useReferenceMention(options: UseReferenceMentionOptions): UseRef
 
     return allItems.slice(0, 50); // Limit initial display
   }, [issues, pullRequests, filterText]);
-
-  // Reset selected index when items change
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [items.length]);
 
   const handleSelect = useCallback(
     (item: ReferenceItem): string | null => {
@@ -185,8 +175,6 @@ export function useReferenceMention(options: UseReferenceMentionOptions): UseRef
     selectedIndex,
     filterText,
     cursorPosition: cursorPos,
-    anchorElement: activeInputRef.current,
-    setActiveInput,
     handleInputChange,
     handleKeyDown,
     handleSelect,

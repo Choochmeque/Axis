@@ -67,7 +67,6 @@ export function ReferenceMention({
   // Position dropdown and continuously track position for panel resize
   useLayoutEffect(() => {
     if (!isOpen || !anchorElement) {
-      setPosition(null);
       return;
     }
 

@@ -21,7 +21,7 @@ const SelectItem = forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item ref={ref} className={cn('dropdown-item', className)} {...props}>
+  <SelectPrimitive.Item ref={ref} className={cn('dropdown-item pl-7', className)} {...props}>
     <SelectPrimitive.ItemIndicator className="absolute left-2">
       <Check size={12} />
     </SelectPrimitive.ItemIndicator>

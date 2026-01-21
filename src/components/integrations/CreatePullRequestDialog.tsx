@@ -50,6 +50,13 @@ export function CreatePullRequestDialog({
   // Get current branch for default source
   const currentBranch = useMemo(() => localBranches.find((b) => b.isHead), [localBranches]);
 
+  // Check if selected source branch has been pushed to remote
+  const sourceBranchData = useMemo(
+    () => localBranches.find((b) => b.name === sourceBranch),
+    [localBranches, sourceBranch]
+  );
+  const isSourceBranchPushed = sourceBranchData?.upstream !== null;
+
   // Common target branches
   const defaultTargetBranches = useMemo(() => ['main', 'master', 'develop', 'dev'], []);
 
@@ -68,6 +75,13 @@ export function CreatePullRequestDialog({
     }
   }, [isOpen, currentBranch, localBranches, defaultTargetBranches]);
 
+  // Clear target if it matches the new source
+  useEffect(() => {
+    if (sourceBranch && targetBranch === sourceBranch) {
+      setTargetBranch('');
+    }
+  }, [sourceBranch, targetBranch]);
+
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
       setError('Title is required');
@@ -81,8 +95,8 @@ export function CreatePullRequestDialog({
       setError('Target branch is required');
       return;
     }
-    if (sourceBranch === targetBranch) {
-      setError('Source and target branches must be different');
+    if (!isSourceBranchPushed) {
+      setError('Source branch must be pushed to the remote first');
       return;
     }
 
@@ -118,7 +132,15 @@ export function CreatePullRequestDialog({
             </Alert>
           )}
 
-          <FormField label="From (source)" htmlFor="pr-source">
+          <FormField
+            label="From (source)"
+            htmlFor="pr-source"
+            error={
+              sourceBranch && !isSourceBranchPushed
+                ? 'This branch has not been pushed to the remote yet'
+                : undefined
+            }
+          >
             <Select
               id="pr-source"
               value={sourceBranch}
@@ -141,11 +163,13 @@ export function CreatePullRequestDialog({
               onValueChange={setTargetBranch}
               placeholder="Select branch"
             >
-              {localBranches.map((branch) => (
-                <SelectItem key={branch.name} value={branch.name}>
-                  {branch.name}
-                </SelectItem>
-              ))}
+              {localBranches
+                .filter((branch) => branch.name !== sourceBranch)
+                .map((branch) => (
+                  <SelectItem key={branch.name} value={branch.name}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
             </Select>
           </FormField>
 

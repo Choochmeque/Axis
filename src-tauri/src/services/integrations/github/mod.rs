@@ -151,7 +151,7 @@ impl GitHubProvider {
         let client = Octocrab::builder()
             .personal_token(token)
             .build()
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create client: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to create client: {e:?}")))?;
 
         self.set_client(Arc::new(client))?;
         Ok(())
@@ -195,11 +195,13 @@ impl GitHubProvider {
             .into_body()
             .collect()
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to read response body: {e}")))?
+            .map_err(|e| {
+                AxisError::IntegrationError(format!("Failed to read response body: {e:?}"))
+            })?
             .to_bytes();
 
         serde_json::from_slice(&body)
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to parse JSON: {e}")))
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to parse JSON: {e:?}")))
     }
 
     /// Convert Author to IntegrationUser
@@ -343,7 +345,7 @@ impl IntegrationProvider for GitHubProvider {
 
         let repository =
             client.repos(owner, repo).get().await.map_err(|e| {
-                AxisError::IntegrationError(format!("Failed to get repo info: {e}"))
+                AxisError::IntegrationError(format!("Failed to get repo info: {e:?}"))
             })?;
 
         let info = IntegrationRepoInfo {
@@ -382,7 +384,7 @@ impl IntegrationProvider for GitHubProvider {
         let http_response = client
             ._get(&route)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get commit: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to get commit: {e:?}")))?;
 
         let response: serde_json::Value = Self::parse_response(http_response).await?;
 
@@ -416,7 +418,7 @@ impl IntegrationProvider for GitHubProvider {
         let http_response = client
             ._get(&route)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list PRs: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to list PRs: {e:?}")))?;
 
         // Get Link header for pagination info
         let link_header = http_response
@@ -502,7 +504,7 @@ impl IntegrationProvider for GitHubProvider {
             .pulls(owner, repo)
             .get(number as u64)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get PR: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to get PR: {e:?}")))?;
 
         let base = Self::convert_pr(&pr, ProviderType::GitHub);
 
@@ -566,7 +568,7 @@ impl IntegrationProvider for GitHubProvider {
         let pr = request
             .send()
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create PR: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to create PR: {e:?}")))?;
 
         Ok(Self::convert_pr(&pr, ProviderType::GitHub))
     }
@@ -602,7 +604,7 @@ impl IntegrationProvider for GitHubProvider {
         let response = client
             ._put(route, Some(&body))
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to merge PR: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to merge PR: {e:?}")))?;
 
         if !response.status().is_success() {
             return Err(AxisError::IntegrationError(format!(
@@ -637,7 +639,7 @@ impl IntegrationProvider for GitHubProvider {
         let http_response = client
             ._get(&route)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list issues: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to list issues: {e:?}")))?;
 
         // Get Link header for pagination info
         let link_header = http_response
@@ -717,7 +719,7 @@ impl IntegrationProvider for GitHubProvider {
             .issues(owner, repo)
             .get(number as u64)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get issue: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to get issue: {e:?}")))?;
 
         let base = Issue {
             provider: ProviderType::GitHub,
@@ -779,7 +781,7 @@ impl IntegrationProvider for GitHubProvider {
         let issue = request
             .send()
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create issue: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to create issue: {e:?}")))?;
 
         Ok(Issue {
             provider: ProviderType::GitHub,
@@ -812,7 +814,7 @@ impl IntegrationProvider for GitHubProvider {
         let http_response = client
             ._get(route)
             .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list CI runs: {e}")))?;
+            .map_err(|e| AxisError::IntegrationError(format!("Failed to list CI runs: {e:?}")))?;
 
         let response: serde_json::Value = Self::parse_response(http_response).await?;
 
@@ -878,7 +880,7 @@ impl IntegrationProvider for GitHubProvider {
         // Get combined status
         let route = format!("/repos/{owner}/{repo}/commits/{sha}/status");
         let http_response = client._get(&route).await.map_err(|e| {
-            AxisError::IntegrationError(format!("Failed to get commit status: {e}"))
+            AxisError::IntegrationError(format!("Failed to get commit status: {e:?}"))
         })?;
 
         let response: serde_json::Value = Self::parse_response(http_response).await?;
@@ -964,7 +966,7 @@ impl IntegrationProvider for GitHubProvider {
         };
 
         let http_response = client._get(&route).await.map_err(|e| {
-            AxisError::IntegrationError(format!("Failed to list notifications: {e}"))
+            AxisError::IntegrationError(format!("Failed to list notifications: {e:?}"))
         })?;
 
         // Get Link header for pagination info
@@ -1039,7 +1041,7 @@ impl IntegrationProvider for GitHubProvider {
 
         let route = format!("/notifications/threads/{thread_id}");
         let response = client._patch(route, None::<&()>).await.map_err(|e| {
-            AxisError::IntegrationError(format!("Failed to mark notification read: {e}"))
+            AxisError::IntegrationError(format!("Failed to mark notification read: {e:?}"))
         })?;
 
         if !response.status().is_success() {
@@ -1059,7 +1061,7 @@ impl IntegrationProvider for GitHubProvider {
             ._put("/notifications", None::<&()>)
             .await
             .map_err(|e| {
-                AxisError::IntegrationError(format!("Failed to mark all notifications read: {e}"))
+                AxisError::IntegrationError(format!("Failed to mark all notifications read: {e:?}"))
             })?;
 
         if !response.status().is_success() {

@@ -3,7 +3,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { StatusBar } from './StatusBar';
-import { useFileWatcher } from '../../hooks';
+import { useFileWatcher, useGitProgress } from '../../hooks';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,6 +12,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   // Start file watcher and listen for changes
   useFileWatcher();
+  // Listen for git operation progress events
+  useGitProgress();
 
   return (
     <div className="flex flex-col h-full bg-(--bg-primary) text-(--text-primary)">

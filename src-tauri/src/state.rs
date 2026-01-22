@@ -1,6 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
-use crate::services::{AvatarService, BackgroundFetchService, GitService};
+use crate::services::{AvatarService, BackgroundFetchService, GitService, ProgressRegistry};
 use crate::storage::Database;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -149,6 +149,7 @@ pub struct AppState {
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
+    progress_registry: ProgressRegistry,
 }
 
 impl AppState {
@@ -160,6 +161,7 @@ impl AppState {
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
             avatar_service: RwLock::new(None),
+            progress_registry: ProgressRegistry::new(),
         }
     }
 
@@ -203,6 +205,11 @@ impl AppState {
             .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("Avatar service not initialized".to_string()))
+    }
+
+    /// Get the progress registry for operation cancellation
+    pub fn progress_registry(&self) -> &ProgressRegistry {
+        &self.progress_registry
     }
 
     /// Set/switch the active repository (adds to cache if needed)

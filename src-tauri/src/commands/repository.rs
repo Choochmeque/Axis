@@ -1,8 +1,9 @@
 use crate::error::{AxisError, Result};
+use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{
     Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
 };
-use crate::services::Git2Service;
+use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
@@ -73,8 +74,21 @@ pub async fn clone_repository(
         ));
     }
 
+    let app_handle = state.get_app_handle()?;
+    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+
+    ctx.emit(GitOperationType::Clone, ProgressStage::Connecting, None);
+
     // Clone the repository first (this creates a new Git2Service internally)
-    let service = Git2Service::clone(&url, &path)?;
+    let result = Git2Service::clone(
+        &url,
+        &path,
+        Some(ctx.make_receive_callback(GitOperationType::Clone)),
+    );
+
+    ctx.handle_result(&result, GitOperationType::Clone);
+
+    let service = result?;
     let repo_info = service.get_repository_info()?;
 
     // Now add to cache via switch_active_repository

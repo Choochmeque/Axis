@@ -54,7 +54,12 @@ impl BackgroundFetchService {
                                 let mut total_updates = 0u32;
 
                                 for remote in remotes {
-                                    match git2.fetch(&remote.name, &options, None) {
+                                    match git2.fetch(
+                                        &remote.name,
+                                        &options,
+                                        None,
+                                        None::<fn(&git2::Progress<'_>) -> bool>,
+                                    ) {
                                         Ok(result) => {
                                             // Count updated refs as new commits
                                             total_updates += result.updated_refs.len() as u32;

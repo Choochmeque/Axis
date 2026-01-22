@@ -35,8 +35,12 @@ impl Git2Service {
         Ok(Git2Service { repo })
     }
 
-    /// Clone a repository from a URL
-    pub fn clone(url: &str, path: &Path) -> Result<Self> {
+    /// Clone a repository from a URL with optional progress callback
+    /// The callback receives progress stats and returns true to continue or false to cancel
+    pub fn clone<F>(url: &str, path: &Path, progress_cb: Option<F>) -> Result<Self>
+    where
+        F: FnMut(&git2::Progress<'_>) -> bool + 'static,
+    {
         let mut callbacks = RemoteCallbacks::new();
 
         // Set up authentication callback
@@ -94,6 +98,11 @@ impl Git2Service {
 
             Err(git2::Error::from_str("No valid credentials found"))
         });
+
+        // Set up progress callback if provided
+        if let Some(mut cb) = progress_cb {
+            callbacks.transfer_progress(move |stats| cb(&stats));
+        }
 
         // Set up fetch options with callbacks
         let mut fetch_options = FetchOptions::new();
@@ -834,7 +843,12 @@ impl Git2Service {
             set_upstream: false,
             tags: false,
         };
-        self.push(remote_name, &[refspec], &options)?;
+        self.push(
+            remote_name,
+            &[refspec],
+            &options,
+            None::<fn(usize, usize, usize) -> bool>,
+        )?;
         Ok(())
     }
 
@@ -1197,13 +1211,18 @@ impl Git2Service {
         Ok(())
     }
 
-    /// Fetch from a remote
-    pub fn fetch(
+    /// Fetch from a remote with optional progress callback
+    /// The callback receives progress stats and returns true to continue or false to cancel
+    pub fn fetch<F>(
         &self,
         remote_name: &str,
         options: &crate::models::FetchOptions,
         refspecs: Option<&[&str]>,
-    ) -> Result<crate::models::FetchResult> {
+        progress_cb: Option<F>,
+    ) -> Result<crate::models::FetchResult>
+    where
+        F: FnMut(&git2::Progress<'_>) -> bool + 'static,
+    {
         let mut remote = self.repo.find_remote(remote_name)?;
 
         let mut fetch_opts = git2::FetchOptions::new();
@@ -1225,6 +1244,11 @@ impl Git2Service {
 
             Err(git2::Error::from_str("no valid credentials found"))
         });
+
+        // Set up progress callback if provided
+        if let Some(mut cb) = progress_cb {
+            callbacks.transfer_progress(move |stats| cb(&stats));
+        }
 
         fetch_opts.remote_callbacks(callbacks);
 
@@ -1263,13 +1287,18 @@ impl Git2Service {
         })
     }
 
-    /// Push to a remote
-    pub fn push(
+    /// Push to a remote with optional progress callback
+    /// The callback receives (current, total, bytes) and returns true to continue
+    pub fn push<F>(
         &self,
         remote_name: &str,
         refspecs: &[String],
         options: &crate::models::PushOptions,
-    ) -> Result<crate::models::PushResult> {
+        progress_cb: Option<F>,
+    ) -> Result<crate::models::PushResult>
+    where
+        F: FnMut(usize, usize, usize) -> bool + 'static,
+    {
         let mut remote = self.repo.find_remote(remote_name)?;
 
         let mut push_opts = git2::PushOptions::new();
@@ -1291,6 +1320,13 @@ impl Git2Service {
 
             Err(git2::Error::from_str("no valid credentials found"))
         });
+
+        // Set up progress callback if provided
+        if let Some(mut cb) = progress_cb {
+            callbacks.push_transfer_progress(move |current, total, bytes| {
+                cb(current, total, bytes);
+            });
+        }
 
         push_opts.remote_callbacks(callbacks);
 
@@ -1320,19 +1356,23 @@ impl Git2Service {
         })
     }
 
-    /// Push the current branch to its upstream
-    pub fn push_current_branch(
+    /// Push the current branch to its upstream with optional progress callback
+    pub fn push_current_branch<F>(
         &self,
         remote_name: &str,
         options: &crate::models::PushOptions,
-    ) -> Result<crate::models::PushResult> {
+        progress_cb: Option<F>,
+    ) -> Result<crate::models::PushResult>
+    where
+        F: FnMut(usize, usize, usize) -> bool + 'static,
+    {
         let head = self.repo.head()?;
         let branch_name = head
             .shorthand()
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
-        let result = self.push(remote_name, &[refspec], options)?;
+        let result = self.push(remote_name, &[refspec], options, progress_cb)?;
 
         // Set upstream tracking if requested
         if options.set_upstream {
@@ -1343,16 +1383,25 @@ impl Git2Service {
         Ok(result)
     }
 
-    /// Pull from a remote (fetch + merge/rebase)
+    /// Pull from a remote (fetch + merge/rebase) with optional progress callback
     /// Note: Full merge/rebase requires CLI for complex cases
-    pub fn pull(
+    pub fn pull<F>(
         &self,
         remote_name: &str,
         branch_name: &str,
         options: &crate::models::PullOptions,
-    ) -> Result<()> {
+        progress_cb: Option<F>,
+    ) -> Result<()>
+    where
+        F: FnMut(&git2::Progress<'_>) -> bool + 'static,
+    {
         // First, fetch
-        self.fetch(remote_name, &crate::models::FetchOptions::default(), None)?;
+        self.fetch(
+            remote_name,
+            &crate::models::FetchOptions::default(),
+            None,
+            progress_cb,
+        )?;
 
         // Get the remote tracking branch
         let remote_ref = format!("{}/{}", remote_name, branch_name);

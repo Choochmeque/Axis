@@ -1,6 +1,18 @@
+import type { GitOperationType, ProgressStage } from '@/types';
 import { create } from 'zustand';
 
 export type OperationCategory = 'git' | 'file' | 'network' | 'general';
+
+export interface OperationProgress {
+  stage: ProgressStage;
+  totalObjects?: number;
+  receivedObjects?: number;
+  indexedObjects?: number;
+  receivedBytes: number;
+  totalDeltas?: number;
+  indexedDeltas?: number;
+  message?: string;
+}
 
 export interface Operation {
   id: string;
@@ -8,6 +20,9 @@ export interface Operation {
   description?: string;
   category: OperationCategory;
   startedAt: number;
+  operationType?: GitOperationType;
+  progress?: OperationProgress;
+  cancellable?: boolean;
 }
 
 interface OperationState {
@@ -19,9 +34,12 @@ interface OperationState {
       id?: string;
       description?: string;
       category?: OperationCategory;
+      operationType?: GitOperationType;
+      cancellable?: boolean;
     }
   ) => string;
   updateOperation: (id: string, updates: Partial<Pick<Operation, 'description'>>) => void;
+  updateProgress: (id: string, progress: OperationProgress) => void;
   completeOperation: (id: string) => void;
   clearAll: () => void;
 }
@@ -45,6 +63,8 @@ export const useOperationStore = create<OperationState>((set, get) => ({
       description: options.description,
       category: options.category ?? 'general',
       startedAt: Date.now(),
+      operationType: options.operationType,
+      cancellable: options.cancellable,
     };
 
     set((state) => {
@@ -67,6 +87,17 @@ export const useOperationStore = create<OperationState>((set, get) => ({
     });
   },
 
+  updateProgress: (id, progress) => {
+    set((state) => {
+      const op = state.operations.get(id);
+      if (!op) return state;
+
+      const newOps = new Map(state.operations);
+      newOps.set(id, { ...op, progress });
+      return { operations: newOps };
+    });
+  },
+
   completeOperation: (id) => {
     set((state) => {
       const newOps = new Map(state.operations);
@@ -82,10 +113,18 @@ export const useOperationStore = create<OperationState>((set, get) => ({
 export const operations = {
   start: (
     name: string,
-    options?: { id?: string; description?: string; category?: OperationCategory }
+    options?: {
+      id?: string;
+      description?: string;
+      category?: OperationCategory;
+      operationType?: GitOperationType;
+      cancellable?: boolean;
+    }
   ) => useOperationStore.getState().startOperation(name, options),
   update: (id: string, updates: Partial<Pick<Operation, 'description'>>) =>
     useOperationStore.getState().updateOperation(id, updates),
+  updateProgress: (id: string, progress: OperationProgress) =>
+    useOperationStore.getState().updateProgress(id, progress),
   complete: (id: string) => useOperationStore.getState().completeOperation(id),
   clearAll: () => useOperationStore.getState().clearAll(),
 };

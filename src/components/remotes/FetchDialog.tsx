@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 
-import { toast, useOperation } from '@/hooks';
+import { toast, useOperationProgress } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
@@ -20,6 +20,7 @@ import {
   SelectItem,
   CheckboxField,
   Alert,
+  OperationProgressBar,
 } from '@/components/ui';
 
 interface FetchDialogProps {
@@ -36,7 +37,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
-  const { trackOperation } = useOperation();
+  const fetchOperation = useOperationProgress('Fetch');
 
   useEffect(() => {
     if (open) {
@@ -62,24 +63,16 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
     setError(null);
 
     try {
-      await trackOperation(
-        {
-          name: 'Fetch',
-          description: fetchAll ? 'Fetching all remotes' : `Fetching ${selectedRemote}`,
-          category: 'git',
-        },
-        async () => {
-          if (fetchAll) {
-            await remoteApi.fetchAll();
-          } else {
-            await remoteApi.fetch(selectedRemote, prune);
-          }
+      if (fetchAll) {
+        await remoteApi.fetchAll();
+      } else {
+        await remoteApi.fetch(selectedRemote, prune);
+      }
 
-          await loadBranches();
-          await refreshRepository();
-          notifyNewCommits(useRepositoryStore.getState().branches);
-        }
-      );
+      await loadBranches();
+      await refreshRepository();
+      notifyNewCommits(useRepositoryStore.getState().branches);
+
       onOpenChange(false);
       toast.success('Fetch complete');
     } catch (err) {
@@ -105,6 +98,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
             label="Fetch from all remotes"
             checked={fetchAll}
             onCheckedChange={setFetchAll}
+            disabled={isLoading}
           />
 
           {!fetchAll && (
@@ -113,7 +107,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
                 id="remote-select"
                 value={selectedRemote}
                 onValueChange={setSelectedRemote}
-                disabled={remotes.length === 0}
+                disabled={remotes.length === 0 || isLoading}
               >
                 {remotes.map((remote) => (
                   <SelectItem key={remote.name} value={remote.name}>
@@ -129,7 +123,12 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
             label="Prune deleted remote branches"
             checked={prune}
             onCheckedChange={setPrune}
+            disabled={isLoading}
           />
+
+          {fetchOperation?.progress && (
+            <OperationProgressBar progress={fetchOperation.progress} className="mt-3" />
+          )}
 
           {error && (
             <Alert variant="error" inline className="mt-3">

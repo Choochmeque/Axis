@@ -754,6 +754,18 @@ code {
     @apply text-xs text-(--text-tertiary) shrink-0;
   }
 
+  .operations-progress-bar {
+    @apply h-1.5 w-full bg-(--bg-tertiary) rounded-full mt-1.5 overflow-hidden;
+  }
+
+  .operations-progress-fill {
+    @apply h-full bg-(--accent-color) rounded-full transition-[width] duration-150 ease-out;
+  }
+
+  .operations-progress-text {
+    @apply text-xs text-(--text-secondary) mt-1;
+  }
+
   /* Dropdown classes (Radix UI) */
   .dropdown-button {
     @apply flex items-center gap-1 py-1 px-2 border border-(--border-color) bg-(--bg-secondary) text-(--text-primary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover);

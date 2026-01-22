@@ -1,5 +1,7 @@
 use crate::error::Result;
+use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{FetchOptions, FetchResult, PullOptions, PushOptions, PushResult, Remote};
+use crate::services::ProgressContext;
 use crate::state::AppState;
 use tauri::State;
 
@@ -81,9 +83,24 @@ pub async fn fetch_remote(
         tags: tags.unwrap_or(false),
         depth,
     };
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.fetch(&remote_name, &options, None))
+
+    let app_handle = state.get_app_handle()?;
+    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+
+    ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
+
+    let result = state.get_git_service()?.with_git2(|git2| {
+        git2.fetch(
+            &remote_name,
+            &options,
+            None,
+            Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+        )
+    });
+
+    ctx.handle_result(&result, GitOperationType::Fetch);
+
+    result
 }
 
 #[tauri::command]
@@ -94,9 +111,23 @@ pub async fn push_remote(
     refspecs: Vec<String>,
     options: PushOptions,
 ) -> Result<PushResult> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.push(&remote_name, &refspecs, &options))
+    let app_handle = state.get_app_handle()?;
+    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+
+    ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
+
+    let result = state.get_git_service()?.with_git2(|git2| {
+        git2.push(
+            &remote_name,
+            &refspecs,
+            &options,
+            Some(ctx.make_send_callback(GitOperationType::Push)),
+        )
+    });
+
+    ctx.handle_result(&result, GitOperationType::Push);
+
+    result
 }
 
 #[tauri::command]
@@ -106,9 +137,22 @@ pub async fn push_current_branch(
     remote_name: String,
     options: PushOptions,
 ) -> Result<PushResult> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.push_current_branch(&remote_name, &options))
+    let app_handle = state.get_app_handle()?;
+    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+
+    ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
+
+    let result = state.get_git_service()?.with_git2(|git2| {
+        git2.push_current_branch(
+            &remote_name,
+            &options,
+            Some(ctx.make_send_callback(GitOperationType::Push)),
+        )
+    });
+
+    ctx.handle_result(&result, GitOperationType::Push);
+
+    result
 }
 
 #[tauri::command]
@@ -124,14 +168,30 @@ pub async fn pull_remote(
         rebase: rebase.unwrap_or(false),
         ff_only: ff_only.unwrap_or(false),
     };
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.pull(&remote_name, &branch_name, &options))
+
+    let app_handle = state.get_app_handle()?;
+    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+
+    ctx.emit(GitOperationType::Pull, ProgressStage::Connecting, None);
+
+    let result = state.get_git_service()?.with_git2(|git2| {
+        git2.pull(
+            &remote_name,
+            &branch_name,
+            &options,
+            Some(ctx.make_receive_callback(GitOperationType::Pull)),
+        )
+    });
+
+    ctx.handle_result(&result, GitOperationType::Pull);
+
+    result
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
+    let app_handle = state.get_app_handle()?;
     let handle = state.get_git_service()?;
     let guard = handle.lock();
     let git2 = guard.git2();
@@ -141,10 +201,21 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
 
     let mut results = Vec::new();
     for remote in remotes {
-        match git2.fetch(&remote.name, &options, None) {
-            Ok(result) => results.push(result),
+        let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
+        ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
+
+        match git2.fetch(
+            &remote.name,
+            &options,
+            None,
+            Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+        ) {
+            Ok(result) => {
+                ctx.emit_complete(GitOperationType::Fetch);
+                results.push(result);
+            }
             Err(e) => {
-                // Log error but continue with other remotes
+                ctx.emit_failed(GitOperationType::Fetch, &e.to_string());
                 log::error!("Failed to fetch from {}: {e}", remote.name);
             }
         }

@@ -60,6 +60,10 @@ export {
   type DropdownSubMenuProps,
 } from './dropdown-menu';
 
+// Progress Components
+export { OperationProgressBar } from './OperationProgressBar';
+export { OperationsIndicator } from './OperationsIndicator';
+
 // Data Display Components
 export { TreeView, buildTreeFromPaths, type TreeNode } from './tree-view';
 export {

@@ -182,6 +182,9 @@ export type {
   GitEnvironment,
   LfsPruneOptions,
   LfsPruneResult,
+
+  // Progress types
+  GitOperationProgressEvent,
 } from '../bindings/api';
 
 // Import types used locally
@@ -222,6 +225,9 @@ import type {
   LfsMigrateMode as LfsMigrateModeType,
   // Reflog types
   ReflogAction as ReflogActionType,
+  // Progress types
+  ProgressStage as ProgressStageType,
+  GitOperationType as GitOperationTypeType,
 } from '../bindings/api';
 
 // Frontend-only types (not generated from Rust)
@@ -592,5 +598,29 @@ export const ReflogAction: {
 };
 
 export type ReflogAction = ReflogActionType;
+
+// Progress enum helpers
+export const ProgressStage: { [K in ProgressStageType]: K } = {
+  Connecting: 'Connecting',
+  Counting: 'Counting',
+  Compressing: 'Compressing',
+  Receiving: 'Receiving',
+  Resolving: 'Resolving',
+  Writing: 'Writing',
+  Complete: 'Complete',
+  Failed: 'Failed',
+  Cancelled: 'Cancelled',
+};
+
+export type ProgressStage = ProgressStageType;
+
+export const GitOperationType: { [K in GitOperationTypeType]: K } = {
+  Clone: 'Clone',
+  Fetch: 'Fetch',
+  Push: 'Push',
+  Pull: 'Pull',
+};
+
+export type GitOperationType = GitOperationTypeType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

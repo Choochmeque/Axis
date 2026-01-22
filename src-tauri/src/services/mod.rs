@@ -6,6 +6,7 @@ mod git2_service;
 mod git_cli_service;
 mod git_service;
 mod integrations;
+mod progress_emitter;
 mod signing_service;
 
 pub use avatar_service::*;
@@ -15,4 +16,5 @@ pub use git2_service::*;
 pub use git_cli_service::*;
 pub use git_service::*;
 pub use integrations::*;
+pub use progress_emitter::*;
 pub use signing_service::*;

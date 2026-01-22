@@ -1,14 +1,57 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { useOperationStore, type Operation } from '@/store/operationStore';
+import { useOperationStore, type Operation, type OperationProgress } from '@/store/operationStore';
+import { ProgressStage } from '@/types';
 
 function formatDuration(startedAt: number): string {
   const seconds = Math.floor((Date.now() - startedAt) / 1000);
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
   return `${minutes}m ${seconds % 60}s`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+function formatProgressText(progress: OperationProgress): string {
+  const bytes = formatBytes(progress.receivedBytes);
+
+  if (
+    progress.stage === ProgressStage.Resolving &&
+    progress.totalDeltas &&
+    progress.indexedDeltas
+  ) {
+    return `Resolving: ${progress.indexedDeltas}/${progress.totalDeltas}`;
+  }
+
+  if (progress.totalObjects && progress.receivedObjects !== undefined) {
+    return `${progress.stage}: ${progress.receivedObjects}/${progress.totalObjects} (${bytes})`;
+  }
+
+  return `${progress.stage}: ${bytes}`;
+}
+
+function getProgressPercent(progress: OperationProgress): number {
+  if (
+    progress.stage === ProgressStage.Resolving &&
+    progress.totalDeltas &&
+    progress.indexedDeltas
+  ) {
+    return Math.round((progress.indexedDeltas / progress.totalDeltas) * 100);
+  }
+
+  if (progress.totalObjects && progress.receivedObjects !== undefined) {
+    return Math.round((progress.receivedObjects / progress.totalObjects) * 100);
+  }
+
+  return 0;
 }
 
 function OperationItem({ operation }: { operation: Operation }) {
@@ -20,6 +63,9 @@ function OperationItem({ operation }: { operation: Operation }) {
     return () => clearInterval(interval);
   }, []);
 
+  const progress = operation.progress;
+  const percent = progress ? getProgressPercent(progress) : 0;
+
   return (
     <div className="operations-item">
       <Loader2 size={14} className="operations-item-spinner" />
@@ -27,6 +73,14 @@ function OperationItem({ operation }: { operation: Operation }) {
         <div className="operations-item-name">{operation.name}</div>
         {operation.description && (
           <div className="operations-item-description">{operation.description}</div>
+        )}
+        {progress && (
+          <>
+            <div className="operations-progress-bar">
+              <div className="operations-progress-fill" style={{ width: `${percent}%` }} />
+            </div>
+            <div className="operations-progress-text">{formatProgressText(progress)}</div>
+          </>
         )}
       </div>
       <div className="operations-item-time">{formatDuration(operation.startedAt)}</div>
@@ -41,10 +95,20 @@ interface OperationsIndicatorProps {
 export function OperationsIndicator({ className }: OperationsIndicatorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevProgressCountRef = useRef(0);
   const operations = useOperationStore((s) => s.operations);
 
   const operationsList = Array.from(operations.values());
   const count = operationsList.length;
+
+  // Auto-open when an operation with progress starts
+  const progressCount = operationsList.filter((op) => op.progress).length;
+  useEffect(() => {
+    if (progressCount > prevProgressCountRef.current && progressCount > 0) {
+      startTransition(() => setIsOpen(true));
+    }
+    prevProgressCountRef.current = progressCount;
+  }, [progressCount]);
 
   // Close on click outside
   useEffect(() => {

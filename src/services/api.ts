@@ -62,6 +62,10 @@ export const repositoryApi = {
 
   close: () => commands.closeRepository(),
 
+  closePath: (path: string) => commands.closeRepositoryPath(path),
+
+  switchActive: (path: string) => commands.switchActiveRepository(path),
+
   getInfo: () => commands.getRepositoryInfo(),
 
   getStatus: () => commands.getRepositoryStatus(),
@@ -545,14 +549,15 @@ export const integrationApi = {
     commands.integrationGetCommitStatus(owner, repo, sha),
 
   // Notifications
-  listNotifications: (all: boolean, page: number) =>
-    commands.integrationListNotifications(all, page),
+  listNotifications: (owner: string, repo: string, all: boolean, page: number) =>
+    commands.integrationListNotifications(owner, repo, all, page),
 
   markNotificationRead: (threadId: string) => commands.integrationMarkNotificationRead(threadId),
 
-  markAllNotificationsRead: () => commands.integrationMarkAllNotificationsRead(),
+  markAllNotificationsRead: (owner: string, repo: string) =>
+    commands.integrationMarkAllNotificationsRead(owner, repo),
 
-  getUnreadCount: () => commands.integrationGetUnreadCount(),
+  getUnreadCount: (owner: string, repo: string) => commands.integrationGetUnreadCount(owner, repo),
 };
 
 export const gitignoreApi = {

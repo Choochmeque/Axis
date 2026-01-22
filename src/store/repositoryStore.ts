@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-import { commands } from '@/bindings/api';
 import { operations } from '@/store/operationStore';
 import { BranchFilterType, SortOrder } from '@/types';
 import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
@@ -172,7 +171,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   switchRepository: async (path: string) => {
     set({ isLoading: true, error: null });
     try {
-      const repository = await commands.switchActiveRepository(path);
+      const repository = await repositoryApi.switchActive(path);
       set({ repository, isLoading: false });
 
       // Load data in parallel

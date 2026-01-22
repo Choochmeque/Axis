@@ -166,18 +166,4 @@ impl AvatarService {
         }
         Ok(())
     }
-
-    /// Remove expired cache entries
-    pub fn cleanup_expired(&self) {
-        let Ok(entries) = fs::read_dir(&self.cache_dir) else {
-            return;
-        };
-
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if !self.is_cache_valid(&path) {
-                let _ = fs::remove_file(&path);
-            }
-        }
-    }
 }

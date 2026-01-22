@@ -197,7 +197,6 @@ pub struct CIRun {
 #[serde(rename_all = "camelCase")]
 pub struct CiRunsPage {
     pub runs: Vec<CIRun>,
-    pub total_count: u32,
     pub has_more: bool,
 }
 
@@ -206,7 +205,6 @@ pub struct CiRunsPage {
 #[serde(rename_all = "camelCase")]
 pub struct PullRequestsPage {
     pub items: Vec<PullRequest>,
-    pub total_count: u32,
     pub has_more: bool,
 }
 
@@ -215,7 +213,6 @@ pub struct PullRequestsPage {
 #[serde(rename_all = "camelCase")]
 pub struct IssuesPage {
     pub items: Vec<Issue>,
-    pub total_count: u32,
     pub has_more: bool,
 }
 

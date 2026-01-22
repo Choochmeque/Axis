@@ -59,18 +59,17 @@ impl<T: Clone> TtlCache<T> {
         }
     }
 
+    /// Remove all entries with keys starting with the given prefix
+    pub fn remove_by_prefix(&self, prefix: &str) {
+        if let Ok(mut entries) = self.entries.write() {
+            entries.retain(|key, _| !key.starts_with(prefix));
+        }
+    }
+
     /// Clear all entries from the cache
     pub fn clear(&self) {
         if let Ok(mut entries) = self.entries.write() {
             entries.clear();
-        }
-    }
-
-    /// Remove expired entries from the cache
-    pub fn cleanup_expired(&self) {
-        if let Ok(mut entries) = self.entries.write() {
-            let now = Instant::now();
-            entries.retain(|_, entry| entry.expires_at > now);
         }
     }
 }

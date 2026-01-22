@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 
-import { commands, events } from '@/bindings/api';
+import { events } from '@/bindings/api';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { integrationApi } from '@/services/api';
 import { PrState, IssueState } from '@/types';
 import type {
   DetectedProvider,
@@ -34,7 +35,6 @@ interface IntegrationState {
   prFilter: PrState;
   prsPage: number;
   prsHasMore: boolean;
-  prsTotalCount: number;
   isLoadingPrs: boolean;
   isLoadingMorePrs: boolean;
 
@@ -44,7 +44,6 @@ interface IntegrationState {
   issueFilter: IssueState;
   issuesPage: number;
   issuesHasMore: boolean;
-  issuesTotalCount: number;
   isLoadingIssues: boolean;
   isLoadingMoreIssues: boolean;
 
@@ -52,7 +51,6 @@ interface IntegrationState {
   ciRuns: CIRun[];
   ciRunsPage: number;
   ciRunsHasMore: boolean;
-  ciRunsTotalCount: number;
   isLoadingCiRuns: boolean;
   isLoadingMoreCiRuns: boolean;
 
@@ -118,7 +116,6 @@ const initialState = {
   prFilter: PrState.Open,
   prsPage: 1,
   prsHasMore: false,
-  prsTotalCount: 0,
   isLoadingPrs: false,
   isLoadingMorePrs: false,
   issues: [],
@@ -126,13 +123,11 @@ const initialState = {
   issueFilter: IssueState.Open,
   issuesPage: 1,
   issuesHasMore: false,
-  issuesTotalCount: 0,
   isLoadingIssues: false,
   isLoadingMoreIssues: false,
   ciRuns: [],
   ciRunsPage: 1,
   ciRunsHasMore: false,
-  ciRunsTotalCount: 0,
   isLoadingCiRuns: false,
   isLoadingMoreCiRuns: false,
   notifications: [],
@@ -149,7 +144,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   detectProvider: async () => {
     try {
-      const detected = await commands.integrationDetectProvider();
+      const detected = await integrationApi.detectProvider();
       set({ detectedProvider: detected, error: null });
 
       // If detected, check connection status
@@ -167,7 +162,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider) return;
 
     try {
-      const status = await commands.integrationGetStatus(detectedProvider.provider);
+      const status = await integrationApi.getStatus(detectedProvider.provider);
       set({ connectionStatus: status, error: null });
     } catch (error) {
       console.error('Failed to check connection:', error);
@@ -185,7 +180,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isConnecting: true, error: null });
     try {
       // This opens browser, waits for callback, and exchanges token
-      await commands.integrationStartOauth();
+      await integrationApi.startOauth();
       await get().checkConnection();
       set({ isConnecting: false });
 
@@ -205,7 +200,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   cancelOAuth: async () => {
     try {
-      await commands.integrationCancelOauth();
+      await integrationApi.cancelOauth();
       set({ isConnecting: false, error: null });
     } catch (error) {
       console.error('Failed to cancel OAuth:', error);
@@ -217,7 +212,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider) return;
 
     try {
-      await commands.integrationDisconnect(detectedProvider.provider);
+      await integrationApi.disconnect(detectedProvider.provider);
       set({
         connectionStatus: null,
         repoInfo: null,
@@ -225,18 +220,15 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         selectedPr: null,
         prsPage: 1,
         prsHasMore: false,
-        prsTotalCount: 0,
         isLoadingMorePrs: false,
         issues: [],
         selectedIssue: null,
         issuesPage: 1,
         issuesHasMore: false,
-        issuesTotalCount: 0,
         isLoadingMoreIssues: false,
         ciRuns: [],
         ciRunsPage: 1,
         ciRunsHasMore: false,
-        ciRunsTotalCount: 0,
         isLoadingMoreCiRuns: false,
         notifications: [],
         notificationsPage: 1,
@@ -256,10 +248,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const info = await commands.integrationGetRepoInfo(
-        detectedProvider.owner,
-        detectedProvider.repo
-      );
+      const info = await integrationApi.getRepoInfo(detectedProvider.owner, detectedProvider.repo);
       set({ repoInfo: info, error: null });
     } catch (error) {
       console.error('Failed to load repo info:', error);
@@ -275,7 +264,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingPrs: true, prFilter: filterState, pullRequests: [], prsPage: 1 });
 
     try {
-      const result = await commands.integrationListPrs(
+      const result = await integrationApi.listPrs(
         detectedProvider.owner,
         detectedProvider.repo,
         filterState,
@@ -285,7 +274,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         pullRequests: result.items,
         prsPage: 1,
         prsHasMore: result.hasMore,
-        prsTotalCount: result.totalCount,
         isLoadingPrs: false,
         error: null,
       });
@@ -308,7 +296,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = prsPage + 1;
-      const result = await commands.integrationListPrs(
+      const result = await integrationApi.listPrs(
         detectedProvider.owner,
         detectedProvider.repo,
         prFilter,
@@ -318,7 +306,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         pullRequests: [...state.pullRequests, ...result.items],
         prsPage: nextPage,
         prsHasMore: result.hasMore,
-        prsTotalCount: result.totalCount,
         isLoadingMorePrs: false,
         error: null,
       }));
@@ -336,11 +323,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const pr = await commands.integrationGetPr(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        number
-      );
+      const pr = await integrationApi.getPr(detectedProvider.owner, detectedProvider.repo, number);
       set({ selectedPr: pr, error: null });
     } catch (error) {
       console.error('Failed to get pull request:', error);
@@ -354,7 +337,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    const pr = await commands.integrationCreatePr(
+    const pr = await integrationApi.createPr(
       detectedProvider.owner,
       detectedProvider.repo,
       options
@@ -372,12 +355,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    await commands.integrationMergePr(
-      detectedProvider.owner,
-      detectedProvider.repo,
-      number,
-      options
-    );
+    await integrationApi.mergePr(detectedProvider.owner, detectedProvider.repo, number, options);
 
     // Refresh PR list and clear selection
     set({ selectedPr: null });
@@ -396,7 +374,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       selectedPr: null,
       prsPage: 1,
       prsHasMore: false,
-      prsTotalCount: 0,
       isLoadingPrs: false,
       isLoadingMorePrs: false,
     }),
@@ -409,7 +386,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingIssues: true, issueFilter: filterState, issues: [], issuesPage: 1 });
 
     try {
-      const result = await commands.integrationListIssues(
+      const result = await integrationApi.listIssues(
         detectedProvider.owner,
         detectedProvider.repo,
         filterState,
@@ -419,7 +396,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         issues: result.items,
         issuesPage: 1,
         issuesHasMore: result.hasMore,
-        issuesTotalCount: result.totalCount,
         isLoadingIssues: false,
         error: null,
       });
@@ -445,7 +421,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = issuesPage + 1;
-      const result = await commands.integrationListIssues(
+      const result = await integrationApi.listIssues(
         detectedProvider.owner,
         detectedProvider.repo,
         issueFilter,
@@ -455,7 +431,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         issues: [...state.issues, ...result.items],
         issuesPage: nextPage,
         issuesHasMore: result.hasMore,
-        issuesTotalCount: result.totalCount,
         isLoadingMoreIssues: false,
         error: null,
       }));
@@ -473,7 +448,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const issue = await commands.integrationGetIssue(
+      const issue = await integrationApi.getIssue(
         detectedProvider.owner,
         detectedProvider.repo,
         number
@@ -491,7 +466,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    const issue = await commands.integrationCreateIssue(
+    const issue = await integrationApi.createIssue(
       detectedProvider.owner,
       detectedProvider.repo,
       options
@@ -515,7 +490,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       selectedIssue: null,
       issuesPage: 1,
       issuesHasMore: false,
-      issuesTotalCount: 0,
       isLoadingIssues: false,
       isLoadingMoreIssues: false,
     }),
@@ -527,7 +501,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingCiRuns: true, ciRuns: [], ciRunsPage: 1 });
 
     try {
-      const result = await commands.integrationListCiRuns(
+      const result = await integrationApi.listCiRuns(
         detectedProvider.owner,
         detectedProvider.repo,
         1
@@ -536,7 +510,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         ciRuns: result.runs,
         ciRunsPage: 1,
         ciRunsHasMore: result.hasMore,
-        ciRunsTotalCount: result.totalCount,
         isLoadingCiRuns: false,
         error: null,
       });
@@ -556,7 +529,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = ciRunsPage + 1;
-      const result = await commands.integrationListCiRuns(
+      const result = await integrationApi.listCiRuns(
         detectedProvider.owner,
         detectedProvider.repo,
         nextPage
@@ -565,7 +538,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         ciRuns: [...state.ciRuns, ...result.runs],
         ciRunsPage: nextPage,
         ciRunsHasMore: result.hasMore,
-        ciRunsTotalCount: result.totalCount,
         isLoadingMoreCiRuns: false,
         error: null,
       }));
@@ -583,7 +555,6 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       ciRuns: [],
       ciRunsPage: 1,
       ciRunsHasMore: false,
-      ciRunsTotalCount: 0,
       isLoadingCiRuns: false,
       isLoadingMoreCiRuns: false,
     }),
@@ -594,23 +565,19 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    return await commands.integrationGetCommitStatus(
-      detectedProvider.owner,
-      detectedProvider.repo,
-      sha
-    );
+    return await integrationApi.getCommitStatus(detectedProvider.owner, detectedProvider.repo, sha);
   },
 
   loadNotifications: async (all = false) => {
-    const { connectionStatus } = get();
-    if (!connectionStatus?.connected) return;
+    const { detectedProvider, connectionStatus } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
 
     set({ isLoadingNotifications: true, notifications: [], notificationsPage: 1 });
 
     try {
       const [result, unreadCount] = await Promise.all([
-        commands.integrationListNotifications(all, 1),
-        commands.integrationGetUnreadCount(),
+        integrationApi.listNotifications(detectedProvider.owner, detectedProvider.repo, all, 1),
+        integrationApi.getUnreadCount(detectedProvider.owner, detectedProvider.repo),
       ]);
       set({
         notifications: result.items,
@@ -631,12 +598,13 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   loadMoreNotifications: async () => {
     const {
+      detectedProvider,
       connectionStatus,
       notificationsHasMore,
       isLoadingMoreNotifications,
       notificationsPage,
     } = get();
-    if (!connectionStatus?.connected) return;
+    if (!detectedProvider || !connectionStatus?.connected) return;
     if (!notificationsHasMore || isLoadingMoreNotifications) return;
 
     set({ isLoadingMoreNotifications: true });
@@ -644,7 +612,12 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     try {
       const nextPage = notificationsPage + 1;
       // Load unread only (all=false) for infinite scroll
-      const result = await commands.integrationListNotifications(false, nextPage);
+      const result = await integrationApi.listNotifications(
+        detectedProvider.owner,
+        detectedProvider.repo,
+        false,
+        nextPage
+      );
       set((state) => ({
         notifications: [...state.notifications, ...result.items],
         notificationsPage: nextPage,
@@ -663,7 +636,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   markNotificationRead: async (threadId: string) => {
     try {
-      await commands.integrationMarkNotificationRead(threadId);
+      await integrationApi.markNotificationRead(threadId);
       // Update local state
       set((state) => ({
         notifications: state.notifications.map((n) =>
@@ -678,8 +651,11 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
   },
 
   markAllNotificationsRead: async () => {
+    const { detectedProvider, connectionStatus } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+
     try {
-      await commands.integrationMarkAllNotificationsRead();
+      await integrationApi.markAllNotificationsRead(detectedProvider.owner, detectedProvider.repo);
       // Update local state
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, unread: false })),

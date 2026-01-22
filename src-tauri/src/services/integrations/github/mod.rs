@@ -206,28 +206,22 @@ impl From<octocrab::models::workflows::Run> for CIRun {
 
 impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequestsPage {
     fn from(page: octocrab::Page<octocrab::models::pulls::PullRequest>) -> Self {
-        let items = page.items.iter().map(|pr| pr.clone().into()).collect();
+        let items = page.items.into_iter().map(|pr| pr.into()).collect();
 
         PullRequestsPage {
             items,
-            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
-            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+            has_more: page.next.is_some(),
         }
     }
 }
 
 impl From<octocrab::Page<octocrab::models::issues::Issue>> for IssuesPage {
     fn from(page: octocrab::Page<octocrab::models::issues::Issue>) -> Self {
-        let items = page
-            .items
-            .iter()
-            .map(|issue| issue.clone().into())
-            .collect();
+        let items = page.items.into_iter().map(|issue| issue.into()).collect();
 
         IssuesPage {
             items,
-            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
-            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+            has_more: page.next.is_some(),
         }
     }
 }
@@ -242,7 +236,7 @@ impl From<octocrab::Page<octocrab::models::activity::Notification>> for Notifica
 
         NotificationsPage {
             items,
-            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+            has_more: page.next.is_some(),
         }
     }
 }
@@ -253,8 +247,7 @@ impl From<octocrab::Page<octocrab::models::workflows::Run>> for CiRunsPage {
 
         CiRunsPage {
             runs: items,
-            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
-            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+            has_more: page.next.is_some(),
         }
     }
 }
@@ -273,11 +266,13 @@ pub struct GitHubProvider {
     set_secret: Box<dyn Fn(&str, &str) -> Result<()> + Send + Sync>,
     delete_secret: Box<dyn Fn(&str) -> Result<()> + Send + Sync>,
     // Caches
-    pr_cache: TtlCache<Vec<PullRequest>>,
-    issue_cache: TtlCache<Vec<Issue>>,
-    ci_cache: TtlCache<Vec<CIRun>>,
-    notification_cache: TtlCache<Vec<Notification>>,
+    pr_cache: TtlCache<PullRequestsPage>,
+    issue_cache: TtlCache<IssuesPage>,
+    ci_cache: TtlCache<CiRunsPage>,
+    notification_cache: TtlCache<NotificationsPage>,
     repo_info_cache: TtlCache<IntegrationRepoInfo>,
+    commit_cache: TtlCache<IntegrationCommit>,
+    commit_status_cache: TtlCache<CommitStatus>,
 }
 
 impl GitHubProvider {
@@ -313,6 +308,8 @@ impl GitHubProvider {
             ci_cache: TtlCache::new(CACHE_TTL_MEDIUM),
             notification_cache: TtlCache::new(CACHE_TTL_SHORT),
             repo_info_cache: TtlCache::new(CACHE_TTL_LONG),
+            commit_cache: TtlCache::new(CACHE_TTL_LONG),
+            commit_status_cache: TtlCache::new(CACHE_TTL_SHORT),
         }
     }
 
@@ -323,22 +320,32 @@ impl GitHubProvider {
         self.ci_cache.clear();
         self.notification_cache.clear();
         self.repo_info_cache.clear();
+        self.commit_cache.clear();
+        self.commit_status_cache.clear();
     }
 
     /// Invalidate PR cache (called after create/merge)
     pub fn invalidate_pr_cache(&self, owner: &str, repo: &str) {
-        // Invalidate all states for this repo
-        for state in ["open", "closed", "merged", "all"] {
-            self.pr_cache.remove(&format!("{owner}/{repo}/prs/{state}"));
-        }
+        self.pr_cache
+            .remove_by_prefix(&format!("{owner}/{repo}/prs/"));
     }
 
     /// Invalidate issue cache (called after create)
     pub fn invalidate_issue_cache(&self, owner: &str, repo: &str) {
-        for state in ["open", "closed", "all"] {
-            self.issue_cache
-                .remove(&format!("{owner}/{repo}/issues/{state}"));
-        }
+        self.issue_cache
+            .remove_by_prefix(&format!("{owner}/{repo}/issues/"));
+    }
+
+    /// Invalidate notification cache (called after mark as read)
+    pub fn invalidate_notification_cache(&self, owner: &str, repo: &str) {
+        self.notification_cache
+            .remove_by_prefix(&format!("{owner}/{repo}/notifications/"));
+    }
+
+    /// Invalidate commit status cache (called after actions that trigger CI)
+    pub fn invalidate_commit_status_cache(&self, owner: &str, repo: &str) {
+        self.commit_status_cache
+            .remove_by_prefix(&format!("{owner}/{repo}/status/"));
     }
 
     /// Set OAuth client ID (PKCE flow doesn't need client secret)
@@ -546,14 +553,24 @@ impl IntegrationProvider for GitHubProvider {
     }
 
     async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> Result<IntegrationCommit> {
+        let cache_key = format!("{owner}/{repo}/commit/{sha}");
+
+        if let Some(cached) = self.commit_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
         let commit = client.commits(owner, repo).get(sha).await?;
 
-        Ok(IntegrationCommit {
+        let result = IntegrationCommit {
             sha: commit.sha,
             author_avatar_url: commit.author.map(|a| a.avatar_url.to_string()),
-        })
+        };
+
+        self.commit_cache.set(cache_key, result.clone());
+
+        Ok(result)
     }
 
     async fn list_pull_requests(
@@ -563,9 +580,15 @@ impl IntegrationProvider for GitHubProvider {
         state: PrState,
         page: u32,
     ) -> Result<PullRequestsPage> {
+        let cache_key = format!("{owner}/{repo}/prs/{state:?}/{page}");
+
+        if let Some(cached) = self.pr_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
-        let page = client
+        let result = client
             .pulls(owner, repo)
             .list()
             .state(state.into())
@@ -574,7 +597,10 @@ impl IntegrationProvider for GitHubProvider {
             .send()
             .await?;
 
-        Ok(page.into())
+        let page_result: PullRequestsPage = result.into();
+        self.pr_cache.set(cache_key, page_result.clone());
+
+        Ok(page_result)
     }
 
     async fn get_pull_request(
@@ -646,6 +672,9 @@ impl IntegrationProvider for GitHubProvider {
 
         let pr = request.send().await?;
 
+        self.invalidate_pr_cache(owner, repo);
+        self.invalidate_commit_status_cache(owner, repo);
+
         Ok(pr.into())
     }
 
@@ -673,6 +702,9 @@ impl IntegrationProvider for GitHubProvider {
 
         request.send().await?;
 
+        self.invalidate_pr_cache(owner, repo);
+        self.invalidate_commit_status_cache(owner, repo);
+
         Ok(())
     }
 
@@ -683,9 +715,15 @@ impl IntegrationProvider for GitHubProvider {
         state: IssueState,
         page: u32,
     ) -> Result<IssuesPage> {
+        let cache_key = format!("{owner}/{repo}/issues/{state:?}/{page}");
+
+        if let Some(cached) = self.issue_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
-        let page = client
+        let result = client
             .issues(owner, repo)
             .list()
             .state(state.into())
@@ -694,7 +732,10 @@ impl IntegrationProvider for GitHubProvider {
             .send()
             .await?;
 
-        Ok(page.into())
+        let page_result: IssuesPage = result.into();
+        self.issue_cache.set(cache_key, page_result.clone());
+
+        Ok(page_result)
     }
 
     async fn get_issue(&self, owner: &str, repo: &str, number: u32) -> Result<IssueDetail> {
@@ -737,14 +778,21 @@ impl IntegrationProvider for GitHubProvider {
 
         let issue = request.send().await?;
 
+        self.invalidate_issue_cache(owner, repo);
+
         Ok(issue.into())
     }
 
     async fn list_ci_runs(&self, owner: &str, repo: &str, page: u32) -> Result<CiRunsPage> {
+        let cache_key = format!("{owner}/{repo}/ci/{page}");
+
+        if let Some(cached) = self.ci_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
-        // Use the Actions API with pagination
-        let page = client
+        let result = client
             .workflows(owner, repo)
             .list_all_runs()
             .page(page)
@@ -752,13 +800,25 @@ impl IntegrationProvider for GitHubProvider {
             .send()
             .await?;
 
-        Ok(page.into())
+        let page_result: CiRunsPage = result.into();
+        self.ci_cache.set(cache_key, page_result.clone());
+
+        Ok(page_result)
     }
 
     async fn get_commit_status(&self, owner: &str, repo: &str, sha: &str) -> Result<CommitStatus> {
+        let cache_key = format!("{owner}/{repo}/status/{sha}");
+
+        if let Some(cached) = self.commit_status_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
-        // TODO: seems like a hallucination
+        // NOTE: Using raw API calls here because:
+        // 1. octocrab's Reference enum only supports Branch/Tag, not SHA
+        // 2. octocrab's CheckRun model is missing the `status` field (only has `conclusion`)
+        //    GitHub API returns status: queued | in_progress | completed, which we need
 
         // Get combined status
         let route = format!("/repos/{owner}/{repo}/commits/{sha}/status");
@@ -776,13 +836,17 @@ impl IntegrationProvider for GitHubProvider {
             _ => CommitStatusState::Pending,
         };
 
-        // Also get check runs
+        // Get check runs (separate from commit statuses)
         let checks_route = format!("/repos/{owner}/{repo}/commits/{sha}/check-runs");
         let checks_response: serde_json::Value = match client._get(&checks_route).await {
-            Ok(resp) => Self::parse_response(resp)
-                .await
-                .unwrap_or_else(|_| serde_json::json!({"check_runs": []})),
-            Err(_) => serde_json::json!({"check_runs": []}),
+            Ok(resp) => Self::parse_response(resp).await.unwrap_or_else(|e| {
+                log::warn!("Failed to parse check runs response: {e:?}");
+                serde_json::json!({"check_runs": []})
+            }),
+            Err(e) => {
+                log::warn!("Failed to fetch check runs: {e:?}");
+                serde_json::json!({"check_runs": []})
+            }
         };
 
         let checks: Vec<CIRun> = checks_response["check_runs"]
@@ -831,11 +895,15 @@ impl IntegrationProvider for GitHubProvider {
             })
             .collect();
 
-        Ok(CommitStatus {
+        let result = CommitStatus {
             state,
             checks,
             total_count: response["total_count"].as_u64().unwrap_or(0) as u32,
-        })
+        };
+
+        self.commit_status_cache.set(cache_key, result.clone());
+
+        Ok(result)
     }
 
     async fn list_notifications(
@@ -845,9 +913,15 @@ impl IntegrationProvider for GitHubProvider {
         all: bool,
         page: u32,
     ) -> Result<NotificationsPage> {
+        let cache_key = format!("{owner}/{repo}/notifications/{all}/{page}");
+
+        if let Some(cached) = self.notification_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
         let client = self.get_client()?;
 
-        let page = client
+        let result = client
             .activity()
             .notifications()
             .list_for_repo(owner, repo)
@@ -857,7 +931,10 @@ impl IntegrationProvider for GitHubProvider {
             .send()
             .await?;
 
-        Ok(page.into())
+        let page_result: NotificationsPage = result.into();
+        self.notification_cache.set(cache_key, page_result.clone());
+
+        Ok(page_result)
     }
 
     async fn mark_notification_read(&self, thread_id: &str) -> Result<()> {
@@ -872,6 +949,9 @@ impl IntegrationProvider for GitHubProvider {
             .mark_as_read(id.into())
             .await?;
 
+        // Clear all notification cache since we don't know which repo this belongs to
+        self.notification_cache.clear();
+
         Ok(())
     }
 
@@ -883,6 +963,8 @@ impl IntegrationProvider for GitHubProvider {
             .notifications()
             .mark_repo_as_read(owner, repo, None)
             .await?;
+
+        self.invalidate_notification_cache(owner, repo);
 
         Ok(())
     }

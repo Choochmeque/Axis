@@ -130,8 +130,28 @@ export function IssuesView() {
       </div>
 
       {/* Content */}
-      <PanelGroup direction="horizontal" autoSaveId="issues-view-layout" className="flex-1">
-        <Panel defaultSize={40} minSize={25} maxSize={60}>
+      {selectedIssue ? (
+        <PanelGroup direction="horizontal" autoSaveId="issues-view-layout" className="flex-1">
+          <Panel defaultSize={40} minSize={25} maxSize={60}>
+            <IssueList
+              issues={issues}
+              selectedIssue={selectedIssue}
+              isLoading={isLoadingIssues}
+              hasMore={issuesHasMore}
+              isLoadingMore={isLoadingMoreIssues}
+              onSelect={handleIssueSelect}
+              onLoadMore={handleLoadMore}
+            />
+          </Panel>
+
+          <PanelResizeHandle className="resize-handle" />
+
+          <Panel minSize={40}>
+            <IssueDetail issueDetail={selectedIssue} onClose={clearSelectedIssue} />
+          </Panel>
+        </PanelGroup>
+      ) : (
+        <div className="flex-1 overflow-hidden">
           <IssueList
             issues={issues}
             selectedIssue={selectedIssue}
@@ -141,14 +161,8 @@ export function IssuesView() {
             onSelect={handleIssueSelect}
             onLoadMore={handleLoadMore}
           />
-        </Panel>
-
-        <PanelResizeHandle className="resize-handle" />
-
-        <Panel minSize={40}>
-          <IssueDetail issueDetail={selectedIssue} onClose={clearSelectedIssue} />
-        </Panel>
-      </PanelGroup>
+        </div>
+      )}
 
       {/* Create Issue Dialog */}
       <CreateIssueDialog

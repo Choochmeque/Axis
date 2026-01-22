@@ -217,7 +217,13 @@ impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequests
 
 impl From<octocrab::Page<octocrab::models::issues::Issue>> for IssuesPage {
     fn from(page: octocrab::Page<octocrab::models::issues::Issue>) -> Self {
-        let items = page.items.into_iter().map(|issue| issue.into()).collect();
+        // Filter out PRs - GitHub's issues API returns both issues and PRs
+        let items = page
+            .items
+            .into_iter()
+            .filter(|issue| issue.pull_request.is_none())
+            .map(|issue| issue.into())
+            .collect();
 
         IssuesPage {
             items,

@@ -130,8 +130,28 @@ export function PullRequestsView() {
       </div>
 
       {/* Content */}
-      <PanelGroup direction="horizontal" autoSaveId="pr-view-layout" className="flex-1">
-        <Panel defaultSize={40} minSize={25} maxSize={60}>
+      {selectedPr ? (
+        <PanelGroup direction="horizontal" autoSaveId="pr-view-layout" className="flex-1">
+          <Panel defaultSize={40} minSize={25} maxSize={60}>
+            <PullRequestList
+              pullRequests={pullRequests}
+              selectedPr={selectedPr}
+              isLoading={isLoadingPrs}
+              hasMore={prsHasMore}
+              isLoadingMore={isLoadingMorePrs}
+              onSelect={handlePrSelect}
+              onLoadMore={handleLoadMore}
+            />
+          </Panel>
+
+          <PanelResizeHandle className="resize-handle" />
+
+          <Panel minSize={40}>
+            <PullRequestDetail prDetail={selectedPr} onClose={clearSelectedPr} />
+          </Panel>
+        </PanelGroup>
+      ) : (
+        <div className="flex-1 overflow-hidden">
           <PullRequestList
             pullRequests={pullRequests}
             selectedPr={selectedPr}
@@ -141,14 +161,8 @@ export function PullRequestsView() {
             onSelect={handlePrSelect}
             onLoadMore={handleLoadMore}
           />
-        </Panel>
-
-        <PanelResizeHandle className="resize-handle" />
-
-        <Panel minSize={40}>
-          <PullRequestDetail prDetail={selectedPr} onClose={clearSelectedPr} />
-        </Panel>
-      </PanelGroup>
+        </div>
+      )}
 
       {/* Create PR Dialog */}
       <CreatePullRequestDialog

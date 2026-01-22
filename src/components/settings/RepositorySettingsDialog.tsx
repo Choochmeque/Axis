@@ -1,21 +1,36 @@
-import { useState, useEffect } from 'react';
-import { Settings, User, Globe, Plus, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import CodeEditor from '@uiw/react-textarea-code-editor';
+import {
+  Settings,
+  User,
+  Globe,
+  Plus,
+  Pencil,
+  Trash2,
+  FileCode2,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { repoSettingsApi, remoteApi } from '@/services/api';
+import { repoSettingsApi, remoteApi, hooksApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import type { RepositorySettings, Remote } from '@/types';
+import type { RepositorySettings, Remote, HookInfo, HookTemplate } from '@/types';
+import { GitHookType } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogBody,
   DialogFooter,
   DialogClose,
   Button,
   FormField,
   Input,
   Alert,
+  Select,
+  SelectItem,
 } from '@/components/ui';
 
 interface RepositorySettingsDialogProps {
@@ -23,7 +38,7 @@ interface RepositorySettingsDialogProps {
   onClose: () => void;
 }
 
-type SettingsTab = 'identity' | 'remotes';
+type SettingsTab = 'identity' | 'remotes' | 'hooks';
 
 export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettingsDialogProps) {
   const repository = useRepositoryStore((s) => s.repository);
@@ -54,6 +69,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'identity', label: 'Identity', icon: <User size={16} /> },
     { id: 'remotes', label: 'Remotes', icon: <Globe size={16} /> },
+    { id: 'hooks', label: 'Hooks', icon: <FileCode2 size={16} /> },
   ];
 
   return (
@@ -100,6 +116,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
                 {activeTab === 'remotes' && (
                   <RemotesSettings remotes={settings.remotes} onRemotesChange={loadSettings} />
                 )}
+                {activeTab === 'hooks' && <HooksSettings />}
               </>
             ) : null}
           </div>
@@ -398,15 +415,383 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
       ) : (
         <Button
           variant="secondary"
+          size="sm"
           onClick={() => {
             setIsAddingRemote(true);
             setEditingRemote(null);
           }}
+          title="Add remote"
         >
-          <Plus size={16} className="mr-1" />
-          Add Remote
+          <Plus size={14} />
         </Button>
       )}
     </div>
+  );
+}
+
+// Human-readable hook names (keys match GitHookType enum values)
+/* eslint-disable @typescript-eslint/naming-convention */
+const HOOK_LABELS: Record<string, string> = {
+  PreCommit: 'Pre-commit',
+  PrepareCommitMsg: 'Prepare Commit Message',
+  CommitMsg: 'Commit Message',
+  PostCommit: 'Post-commit',
+  PrePush: 'Pre-push',
+  PostMerge: 'Post-merge',
+  PreRebase: 'Pre-rebase',
+  PostCheckout: 'Post-checkout',
+  PostRewrite: 'Post-rewrite',
+};
+/* eslint-enable @typescript-eslint/naming-convention */
+
+const ALL_HOOK_TYPES = Object.keys(GitHookType) as Array<keyof typeof GitHookType>;
+
+function HooksSettings() {
+  const [hooks, setHooks] = useState<HookInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingHook, setEditingHook] = useState<HookInfo | null>(null);
+  const [creatingHook, setCreatingHook] = useState<keyof typeof GitHookType | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadHooks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const loaded = await hooksApi.list();
+      setHooks(loaded);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHooks();
+  }, [loadHooks]);
+
+  const handleToggle = async (hook: HookInfo) => {
+    setIsSaving(true);
+    try {
+      const newEnabled = await hooksApi.toggle(hook.hookType);
+      setHooks((prev) =>
+        prev.map((h) => (h.hookType === hook.hookType ? { ...h, enabled: newEnabled } : h))
+      );
+      toast.success(`Hook ${newEnabled ? 'enabled' : 'disabled'}`);
+      document.dispatchEvent(new CustomEvent('hooks-changed'));
+    } catch (err) {
+      toast.error('Failed to toggle hook', getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (hook: HookInfo) => {
+    setIsSaving(true);
+    try {
+      await hooksApi.delete(hook.hookType);
+      setHooks((prev) =>
+        prev.map((h) =>
+          h.hookType === hook.hookType ? { ...h, exists: false, enabled: false } : h
+        )
+      );
+      toast.success('Hook deleted');
+      document.dispatchEvent(new CustomEvent('hooks-changed'));
+    } catch (err) {
+      toast.error('Failed to delete hook', getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async (
+    hookType: keyof typeof GitHookType,
+    content: string,
+    isNew: boolean
+  ) => {
+    setIsSaving(true);
+    try {
+      if (isNew) {
+        await hooksApi.create(hookType, content);
+        toast.success('Hook created');
+      } else {
+        await hooksApi.update(hookType, content);
+        toast.success('Hook updated');
+      }
+      await loadHooks();
+      setEditingHook(null);
+      setCreatingHook(null);
+      document.dispatchEvent(new CustomEvent('hooks-changed'));
+    } catch (err) {
+      toast.error(isNew ? 'Failed to create hook' : 'Failed to update hook', getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-50 text-(--text-muted)">
+        Loading hooks...
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert variant="error">{error}</Alert>;
+  }
+
+  // Get hooks that don't exist yet
+  const existingHookTypes = new Set(hooks.filter((h) => h.exists).map((h) => h.hookType));
+  const availableHookTypes = ALL_HOOK_TYPES.filter(
+    (type) => !existingHookTypes.has(GitHookType[type])
+  );
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>Git Hooks</h3>
+      <p className="text-sm text-(--text-secondary) mb-4">
+        Manage Git hooks for this repository. Hooks run automatically during Git operations.
+      </p>
+
+      <div className="flex flex-col gap-2 mb-4">
+        {hooks.map((hook) => (
+          <div
+            key={hook.hookType}
+            className={cn(
+              'flex items-center gap-3 p-3 rounded border',
+              hook.exists
+                ? 'bg-(--bg-secondary) border-(--border-color)'
+                : 'bg-(--bg-tertiary) border-transparent'
+            )}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-(--text-primary)">
+                {HOOK_LABELS[hook.hookType] || hook.hookType}
+              </div>
+              {hook.exists && (
+                <div className="text-xs text-(--text-muted) truncate" title={hook.path}>
+                  {hook.enabled ? (hook.isExecutable ? 'Active' : 'Not executable') : 'Disabled'}
+                </div>
+              )}
+              {!hook.exists && <div className="text-xs text-(--text-muted)">Not configured</div>}
+            </div>
+
+            {hook.exists ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleToggle(hook)}
+                  disabled={isSaving}
+                  title={hook.enabled ? 'Disable hook' : 'Enable hook'}
+                >
+                  {hook.enabled ? (
+                    <ToggleRight size={18} className="text-(--success-color)" />
+                  ) : (
+                    <ToggleLeft size={18} className="text-(--text-muted)" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingHook(hook)}
+                  title="Edit hook"
+                >
+                  <Pencil size={14} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(hook)}
+                  disabled={isSaving}
+                  title="Delete hook"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCreatingHook(hook.hookType as keyof typeof GitHookType)}
+                title="Create hook"
+              >
+                <Plus size={14} />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {availableHookTypes.length > 0 && hooks.length === 0 && (
+        <p className="text-sm text-(--text-muted)">No hooks configured yet.</p>
+      )}
+
+      {editingHook && (
+        <HookEditorDialog
+          hookType={editingHook.hookType as keyof typeof GitHookType}
+          isNew={false}
+          onSave={(content) =>
+            handleSave(editingHook.hookType as keyof typeof GitHookType, content, false)
+          }
+          onClose={() => setEditingHook(null)}
+          isSaving={isSaving}
+        />
+      )}
+
+      {creatingHook && (
+        <HookEditorDialog
+          hookType={creatingHook}
+          isNew={true}
+          onSave={(content) => handleSave(creatingHook, content, true)}
+          onClose={() => setCreatingHook(null)}
+          isSaving={isSaving}
+        />
+      )}
+    </div>
+  );
+}
+
+interface HookEditorDialogProps {
+  hookType: keyof typeof GitHookType;
+  isNew: boolean;
+  onSave: (content: string) => void;
+  onClose: () => void;
+  isSaving: boolean;
+}
+
+function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEditorDialogProps) {
+  const [content, setContent] = useState('');
+  const [templates, setTemplates] = useState<HookTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        if (isNew) {
+          const loadedTemplates = await hooksApi.getTemplatesForType(GitHookType[hookType]);
+          setTemplates(loadedTemplates);
+          if (loadedTemplates.length > 0) {
+            setContent(loadedTemplates[0].content);
+            setSelectedTemplate(loadedTemplates[0].name);
+          } else {
+            setContent('#!/bin/bash\n\n# Add your hook script here\n');
+          }
+        } else {
+          const details = await hooksApi.get(GitHookType[hookType]);
+          setContent(details.content || '');
+        }
+      } catch (err) {
+        toast.error('Failed to load hook', getErrorMessage(err));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [hookType, isNew]);
+
+  const handleTemplateChange = (templateName: string) => {
+    setSelectedTemplate(templateName);
+    if (templateName === '_custom') {
+      setContent('#!/bin/bash\n\n# Add your hook script here\n');
+    } else {
+      const template = templates.find((t) => t.name === templateName);
+      if (template) {
+        setContent(template.content);
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    if (content.trim()) {
+      onSave(content);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-150">
+        <DialogTitle icon={FileCode2}>
+          {isNew ? 'Create' : 'Edit'} {HOOK_LABELS[hookType] || hookType} Hook
+        </DialogTitle>
+
+        <DialogBody>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-50 text-(--text-muted)">
+              Loading...
+            </div>
+          ) : (
+            <>
+              {isNew && templates.length > 0 && (
+                <FormField label="Template" htmlFor="template">
+                  <Select
+                    id="template"
+                    value={selectedTemplate}
+                    onValueChange={handleTemplateChange}
+                    placeholder="Select a template..."
+                  >
+                    {templates.map((t) => (
+                      <SelectItem key={t.name} value={t.name}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="_custom">Custom</SelectItem>
+                  </Select>
+                </FormField>
+              )}
+
+              <FormField label="Hook Script" htmlFor="hookContent">
+                <CodeEditor
+                  id="hookContent"
+                  value={content}
+                  language="bash"
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    setSelectedTemplate('');
+                  }}
+                  placeholder="#!/bin/bash"
+                  padding={12}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 'var(--font-size-sm)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--border-color)',
+                    minHeight: '15rem',
+                    resize: 'vertical',
+                    overflow: 'auto',
+                  }}
+                  data-color-mode="dark"
+                />
+              </FormField>
+
+              <p className="text-xs text-(--text-muted) mt-2">
+                The hook script should start with a shebang (e.g., #!/bin/bash). It will be made
+                executable automatically.
+              </p>
+            </>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={isSaving}>
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={!content.trim() || isSaving || isLoading}
+          >
+            {isSaving ? 'Saving...' : isNew ? 'Create' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

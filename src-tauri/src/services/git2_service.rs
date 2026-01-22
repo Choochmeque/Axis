@@ -116,6 +116,27 @@ impl Git2Service {
         Ok(Git2Service { repo })
     }
 
+    /// Get a reference to the underlying git2 repository
+    pub fn repo(&self) -> &Git2Repository {
+        &self.repo
+    }
+
+    /// Get the current HEAD commit OID as a string
+    /// Returns a null OID (40 zeros) if HEAD doesn't exist
+    pub fn get_head_oid(&self) -> String {
+        self.get_head_oid_opt().unwrap_or_else(|| "0".repeat(40))
+    }
+
+    /// Get the current HEAD commit OID as an optional string
+    /// Returns None if HEAD doesn't exist
+    pub fn get_head_oid_opt(&self) -> Option<String> {
+        self.repo
+            .head()
+            .ok()
+            .and_then(|h| h.target())
+            .map(|oid| oid.to_string())
+    }
+
     /// Get repository information
     pub fn get_repository_info(&self) -> Result<Repository> {
         let path = self

@@ -1,9 +1,63 @@
-use crate::error::Result;
+use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{FetchOptions, FetchResult, PullOptions, PushOptions, PushResult, Remote};
 use crate::services::ProgressContext;
-use crate::state::AppState;
+use crate::state::{AppState, GitServiceHandle};
 use tauri::State;
+
+/// Build the refs stdin string for the pre-push hook
+/// Format: <local ref> <local sha> <remote ref> <remote sha>\n per ref
+fn build_push_refs_stdin(
+    git_service: &GitServiceHandle,
+    remote_name: &str,
+    refspecs: &[String],
+) -> String {
+    let mut refs_lines = Vec::new();
+
+    for refspec in refspecs {
+        // Parse refspec (e.g., "refs/heads/main:refs/heads/main" or just "main")
+        let (local_ref, remote_ref) = if refspec.contains(':') {
+            let parts: Vec<&str> = refspec.split(':').collect();
+            (parts[0].to_string(), parts[1].to_string())
+        } else {
+            // Simple branch name
+            let full_ref = format!("refs/heads/{refspec}");
+            (full_ref.clone(), full_ref)
+        };
+
+        // Get local SHA
+        let local_sha = git_service
+            .with_git2(|git2| {
+                git2.repo()
+                    .revparse_single(&local_ref)
+                    .ok()
+                    .map(|obj| obj.id().to_string())
+            })
+            .unwrap_or_else(|| "0".repeat(40));
+
+        // Get remote SHA (what the remote currently has)
+        let remote_sha = git_service
+            .with_git2(|git2| {
+                let remote_ref_name = format!(
+                    "refs/remotes/{remote_name}/{}",
+                    refspec
+                        .split(':')
+                        .next()
+                        .unwrap_or(refspec)
+                        .replace("refs/heads/", "")
+                );
+                git2.repo()
+                    .revparse_single(&remote_ref_name)
+                    .ok()
+                    .map(|obj| obj.id().to_string())
+            })
+            .unwrap_or_else(|| "0".repeat(40));
+
+        refs_lines.push(format!("{local_ref} {local_sha} {remote_ref} {remote_sha}"));
+    }
+
+    refs_lines.join("\n") + "\n"
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -102,13 +156,46 @@ pub async fn push_remote(
     remote_name: String,
     refspecs: Vec<String>,
     options: PushOptions,
+    bypass_hooks: Option<bool>,
 ) -> Result<PushResult> {
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Use explicit bypass_hooks param if provided, otherwise use settings
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    // Run pre-push hook (can abort)
+    if !skip_hooks {
+        // Get remote URL for the hook
+        let remote_url = git_service
+            .with_git2(|git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone()))
+            .flatten()
+            .unwrap_or_default();
+
+        let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs);
+
+        let hook_result =
+            git_service.with_hook(|hook| hook.run_pre_push(&remote_name, &remote_url, &refs_stdin));
+
+        if !hook_result.skipped && !hook_result.success {
+            let output = if !hook_result.stderr.is_empty() {
+                &hook_result.stderr
+            } else {
+                &hook_result.stdout
+            };
+            return Err(AxisError::Other(format!(
+                "Hook 'pre-push' failed:\n{}",
+                output.trim()
+            )));
+        }
+    }
+
     let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
-    let result = state.get_git_service()?.with_git2(|git2| {
+    let result = git_service.with_git2(|git2| {
         git2.push(
             &remote_name,
             &refspecs,
@@ -128,13 +215,57 @@ pub async fn push_current_branch(
     state: State<'_, AppState>,
     remote_name: String,
     options: PushOptions,
+    bypass_hooks: Option<bool>,
 ) -> Result<PushResult> {
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Use explicit bypass_hooks param if provided, otherwise use settings
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    // Run pre-push hook (can abort)
+    if !skip_hooks {
+        // Get current branch name
+        let current_branch = git_service.with_git2(|git2| {
+            git2.repo()
+                .head()
+                .ok()
+                .and_then(|h| h.shorthand().map(|s| s.to_string()))
+        });
+
+        if let Some(branch) = &current_branch {
+            // Get remote URL for the hook
+            let remote_url = git_service
+                .with_git2(|git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone()))
+                .flatten()
+                .unwrap_or_default();
+
+            let refspecs = vec![branch.clone()];
+            let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs);
+
+            let hook_result = git_service
+                .with_hook(|hook| hook.run_pre_push(&remote_name, &remote_url, &refs_stdin));
+
+            if !hook_result.skipped && !hook_result.success {
+                let output = if !hook_result.stderr.is_empty() {
+                    &hook_result.stderr
+                } else {
+                    &hook_result.stdout
+                };
+                return Err(AxisError::Other(format!(
+                    "Hook 'pre-push' failed:\n{}",
+                    output.trim()
+                )));
+            }
+        }
+    }
+
     let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
-    let result = state.get_git_service()?.with_git2(|git2| {
+    let result = git_service.with_git2(|git2| {
         git2.push_current_branch(
             &remote_name,
             &options,

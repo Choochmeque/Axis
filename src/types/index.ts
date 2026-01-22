@@ -3,6 +3,7 @@ export type {
   // Repository types
   Repository,
   RepositoryStatus,
+  RepositorySettings,
   RecentRepository,
   FileStatus,
 
@@ -14,6 +15,7 @@ export type {
   // Branch types
   Branch,
   CreateBranchOptions,
+  CheckoutOptions,
 
   // Diff types
   FileDiff,
@@ -187,6 +189,11 @@ export type {
 
   // Progress types
   GitOperationProgressEvent,
+
+  // Hook types
+  HookInfo,
+  HookDetails,
+  HookTemplate,
 } from '../bindings/api';
 
 // Import types used locally
@@ -230,15 +237,9 @@ import type {
   // Progress types
   ProgressStage as ProgressStageType,
   GitOperationType as GitOperationTypeType,
+  // Hook types
+  GitHookType as GitHookTypeType,
 } from '../bindings/api';
-
-// Frontend-only types (not generated from Rust)
-
-export interface CheckoutOptions {
-  create?: boolean;
-  force?: boolean;
-  track?: string;
-}
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';
 
@@ -613,5 +614,20 @@ export const GitOperationType: { [K in GitOperationTypeType]: K } = {
 };
 
 export type GitOperationType = GitOperationTypeType;
+
+// Hook enum helpers
+export const GitHookType: { [K in GitHookTypeType]: K } = {
+  PreCommit: 'PreCommit',
+  PrepareCommitMsg: 'PrepareCommitMsg',
+  CommitMsg: 'CommitMsg',
+  PostCommit: 'PostCommit',
+  PrePush: 'PrePush',
+  PostMerge: 'PostMerge',
+  PreRebase: 'PreRebase',
+  PostCheckout: 'PostCheckout',
+  PostRewrite: 'PostRewrite',
+};
+
+export type GitHookType = GitHookTypeType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

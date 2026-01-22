@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
+import { AlertCircle, ExternalLink } from 'lucide-react';
 
 import { AppLayout } from './components/layout';
 import { HistoryView } from './components/history';
@@ -18,9 +19,12 @@ import { useStagingStore } from './store/stagingStore';
 import { useIntegrationStore } from './store/integrationStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
 import { events } from '@/bindings/api';
+import { lfsApi } from './services/api';
 import './index.css';
 
 function App() {
+  const [gitInstalled, setGitInstalled] = useState<boolean | null>(null);
+
   const { repository, currentView, openRepository, switchRepository, closeRepository } =
     useRepositoryStore();
   const { loadSettings } = useSettingsStore();
@@ -52,6 +56,13 @@ function App() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  // Check if git CLI is installed
+  useEffect(() => {
+    lfsApi.getGitEnvironment().then((env) => {
+      setGitInstalled(env.gitVersion !== null);
+    });
+  }, []);
 
   // Listen for RepositoryDirtyEvent (inactive repos have changes)
   useEffect(() => {
@@ -234,6 +245,32 @@ function App() {
         return <WorkspaceView />;
     }
   };
+
+  // Git CLI not installed - show error
+  // Git CLI not installed - show error
+  if (gitInstalled === false) {
+    return (
+      <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary) items-center justify-center">
+        <div className="text-center max-w-md p-6">
+          <AlertCircle size={64} className="mx-auto mb-4 text-error" />
+          <h1 className="text-2xl font-semibold mb-2">Git Not Installed</h1>
+          <p className="text-(--text-secondary) mb-6">
+            Git CLI is required for Axis to function. Please install Git and restart the
+            application.
+          </p>
+          <a
+            href="https://git-scm.com/downloads"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-(--accent-color) text-white rounded hover:opacity-90 transition-opacity"
+          >
+            <ExternalLink size={16} />
+            Download Git
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   // Welcome view without AppLayout when it's the only tab
   if (isWelcomeTab && tabs.length <= 1) {

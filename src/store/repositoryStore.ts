@@ -27,6 +27,7 @@ import {
   submoduleApi,
   worktreeApi,
 } from '@/services/api';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 export type ViewType =
   | 'file-status'
@@ -161,7 +162,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadStatus(),
       ]);
     } catch (err) {
-      set({ error: String(err), isLoading: false });
+      set({ error: getErrorMessage(err), isLoading: false });
       throw err;
     } finally {
       operations.complete(opId);
@@ -185,7 +186,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadStatus(),
       ]);
     } catch (err) {
-      set({ error: String(err), isLoading: false });
+      set({ error: getErrorMessage(err), isLoading: false });
       throw err;
     }
   },
@@ -209,7 +210,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         selectedCommitFile: null,
       });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -230,7 +231,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       ]);
       set({ repository: updatedRepo });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -255,7 +256,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         isLoadingCommits: false,
       });
     } catch (err) {
-      set({ error: String(err), isLoadingCommits: false });
+      set({ error: getErrorMessage(err), isLoadingCommits: false });
     } finally {
       operations.complete(opId);
     }
@@ -290,7 +291,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         isLoadingMoreCommits: false,
       });
     } catch (err) {
-      set({ error: String(err), isLoadingMoreCommits: false });
+      set({ error: getErrorMessage(err), isLoadingMoreCommits: false });
     } finally {
       operations.complete(opId);
     }
@@ -301,7 +302,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const branches = await branchApi.list();
       set({ branches });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -310,7 +311,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const tags = await tagApi.list();
       set({ tags });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -319,7 +320,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const stashes = await stashApi.list();
       set({ stashes });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -348,7 +349,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const status = await repositoryApi.getStatus();
       set({ status });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -357,7 +358,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const recentRepositories = await repositoryApi.getRecentRepositories();
       set({ recentRepositories });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: getErrorMessage(err) });
     }
   },
 
@@ -419,7 +420,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         isLoadingCommitFiles: false,
       });
     } catch (err) {
-      set({ error: String(err), isLoadingCommitFiles: false });
+      set({ error: getErrorMessage(err), isLoadingCommitFiles: false });
     } finally {
       operations.complete(opId);
     }
@@ -468,7 +469,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         isLoadingStashFiles: false,
       });
     } catch (err) {
-      set({ error: String(err), isLoadingStashFiles: false });
+      set({ error: getErrorMessage(err), isLoadingStashFiles: false });
     } finally {
       operations.complete(opId);
     }

@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { GitBranch, GitPullRequest, ArrowDownToLine, Diff, Trash2, Copy } from 'lucide-react';
+import { GitBranch, ArrowDownToLine, Diff, Trash2, Copy } from 'lucide-react';
 import type { Branch } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
@@ -39,10 +39,6 @@ export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContex
         <MenuSeparator />
         <MenuItem icon={Trash2} danger onSelect={() => setShowDeleteDialog(true)}>
           Delete {branch.name}...
-        </MenuItem>
-        <MenuSeparator />
-        <MenuItem icon={GitPullRequest} disabled>
-          Create Pull Request...
         </MenuItem>
       </ContextMenu>
 

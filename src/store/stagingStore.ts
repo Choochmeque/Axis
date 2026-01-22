@@ -4,6 +4,7 @@ import { operations } from '@/store/operationStore';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
 import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export const WhitespaceMode = {
@@ -115,7 +116,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       set({ status, isLoadingStatus: false });
     } catch (error) {
       set({
-        error: String(error),
+        error: getErrorMessage(error),
         isLoadingStatus: false,
       });
     } finally {
@@ -137,7 +138,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       set({ selectedFileDiff: diff, isLoadingDiff: false });
     } catch (error) {
       set({
-        error: String(error),
+        error: getErrorMessage(error),
         selectedFileDiff: null,
         isLoadingDiff: false,
       });
@@ -157,7 +158,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         const diff = await diffApi.getFile(selectedFile.path, isSelectedFileStaged, options);
         set({ selectedFileDiff: diff, isLoadingDiff: false });
       } catch (error) {
-        set({ error: String(error), isLoadingDiff: false });
+        set({ error: getErrorMessage(error), isLoadingDiff: false });
       }
     }
   },
@@ -167,7 +168,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.stageFile(path);
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -176,7 +177,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.stageFiles(paths);
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -185,7 +186,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.stageAll();
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -194,7 +195,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.unstageFile(path);
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -203,7 +204,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.unstageFiles(paths);
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -212,7 +213,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.unstageAll();
       await get().loadStatus();
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -228,7 +229,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         set({ selectedFileDiff: diff });
       }
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -244,7 +245,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         set({ selectedFileDiff: diff });
       }
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -260,7 +261,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         set({ selectedFileDiff: diff });
       }
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -273,7 +274,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         set({ selectedFile: null, selectedFileDiff: null });
       }
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -283,7 +284,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await get().loadStatus();
       set({ selectedFile: null, selectedFileDiff: null });
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -295,7 +296,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
         set({ selectedFile: null, selectedFileDiff: null });
       }
     } catch (error) {
-      set({ error: String(error) });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -329,8 +330,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       return oid;
     } catch (error) {
       set({
-        error: String(error),
+        error: getErrorMessage(error),
         isCommitting: false,
+        selectedFile: null,
+        selectedFileDiff: null,
       });
       throw error;
     } finally {
@@ -357,8 +360,10 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       return oid;
     } catch (error) {
       set({
-        error: String(error),
+        error: getErrorMessage(error),
         isCommitting: false,
+        selectedFile: null,
+        selectedFileDiff: null,
       });
       throw error;
     } finally {

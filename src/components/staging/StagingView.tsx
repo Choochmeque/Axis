@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { Checkbox } from '@/components/ui';
+import { Checkbox, Alert, Button } from '@/components/ui';
 import { FileStatusList, FluidFileList, type FluidFile } from './FileStatusList';
 import {
   StagingFilters,
@@ -204,16 +204,13 @@ export function StagingView() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
-        <div className="flex flex-col items-center justify-center h-full gap-3 text-error">
-          <span>{error}</span>
-          <button
-            className="py-1 px-3 border border-(--border-color) rounded bg-transparent text-(--text-primary) cursor-pointer"
-            onClick={clearError}
-          >
-            Dismiss
-          </button>
-        </div>
+      <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden p-4 gap-3">
+        <Alert variant="error">
+          <pre className="whitespace-pre-wrap text-sm">{error}</pre>
+        </Alert>
+        <Button variant="secondary" size="sm" className="self-start" onClick={clearError}>
+          Dismiss
+        </Button>
       </div>
     );
   }

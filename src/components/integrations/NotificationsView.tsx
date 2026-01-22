@@ -9,6 +9,7 @@ export function NotificationsView() {
   const {
     notifications,
     unreadCount,
+    notificationFilter,
     notificationsHasMore,
     isLoadingNotifications,
     isLoadingMoreNotifications,
@@ -16,6 +17,7 @@ export function NotificationsView() {
     loadNotifications,
     loadMoreNotifications,
     markAllNotificationsRead,
+    setNotificationFilter,
   } = useIntegrationStore();
 
   // Load notifications on mount (clearing is done in Sidebar click handler)
@@ -58,6 +60,29 @@ export function NotificationsView() {
         {unreadCount > 0 && (
           <span className="badge bg-(--accent-color) text-white">{unreadCount} unread</span>
         )}
+
+        <div className="flex items-center gap-1 ml-4">
+          <button
+            className={`px-2 py-1 text-xs rounded ${
+              !notificationFilter
+                ? 'bg-(--accent-color) text-white'
+                : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
+            }`}
+            onClick={() => setNotificationFilter(false)}
+          >
+            Unread
+          </button>
+          <button
+            className={`px-2 py-1 text-xs rounded ${
+              notificationFilter
+                ? 'bg-(--accent-color) text-white'
+                : 'bg-(--bg-tertiary) text-(--text-secondary) hover:bg-(--bg-hover)'
+            }`}
+            onClick={() => setNotificationFilter(true)}
+          >
+            All
+          </button>
+        </div>
 
         <div className="flex-1" />
 

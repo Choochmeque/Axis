@@ -57,6 +57,7 @@ interface IntegrationState {
   // Notifications
   notifications: Notification[];
   unreadCount: number;
+  notificationFilter: boolean; // true = all, false = unread only
   notificationsPage: number;
   notificationsHasMore: boolean;
   isLoadingNotifications: boolean;
@@ -100,6 +101,7 @@ interface IntegrationState {
   loadMoreNotifications: () => Promise<void>;
   markNotificationRead: (threadId: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  setNotificationFilter: (all: boolean) => void;
   clearNotificationsView: () => void;
 
   clearError: () => void;
@@ -132,6 +134,7 @@ const initialState = {
   isLoadingMoreCiRuns: false,
   notifications: [],
   unreadCount: 0,
+  notificationFilter: false,
   notificationsPage: 1,
   notificationsHasMore: false,
   isLoadingNotifications: false,
@@ -568,15 +571,26 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     return await integrationApi.getCommitStatus(detectedProvider.owner, detectedProvider.repo, sha);
   },
 
-  loadNotifications: async (all = false) => {
-    const { detectedProvider, connectionStatus } = get();
+  loadNotifications: async (all?: boolean) => {
+    const { detectedProvider, connectionStatus, notificationFilter } = get();
     if (!detectedProvider || !connectionStatus?.connected) return;
 
-    set({ isLoadingNotifications: true, notifications: [], notificationsPage: 1 });
+    const filterAll = all ?? notificationFilter;
+    set({
+      isLoadingNotifications: true,
+      notifications: [],
+      notificationFilter: filterAll,
+      notificationsPage: 1,
+    });
 
     try {
       const [result, unreadCount] = await Promise.all([
-        integrationApi.listNotifications(detectedProvider.owner, detectedProvider.repo, all, 1),
+        integrationApi.listNotifications(
+          detectedProvider.owner,
+          detectedProvider.repo,
+          filterAll,
+          1
+        ),
         integrationApi.getUnreadCount(detectedProvider.owner, detectedProvider.repo),
       ]);
       set({
@@ -600,6 +614,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     const {
       detectedProvider,
       connectionStatus,
+      notificationFilter,
       notificationsHasMore,
       isLoadingMoreNotifications,
       notificationsPage,
@@ -611,11 +626,10 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = notificationsPage + 1;
-      // Load unread only (all=false) for infinite scroll
       const result = await integrationApi.listNotifications(
         detectedProvider.owner,
         detectedProvider.repo,
-        false,
+        notificationFilter,
         nextPage
       );
       set((state) => ({
@@ -667,9 +681,15 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     }
   },
 
+  setNotificationFilter: (all: boolean) => {
+    set({ notificationFilter: all });
+    get().loadNotifications(all);
+  },
+
   clearNotificationsView: () =>
     set({
       notifications: [],
+      notificationFilter: false,
       notificationsPage: 1,
       notificationsHasMore: false,
       isLoadingNotifications: false,

@@ -182,6 +182,15 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Repository settings commands
             crate::commands::get_repository_settings,
             crate::commands::save_repository_user_config,
+            // Hook commands
+            crate::commands::list_hooks,
+            crate::commands::get_hook,
+            crate::commands::create_hook,
+            crate::commands::update_hook,
+            crate::commands::delete_hook,
+            crate::commands::toggle_hook,
+            crate::commands::get_hook_templates,
+            crate::commands::get_hook_templates_for_type,
             // Signing commands
             crate::commands::get_signing_config,
             crate::commands::list_gpg_keys,

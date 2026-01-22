@@ -21,7 +21,7 @@ import {
   Select,
   SelectItem,
 } from '@/components/ui';
-import { remoteApi, commitApi, signingApi, aiApi } from '@/services/api';
+import { remoteApi, commitApi, signingApi, aiApi, hooksApi } from '@/services/api';
 import type { SigningConfig } from '@/types';
 import {
   COMMIT_TYPES,
@@ -55,6 +55,7 @@ export function CommitForm() {
   const [signOff, setSignOff] = useState(false);
   const [signingAvailable, setSigningAvailable] = useState(false);
   const [signingConfig, setSigningConfig] = useState<SigningConfig | null>(null);
+  const [hasCommitHooks, setHasCommitHooks] = useState(false);
   const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -131,6 +132,37 @@ export function CommitForm() {
       checkSigning();
     }
   }, [repository]);
+
+  // Check for enabled commit hooks when repository changes or hooks are modified
+  const checkCommitHooks = useCallback(async () => {
+    if (!repository) return;
+    try {
+      const hooks = await hooksApi.list();
+      // Check if any commit-related hooks exist and are enabled
+      const commitHookTypes = ['PreCommit', 'PrepareCommitMsg', 'CommitMsg', 'PostCommit'];
+      const hasEnabled = hooks.some(
+        (h) => commitHookTypes.includes(h.hookType) && h.exists && h.enabled
+      );
+      setHasCommitHooks(hasEnabled);
+    } catch {
+      setHasCommitHooks(false);
+    }
+  }, [repository]);
+
+  useEffect(() => {
+    checkCommitHooks();
+  }, [checkCommitHooks]);
+
+  // Listen for hooks-changed event (from settings dialog)
+  useEffect(() => {
+    const handleHooksChanged = () => {
+      checkCommitHooks();
+    };
+    document.addEventListener('hooks-changed', handleHooksChanged);
+    return () => {
+      document.removeEventListener('hooks-changed', handleHooksChanged);
+    };
+  }, [checkCommitHooks]);
 
   // Listen for menu focus event
   useEffect(() => {
@@ -213,9 +245,9 @@ export function CommitForm() {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       if (isAmending) {
-        await amendCommit();
+        await amendCommit(bypassHooks);
       } else {
-        await createCommit(signCommit);
+        await createCommit(signCommit, bypassHooks);
       }
       setLocalMessage('');
 
@@ -337,7 +369,7 @@ export function CommitForm() {
             <DropdownMenuCheckboxItem
               checked={bypassHooks}
               onCheckedChange={setBypassHooks}
-              disabled
+              disabled={!hasCommitHooks}
             >
               Bypass commit hooks
             </DropdownMenuCheckboxItem>

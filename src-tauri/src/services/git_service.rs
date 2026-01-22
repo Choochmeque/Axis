@@ -1,16 +1,18 @@
 use crate::error::{AxisError, Result};
-use crate::services::{FileWatcher, Git2Service, GitCliService};
+use crate::services::{FileWatcher, Git2Service, GitCliService, HookService};
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
 /// Unified service for Git operations, combining:
 /// - Git2Service (libgit2 operations)
 /// - GitCliService (CLI operations for merge/rebase/etc)
+/// - HookService (git hook execution and management)
 /// - FileWatcher (per-repo file watching)
 pub struct GitService {
     path: PathBuf,
     git2: Git2Service,
     git_cli: GitCliService,
+    hook: HookService,
     watcher: FileWatcher,
 }
 
@@ -19,6 +21,7 @@ impl GitService {
     pub fn open(path: &Path, app_handle: AppHandle, is_active: bool) -> Result<Self> {
         let git2 = Git2Service::open(path)?;
         let git_cli = GitCliService::new(path);
+        let hook = HookService::new(git2.repo());
         let watcher = FileWatcher::new(path.to_path_buf(), app_handle, is_active)
             .map_err(|e| AxisError::Other(format!("Failed to create file watcher: {e}")))?;
 
@@ -26,6 +29,7 @@ impl GitService {
             path: path.to_path_buf(),
             git2,
             git_cli,
+            hook,
             watcher,
         })
     }
@@ -43,6 +47,11 @@ impl GitService {
     /// Access the Git CLI service
     pub fn git_cli(&self) -> &GitCliService {
         &self.git_cli
+    }
+
+    /// Access the Hook service
+    pub fn hook(&self) -> &HookService {
+        &self.hook
     }
 
     /// Set whether this repo is the active one (affects event emission mode)

@@ -81,7 +81,7 @@ export function CommitContextMenu({
       onCheckout();
     } else {
       try {
-        await branchApi.checkout(commit.oid);
+        await branchApi.checkout(commit.oid, { create: false, force: false, track: null });
         await loadBranches();
         await loadCommits();
         await loadStatus();

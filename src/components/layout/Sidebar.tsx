@@ -212,7 +212,7 @@ export function Sidebar() {
   const handleBranchCheckout = useCallback(
     async (branchName: string) => {
       try {
-        await branchApi.checkout(branchName);
+        await branchApi.checkout(branchName, { create: false, force: false, track: null });
         await loadBranches();
         await loadCommits();
         await loadStatus();
@@ -226,7 +226,7 @@ export function Sidebar() {
   const handleTagCheckout = useCallback(
     async (tagName: string) => {
       try {
-        await branchApi.checkout(tagName);
+        await branchApi.checkout(tagName, { create: false, force: false, track: null });
         await loadBranches();
         await loadCommits();
         await loadStatus();

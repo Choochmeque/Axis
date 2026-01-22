@@ -69,8 +69,8 @@ interface StagingState {
   deleteFile: (path: string) => Promise<void>;
   setCommitMessage: (message: string) => void;
   setIsAmending: (isAmending: boolean) => void;
-  createCommit: (sign?: boolean) => Promise<string>;
-  amendCommit: () => Promise<string>;
+  createCommit: (sign?: boolean, bypassHooks?: boolean) => Promise<string>;
+  amendCommit: (bypassHooks?: boolean) => Promise<string>;
   clearError: () => void;
   reset: () => void;
 }
@@ -307,7 +307,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     set({ isAmending });
   },
 
-  createCommit: async (sign?: boolean) => {
+  createCommit: async (sign?: boolean, bypassHooks?: boolean) => {
     const { commitMessage } = get();
     if (!commitMessage.trim()) {
       set({ error: 'Commit message is required' });
@@ -317,7 +317,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     const opId = operations.start('Creating commit', { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
-      const oid = await commitApi.create(commitMessage, undefined, undefined, sign);
+      const oid = await commitApi.create(commitMessage, undefined, undefined, sign, bypassHooks);
       set({
         commitMessage: '',
         isCommitting: false,
@@ -338,13 +338,13 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     }
   },
 
-  amendCommit: async () => {
+  amendCommit: async (bypassHooks?: boolean) => {
     const { commitMessage } = get();
 
     const opId = operations.start('Amending commit', { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
-      const oid = await commitApi.amend(commitMessage || undefined);
+      const oid = await commitApi.amend(commitMessage || undefined, bypassHooks);
       set({
         commitMessage: '',
         isAmending: false,

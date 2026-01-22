@@ -84,7 +84,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
       });
 
       if (checkout) {
-        await branchApi.checkout(branchName.trim());
+        await branchApi.checkout(branchName.trim(), { create: false, force: false, track: null });
       }
 
       await loadBranches();

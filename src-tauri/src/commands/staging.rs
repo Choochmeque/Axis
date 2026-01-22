@@ -1,7 +1,28 @@
-use crate::error::Result;
+use crate::error::{AxisError, Result};
+use crate::models::HookResult;
 use crate::services::SigningService;
 use crate::state::AppState;
+use std::fs;
 use tauri::State;
+
+/// Create an error from a failed hook result
+fn hook_error(result: &HookResult) -> AxisError {
+    let output = if !result.stderr.is_empty() {
+        result.stderr.clone()
+    } else if !result.stdout.is_empty() {
+        result.stdout.clone()
+    } else {
+        format!(
+            "Hook {} failed with exit code {}",
+            result.hook_type, result.exit_code
+        )
+    };
+    AxisError::Other(format!(
+        "Hook '{}' failed:\n{}",
+        result.hook_type,
+        output.trim()
+    ))
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -73,9 +94,52 @@ pub async fn create_commit(
     author_name: Option<String>,
     author_email: Option<String>,
     sign: Option<bool>,
+    bypass_hooks: Option<bool>,
 ) -> Result<String> {
     let path = state.ensure_repository_open()?;
     let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Use explicit bypass_hooks param if provided, otherwise use settings
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    let mut final_message = message.clone();
+
+    if !skip_hooks {
+        // 1. Run pre-commit hook
+        let result = git_service.with_hook(|hook| hook.run_pre_commit());
+        if !result.skipped && !result.success {
+            return Err(hook_error(&result));
+        }
+
+        // 2. Run prepare-commit-msg hook
+        let msg_file = path.join(".git/COMMIT_EDITMSG");
+        fs::write(&msg_file, &message).map_err(AxisError::IoError)?;
+
+        let msg_file_clone = msg_file.clone();
+        let result =
+            git_service.with_hook(|hook| hook.run_prepare_commit_msg(&msg_file_clone, None, None));
+        if !result.skipped && !result.success {
+            return Err(hook_error(&result));
+        }
+
+        // Read potentially modified message
+        if !result.skipped {
+            final_message = fs::read_to_string(&msg_file).map_err(AxisError::IoError)?;
+        }
+
+        // 3. Run commit-msg hook
+        let msg_file_clone = msg_file.clone();
+        let result = git_service.with_hook(|hook| hook.run_commit_msg(&msg_file_clone));
+        if !result.skipped && !result.success {
+            return Err(hook_error(&result));
+        }
+
+        // Read potentially modified message again
+        if !result.skipped {
+            final_message = fs::read_to_string(&msg_file).map_err(AxisError::IoError)?;
+        }
+    }
 
     // Use explicit sign param if provided, otherwise use settings
     let should_sign = sign.unwrap_or(settings.sign_commits);
@@ -87,22 +151,78 @@ pub async fn create_commit(
         None
     };
 
-    state.get_git_service()?.with_git2(|git2| {
+    // 4. Create the commit
+    let oid = git_service.with_git2(|git2| {
         git2.create_commit(
-            &message,
+            &final_message,
             author_name.as_deref(),
             author_email.as_deref(),
             signing_config.as_ref(),
         )
-    })
+    })?;
+
+    // 5. Run post-commit hook (don't fail on error, just log)
+    if !skip_hooks {
+        let result = git_service.with_hook(|hook| hook.run_post_commit());
+        if !result.skipped && !result.success {
+            log::warn!("post-commit hook failed: {}", result.stderr);
+        }
+    }
+
+    Ok(oid)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn amend_commit(state: State<'_, AppState>, message: Option<String>) -> Result<String> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.amend_commit(message.as_deref()))
+pub async fn amend_commit(
+    state: State<'_, AppState>,
+    message: Option<String>,
+    bypass_hooks: Option<bool>,
+) -> Result<String> {
+    let path = state.ensure_repository_open()?;
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Use explicit bypass_hooks param if provided, otherwise use settings
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    // Get old commit OID before amend for post-rewrite hook
+    let old_oid = git_service.with_git2(|git2| git2.get_head_oid_opt());
+
+    let mut final_message = message.clone();
+
+    if !skip_hooks && final_message.is_some() {
+        // Run commit-msg hook on the new message
+        let msg_file = path.join(".git/COMMIT_EDITMSG");
+        fs::write(&msg_file, final_message.as_ref().unwrap()).map_err(AxisError::IoError)?;
+
+        let msg_file_clone = msg_file.clone();
+        let result = git_service.with_hook(|hook| hook.run_commit_msg(&msg_file_clone));
+        if !result.skipped && !result.success {
+            return Err(hook_error(&result));
+        }
+
+        // Read potentially modified message
+        if !result.skipped {
+            final_message = Some(fs::read_to_string(&msg_file).map_err(AxisError::IoError)?);
+        }
+    }
+
+    // Amend the commit
+    let new_oid = git_service.with_git2(|git2| git2.amend_commit(final_message.as_deref()))?;
+
+    // Run post-rewrite hook
+    if !skip_hooks {
+        if let Some(old) = old_oid {
+            let rewrites = format!("{old} {new_oid}\n");
+            let result = git_service.with_hook(|hook| hook.run_post_rewrite("amend", &rewrites));
+            if !result.skipped && !result.success {
+                log::warn!("post-rewrite hook failed: {}", result.stderr);
+            }
+        }
+    }
+
+    Ok(new_oid)
 }
 
 #[tauri::command]

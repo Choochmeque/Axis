@@ -55,7 +55,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
         const branchName = parts.slice(1).join('/');
         await branchApi.checkoutRemote(remoteName, branchName);
       } else {
-        await branchApi.checkout(selectedBranch);
+        await branchApi.checkout(selectedBranch, { create: false, force: false, track: null });
       }
 
       await loadBranches();

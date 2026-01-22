@@ -51,6 +51,8 @@ import type {
   BisectMarkType,
   FetchOptions,
   PullOptions,
+  GitHookType,
+  CheckoutOptions,
 } from '@/types';
 
 export const repositoryApi = {
@@ -80,10 +82,23 @@ export const commitApi = {
 
   getCommit: (oid: string) => commands.getCommit(oid),
 
-  create: (message: string, authorName?: string, authorEmail?: string, sign?: boolean) =>
-    commands.createCommit(message, authorName ?? null, authorEmail ?? null, sign ?? null),
+  create: (
+    message: string,
+    authorName?: string,
+    authorEmail?: string,
+    sign?: boolean,
+    bypassHooks?: boolean
+  ) =>
+    commands.createCommit(
+      message,
+      authorName ?? null,
+      authorEmail ?? null,
+      sign ?? null,
+      bypassHooks ?? null
+    ),
 
-  amend: (message?: string) => commands.amendCommit(message ?? null),
+  amend: (message?: string, bypassHooks?: boolean) =>
+    commands.amendCommit(message ?? null, bypassHooks ?? null),
 
   getUserSignature: () => commands.getUserSignature(),
 };
@@ -102,8 +117,7 @@ export const branchApi = {
   rename: (oldName: string, newName: string, force?: boolean) =>
     commands.renameBranch(oldName, newName, force ?? null),
 
-  checkout: (name: string, create?: boolean, force?: boolean, track?: string) =>
-    commands.checkoutBranch(name, create ?? null, force ?? null, track ?? null),
+  checkout: (name: string, options: CheckoutOptions) => commands.checkoutBranch(name, options),
 
   checkoutRemote: (remoteName: string, branchName: string, localName?: string) =>
     commands.checkoutRemoteBranch(remoteName, branchName, localName ?? null),
@@ -135,11 +149,11 @@ export const remoteApi = {
 
   fetchAll: () => commands.fetchAll(),
 
-  push: (remoteName: string, refspecs: string[], options: PushOptions) =>
-    commands.pushRemote(remoteName, refspecs, options),
+  push: (remoteName: string, refspecs: string[], options: PushOptions, bypassHooks?: boolean) =>
+    commands.pushRemote(remoteName, refspecs, options, bypassHooks ?? null),
 
-  pushCurrentBranch: (remoteName: string, options: PushOptions) =>
-    commands.pushCurrentBranch(remoteName, options),
+  pushCurrentBranch: (remoteName: string, options: PushOptions, bypassHooks?: boolean) =>
+    commands.pushCurrentBranch(remoteName, options, bypassHooks ?? null),
 
   pull: (remoteName: string, branchName: string, options: PullOptions) =>
     commands.pullRemote(remoteName, branchName, options),
@@ -220,7 +234,8 @@ export const mergeApi = {
 };
 
 export const rebaseApi = {
-  rebase: (options: RebaseOptions) => commands.rebaseBranch(options),
+  rebase: (options: RebaseOptions, bypassHooks?: boolean) =>
+    commands.rebaseBranch(options, bypassHooks ?? null),
 
   abort: () => commands.rebaseAbort(),
 
@@ -409,6 +424,24 @@ export const repoSettingsApi = {
 
   saveUserConfig: (userName: string | null, userEmail: string | null) =>
     commands.saveRepositoryUserConfig(userName, userEmail),
+};
+
+export const hooksApi = {
+  list: () => commands.listHooks(),
+
+  get: (hookType: GitHookType) => commands.getHook(hookType),
+
+  create: (hookType: GitHookType, content: string) => commands.createHook(hookType, content),
+
+  update: (hookType: GitHookType, content: string) => commands.updateHook(hookType, content),
+
+  delete: (hookType: GitHookType) => commands.deleteHook(hookType),
+
+  toggle: (hookType: GitHookType) => commands.toggleHook(hookType),
+
+  getTemplates: () => commands.getHookTemplates(),
+
+  getTemplatesForType: (hookType: GitHookType) => commands.getHookTemplatesForType(hookType),
 };
 
 export const signingApi = {

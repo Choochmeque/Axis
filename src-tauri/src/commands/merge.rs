@@ -18,53 +18,70 @@ pub async fn merge_branch(
     state: State<'_, AppState>,
     options: MergeOptions,
 ) -> Result<MergeResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
-    let cli = guard.git_cli();
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
 
-    let result = cli.merge(
-        &options.branch,
-        options.message.as_deref(),
-        options.no_ff,
-        options.squash,
-        options.ff_only,
-    )?;
+    let merge_result = {
+        let guard = git_service.lock();
+        let cli = guard.git_cli();
 
-    if result.success {
-        // Determine merge type from output
-        let merge_type = if result.stdout.contains("Already up to date") {
-            MergeType::UpToDate
-        } else if result.stdout.contains("Fast-forward") {
-            MergeType::FastForward
+        let result = cli.merge(
+            &options.branch,
+            options.message.as_deref(),
+            options.no_ff,
+            options.squash,
+            options.ff_only,
+        )?;
+
+        if result.success {
+            // Determine merge type from output
+            let merge_type = if result.stdout.contains("Already up to date") {
+                MergeType::UpToDate
+            } else if result.stdout.contains("Fast-forward") {
+                MergeType::FastForward
+            } else {
+                MergeType::Normal
+            };
+
+            Ok(MergeResult {
+                success: true,
+                merge_type,
+                commit_oid: None, // TODO: Could parse from output
+                conflicts: Vec::new(),
+                message: result.stdout.trim().to_string(),
+            })
+        } else if result.stderr.contains("CONFLICT")
+            || result.stderr.contains("Automatic merge failed")
+        {
+            // Merge has conflicts
+            let conflicts = get_conflicted_files_internal(cli)?;
+
+            Ok(MergeResult {
+                success: false,
+                merge_type: MergeType::Conflicted,
+                commit_oid: None,
+                conflicts,
+                message: "Merge conflicts detected. Please resolve conflicts and commit."
+                    .to_string(),
+            })
         } else {
-            MergeType::Normal
-        };
+            Err(AxisError::Other(format!(
+                "Merge failed: {}",
+                result.stderr.trim()
+            )))
+        }
+    }?;
 
-        Ok(MergeResult {
-            success: true,
-            merge_type,
-            commit_oid: None, // TODO: Could parse from output
-            conflicts: Vec::new(),
-            message: result.stdout.trim().to_string(),
-        })
-    } else if result.stderr.contains("CONFLICT") || result.stderr.contains("Automatic merge failed")
-    {
-        // Merge has conflicts
-        let conflicts = get_conflicted_files_internal(cli)?;
-
-        Ok(MergeResult {
-            success: false,
-            merge_type: MergeType::Conflicted,
-            commit_oid: None,
-            conflicts,
-            message: "Merge conflicts detected. Please resolve conflicts and commit.".to_string(),
-        })
-    } else {
-        Err(AxisError::Other(format!(
-            "Merge failed: {}",
-            result.stderr.trim()
-        )))
+    // Run post-merge hook if merge was successful (informational, don't fail)
+    if merge_result.success && !settings.bypass_hooks {
+        let is_squash = options.squash;
+        let hook_result = git_service.with_hook(|hook| hook.run_post_merge(is_squash));
+        if !hook_result.skipped && !hook_result.success {
+            log::warn!("post-merge hook failed: {}", hook_result.stderr);
+        }
     }
+
+    Ok(merge_result)
 }
 
 /// Abort an in-progress merge
@@ -106,40 +123,78 @@ pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
 pub async fn rebase_branch(
     state: State<'_, AppState>,
     options: RebaseOptions,
+    bypass_hooks: Option<bool>,
 ) -> Result<RebaseResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
-    let cli = guard.git_cli();
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
 
-    let result = cli.rebase(&options.onto, options.interactive)?;
+    // Use explicit bypass_hooks param if provided, otherwise use settings
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
-    if result.success {
-        Ok(RebaseResult {
-            success: true,
-            commits_rebased: 0, // TODO: Would need to parse from output
-            current_commit: None,
-            total_commits: None,
-            conflicts: Vec::new(),
-            message: result.stdout.trim().to_string(),
-        })
-    } else if result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(cli)?;
+    // Get current branch name for pre-rebase hook
+    let current_branch = git_service.with_git2(|git2| {
+        git2.repo()
+            .head()
+            .ok()
+            .and_then(|h| h.shorthand().map(|s| s.to_string()))
+    });
 
-        Ok(RebaseResult {
-            success: false,
-            commits_rebased: 0,
-            current_commit: None,
-            total_commits: None,
-            conflicts,
-            message: "Rebase conflicts detected. Please resolve conflicts and continue."
-                .to_string(),
-        })
-    } else {
-        Err(AxisError::Other(format!(
-            "Rebase failed: {}",
-            result.stderr.trim()
-        )))
+    // Run pre-rebase hook (can abort)
+    if !skip_hooks {
+        let hook_result = git_service
+            .with_hook(|hook| hook.run_pre_rebase(&options.onto, current_branch.as_deref()));
+        if !hook_result.skipped && !hook_result.success {
+            let output = if !hook_result.stderr.is_empty() {
+                &hook_result.stderr
+            } else {
+                &hook_result.stdout
+            };
+            return Err(AxisError::Other(format!(
+                "Hook 'pre-rebase' failed:\n{}",
+                output.trim()
+            )));
+        }
     }
+
+    let rebase_result = {
+        let guard = git_service.lock();
+        let cli = guard.git_cli();
+
+        let result = cli.rebase(&options.onto, options.interactive)?;
+
+        if result.success {
+            Ok(RebaseResult {
+                success: true,
+                commits_rebased: 0, // TODO: Would need to parse from output
+                current_commit: None,
+                total_commits: None,
+                conflicts: Vec::new(),
+                message: result.stdout.trim().to_string(),
+            })
+        } else if result.stderr.contains("CONFLICT") {
+            let conflicts = get_conflicted_files_internal(cli)?;
+
+            Ok(RebaseResult {
+                success: false,
+                commits_rebased: 0,
+                current_commit: None,
+                total_commits: None,
+                conflicts,
+                message: "Rebase conflicts detected. Please resolve conflicts and continue."
+                    .to_string(),
+            })
+        } else {
+            Err(AxisError::Other(format!(
+                "Rebase failed: {}",
+                result.stderr.trim()
+            )))
+        }
+    }?;
+
+    // Note: post-rewrite hook should be run when rebase completes (in rebase_continue)
+    // since we don't have the old->new SHA mappings readily available here
+
+    Ok(rebase_result)
 }
 
 /// Abort an in-progress rebase

@@ -51,18 +51,28 @@ pub async fn rename_branch(
 pub async fn checkout_branch(
     state: State<'_, AppState>,
     name: String,
-    create: Option<bool>,
-    force: Option<bool>,
-    track: Option<String>,
+    options: CheckoutOptions,
 ) -> Result<()> {
-    let options = CheckoutOptions {
-        create: create.unwrap_or(false),
-        force: force.unwrap_or(false),
-        track,
-    };
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.checkout_branch(&name, &options))
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Get HEAD before checkout for post-checkout hook
+    let prev_head = git_service.with_git2(|git2| git2.get_head_oid());
+
+    // Perform checkout
+    git_service.with_git2(|git2| git2.checkout_branch(&name, &options))?;
+
+    // Run post-checkout hook (informational, don't fail on error)
+    if !settings.bypass_hooks {
+        let new_head = git_service.with_git2(|git2| git2.get_head_oid());
+        let result =
+            git_service.with_hook(|hook| hook.run_post_checkout(&prev_head, &new_head, true));
+        if !result.skipped && !result.success {
+            log::warn!("post-checkout hook failed: {}", result.stderr);
+        }
+    }
+
+    Ok(())
 }
 
 /// Checkout a remote branch locally
@@ -74,9 +84,28 @@ pub async fn checkout_remote_branch(
     branch_name: String,
     local_name: Option<String>,
 ) -> Result<()> {
-    state.get_git_service()?.with_git2(|git2| {
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+
+    // Get HEAD before checkout for post-checkout hook
+    let prev_head = git_service.with_git2(|git2| git2.get_head_oid());
+
+    // Perform checkout
+    git_service.with_git2(|git2| {
         git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref())
-    })
+    })?;
+
+    // Run post-checkout hook (informational, don't fail on error)
+    if !settings.bypass_hooks {
+        let new_head = git_service.with_git2(|git2| git2.get_head_oid());
+        let result =
+            git_service.with_hook(|hook| hook.run_post_checkout(&prev_head, &new_head, true));
+        if !result.skipped && !result.success {
+            log::warn!("post-checkout hook failed: {}", result.stderr);
+        }
+    }
+
+    Ok(())
 }
 
 /// Get branch details

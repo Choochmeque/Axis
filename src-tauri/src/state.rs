@@ -41,6 +41,15 @@ impl GitServiceHandle {
         let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         f(guard.git_cli())
     }
+
+    /// Access hook service directly (convenience method)
+    pub fn with_hook<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&crate::services::HookService) -> R,
+    {
+        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        f(guard.hook())
+    }
 }
 
 /// Cache for open repository services.

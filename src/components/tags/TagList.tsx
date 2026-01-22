@@ -84,7 +84,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
 
   const handleCheckout = async (name: string) => {
     try {
-      await branchApi.checkout(name);
+      await branchApi.checkout(name, { create: false, force: false, track: null });
       await loadBranches();
       await loadCommits();
       await loadStatus();

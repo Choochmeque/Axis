@@ -15,6 +15,7 @@ pub struct AppSettings {
     pub auto_fetch_interval: u32, // in minutes, 0 = disabled
     pub confirm_before_discard: bool,
     pub sign_commits: bool,
+    pub bypass_hooks: bool, // Skip git hooks by default
 
     // Signing
     pub signing_format: SigningFormat,
@@ -67,6 +68,7 @@ impl Default for AppSettings {
             auto_fetch_interval: 5,
             confirm_before_discard: true,
             sign_commits: false,
+            bypass_hooks: false,
 
             // Signing
             signing_format: SigningFormat::default(),

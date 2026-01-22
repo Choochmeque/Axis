@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowUpFromLine } from 'lucide-react';
 
-import { toast, useOperation } from '@/hooks';
+import { toast, useOperationProgress } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -19,6 +19,7 @@ import {
   SelectItem,
   CheckboxField,
   Alert,
+  OperationProgressBar,
 } from '@/components/ui';
 
 interface PushDialogProps {
@@ -36,7 +37,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
-  const { trackOperation } = useOperation();
+  const pushOperation = useOperationProgress('Push');
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
@@ -76,19 +77,15 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
     setError(null);
 
     try {
-      await trackOperation(
-        { name: 'Push', description: `Pushing to ${selectedRemote}`, category: 'git' },
-        async () => {
-          await remoteApi.pushCurrentBranch(selectedRemote, {
-            force,
-            setUpstream,
-            tags,
-          });
+      await remoteApi.pushCurrentBranch(selectedRemote, {
+        force,
+        setUpstream,
+        tags,
+      });
 
-          await loadBranches();
-          await refreshRepository();
-        }
-      );
+      await loadBranches();
+      await refreshRepository();
+
       onOpenChange(false);
       toast.success('Push complete');
     } catch (err) {
@@ -137,7 +134,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
               id="remote-select"
               value={selectedRemote}
               onValueChange={setSelectedRemote}
-              disabled={remotes.length === 0}
+              disabled={remotes.length === 0 || isLoading}
             >
               {remotes.map((remote) => (
                 <SelectItem key={remote.name} value={remote.name}>
@@ -152,16 +149,28 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
             label="Set as upstream tracking branch"
             checked={setUpstream}
             onCheckedChange={setSetUpstream}
+            disabled={isLoading}
           />
 
-          <CheckboxField id="tags" label="Include tags" checked={tags} onCheckedChange={setTags} />
+          <CheckboxField
+            id="tags"
+            label="Include tags"
+            checked={tags}
+            onCheckedChange={setTags}
+            disabled={isLoading}
+          />
 
           <CheckboxField
             id="force-push"
             label="Force push (overwrites remote changes)"
             checked={force}
             onCheckedChange={setForce}
+            disabled={isLoading}
           />
+
+          {pushOperation?.progress && (
+            <OperationProgressBar progress={pushOperation.progress} className="mt-3" />
+          )}
 
           {error && (
             <Alert variant="error" inline className="mt-3">

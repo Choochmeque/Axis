@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowDownToLine } from 'lucide-react';
 
-import { toast, useOperation } from '@/hooks';
+import { toast, useOperationProgress } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -19,6 +19,7 @@ import {
   SelectItem,
   CheckboxField,
   Alert,
+  OperationProgressBar,
 } from '@/components/ui';
 
 interface PullDialogProps {
@@ -35,7 +36,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
-  const { trackOperation } = useOperation();
+  const pullOperation = useOperationProgress('Pull');
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
@@ -73,16 +74,12 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
     setError(null);
 
     try {
-      await trackOperation(
-        { name: 'Pull', description: `Pulling from ${selectedRemote}`, category: 'git' },
-        async () => {
-          await remoteApi.pull(selectedRemote, currentBranch.name, rebase, ffOnly);
+      await remoteApi.pull(selectedRemote, currentBranch.name, rebase, ffOnly);
 
-          await loadBranches();
-          await loadCommits();
-          await refreshRepository();
-        }
-      );
+      await loadBranches();
+      await loadCommits();
+      await refreshRepository();
+
       onOpenChange(false);
       toast.success('Pull complete');
     } catch (err) {
@@ -140,7 +137,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
               id="remote-select"
               value={selectedRemote}
               onValueChange={setSelectedRemote}
-              disabled={remotes.length === 0}
+              disabled={remotes.length === 0 || isLoading}
             >
               {remotes.map((remote) => (
                 <SelectItem key={remote.name} value={remote.name}>
@@ -154,7 +151,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
             id="rebase"
             label="Rebase instead of merge"
             checked={rebase}
-            disabled={ffOnly}
+            disabled={ffOnly || isLoading}
             onCheckedChange={(checked) => {
               setRebase(checked);
               if (checked) setFfOnly(false);
@@ -165,12 +162,16 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
             id="ff-only"
             label="Fast-forward only (abort if not possible)"
             checked={ffOnly}
-            disabled={rebase}
+            disabled={rebase || isLoading}
             onCheckedChange={(checked) => {
               setFfOnly(checked);
               if (checked) setRebase(false);
             }}
           />
+
+          {pullOperation?.progress && (
+            <OperationProgressBar progress={pullOperation.progress} className="mt-3" />
+          )}
 
           {error && (
             <Alert variant="error" inline className="mt-3">

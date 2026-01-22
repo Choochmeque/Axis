@@ -302,6 +302,16 @@ pub struct IntegrationUser {
     pub url: String,
 }
 
+impl Default for IntegrationUser {
+    fn default() -> Self {
+        Self {
+            login: "unknown".to_string(),
+            avatar_url: String::new(),
+            url: String::new(),
+        }
+    }
+}
+
 /// Label from integration provider
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

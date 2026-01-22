@@ -5,8 +5,8 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     AvatarResponse, AvatarSource, DetectedProvider, IntegrationCommit, ProviderType,
 };
-use crate::services::integrations::{detect_provider, IntegrationProvider};
 use crate::services::AvatarService;
+use crate::services::{detect_provider, IntegrationProvider};
 use crate::state::AppState;
 
 /// Get avatar for a commit author

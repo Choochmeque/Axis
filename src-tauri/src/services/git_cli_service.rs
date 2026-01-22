@@ -1243,7 +1243,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Published {} '{}' to origin", branch_type.as_str(), name),
+            message: format!("Published {} '{name}' to origin", branch_type.as_str()),
             branch: Some(branch_name),
         })
     }
@@ -1261,7 +1261,7 @@ impl GitCliService {
             GitFlowBranchType::Support => &config.support_prefix,
         };
 
-        let result = self.execute(&["branch", "--list", &format!("{}*", prefix)])?;
+        let result = self.execute(&["branch", "--list", &format!("{prefix}*")])?;
         if !result.success {
             return Ok(Vec::new());
         }
@@ -1301,13 +1301,13 @@ impl GitCliService {
 
         let max_count_str;
         if let Some(max) = options.max_count {
-            max_count_str = format!("-m{}", max);
+            max_count_str = format!("-m{max}");
             args.push(&max_count_str);
         }
 
         let context_str;
         if let Some(ctx) = options.context_lines {
-            context_str = format!("-C{}", ctx);
+            context_str = format!("-C{ctx}");
             args.push(&context_str);
         }
 
@@ -1374,7 +1374,7 @@ impl GitCliService {
 
         let max_count_str;
         if let Some(max) = options.max_count {
-            max_count_str = format!("-m{}", max);
+            max_count_str = format!("-m{max}");
             args.push(&max_count_str);
         }
 
@@ -1560,7 +1560,7 @@ impl GitCliService {
         // Add prefix if specified
         let prefix_arg;
         if let Some(p) = prefix {
-            prefix_arg = format!("--prefix={}", p);
+            prefix_arg = format!("--prefix={p}");
             args.push(&prefix_arg);
         }
 
@@ -1572,7 +1572,7 @@ impl GitCliService {
 
         // For tar.gz and tar.bz2, stream tar output through Rust compressors
         if actual_format == "tar.gz" || actual_format == "tar.bz2" {
-            let prefix_arg_tar = prefix.map(|p| format!("--prefix={}", p));
+            let prefix_arg_tar = prefix.map(|p| format!("--prefix={p}"));
             let mut tar_args = vec!["archive", "--format", "tar"];
             if let Some(ref pa) = prefix_arg_tar {
                 tar_args.push(pa);
@@ -2490,7 +2490,7 @@ impl GitCliService {
 
     /// Parse size string like "1.5 MB" to bytes
     fn parse_size(size_str: &str) -> u64 {
-        let parts: Vec<&str> = size_str.trim().split_whitespace().collect();
+        let parts: Vec<&str> = size_str.split_whitespace().collect();
         if parts.len() != 2 {
             return 0;
         }

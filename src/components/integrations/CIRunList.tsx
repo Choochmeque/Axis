@@ -17,7 +17,7 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import { CIRunStatus, CIConclusion } from '@/types';
 import type { CIRun } from '@/types';
-
+// TETS
 interface CIRunListProps {
   ciRuns: CIRun[];
   isLoading: boolean;

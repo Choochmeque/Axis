@@ -13,8 +13,8 @@ use crate::models::{DetectedProvider, ProviderType};
 /// Parse a remote URL and detect the provider type
 pub fn detect_provider(remote_url: &str) -> Option<DetectedProvider> {
     // Try to parse as URL
-    if let Ok(url) = Url::parse(remote_url) {
-        return detect_from_url(&url);
+    if let Some(provider) = detect_from_url(remote_url) {
+        return Some(provider);
     }
 
     // Try SSH format: git@github.com:owner/repo.git
@@ -25,7 +25,9 @@ pub fn detect_provider(remote_url: &str) -> Option<DetectedProvider> {
     None
 }
 
-fn detect_from_url(url: &Url) -> Option<DetectedProvider> {
+fn detect_from_url(url: &str) -> Option<DetectedProvider> {
+    let url = Url::parse(url).ok()?;
+
     let host = url.host_str()?;
     let provider = detect_provider_from_host(host)?;
 
@@ -111,7 +113,7 @@ mod tests {
     fn test_detect_github_https() {
         let result = detect_provider("https://github.com/owner/repo.git");
         assert!(result.is_some());
-        let detected = result.unwrap();
+        let detected = result.expect("Failed to detect provider");
         assert_eq!(detected.provider, ProviderType::GitHub);
         assert_eq!(detected.owner, "owner");
         assert_eq!(detected.repo, "repo");
@@ -121,7 +123,7 @@ mod tests {
     fn test_detect_github_ssh() {
         let result = detect_provider("git@github.com:owner/repo.git");
         assert!(result.is_some());
-        let detected = result.unwrap();
+        let detected = result.expect("Failed to detect provider");
         assert_eq!(detected.provider, ProviderType::GitHub);
         assert_eq!(detected.owner, "owner");
         assert_eq!(detected.repo, "repo");
@@ -131,7 +133,7 @@ mod tests {
     fn test_detect_gitlab_https() {
         let result = detect_provider("https://gitlab.com/owner/repo.git");
         assert!(result.is_some());
-        let detected = result.unwrap();
+        let detected = result.expect("Failed to detect provider");
         assert_eq!(detected.provider, ProviderType::GitLab);
         assert_eq!(detected.owner, "owner");
         assert_eq!(detected.repo, "repo");
@@ -141,7 +143,7 @@ mod tests {
     fn test_detect_bitbucket_https() {
         let result = detect_provider("https://bitbucket.org/owner/repo.git");
         assert!(result.is_some());
-        let detected = result.unwrap();
+        let detected = result.expect("Failed to detect provider");
         assert_eq!(detected.provider, ProviderType::Bitbucket);
         assert_eq!(detected.owner, "owner");
         assert_eq!(detected.repo, "repo");

@@ -3,8 +3,6 @@ mod oauth;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use http_body_util::BodyExt;
-use octocrab::models::pulls::PullRequest as OctocrabPR;
-use octocrab::models::Author;
 use octocrab::models::IssueState as OctocrabIssueState;
 use octocrab::params;
 use octocrab::Octocrab;
@@ -31,6 +29,241 @@ const GITHUB_CLIENT_ID_KEY: &str = "integration_github_client_id";
 const CACHE_TTL_SHORT: Duration = Duration::from_secs(30); // For frequently changing data (notifications)
 const CACHE_TTL_MEDIUM: Duration = Duration::from_secs(60); // For PRs, issues, CI runs
 const CACHE_TTL_LONG: Duration = Duration::from_secs(300); // For repo info
+
+impl From<PrState> for params::State {
+    fn from(state: PrState) -> Self {
+        match state {
+            PrState::Open => params::State::Open,
+            PrState::Closed | PrState::Merged => params::State::Closed,
+            PrState::All => params::State::All,
+        }
+    }
+}
+
+impl From<IssueState> for params::State {
+    fn from(state: IssueState) -> Self {
+        match state {
+            IssueState::Open => params::State::Open,
+            IssueState::Closed => params::State::Closed,
+            IssueState::All => params::State::All,
+        }
+    }
+}
+
+impl From<MergeMethod> for params::pulls::MergeMethod {
+    fn from(method: MergeMethod) -> Self {
+        match method {
+            MergeMethod::Merge => params::pulls::MergeMethod::Merge,
+            MergeMethod::Squash => params::pulls::MergeMethod::Squash,
+            MergeMethod::Rebase => params::pulls::MergeMethod::Rebase,
+        }
+    }
+}
+
+impl From<octocrab::models::Author> for IntegrationUser {
+    fn from(author: octocrab::models::Author) -> Self {
+        IntegrationUser {
+            login: author.login,
+            avatar_url: author.avatar_url.to_string(),
+            url: author.html_url.to_string(),
+        }
+    }
+}
+
+impl From<octocrab::models::pulls::PullRequest> for PullRequest {
+    fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
+        PullRequest {
+            provider: ProviderType::GitHub,
+            number: pr.number as u32,
+            title: pr.title.clone().unwrap_or_default(),
+            state: match pr.state.as_ref() {
+                Some(OctocrabIssueState::Open) => PrState::Open,
+                Some(OctocrabIssueState::Closed) => {
+                    if pr.merged_at.is_some() {
+                        PrState::Merged
+                    } else {
+                        PrState::Closed
+                    }
+                }
+                _ => PrState::Open,
+            },
+            author: pr.user.map(|a| (*a).into()).unwrap_or_default(),
+            source_branch: pr.head.ref_field.clone(),
+            target_branch: pr.base.ref_field.clone(),
+            draft: pr.draft.unwrap_or(false),
+            created_at: pr.created_at.unwrap_or_else(Utc::now),
+            updated_at: pr.updated_at.unwrap_or_else(Utc::now),
+            url: pr
+                .html_url
+                .as_ref()
+                .map(|u| u.to_string())
+                .unwrap_or_default(),
+        }
+    }
+}
+
+impl From<octocrab::models::issues::Issue> for Issue {
+    fn from(issue: octocrab::models::issues::Issue) -> Self {
+        Issue {
+            provider: ProviderType::GitHub,
+            number: issue.number as u32,
+            title: issue.title.clone(),
+            state: match issue.state {
+                OctocrabIssueState::Open => IssueState::Open,
+                OctocrabIssueState::Closed => IssueState::Closed,
+                _ => IssueState::Open,
+            },
+            author: issue.user.into(),
+            labels: issue
+                .labels
+                .iter()
+                .map(|l| IntegrationLabel {
+                    name: l.name.clone(),
+                    color: l.color.clone(),
+                    description: l.description.clone(),
+                })
+                .collect(),
+            comments_count: issue.comments as u32,
+            created_at: issue.created_at,
+            updated_at: issue.updated_at,
+            url: issue.html_url.to_string(),
+        }
+    }
+}
+
+impl From<octocrab::models::activity::Notification> for Notification {
+    fn from(notification: octocrab::models::activity::Notification) -> Self {
+        Notification {
+            provider: ProviderType::GitHub,
+            id: notification.id.to_string(),
+            unread: notification.unread,
+            reason: match notification.reason.as_str() {
+                "assign" => NotificationReason::Assigned,
+                "author" => NotificationReason::Author,
+                "comment" => NotificationReason::Comment,
+                "invitation" => NotificationReason::Invitation,
+                "manual" => NotificationReason::Manual,
+                "mention" => NotificationReason::Mention,
+                "review_requested" => NotificationReason::ReviewRequested,
+                "security_alert" => NotificationReason::SecurityAlert,
+                "state_change" => NotificationReason::StateChange,
+                "subscribed" => NotificationReason::Subscribed,
+                "team_mention" => NotificationReason::TeamMention,
+                "ci_activity" => NotificationReason::CiActivity,
+                _ => NotificationReason::Subscribed,
+            },
+            subject_type: match notification.subject.r#type.as_str() {
+                "Issue" => NotificationSubjectType::Issue,
+                "PullRequest" => NotificationSubjectType::PullRequest,
+                "Release" => NotificationSubjectType::Release,
+                "Discussion" => NotificationSubjectType::Discussion,
+                "Commit" => NotificationSubjectType::Commit,
+                "RepositoryVulnerabilityAlert" => {
+                    NotificationSubjectType::RepositoryVulnerabilityAlert
+                }
+                "CheckSuite" => NotificationSubjectType::CheckSuite,
+                _ => NotificationSubjectType::Issue,
+            },
+            subject_title: notification.subject.title,
+            subject_url: notification.subject.url.map(|u| u.to_string()),
+            repository: notification.repository.full_name.unwrap_or_default(),
+            updated_at: notification.updated_at,
+            url: notification.url.to_string(),
+        }
+    }
+}
+
+impl From<octocrab::models::workflows::Run> for CIRun {
+    fn from(run: octocrab::models::workflows::Run) -> Self {
+        CIRun {
+            provider: ProviderType::GitHub,
+            id: run.id.to_string(),
+            name: run.name,
+            status: match run.status.as_str() {
+                "queued" => CIRunStatus::Queued,
+                "in_progress" => CIRunStatus::InProgress,
+                "completed" => CIRunStatus::Completed,
+                _ => CIRunStatus::Queued,
+            },
+            conclusion: match run.conclusion.as_deref() {
+                Some("success") => Some(CIConclusion::Success),
+                Some("failure") => Some(CIConclusion::Failure),
+                Some("neutral") => Some(CIConclusion::Neutral),
+                Some("cancelled") => Some(CIConclusion::Cancelled),
+                Some("timed_out") => Some(CIConclusion::TimedOut),
+                Some("action_required") => Some(CIConclusion::ActionRequired),
+                _ => None,
+            },
+            commit_sha: run.head_sha,
+            branch: Some(run.head_branch),
+            event: run.event,
+            created_at: run.created_at,
+            updated_at: run.updated_at,
+            url: run.html_url.to_string(),
+        }
+    }
+}
+
+impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequestsPage {
+    fn from(page: octocrab::Page<octocrab::models::pulls::PullRequest>) -> Self {
+        let items = page.items.iter().map(|pr| pr.clone().into()).collect();
+
+        PullRequestsPage {
+            items,
+            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
+            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+        }
+    }
+}
+
+impl From<octocrab::Page<octocrab::models::issues::Issue>> for IssuesPage {
+    fn from(page: octocrab::Page<octocrab::models::issues::Issue>) -> Self {
+        let items = page
+            .items
+            .iter()
+            .map(|issue| issue.clone().into())
+            .collect();
+
+        IssuesPage {
+            items,
+            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
+            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+        }
+    }
+}
+
+impl From<octocrab::Page<octocrab::models::activity::Notification>> for NotificationsPage {
+    fn from(page: octocrab::Page<octocrab::models::activity::Notification>) -> Self {
+        let items = page
+            .items
+            .into_iter()
+            .map(|notification| notification.into())
+            .collect();
+
+        NotificationsPage {
+            items,
+            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+        }
+    }
+}
+
+impl From<octocrab::Page<octocrab::models::workflows::Run>> for CiRunsPage {
+    fn from(page: octocrab::Page<octocrab::models::workflows::Run>) -> Self {
+        let items = page.items.into_iter().map(|run| run.into()).collect();
+
+        CiRunsPage {
+            runs: items,
+            total_count: page.total_count.unwrap_or(0) as u32, // TODO:
+            has_more: page.incomplete_results.unwrap_or(false), // TODO:
+        }
+    }
+}
+
+impl From<octocrab::Error> for AxisError {
+    fn from(err: octocrab::Error) -> Self {
+        AxisError::IntegrationError(format!("GitHub API error: {err:?}"))
+    }
+}
 
 /// GitHub integration provider
 pub struct GitHubProvider {
@@ -203,68 +436,6 @@ impl GitHubProvider {
         serde_json::from_slice(&body)
             .map_err(|e| AxisError::IntegrationError(format!("Failed to parse JSON: {e:?}")))
     }
-
-    /// Convert Author to IntegrationUser
-    fn convert_author(author: &Author) -> IntegrationUser {
-        IntegrationUser {
-            login: author.login.clone(),
-            avatar_url: author.avatar_url.to_string(),
-            url: author.html_url.to_string(),
-        }
-    }
-
-    /// Convert optional boxed Author to IntegrationUser (for PR user which is Box<Author>)
-    fn convert_optional_boxed_author(author: Option<&Box<Author>>) -> IntegrationUser {
-        author
-            .map(|a| Self::convert_author(a))
-            .unwrap_or_else(|| IntegrationUser {
-                login: "unknown".to_string(),
-                avatar_url: String::new(),
-                url: String::new(),
-            })
-    }
-
-    /// Convert optional Author to IntegrationUser (for issue user which is Author directly)
-    fn convert_optional_author(author: Option<&Author>) -> IntegrationUser {
-        author
-            .map(Self::convert_author)
-            .unwrap_or_else(|| IntegrationUser {
-                login: "unknown".to_string(),
-                avatar_url: String::new(),
-                url: String::new(),
-            })
-    }
-
-    /// Convert octocrab PR to our model
-    fn convert_pr(pr: &OctocrabPR, provider: ProviderType) -> PullRequest {
-        PullRequest {
-            provider,
-            number: pr.number as u32,
-            title: pr.title.clone().unwrap_or_default(),
-            state: match pr.state.as_ref() {
-                Some(OctocrabIssueState::Open) => PrState::Open,
-                Some(OctocrabIssueState::Closed) => {
-                    if pr.merged_at.is_some() {
-                        PrState::Merged
-                    } else {
-                        PrState::Closed
-                    }
-                }
-                _ => PrState::Open,
-            },
-            author: Self::convert_optional_boxed_author(pr.user.as_ref()),
-            source_branch: pr.head.ref_field.clone(),
-            target_branch: pr.base.ref_field.clone(),
-            draft: pr.draft.unwrap_or(false),
-            created_at: pr.created_at.unwrap_or_else(Utc::now),
-            updated_at: pr.updated_at.unwrap_or_else(Utc::now),
-            url: pr
-                .html_url
-                .as_ref()
-                .map(|u| u.to_string())
-                .unwrap_or_default(),
-        }
-    }
 }
 
 #[async_trait]
@@ -343,10 +514,7 @@ impl IntegrationProvider for GitHubProvider {
 
         let client = self.get_client()?;
 
-        let repository =
-            client.repos(owner, repo).get().await.map_err(|e| {
-                AxisError::IntegrationError(format!("Failed to get repo info: {e:?}"))
-            })?;
+        let repository = client.repos(owner, repo).get().await?;
 
         let info = IntegrationRepoInfo {
             provider: ProviderType::GitHub,
@@ -380,19 +548,11 @@ impl IntegrationProvider for GitHubProvider {
     async fn get_commit(&self, owner: &str, repo: &str, sha: &str) -> Result<IntegrationCommit> {
         let client = self.get_client()?;
 
-        let route = format!("/repos/{owner}/{repo}/commits/{sha}");
-        let http_response = client
-            ._get(&route)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get commit: {e:?}")))?;
-
-        let response: serde_json::Value = Self::parse_response(http_response).await?;
-
-        let author_avatar_url = response["author"]["avatar_url"].as_str().map(String::from);
+        let commit = client.commits(owner, repo).get(sha).await?;
 
         Ok(IntegrationCommit {
-            sha: response["sha"].as_str().unwrap_or(sha).to_string(),
-            author_avatar_url,
+            sha: commit.sha,
+            author_avatar_url: commit.author.map(|a| a.avatar_url.to_string()),
         })
     }
 
@@ -403,93 +563,18 @@ impl IntegrationProvider for GitHubProvider {
         state: PrState,
         page: u32,
     ) -> Result<PullRequestsPage> {
-        const PER_PAGE: u32 = 30;
         let client = self.get_client()?;
 
-        let gh_state = match state {
-            PrState::Open => "open",
-            PrState::Closed | PrState::Merged => "closed",
-            PrState::All => "all",
-        };
+        let page = client
+            .pulls(owner, repo)
+            .list()
+            .state(state.into())
+            .per_page(30)
+            .page(page)
+            .send()
+            .await?;
 
-        // Use REST API directly for pagination control
-        let route =
-            format!("/repos/{owner}/{repo}/pulls?state={gh_state}&per_page={PER_PAGE}&page={page}");
-        let http_response = client
-            ._get(&route)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list PRs: {e:?}")))?;
-
-        // Get Link header for pagination info
-        let link_header = http_response
-            .headers()
-            .get("link")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("");
-        let has_more = link_header.contains("rel=\"next\"");
-
-        let response: Vec<serde_json::Value> = Self::parse_response(http_response).await?;
-
-        let mut items: Vec<PullRequest> = response
-            .iter()
-            .map(|pr| {
-                let pr_state = match pr["state"].as_str() {
-                    Some("open") => PrState::Open,
-                    Some("closed") => {
-                        if pr["merged_at"].is_string() {
-                            PrState::Merged
-                        } else {
-                            PrState::Closed
-                        }
-                    }
-                    _ => PrState::Open,
-                };
-
-                PullRequest {
-                    provider: ProviderType::GitHub,
-                    number: pr["number"].as_u64().unwrap_or(0) as u32,
-                    title: pr["title"].as_str().unwrap_or("").to_string(),
-                    state: pr_state,
-                    author: IntegrationUser {
-                        login: pr["user"]["login"].as_str().unwrap_or("").to_string(),
-                        avatar_url: pr["user"]["avatar_url"].as_str().unwrap_or("").to_string(),
-                        url: pr["user"]["html_url"].as_str().unwrap_or("").to_string(),
-                    },
-                    source_branch: pr["head"]["ref"].as_str().unwrap_or("").to_string(),
-                    target_branch: pr["base"]["ref"].as_str().unwrap_or("").to_string(),
-                    draft: pr["draft"].as_bool().unwrap_or(false),
-                    created_at: pr["created_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    updated_at: pr["updated_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    url: pr["html_url"].as_str().unwrap_or("").to_string(),
-                }
-            })
-            .collect();
-
-        // Filter merged if specifically requested
-        if state == PrState::Merged {
-            items.retain(|pr| pr.state == PrState::Merged);
-        }
-
-        // GitHub doesn't give us total count for PRs, estimate based on current page
-        let total_count = if has_more {
-            (page * PER_PAGE) + PER_PAGE
-        } else {
-            ((page - 1) * PER_PAGE) + items.len() as u32
-        };
-
-        Ok(PullRequestsPage {
-            items,
-            total_count,
-            has_more,
-        })
+        Ok(page.into())
     }
 
     async fn get_pull_request(
@@ -500,13 +585,9 @@ impl IntegrationProvider for GitHubProvider {
     ) -> Result<PullRequestDetail> {
         let client = self.get_client()?;
 
-        let pr = client
-            .pulls(owner, repo)
-            .get(number as u64)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get PR: {e:?}")))?;
+        let pr = client.pulls(owner, repo).get(number as u64).await?;
 
-        let base = Self::convert_pr(&pr, ProviderType::GitHub);
+        let base: PullRequest = pr.clone().into();
 
         Ok(PullRequestDetail {
             base,
@@ -530,14 +611,14 @@ impl IntegrationProvider for GitHubProvider {
             assignees: pr
                 .assignees
                 .unwrap_or_default()
-                .iter()
-                .map(Self::convert_author)
+                .into_iter()
+                .map(Into::into)
                 .collect(),
             reviewers: pr
                 .requested_reviewers
                 .unwrap_or_default()
-                .iter()
-                .map(Self::convert_author)
+                .into_iter()
+                .map(Into::into)
                 .collect(),
         })
     }
@@ -555,22 +636,17 @@ impl IntegrationProvider for GitHubProvider {
         let target = options.target_branch.clone();
 
         let pulls_handler = client.pulls(owner, repo);
-        let mut request = pulls_handler.create(&title, &source, &target);
+        let mut request = pulls_handler
+            .create(&title, &source, &target)
+            .draft(options.draft);
 
         if let Some(body) = &options.body {
             request = request.body(body);
         }
 
-        if options.draft {
-            request = request.draft(true);
-        }
+        let pr = request.send().await?;
 
-        let pr = request
-            .send()
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create PR: {e:?}")))?;
-
-        Ok(Self::convert_pr(&pr, ProviderType::GitHub))
+        Ok(pr.into())
     }
 
     async fn merge_pull_request(
@@ -582,36 +658,20 @@ impl IntegrationProvider for GitHubProvider {
     ) -> Result<()> {
         let client = self.get_client()?;
 
-        let method = match options.merge_method {
-            MergeMethod::Merge => "merge",
-            MergeMethod::Squash => "squash",
-            MergeMethod::Rebase => "rebase",
-        };
-
-        // Use the API directly for merge
-        let route = format!("/repos/{owner}/{repo}/pulls/{number}/merge");
-        let mut body = serde_json::json!({
-            "merge_method": method,
-        });
+        let pulls_handler = client.pulls(owner, repo);
+        let mut request = pulls_handler
+            .merge(number as u64)
+            .method(options.merge_method);
 
         if let Some(title) = options.commit_title {
-            body["commit_title"] = serde_json::Value::String(title);
+            request = request.title(title);
         }
+
         if let Some(message) = options.commit_message {
-            body["commit_message"] = serde_json::Value::String(message);
+            request = request.message(message);
         }
 
-        let response = client
-            ._put(route, Some(&body))
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to merge PR: {e:?}")))?;
-
-        if !response.status().is_success() {
-            return Err(AxisError::IntegrationError(format!(
-                "Failed to merge PR: HTTP {}",
-                response.status()
-            )));
-        }
+        request.send().await?;
 
         Ok(())
     }
@@ -623,133 +683,31 @@ impl IntegrationProvider for GitHubProvider {
         state: IssueState,
         page: u32,
     ) -> Result<IssuesPage> {
-        const PER_PAGE: u32 = 30;
         let client = self.get_client()?;
 
-        let state_str = match state {
-            IssueState::Open => "open",
-            IssueState::Closed => "closed",
-            IssueState::All => "all",
-        };
+        let page = client
+            .issues(owner, repo)
+            .list()
+            .state(state.into())
+            .per_page(30)
+            .page(page)
+            .send()
+            .await?;
 
-        // Use REST API directly for pagination control
-        let route = format!(
-            "/repos/{owner}/{repo}/issues?state={state_str}&per_page={PER_PAGE}&page={page}"
-        );
-        let http_response = client
-            ._get(&route)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list issues: {e:?}")))?;
-
-        // Get Link header for pagination info
-        let link_header = http_response
-            .headers()
-            .get("link")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("");
-        let has_more = link_header.contains("rel=\"next\"");
-
-        let response: Vec<serde_json::Value> = Self::parse_response(http_response).await?;
-
-        // Filter out PRs (GitHub returns PRs in issues endpoint)
-        let items: Vec<Issue> = response
-            .iter()
-            .filter(|i| i.get("pull_request").is_none())
-            .map(|i| {
-                let issue_state = match i["state"].as_str() {
-                    Some("open") => IssueState::Open,
-                    Some("closed") => IssueState::Closed,
-                    _ => IssueState::Open,
-                };
-
-                Issue {
-                    provider: ProviderType::GitHub,
-                    number: i["number"].as_u64().unwrap_or(0) as u32,
-                    title: i["title"].as_str().unwrap_or("").to_string(),
-                    state: issue_state,
-                    author: IntegrationUser {
-                        login: i["user"]["login"].as_str().unwrap_or("").to_string(),
-                        avatar_url: i["user"]["avatar_url"].as_str().unwrap_or("").to_string(),
-                        url: i["user"]["html_url"].as_str().unwrap_or("").to_string(),
-                    },
-                    labels: i["labels"]
-                        .as_array()
-                        .unwrap_or(&Vec::new())
-                        .iter()
-                        .map(|l| IntegrationLabel {
-                            name: l["name"].as_str().unwrap_or("").to_string(),
-                            color: l["color"].as_str().unwrap_or("").to_string(),
-                            description: l["description"].as_str().map(String::from),
-                        })
-                        .collect(),
-                    comments_count: i["comments"].as_u64().unwrap_or(0) as u32,
-                    created_at: i["created_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    updated_at: i["updated_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    url: i["html_url"].as_str().unwrap_or("").to_string(),
-                }
-            })
-            .collect();
-
-        // GitHub doesn't give us total count for issues directly
-        let total_count = if has_more {
-            (page * PER_PAGE) + PER_PAGE
-        } else {
-            ((page - 1) * PER_PAGE) + items.len() as u32
-        };
-
-        Ok(IssuesPage {
-            items,
-            total_count,
-            has_more,
-        })
+        Ok(page.into())
     }
 
     async fn get_issue(&self, owner: &str, repo: &str, number: u32) -> Result<IssueDetail> {
         let client = self.get_client()?;
 
-        let issue = client
-            .issues(owner, repo)
-            .get(number as u64)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to get issue: {e:?}")))?;
+        let issue = client.issues(owner, repo).get(number as u64).await?;
 
-        let base = Issue {
-            provider: ProviderType::GitHub,
-            number: issue.number as u32,
-            title: issue.title.clone(),
-            state: match issue.state {
-                OctocrabIssueState::Open => IssueState::Open,
-                OctocrabIssueState::Closed => IssueState::Closed,
-                _ => IssueState::Open,
-            },
-            author: Self::convert_author(&issue.user),
-            labels: issue
-                .labels
-                .iter()
-                .map(|l| IntegrationLabel {
-                    name: l.name.clone(),
-                    color: l.color.clone(),
-                    description: l.description.clone(),
-                })
-                .collect(),
-            comments_count: issue.comments as u32,
-            created_at: issue.created_at,
-            updated_at: issue.updated_at,
-            url: issue.html_url.to_string(),
-        };
+        let base: Issue = issue.clone().into();
 
         Ok(IssueDetail {
             base,
             body: issue.body,
-            assignees: issue.assignees.iter().map(Self::convert_author).collect(),
+            assignees: issue.assignees.into_iter().map(Into::into).collect(),
             milestone: issue.milestone.map(|m| m.title),
         })
     }
@@ -762,9 +720,8 @@ impl IntegrationProvider for GitHubProvider {
     ) -> Result<Issue> {
         let client = self.get_client()?;
 
-        let title = options.title.clone();
         let issues_handler = client.issues(owner, repo);
-        let mut request = issues_handler.create(&title);
+        let mut request = issues_handler.create(&options.title);
 
         if let Some(body) = &options.body {
             request = request.body(body);
@@ -778,104 +735,30 @@ impl IntegrationProvider for GitHubProvider {
             request = request.assignees(options.assignees.clone());
         }
 
-        let issue = request
-            .send()
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create issue: {e:?}")))?;
+        let issue = request.send().await?;
 
-        Ok(Issue {
-            provider: ProviderType::GitHub,
-            number: issue.number as u32,
-            title: issue.title.clone(),
-            state: IssueState::Open,
-            author: Self::convert_author(&issue.user),
-            labels: issue
-                .labels
-                .iter()
-                .map(|l| IntegrationLabel {
-                    name: l.name.clone(),
-                    color: l.color.clone(),
-                    description: l.description.clone(),
-                })
-                .collect(),
-            comments_count: 0,
-            created_at: issue.created_at,
-            updated_at: issue.updated_at,
-            url: issue.html_url.to_string(),
-        })
+        Ok(issue.into())
     }
 
     async fn list_ci_runs(&self, owner: &str, repo: &str, page: u32) -> Result<CiRunsPage> {
-        const PER_PAGE: u32 = 30;
         let client = self.get_client()?;
 
         // Use the Actions API with pagination
-        let route = format!("/repos/{owner}/{repo}/actions/runs?per_page={PER_PAGE}&page={page}");
-        let http_response = client
-            ._get(route)
-            .await
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to list CI runs: {e:?}")))?;
+        let page = client
+            .workflows(owner, repo)
+            .list_all_runs()
+            .page(page)
+            .per_page(30)
+            .send()
+            .await?;
 
-        let response: serde_json::Value = Self::parse_response(http_response).await?;
-
-        let total_count = response["total_count"].as_u64().unwrap_or(0) as u32;
-        let runs: Vec<CIRun> = response["workflow_runs"]
-            .as_array()
-            .unwrap_or(&Vec::new())
-            .iter()
-            .map(|run| {
-                let status = match run["status"].as_str() {
-                    Some("queued") => CIRunStatus::Queued,
-                    Some("in_progress") => CIRunStatus::InProgress,
-                    _ => CIRunStatus::Completed,
-                };
-
-                let conclusion = run["conclusion"].as_str().map(|c| match c {
-                    "success" => CIConclusion::Success,
-                    "failure" => CIConclusion::Failure,
-                    "cancelled" => CIConclusion::Cancelled,
-                    "skipped" => CIConclusion::Skipped,
-                    "neutral" => CIConclusion::Neutral,
-                    "timed_out" => CIConclusion::TimedOut,
-                    "action_required" => CIConclusion::ActionRequired,
-                    _ => CIConclusion::Neutral,
-                });
-
-                CIRun {
-                    provider: ProviderType::GitHub,
-                    id: run["id"].as_u64().unwrap_or(0).to_string(),
-                    name: run["name"].as_str().unwrap_or("").to_string(),
-                    status,
-                    conclusion,
-                    commit_sha: run["head_sha"].as_str().unwrap_or("").to_string(),
-                    branch: run["head_branch"].as_str().map(String::from),
-                    event: run["event"].as_str().unwrap_or("").to_string(),
-                    created_at: run["created_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    updated_at: run["updated_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    url: run["html_url"].as_str().unwrap_or("").to_string(),
-                }
-            })
-            .collect();
-
-        let has_more = (page * PER_PAGE) < total_count;
-
-        Ok(CiRunsPage {
-            runs,
-            total_count,
-            has_more,
-        })
+        Ok(page.into())
     }
 
     async fn get_commit_status(&self, owner: &str, repo: &str, sha: &str) -> Result<CommitStatus> {
         let client = self.get_client()?;
+
+        // TODO: seems like a hallucination
 
         // Get combined status
         let route = format!("/repos/{owner}/{repo}/commits/{sha}/status");
@@ -955,127 +838,57 @@ impl IntegrationProvider for GitHubProvider {
         })
     }
 
-    async fn list_notifications(&self, all: bool, page: u32) -> Result<NotificationsPage> {
-        const PER_PAGE: u32 = 30;
+    async fn list_notifications(
+        &self,
+        owner: &str,
+        repo: &str,
+        all: bool,
+        page: u32,
+    ) -> Result<NotificationsPage> {
         let client = self.get_client()?;
 
-        let route = if all {
-            format!("/notifications?all=true&per_page={PER_PAGE}&page={page}")
-        } else {
-            format!("/notifications?per_page={PER_PAGE}&page={page}")
-        };
+        let page = client
+            .activity()
+            .notifications()
+            .list_for_repo(owner, repo)
+            .all(all)
+            .per_page(30)
+            .page(page.try_into().unwrap_or(255))
+            .send()
+            .await?;
 
-        let http_response = client._get(&route).await.map_err(|e| {
-            AxisError::IntegrationError(format!("Failed to list notifications: {e:?}"))
-        })?;
-
-        // Get Link header for pagination info
-        let link_header = http_response
-            .headers()
-            .get("link")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("");
-        let has_more = link_header.contains("rel=\"next\"");
-
-        let response: Vec<serde_json::Value> = Self::parse_response(http_response).await?;
-
-        let items: Vec<Notification> = response
-            .iter()
-            .map(|n| {
-                let reason = match n["reason"].as_str() {
-                    Some("assign") => NotificationReason::Assigned,
-                    Some("author") => NotificationReason::Author,
-                    Some("comment") => NotificationReason::Comment,
-                    Some("invitation") => NotificationReason::Invitation,
-                    Some("manual") => NotificationReason::Manual,
-                    Some("mention") => NotificationReason::Mention,
-                    Some("review_requested") => NotificationReason::ReviewRequested,
-                    Some("security_alert") => NotificationReason::SecurityAlert,
-                    Some("state_change") => NotificationReason::StateChange,
-                    Some("subscribed") => NotificationReason::Subscribed,
-                    Some("team_mention") => NotificationReason::TeamMention,
-                    Some("ci_activity") => NotificationReason::CiActivity,
-                    _ => NotificationReason::Subscribed,
-                };
-
-                let subject_type = match n["subject"]["type"].as_str() {
-                    Some("Issue") => NotificationSubjectType::Issue,
-                    Some("PullRequest") => NotificationSubjectType::PullRequest,
-                    Some("Release") => NotificationSubjectType::Release,
-                    Some("Discussion") => NotificationSubjectType::Discussion,
-                    Some("Commit") => NotificationSubjectType::Commit,
-                    Some("RepositoryVulnerabilityAlert") => {
-                        NotificationSubjectType::RepositoryVulnerabilityAlert
-                    }
-                    Some("CheckSuite") => NotificationSubjectType::CheckSuite,
-                    _ => NotificationSubjectType::Issue,
-                };
-
-                Notification {
-                    provider: ProviderType::GitHub,
-                    id: n["id"].as_str().unwrap_or("").to_string(),
-                    reason,
-                    unread: n["unread"].as_bool().unwrap_or(false),
-                    subject_title: n["subject"]["title"].as_str().unwrap_or("").to_string(),
-                    subject_type,
-                    subject_url: n["subject"]["url"].as_str().map(String::from),
-                    repository: n["repository"]["full_name"]
-                        .as_str()
-                        .unwrap_or("")
-                        .to_string(),
-                    updated_at: n["updated_at"]
-                        .as_str()
-                        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
-                    url: n["url"].as_str().unwrap_or("").to_string(),
-                }
-            })
-            .collect();
-
-        Ok(NotificationsPage { items, has_more })
+        Ok(page.into())
     }
 
     async fn mark_notification_read(&self, thread_id: &str) -> Result<()> {
         let client = self.get_client()?;
 
-        let route = format!("/notifications/threads/{thread_id}");
-        let response = client._patch(route, None::<&()>).await.map_err(|e| {
-            AxisError::IntegrationError(format!("Failed to mark notification read: {e:?}"))
-        })?;
-
-        if !response.status().is_success() {
-            return Err(AxisError::IntegrationError(format!(
-                "Failed to mark notification read: HTTP {}",
-                response.status()
-            )));
-        }
+        let id: u64 = thread_id
+            .parse()
+            .map_err(|e| AxisError::IntegrationError(format!("Invalid thread ID format: {e:?}")))?;
+        client
+            .activity()
+            .notifications()
+            .mark_as_read(id.into())
+            .await?;
 
         Ok(())
     }
 
-    async fn mark_all_notifications_read(&self) -> Result<()> {
+    async fn mark_all_notifications_read(&self, owner: &str, repo: &str) -> Result<()> {
         let client = self.get_client()?;
 
-        let response = client
-            ._put("/notifications", None::<&()>)
-            .await
-            .map_err(|e| {
-                AxisError::IntegrationError(format!("Failed to mark all notifications read: {e:?}"))
-            })?;
-
-        if !response.status().is_success() {
-            return Err(AxisError::IntegrationError(format!(
-                "Failed to mark all notifications read: HTTP {}",
-                response.status()
-            )));
-        }
+        client
+            .activity()
+            .notifications()
+            .mark_repo_as_read(owner, repo, None)
+            .await?;
 
         Ok(())
     }
 
-    async fn get_unread_count(&self) -> Result<u32> {
-        let page = self.list_notifications(false, 1).await?;
+    async fn get_unread_count(&self, owner: &str, repo: &str) -> Result<u32> {
+        let page = self.list_notifications(owner, repo, false, 1).await?;
         Ok(page.items.len() as u32)
     }
 }

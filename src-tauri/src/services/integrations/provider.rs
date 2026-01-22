@@ -102,14 +102,20 @@ pub trait IntegrationProvider: Send + Sync {
 
     // Notification operations
     /// List notifications with pagination
-    async fn list_notifications(&self, all: bool, page: u32) -> Result<NotificationsPage>;
+    async fn list_notifications(
+        &self,
+        owner: &str,
+        repo: &str,
+        all: bool,
+        page: u32,
+    ) -> Result<NotificationsPage>;
 
     /// Mark a notification as read
     async fn mark_notification_read(&self, thread_id: &str) -> Result<()>;
 
     /// Mark all notifications as read
-    async fn mark_all_notifications_read(&self) -> Result<()>;
+    async fn mark_all_notifications_read(&self, owner: &str, repo: &str) -> Result<()>;
 
     /// Get unread notification count
-    async fn get_unread_count(&self) -> Result<u32>;
+    async fn get_unread_count(&self, owner: &str, repo: &str) -> Result<u32>;
 }

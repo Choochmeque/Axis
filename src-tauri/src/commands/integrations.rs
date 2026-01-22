@@ -10,8 +10,7 @@ use crate::models::{
     MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest, PullRequestDetail,
     PullRequestsPage,
 };
-use crate::services::integrations::github::OAuthFlow;
-use crate::services::integrations::{detect_provider, GitHubProvider, IntegrationProvider};
+use crate::services::{detect_provider, github::OAuthFlow, GitHubProvider, IntegrationProvider};
 use crate::state::AppState;
 
 /// Global GitHub provider instance using tokio RwLock for async compatibility
@@ -483,6 +482,8 @@ pub async fn integration_get_commit_status(
 #[specta::specta]
 pub async fn integration_list_notifications(
     state: State<'_, AppState>,
+    owner: String,
+    repo: String,
     all: bool,
     page: u32,
 ) -> Result<NotificationsPage> {
@@ -491,7 +492,7 @@ pub async fn integration_list_notifications(
     let guard = provider_lock.read().await;
 
     if let Some(provider) = guard.as_ref() {
-        provider.list_notifications(all, page).await
+        provider.list_notifications(&owner, &repo, all, page).await
     } else {
         Err(AxisError::IntegrationNotConnected("GitHub".to_string()))
     }
@@ -516,13 +517,17 @@ pub async fn integration_mark_notification_read(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn integration_mark_all_notifications_read(state: State<'_, AppState>) -> Result<()> {
+pub async fn integration_mark_all_notifications_read(
+    state: State<'_, AppState>,
+    owner: String,
+    repo: String,
+) -> Result<()> {
     ensure_github_provider(&state).await?;
     let provider_lock = get_github_provider();
     let guard = provider_lock.read().await;
 
     if let Some(provider) = guard.as_ref() {
-        provider.mark_all_notifications_read().await
+        provider.mark_all_notifications_read(&owner, &repo).await
     } else {
         Err(AxisError::IntegrationNotConnected("GitHub".to_string()))
     }
@@ -530,13 +535,17 @@ pub async fn integration_mark_all_notifications_read(state: State<'_, AppState>)
 
 #[tauri::command]
 #[specta::specta]
-pub async fn integration_get_unread_count(state: State<'_, AppState>) -> Result<u32> {
+pub async fn integration_get_unread_count(
+    state: State<'_, AppState>,
+    owner: String,
+    repo: String,
+) -> Result<u32> {
     ensure_github_provider(&state).await?;
     let provider_lock = get_github_provider();
     let guard = provider_lock.read().await;
 
     if let Some(provider) = guard.as_ref() {
-        provider.get_unread_count().await
+        provider.get_unread_count(&owner, &repo).await
     } else {
         Ok(0)
     }

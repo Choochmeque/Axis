@@ -5,7 +5,7 @@ mod file_watcher;
 mod git2_service;
 mod git_cli_service;
 mod git_service;
-pub mod integrations;
+mod integrations;
 mod signing_service;
 
 pub use avatar_service::*;

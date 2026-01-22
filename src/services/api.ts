@@ -1,20 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
-import {
-  commands,
-  type AiProvider,
-  type LfsFetchOptions,
-  type LfsPullOptions,
-  type LfsPushOptions,
-  type LfsMigrateOptions,
-  type LfsPruneOptions,
-  type ProviderType,
-  type PrState,
-  type IssueState,
-  type CreatePrOptions,
-  type MergePrOptions,
-  type CreateIssueOptions,
-} from '../bindings/api';
+import { commands } from '@/bindings/api';
 import type {
+  AiProvider,
+  LfsFetchOptions,
+  LfsPullOptions,
+  LfsPushOptions,
+  LfsMigrateOptions,
+  LfsPruneOptions,
+  ProviderType,
+  PrState,
+  IssueState,
+  CreatePrOptions,
+  MergePrOptions,
+  CreateIssueOptions,
   BranchType,
   LogOptions,
   DiffOptions,
@@ -51,7 +49,9 @@ import type {
   CreateBranchOptions,
   BisectStartOptions,
   BisectMarkType,
-} from '../types';
+  FetchOptions,
+  PullOptions,
+} from '@/types';
 
 export const repositoryApi = {
   open: (path: string) => commands.openRepository(path),
@@ -131,8 +131,7 @@ export const remoteApi = {
 
   setPushUrl: (name: string, url: string) => commands.setRemotePushUrl(name, url),
 
-  fetch: (remoteName: string, prune?: boolean, tags?: boolean, depth?: number) =>
-    commands.fetchRemote(remoteName, prune ?? null, tags ?? null, depth ?? null),
+  fetch: (remoteName: string, options: FetchOptions) => commands.fetchRemote(remoteName, options),
 
   fetchAll: () => commands.fetchAll(),
 
@@ -142,8 +141,8 @@ export const remoteApi = {
   pushCurrentBranch: (remoteName: string, options: PushOptions) =>
     commands.pushCurrentBranch(remoteName, options),
 
-  pull: (remoteName: string, branchName: string, rebase?: boolean, ffOnly?: boolean) =>
-    commands.pullRemote(remoteName, branchName, rebase ?? null, ffOnly ?? null),
+  pull: (remoteName: string, branchName: string, options: PullOptions) =>
+    commands.pullRemote(remoteName, branchName, options),
 };
 
 export const stagingApi = {

@@ -74,7 +74,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
     setError(null);
 
     try {
-      await remoteApi.pull(selectedRemote, currentBranch.name, rebase, ffOnly);
+      await remoteApi.pull(selectedRemote, currentBranch.name, { rebase, ffOnly });
 
       await loadBranches();
       await loadCommits();

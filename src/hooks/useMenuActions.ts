@@ -65,7 +65,7 @@ export function useMenuActions() {
           if (repository) {
             try {
               const branchName = repository.currentBranch || 'main';
-              await remoteApi.pull('origin', branchName);
+              await remoteApi.pull('origin', branchName, { rebase: false, ffOnly: false });
               await refreshRepository();
               toast.success('Pull complete');
             } catch (err) {

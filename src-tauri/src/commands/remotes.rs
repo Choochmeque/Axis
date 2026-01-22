@@ -74,16 +74,8 @@ pub async fn set_remote_push_url(
 pub async fn fetch_remote(
     state: State<'_, AppState>,
     remote_name: String,
-    prune: Option<bool>,
-    tags: Option<bool>,
-    depth: Option<u32>,
+    options: FetchOptions,
 ) -> Result<FetchResult> {
-    let options = FetchOptions {
-        prune: prune.unwrap_or(false),
-        tags: tags.unwrap_or(false),
-        depth,
-    };
-
     let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
@@ -161,14 +153,8 @@ pub async fn pull_remote(
     state: State<'_, AppState>,
     remote_name: String,
     branch_name: String,
-    rebase: Option<bool>,
-    ff_only: Option<bool>,
+    options: PullOptions,
 ) -> Result<()> {
-    let options = PullOptions {
-        rebase: rebase.unwrap_or(false),
-        ff_only: ff_only.unwrap_or(false),
-    };
-
     let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 

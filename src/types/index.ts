@@ -23,9 +23,11 @@ export type {
 
   // Remote types
   Remote,
+  FetchOptions,
   FetchProgress,
   FetchResult,
   UpdatedRef,
+  PullOptions,
   PushOptions,
   PushResult,
   PushedRef,
@@ -236,17 +238,6 @@ export interface CheckoutOptions {
   create?: boolean;
   force?: boolean;
   track?: string;
-}
-
-export interface FetchOptions {
-  prune?: boolean;
-  tags?: boolean;
-  depth?: number;
-}
-
-export interface PullOptions {
-  rebase?: boolean;
-  ffOnly?: boolean;
 }
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';

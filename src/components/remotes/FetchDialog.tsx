@@ -66,7 +66,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
       if (fetchAll) {
         await remoteApi.fetchAll();
       } else {
-        await remoteApi.fetch(selectedRemote, prune);
+        await remoteApi.fetch(selectedRemote, { prune, tags: false, depth: null });
       }
 
       await loadBranches();

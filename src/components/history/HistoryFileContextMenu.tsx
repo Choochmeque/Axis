@@ -1,11 +1,10 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { History, FileText, RotateCcw, FileCode, FolderOpen, Copy, Eye, Diff } from 'lucide-react';
 import type { FileDiff } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { shellApi } from '@/services/api';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard, showInFinder } from '@/lib/actions';
 
 interface HistoryFileContextMenuProps {
   file: FileDiff;
@@ -13,59 +12,40 @@ interface HistoryFileContextMenuProps {
 }
 
 export function HistoryFileContextMenu({ file, children }: HistoryFileContextMenuProps) {
+  const { t } = useTranslation();
   const { repository } = useRepositoryStore();
   const filePath = file.newPath || file.oldPath || '';
-
-  const handleCopyPath = async () => {
-    try {
-      await navigator.clipboard.writeText(filePath);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
-
-  const handleShowInFinder = async () => {
-    if (repository?.path && filePath) {
-      const fullPath = `${repository.path}/${filePath}`;
-      try {
-        await shellApi.showInFolder(fullPath);
-      } catch (err) {
-        toast.error('Show in Finder failed', getErrorMessage(err));
-      }
-    }
-  };
 
   return (
     <ContextMenu trigger={children}>
       <MenuItem icon={History} disabled>
-        Log Selected...
+        {t('history.fileContextMenu.logSelected')}
       </MenuItem>
       <MenuItem icon={FileText} disabled>
-        Annotate Selected...
+        {t('history.fileContextMenu.annotateSelected')}
       </MenuItem>
       <MenuItem icon={RotateCcw} disabled>
-        Reset to Commit...
+        {t('history.fileContextMenu.resetToCommit')}
       </MenuItem>
       <MenuSeparator />
       <MenuItem icon={FileCode} disabled>
-        Open Current Version
+        {t('history.fileContextMenu.openCurrentVersion')}
       </MenuItem>
       <MenuItem icon={FileCode} disabled>
-        Open Selected Version
+        {t('history.fileContextMenu.openSelectedVersion')}
       </MenuItem>
-      <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
-        Show In Finder
+      <MenuItem icon={FolderOpen} onSelect={() => showInFinder(`${repository?.path}/${filePath}`)}>
+        {t('history.fileContextMenu.showInFinder')}
       </MenuItem>
-      <MenuItem icon={Copy} onSelect={handleCopyPath}>
-        Copy Path To Clipboard
+      <MenuItem icon={Copy} onSelect={() => copyToClipboard(filePath)}>
+        {t('history.fileContextMenu.copyPath')}
       </MenuItem>
       <MenuItem icon={Eye} disabled>
-        Quick Look
+        {t('history.fileContextMenu.quickLook')}
       </MenuItem>
       <MenuSeparator />
       <MenuItem icon={Diff} disabled>
-        External Diff
+        {t('history.fileContextMenu.externalDiff')}
       </MenuItem>
     </ContextMenu>
   );

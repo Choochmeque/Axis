@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { History, GitCommit, Loader2 } from 'lucide-react';
 import { graphApi } from '@/services/api';
@@ -26,6 +27,7 @@ interface FileLogDialogProps {
 const PAGE_SIZE = 50;
 
 export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps) {
+  const { t } = useTranslation();
   const [commits, setCommits] = useState<Commit[]>([]);
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [selectedDiff, setSelectedDiff] = useState<FileDiff | null>(null);
@@ -137,24 +139,26 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[90vw] w-[90vw] h-[85vh] flex flex-col">
-        <DialogTitle icon={History}>Log: {displayPath}</DialogTitle>
+        <DialogTitle icon={History}>
+          {t('history.fileLog.title', { path: displayPath })}
+        </DialogTitle>
 
         <DialogBody className="flex-1 min-h-0 p-0">
           {isLoading ? (
             <div className="flex items-center justify-center h-full gap-2 text-(--text-secondary)">
               <Loader2 size={20} className="animate-spin" />
-              <span>Loading history...</span>
+              <span>{t('history.fileLog.loading')}</span>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-(--text-secondary)">
               <GitCommit size={48} strokeWidth={1} />
-              <p>Error loading history</p>
+              <p>{t('history.fileLog.errorLoading')}</p>
               <p className="text-xs text-(--text-tertiary)">{error}</p>
             </div>
           ) : commits.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-(--text-secondary)">
               <GitCommit size={48} strokeWidth={1} />
-              <p>No commits found that modified this file</p>
+              <p>{t('history.fileLog.noCommits')}</p>
             </div>
           ) : (
             <div className="flex flex-col h-full">
@@ -174,16 +178,16 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                                 <thead className="sticky top-0 bg-(--bg-toolbar) z-10">
                                   <tr className="text-xs text-(--text-secondary) border-b border-(--border-color)">
                                     <th className="text-left py-2 px-3 font-semibold whitespace-nowrap">
-                                      Changeset
+                                      {t('history.fileLog.changeset')}
                                     </th>
                                     <th className="text-left py-2 px-3 font-semibold whitespace-nowrap">
-                                      Date
+                                      {t('history.fileLog.date')}
                                     </th>
                                     <th className="text-left py-2 px-3 font-semibold whitespace-nowrap">
-                                      User
+                                      {t('history.fileLog.user')}
                                     </th>
                                     <th className="text-left py-2 px-3 font-semibold">
-                                      Description
+                                      {t('history.fileLog.description')}
                                     </th>
                                   </tr>
                                 </thead>
@@ -201,7 +205,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                               {isLoadingMore && (
                                 <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
                                   <Loader2 size={14} className="animate-spin" />
-                                  <span>Loading more...</span>
+                                  <span>{t('history.fileLog.loadingMore')}</span>
                                 </div>
                               )}
                             </div>
@@ -213,7 +217,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                             <CommitInfo commit={selectedCommit} />
                           ) : (
                             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
-                              Select a commit to view details
+                              {t('history.fileLog.selectCommit')}
                             </div>
                           )}
                         </Panel>
@@ -234,7 +238,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
               <div className="shrink-0 p-3 border-t border-(--border-color) bg-(--bg-secondary)">
                 <CheckboxField
                   id="follow-renames"
-                  label="Follow renamed files"
+                  label={t('history.fileLog.followRenames')}
                   checked={followRenames}
                   onCheckedChange={handleFollowRenamesChange}
                 />

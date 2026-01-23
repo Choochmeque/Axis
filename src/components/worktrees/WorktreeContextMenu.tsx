@@ -3,10 +3,11 @@ import { Play, Lock, Unlock, Trash2, FolderOpen, Copy } from 'lucide-react';
 
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 import type { Worktree } from '@/types';
-import { worktreeApi, shellApi } from '@/services/api';
+import { worktreeApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard, showInFinder } from '@/lib/actions';
 import { RemoveWorktreeDialog } from './RemoveWorktreeDialog';
 
 interface WorktreeContextMenuProps {
@@ -21,14 +22,6 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
 
   const handleSwitch = () => {
     onSwitch?.();
-  };
-
-  const handleOpenInFolder = async () => {
-    try {
-      await shellApi.showInFolder(worktree.path);
-    } catch (err) {
-      toast.error('Open folder failed', getErrorMessage(err));
-    }
   };
 
   const handleLock = async () => {
@@ -51,15 +44,6 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
     }
   };
 
-  const handleCopyPath = async () => {
-    try {
-      await navigator.clipboard.writeText(worktree.path);
-      toast.success('Path copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
-
   return (
     <>
       <ContextMenu trigger={children}>
@@ -72,11 +56,11 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
           </>
         )}
 
-        <MenuItem icon={FolderOpen} onSelect={handleOpenInFolder}>
+        <MenuItem icon={FolderOpen} onSelect={() => showInFinder(worktree.path)}>
           Open in Finder
         </MenuItem>
 
-        <MenuItem icon={Copy} onSelect={handleCopyPath}>
+        <MenuItem icon={Copy} onSelect={() => copyToClipboard(worktree.path)}>
           Copy Path
         </MenuItem>
 

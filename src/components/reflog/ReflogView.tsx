@@ -36,6 +36,7 @@ import {
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard } from '@/lib/actions';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -233,14 +234,6 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     }
   };
 
-  const handleCopyOid = async (oid: string) => {
-    try {
-      await navigator.clipboard.writeText(oid);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
   const getRefDisplayName = (ref: string) => {
     if (ref === 'HEAD') return 'HEAD';
     return ref.replace('refs/heads/', '');
@@ -360,7 +353,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleCopyOid(entry.newOid);
+                        copyToClipboard(entry.newOid);
                       }}
                       title="Copy SHA"
                     >

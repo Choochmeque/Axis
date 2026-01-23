@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { X } from 'lucide-react';
 import { CommitInfo } from './CommitInfo';
@@ -12,6 +13,7 @@ interface CommitDetailPanelProps {
 }
 
 export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
+  const { t } = useTranslation();
   const { selectedCommitFiles, selectedCommitFile, isLoadingCommitFiles, selectCommitFile } =
     useRepositoryStore();
 
@@ -27,7 +29,7 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
         <button
           className="flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors shrink-0 hover:bg-(--bg-hover) hover:text-(--text-primary)"
           onClick={onClose}
-          title="Close"
+          title={t('common.close')}
         >
           <X size={16} />
         </button>

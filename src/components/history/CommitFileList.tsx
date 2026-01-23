@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { DiffStatus } from '@/types';
 import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
 import { cn } from '../../lib/utils';
@@ -21,6 +22,7 @@ export function CommitFileList({
   onSelectFile,
   isLoading = false,
 }: CommitFileListProps) {
+  const { t } = useTranslation();
   const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
   const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
@@ -28,9 +30,9 @@ export function CommitFileList({
     return (
       <div className={listClass}>
         <div className={headerClass}>
-          <span className="flex-1">Changed Files</span>
+          <span className="flex-1">{t('history.fileList.title')}</span>
         </div>
-        <div className={emptyClass}>Loading...</div>
+        <div className={emptyClass}>{t('history.fileList.loading')}</div>
       </div>
     );
   }
@@ -39,9 +41,9 @@ export function CommitFileList({
     return (
       <div className={listClass}>
         <div className={headerClass}>
-          <span className="flex-1">Changed Files</span>
+          <span className="flex-1">{t('history.fileList.title')}</span>
         </div>
-        <div className={emptyClass}>No files changed</div>
+        <div className={emptyClass}>{t('history.fileList.noChanges')}</div>
       </div>
     );
   }
@@ -49,7 +51,7 @@ export function CommitFileList({
   return (
     <div className={listClass}>
       <div className={headerClass}>
-        <span className="flex-1">Changed Files</span>
+        <span className="flex-1">{t('history.fileList.title')}</span>
         <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
         <span className="flex gap-1.5 text-sm font-medium">
           <span className="text-success">+{totalAdditions}</span>

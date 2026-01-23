@@ -4,8 +4,7 @@ import type { Tag, Remote } from '@/types';
 import { ActionContext } from '@/types';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard } from '@/lib/actions';
 
 interface TagContextMenuProps {
   tag: Tag;
@@ -28,18 +27,9 @@ export function TagContextMenu({
   onPush,
   onDelete,
 }: TagContextMenuProps) {
-  const handleCopyName = async () => {
-    try {
-      await navigator.clipboard.writeText(tag.name);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
-
   return (
     <ContextMenu trigger={children}>
-      <MenuItem icon={Copy} onSelect={handleCopyName}>
+      <MenuItem icon={Copy} onSelect={() => copyToClipboard(tag.name)}>
         Copy Tag Name to Clipboard
       </MenuItem>
       <MenuSeparator />

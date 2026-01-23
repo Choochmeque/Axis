@@ -18,6 +18,7 @@ import { stashApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard } from '@/lib/actions';
 
 interface StashContextMenuProps {
   stash: StashEntry;
@@ -74,15 +75,6 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
     }
   };
 
-  const handleCopyMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(stash.message);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
-
   return (
     <ContextMenu trigger={children}>
       <MenuItem icon={Play} onSelect={handleApply} hint="Keep in list">
@@ -130,7 +122,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       </ContextMenuSub>
 
       <MenuSeparator />
-      <MenuItem icon={Copy} onSelect={handleCopyMessage}>
+      <MenuItem icon={Copy} onSelect={() => copyToClipboard(stash.message)}>
         Copy Message
       </MenuItem>
 

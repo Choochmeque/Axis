@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { formatFullDateTime } from '@/lib/dateUtils';
@@ -5,24 +6,15 @@ import { RefType, SigningFormat } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard } from '@/lib/actions';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;
 }
 
 export function CommitInfo({ commit }: CommitInfoProps) {
+  const { t } = useTranslation();
   const { selectCommit } = useRepositoryStore();
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
 
   const handleParentClick = (parentOid: string) => {
     selectCommit(parentOid);
@@ -37,12 +29,12 @@ export function CommitInfo({ commit }: CommitInfoProps) {
     <div className="flex flex-col h-full bg-(--bg-primary)">
       <div className="flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0">
         <GitCommit size={16} />
-        <span>Commit Details</span>
+        <span>{t('history.commitInfo.title')}</span>
       </div>
 
       <div className="flex flex-col p-3 gap-2 flex-1 overflow-y-auto">
         <div className={rowClass}>
-          <span className={metaLabelClass}>SHA</span>
+          <span className={metaLabelClass}>{t('history.commitInfo.sha')}</span>
           <div className={valueClass}>
             <code className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded break-all">
               {commit.oid}
@@ -50,7 +42,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
             <button
               className="flex items-center justify-center w-5 h-5 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors shrink-0 hover:bg-(--bg-hover) hover:text-(--text-primary)"
               onClick={() => copyToClipboard(commit.oid)}
-              title="Copy SHA"
+              title={t('history.commitInfo.copySha')}
             >
               <Copy size={12} />
             </button>
@@ -60,7 +52,9 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         {commit.parentOids.length > 0 && (
           <div className={rowClass}>
             <span className={metaLabelClass}>
-              {commit.parentOids.length === 1 ? 'Parent' : 'Parents'}
+              {commit.parentOids.length === 1
+                ? t('history.commitInfo.parent')
+                : t('history.commitInfo.parents')}
             </span>
             <div className={cn(valueClass, 'gap-1')}>
               {commit.parentOids.map((parentOid) => (
@@ -68,7 +62,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
                   key={parentOid}
                   className="font-mono text-xs bg-(--bg-tertiary) py-0.5 px-1.5 rounded border-none text-(--accent-color) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:underline"
                   onClick={() => handleParentClick(parentOid)}
-                  title="Go to parent commit"
+                  title={t('history.commitInfo.goToParent')}
                 >
                   {parentOid.substring(0, 7)}
                 </button>
@@ -85,7 +79,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
               name={commit.author.name}
               size={12}
             />
-            Author
+            {t('history.commitInfo.author')}
           </span>
           <div className={valueClass}>
             <span className="font-medium">{commit.author.name}</span>
@@ -96,7 +90,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         <div className={rowClass}>
           <span className={metaLabelClass}>
             <Calendar size={12} />
-            Date
+            {t('history.commitInfo.date')}
           </span>
           <div className={valueClass}>{formatFullDateTime(commit.timestamp)}</div>
         </div>
@@ -111,7 +105,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
               ) : (
                 <ShieldCheck size={12} />
               )}
-              Signed
+              {t('history.commitInfo.signed')}
             </span>
             <div className={valueClass}>
               <span
@@ -123,7 +117,9 @@ export function CommitInfo({ commit }: CommitInfoProps) {
                 )}
               >
                 {commit.signature.format?.toUpperCase() ?? 'UNKNOWN'}
-                {commit.signature.verified ? ' (Verified)' : ' (Unverified)'}
+                {commit.signature.verified
+                  ? ` (${t('history.commitInfo.verified')})`
+                  : ` (${t('history.commitInfo.unverified')})`}
               </span>
               {commit.signature.signer && (
                 <span className="text-sm text-(--text-secondary)">{commit.signature.signer}</span>
@@ -134,7 +130,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
 
         {'refs' in commit && commit.refs.length > 0 && (
           <div className={rowClass}>
-            <span className={metaLabelClass}>Refs</span>
+            <span className={metaLabelClass}>{t('history.commitInfo.refs')}</span>
             <div className={cn(valueClass, 'gap-1')}>
               {commit.refs.map((ref: GraphCommit['refs'][0], idx: number) => {
                 // Use lane color if available, otherwise fall back to type-based colors
@@ -166,7 +162,7 @@ export function CommitInfo({ commit }: CommitInfoProps) {
         )}
 
         <div className="flex flex-col gap-1 mt-1">
-          <span className={metaLabelClass}>Message</span>
+          <span className={metaLabelClass}>{t('history.commitInfo.message')}</span>
           <div className="font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-tertiary) p-2 rounded max-h-30 overflow-y-auto">
             {commit.message}
           </div>

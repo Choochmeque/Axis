@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Archive, FolderOpen } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from '@/hooks';
@@ -29,14 +30,15 @@ interface ArchiveDialogProps {
   commitSummary?: string;
 }
 
-const ARCHIVE_FORMATS: { value: ArchiveFormat; label: string; extension: string }[] = [
-  { value: 'zip', label: 'ZIP Archive', extension: '.zip' },
-  { value: 'tar', label: 'TAR Archive', extension: '.tar' },
-  { value: 'tar.gz', label: 'Gzipped TAR', extension: '.tar.gz' },
-  { value: 'tar.bz2', label: 'Bzip2 TAR', extension: '.tar.bz2' },
+const ARCHIVE_FORMATS: { value: ArchiveFormat; labelKey: string; extension: string }[] = [
+  { value: 'zip', labelKey: 'history.archive.formats.zip', extension: '.zip' },
+  { value: 'tar', labelKey: 'history.archive.formats.tar', extension: '.tar' },
+  { value: 'tar.gz', labelKey: 'history.archive.formats.targz', extension: '.tar.gz' },
+  { value: 'tar.bz2', labelKey: 'history.archive.formats.tarbz2', extension: '.tar.bz2' },
 ];
 
 export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: ArchiveDialogProps) {
+  const { t } = useTranslation();
   const repository = useRepositoryStore((state) => state.repository);
   const [format, setFormat] = useState<ArchiveFormat>('zip');
   const [outputPath, setOutputPath] = useState('');
@@ -65,13 +67,13 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
         defaultPath: defaultName,
         filters: [
           {
-            name: selectedFormat?.label || 'Archive',
+            name: selectedFormat ? t(selectedFormat.labelKey) : 'Archive',
             extensions: [
               format === 'tar.gz' ? 'tar.gz' : format === 'tar.bz2' ? 'tar.bz2' : format,
             ],
           },
         ],
-        title: 'Save Archive As',
+        title: t('history.archive.saveArchiveAs'),
       });
 
       if (path && typeof path === 'string') {
@@ -84,7 +86,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
 
   const handleCreate = async () => {
     if (!outputPath.trim()) {
-      setError('Output path is required');
+      setError(t('history.archive.outputPathRequired'));
       return;
     }
 
@@ -100,7 +102,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
       });
 
       onClose();
-      toast.success('Archive created');
+      toast.success(t('history.archive.archiveCreated'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -111,7 +113,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-112.5">
-        <DialogTitle icon={Archive}>Create Archive</DialogTitle>
+        <DialogTitle icon={Archive}>{t('history.archive.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -121,7 +123,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
           )}
 
           <div className="field">
-            <Label>Source:</Label>
+            <Label>{t('history.archive.source')}</Label>
             <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
               <span className="font-mono text-(--text-secondary)">
                 {commitOid ? commitOid.slice(0, 7) : 'HEAD'}
@@ -134,7 +136,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             </div>
           </div>
 
-          <FormField label="Format:" htmlFor="archive-format">
+          <FormField label={t('history.archive.format')} htmlFor="archive-format">
             <Select
               id="archive-format"
               value={format}
@@ -143,20 +145,20 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             >
               {ARCHIVE_FORMATS.map((f) => (
                 <SelectItem key={f.value} value={f.value}>
-                  {f.label} ({f.extension})
+                  {t(f.labelKey)} ({f.extension})
                 </SelectItem>
               ))}
             </Select>
           </FormField>
 
-          <FormField label="Save to:" htmlFor="output-path">
+          <FormField label={t('history.archive.saveTo')} htmlFor="output-path">
             <div className="flex gap-2">
               <Input
                 id="output-path"
                 type="text"
                 value={outputPath}
                 onChange={(e) => setOutputPath(e.target.value)}
-                placeholder="Select output file..."
+                placeholder={t('history.archive.selectOutputFile')}
                 disabled={isLoading}
                 className="flex-1"
               />
@@ -167,16 +169,16 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
           </FormField>
 
           <FormField
-            label="Prefix (optional):"
+            label={t('history.archive.prefix')}
             htmlFor="archive-prefix"
-            hint="Prepended to all file paths in the archive"
+            hint={t('history.archive.prefixHint')}
           >
             <Input
               id="archive-prefix"
               type="text"
               value={prefix}
               onChange={(e) => setPrefix(e.target.value)}
-              placeholder="e.g., project-name/"
+              placeholder={t('history.archive.prefixPlaceholder')}
               disabled={isLoading}
             />
           </FormField>
@@ -185,7 +187,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isLoading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -193,7 +195,7 @@ export function ArchiveDialog({ isOpen, onClose, commitOid, commitSummary }: Arc
             onClick={handleCreate}
             disabled={isLoading || !outputPath.trim()}
           >
-            {isLoading ? 'Creating...' : 'Create Archive'}
+            {isLoading ? t('history.archive.creating') : t('history.archive.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

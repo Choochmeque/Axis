@@ -5,6 +5,7 @@ import type { Branch } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
+import { copyToClipboard } from '@/lib/actions';
 
 interface RemoteBranchContextMenuProps {
   branch: Branch;
@@ -36,7 +37,7 @@ export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContex
           })}
         </MenuItem>
         <MenuSeparator />
-        <MenuItem icon={Copy} onSelect={() => navigator.clipboard.writeText(branch.name)}>
+        <MenuItem icon={Copy} onSelect={() => copyToClipboard(branch.name)}>
           {t('branches.contextMenu.copyBranchName')}
         </MenuItem>
         <MenuItem icon={Diff} disabled>

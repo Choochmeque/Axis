@@ -1,5 +1,6 @@
 // Refactored to use vscode-git-graph approach
 import { useRef, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { GitCommit, Loader2 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { BisectBanner } from '../merge/BisectBanner';
 import { RefType } from '@/types';
 
 export function HistoryView() {
+  const { t } = useTranslation();
   const {
     commits,
     isLoadingCommits,
@@ -115,7 +117,7 @@ export function HistoryView() {
   if (isLoadingCommits) {
     return (
       <div className="historyEmptyState">
-        <p>Loading commits...</p>
+        <p>{t('history.loading')}</p>
       </div>
     );
   }
@@ -124,7 +126,7 @@ export function HistoryView() {
     return (
       <div className="historyEmptyState">
         <GitCommit size={48} strokeWidth={1} />
-        <p>Error loading commits</p>
+        <p>{t('history.errorLoading')}</p>
         <p className="text-xs text-(--text-tertiary)">{error}</p>
       </div>
     );
@@ -134,7 +136,7 @@ export function HistoryView() {
     return (
       <div className="historyEmptyState">
         <GitCommit size={48} strokeWidth={1} />
-        <p>No commits yet</p>
+        <p>{t('history.noCommits')}</p>
       </div>
     );
   }
@@ -172,7 +174,7 @@ export function HistoryView() {
         {isLoadingMoreCommits && (
           <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
             <Loader2 size={16} className="animate-spin" />
-            <span>Loading more commits...</span>
+            <span>{t('history.loadingMore')}</span>
           </div>
         )}
       </div>

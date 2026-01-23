@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { shellApi } from '@/services/api';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { showInFinder } from '@/lib/actions';
 import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
@@ -55,16 +56,6 @@ export function Toolbar() {
   const handleRefresh = useCallback(() => {
     refreshRepository?.();
   }, [refreshRepository]);
-
-  const handleShowInFinder = useCallback(async () => {
-    if (repository?.path) {
-      try {
-        await shellApi.showInFolder(repository.path);
-      } catch (err) {
-        toast.error('Show in Finder failed', getErrorMessage(err));
-      }
-    }
-  }, [repository]);
 
   const handleOpenTerminal = useCallback(async () => {
     if (repository?.path) {
@@ -176,7 +167,7 @@ export function Toolbar() {
         <div className="flex items-center gap-0.5">
           <button
             className={toolbarButtonClass}
-            onClick={handleShowInFinder}
+            onClick={() => repository?.path && showInFinder(repository.path)}
             title="Show in Finder"
           >
             <FolderOpen size={18} />

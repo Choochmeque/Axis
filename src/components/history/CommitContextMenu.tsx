@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GitBranch,
   GitMerge,
@@ -57,6 +58,7 @@ export function CommitContextMenu({
   onCherryPick,
   onReset,
 }: CommitContextMenuProps) {
+  const { t } = useTranslation();
   const { repository, loadBranches, loadTags, loadCommits, loadStatus } = useRepositoryStore();
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
@@ -88,7 +90,7 @@ export function CommitContextMenu({
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        toast.error('Checkout failed', getErrorMessage(err));
+        toast.error(t('history.contextMenu.checkoutFailed'), getErrorMessage(err));
       }
     }
   };
@@ -192,57 +194,74 @@ export function CommitContextMenu({
     <>
       <ContextMenu trigger={children}>
         <MenuItem icon={Check} onSelect={handleCheckout} shortcut={commit.shortOid}>
-          Checkout
+          {t('history.contextMenu.checkout')}
         </MenuItem>
         <MenuItem icon={ArrowUpFromLine} disabled>
-          Push revision...
+          {t('history.contextMenu.pushRevision')}
         </MenuItem>
         <MenuSeparator />
         <MenuItem icon={GitMerge} disabled onSelect={handleMerge}>
-          Merge into {repository?.currentBranch ?? 'current branch'}...
+          {t('history.contextMenu.mergeInto', {
+            branch: repository?.currentBranch ?? 'current branch',
+          })}
         </MenuItem>
         <MenuItem icon={GitMerge} className="[&>svg]:rotate-180" onSelect={handleRebase}>
-          Rebase...
+          {t('history.contextMenu.rebase')}
         </MenuItem>
         <MenuSeparator />
         <MenuItem icon={Tag} onSelect={handleCreateTag}>
-          Tag...
+          {t('history.contextMenu.tag')}
         </MenuItem>
         <MenuItem icon={PenTool} disabled>
-          Sign...
+          {t('history.contextMenu.sign')}
         </MenuItem>
         <MenuItem icon={GitBranch} onSelect={handleCreateBranch}>
-          Branch...
+          {t('history.contextMenu.branch')}
         </MenuItem>
         <MenuSeparator />
 
-        <SubMenu icon={RotateCcw} label={`Reset ${repository?.currentBranch ?? 'branch'} to here`}>
-          <MenuItem onSelect={() => handleReset(ResetMode.Soft)} hint="Keep all changes staged">
-            Soft
+        <SubMenu
+          icon={RotateCcw}
+          label={t('history.contextMenu.resetToHere', {
+            branch: repository?.currentBranch ?? 'branch',
+          })}
+        >
+          <MenuItem
+            onSelect={() => handleReset(ResetMode.Soft)}
+            hint={t('history.contextMenu.resetSoftHint')}
+          >
+            {t('history.contextMenu.resetSoft')}
           </MenuItem>
-          <MenuItem onSelect={() => handleReset(ResetMode.Mixed)} hint="Keep changes unstaged">
-            Mixed
+          <MenuItem
+            onSelect={() => handleReset(ResetMode.Mixed)}
+            hint={t('history.contextMenu.resetMixedHint')}
+          >
+            {t('history.contextMenu.resetMixed')}
           </MenuItem>
-          <MenuItem danger onSelect={() => handleReset(ResetMode.Hard)} hint="Discard all changes">
-            Hard
+          <MenuItem
+            danger
+            onSelect={() => handleReset(ResetMode.Hard)}
+            hint={t('history.contextMenu.resetHardHint')}
+          >
+            {t('history.contextMenu.resetHard')}
           </MenuItem>
         </SubMenu>
 
         <MenuItem icon={Undo2} onSelect={handleRevert}>
-          Revert commit...
+          {t('history.contextMenu.revertCommit')}
         </MenuItem>
         <MenuItem icon={CherryIcon} onSelect={handleCherryPick}>
-          Cherry Pick
+          {t('history.contextMenu.cherryPick')}
         </MenuItem>
         <MenuItem icon={Search} onSelect={handleBisectGood}>
-          Bisect from here (good)...
+          {t('history.contextMenu.bisectFromHere')}
         </MenuItem>
         <MenuItem icon={FileText} onSelect={() => setShowPatchDialog(true)}>
-          Create Patch...
+          {t('history.contextMenu.createPatch')}
         </MenuItem>
         <MenuSeparator />
         <MenuItem icon={Archive} onSelect={() => setShowArchiveDialog(true)}>
-          Archive...
+          {t('history.contextMenu.archive')}
         </MenuItem>
 
         <CustomActionsMenuSection
@@ -256,12 +275,14 @@ export function CommitContextMenu({
 
         <MenuSeparator />
 
-        <SubMenu icon={Copy} label="Copy">
+        <SubMenu icon={Copy} label={t('history.contextMenu.copy')}>
           <MenuItem onSelect={handleCopyShortSha} shortcut={commit.shortOid}>
-            Short SHA
+            {t('history.contextMenu.shortSha')}
           </MenuItem>
-          <MenuItem onSelect={handleCopySha}>Full SHA</MenuItem>
-          <MenuItem onSelect={() => copyToClipboard(commit.summary)}>Commit Message</MenuItem>
+          <MenuItem onSelect={handleCopySha}>{t('history.contextMenu.fullSha')}</MenuItem>
+          <MenuItem onSelect={() => copyToClipboard(commit.summary)}>
+            {t('history.contextMenu.commitMessage')}
+          </MenuItem>
         </SubMenu>
       </ContextMenu>
 

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch, Loader2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -32,6 +33,7 @@ const REBASE_ACTIONS: { value: RebaseAction; label: string; description: string 
 ];
 
 export function InteractiveRebaseDialog() {
+  const { t } = useTranslation();
   const {
     isOpen,
     entries,
@@ -71,14 +73,14 @@ export function InteractiveRebaseDialog() {
       );
 
       if (result.success && result.conflicts.length === 0) {
-        toast.success('Interactive rebase completed');
+        toast.success(t('merge.interactiveRebase.notifications.complete'));
         reset();
         // Refresh repository data
         await useRepositoryStore.getState().loadCommits();
         await useStagingStore.getState().loadStatus();
         await useRepositoryStore.getState().loadBranches();
       } else if (result.conflicts.length > 0) {
-        toast.warning('Rebase has conflicts - resolve and continue');
+        toast.warning(t('merge.interactiveRebase.notifications.hasConflicts'));
         reset();
         // Refresh to show conflict state
         await useStagingStore.getState().loadStatus();
@@ -128,7 +130,7 @@ export function InteractiveRebaseDialog() {
             size="sm"
             onClick={() => moveEntry(index, index - 1)}
             disabled={index === 0}
-            title="Move up"
+            title={t('merge.interactiveRebase.moveUp')}
           >
             <ArrowUp size={14} />
           </Button>
@@ -137,7 +139,7 @@ export function InteractiveRebaseDialog() {
             size="sm"
             onClick={() => moveEntry(index, index + 1)}
             disabled={index === entries.length - 1}
-            title="Move down"
+            title={t('merge.interactiveRebase.moveDown')}
           >
             <ArrowDown size={14} />
           </Button>
@@ -152,7 +154,7 @@ export function InteractiveRebaseDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-175 max-h-[85vh]">
-        <DialogTitle icon={GitBranch}>Interactive Rebase</DialogTitle>
+        <DialogTitle icon={GitBranch}>{t('merge.interactiveRebase.title')}</DialogTitle>
 
         <DialogBody>
           {displayError && (
@@ -164,27 +166,30 @@ export function InteractiveRebaseDialog() {
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 size={20} className="animate-spin text-(--text-secondary)" />
-              <span className="ml-3 text-sm text-(--text-secondary)">Loading commits...</span>
+              <span className="ml-3 text-sm text-(--text-secondary)">
+                {t('merge.interactiveRebase.loadingCommits')}
+              </span>
             </div>
           ) : (
             <>
               <div className="mb-4 p-3 bg-(--bg-secondary) rounded-md">
                 <p className="m-0 text-sm text-(--text-secondary)">
-                  Rebasing <strong className="text-(--accent-color)">{commitsToRebase}</strong>{' '}
-                  commit(s) onto <strong className="text-(--text-primary) font-mono">{onto}</strong>
+                  {t('merge.interactiveRebase.rebasing', { count: commitsToRebase, target: onto })}
                   {entries.length !== commitsToRebase && (
                     <span className="text-(--text-tertiary)">
                       {' '}
-                      ({entries.length - commitsToRebase} will be dropped)
+                      {t('merge.interactiveRebase.willBeDropped', {
+                        count: entries.length - commitsToRebase,
+                      })}
                     </span>
                   )}
                 </p>
               </div>
 
               <div className="mb-2 flex items-center gap-4 text-xs text-(--text-tertiary)">
-                <span>Use arrows to reorder commits</span>
+                <span>{t('merge.interactiveRebase.reorderHelp')}</span>
                 <span className="text-(--border-color)">|</span>
-                <span>Select action for each commit</span>
+                <span>{t('merge.interactiveRebase.actionHelp')}</span>
               </div>
 
               <div
@@ -219,30 +224,41 @@ export function InteractiveRebaseDialog() {
 
               <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md text-xs text-(--text-tertiary) space-y-1">
                 <p className="m-0">
-                  <strong className="text-(--text-secondary)">pick</strong> = use commit as-is
+                  <strong className="text-(--text-secondary)">
+                    {t('merge.interactiveRebase.actions.pick')}
+                  </strong>{' '}
+                  = {t('merge.interactiveRebase.legend.pick')}
                 </p>
                 <p className="m-0">
-                  <strong className="text-(--text-secondary)">reword</strong> = use commit but edit
-                  message
+                  <strong className="text-(--text-secondary)">
+                    {t('merge.interactiveRebase.actions.reword')}
+                  </strong>{' '}
+                  = {t('merge.interactiveRebase.legend.reword')}
                 </p>
                 <p className="m-0">
-                  <strong className="text-(--text-secondary)">squash</strong> = meld into previous
-                  commit (keep message)
+                  <strong className="text-(--text-secondary)">
+                    {t('merge.interactiveRebase.actions.squash')}
+                  </strong>{' '}
+                  = {t('merge.interactiveRebase.legend.squash')}
                 </p>
                 <p className="m-0">
-                  <strong className="text-(--text-secondary)">fixup</strong> = meld into previous
-                  (discard message)
+                  <strong className="text-(--text-secondary)">
+                    {t('merge.interactiveRebase.actions.fixup')}
+                  </strong>{' '}
+                  = {t('merge.interactiveRebase.legend.fixup')}
                 </p>
                 <p className="m-0">
-                  <strong className="text-(--text-secondary)">drop</strong> = remove commit entirely
+                  <strong className="text-(--text-secondary)">
+                    {t('merge.interactiveRebase.actions.drop')}
+                  </strong>{' '}
+                  = {t('merge.interactiveRebase.legend.drop')}
                 </p>
               </div>
 
               {preview && preview.preview.commitsToRebase.length > 0 && (
                 <div className="mt-3 p-3 bg-(--bg-secondary) rounded-md">
                   <p className="m-0 text-xs text-warning">
-                    Warning: Rebase rewrites commit history. Only rebase commits that haven't been
-                    pushed to a shared repository.
+                    {t('merge.interactiveRebase.historyWarning')}
                   </p>
                 </div>
               )}
@@ -253,7 +269,7 @@ export function InteractiveRebaseDialog() {
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isExecuting}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -261,7 +277,9 @@ export function InteractiveRebaseDialog() {
             onClick={handleExecute}
             disabled={isExecuting || isLoading || entries.length === 0}
           >
-            {isExecuting ? 'Rebasing...' : 'Start Rebase'}
+            {isExecuting
+              ? t('merge.interactiveRebase.rebasing_button')
+              : t('merge.interactiveRebase.startButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

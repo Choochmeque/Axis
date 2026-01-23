@@ -460,7 +460,135 @@
       "abort": "Abort",
       "continue": "Continue",
       "noCommitsError": "No commits selected"
-    }
+    },
+    "bisect": {
+      "title": "Git Bisect",
+      "banner": {
+        "testing": "Bisecting: testing",
+        "stepsLeft": "(~{{steps}} steps left)"
+      },
+      "markGood": "Mark as good",
+      "markBad": "Mark as bad",
+      "skipCommit": "Skip commit",
+      "endBisect": "End bisect",
+      "badCommit": "Bad (New) Commit",
+      "badCommitPlaceholder": "HEAD (leave empty for current)",
+      "goodCommit": "Good (Old) Commit",
+      "goodCommitPlaceholder": "Enter commit hash or ref",
+      "description": "Bisect uses binary search to find the commit that introduced a bug. Specify a known good (working) commit and optionally a bad (broken) commit.",
+      "currentCommit": "Current commit to test:",
+      "stepsRemaining": "~{{steps}} steps remaining ({{total}} commits left)",
+      "testAndMark": "Test this commit and mark it:",
+      "good": "Good",
+      "bad": "Bad",
+      "skip": "Skip",
+      "goodCount": "Good: {{count}} commits",
+      "skippedCount": "Skipped: {{count}} commits",
+      "firstBadFound": "First Bad Commit Found",
+      "starting": "Starting...",
+      "startButton": "Start Bisect",
+      "endButton": "End Bisect",
+      "specifyGoodCommit": "Please specify a good (old) commit",
+      "notifications": {
+        "complete": "Bisect complete",
+        "firstBadCommit": "First bad commit: {{oid}}",
+        "started": "Bisect started",
+        "testingCommit": "Testing commit {{oid}}",
+        "markFailed": "Bisect mark failed",
+        "ended": "Bisect ended",
+        "endFailed": "Failed to end bisect"
+      }
+    },
+    "conflictResolver": {
+      "title": "Resolve Conflicts",
+      "refresh": "Refresh conflicts",
+      "conflictedFiles": "{{count}} conflicted file",
+      "conflictedFilesPlural": "{{count}} conflicted files",
+      "loading": "Loading...",
+      "selectFile": "Select a file to resolve conflicts",
+      "failedLoad": "Failed to load conflicts",
+      "failedLoadContent": "Failed to load file content",
+      "failedResolve": "Failed to resolve conflict",
+      "ours": "Ours (Current)",
+      "theirs": "Theirs (Incoming)",
+      "useThis": "Use This",
+      "merged": "Merged Result",
+      "markResolved": "Mark Resolved",
+      "deleted": "(deleted)",
+      "operations": {
+        "merging": "Merging",
+        "rebasing": "Rebasing",
+        "cherryPicking": "Cherry Picking",
+        "reverting": "Reverting",
+        "bisecting": "Bisecting"
+      }
+    },
+    "interactiveRebase": {
+      "title": "Interactive Rebase",
+      "loadingCommits": "Loading commits...",
+      "rebasing": "Rebasing {{count}} commit(s) onto {{target}}",
+      "willBeDropped": "({{count}} will be dropped)",
+      "reorderHelp": "Use arrows to reorder commits",
+      "actionHelp": "Select action for each commit",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "actions": {
+        "pick": "pick",
+        "pickDesc": "use commit",
+        "reword": "reword",
+        "rewordDesc": "edit message",
+        "edit": "edit",
+        "editDesc": "stop for amending",
+        "squash": "squash",
+        "squashDesc": "meld into previous",
+        "fixup": "fixup",
+        "fixupDesc": "meld, discard message",
+        "drop": "drop",
+        "dropDesc": "remove commit"
+      },
+      "legend": {
+        "pick": "use commit as-is",
+        "reword": "use commit but edit message",
+        "squash": "meld into previous commit (keep message)",
+        "fixup": "meld into previous (discard message)",
+        "drop": "remove commit entirely"
+      },
+      "historyWarning": "Warning: Rebase rewrites commit history. Only rebase commits that haven't been pushed to a shared repository.",
+      "rebasing_button": "Rebasing...",
+      "startButton": "Start Rebase",
+      "notifications": {
+        "complete": "Interactive rebase completed",
+        "hasConflicts": "Rebase has conflicts - resolve and continue"
+      }
+    },
+    "reset": {
+      "soft": {
+        "title": "Soft Reset",
+        "description": "Move branch pointer to target commit. All changes will be kept staged.",
+        "warning": "This is a safe operation. No changes will be lost."
+      },
+      "mixed": {
+        "title": "Mixed Reset",
+        "description": "Move branch pointer to target commit. All changes will be kept but unstaged.",
+        "warning": "This is a safe operation. No changes will be lost."
+      },
+      "hard": {
+        "title": "Hard Reset",
+        "description": "Move branch pointer to target commit. All changes will be permanently discarded.",
+        "warning": "This will permanently delete all uncommitted changes. This cannot be undone!"
+      },
+      "branch": "Branch",
+      "resetToCommit": "Reset to Commit",
+      "resetting": "Resetting...",
+      "resetButton": "Reset {{mode}}"
+    },
+    "rebasePreview": {
+      "before": "Before",
+      "after": "After",
+      "noCommits": "No commits to rebase. Branch is already up to date.",
+      "more": "+{{count}} more"
+    },
+    "rebaseDescription": "This will replay all commits from {{source}} on top of {{target}}."
   },
   "dialogs": {
     "confirm": "Confirm",

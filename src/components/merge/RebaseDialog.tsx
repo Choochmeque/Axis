@@ -268,13 +268,10 @@ export function RebaseDialog({
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-base text-(--text-secondary)">
                 <p className="m-0 mb-2">
-                  This will replay all commits from{' '}
-                  <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
-                  top of{' '}
-                  <strong className="text-(--text-primary) font-mono">
-                    {targetCommit ? targetCommit.shortOid : selectedBranch || '...'}
-                  </strong>
-                  .
+                  {t('merge.rebaseDescription', {
+                    source: currentBranch,
+                    target: targetCommit ? targetCommit.shortOid : selectedBranch || '...',
+                  })}
                 </p>
                 <p className="m-0 text-xs text-warning">{t('merge.rebase.rebaseWarning')}</p>
               </div>

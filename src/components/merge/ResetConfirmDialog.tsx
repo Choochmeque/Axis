@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { operationApi } from '@/services/api';
 import { ResetMode } from '@/types';
@@ -26,27 +27,6 @@ interface ResetConfirmDialogProps {
   currentBranch: string;
 }
 
-const modeDescriptions: Record<
-  ResetModeType,
-  { title: string; description: string; warning: string }
-> = {
-  [ResetMode.Soft]: {
-    title: 'Soft Reset',
-    description: 'Move branch pointer to target commit. All changes will be kept staged.',
-    warning: 'This is a safe operation. No changes will be lost.',
-  },
-  [ResetMode.Mixed]: {
-    title: 'Mixed Reset',
-    description: 'Move branch pointer to target commit. All changes will be kept but unstaged.',
-    warning: 'This is a safe operation. No changes will be lost.',
-  },
-  [ResetMode.Hard]: {
-    title: 'Hard Reset',
-    description: 'Move branch pointer to target commit. All changes will be permanently discarded.',
-    warning: 'This will permanently delete all uncommitted changes. This cannot be undone!',
-  },
-};
-
 export function ResetConfirmDialog({
   isOpen,
   onClose,
@@ -55,10 +35,34 @@ export function ResetConfirmDialog({
   mode,
   currentBranch,
 }: ResetConfirmDialogProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const modeInfo = modeDescriptions[mode];
+  const getModeInfo = (resetMode: ResetModeType) => {
+    switch (resetMode) {
+      case ResetMode.Soft:
+        return {
+          title: t('merge.reset.soft.title'),
+          description: t('merge.reset.soft.description'),
+          warning: t('merge.reset.soft.warning'),
+        };
+      case ResetMode.Mixed:
+        return {
+          title: t('merge.reset.mixed.title'),
+          description: t('merge.reset.mixed.description'),
+          warning: t('merge.reset.mixed.warning'),
+        };
+      case ResetMode.Hard:
+        return {
+          title: t('merge.reset.hard.title'),
+          description: t('merge.reset.hard.description'),
+          warning: t('merge.reset.hard.warning'),
+        };
+    }
+  };
+
+  const modeInfo = getModeInfo(mode);
   const isHardReset = mode === ResetMode.Hard;
 
   const handleReset = async () => {
@@ -100,14 +104,14 @@ export function ResetConfirmDialog({
           )}
 
           <div className="field">
-            <Label>Branch</Label>
+            <Label>{t('merge.reset.branch')}</Label>
             <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
               {currentBranch}
             </div>
           </div>
 
           <div className="field">
-            <Label>Reset to Commit</Label>
+            <Label>{t('merge.reset.resetToCommit')}</Label>
             <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
               <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
                 {commit.shortOid}
@@ -138,7 +142,7 @@ export function ResetConfirmDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isLoading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -146,7 +150,11 @@ export function ResetConfirmDialog({
             onClick={handleReset}
             disabled={isLoading}
           >
-            {isLoading ? 'Resetting...' : `Reset ${mode.charAt(0).toUpperCase() + mode.slice(1)}`}
+            {isLoading
+              ? t('merge.reset.resetting')
+              : t('merge.reset.resetButton', {
+                  mode: mode.charAt(0).toUpperCase() + mode.slice(1),
+                })}
           </Button>
         </DialogFooter>
       </DialogContent>

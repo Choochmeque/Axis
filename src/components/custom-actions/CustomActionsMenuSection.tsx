@@ -24,15 +24,15 @@ export function CustomActionsMenuSection({
 
   const buildVariables = (): ActionVariables => ({
     repoPath: repository?.path || '',
-    branch: repository?.currentBranch || undefined,
-    file: variables.file,
-    selectedFiles: variables.selectedFiles,
-    commitHash: variables.commitHash,
-    commitShort: variables.commitShort,
-    commitMessage: variables.commitMessage,
-    remoteUrl: variables.remoteUrl,
-    tag: variables.tag,
-    stashRef: variables.stashRef,
+    branch: repository?.currentBranch ?? null,
+    file: variables.file ?? null,
+    selectedFiles: variables.selectedFiles ?? null,
+    commitHash: variables.commitHash ?? null,
+    commitShort: variables.commitShort ?? null,
+    commitMessage: variables.commitMessage ?? null,
+    remoteUrl: variables.remoteUrl ?? null,
+    tag: variables.tag ?? null,
+    stashRef: variables.stashRef ?? null,
   });
 
   return (
@@ -44,7 +44,6 @@ export function CustomActionsMenuSection({
           <MenuItem
             key={action.id}
             icon={isExecuting ? Loader2 : Terminal}
-            iconClassName={isExecuting ? 'animate-spin' : undefined}
             disabled={isExecuting}
             shortcut={action.shortcut || undefined}
             onSelect={() => confirmAndExecute(action, buildVariables())}

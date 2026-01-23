@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Terminal, HelpCircle } from 'lucide-react';
 import {
   Dialog,
@@ -54,6 +55,7 @@ export function ActionEditorDialog({
   action,
   defaultStorage,
 }: ActionEditorDialogProps) {
+  const { t } = useTranslation();
   const saveAction = useCustomActionsStore((s) => s.saveAction);
 
   const [name, setName] = useState('');
@@ -123,15 +125,15 @@ export function ActionEditorDialog({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setError('Name is required');
+      setError(t('customActions.editor.validation.nameRequired'));
       return;
     }
     if (!command.trim()) {
-      setError('Command is required');
+      setError(t('customActions.editor.validation.commandRequired'));
       return;
     }
     if (contexts.length === 0) {
-      setError('At least one context is required');
+      setError(t('customActions.editor.validation.contextRequired'));
       return;
     }
 
@@ -170,35 +172,40 @@ export function ActionEditorDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-140">
-        <DialogTitle icon={Terminal}>{action ? 'Edit Action' : 'Create Action'}</DialogTitle>
+        <DialogTitle icon={Terminal}>
+          {action ? t('customActions.editor.editTitle') : t('customActions.editor.createTitle')}
+        </DialogTitle>
 
         <DialogBody className="space-y-4">
-          <FormField label="Name *" htmlFor="action-name">
+          <FormField label={t('customActions.editor.nameLabel')} htmlFor="action-name">
             <Input
               id="action-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Open in VS Code"
+              placeholder={t('customActions.editor.namePlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Description" htmlFor="action-description">
+          <FormField
+            label={t('customActions.editor.descriptionLabel')}
+            htmlFor="action-description"
+          >
             <Input
               id="action-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description shown as tooltip"
+              placeholder={t('customActions.editor.descriptionPlaceholder')}
             />
           </FormField>
 
-          <FormField label="Command *" htmlFor="action-command">
+          <FormField label={t('customActions.editor.commandLabel')} htmlFor="action-command">
             <div className="relative">
               <textarea
                 id="action-command"
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
-                placeholder='code "$FILE"'
+                placeholder={t('customActions.editor.commandPlaceholder')}
                 rows={3}
                 className="w-full rounded-md border border-(--border-color) bg-(--bg-tertiary) p-2 pr-8 font-mono text-sm text-(--text-primary) resize-none outline-none focus:border-(--accent-color)"
                 autoComplete="off"
@@ -210,7 +217,7 @@ export function ActionEditorDialog({
                 type="button"
                 onClick={() => setShowVariables(!showVariables)}
                 className="absolute top-2 right-2 text-(--text-muted) hover:text-(--text-secondary)"
-                title="Show variables"
+                title={t('customActions.editor.showVariables')}
               >
                 <HelpCircle className="w-4 h-4" />
               </button>
@@ -225,17 +232,17 @@ export function ActionEditorDialog({
             </div>
           </FormField>
 
-          <FormField label="Working Directory" htmlFor="action-workdir">
+          <FormField label={t('customActions.editor.workingDirLabel')} htmlFor="action-workdir">
             <Input
               id="action-workdir"
               value={workingDir}
               onChange={(e) => setWorkingDir(e.target.value)}
-              placeholder="$REPO_PATH (default)"
+              placeholder={t('customActions.editor.workingDirPlaceholder')}
               className="font-mono text-sm"
             />
           </FormField>
 
-          <FormField label="Show In Contexts *">
+          <FormField label={t('customActions.editor.contextsLabel')}>
             <div className="flex flex-wrap gap-2">
               {CONTEXT_OPTIONS.map(({ value, label }) => (
                 <label
@@ -252,13 +259,13 @@ export function ActionEditorDialog({
                     checked={contexts.includes(value)}
                     onChange={() => handleContextToggle(value)}
                   />
-                  {label}
+                  {t(`customActions.editor.contexts.${label.toLowerCase()}`)}
                 </label>
               ))}
             </div>
           </FormField>
 
-          <FormField label="Keyboard Shortcut" htmlFor="action-shortcut">
+          <FormField label={t('customActions.editor.shortcutLabel')} htmlFor="action-shortcut">
             <Input
               id="action-shortcut"
               value={shortcut}
@@ -299,26 +306,28 @@ export function ActionEditorDialog({
                 parts.push(key);
                 setShortcut(parts.join('+'));
               }}
-              placeholder="Press keys..."
+              placeholder={t('customActions.editor.shortcutPlaceholder')}
               className="font-mono text-sm"
               readOnly
             />
             <p className="text-(--text-muted) mt-1 text-xs">
-              Click and press your shortcut. Backspace to clear.
+              {t('customActions.editor.shortcutHint')}
             </p>
           </FormField>
 
           {showStorageSelector && (
-            <FormField label="Storage" htmlFor="action-storage">
+            <FormField label={t('customActions.editor.storageLabel')} htmlFor="action-storage">
               <Select
                 id="action-storage"
                 value={storage}
                 onValueChange={(v) => setStorage(v as ActionStorageType)}
                 disabled={!!action}
               >
-                <SelectItem value={ActionStorageType.Global}>Global (all repositories)</SelectItem>
+                <SelectItem value={ActionStorageType.Global}>
+                  {t('customActions.editor.storage.global')}
+                </SelectItem>
                 <SelectItem value={ActionStorageType.Repository}>
-                  Repository (stored in .axis/actions.json)
+                  {t('customActions.editor.storage.repository')}
                 </SelectItem>
               </Select>
             </FormField>
@@ -326,25 +335,28 @@ export function ActionEditorDialog({
 
           <CheckboxField
             id="action-show-output"
-            label="Show output dialog after execution"
+            label={t('customActions.editor.showOutputLabel')}
             checked={showOutput}
             onCheckedChange={setShowOutput}
           />
 
           <CheckboxField
             id="action-confirm"
-            label="Show confirmation dialog before running"
+            label={t('customActions.editor.confirmLabel')}
             checked={confirm}
             onCheckedChange={setConfirm}
           />
 
           {confirm && (
-            <FormField label="Confirmation Message" htmlFor="action-confirm-message">
+            <FormField
+              label={t('customActions.editor.confirmMessageLabel')}
+              htmlFor="action-confirm-message"
+            >
               <Input
                 id="action-confirm-message"
                 value={confirmMessage}
                 onChange={(e) => setConfirmMessage(e.target.value)}
-                placeholder="Are you sure you want to run this action?"
+                placeholder={t('customActions.editor.confirmMessagePlaceholder')}
               />
             </FormField>
           )}
@@ -358,10 +370,14 @@ export function ActionEditorDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="primary" onClick={handleSave} disabled={isLoading}>
-            {isLoading ? 'Saving...' : action ? 'Save' : 'Create'}
+            {isLoading
+              ? t('common.saving')
+              : action
+                ? t('common.save')
+                : t('customActions.editor.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

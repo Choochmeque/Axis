@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Terminal } from 'lucide-react';
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
 import { useCustomActionsStore } from '@/store/customActionsStore';
 
 export function ActionOutputDialog() {
+  const { t } = useTranslation();
   const showOutputDialog = useCustomActionsStore((s) => s.showOutputDialog);
   const lastResult = useCustomActionsStore((s) => s.lastResult);
   const closeOutputDialog = useCustomActionsStore((s) => s.closeOutputDialog);
@@ -25,19 +27,21 @@ export function ActionOutputDialog() {
     <Dialog open={showOutputDialog} onOpenChange={(open) => !open && closeOutputDialog()}>
       <DialogContent className="max-w-150">
         <DialogTitle icon={Icon} iconClassName={iconClass}>
-          {isSuccess ? 'Action Completed' : 'Action Failed'}
+          {isSuccess ? t('customActions.output.completed') : t('customActions.output.failed')}
         </DialogTitle>
 
         <DialogBody className="space-y-4">
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <Terminal className="h-4 w-4" />
-            <span>Exit code: {lastResult.exitCode}</span>
+            <span>{t('customActions.output.exitCode', { code: lastResult.exitCode })}</span>
             <span className="text-muted-foreground/60">({lastResult.durationMs}ms)</span>
           </div>
 
           {lastResult.stdout && (
             <div>
-              <div className="mb-1 text-sm font-medium">Output:</div>
+              <div className="mb-1 text-sm font-medium">
+                {t('customActions.output.outputLabel')}
+              </div>
               <pre className="bg-muted max-h-60 overflow-auto rounded p-3 font-mono text-xs">
                 {lastResult.stdout}
               </pre>
@@ -47,7 +51,7 @@ export function ActionOutputDialog() {
           {lastResult.stderr && (
             <div>
               <div className="mb-1 text-sm font-medium text-destructive">
-                {isSuccess ? 'Warnings:' : 'Error:'}
+                {isSuccess ? t('customActions.output.warnings') : t('customActions.output.error')}
               </div>
               <pre className="bg-destructive/10 text-destructive max-h-40 overflow-auto rounded p-3 font-mono text-xs">
                 {lastResult.stderr}
@@ -56,13 +60,13 @@ export function ActionOutputDialog() {
           )}
 
           {!lastResult.stdout && !lastResult.stderr && (
-            <p className="text-muted-foreground text-sm">No output</p>
+            <p className="text-muted-foreground text-sm">{t('customActions.output.noOutput')}</p>
           )}
         </DialogBody>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Close</Button>
+            <Button variant="secondary">{t('common.close')}</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

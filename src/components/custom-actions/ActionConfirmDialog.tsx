@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import {
   Dialog,
@@ -12,6 +13,7 @@ import {
 import { useCustomActionsStore } from '@/store/customActionsStore';
 
 export function ActionConfirmDialog() {
+  const { t } = useTranslation();
   const showConfirmDialog = useCustomActionsStore((s) => s.showConfirmDialog);
   const pendingAction = useCustomActionsStore((s) => s.pendingAction);
   const cancelConfirmation = useCustomActionsStore((s) => s.cancelConfirmation);
@@ -20,13 +22,14 @@ export function ActionConfirmDialog() {
   if (!pendingAction) return null;
 
   const message =
-    pendingAction.confirmMessage || `Are you sure you want to run "${pendingAction.name}"?`;
+    pendingAction.confirmMessage ||
+    t('customActions.confirm.defaultMessage', { name: pendingAction.name });
 
   return (
     <Dialog open={showConfirmDialog} onOpenChange={(open) => !open && cancelConfirmation()}>
       <DialogContent className="max-w-100">
         <DialogTitle icon={AlertTriangle} iconClassName="text-warning">
-          Confirm Action
+          {t('customActions.confirm.title')}
         </DialogTitle>
 
         <DialogBody>
@@ -38,10 +41,10 @@ export function ActionConfirmDialog() {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="primary" onClick={proceedWithExecution}>
-            Run
+            {t('customActions.confirm.runButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

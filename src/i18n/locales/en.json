@@ -551,5 +551,61 @@
     "stashes": "Stashes",
     "remotes": "Remotes",
     "submodules": "Submodules"
+  },
+  "customActions": {
+    "confirm": {
+      "title": "Confirm Action",
+      "defaultMessage": "Are you sure you want to run \"{{name}}\"?",
+      "runButton": "Run"
+    },
+    "editor": {
+      "createTitle": "Create Action",
+      "editTitle": "Edit Action",
+      "nameLabel": "Name *",
+      "namePlaceholder": "Open in VS Code",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description shown as tooltip",
+      "commandLabel": "Command *",
+      "commandPlaceholder": "code \"$FILE\"",
+      "showVariables": "Show variables",
+      "workingDirLabel": "Working Directory",
+      "workingDirPlaceholder": "$REPO_PATH (default)",
+      "contextsLabel": "Show In Contexts *",
+      "contexts": {
+        "file": "File",
+        "commit": "Commit",
+        "branch": "Branch",
+        "tag": "Tag",
+        "stash": "Stash",
+        "repository": "Repository"
+      },
+      "shortcutLabel": "Keyboard Shortcut",
+      "shortcutPlaceholder": "Press keys...",
+      "shortcutHint": "Click and press your shortcut. Backspace to clear.",
+      "storageLabel": "Storage",
+      "storage": {
+        "global": "Global (all repositories)",
+        "repository": "Repository (stored in .axis/actions.json)"
+      },
+      "showOutputLabel": "Show output dialog after execution",
+      "confirmLabel": "Show confirmation dialog before running",
+      "confirmMessageLabel": "Confirmation Message",
+      "confirmMessagePlaceholder": "Are you sure you want to run this action?",
+      "createButton": "Create",
+      "validation": {
+        "nameRequired": "Name is required",
+        "commandRequired": "Command is required",
+        "contextRequired": "At least one context is required"
+      }
+    },
+    "output": {
+      "completed": "Action Completed",
+      "failed": "Action Failed",
+      "exitCode": "Exit code: {{code}}",
+      "outputLabel": "Output:",
+      "warnings": "Warnings:",
+      "error": "Error:",
+      "noOutput": "No output"
+    }
   }
 }

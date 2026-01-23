@@ -1,4 +1,13 @@
 /**
+ * Type for a debounced function with cancel and flush methods.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DebouncedFn = ((...args: any[]) => void) & {
+  cancel: () => void;
+  flush: () => void;
+};
+
+/**
  * Creates a debounced version of a function that delays execution
  * until after the specified delay has elapsed since the last call.
  * (Trailing edge debounce)
@@ -7,12 +16,12 @@
  * - cancel(): cancels any pending execution
  * - flush(): immediately executes any pending call
  */
-export function debounce<T extends (...args: unknown[]) => void | Promise<void>>(
-  fn: T,
+export function debounce<Args extends unknown[], R extends void | Promise<void>>(
+  fn: (...args: Args) => R,
   delay: number
-): T & { cancel: () => void; flush: () => void } {
+): ((...args: Args) => void) & { cancel: () => void; flush: () => void } {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let pendingArgs: Parameters<T> | null = null;
+  let pendingArgs: Args | null = null;
 
   const execute = () => {
     if (pendingArgs !== null) {
@@ -23,7 +32,7 @@ export function debounce<T extends (...args: unknown[]) => void | Promise<void>>
     }
   };
 
-  const debounced = (...args: Parameters<T>) => {
+  const debounced = (...args: Args) => {
     pendingArgs = args;
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(execute, delay);
@@ -44,5 +53,5 @@ export function debounce<T extends (...args: unknown[]) => void | Promise<void>>
     }
   };
 
-  return debounced as T & { cancel: () => void; flush: () => void };
+  return debounced as ((...args: Args) => void) & { cancel: () => void; flush: () => void };
 }

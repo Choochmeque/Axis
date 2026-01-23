@@ -5,13 +5,12 @@ import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
 import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { debounce } from '@/lib/debounce';
+import { debounce, type DebouncedFn } from '@/lib/debounce';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;
 
 // Debounced loader (initialized lazily)
-type DebouncedFn = ReturnType<typeof debounce>;
 let debouncedLoadStatus: DebouncedFn | null = null;
 
 /* eslint-disable @typescript-eslint/naming-convention */

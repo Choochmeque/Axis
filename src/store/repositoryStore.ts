@@ -28,13 +28,13 @@ import {
   worktreeApi,
 } from '@/services/api';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { debounce } from '@/lib/debounce';
+import { debounce, type DebouncedFn } from '@/lib/debounce';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;
 
 // Debounced loaders (initialized lazily)
-type DebouncedFn = ReturnType<typeof debounce>;
+let debouncedLoadCommits: DebouncedFn | null = null;
 let debouncedLoadStatus: DebouncedFn | null = null;
 let debouncedLoadBranches: DebouncedFn | null = null;
 let debouncedLoadTags: DebouncedFn | null = null;
@@ -247,30 +247,35 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   loadCommits: async (limit = 100, skip = 0) => {
-    const { branchFilter, includeRemotes, sortOrder } = get();
-    const opId = operations.start('Loading commits', { category: 'file' });
-    set({ isLoadingCommits: true });
-    try {
-      const result = await graphApi.build({
-        limit: limit,
-        skip: skip,
-        branchFilter: branchFilter,
-        includeRemotes: includeRemotes,
-        sortOrder: sortOrder,
-        fromRef: null,
-        includeUncommitted: true,
-      });
-      set({
-        commits: result.commits,
-        maxLane: Number(result.maxLane),
-        hasMoreCommits: result.hasMore,
-        isLoadingCommits: false,
-      });
-    } catch (err) {
-      set({ error: getErrorMessage(err), isLoadingCommits: false });
-    } finally {
-      operations.complete(opId);
+    if (!debouncedLoadCommits) {
+      debouncedLoadCommits = debounce(async (limitArg: number, skipArg: number) => {
+        const { branchFilter, includeRemotes, sortOrder } = get();
+        const opId = operations.start('Loading commits', { category: 'file' });
+        set({ isLoadingCommits: true });
+        try {
+          const result = await graphApi.build({
+            limit: limitArg,
+            skip: skipArg,
+            branchFilter: branchFilter,
+            includeRemotes: includeRemotes,
+            sortOrder: sortOrder,
+            fromRef: null,
+            includeUncommitted: true,
+          });
+          set({
+            commits: result.commits,
+            maxLane: Number(result.maxLane),
+            hasMoreCommits: result.hasMore,
+            isLoadingCommits: false,
+          });
+        } catch (err) {
+          set({ error: getErrorMessage(err), isLoadingCommits: false });
+        } finally {
+          operations.complete(opId);
+        }
+      }, DEBOUNCE_DELAY);
     }
+    debouncedLoadCommits(limit, skip);
   },
 
   loadMoreCommits: async () => {

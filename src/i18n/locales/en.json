@@ -797,5 +797,149 @@
       "user": "User",
       "description": "Description"
     }
+  },
+  "integrations": {
+    "notConnected": {
+      "message": "Not connected to provider.",
+      "ciHint": "Connect in Settings to view CI/Actions.",
+      "notificationsHint": "Connect in Settings to view notifications.",
+      "issuesHint": "Connect in Settings to view issues.",
+      "pullRequestsHint": "Connect in Settings to view pull requests."
+    },
+    "ci": {
+      "title": "CI / Actions",
+      "loading": "Loading CI runs...",
+      "noRuns": "No CI runs found",
+      "loadingMore": "Loading more...",
+      "status": {
+        "queued": "Queued",
+        "inProgress": "In Progress",
+        "completed": "Completed"
+      },
+      "started": "Started {{time}}",
+      "finished": "Finished {{time}}",
+      "openInBrowser": "Open in browser"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "{{count}} unread",
+      "filterUnread": "Unread",
+      "filterAll": "All",
+      "markAllRead": "Mark all read",
+      "loading": "Loading notifications...",
+      "noNotifications": "No notifications",
+      "loadingMore": "Loading more...",
+      "openInBrowser": "Open in browser",
+      "reasons": {
+        "assigned": "You were assigned",
+        "author": "You created this",
+        "comment": "Someone commented",
+        "invitation": "You were invited",
+        "manual": "You subscribed",
+        "mention": "You were mentioned",
+        "reviewRequested": "Review requested",
+        "securityAlert": "Security alert",
+        "stateChange": "State changed",
+        "subscribed": "You're watching",
+        "teamMention": "Your team was mentioned",
+        "ciActivity": "CI activity"
+      }
+    },
+    "issues": {
+      "title": "Issues",
+      "filterOpen": "Open",
+      "filterClosed": "Closed",
+      "filterAll": "All",
+      "loading": "Loading issues...",
+      "noIssues": "No issues found",
+      "loadingMore": "Loading more...",
+      "selectIssue": "Select an issue to view details",
+      "create": {
+        "title": "Create Issue",
+        "titleLabel": "Title",
+        "titlePlaceholder": "Issue title",
+        "descriptionLabel": "Description (optional)",
+        "descriptionPlaceholder": "Add a description...",
+        "labelsLabel": "Labels (optional)",
+        "labelsPlaceholder": "bug, enhancement, help wanted",
+        "labelsHint": "Separate multiple labels with commas",
+        "creating": "Creating...",
+        "createButton": "Create Issue",
+        "titleRequired": "Title is required",
+        "created": "Issue created successfully"
+      },
+      "detail": {
+        "created": "Created: {{date}}",
+        "updated": "Updated: {{date}}",
+        "comments": "{{count}} comments",
+        "labels": "Labels",
+        "assignees": "Assignees",
+        "milestone": "Milestone: {{name}}"
+      },
+      "state": {
+        "open": "Open",
+        "closed": "Closed"
+      }
+    },
+    "pullRequests": {
+      "title": "Pull Requests",
+      "filterOpen": "Open",
+      "filterClosed": "Closed",
+      "filterAll": "All",
+      "loading": "Loading pull requests...",
+      "noPullRequests": "No pull requests found",
+      "loadingMore": "Loading more...",
+      "selectPr": "Select a pull request to view details",
+      "draft": "Draft",
+      "create": {
+        "title": "Create Pull Request",
+        "fromLabel": "From (source)",
+        "selectBranch": "Select branch",
+        "currentSuffix": " (current)",
+        "notPushed": "This branch has not been pushed to the remote yet",
+        "intoLabel": "Into (target)",
+        "titleLabel": "Title",
+        "titlePlaceholder": "Pull request title",
+        "descriptionLabel": "Description (optional)",
+        "descriptionPlaceholder": "Add a description...",
+        "createAsDraft": "Create as draft",
+        "creating": "Creating...",
+        "createButton": "Create Pull Request",
+        "titleRequired": "Title is required",
+        "sourceBranchRequired": "Source branch is required",
+        "targetBranchRequired": "Target branch is required",
+        "sourceMustBePushed": "Source branch must be pushed to the remote first",
+        "created": "Pull request created successfully"
+      },
+      "detail": {
+        "created": "Created: {{date}}",
+        "updated": "Updated: {{date}}",
+        "comments": "{{count}} comments",
+        "files": "{{count}} files"
+      },
+      "state": {
+        "open": "Open",
+        "merged": "Merged",
+        "closed": "Closed"
+      },
+      "merge": {
+        "noConflicts": "This branch has no conflicts",
+        "hasConflicts": "This branch has conflicts",
+        "checkingMergeability": "Checking mergeability...",
+        "merging": "Merging...",
+        "mergeCommit": "Create a merge commit",
+        "squashMerge": "Squash and merge",
+        "rebaseMerge": "Rebase and merge",
+        "merged": "PR #{{number}} merged successfully",
+        "mergeFailed": "Failed to merge PR: {{error}}"
+      }
+    },
+    "common": {
+      "refresh": "Refresh",
+      "newIssue": "New Issue",
+      "newPr": "New PR",
+      "openInBrowser": "Open in browser",
+      "close": "Close"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw, CheckCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui';
@@ -6,6 +7,7 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { NotificationList } from './NotificationList';
 
 export function NotificationsView() {
+  const { t } = useTranslation();
   const {
     notifications,
     unreadCount,
@@ -44,8 +46,8 @@ export function NotificationsView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-(--text-muted)">
-          <p>Not connected to provider.</p>
-          <p className="mt-2 text-sm">Connect in Settings to view notifications.</p>
+          <p>{t('integrations.notConnected.message')}</p>
+          <p className="mt-2 text-sm">{t('integrations.notConnected.notificationsHint')}</p>
         </div>
       </div>
     );
@@ -55,10 +57,14 @@ export function NotificationsView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-(--border-color) bg-(--bg-primary)">
-        <span className="text-sm font-medium text-(--text-primary)">Notifications</span>
+        <span className="text-sm font-medium text-(--text-primary)">
+          {t('integrations.notifications.title')}
+        </span>
 
         {unreadCount > 0 && (
-          <span className="badge bg-(--accent-color) text-white">{unreadCount} unread</span>
+          <span className="badge bg-(--accent-color) text-white">
+            {t('integrations.notifications.unread', { count: unreadCount })}
+          </span>
         )}
 
         <div className="flex items-center gap-1 ml-4">
@@ -70,7 +76,7 @@ export function NotificationsView() {
             }`}
             onClick={() => setNotificationFilter(false)}
           >
-            Unread
+            {t('integrations.notifications.filterUnread')}
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
@@ -80,16 +86,21 @@ export function NotificationsView() {
             }`}
             onClick={() => setNotificationFilter(true)}
           >
-            All
+            {t('integrations.notifications.filterAll')}
           </button>
         </div>
 
         <div className="flex-1" />
 
         {unreadCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={handleMarkAllRead} title="Mark all as read">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleMarkAllRead}
+            title={t('integrations.notifications.markAllRead')}
+          >
             <CheckCheck size={14} />
-            <span>Mark all read</span>
+            <span>{t('integrations.notifications.markAllRead')}</span>
           </Button>
         )}
 
@@ -98,7 +109,7 @@ export function NotificationsView() {
           size="sm"
           onClick={handleRefresh}
           disabled={isLoadingNotifications}
-          title="Refresh"
+          title={t('integrations.common.refresh')}
         >
           <RefreshCw size={14} className={isLoadingNotifications ? 'animate-spin' : ''} />
         </Button>

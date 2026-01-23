@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   CheckCircle2,
@@ -17,7 +18,7 @@ import { formatRelativeTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import { CIRunStatus, CIConclusion } from '@/types';
 import type { CIRun } from '@/types';
-// TETS
+
 interface CIRunListProps {
   ciRuns: CIRun[];
   isLoading: boolean;
@@ -33,6 +34,7 @@ export function CIRunList({
   isLoadingMore = false,
   onLoadMore,
 }: CIRunListProps) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -87,14 +89,17 @@ export function CIRunList({
     }
   }, []);
 
-  const getStatusText = useCallback((status: string, conclusion: string | null) => {
-    if (status === CIRunStatus.Queued) return 'Queued';
-    if (status === CIRunStatus.InProgress) return 'In Progress';
-    if (conclusion) {
-      return conclusion.charAt(0).toUpperCase() + conclusion.slice(1);
-    }
-    return 'Completed';
-  }, []);
+  const getStatusText = useCallback(
+    (status: string, conclusion: string | null) => {
+      if (status === CIRunStatus.Queued) return t('integrations.ci.status.queued');
+      if (status === CIRunStatus.InProgress) return t('integrations.ci.status.inProgress');
+      if (conclusion) {
+        return conclusion.charAt(0).toUpperCase() + conclusion.slice(1);
+      }
+      return t('integrations.ci.status.completed');
+    },
+    [t]
+  );
 
   const getStatusColor = useCallback((status: string, conclusion: string | null) => {
     if (status === CIRunStatus.Queued) return 'text-(--text-muted)';
@@ -117,7 +122,7 @@ export function CIRunList({
   if (isLoading && ciRuns.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">Loading CI runs...</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.ci.loading')}</div>
       </div>
     );
   }
@@ -125,7 +130,7 @@ export function CIRunList({
   if (ciRuns.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">No CI runs found</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.ci.noRuns')}</div>
       </div>
     );
   }
@@ -187,7 +192,7 @@ export function CIRunList({
                 <button
                   className="p-1 hover:bg-(--bg-tertiary) rounded"
                   onClick={(e) => openInBrowser(run.url, e)}
-                  title="Open in browser"
+                  title={t('integrations.ci.openInBrowser')}
                 >
                   <ExternalLink size={14} className="text-(--text-muted)" />
                 </button>
@@ -203,7 +208,9 @@ export function CIRunList({
             style={{ top: `${virtualizer.getTotalSize()}px` }}
           >
             <Loader2 size={16} className="animate-spin text-(--text-muted)" />
-            <span className="ml-2 text-sm text-(--text-muted)">Loading more...</span>
+            <span className="ml-2 text-sm text-(--text-muted)">
+              {t('integrations.ci.loadingMore')}
+            </span>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   GitPullRequest,
@@ -34,6 +35,7 @@ export function NotificationList({
   isLoadingMore,
   onLoadMore,
 }: NotificationListProps) {
+  const { t } = useTranslation();
   const { markNotificationRead } = useIntegrationStore();
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -83,36 +85,39 @@ export function NotificationList({
     }
   }, []);
 
-  const getReasonText = useCallback((reason: string) => {
-    switch (reason) {
-      case 'assigned':
-        return 'You were assigned';
-      case 'author':
-        return 'You created this';
-      case 'comment':
-        return 'Someone commented';
-      case 'invitation':
-        return 'You were invited';
-      case 'manual':
-        return 'You subscribed';
-      case 'mention':
-        return 'You were mentioned';
-      case 'review_requested':
-        return 'Review requested';
-      case 'security_alert':
-        return 'Security alert';
-      case 'state_change':
-        return 'State changed';
-      case 'subscribed':
-        return "You're watching";
-      case 'team_mention':
-        return 'Your team was mentioned';
-      case 'ci_activity':
-        return 'CI activity';
-      default:
-        return reason;
-    }
-  }, []);
+  const getReasonText = useCallback(
+    (reason: string) => {
+      switch (reason) {
+        case 'assigned':
+          return t('integrations.notifications.reasons.assigned');
+        case 'author':
+          return t('integrations.notifications.reasons.author');
+        case 'comment':
+          return t('integrations.notifications.reasons.comment');
+        case 'invitation':
+          return t('integrations.notifications.reasons.invitation');
+        case 'manual':
+          return t('integrations.notifications.reasons.manual');
+        case 'mention':
+          return t('integrations.notifications.reasons.mention');
+        case 'review_requested':
+          return t('integrations.notifications.reasons.reviewRequested');
+        case 'security_alert':
+          return t('integrations.notifications.reasons.securityAlert');
+        case 'state_change':
+          return t('integrations.notifications.reasons.stateChange');
+        case 'subscribed':
+          return t('integrations.notifications.reasons.subscribed');
+        case 'team_mention':
+          return t('integrations.notifications.reasons.teamMention');
+        case 'ci_activity':
+          return t('integrations.notifications.reasons.ciActivity');
+        default:
+          return reason;
+      }
+    },
+    [t]
+  );
 
   const handleClick = useCallback(
     async (notification: Notification) => {
@@ -136,7 +141,7 @@ export function NotificationList({
   if (isLoading && notifications.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">Loading notifications...</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.notifications.loading')}</div>
       </div>
     );
   }
@@ -144,7 +149,9 @@ export function NotificationList({
   if (notifications.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">No notifications</div>
+        <div className="text-(--text-muted) text-sm">
+          {t('integrations.notifications.noNotifications')}
+        </div>
       </div>
     );
   }
@@ -198,7 +205,7 @@ export function NotificationList({
                   <button
                     className="p-1 hover:bg-(--bg-tertiary) rounded"
                     onClick={(e) => openInBrowser(notification.url, e)}
-                    title="Open in browser"
+                    title={t('integrations.notifications.openInBrowser')}
                   >
                     <ExternalLink size={14} className="text-(--text-muted)" />
                   </button>
@@ -215,7 +222,9 @@ export function NotificationList({
             style={{ top: `${virtualizer.getTotalSize()}px` }}
           >
             <Loader2 size={16} className="animate-spin text-(--text-muted)" />
-            <span className="ml-2 text-sm text-(--text-muted)">Loading more...</span>
+            <span className="ml-2 text-sm text-(--text-muted)">
+              {t('integrations.notifications.loadingMore')}
+            </span>
           </div>
         )}
       </div>

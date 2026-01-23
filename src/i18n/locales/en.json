@@ -1220,6 +1220,41 @@
       }
     }
   },
+  "repository": {
+    "clone": {
+      "title": "Clone Repository",
+      "urlLabel": "Repository URL",
+      "urlHint": "HTTPS or SSH URL (e.g., git@github.com:user/repo.git)",
+      "urlPlaceholder": "https://github.com/user/repo.git",
+      "destinationLabel": "Destination",
+      "destinationPlaceholder": "/path/to/clone",
+      "selectDestination": "Select Clone Destination",
+      "urlRequired": "Repository URL is required",
+      "pathRequired": "Destination path is required",
+      "cloning": "Cloning...",
+      "cloningMessage": "Cloning repository... This may take a while for large repositories.",
+      "cloneButton": "Clone"
+    },
+    "init": {
+      "title": "Initialize Repository",
+      "directoryLabel": "Directory",
+      "directoryHint": "Select an empty directory or create a new one",
+      "directoryPlaceholder": "/path/to/new/repo",
+      "selectDirectory": "Select Directory for New Repository",
+      "bareLabel": "Create bare repository",
+      "bareDescription": "Bare repositories have no working directory (for servers)",
+      "pathRequired": "Directory path is required",
+      "creating": "Creating...",
+      "createButton": "Create Repository"
+    },
+    "contextMenu": {
+      "open": "Open",
+      "openInNewWindow": "Open in New Window",
+      "removeFromRecent": "Remove from Recent",
+      "openWindowFailed": "Open window failed",
+      "removeFailed": "Remove repository failed"
+    }
+  },
   "lfs": {
     "title": "Git LFS",
     "notInstalled": {

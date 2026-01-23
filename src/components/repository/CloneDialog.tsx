@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderPlus, FolderOpen } from 'lucide-react';
 
@@ -26,6 +27,7 @@ interface CloneDialogProps {
 }
 
 export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
+  const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +59,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select Clone Destination',
+      title: t('repository.clone.selectDestination'),
     });
 
     if (selected && typeof selected === 'string') {
@@ -68,11 +70,11 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
 
   const handleClone = async () => {
     if (!url.trim()) {
-      setError('Repository URL is required');
+      setError(t('repository.clone.urlRequired'));
       return;
     }
     if (!path.trim()) {
-      setError('Destination path is required');
+      setError(t('repository.clone.pathRequired'));
       return;
     }
 
@@ -90,15 +92,14 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
       );
 
       // Create tab for cloned repository
-      const existingTab = findTabByPath(repo.path.toString());
+      const existingTab = findTabByPath(repo.path);
       if (existingTab) {
         setActiveTab(existingTab.id);
       } else {
         addTab({
           type: TabType.Repository,
-          path: repo.path.toString(),
+          path: repo.path,
           name: repo.name,
-          repository: repo,
         });
       }
 
@@ -122,13 +123,13 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-110">
-        <DialogTitle icon={FolderPlus}>Clone Repository</DialogTitle>
+        <DialogTitle icon={FolderPlus}>{t('repository.clone.title')}</DialogTitle>
 
         <DialogBody>
           <FormField
-            label="Repository URL"
+            label={t('repository.clone.urlLabel')}
             htmlFor="clone-url"
-            hint="HTTPS or SSH URL (e.g., git@github.com:user/repo.git)"
+            hint={t('repository.clone.urlHint')}
           >
             <Input
               id="clone-url"
@@ -136,12 +137,12 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="https://github.com/user/repo.git"
+              placeholder={t('repository.clone.urlPlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Destination" htmlFor="clone-path">
+          <FormField label={t('repository.clone.destinationLabel')} htmlFor="clone-path">
             <div className="flex gap-2">
               <Input
                 id="clone-path"
@@ -149,7 +150,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="/path/to/clone"
+                placeholder={t('repository.clone.destinationPlaceholder')}
                 className="flex-1"
               />
               <Button variant="secondary" onClick={handleBrowse}>
@@ -166,7 +167,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
 
           {isLoading && (
             <div className="mt-3 py-2 px-3 bg-(--bg-secondary) border border-(--border-color) rounded text-(--text-secondary) text-base">
-              Cloning repository... This may take a while for large repositories.
+              {t('repository.clone.cloningMessage')}
             </div>
           )}
         </DialogBody>
@@ -174,7 +175,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isLoading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -182,7 +183,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
             onClick={handleClone}
             disabled={isLoading || !url.trim() || !path.trim()}
           >
-            {isLoading ? 'Cloning...' : 'Clone'}
+            {isLoading ? t('repository.clone.cloning') : t('repository.clone.cloneButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

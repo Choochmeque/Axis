@@ -1002,5 +1002,54 @@
       "openInBrowser": "Open in browser",
       "close": "Close"
     }
+  },
+  "lfs": {
+    "title": "Git LFS",
+    "notInstalled": {
+      "title": "Git LFS Not Installed",
+      "message": "Install Git LFS to track large files"
+    },
+    "initialize": {
+      "button": "Initialize Git LFS",
+      "buttonShort": "Initialize LFS",
+      "initializing": "Initializing..."
+    },
+    "indicator": {
+      "downloaded": "LFS file (downloaded)",
+      "pointer": "LFS pointer (not downloaded)",
+      "label": "LFS"
+    },
+    "actions": {
+      "trackPattern": "Track pattern",
+      "pullObjects": "Pull LFS objects",
+      "pushObjects": "Push LFS objects"
+    },
+    "tabs": {
+      "patterns": "Patterns",
+      "files": "Files"
+    },
+    "patterns": {
+      "empty": "No tracked patterns. Click + to add one.",
+      "untrackConfirm": "Untrack pattern \"{{pattern}}\"?"
+    },
+    "files": {
+      "empty": "No LFS files",
+      "downloaded": "Downloaded",
+      "pointers": "Pointers"
+    },
+    "trackDialog": {
+      "title": "Track Pattern",
+      "patternLabel": "Pattern",
+      "patternPlaceholder": "*.psd, *.zip, etc.",
+      "tracking": "Tracking...",
+      "trackButton": "Track Pattern"
+    },
+    "notifications": {
+      "initialized": "Git LFS initialized",
+      "patternTracked": "Pattern tracked",
+      "patternUntracked": "Pattern untracked",
+      "pullComplete": "LFS pull complete",
+      "pushComplete": "LFS push complete"
+    }
   }
 }

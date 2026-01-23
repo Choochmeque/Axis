@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +8,8 @@ interface LfsIndicatorProps {
 }
 
 export function LfsIndicator({ isDownloaded = true, className }: LfsIndicatorProps) {
+  const { t } = useTranslation();
+
   return (
     <span
       className={cn(
@@ -16,10 +19,10 @@ export function LfsIndicator({ isDownloaded = true, className }: LfsIndicatorPro
           : 'bg-warning/20 text-warning',
         className
       )}
-      title={isDownloaded ? 'LFS file (downloaded)' : 'LFS pointer (not downloaded)'}
+      title={isDownloaded ? t('lfs.indicator.downloaded') : t('lfs.indicator.pointer')}
     >
       <HardDrive size={10} />
-      LFS
+      {t('lfs.indicator.label')}
     </span>
   );
 }

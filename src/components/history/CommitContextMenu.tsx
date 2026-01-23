@@ -31,6 +31,8 @@ import { RebaseDialog } from '../merge/RebaseDialog';
 import { BisectDialog } from '../merge/BisectDialog';
 import { ArchiveDialog } from './ArchiveDialog';
 import { PatchDialog } from './PatchDialog';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
+import { ActionContext } from '@/types';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
@@ -242,6 +244,16 @@ export function CommitContextMenu({
         <MenuItem icon={Archive} onSelect={() => setShowArchiveDialog(true)}>
           Archive...
         </MenuItem>
+
+        <CustomActionsMenuSection
+          context={ActionContext.Commit}
+          variables={{
+            commitHash: commit.oid,
+            commitShort: commit.shortOid,
+            commitMessage: commit.summary,
+          }}
+        />
+
         <MenuSeparator />
 
         <SubMenu icon={Copy} label="Copy">

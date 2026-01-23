@@ -23,6 +23,8 @@ import { DeleteBranchDialog } from './DeleteBranchDialog';
 import { BranchCompareDialog } from './BranchCompareDialog';
 import { PullDialog } from '../remotes/PullDialog';
 import { PushDialog } from '../remotes/PushDialog';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
+import { ActionContext } from '@/types';
 
 interface BranchContextMenuProps {
   branch: Branch;
@@ -187,6 +189,12 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         <MenuItem icon={Copy} onSelect={() => copyToClipboard(branch.name)}>
           Copy Branch Name to Clipboard
         </MenuItem>
+
+        <CustomActionsMenuSection
+          context={ActionContext.Branch}
+          variables={{ branch: branch.name }}
+        />
+
         <MenuSeparator />
         <MenuItem icon={GitPullRequest} disabled>
           Create Pull Request...

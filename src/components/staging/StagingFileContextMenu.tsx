@@ -29,6 +29,8 @@ import type { FileStatus } from '@/types';
 import { FileLogDialog } from '../history/FileLogDialog';
 import { IgnoreDialog } from './IgnoreDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
+import { ActionContext } from '@/types';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -177,6 +179,8 @@ export function StagingFileContextMenu({
         <MenuItem icon={Move} disabled>
           Move...
         </MenuItem>
+
+        <CustomActionsMenuSection context={ActionContext.File} variables={{ file: file.path }} />
 
         {isTreeView && (
           <>

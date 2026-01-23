@@ -198,10 +198,17 @@ export type {
   HookInfo,
   HookDetails,
   HookTemplate,
+
+  // Custom actions types
+  CustomAction,
+  ActionVariables,
+  ActionExecutionResult,
 } from '../bindings/api';
 
 // Import types used locally
 import type {
+  ActionContext as ActionContextType,
+  ActionStorageType as ActionStorageTypeType,
   AiProvider as AiProviderType,
   BranchType as BranchTypeType,
   BranchFilterType as BranchFilterTypeType,
@@ -633,5 +640,24 @@ export const GitHookType: { [K in GitHookTypeType]: K } = {
 };
 
 export type GitHookType = GitHookTypeType;
+
+// Custom actions enum helpers
+export const ActionContext: { [K in ActionContextType]: K } = {
+  File: 'File',
+  Commit: 'Commit',
+  Branch: 'Branch',
+  Tag: 'Tag',
+  Stash: 'Stash',
+  Repository: 'Repository',
+};
+
+export type ActionContext = ActionContextType;
+
+export const ActionStorageType: { [K in ActionStorageTypeType]: K } = {
+  Global: 'Global',
+  Repository: 'Repository',
+};
+
+export type ActionStorageType = ActionStorageTypeType;
 
 /* eslint-enable @typescript-eslint/naming-convention */

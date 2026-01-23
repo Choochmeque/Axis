@@ -12,6 +12,8 @@ import {
   ContextMenuSubContent,
 } from '@/components/ui';
 import type { StashEntry } from '@/types';
+import { ActionContext } from '@/types';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { stashApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { toast } from '@/hooks';
@@ -131,6 +133,12 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       <MenuItem icon={Copy} onSelect={handleCopyMessage}>
         Copy Message
       </MenuItem>
+
+      <CustomActionsMenuSection
+        context={ActionContext.Stash}
+        variables={{ stashRef: `stash@{${stash.index}}` }}
+      />
+
       <MenuSeparator />
       <MenuItem icon={Trash2} danger onSelect={handleDrop}>
         Drop Stash

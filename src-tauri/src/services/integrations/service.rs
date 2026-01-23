@@ -124,11 +124,14 @@ impl IntegrationService {
 
     /// Disconnect a provider (remove token and clear cache)
     pub async fn disconnect(&self, provider_type: ProviderType) -> Result<()> {
-        // Remove token from database
-        let token_key = get_provider_token_key(provider_type);
-        self.database.delete_secret(&token_key)?;
+        // Call provider's disconnect (handles token deletion and cache clearing)
+        if let Some(provider) = self.providers.read().await.get(&provider_type) {
+            if let Err(e) = provider.disconnect().await {
+                log::warn!("Provider disconnect failed: {e}");
+            }
+        }
 
-        // Remove from cache
+        // Remove from providers cache
         {
             let mut providers = self.providers.write().await;
             providers.remove(&provider_type);

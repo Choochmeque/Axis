@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 import { Copy, Check, Info, GitCompare, Upload, Trash2 } from 'lucide-react';
 import type { Tag, Remote } from '@/types';
+import { ActionContext } from '@/types';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 
@@ -64,6 +66,8 @@ export function TagContextMenu({
       <MenuItem icon={Trash2} danger onSelect={onDelete}>
         Delete {tag.name}
       </MenuItem>
+
+      <CustomActionsMenuSection context={ActionContext.Tag} variables={{ tag: tag.name }} />
     </ContextMenu>
   );
 }

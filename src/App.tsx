@@ -11,14 +11,16 @@ import { LfsView } from './components/lfs';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { TabBar } from './components/layout/TabBar';
 import { InteractiveRebaseDialog } from './components/merge';
-import { useMenuActions, toast } from './hooks';
+import { useMenuActions, useCustomActionShortcuts, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
 import { notifyNewCommits } from './lib/actions';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
 import { useIntegrationStore } from './store/integrationStore';
+import { useCustomActionsStore } from './store/customActionsStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
+import { ActionConfirmDialog, ActionOutputDialog } from './components/custom-actions';
 import { events } from '@/bindings/api';
 import { lfsApi } from './services/api';
 import './index.css';
@@ -29,6 +31,7 @@ function App() {
   const { repository, currentView, openRepository, switchRepository, closeRepository } =
     useRepositoryStore();
   const { loadSettings } = useSettingsStore();
+  const { loadAllActions } = useCustomActionsStore();
   const {
     tabs,
     activeTabId,
@@ -41,6 +44,9 @@ function App() {
   } = useTabsStore();
   // Handle menu actions from native menu
   useMenuActions();
+
+  // Handle custom action keyboard shortcuts
+  useCustomActionShortcuts();
 
   // Ensure welcome tab exists on mount (fix stale localStorage)
   useEffect(() => {
@@ -56,7 +62,8 @@ function App() {
 
   useEffect(() => {
     loadSettings();
-  }, [loadSettings]);
+    loadAllActions();
+  }, [loadSettings, loadAllActions]);
 
   // Check if git CLI is installed
   useEffect(() => {
@@ -297,6 +304,8 @@ function App() {
         <AppLayout>{renderView()}</AppLayout>
       </div>
       <InteractiveRebaseDialog />
+      <ActionConfirmDialog />
+      <ActionOutputDialog />
     </div>
   );
 }

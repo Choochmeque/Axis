@@ -259,6 +259,16 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Avatar commands
             crate::commands::get_avatar,
             crate::commands::clear_avatar_cache,
+            // Custom actions commands
+            crate::commands::list_global_actions,
+            crate::commands::save_global_action,
+            crate::commands::delete_global_action,
+            crate::commands::list_repo_actions,
+            crate::commands::save_repo_action,
+            crate::commands::delete_repo_action,
+            crate::commands::get_actions_for_context,
+            crate::commands::get_all_actions,
+            crate::commands::execute_custom_action,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,

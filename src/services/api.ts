@@ -1,7 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { commands } from '@/bindings/api';
 import type {
+  ActionContext,
+  ActionVariables,
   AiProvider,
+  CustomAction,
   LfsFetchOptions,
   LfsPullOptions,
   LfsPushOptions,
@@ -611,4 +614,29 @@ export const avatarApi = {
   get: (email: string, sha?: string) => commands.getAvatar(email, sha ?? null),
 
   clearCache: () => commands.clearAvatarCache(),
+};
+
+export const customActionsApi = {
+  // Global actions
+  listGlobal: () => commands.listGlobalActions(),
+
+  saveGlobal: (action: CustomAction) => commands.saveGlobalAction(action),
+
+  deleteGlobal: (actionId: string) => commands.deleteGlobalAction(actionId),
+
+  // Repository actions
+  listRepo: () => commands.listRepoActions(),
+
+  saveRepo: (action: CustomAction) => commands.saveRepoAction(action),
+
+  deleteRepo: (actionId: string) => commands.deleteRepoAction(actionId),
+
+  // Combined
+  listForContext: (context: ActionContext) => commands.getActionsForContext(context),
+
+  listAll: () => commands.getAllActions(),
+
+  // Execution
+  execute: (actionId: string, variables: ActionVariables) =>
+    commands.executeCustomAction(actionId, variables),
 };

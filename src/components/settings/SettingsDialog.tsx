@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
-import { Settings, Palette, GitBranch, FileText, Sparkles, Link2 } from 'lucide-react';
+import { Settings, Palette, GitBranch, FileText, Sparkles, Link2, Terminal } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { settingsApi, signingApi, aiApi, lfsApi, avatarApi } from '@/services/api';
@@ -30,6 +30,7 @@ import {
   CheckboxField,
   Alert,
 } from '@/components/ui';
+import { GlobalActionsSettings } from './GlobalActionsSettings';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations';
+type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations' | 'actions';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
@@ -128,6 +129,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
     { id: 'ai', label: 'AI', icon: <Sparkles size={16} /> },
     { id: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
+    { id: 'actions', label: 'Actions', icon: <Terminal size={16} /> },
   ];
 
   return (
@@ -174,6 +176,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                   <AiSettings settings={settings} updateSetting={updateSetting} />
                 )}
                 {activeTab === 'integrations' && <IntegrationsSettings />}
+                {activeTab === 'actions' && <GlobalActionsSettings />}
               </>
             )}
           </div>

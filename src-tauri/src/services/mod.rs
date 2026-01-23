@@ -1,6 +1,7 @@
 pub mod ai;
 mod avatar_service;
 mod background_fetch;
+mod custom_actions_service;
 mod file_watcher;
 mod git2_service;
 mod git_cli_service;
@@ -12,6 +13,7 @@ mod signing_service;
 
 pub use avatar_service::*;
 pub use background_fetch::*;
+pub use custom_actions_service::*;
 pub use file_watcher::*;
 pub use git2_service::*;
 pub use git_cli_service::*;

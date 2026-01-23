@@ -47,7 +47,8 @@ import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
 import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
-import { BranchType, PrState, IssueState, CIRunStatus } from '@/types';
+import { BranchType, PrState, IssueState, CIRunStatus, ActionContext } from '@/types';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 

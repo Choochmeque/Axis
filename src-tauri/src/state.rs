@@ -209,11 +209,6 @@ impl AppState {
         Arc::clone(&self.repository_cache)
     }
 
-    /// Get the database Arc (for integration providers that need 'static closures)
-    pub fn database(&self) -> Arc<Database> {
-        Arc::clone(&self.database)
-    }
-
     /// Get the avatar service
     pub fn avatar_service(&self) -> Result<Arc<AvatarService>> {
         self.avatar_service

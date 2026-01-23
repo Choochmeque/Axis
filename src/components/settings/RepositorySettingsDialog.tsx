@@ -10,6 +10,7 @@ import {
   FileCode2,
   ToggleLeft,
   ToggleRight,
+  Terminal,
 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -32,13 +33,14 @@ import {
   Select,
   SelectItem,
 } from '@/components/ui';
+import { RepoActionsSettings } from './RepoActionsSettings';
 
 interface RepositorySettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type SettingsTab = 'identity' | 'remotes' | 'hooks';
+type SettingsTab = 'identity' | 'remotes' | 'hooks' | 'actions';
 
 export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettingsDialogProps) {
   const repository = useRepositoryStore((s) => s.repository);
@@ -70,6 +72,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
     { id: 'identity', label: 'Identity', icon: <User size={16} /> },
     { id: 'remotes', label: 'Remotes', icon: <Globe size={16} /> },
     { id: 'hooks', label: 'Hooks', icon: <FileCode2 size={16} /> },
+    { id: 'actions', label: 'Actions', icon: <Terminal size={16} /> },
   ];
 
   return (
@@ -117,6 +120,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
                   <RemotesSettings remotes={settings.remotes} onRemotesChange={loadSettings} />
                 )}
                 {activeTab === 'hooks' && <HooksSettings />}
+                {activeTab === 'actions' && <RepoActionsSettings />}
               </>
             ) : null}
           </div>

@@ -311,6 +311,7 @@ dependencies = [
  "notify",
  "octocrab",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",

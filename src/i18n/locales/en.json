@@ -1303,5 +1303,21 @@
       "pullComplete": "LFS pull complete",
       "pushComplete": "LFS push complete"
     }
+  },
+  "search": {
+    "title": "Search in Files",
+    "placeholder": "Search pattern...",
+    "searching": "Searching...",
+    "searchButton": "Search",
+    "options": "Options",
+    "ignoreCase": "Ignore case",
+    "wholeWord": "Whole word",
+    "useRegex": "Use regex",
+    "failed": "Search failed",
+    "results": {
+      "one": "{{count}} result in {{files}} file",
+      "other": "{{count}} results in {{files}} files"
+    },
+    "noResults": "No results found for \"{{pattern}}\""
   }
 }

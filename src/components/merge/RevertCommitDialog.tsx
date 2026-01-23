@@ -141,7 +141,11 @@ export function RevertCommitDialog({
           {!result && (
             <>
               <div className="field">
-                <Label>{commits.length === 1 ? t('merge.revert.commitToRevert') : t('merge.revert.commitsToRevert')}</Label>
+                <Label>
+                  {commits.length === 1
+                    ? t('merge.revert.commitToRevert')
+                    : t('merge.revert.commitsToRevert')}
+                </Label>
                 <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
                   {commits.map((commit) => (
                     <div
@@ -160,9 +164,7 @@ export function RevertCommitDialog({
               </div>
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-base text-(--text-secondary)">
-                <p className="m-0">
-                  {t('merge.revert.revertDescription')}
-                </p>
+                <p className="m-0">{t('merge.revert.revertDescription')}</p>
               </div>
 
               <CheckboxField

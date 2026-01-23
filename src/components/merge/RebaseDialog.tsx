@@ -256,7 +256,9 @@ export function RebaseDialog({
               {isLoadingPreview && (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 size={16} className="animate-spin text-(--text-secondary)" />
-                  <span className="ml-2 text-sm text-(--text-secondary)">{t('merge.rebase.loadingPreview')}</span>
+                  <span className="ml-2 text-sm text-(--text-secondary)">
+                    {t('merge.rebase.loadingPreview')}
+                  </span>
                 </div>
               )}
 
@@ -274,9 +276,7 @@ export function RebaseDialog({
                   </strong>
                   .
                 </p>
-                <p className="m-0 text-xs text-warning">
-                  {t('merge.rebase.rebaseWarning')}
-                </p>
+                <p className="m-0 text-xs text-warning">{t('merge.rebase.rebaseWarning')}</p>
               </div>
             </>
           )}

@@ -155,7 +155,9 @@ export function CherryPickDialog({
             <>
               <div className="field">
                 <Label>
-                  {commits.length === 1 ? t('merge.cherryPick.commitToPick') : t('merge.cherryPick.commitsToPick')}
+                  {commits.length === 1
+                    ? t('merge.cherryPick.commitToPick')
+                    : t('merge.cherryPick.commitsToPick')}
                 </Label>
                 <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
                   {commits.map((commit) => (

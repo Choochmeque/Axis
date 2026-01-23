@@ -402,7 +402,9 @@ export function CommitForm() {
               disabled={!settings?.aiEnabled || stagedCount === 0 || isGeneratingMessage}
               icon={Sparkles}
             >
-              {isGeneratingMessage ? t('staging.commitOptions.generating') : t('staging.commitOptions.generateWithAi')}
+              {isGeneratingMessage
+                ? t('staging.commitOptions.generating')
+                : t('staging.commitOptions.generateWithAi')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -492,7 +494,11 @@ export function CommitForm() {
             <textarea
               ref={textareaRef}
               className="w-full h-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
-              placeholder={isAmending ? t('staging.commitForm.amendPlaceholder') : t('staging.commitForm.placeholder')}
+              placeholder={
+                isAmending
+                  ? t('staging.commitForm.amendPlaceholder')
+                  : t('staging.commitForm.placeholder')
+              }
               value={localMessage}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
@@ -528,7 +534,9 @@ export function CommitForm() {
               htmlFor="push-after-commit"
               className="text-xs text-(--text-secondary) cursor-pointer select-none"
             >
-              {t('staging.commitForm.pushToOrigin', { branch: repository?.currentBranch || 'main' })}
+              {t('staging.commitForm.pushToOrigin', {
+                branch: repository?.currentBranch || 'main',
+              })}
             </label>
           </div>
           <button
@@ -536,7 +544,11 @@ export function CommitForm() {
             onClick={handleCommit}
             disabled={!canCommit || isCommitting}
           >
-            {isCommitting ? t('staging.commitForm.committing') : isAmending ? t('staging.commitForm.amendButton') : t('staging.commitForm.commitButton')}
+            {isCommitting
+              ? t('staging.commitForm.committing')
+              : isAmending
+                ? t('staging.commitForm.amendButton')
+                : t('staging.commitForm.commitButton')}
             {stagedCount > 0 && <span className="opacity-80 font-normal">({stagedCount})</span>}
           </button>
         </div>

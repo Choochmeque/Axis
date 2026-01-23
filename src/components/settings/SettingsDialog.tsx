@@ -431,7 +431,10 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           message: t('settings.signing.signingWorks', { program: result.programUsed }),
         });
       } else {
-        setTestResult({ success: false, message: result.error || t('settings.signing.signingFailed') });
+        setTestResult({
+          success: false,
+          message: result.error || t('settings.signing.signingFailed'),
+        });
       }
     } catch {
       setTestResult({ success: false, message: t('settings.signing.signingFailed') });
@@ -526,7 +529,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             className="flex-1"
             disabled={isLoadingKeys}
             placeholder={
-              isLoadingKeys ? t('settings.signing.key.loadingKeys') : t('settings.signing.key.placeholder')
+              isLoadingKeys
+                ? t('settings.signing.key.loadingKeys')
+                : t('settings.signing.key.placeholder')
             }
           >
             {availableKeys.map((key) => (
@@ -875,7 +880,9 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
           }}
         >
           <SelectItem value={AiProvider.OpenAi}>{t('settings.ai.provider.openai')}</SelectItem>
-          <SelectItem value={AiProvider.Anthropic}>{t('settings.ai.provider.anthropic')}</SelectItem>
+          <SelectItem value={AiProvider.Anthropic}>
+            {t('settings.ai.provider.anthropic')}
+          </SelectItem>
           <SelectItem value={AiProvider.Ollama}>{t('settings.ai.provider.ollama')}</SelectItem>
         </Select>
       </FormField>
@@ -1113,7 +1120,9 @@ function IntegrationsSettings() {
                 <div className="font-medium text-(--text-primary)">{activeProvider?.name}</div>
                 {connectionStatus?.connected && connectionStatus.username && (
                   <div className="text-sm text-(--text-muted)">
-                    {t('settings.integrations.connectedAs', { username: connectionStatus.username })}
+                    {t('settings.integrations.connectedAs', {
+                      username: connectionStatus.username,
+                    })}
                   </div>
                 )}
               </div>
@@ -1141,16 +1150,21 @@ function IntegrationsSettings() {
           {connectionStatus?.connected && (
             <div className="text-sm text-(--text-secondary)">
               <p>
-                {t('settings.integrations.connectedDescription', { provider: activeProvider?.name })}
+                {t('settings.integrations.connectedDescription', {
+                  provider: activeProvider?.name,
+                })}
               </p>
             </div>
           )}
 
           {!connectionStatus?.connected && (
             <div className="text-sm text-(--text-muted)">
-              <p>{t('settings.integrations.connectDescription', { provider: activeProvider?.name })}</p>
+              <p>
+                {t('settings.integrations.connectDescription', { provider: activeProvider?.name })}
+              </p>
               <p className="mt-2">
-                <strong>Note:</strong> {t('settings.integrations.authNote', { provider: activeProvider?.name })}
+                <strong>Note:</strong>{' '}
+                {t('settings.integrations.authNote', { provider: activeProvider?.name })}
               </p>
             </div>
           )}

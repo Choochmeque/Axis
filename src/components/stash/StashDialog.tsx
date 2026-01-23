@@ -80,9 +80,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
         <DialogTitle icon={Archive}>{t('stash.dialog.title')}</DialogTitle>
 
         <DialogBody>
-          <p className="text-base text-(--text-secondary) mb-4">
-            {t('stash.dialog.description')}
-          </p>
+          <p className="text-base text-(--text-secondary) mb-4">{t('stash.dialog.description')}</p>
 
           <FormField label={t('stash.dialog.messageLabel')} htmlFor="stash-message">
             <Input

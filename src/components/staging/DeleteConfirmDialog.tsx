@@ -39,9 +39,7 @@ export function DeleteConfirmDialog({
         </DialogTitle>
 
         <DialogBody>
-          <Alert variant="warning">
-            {t('dialogs.deleteFile.message', { path: filePath })}
-          </Alert>
+          <Alert variant="warning">{t('dialogs.deleteFile.message', { path: filePath })}</Alert>
         </DialogBody>
 
         <DialogFooter>

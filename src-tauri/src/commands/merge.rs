@@ -1,7 +1,8 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
     CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictType,
-    ConflictedFile, MergeOptions, MergeResult, MergeType, OperationState, RebaseOptions,
+    ConflictedFile, InteractiveRebaseEntry, InteractiveRebaseOptions, InteractiveRebasePreview,
+    MergeOptions, MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions,
     RebasePreview, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
 use crate::services::GitCliService;
@@ -274,6 +275,117 @@ pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Res
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_rebase_preview(&onto))
+}
+
+/// Get interactive rebase preview with entries prepared for editing
+#[tauri::command]
+#[specta::specta]
+pub async fn get_interactive_rebase_preview(
+    state: State<'_, AppState>,
+    onto: String,
+) -> Result<InteractiveRebasePreview> {
+    state.get_git_service()?.with_git2(|git2| {
+        let preview = git2.get_rebase_preview(&onto)?;
+
+        // Convert commits to interactive entries with default 'pick' action
+        let entries: Vec<InteractiveRebaseEntry> = preview
+            .commits_to_rebase
+            .iter()
+            .enumerate()
+            .map(|(i, commit)| InteractiveRebaseEntry {
+                action: RebaseAction::Pick,
+                short_oid: commit.short_oid.clone(),
+                oid: commit.oid.clone(),
+                summary: commit.summary.clone(),
+                original_index: i,
+            })
+            .collect();
+
+        Ok(InteractiveRebasePreview { preview, entries })
+    })
+}
+
+/// Start an interactive rebase with pre-configured actions
+#[tauri::command]
+#[specta::specta]
+pub async fn interactive_rebase(
+    state: State<'_, AppState>,
+    options: InteractiveRebaseOptions,
+    bypass_hooks: Option<bool>,
+) -> Result<RebaseResult> {
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    // Get current branch for pre-rebase hook
+    let current_branch = git_service.with_git2(|git2| {
+        git2.repo()
+            .head()
+            .ok()
+            .and_then(|h| h.shorthand().map(|s| s.to_string()))
+    });
+
+    // Run pre-rebase hook
+    if !skip_hooks {
+        let hook_result = git_service
+            .with_hook(|hook| hook.run_pre_rebase(&options.onto, current_branch.as_deref()));
+        if !hook_result.skipped && !hook_result.success {
+            let output = if !hook_result.stderr.is_empty() {
+                &hook_result.stderr
+            } else {
+                &hook_result.stdout
+            };
+            return Err(AxisError::Other(format!(
+                "Hook 'pre-rebase' failed:\n{}",
+                output.trim()
+            )));
+        }
+    }
+
+    // Count non-dropped commits
+    let commits_count = options
+        .entries
+        .iter()
+        .filter(|e| e.action != RebaseAction::Drop)
+        .count();
+
+    // Execute interactive rebase
+    let result = {
+        let guard = git_service.lock();
+        let cli = guard.git_cli();
+        cli.interactive_rebase(&options.onto, &options.entries, options.autosquash)?
+    };
+
+    if result.success {
+        Ok(RebaseResult {
+            success: true,
+            commits_rebased: commits_count,
+            current_commit: None,
+            total_commits: Some(options.entries.len()),
+            conflicts: Vec::new(),
+            message: result.stdout.trim().to_string(),
+        })
+    } else if result.stderr.contains("CONFLICT") {
+        let conflicts = {
+            let guard = git_service.lock();
+            get_conflicted_files_internal(guard.git_cli())?
+        };
+
+        Ok(RebaseResult {
+            success: false,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: Some(options.entries.len()),
+            conflicts,
+            message: "Rebase conflicts detected. Please resolve conflicts and continue."
+                .to_string(),
+        })
+    } else {
+        Err(AxisError::Other(format!(
+            "Interactive rebase failed: {}",
+            result.stderr.trim()
+        )))
+    }
 }
 
 // ==================== Cherry-pick Commands ====================

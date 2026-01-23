@@ -22,6 +22,7 @@ import type {
   FileLogOptions,
   MergeOptions,
   RebaseOptions,
+  InteractiveRebaseOptions,
   CherryPickOptions,
   RevertOptions,
   ConflictResolution,
@@ -245,6 +246,11 @@ export const rebaseApi = {
   skip: () => commands.rebaseSkip(),
 
   getPreview: (onto: string) => commands.getRebasePreview(onto),
+
+  getInteractivePreview: (onto: string) => commands.getInteractiveRebasePreview(onto),
+
+  interactiveRebase: (options: InteractiveRebaseOptions, bypassHooks?: boolean) =>
+    commands.interactiveRebase(options, bypassHooks ?? null),
 };
 
 export const cherryPickApi = {

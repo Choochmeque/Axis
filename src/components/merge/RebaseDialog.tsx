@@ -12,6 +12,7 @@ import {
   type RebaseResult,
 } from '../../types';
 import { RebasePreviewDiagram } from './RebasePreviewDiagram';
+import { useInteractiveRebaseStore } from '@/store/interactiveRebaseStore';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,8 @@ export function RebaseDialog({
   const [preview, setPreview] = useState<RebasePreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const { trackOperation } = useOperation();
+  const openInteractiveRebase = useInteractiveRebaseStore((s) => s.open);
+  const isOpeningInteractive = useInteractiveRebaseStore((s) => s.isLoading);
 
   useEffect(() => {
     if (isOpen) {
@@ -316,6 +319,24 @@ export function RebaseDialog({
                   Cancel
                 </Button>
               </DialogClose>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const target = targetCommit?.oid ?? selectedBranch;
+                  if (target) {
+                    openInteractiveRebase(target);
+                    onClose();
+                  }
+                }}
+                disabled={
+                  isLoading ||
+                  isOpeningInteractive ||
+                  (!targetCommit && !selectedBranch) ||
+                  !preview
+                }
+              >
+                {isOpeningInteractive ? 'Loading...' : 'Interactive...'}
+              </Button>
               <Button
                 variant="primary"
                 onClick={handleRebase}

@@ -10,6 +10,7 @@ import { ReflogView } from './components/reflog';
 import { LfsView } from './components/lfs';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { TabBar } from './components/layout/TabBar';
+import { InteractiveRebaseDialog } from './components/merge';
 import { useMenuActions, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
 import { notifyNewCommits } from './lib/actions';
@@ -295,6 +296,7 @@ function App() {
       <div className="flex-1 overflow-hidden">
         <AppLayout>{renderView()}</AppLayout>
       </div>
+      <InteractiveRebaseDialog />
     </div>
   );
 }

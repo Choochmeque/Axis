@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GitBranch,
   GitMerge,
@@ -33,6 +34,7 @@ interface BranchContextMenuProps {
 }
 
 export function BranchContextMenu({ branch, children, onCheckout }: BranchContextMenuProps) {
+  const { t } = useTranslation();
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPullDialog, setShowPullDialog] = useState(false);
@@ -58,7 +60,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         setRemotes(remotesData);
         setRemoteBranches(branchesData);
       } catch (err) {
-        toast.error('Load remotes failed', getErrorMessage(err));
+        toast.error(t('notifications.error.loadRemotesFailed'), getErrorMessage(err));
       }
     }
   };
@@ -80,9 +82,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         tags: false,
       });
       await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
-      toast.success('Push completed');
+      toast.success(t('notifications.success.pushComplete'));
     } catch (err) {
-      toast.error('Push failed', getErrorMessage(err));
+      toast.error(t('notifications.error.pushFailed'), getErrorMessage(err));
     }
   };
 
@@ -92,9 +94,9 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     try {
       await branchApi.setUpstream(branch.name, remoteBranch.fullName);
       await loadBranches();
-      toast.success('Upstream set');
+      toast.success(t('notifications.success.upstreamSet'));
     } catch (err) {
-      toast.error('Set upstream failed', getErrorMessage(err));
+      toast.error(t('notifications.error.setUpstreamFailed'), getErrorMessage(err));
     } finally {
       setIsSettingUpstream(false);
     }
@@ -104,36 +106,41 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     <>
       <ContextMenu trigger={children} onOpenChange={handleMenuOpen}>
         <MenuItem icon={GitBranch} disabled={isCurrentBranch} onSelect={onCheckout}>
-          Checkout {branch.name}
+          {t('branches.contextMenu.checkout', { name: branch.name })}
         </MenuItem>
         <MenuItem icon={GitMerge} disabled>
-          Merge {branch.name} into {currentBranch?.name ?? 'current'}
+          {t('branches.contextMenu.mergeInto', {
+            source: branch.name,
+            target: currentBranch?.name ?? 'current',
+          })}
         </MenuItem>
         <MenuItem icon={GitMerge} disabled className="[&>svg]:rotate-180">
-          Rebase current changes onto {branch.name}
+          {t('branches.contextMenu.rebaseOnto', { name: branch.name })}
         </MenuItem>
         <MenuSeparator />
 
         {hasUpstream && isCurrentBranch && (
           <MenuItem icon={ArrowDownToLine} onSelect={handlePullTracked}>
-            Pull {branch.upstream} (tracked)
+            {t('branches.contextMenu.pullTracked', { upstream: branch.upstream })}
           </MenuItem>
         )}
         {hasUpstream && isCurrentBranch && (
           <MenuItem icon={ArrowUpFromLine} onSelect={handlePushTracked}>
-            Push to {branch.upstream} (tracked)
+            {t('branches.contextMenu.pushTracked', { upstream: branch.upstream })}
           </MenuItem>
         )}
 
         <SubMenu
           icon={ArrowUpFromLine}
-          label="Push to"
+          label={t('branches.contextMenu.pushTo')}
           disabled={remotes.length === 0}
           minWidth="md"
         >
           {remotes.length === 0 ? (
             <MenuItem disabled>
-              <span className="text-(--text-tertiary)">No remotes configured</span>
+              <span className="text-(--text-tertiary)">
+                {t('branches.contextMenu.noRemotesConfigured')}
+              </span>
             </MenuItem>
           ) : (
             remotes.map((remote) => (
@@ -146,14 +153,16 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
         <SubMenu
           icon={GitBranch}
-          label="Track Remote Branch"
+          label={t('branches.contextMenu.trackRemoteBranch')}
           disabled={remoteBranches.length === 0}
           minWidth="md"
           className="max-h-64 overflow-y-auto"
         >
           {remoteBranches.length === 0 ? (
             <MenuItem disabled>
-              <span className="text-(--text-tertiary)">No remote branches</span>
+              <span className="text-(--text-tertiary)">
+                {t('branches.contextMenu.noRemoteBranches')}
+              </span>
             </MenuItem>
           ) : (
             remoteBranches.map((remoteBranch) => (
@@ -173,21 +182,21 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         <MenuSeparator />
         {!isCurrentBranch && (
           <MenuItem icon={Diff} onSelect={() => setShowCompareDialog(true)}>
-            Diff Against Current
+            {t('branches.contextMenu.diffAgainstCurrent')}
           </MenuItem>
         )}
         {!isCurrentBranch && <MenuSeparator />}
         <MenuItem icon={Pencil} onSelect={() => setShowRenameDialog(true)}>
-          Rename...
+          {t('branches.contextMenu.rename')}
         </MenuItem>
         {!isCurrentBranch && (
           <MenuItem icon={Trash2} danger onSelect={() => setShowDeleteDialog(true)}>
-            Delete {branch.name}
+            {t('branches.contextMenu.delete', { name: branch.name })}
           </MenuItem>
         )}
         <MenuSeparator />
         <MenuItem icon={Copy} onSelect={() => copyToClipboard(branch.name)}>
-          Copy Branch Name to Clipboard
+          {t('branches.contextMenu.copyBranchName')}
         </MenuItem>
 
         <CustomActionsMenuSection
@@ -197,7 +206,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
         <MenuSeparator />
         <MenuItem icon={GitPullRequest} disabled>
-          Create Pull Request...
+          {t('branches.contextMenu.createPullRequest')}
         </MenuItem>
       </ContextMenu>
 

@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, GitCommit } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/dateUtils';
 import { Avatar } from '@/components/ui';
@@ -24,6 +25,7 @@ export function CommitCompareList({
   onSelectCommit,
   isLoading = false,
 }: CommitCompareListProps) {
+  const { t } = useTranslation();
   const [aheadExpanded, setAheadExpanded] = useState(true);
   const [behindExpanded, setBehindExpanded] = useState(true);
 
@@ -31,9 +33,11 @@ export function CommitCompareList({
     return (
       <div className={listClass}>
         <div className={headerClass}>
-          <span className="flex-1">Commits</span>
+          <span className="flex-1">{t('branches.compare.commits')}</span>
         </div>
-        <div className="p-6 text-center text-(--text-secondary) text-base">Loading...</div>
+        <div className="p-6 text-center text-(--text-secondary) text-base">
+          {t('common.loading')}
+        </div>
       </div>
     );
   }
@@ -44,10 +48,10 @@ export function CommitCompareList({
     return (
       <div className={listClass}>
         <div className={headerClass}>
-          <span className="flex-1">Commits</span>
+          <span className="flex-1">{t('branches.compare.commits')}</span>
         </div>
         <div className="p-6 text-center text-(--text-secondary) text-base">
-          Branches are identical
+          {t('branches.compare.branchesIdentical')}
         </div>
       </div>
     );
@@ -56,13 +60,13 @@ export function CommitCompareList({
   return (
     <div className={listClass}>
       <div className={headerClass}>
-        <span className="flex-1">Commits</span>
+        <span className="flex-1">{t('branches.compare.commits')}</span>
         <span className="badge text-sm font-normal">{totalCommits}</span>
       </div>
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {aheadCommits.length > 0 && (
           <CommitSection
-            title="Ahead"
+            title={t('branches.compare.aheadSection')}
             count={aheadCommits.length}
             commits={aheadCommits}
             expanded={aheadExpanded}
@@ -74,7 +78,7 @@ export function CommitCompareList({
         )}
         {behindCommits.length > 0 && (
           <CommitSection
-            title="Behind"
+            title={t('branches.compare.behindSection')}
             count={behindCommits.length}
             commits={behindCommits}
             expanded={behindExpanded}

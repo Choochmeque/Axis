@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -26,6 +27,7 @@ interface CheckoutBranchDialogProps {
 }
 
 export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
+  const { t } = useTranslation();
   const [selectedBranch, setSelectedBranch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
 
   const handleCheckout = async () => {
     if (!selectedBranch) {
-      setError('Please select a branch');
+      setError(t('branches.checkout.selectBranchError'));
       return;
     }
 
@@ -73,28 +75,30 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle icon={GitBranch}>Checkout Branch</DialogTitle>
+        <DialogTitle icon={GitBranch}>{t('branches.checkout.title')}</DialogTitle>
 
         <DialogBody>
           {currentBranch && (
             <div className="dialog-info-box">
               <div className="flex justify-between text-base py-1">
-                <span className="text-(--text-secondary)">Current branch:</span>
+                <span className="text-(--text-secondary)">
+                  {t('branches.checkout.currentBranchLabel')}
+                </span>
                 <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
               </div>
             </div>
           )}
 
-          <FormField label="Select Branch" htmlFor="branch-select">
+          <FormField label={t('branches.checkout.selectBranchLabel')} htmlFor="branch-select">
             <Select
               id="branch-select"
               value={selectedBranch}
               onValueChange={setSelectedBranch}
-              placeholder="-- Select a branch --"
+              placeholder={t('branches.checkout.selectBranchPlaceholder')}
             >
               {localBranches.length > 0 && (
                 <SelectGroup>
-                  <SelectLabel>Local Branches</SelectLabel>
+                  <SelectLabel>{t('branches.checkout.localBranches')}</SelectLabel>
                   {localBranches
                     .filter((b) => !b.isHead)
                     .map((branch) => (
@@ -107,7 +111,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
 
               {remoteBranches.length > 0 && (
                 <SelectGroup>
-                  <SelectLabel>Remote Branches</SelectLabel>
+                  <SelectLabel>{t('branches.checkout.remoteBranches')}</SelectLabel>
                   {remoteBranches.map((branch) => (
                     <SelectItem key={branch.fullName} value={branch.name}>
                       {branch.name}
@@ -127,14 +131,14 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleCheckout}
             disabled={isLoading || !selectedBranch}
           >
-            {isLoading ? 'Switching...' : 'Checkout'}
+            {isLoading ? t('branches.checkout.switching') : t('branches.checkout.checkoutButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

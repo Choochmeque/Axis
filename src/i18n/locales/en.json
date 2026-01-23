@@ -232,6 +232,16 @@
     "selectRepository": "Select Repository"
   },
   "branches": {
+    "validation": {
+      "cannotContainSpaces": "Branch name cannot contain spaces",
+      "cannotStartWithDot": "Branch name cannot start with a dot",
+      "cannotEndWithSlash": "Branch name cannot end with a slash",
+      "cannotEndWithLock": "Branch name cannot end with .lock",
+      "cannotContainConsecutiveDots": "Branch name cannot contain consecutive dots",
+      "containsInvalidCharacters": "Branch name contains invalid characters",
+      "containsControlCharacters": "Branch name contains control characters",
+      "nameRequired": "Branch name is required"
+    },
     "delete": {
       "title": "Delete Branch",
       "warning": "This action cannot be undone.",
@@ -244,28 +254,84 @@
       "deleting": "Deleting...",
       "deleteButton": "Delete Branch"
     },
+    "deleteRemote": {
+      "title": "Delete Remote Branch",
+      "warning": "This will delete the branch from the remote server.",
+      "remoteLabel": "Remote:",
+      "branchLabel": "Branch:",
+      "confirmMessage": "Are you sure you want to delete \"{{branch}}\" from {{remote}}?",
+      "forceDelete": "Force delete",
+      "deleting": "Deleting...",
+      "deleteButton": "Delete from Remote"
+    },
     "create": {
       "title": "Create Branch",
       "nameLabel": "Branch Name",
-      "namePlaceholder": "feature/my-new-feature",
-      "baseLabel": "Base Branch",
-      "checkout": "Checkout after creating",
+      "namePlaceholder": "feature/my-feature",
+      "startingPointLabel": "Starting Point",
+      "startingPointPlaceholder": "Current HEAD",
+      "commitSuffix": "(commit)",
+      "currentSuffix": "(current)",
+      "checkoutNewBranch": "Checkout new branch",
       "creating": "Creating...",
       "createButton": "Create Branch"
     },
     "rename": {
       "title": "Rename Branch",
-      "currentLabel": "Current Name:",
-      "newLabel": "New Name",
+      "currentLabel": "Current name:",
+      "statusLabel": "Status:",
+      "currentBranchStatus": "Current branch (HEAD)",
+      "newNameLabel": "New Branch Name",
+      "newNamePlaceholder": "Enter new branch name",
+      "forceRename": "Force rename (overwrite if branch exists)",
+      "alreadyExists": "A branch with this name already exists. Check \"Force rename\" to overwrite.",
       "renaming": "Renaming...",
       "renameButton": "Rename Branch"
     },
     "checkout": {
       "title": "Checkout Branch",
-      "message": "You have uncommitted changes. What would you like to do?",
-      "stashChanges": "Stash changes",
-      "discardChanges": "Discard changes",
-      "checking": "Checking out..."
+      "currentBranchLabel": "Current branch:",
+      "selectBranchLabel": "Select Branch",
+      "selectBranchPlaceholder": "-- Select a branch --",
+      "localBranches": "Local Branches",
+      "remoteBranches": "Remote Branches",
+      "selectBranchError": "Please select a branch",
+      "switching": "Switching...",
+      "checkoutButton": "Checkout"
+    },
+    "compare": {
+      "title": "Compare Branches",
+      "ahead": "ahead",
+      "behind": "behind",
+      "commits": "Commits",
+      "files": "Files",
+      "loading": "Loading comparison...",
+      "selectCommitPrompt": "Select a commit to view its changes",
+      "branchesIdentical": "Branches are identical",
+      "aheadSection": "Ahead",
+      "behindSection": "Behind"
+    },
+    "contextMenu": {
+      "checkout": "Checkout {{name}}",
+      "mergeInto": "Merge {{source}} into {{target}}",
+      "rebaseOnto": "Rebase current changes onto {{name}}",
+      "pullTracked": "Pull {{upstream}} (tracked)",
+      "pushTracked": "Push to {{upstream}} (tracked)",
+      "pushTo": "Push to",
+      "trackRemoteBranch": "Track Remote Branch",
+      "noRemotesConfigured": "No remotes configured",
+      "noRemoteBranches": "No remote branches",
+      "diffAgainstCurrent": "Diff Against Current",
+      "rename": "Rename...",
+      "delete": "Delete {{name}}",
+      "copyBranchName": "Copy Branch Name to Clipboard",
+      "createPullRequest": "Create Pull Request..."
+    },
+    "remoteContextMenu": {
+      "checkout": "Checkout...",
+      "pullInto": "Pull {{remote}}/{{branch}} into {{current}}",
+      "diffAgainstCurrent": "Diff Against Current",
+      "delete": "Delete {{name}}..."
     }
   },
   "stash": {
@@ -432,6 +498,7 @@
       "branchCreated": "Branch \"{{name}}\" created",
       "branchDeleted": "Branch \"{{name}}\" deleted",
       "branchRenamed": "Branch renamed to \"{{name}}\"",
+      "upstreamSet": "Upstream set",
       "pullComplete": "Pull complete",
       "pushComplete": "Push complete",
       "fetchComplete": "Fetch complete",
@@ -463,7 +530,9 @@
       "mergeFailed": "Merge failed",
       "rebaseFailed": "Rebase failed",
       "stashFailed": "Stash failed",
-      "cloneFailed": "Clone failed"
+      "cloneFailed": "Clone failed",
+      "loadRemotesFailed": "Load remotes failed",
+      "setUpstreamFailed": "Set upstream failed"
     }
   },
   "toolbar": {

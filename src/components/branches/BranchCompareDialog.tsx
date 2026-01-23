@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Diff, GitBranch, ArrowRight, FileCode, GitCommit } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogBody, Alert, Button } from '@/components/ui';
@@ -22,6 +23,7 @@ export function BranchCompareDialog({
   baseBranch,
   compareBranch,
 }: BranchCompareDialogProps) {
+  const { t } = useTranslation();
   const {
     compareResult,
     isLoading,
@@ -67,7 +69,7 @@ export function BranchCompareDialog({
       <DialogContent maxWidth="2xl" className="h-[80vh] flex flex-col">
         <DialogTitle icon={Diff}>
           <div className="flex items-center gap-2">
-            <span>Compare Branches</span>
+            <span>{t('branches.compare.title')}</span>
           </div>
         </DialogTitle>
 
@@ -91,13 +93,13 @@ export function BranchCompareDialog({
                   <span className="text-success font-medium">
                     +{compareResult.aheadCommits.length}
                   </span>
-                  <span className="text-(--text-tertiary)">ahead</span>
+                  <span className="text-(--text-tertiary)">{t('branches.compare.ahead')}</span>
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-warning font-medium">
                     -{compareResult.behindCommits.length}
                   </span>
-                  <span className="text-(--text-tertiary)">behind</span>
+                  <span className="text-(--text-tertiary)">{t('branches.compare.behind')}</span>
                 </span>
               </div>
             )}
@@ -109,7 +111,7 @@ export function BranchCompareDialog({
               active={activeTab === 'commits'}
               onClick={() => setActiveTab('commits')}
               icon={GitCommit}
-              label="Commits"
+              label={t('branches.compare.commits')}
               count={
                 compareResult
                   ? compareResult.aheadCommits.length + compareResult.behindCommits.length
@@ -120,7 +122,7 @@ export function BranchCompareDialog({
               active={activeTab === 'files'}
               onClick={() => setActiveTab('files')}
               icon={FileCode}
-              label="Files"
+              label={t('branches.compare.files')}
               count={compareResult?.files.length}
             />
           </div>
@@ -135,7 +137,7 @@ export function BranchCompareDialog({
           {/* Loading state */}
           {isLoading && (
             <div className="flex-1 flex items-center justify-center text-(--text-secondary)">
-              Loading comparison...
+              {t('branches.compare.loading')}
             </div>
           )}
 
@@ -165,7 +167,7 @@ export function BranchCompareDialog({
                 <Panel minSize={50}>
                   {activeTab === 'commits' && !selectedCommit ? (
                     <div className="flex flex-col h-full items-center justify-center text-(--text-secondary) text-sm">
-                      Select a commit to view its changes
+                      {t('branches.compare.selectCommitPrompt')}
                     </div>
                   ) : activeTab === 'commits' && selectedCommit ? (
                     <PanelGroup direction="vertical" autoSaveId="branch-compare-commit-layout">

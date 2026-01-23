@@ -9,16 +9,13 @@ use crate::models::{
 };
 
 /// Trait for integration providers (GitHub, GitLab, Bitbucket, Gitea)
+///
+/// OAuth is handled by the IntegrationService, not by providers directly.
+/// Providers receive tokens via their constructor and make API calls.
 #[async_trait]
 pub trait IntegrationProvider: Send + Sync {
     /// Returns the provider type
     fn provider_type(&self) -> ProviderType;
-
-    /// Returns the OAuth URL for authentication
-    fn get_oauth_url(&self, state: &str) -> String;
-
-    /// Exchange authorization code for access token
-    async fn exchange_code(&self, code: &str) -> Result<String>;
 
     /// Check if the provider is connected (has valid token)
     async fn is_connected(&self) -> bool;

@@ -1,6 +1,8 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
-use crate::services::{AvatarService, BackgroundFetchService, GitService, ProgressRegistry};
+use crate::services::{
+    AvatarService, BackgroundFetchService, GitService, IntegrationService, ProgressRegistry,
+};
 use crate::storage::Database;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -158,18 +160,23 @@ pub struct AppState {
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
+    integration_service: RwLock<Option<Arc<IntegrationService>>>,
     progress_registry: ProgressRegistry,
 }
 
 impl AppState {
     pub fn new(database: Database) -> Self {
+        let database = Arc::new(database);
+        let integration_service = IntegrationService::new(Arc::clone(&database));
+
         AppState {
             active_repository_path: RwLock::new(None),
             repository_cache: Arc::new(RepositoryCache::new()),
-            database: Arc::new(database),
+            database,
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
             avatar_service: RwLock::new(None),
+            integration_service: RwLock::new(Some(Arc::new(integration_service))),
             progress_registry: ProgressRegistry::new(),
         }
     }
@@ -214,6 +221,15 @@ impl AppState {
             .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("Avatar service not initialized".to_string()))
+    }
+
+    /// Get the integration service
+    pub fn integration_service(&self) -> Result<Arc<IntegrationService>> {
+        self.integration_service
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+            .ok_or_else(|| AxisError::Other("Integration service not initialized".to_string()))
     }
 
     /// Get the progress registry for operation cancellation

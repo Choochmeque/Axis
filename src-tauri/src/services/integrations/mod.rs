@@ -1,10 +1,11 @@
 mod cache;
 pub mod github;
 mod provider;
+mod service;
 
 pub use cache::TtlCache;
-pub use github::GitHubProvider;
 pub use provider::IntegrationProvider;
+pub use service::IntegrationService;
 
 use url::Url;
 

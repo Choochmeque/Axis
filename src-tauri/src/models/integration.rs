@@ -4,7 +4,7 @@ use specta::Type;
 use strum::Display;
 
 /// Supported integration providers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type, Display)]
 #[serde(rename_all = "PascalCase")]
 pub enum ProviderType {
     GitHub,

@@ -183,7 +183,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isConnecting: true, error: null });
     try {
       // This opens browser, waits for callback, and exchanges token
-      await integrationApi.startOauth();
+      await integrationApi.startOauth(detectedProvider.provider);
       await get().checkConnection();
       set({ isConnecting: false });
 
@@ -251,7 +251,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const info = await integrationApi.getRepoInfo(detectedProvider.owner, detectedProvider.repo);
+      const info = await integrationApi.getRepoInfo(detectedProvider);
       set({ repoInfo: info, error: null });
     } catch (error) {
       console.error('Failed to load repo info:', error);
@@ -267,12 +267,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingPrs: true, prFilter: filterState, pullRequests: [], prsPage: 1 });
 
     try {
-      const result = await integrationApi.listPrs(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        filterState,
-        1
-      );
+      const result = await integrationApi.listPrs(detectedProvider, filterState, 1);
       set({
         pullRequests: result.items,
         prsPage: 1,
@@ -299,12 +294,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = prsPage + 1;
-      const result = await integrationApi.listPrs(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        prFilter,
-        nextPage
-      );
+      const result = await integrationApi.listPrs(detectedProvider, prFilter, nextPage);
       set((state) => ({
         pullRequests: [...state.pullRequests, ...result.items],
         prsPage: nextPage,
@@ -326,7 +316,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const pr = await integrationApi.getPr(detectedProvider.owner, detectedProvider.repo, number);
+      const pr = await integrationApi.getPr(detectedProvider, number);
       set({ selectedPr: pr, error: null });
     } catch (error) {
       console.error('Failed to get pull request:', error);
@@ -340,11 +330,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    const pr = await integrationApi.createPr(
-      detectedProvider.owner,
-      detectedProvider.repo,
-      options
-    );
+    const pr = await integrationApi.createPr(detectedProvider, options);
 
     // Refresh PR list
     get().loadPullRequests();
@@ -358,11 +344,12 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    await integrationApi.mergePr(detectedProvider.owner, detectedProvider.repo, number, options);
+    await integrationApi.mergePr(detectedProvider, number, options);
 
-    // Refresh PR list and clear selection
+    // Refresh PR list, CI runs and clear selection
     set({ selectedPr: null });
     get().loadPullRequests();
+    get().loadCiRuns();
   },
 
   setPrFilter: (state: PrState) => {
@@ -389,12 +376,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingIssues: true, issueFilter: filterState, issues: [], issuesPage: 1 });
 
     try {
-      const result = await integrationApi.listIssues(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        filterState,
-        1
-      );
+      const result = await integrationApi.listIssues(detectedProvider, filterState, 1);
       set({
         issues: result.items,
         issuesPage: 1,
@@ -424,12 +406,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = issuesPage + 1;
-      const result = await integrationApi.listIssues(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        issueFilter,
-        nextPage
-      );
+      const result = await integrationApi.listIssues(detectedProvider, issueFilter, nextPage);
       set((state) => ({
         issues: [...state.issues, ...result.items],
         issuesPage: nextPage,
@@ -451,11 +428,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      const issue = await integrationApi.getIssue(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        number
-      );
+      const issue = await integrationApi.getIssue(detectedProvider, number);
       set({ selectedIssue: issue, error: null });
     } catch (error) {
       console.error('Failed to get issue:', error);
@@ -469,11 +442,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    const issue = await integrationApi.createIssue(
-      detectedProvider.owner,
-      detectedProvider.repo,
-      options
-    );
+    const issue = await integrationApi.createIssue(detectedProvider, options);
 
     // Refresh issue list
     get().loadIssues();
@@ -504,11 +473,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     set({ isLoadingCiRuns: true, ciRuns: [], ciRunsPage: 1 });
 
     try {
-      const result = await integrationApi.listCiRuns(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        1
-      );
+      const result = await integrationApi.listCiRuns(detectedProvider, 1);
       set({
         ciRuns: result.runs,
         ciRunsPage: 1,
@@ -532,11 +497,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const nextPage = ciRunsPage + 1;
-      const result = await integrationApi.listCiRuns(
-        detectedProvider.owner,
-        detectedProvider.repo,
-        nextPage
-      );
+      const result = await integrationApi.listCiRuns(detectedProvider, nextPage);
       set((state) => ({
         ciRuns: [...state.ciRuns, ...result.runs],
         ciRunsPage: nextPage,
@@ -568,7 +529,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       throw new Error('Not connected to provider');
     }
 
-    return await integrationApi.getCommitStatus(detectedProvider.owner, detectedProvider.repo, sha);
+    return await integrationApi.getCommitStatus(detectedProvider, sha);
   },
 
   loadNotifications: async (all?: boolean) => {
@@ -585,13 +546,8 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     try {
       const [result, unreadCount] = await Promise.all([
-        integrationApi.listNotifications(
-          detectedProvider.owner,
-          detectedProvider.repo,
-          filterAll,
-          1
-        ),
-        integrationApi.getUnreadCount(detectedProvider.owner, detectedProvider.repo),
+        integrationApi.listNotifications(detectedProvider, filterAll, 1),
+        integrationApi.getUnreadCount(detectedProvider),
       ]);
       set({
         notifications: result.items,
@@ -627,8 +583,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     try {
       const nextPage = notificationsPage + 1;
       const result = await integrationApi.listNotifications(
-        detectedProvider.owner,
-        detectedProvider.repo,
+        detectedProvider,
         notificationFilter,
         nextPage
       );
@@ -649,8 +604,11 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
   },
 
   markNotificationRead: async (threadId: string) => {
+    const { detectedProvider } = get();
+    if (!detectedProvider) return;
+
     try {
-      await integrationApi.markNotificationRead(threadId);
+      await integrationApi.markNotificationRead(detectedProvider.provider, threadId);
       // Update local state
       set((state) => ({
         notifications: state.notifications.map((n) =>
@@ -669,7 +627,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     if (!detectedProvider || !connectionStatus?.connected) return;
 
     try {
-      await integrationApi.markAllNotificationsRead(detectedProvider.owner, detectedProvider.repo);
+      await integrationApi.markAllNotificationsRead(detectedProvider);
       // Update local state
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, unread: false })),

@@ -1,12 +1,9 @@
 use tauri::State;
 
-use crate::commands::integrations::get_github_provider;
-use crate::error::{AxisError, Result};
-use crate::models::{
-    AvatarResponse, AvatarSource, DetectedProvider, IntegrationCommit, ProviderType,
-};
+use crate::error::Result;
+use crate::models::{AvatarResponse, AvatarSource};
+use crate::services::detect_provider;
 use crate::services::AvatarService;
-use crate::services::{detect_provider, IntegrationProvider};
 use crate::state::AppState;
 
 /// Get avatar for a commit author
@@ -92,34 +89,17 @@ async fn get_integration_commit_avatar(state: &State<'_, AppState>, sha: &str) -
     // 2. Detect provider from URL
     let detected = detect_provider(&remote_url)?;
 
-    // 3. Fetch commit from provider API
-    let commit = fetch_commit_from_provider(&detected, sha).await.ok()?;
+    // 3. Get integration service and provider
+    let service = state.integration_service().ok()?;
+    let provider = service.get_provider(detected.provider).await.ok()?;
+
+    // 4. Fetch commit from provider API
+    let commit = provider
+        .get_commit(&detected.owner, &detected.repo, sha)
+        .await
+        .ok()?;
 
     commit.author_avatar_url
-}
-
-/// Fetch commit using the appropriate provider
-async fn fetch_commit_from_provider(
-    detected: &DetectedProvider,
-    sha: &str,
-) -> Result<IntegrationCommit> {
-    match detected.provider {
-        ProviderType::GitHub => {
-            let provider_lock = get_github_provider();
-            let guard = provider_lock.read().await;
-            if let Some(provider) = guard.as_ref() {
-                provider
-                    .get_commit(&detected.owner, &detected.repo, sha)
-                    .await
-            } else {
-                Err(AxisError::IntegrationNotConnected("GitHub".to_string()))
-            }
-        }
-        _ => Err(AxisError::IntegrationError(format!(
-            "Provider {} not supported for avatar fetching",
-            detected.provider
-        ))),
-    }
 }
 
 /// Clear the avatar cache

@@ -8,6 +8,7 @@ import type {
   LfsMigrateOptions,
   LfsPruneOptions,
   ProviderType,
+  DetectedProvider,
   PrState,
   IssueState,
   CreatePrOptions,
@@ -532,9 +533,7 @@ export const lfsApi = {
 
 export const integrationApi = {
   // OAuth / Connection
-  setGithubClientId: (clientId: string) => commands.integrationSetGithubClientId(clientId),
-
-  startOauth: () => commands.integrationStartOauth(),
+  startOauth: (provider: ProviderType) => commands.integrationStartOauth(provider),
 
   cancelOauth: () => commands.integrationCancelOauth(),
 
@@ -548,48 +547,49 @@ export const integrationApi = {
   detectProvider: () => commands.integrationDetectProvider(),
 
   // Repository
-  getRepoInfo: (owner: string, repo: string) => commands.integrationGetRepoInfo(owner, repo),
+  getRepoInfo: (detected: DetectedProvider) => commands.integrationGetRepoInfo(detected),
 
   // Pull Requests
-  listPrs: (owner: string, repo: string, state: PrState, page: number) =>
-    commands.integrationListPrs(owner, repo, state, page),
+  listPrs: (detected: DetectedProvider, state: PrState, page: number) =>
+    commands.integrationListPrs(detected, state, page),
 
-  getPr: (owner: string, repo: string, number: number) =>
-    commands.integrationGetPr(owner, repo, number),
+  getPr: (detected: DetectedProvider, number: number) =>
+    commands.integrationGetPr(detected, number),
 
-  createPr: (owner: string, repo: string, options: CreatePrOptions) =>
-    commands.integrationCreatePr(owner, repo, options),
+  createPr: (detected: DetectedProvider, options: CreatePrOptions) =>
+    commands.integrationCreatePr(detected, options),
 
-  mergePr: (owner: string, repo: string, number: number, options: MergePrOptions) =>
-    commands.integrationMergePr(owner, repo, number, options),
+  mergePr: (detected: DetectedProvider, number: number, options: MergePrOptions) =>
+    commands.integrationMergePr(detected, number, options),
 
   // Issues
-  listIssues: (owner: string, repo: string, state: IssueState, page: number) =>
-    commands.integrationListIssues(owner, repo, state, page),
+  listIssues: (detected: DetectedProvider, state: IssueState, page: number) =>
+    commands.integrationListIssues(detected, state, page),
 
-  getIssue: (owner: string, repo: string, number: number) =>
-    commands.integrationGetIssue(owner, repo, number),
+  getIssue: (detected: DetectedProvider, number: number) =>
+    commands.integrationGetIssue(detected, number),
 
-  createIssue: (owner: string, repo: string, options: CreateIssueOptions) =>
-    commands.integrationCreateIssue(owner, repo, options),
+  createIssue: (detected: DetectedProvider, options: CreateIssueOptions) =>
+    commands.integrationCreateIssue(detected, options),
 
   // CI/CD
-  listCiRuns: (owner: string, repo: string, page: number) =>
-    commands.integrationListCiRuns(owner, repo, page),
+  listCiRuns: (detected: DetectedProvider, page: number) =>
+    commands.integrationListCiRuns(detected, page),
 
-  getCommitStatus: (owner: string, repo: string, sha: string) =>
-    commands.integrationGetCommitStatus(owner, repo, sha),
+  getCommitStatus: (detected: DetectedProvider, sha: string) =>
+    commands.integrationGetCommitStatus(detected, sha),
 
   // Notifications
-  listNotifications: (owner: string, repo: string, all: boolean, page: number) =>
-    commands.integrationListNotifications(owner, repo, all, page),
+  listNotifications: (detected: DetectedProvider, all: boolean, page: number) =>
+    commands.integrationListNotifications(detected, all, page),
 
-  markNotificationRead: (threadId: string) => commands.integrationMarkNotificationRead(threadId),
+  markNotificationRead: (provider: ProviderType, threadId: string) =>
+    commands.integrationMarkNotificationRead(provider, threadId),
 
-  markAllNotificationsRead: (owner: string, repo: string) =>
-    commands.integrationMarkAllNotificationsRead(owner, repo),
+  markAllNotificationsRead: (detected: DetectedProvider) =>
+    commands.integrationMarkAllNotificationsRead(detected),
 
-  getUnreadCount: (owner: string, repo: string) => commands.integrationGetUnreadCount(owner, repo),
+  getUnreadCount: (detected: DetectedProvider) => commands.integrationGetUnreadCount(detected),
 };
 
 export const gitignoreApi = {

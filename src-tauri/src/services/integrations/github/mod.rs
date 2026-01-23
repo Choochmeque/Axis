@@ -23,7 +23,6 @@ use crate::services::integrations::{IntegrationProvider, TtlCache};
 pub use oauth::OAuthFlow;
 
 const GITHUB_TOKEN_KEY: &str = "integration_github_token";
-const GITHUB_CLIENT_ID_KEY: &str = "integration_github_client_id";
 
 // Cache TTL constants
 const CACHE_TTL_SHORT: Duration = Duration::from_secs(30); // For frequently changing data (notifications)
@@ -267,7 +266,6 @@ impl From<octocrab::Error> for AxisError {
 /// GitHub integration provider
 pub struct GitHubProvider {
     client: RwLock<Option<Arc<Octocrab>>>,
-    client_id: RwLock<Option<String>>,
     get_secret: Box<dyn Fn(&str) -> Result<Option<String>> + Send + Sync>,
     set_secret: Box<dyn Fn(&str, &str) -> Result<()> + Send + Sync>,
     delete_secret: Box<dyn Fn(&str) -> Result<()> + Send + Sync>,
@@ -289,7 +287,6 @@ impl GitHubProvider {
         D: Fn(&str) -> Result<()> + Send + Sync + 'static,
     {
         let mut client = None;
-        let mut stored_client_id = None;
 
         // Try to initialize client from stored token
         if let Ok(Some(token)) = get_secret(GITHUB_TOKEN_KEY) {
@@ -298,14 +295,8 @@ impl GitHubProvider {
             }
         }
 
-        // Load client_id from secrets if available
-        if let Ok(Some(id)) = get_secret(GITHUB_CLIENT_ID_KEY) {
-            stored_client_id = Some(id);
-        }
-
         Self {
             client: RwLock::new(client),
-            client_id: RwLock::new(stored_client_id),
             get_secret: Box::new(get_secret),
             set_secret: Box::new(set_secret),
             delete_secret: Box::new(delete_secret),
@@ -352,40 +343,6 @@ impl GitHubProvider {
     pub fn invalidate_commit_status_cache(&self, owner: &str, repo: &str) {
         self.commit_status_cache
             .remove_by_prefix(&format!("{owner}/{repo}/status/"));
-    }
-
-    /// Set OAuth client ID (PKCE flow doesn't need client secret)
-    pub fn set_client_id(&self, client_id: String) -> Result<()> {
-        // Store in secrets
-        (self.set_secret)(GITHUB_CLIENT_ID_KEY, &client_id)?;
-
-        let mut guard = self
-            .client_id
-            .write()
-            .map_err(|e| AxisError::Other(format!("Lock poisoned: {e}")))?;
-        *guard = Some(client_id);
-        Ok(())
-    }
-
-    /// Get the configured client ID
-    pub fn get_client_id(&self) -> Result<Option<String>> {
-        // Check memory first
-        let guard = self
-            .client_id
-            .read()
-            .map_err(|e| AxisError::Other(format!("Lock poisoned: {e}")))?;
-        if guard.is_some() {
-            return Ok(guard.clone());
-        }
-        drop(guard);
-
-        // Use compile-time .env value
-        let env_id = dotenvy_macro::dotenv!("GITHUB_CLIENT_ID");
-        if !env_id.is_empty() {
-            return Ok(Some(env_id.to_string()));
-        }
-
-        Ok(None)
     }
 
     /// Set access token and create client (called after OAuth flow completes)
@@ -455,20 +412,6 @@ impl GitHubProvider {
 impl IntegrationProvider for GitHubProvider {
     fn provider_type(&self) -> ProviderType {
         ProviderType::GitHub
-    }
-
-    fn get_oauth_url(&self, _state: &str) -> String {
-        // Deprecated: Use OAuthFlow::start() instead which handles PKCE
-        log::warn!("get_oauth_url is deprecated, use OAuthFlow::start() for PKCE support");
-        String::new()
-    }
-
-    async fn exchange_code(&self, _code: &str) -> Result<String> {
-        // Deprecated: Use OAuthFlow::start() instead which handles PKCE exchange
-        log::error!("exchange_code is deprecated, use OAuthFlow::start() for PKCE support");
-        Err(AxisError::OAuthError(
-            "Use OAuthFlow::start() for OAuth with PKCE support".to_string(),
-        ))
     }
 
     async fn is_connected(&self) -> bool {

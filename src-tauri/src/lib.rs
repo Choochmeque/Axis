@@ -234,7 +234,6 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::lfs_is_pointer,
             crate::commands::lfs_prune,
             // Integration commands
-            crate::commands::integration_set_github_client_id,
             crate::commands::integration_start_oauth,
             crate::commands::integration_cancel_oauth,
             crate::commands::integration_is_connected,

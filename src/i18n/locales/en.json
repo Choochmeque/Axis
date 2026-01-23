@@ -515,7 +515,8 @@
       "cherryPickComplete": "Cherry-pick complete",
       "revertComplete": "Revert complete",
       "copiedToClipboard": "Copied to clipboard",
-      "aiGenerated": "Generated with {{model}}"
+      "aiGenerated": "Generated with {{model}}",
+      "worktreeSwitched": "Switched to worktree"
     },
     "error": {
       "loadFailed": "Failed to load",
@@ -536,21 +537,81 @@
     }
   },
   "toolbar": {
+    "commit": "Commit",
     "fetch": "Fetch",
     "pull": "Pull",
     "push": "Push",
     "stash": "Stash",
     "branch": "Branch",
+    "checkout": "Checkout",
+    "showInFinder": "Show in Finder",
+    "terminal": "Terminal",
     "settings": "Settings"
   },
+  "layout": {
+    "statusBar": {
+      "detached": "detached",
+      "changes": "{{count}} changes",
+      "clean": "Clean",
+      "loading": "Loading..."
+    }
+  },
   "sidebar": {
-    "workspace": "Workspace",
-    "history": "History",
-    "branches": "Branches",
-    "tags": "Tags",
-    "stashes": "Stashes",
-    "remotes": "Remotes",
-    "submodules": "Submodules"
+    "noRepository": "No repository open",
+    "noRepositoryHint": "Open a repository to get started",
+    "sections": {
+      "workspace": "WORKSPACE",
+      "branches": "BRANCHES",
+      "tags": "TAGS",
+      "remotes": "REMOTES",
+      "stashes": "STASHES",
+      "worktrees": "WORKTREES",
+      "integrations": "INTEGRATIONS",
+      "submodules": "SUBMODULES"
+    },
+    "views": {
+      "fileStatus": "File Status",
+      "history": "History",
+      "search": "Search",
+      "reflog": "Reflog",
+      "gitLfs": "Git LFS"
+    },
+    "empty": {
+      "noBranches": "No branches",
+      "noTags": "No tags",
+      "noRemotes": "No remotes",
+      "noStashes": "No stashes",
+      "noWorktrees": "No worktrees",
+      "noSubmodules": "No submodules"
+    },
+    "badges": {
+      "main": "main",
+      "off": "off",
+      "notConnected": "not connected"
+    },
+    "integration": {
+      "pullRequests": "Pull Requests",
+      "issues": "Issues",
+      "ciActions": "CI / Actions",
+      "notifications": "Notifications",
+      "connectInSettings": "Connect in Settings to view data"
+    },
+    "providers": {
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "bitbucket": "Bitbucket",
+      "gitea": "Gitea"
+    },
+    "contextMenu": {
+      "newBranch": "New Branch...",
+      "newTag": "New Tag...",
+      "newRemote": "New Remote...",
+      "addSubmodule": "Add Submodule...",
+      "addWorktree": "Add Worktree..."
+    },
+    "submodule": {
+      "modified": "Modified"
+    }
   },
   "customActions": {
     "confirm": {

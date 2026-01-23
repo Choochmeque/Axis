@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronRight,
@@ -154,6 +155,7 @@ function Section({ title, icon, children, defaultExpanded = true }: SectionProps
 }
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const {
     repository,
     branches,
@@ -186,9 +188,11 @@ export function Sidebar() {
       remoteApi
         .list()
         .then(setRemotes)
-        .catch((err) => toast.error('Load remotes failed', getErrorMessage(err)));
+        .catch((err) =>
+          toast.error(t('notifications.error.loadRemotesFailed'), getErrorMessage(err))
+        );
     }
-  }, [repository]);
+  }, [repository, t]);
 
   // Load LFS status when repository changes
   useEffect(() => {
@@ -217,10 +221,10 @@ export function Sidebar() {
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        toast.error('Checkout branch failed', getErrorMessage(err));
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
     },
-    [loadBranches, loadCommits, loadStatus]
+    [loadBranches, loadCommits, loadStatus, t]
   );
 
   const handleTagCheckout = useCallback(
@@ -231,20 +235,23 @@ export function Sidebar() {
         await loadCommits();
         await loadStatus();
       } catch (err) {
-        toast.error('Checkout tag failed', getErrorMessage(err));
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
     },
-    [loadBranches, loadCommits, loadStatus]
+    [loadBranches, loadCommits, loadStatus, t]
   );
 
-  const handleTagPush = useCallback(async (tagName: string, remote: string) => {
-    try {
-      await tagApi.push(tagName, remote);
-      toast.success('Tag pushed');
-    } catch (err) {
-      toast.error('Push tag failed', getErrorMessage(err));
-    }
-  }, []);
+  const handleTagPush = useCallback(
+    async (tagName: string, remote: string) => {
+      try {
+        await tagApi.push(tagName, remote);
+        toast.success(t('notifications.success.tagPushed'));
+      } catch (err) {
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
+      }
+    },
+    [t]
+  );
 
   const handleTagDelete = useCallback(
     async (tagName: string) => {
@@ -252,12 +259,12 @@ export function Sidebar() {
       try {
         await tagApi.delete(tagName);
         await loadTags();
-        toast.success('Tag deleted');
+        toast.success(t('notifications.success.tagDeleted', { name: tagName }));
       } catch (err) {
-        toast.error('Delete tag failed', getErrorMessage(err));
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
     },
-    [loadTags]
+    [loadTags, t]
   );
 
   // Listen for menu events
@@ -280,23 +287,26 @@ export function Sidebar() {
   const changesCount =
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);
 
-  const handleWorktreeSwitch = useCallback(async (worktreePath: string) => {
-    try {
-      // Reset staging store to clear old worktree's state
-      useStagingStore.getState().reset();
-      const { switchRepository } = useRepositoryStore.getState();
-      await switchRepository(worktreePath);
-      toast.success('Switched to worktree');
-    } catch (err) {
-      toast.error('Switch worktree failed', getErrorMessage(err));
-    }
-  }, []);
+  const handleWorktreeSwitch = useCallback(
+    async (worktreePath: string) => {
+      try {
+        // Reset staging store to clear old worktree's state
+        useStagingStore.getState().reset();
+        const { switchRepository } = useRepositoryStore.getState();
+        await switchRepository(worktreePath);
+        toast.success(t('notifications.success.worktreeSwitched'));
+      } catch (err) {
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
+      }
+    },
+    [t]
+  );
 
   if (!repository) {
     return (
       <div className="flex flex-col h-full items-center justify-center bg-(--bg-sidebar) border-r border-(--border-color) text-(--text-secondary) text-center p-6">
-        <p>No repository open</p>
-        <p className="text-xs mt-2 opacity-70">Open a repository to get started</p>
+        <p>{t('sidebar.noRepository')}</p>
+        <p className="text-xs mt-2 opacity-70">{t('sidebar.noRepositoryHint')}</p>
       </div>
     );
   }
@@ -331,7 +341,11 @@ export function Sidebar() {
       <ContextMenuRoot>
         <ContextMenuTrigger asChild>
           <ScrollArea className="flex flex-col h-full bg-(--bg-sidebar) border-r border-(--border-color) overflow-y-auto">
-            <Section title="WORKSPACE" icon={<FileCode />} defaultExpanded={true}>
+            <Section
+              title={t('sidebar.sections.workspace')}
+              icon={<FileCode />}
+              defaultExpanded={true}
+            >
               <button
                 className={cn(
                   sidebarItemClass,
@@ -340,7 +354,7 @@ export function Sidebar() {
                 onClick={() => handleViewClick('file-status')}
               >
                 <FileCode size={12} />
-                <span>File Status</span>
+                <span>{t('sidebar.views.fileStatus')}</span>
                 {changesCount > 0 && <span className="badge">{changesCount}</span>}
               </button>
               <button
@@ -351,7 +365,7 @@ export function Sidebar() {
                 onClick={() => handleViewClick('history')}
               >
                 <History size={12} />
-                <span>History</span>
+                <span>{t('sidebar.views.history')}</span>
               </button>
               <button
                 className={cn(
@@ -361,7 +375,7 @@ export function Sidebar() {
                 onClick={() => handleViewClick('search')}
               >
                 <Search size={12} />
-                <span>Search</span>
+                <span>{t('sidebar.views.search')}</span>
               </button>
               <button
                 className={cn(
@@ -371,7 +385,7 @@ export function Sidebar() {
                 onClick={() => handleViewClick('reflog')}
               >
                 <RotateCcw size={12} />
-                <span>Reflog</span>
+                <span>{t('sidebar.views.reflog')}</span>
               </button>
               <button
                 className={cn(
@@ -381,12 +395,16 @@ export function Sidebar() {
                 onClick={() => handleViewClick('lfs')}
               >
                 <HardDrive size={12} />
-                <span>Git LFS</span>
+                <span>{t('sidebar.views.gitLfs')}</span>
                 <LfsStatusBadge />
               </button>
             </Section>
 
-            <Section title="BRANCHES" icon={<GitBranch />} defaultExpanded={true}>
+            <Section
+              title={t('sidebar.sections.branches')}
+              icon={<GitBranch />}
+              defaultExpanded={true}
+            >
               {localBranches.length > 0 ? (
                 [...localBranches]
                   .sort((a, b) => naturalCompare(a.name, b.name))
@@ -437,12 +455,12 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No branches
+                  {t('sidebar.empty.noBranches')}
                 </div>
               )}
             </Section>
 
-            <Section title="TAGS" icon={<Tag />} defaultExpanded={false}>
+            <Section title={t('sidebar.sections.tags')} icon={<Tag />} defaultExpanded={false}>
               {tags.length > 0 ? (
                 [...tags]
                   .sort((a, b) => naturalCompare(a.name, b.name))
@@ -473,12 +491,12 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No tags
+                  {t('sidebar.empty.noTags')}
                 </div>
               )}
             </Section>
 
-            <Section title="REMOTES" icon={<Cloud />} defaultExpanded={false}>
+            <Section title={t('sidebar.sections.remotes')} icon={<Cloud />} defaultExpanded={false}>
               {remoteBranches.length > 0 ? (
                 <RemoteTree branches={remoteBranches} onBranchClick={handleRefClick} />
               ) : (
@@ -488,12 +506,16 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No remotes
+                  {t('sidebar.empty.noRemotes')}
                 </div>
               )}
             </Section>
 
-            <Section title="STASHES" icon={<Archive />} defaultExpanded={false}>
+            <Section
+              title={t('sidebar.sections.stashes')}
+              icon={<Archive />}
+              defaultExpanded={false}
+            >
               {stashes.length > 0 ? (
                 stashes.map((stash) => (
                   <StashContextMenu key={stash.stashRef} stash={stash}>
@@ -518,12 +540,16 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No stashes
+                  {t('sidebar.empty.noStashes')}
                 </div>
               )}
             </Section>
 
-            <Section title="WORKTREES" icon={<GitFork />} defaultExpanded={false}>
+            <Section
+              title={t('sidebar.sections.worktrees')}
+              icon={<GitFork />}
+              defaultExpanded={false}
+            >
               {worktrees.length > 0 ? (
                 worktrees.map((worktree) => {
                   // Normalize paths for comparison (remove trailing slashes)
@@ -548,7 +574,7 @@ export function Sidebar() {
                         </span>
                         {worktree.isMain && (
                           <span className="badge bg-(--bg-tertiary) text-(--text-secondary)">
-                            main
+                            {t('sidebar.badges.main')}
                           </span>
                         )}
                         {worktree.isLocked && (
@@ -565,14 +591,18 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No worktrees
+                  {t('sidebar.empty.noWorktrees')}
                 </div>
               )}
             </Section>
 
             <IntegrationsSection />
 
-            <Section title="SUBMODULES" icon={<FolderGit2 />} defaultExpanded={false}>
+            <Section
+              title={t('sidebar.sections.submodules')}
+              icon={<FolderGit2 />}
+              defaultExpanded={false}
+            >
               {submodules.length > 0 ? (
                 [...submodules]
                   .sort((a, b) => naturalCompare(a.name, b.name))
@@ -601,7 +631,7 @@ export function Sidebar() {
                     'text-(--text-secondary) italic cursor-default hover:bg-transparent'
                   )}
                 >
-                  No submodules
+                  {t('sidebar.empty.noSubmodules')}
                 </div>
               )}
             </Section>
@@ -611,19 +641,19 @@ export function Sidebar() {
         <ContextMenuPortal>
           <ContextMenuContent className="menu-content">
             <MenuItem icon={GitBranch} onSelect={() => setShowBranchDialog(true)}>
-              New Branch...
+              {t('sidebar.contextMenu.newBranch')}
             </MenuItem>
             <MenuItem icon={Tag} onSelect={() => setShowTagDialog(true)}>
-              New Tag...
+              {t('sidebar.contextMenu.newTag')}
             </MenuItem>
             <MenuItem icon={Cloud} onSelect={() => setShowRemoteDialog(true)}>
-              New Remote...
+              {t('sidebar.contextMenu.newRemote')}
             </MenuItem>
             <MenuItem icon={FolderGit2} onSelect={() => setShowSubmoduleDialog(true)}>
-              Add Submodule...
+              {t('sidebar.contextMenu.addSubmodule')}
             </MenuItem>
             <MenuItem icon={GitFork} onSelect={() => setShowWorktreeDialog(true)}>
-              Add Worktree...
+              {t('sidebar.contextMenu.addWorktree')}
             </MenuItem>
           </ContextMenuContent>
         </ContextMenuPortal>
@@ -647,6 +677,7 @@ export function Sidebar() {
 }
 
 function LfsStatusBadge() {
+  const { t } = useTranslation();
   const { status } = useLfsStore();
 
   if (!status?.isInstalled) {
@@ -654,7 +685,11 @@ function LfsStatusBadge() {
   }
 
   if (!status.isInitialized) {
-    return <span className="badge bg-(--bg-tertiary) text-(--text-muted)">off</span>;
+    return (
+      <span className="badge bg-(--bg-tertiary) text-(--text-muted)">
+        {t('sidebar.badges.off')}
+      </span>
+    );
   }
 
   const total = status.lfsFilesCount;
@@ -676,16 +711,16 @@ type IntegrationItem = {
   onClick?: () => void;
 };
 
-function getProviderName(provider: string) {
+function getProviderName(provider: string, t: (key: string) => string) {
   switch (provider) {
     case 'github':
-      return 'GitHub';
+      return t('sidebar.providers.github');
     case 'gitlab':
-      return 'GitLab';
+      return t('sidebar.providers.gitlab');
     case 'bitbucket':
-      return 'Bitbucket';
+      return t('sidebar.providers.bitbucket');
     case 'gitea':
-      return 'Gitea';
+      return t('sidebar.providers.gitea');
     default:
       return provider;
   }
@@ -704,6 +739,7 @@ function getProviderIcon(provider: string, size: number = 12) {
 }
 
 function IntegrationsSection() {
+  const { t } = useTranslation();
   const { currentView, setCurrentView } = useRepositoryStore();
   const {
     detectedProvider,
@@ -737,7 +773,7 @@ function IntegrationsSection() {
             name: 'pull-requests',
             data: {
               id: 'pull-requests',
-              label: 'Pull Requests',
+              label: t('sidebar.integration.pullRequests'),
               icon: <GitPullRequest size={12} />,
               view: 'pull-requests',
               badge:
@@ -759,7 +795,7 @@ function IntegrationsSection() {
             name: 'issues',
             data: {
               id: 'issues',
-              label: 'Issues',
+              label: t('sidebar.integration.issues'),
               icon: <CircleDot size={12} />,
               view: 'issues',
               badge:
@@ -781,7 +817,7 @@ function IntegrationsSection() {
             name: 'ci',
             data: {
               id: 'ci',
-              label: 'CI / Actions',
+              label: t('sidebar.integration.ciActions'),
               icon: <Play size={12} />,
               view: 'ci',
               badge:
@@ -800,7 +836,7 @@ function IntegrationsSection() {
             name: 'notifications',
             data: {
               id: 'notifications',
-              label: 'Notifications',
+              label: t('sidebar.integration.notifications'),
               icon: <Bell size={12} />,
               view: 'notifications',
               badge:
@@ -824,7 +860,7 @@ function IntegrationsSection() {
             name: 'not-connected',
             data: {
               id: 'not-connected',
-              label: 'Connect in Settings to view data',
+              label: t('sidebar.integration.connectInSettings'),
               icon: null,
               disabled: true,
             },
@@ -834,7 +870,7 @@ function IntegrationsSection() {
     return [
       {
         id: `provider-${detectedProvider.provider}`,
-        name: getProviderName(detectedProvider.provider),
+        name: getProviderName(detectedProvider.provider, t),
         children,
       },
     ];
@@ -850,6 +886,7 @@ function IntegrationsSection() {
     isLoadingCiRuns,
     isLoadingNotifications,
     setCurrentView,
+    t,
   ]);
 
   // Load data when connected
@@ -875,7 +912,7 @@ function IntegrationsSection() {
   }
 
   return (
-    <Section title="INTEGRATIONS" icon={<Link2 />} defaultExpanded={true}>
+    <Section title={t('sidebar.sections.integrations')} icon={<Link2 />} defaultExpanded={true}>
       <TreeView<IntegrationItem>
         data={treeData}
         defaultExpandAll={connectionStatus?.connected}
@@ -900,7 +937,7 @@ function IntegrationsSection() {
                 </span>
                 {!connectionStatus?.connected && (
                   <span className="badge bg-(--bg-tertiary) text-(--text-muted)">
-                    not connected
+                    {t('sidebar.badges.notConnected')}
                   </span>
                 )}
               </button>

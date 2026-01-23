@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GitCommit,
   ArrowDownToLine,
@@ -28,6 +29,7 @@ const toolbarButtonClass =
   'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-sm transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
+  const { t } = useTranslation();
   const { repository, status, branches, setCurrentView, refreshRepository } = useRepositoryStore();
 
   // Get current branch for ahead/behind counts
@@ -62,10 +64,10 @@ export function Toolbar() {
       try {
         await shellApi.openTerminal(repository.path);
       } catch (err) {
-        toast.error('Open terminal failed', getErrorMessage(err));
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
     }
-  }, [repository]);
+  }, [repository, t]);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -84,7 +86,11 @@ export function Toolbar() {
       {repository && (
         <>
           <div className="flex items-center gap-0.5">
-            <button className={toolbarButtonClass} title="Commit" onClick={handleCommitClick}>
+            <button
+              className={toolbarButtonClass}
+              title={t('toolbar.commit')}
+              onClick={handleCommitClick}
+            >
               <div className="relative">
                 <GitCommit size={18} />
                 {stagedCount > 0 && (
@@ -93,9 +99,13 @@ export function Toolbar() {
                   </span>
                 )}
               </div>
-              <span>Commit</span>
+              <span>{t('toolbar.commit')}</span>
             </button>
-            <button className={toolbarButtonClass} title="Pull" onClick={() => setPullOpen(true)}>
+            <button
+              className={toolbarButtonClass}
+              title={t('toolbar.pull')}
+              onClick={() => setPullOpen(true)}
+            >
               <div className="relative">
                 <ArrowDownToLine size={18} />
                 {behindCount > 0 && (
@@ -104,9 +114,13 @@ export function Toolbar() {
                   </span>
                 )}
               </div>
-              <span>Pull</span>
+              <span>{t('toolbar.pull')}</span>
             </button>
-            <button className={toolbarButtonClass} title="Push" onClick={() => setPushOpen(true)}>
+            <button
+              className={toolbarButtonClass}
+              title={t('toolbar.push')}
+              onClick={() => setPushOpen(true)}
+            >
               <div className="relative">
                 <ArrowUpFromLine size={18} />
                 {aheadCount > 0 && (
@@ -115,11 +129,15 @@ export function Toolbar() {
                   </span>
                 )}
               </div>
-              <span>Push</span>
+              <span>{t('toolbar.push')}</span>
             </button>
-            <button className={toolbarButtonClass} onClick={() => setFetchOpen(true)} title="Fetch">
+            <button
+              className={toolbarButtonClass}
+              onClick={() => setFetchOpen(true)}
+              title={t('toolbar.fetch')}
+            >
               <RefreshCw size={18} />
-              <span>Fetch</span>
+              <span>{t('toolbar.fetch')}</span>
             </button>
           </div>
 
@@ -127,23 +145,27 @@ export function Toolbar() {
           <div className="flex items-center gap-0.5">
             <button
               className={toolbarButtonClass}
-              title="Create Branch"
+              title={t('toolbar.branch')}
               onClick={() => setCreateBranchOpen(true)}
             >
               <GitBranch size={18} />
-              <span>Branch</span>
+              <span>{t('toolbar.branch')}</span>
             </button>
             <button
               className={toolbarButtonClass}
-              title="Checkout Branch"
+              title={t('toolbar.checkout')}
               onClick={() => setCheckoutBranchOpen(true)}
             >
               <GitMerge size={18} />
-              <span>Checkout</span>
+              <span>{t('toolbar.checkout')}</span>
             </button>
-            <button className={toolbarButtonClass} title="Stash" onClick={() => setStashOpen(true)}>
+            <button
+              className={toolbarButtonClass}
+              title={t('toolbar.stash')}
+              onClick={() => setStashOpen(true)}
+            >
               <Archive size={18} />
-              <span>Stash</span>
+              <span>{t('toolbar.stash')}</span>
             </button>
           </div>
 
@@ -168,22 +190,26 @@ export function Toolbar() {
           <button
             className={toolbarButtonClass}
             onClick={() => repository?.path && showInFinder(repository.path)}
-            title="Show in Finder"
+            title={t('toolbar.showInFinder')}
           >
             <FolderOpen size={18} />
-            <span>Show in Finder</span>
+            <span>{t('toolbar.showInFinder')}</span>
           </button>
-          <button className={toolbarButtonClass} onClick={handleOpenTerminal} title="Terminal">
+          <button
+            className={toolbarButtonClass}
+            onClick={handleOpenTerminal}
+            title={t('toolbar.terminal')}
+          >
             <Terminal size={18} />
-            <span>Terminal</span>
+            <span>{t('toolbar.terminal')}</span>
           </button>
           <button
             className={toolbarButtonClass}
             onClick={() => setRepoSettingsOpen(true)}
-            title="Repository Settings"
+            title={t('toolbar.settings')}
           >
             <Settings size={18} />
-            <span>Settings</span>
+            <span>{t('toolbar.settings')}</span>
           </button>
         </div>
       )}

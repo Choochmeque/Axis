@@ -7,7 +7,7 @@ import { settingsApi, signingApi, aiApi, lfsApi, avatarApi } from '@/services/ap
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
-import { SigningFormat, Theme, AiProvider } from '@/types';
+import { SigningFormat, Theme, AiProvider, ProviderType } from '@/types';
 import type {
   AppSettings,
   Theme as ThemeType,
@@ -1005,13 +1005,11 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
   );
 }
 
-type ProviderTab = 'github' | 'gitlab' | 'bitbucket' | 'gitea';
-
-const PROVIDERS: { id: ProviderTab; name: string; supported: boolean }[] = [
-  { id: 'github', name: 'GitHub', supported: true },
-  { id: 'gitlab', name: 'GitLab', supported: false },
-  { id: 'bitbucket', name: 'Bitbucket', supported: false },
-  { id: 'gitea', name: 'Gitea', supported: false },
+const PROVIDERS: { id: ProviderType; name: string; supported: boolean }[] = [
+  { id: ProviderType.GitHub, name: 'GitHub', supported: true },
+  { id: ProviderType.GitLab, name: 'GitLab', supported: false },
+  { id: ProviderType.Bitbucket, name: 'Bitbucket', supported: false },
+  { id: ProviderType.Gitea, name: 'Gitea', supported: false },
 ];
 
 function IntegrationsSettings() {
@@ -1029,17 +1027,17 @@ function IntegrationsSettings() {
   } = useIntegrationStore();
 
   // Compute initial tab based on detected provider
-  const initialTab = useMemo((): ProviderTab => {
+  const initialTab = useMemo((): ProviderType => {
     if (detectedProvider?.provider) {
-      const providerTab = detectedProvider.provider as ProviderTab;
+      const providerTab = detectedProvider.provider as ProviderType;
       if (PROVIDERS.some((p) => p.id === providerTab)) {
         return providerTab;
       }
     }
-    return 'github';
+    return ProviderType.GitHub;
   }, [detectedProvider]);
 
-  const [activeTab, setActiveTab] = useState<ProviderTab>(initialTab);
+  const [activeTab, setActiveTab] = useState<ProviderType>(initialTab);
   const hasSetInitialTab = useRef(false);
 
   useEffect(() => {
@@ -1050,7 +1048,7 @@ function IntegrationsSettings() {
   // Update tab when detected provider changes (only once)
   useEffect(() => {
     if (!hasSetInitialTab.current && detectedProvider?.provider) {
-      const providerTab = detectedProvider.provider as ProviderTab;
+      const providerTab = detectedProvider.provider as ProviderType;
       if (PROVIDERS.some((p) => p.id === providerTab)) {
         hasSetInitialTab.current = true;
         startTransition(() => {
@@ -1084,13 +1082,13 @@ function IntegrationsSettings() {
             onClick={() => setActiveTab(provider.id)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === provider.id
-                ? 'border-(--accent-primary) text-(--accent-primary)'
+                ? 'border-(--accent-color) text-(--accent-color)'
                 : 'border-transparent text-(--text-muted) hover:text-(--text-primary)'
             }`}
           >
             {provider.name}
             {detectedProvider?.provider === provider.id && (
-              <span className="ml-2 w-2 h-2 inline-block rounded-full bg-(--accent-primary)" />
+              <span className="ml-2 w-2 h-2 inline-block rounded-full bg-(--accent-color)" />
             )}
           </button>
         ))}

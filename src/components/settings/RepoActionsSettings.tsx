@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Terminal, GripVertical } from 'lucide-react';
 import { Button, Alert } from '@/components/ui';
 import { ActionEditorDialog } from '@/components/custom-actions';
@@ -10,6 +11,7 @@ const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';
 
 export function RepoActionsSettings() {
+  const { t } = useTranslation();
   const repoActions = useCustomActionsStore((s) => s.repoActions);
   const isLoading = useCustomActionsStore((s) => s.isLoading);
   const loadRepoActions = useCustomActionsStore((s) => s.loadRepoActions);
@@ -33,7 +35,7 @@ export function RepoActionsSettings() {
   };
 
   const handleDelete = async (action: CustomAction) => {
-    if (confirm(`Delete action "${action.name}"?`)) {
+    if (confirm(t('actions.deleteConfirm', { name: action.name }))) {
       await deleteAction(action.id, ActionStorageType.Repository);
     }
   };
@@ -41,25 +43,24 @@ export function RepoActionsSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-50 text-(--text-muted)">
-        Loading actions...
+        {t('actions.loading')}
       </div>
     );
   }
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Repository Actions</h3>
+      <h3 className={sectionTitleClass}>{t('actions.repo.title')}</h3>
 
       <Alert variant="info" inline className="mb-4">
-        Repository actions are stored in <code className="text-xs">.axis/actions.json</code> and can
-        be shared with your team via git.
+        {t('actions.repo.info')}
       </Alert>
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-(--text-secondary)">
           {repoActions.length === 0
-            ? 'No repository actions configured.'
-            : `${repoActions.length} action${repoActions.length === 1 ? '' : 's'}`}
+            ? t('actions.repo.empty')
+            : t('actions.repo.count', { count: repoActions.length })}
         </p>
         <Button variant="primary" size="sm" onClick={handleCreate}>
           <Plus className="w-4 h-4" />
@@ -101,7 +102,7 @@ export function RepoActionsSettings() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleEdit(action)}
-                  aria-label="Edit action"
+                  aria-label={t('actions.editLabel')}
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
@@ -109,7 +110,7 @@ export function RepoActionsSettings() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(action)}
-                  aria-label="Delete action"
+                  aria-label={t('actions.deleteLabel')}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>

@@ -1314,10 +1314,124 @@
     "wholeWord": "Whole word",
     "useRegex": "Use regex",
     "failed": "Search failed",
-    "results": {
-      "one": "{{count}} result in {{files}} file",
-      "other": "{{count}} results in {{files}} files"
-    },
+    "results_one": "{{count}} result in {{files}} file",
+    "results_other": "{{count}} results in {{files}} files",
     "noResults": "No results found for \"{{pattern}}\""
+  },
+  "repoSettings": {
+    "title": "Repository Settings",
+    "loading": "Loading settings...",
+    "close": "Close",
+    "tabs": {
+      "identity": "Identity",
+      "remotes": "Remotes",
+      "hooks": "Hooks",
+      "actions": "Actions"
+    },
+    "identity": {
+      "title": "Git Identity",
+      "description": "Override the global git identity for this repository only.",
+      "nameLabel": "Name",
+      "nameHint": "Global: {{name}}",
+      "noGlobalName": "No global name set",
+      "namePlaceholder": "Enter name...",
+      "emailLabel": "Email",
+      "emailHint": "Global: {{email}}",
+      "noGlobalEmail": "No global email set",
+      "emailPlaceholder": "Enter email...",
+      "saved": "Identity saved",
+      "saveFailed": "Failed to save identity"
+    },
+    "remotes": {
+      "title": "Remotes",
+      "empty": "No remotes configured.",
+      "urlPlaceholder": "URL",
+      "pushLabel": "Push:",
+      "namePlaceholder": "Remote name (e.g., origin)",
+      "urlFieldPlaceholder": "Remote URL",
+      "add": "Add",
+      "editTitle": "Edit remote",
+      "deleteTitle": "Delete remote",
+      "added": "Remote \"{{name}}\" added",
+      "addFailed": "Failed to add remote",
+      "updated": "Remote \"{{name}}\" updated",
+      "updateFailed": "Failed to update remote",
+      "removed": "Remote \"{{name}}\" removed",
+      "removeFailed": "Failed to remove remote"
+    },
+    "hooks": {
+      "title": "Git Hooks",
+      "description": "Manage Git hooks for this repository. Hooks run automatically during Git operations.",
+      "loading": "Loading hooks...",
+      "empty": "No hooks configured yet.",
+      "labels": {
+        "PreCommit": "Pre-commit",
+        "PrepareCommitMsg": "Prepare Commit Message",
+        "CommitMsg": "Commit Message",
+        "PostCommit": "Post-commit",
+        "PrePush": "Pre-push",
+        "PostMerge": "Post-merge",
+        "PreRebase": "Pre-rebase",
+        "PostCheckout": "Post-checkout",
+        "PostRewrite": "Post-rewrite"
+      },
+      "status": {
+        "active": "Active",
+        "notExecutable": "Not executable",
+        "disabled": "Disabled",
+        "notConfigured": "Not configured"
+      },
+      "actions": {
+        "enable": "Enable hook",
+        "disable": "Disable hook",
+        "edit": "Edit hook",
+        "delete": "Delete hook",
+        "create": "Create hook"
+      },
+      "notifications": {
+        "enabled": "Hook enabled",
+        "disabled": "Hook disabled",
+        "deleted": "Hook deleted",
+        "created": "Hook created",
+        "updated": "Hook updated",
+        "toggleFailed": "Failed to toggle hook",
+        "deleteFailed": "Failed to delete hook",
+        "createFailed": "Failed to create hook",
+        "updateFailed": "Failed to update hook",
+        "loadFailed": "Failed to load hook"
+      },
+      "editor": {
+        "createTitle": "Create {{hook}} Hook",
+        "editTitle": "Edit {{hook}} Hook",
+        "loading": "Loading...",
+        "templateLabel": "Template",
+        "templatePlaceholder": "Select a template...",
+        "customTemplate": "Custom",
+        "scriptLabel": "Hook Script",
+        "scriptPlaceholder": "#!/bin/bash",
+        "hint": "The hook script should start with a shebang (e.g., #!/bin/bash). It will be made executable automatically.",
+        "defaultScript": "#!/bin/bash\n\n# Add your hook script here\n"
+      }
+    }
+  },
+  "actions": {
+    "global": {
+      "title": "Global Actions",
+      "info": "Global actions are available in all repositories.",
+      "empty": "No global actions configured.",
+      "count": "{{count}} action",
+      "count_plural": "{{count}} actions"
+    },
+    "repo": {
+      "title": "Repository Actions",
+      "info": "Repository actions are stored in <code>.axis/actions.json</code> and can be shared with your team via git.",
+      "empty": "No repository actions configured.",
+      "count": "{{count}} action",
+      "count_plural": "{{count}} actions"
+    },
+    "loading": "Loading actions...",
+    "deleteConfirm": "Delete action \"{{name}}\"?",
+    "editLabel": "Edit action",
+    "deleteLabel": "Delete action"
   }
 }

@@ -10,6 +10,7 @@ use crate::models::{
     SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions, Worktree,
     WorktreeResult,
 };
+use crate::models::{InteractiveRebaseEntry, RebaseAction};
 use chrono::{DateTime, Utc};
 use std::fs::File;
 use std::io::Read;
@@ -167,6 +168,65 @@ impl GitCliService {
         }
 
         self.execute(&args)
+    }
+
+    /// Execute an interactive rebase with a pre-built todo list
+    pub fn interactive_rebase(
+        &self,
+        onto: &str,
+        entries: &[InteractiveRebaseEntry],
+        autosquash: bool,
+    ) -> Result<GitCommandResult> {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Build the todo file content (dropped commits are simply omitted)
+        let todo_content = entries
+            .iter()
+            .filter(|e| e.action != RebaseAction::Drop)
+            .map(|entry| {
+                format!(
+                    "{} {} {}",
+                    entry.action.to_string().to_lowercase(),
+                    entry.short_oid,
+                    entry.summary
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        // Write to temp file
+        let mut todo_file = NamedTempFile::new().map_err(AxisError::IoError)?;
+        writeln!(todo_file, "{}", todo_content).map_err(AxisError::IoError)?;
+        let todo_path = todo_file.path().to_string_lossy().to_string();
+
+        // Build the GIT_SEQUENCE_EDITOR command based on platform
+        // This command copies our pre-built todo file over the one git provides
+        #[cfg(windows)]
+        let editor_cmd = format!("cmd /c copy /y \"{}\" ", todo_path.replace('/', "\\"));
+        #[cfg(not(windows))]
+        let editor_cmd = format!("cp \"{}\" ", todo_path);
+
+        // Build rebase args
+        let mut args = vec!["rebase", "-i"];
+        if autosquash {
+            args.push("--autosquash");
+        }
+        args.push(onto);
+
+        // Execute with custom editor that replaces the todo file
+        let output = Command::new("git")
+            .args(&args)
+            .current_dir(&self.repo_path)
+            .env("GIT_SEQUENCE_EDITOR", &editor_cmd)
+            .stdin(Stdio::null())
+            .output()
+            .map_err(AxisError::IoError)?;
+
+        // Keep temp file alive until command completes
+        drop(todo_file);
+
+        Ok(GitCommandResult::from(output))
     }
 
     // ==================== Cherry-pick Operations ====================

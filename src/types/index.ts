@@ -65,6 +65,10 @@ export type {
   RebaseResult,
   RebasePreview,
   RebaseTarget,
+  RebaseAction,
+  InteractiveRebaseEntry,
+  InteractiveRebaseOptions,
+  InteractiveRebasePreview,
 
   // Cherry-pick types
   CherryPickOptions,

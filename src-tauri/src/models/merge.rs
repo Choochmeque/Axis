@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use strum::{Display, EnumString};
 
 use super::commit::Commit;
 
@@ -107,6 +108,60 @@ pub struct RebaseTarget {
     pub short_oid: String,
     /// Commit summary
     pub summary: String,
+}
+
+/// Action for each commit in interactive rebase
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Type, Display, EnumString, Default,
+)]
+#[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "lowercase")]
+pub enum RebaseAction {
+    #[default]
+    Pick,
+    Reword,
+    Edit,
+    Squash,
+    Fixup,
+    Drop,
+}
+
+/// A single entry in the interactive rebase todo list
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct InteractiveRebaseEntry {
+    /// The action to perform
+    pub action: RebaseAction,
+    /// Commit short OID
+    pub short_oid: String,
+    /// Commit full OID
+    pub oid: String,
+    /// Commit message summary
+    pub summary: String,
+    /// Original index for tracking reordering
+    pub original_index: usize,
+}
+
+/// Options for starting an interactive rebase
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct InteractiveRebaseOptions {
+    /// The branch/commit to rebase onto
+    pub onto: String,
+    /// The ordered list of entries with actions
+    pub entries: Vec<InteractiveRebaseEntry>,
+    /// Whether to autosquash fixup! commits
+    pub autosquash: bool,
+}
+
+/// Extended rebase preview with interactive entries
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct InteractiveRebasePreview {
+    /// Base preview data
+    pub preview: RebasePreview,
+    /// Entries prepared for interactive editing (with default pick action)
+    pub entries: Vec<InteractiveRebaseEntry>,
 }
 
 /// Options for cherry-pick operations

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   History,
   RefreshCw,
@@ -79,45 +80,46 @@ const getActionIcon = (action: ReflogEntry['action']): React.ElementType => {
   }
 };
 
-const getActionLabel = (action: ReflogEntry['action']): string => {
-  if (typeof action === 'object' && 'Other' in action) {
-    return action.Other;
-  }
-  switch (action) {
-    case ReflogAction.Commit:
-      return 'commit';
-    case ReflogAction.CommitAmend:
-      return 'amend';
-    case ReflogAction.CommitInitial:
-      return 'initial';
-    case ReflogAction.Checkout:
-      return 'checkout';
-    case ReflogAction.Merge:
-      return 'merge';
-    case ReflogAction.Rebase:
-      return 'rebase';
-    case ReflogAction.Reset:
-      return 'reset';
-    case ReflogAction.CherryPick:
-      return 'cherry-pick';
-    case ReflogAction.Revert:
-      return 'revert';
-    case ReflogAction.Pull:
-      return 'pull';
-    case ReflogAction.Clone:
-      return 'clone';
-    case ReflogAction.Branch:
-      return 'branch';
-    case ReflogAction.Stash:
-      return 'stash';
-    default:
-      return 'other';
-  }
-};
-
 const PAGE_SIZE = 50;
 
 export function ReflogView({ onRefresh }: ReflogViewProps) {
+  const { t } = useTranslation();
+
+  const getActionLabel = (action: ReflogEntry['action']): string => {
+    if (typeof action === 'object' && 'Other' in action) {
+      return action.Other;
+    }
+    switch (action) {
+      case ReflogAction.Commit:
+        return t('reflog.actions.commit');
+      case ReflogAction.CommitAmend:
+        return t('reflog.actions.amend');
+      case ReflogAction.CommitInitial:
+        return t('reflog.actions.initial');
+      case ReflogAction.Checkout:
+        return t('reflog.actions.checkout');
+      case ReflogAction.Merge:
+        return t('reflog.actions.merge');
+      case ReflogAction.Rebase:
+        return t('reflog.actions.rebase');
+      case ReflogAction.Reset:
+        return t('reflog.actions.reset');
+      case ReflogAction.CherryPick:
+        return t('reflog.actions.cherryPick');
+      case ReflogAction.Revert:
+        return t('reflog.actions.revert');
+      case ReflogAction.Pull:
+        return t('reflog.actions.pull');
+      case ReflogAction.Clone:
+        return t('reflog.actions.clone');
+      case ReflogAction.Branch:
+        return t('reflog.actions.branch');
+      case ReflogAction.Stash:
+        return t('reflog.actions.stash');
+      default:
+        return t('reflog.actions.other');
+    }
+  };
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<ReflogEntry | null>(null);
   const [availableRefs, setAvailableRefs] = useState<string[]>(['HEAD']);
@@ -146,7 +148,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       setHasMore(reflogEntries.length >= PAGE_SIZE);
     } catch (err) {
       console.error('Failed to load reflog:', err);
-      setError('Failed to load reflog');
+      setError(t('reflog.failedToLoad'));
     } finally {
       setIsLoading(false);
     }
@@ -244,7 +246,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <History size={16} />
-          <span>Reflog</span>
+          <span>{t('reflog.title')}</span>
           <Select
             value={currentRef}
             onValueChange={handleRefChange}
@@ -263,7 +265,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         <button
           className={btnIconClass}
           onClick={() => loadReflog(currentRef)}
-          title="Refresh"
+          title={t('reflog.refresh')}
           disabled={isLoading}
         >
           <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -285,7 +287,9 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
 
       <div className="flex-1 overflow-y-auto p-2" ref={listRef} onScroll={handleScroll}>
         {entries.length === 0 ? (
-          <div className="py-6 text-center text-(--text-muted) text-sm">No reflog entries</div>
+          <div className="py-6 text-center text-(--text-muted) text-sm">
+            {t('reflog.noEntries')}
+          </div>
         ) : (
           entries.map((entry) => {
             const Icon = getActionIcon(entry.action);
@@ -327,10 +331,10 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
                         e.stopPropagation();
                         handleCheckout(entry);
                       }}
-                      title="Checkout (detached HEAD)"
+                      title={t('reflog.entry.checkoutTitle')}
                     >
                       <Check size={12} />
-                      Checkout
+                      {t('reflog.entry.checkout')}
                     </button>
                     <button
                       className={cn(
@@ -341,10 +345,10 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
                         e.stopPropagation();
                         setShowBranchDialog(true);
                       }}
-                      title="Create branch from this commit"
+                      title={t('reflog.entry.branchTitle')}
                     >
                       <GitBranch size={12} />
-                      Branch
+                      {t('reflog.entry.branch')}
                     </button>
                     <button
                       className={cn(
@@ -355,7 +359,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
                         e.stopPropagation();
                         copyToClipboard(entry.newOid);
                       }}
-                      title="Copy SHA"
+                      title={t('reflog.entry.copyShaTitle')}
                     >
                       <Copy size={12} />
                     </button>
@@ -368,36 +372,36 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         {isLoadingMore && (
           <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
             <Loader2 size={16} className="animate-spin" />
-            <span>Loading more entries...</span>
+            <span>{t('reflog.loadingMore')}</span>
           </div>
         )}
       </div>
 
       <Dialog open={showBranchDialog} onOpenChange={setShowBranchDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle icon={GitBranch}>Create Branch</DialogTitle>
+          <DialogTitle icon={GitBranch}>{t('reflog.createBranch.title')}</DialogTitle>
 
           <DialogBody>
-            <FormField label="Branch name" htmlFor="branch-name">
+            <FormField label={t('reflog.createBranch.nameLabel')} htmlFor="branch-name">
               <Input
                 id="branch-name"
                 type="text"
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
-                placeholder="new-branch-name"
+                placeholder={t('reflog.createBranch.namePlaceholder')}
               />
             </FormField>
             <div className="text-xs text-(--text-muted)">
-              From commit: {selectedEntry?.shortNewOid}
+              {t('reflog.createBranch.fromCommit', { oid: selectedEntry?.shortNewOid })}
             </div>
           </DialogBody>
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+              <Button variant="secondary">{t('common.cancel')}</Button>
             </DialogClose>
             <Button variant="primary" onClick={handleCreateBranch} disabled={!branchName.trim()}>
-              Create Branch
+              {t('reflog.createBranch.createButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

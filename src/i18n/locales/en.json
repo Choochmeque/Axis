@@ -1131,6 +1131,43 @@
       "close": "Close"
     }
   },
+  "reflog": {
+    "title": "Reflog",
+    "refresh": "Refresh",
+    "noEntries": "No reflog entries",
+    "loadingMore": "Loading more entries...",
+    "failedToLoad": "Failed to load reflog",
+    "actions": {
+      "commit": "commit",
+      "amend": "amend",
+      "initial": "initial",
+      "checkout": "checkout",
+      "merge": "merge",
+      "rebase": "rebase",
+      "reset": "reset",
+      "cherryPick": "cherry-pick",
+      "revert": "revert",
+      "pull": "pull",
+      "clone": "clone",
+      "branch": "branch",
+      "stash": "stash",
+      "other": "other"
+    },
+    "entry": {
+      "checkout": "Checkout",
+      "checkoutTitle": "Checkout (detached HEAD)",
+      "branch": "Branch",
+      "branchTitle": "Create branch from this commit",
+      "copyShaTitle": "Copy SHA"
+    },
+    "createBranch": {
+      "title": "Create Branch",
+      "nameLabel": "Branch name",
+      "namePlaceholder": "new-branch-name",
+      "fromCommit": "From commit: {{oid}}",
+      "createButton": "Create Branch"
+    }
+  },
   "lfs": {
     "title": "Git LFS",
     "notInstalled": {

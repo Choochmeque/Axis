@@ -4,6 +4,7 @@ import { operationApi } from '@/services/api';
 import { ResetMode } from '@/types';
 import type { Commit, ResetMode as ResetModeType } from '@/types';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -73,7 +74,7 @@ export function ResetConfirmDialog({
       onClose();
     } catch (err) {
       console.error('Reset failed:', err);
-      setError(err instanceof Error ? err.message : 'Reset failed');
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

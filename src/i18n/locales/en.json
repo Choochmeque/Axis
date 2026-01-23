@@ -607,5 +607,50 @@
       "error": "Error:",
       "noOutput": "No output"
     }
+  },
+  "diff": {
+    "loadingImage": "Loading image...",
+    "failedToLoadImage": "Failed to load image",
+    "before": "Before",
+    "after": "After",
+    "notAvailable": "Not available",
+    "imageNotAvailable": "Image not available",
+    "unknownFile": "Unknown file",
+    "loadingDiff": "Loading diff...",
+    "selectFile": "Select a file to view changes",
+    "binaryFile": "Binary file",
+    "noChanges": "No changes in this file",
+    "status": {
+      "added": "Added",
+      "deleted": "Deleted",
+      "modified": "Modified",
+      "renamed": "Renamed",
+      "copied": "Copied",
+      "typeChanged": "Type Changed",
+      "untracked": "Untracked",
+      "conflicted": "Conflicted"
+    },
+    "options": {
+      "title": "Diff options",
+      "context": "Context: {{lines}}",
+      "externalDiff": "External Diff",
+      "showWhitespace": "Show whitespace",
+      "ignoreWhitespace": "Ignore whitespace",
+      "linesOfContext": "Lines of context",
+      "diffVsParent": "Diff vs parent",
+      "diffVsMerged": "Diff vs merged"
+    },
+    "viewMode": {
+      "unified": "Unified view",
+      "split": "Side-by-side view"
+    },
+    "hunk": {
+      "stage": "Stage",
+      "stageTitle": "Stage hunk",
+      "unstage": "Unstage",
+      "unstageTitle": "Unstage hunk",
+      "discard": "Discard",
+      "discardTitle": "Discard hunk"
+    }
   }
 }

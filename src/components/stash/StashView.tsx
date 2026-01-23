@@ -3,6 +3,7 @@ import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } fro
 import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { formatTimestamp } from '@/lib/dateUtils';
 import {
   Dialog,
@@ -71,7 +72,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to save stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -85,7 +86,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       }
     } catch (err) {
       console.error('Failed to apply stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to apply stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -100,7 +101,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       }
     } catch (err) {
       console.error('Failed to pop stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to pop stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -111,7 +112,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       setSelectedIndex(null);
     } catch (err) {
       console.error('Failed to drop stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to drop stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -125,7 +126,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to create branch from stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create branch from stash');
+      setError(getErrorMessage(err));
     }
   };
 

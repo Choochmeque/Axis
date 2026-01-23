@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, Palette, GitBranch, FileText, Sparkles, Link2, Terminal } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -42,11 +43,13 @@ type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations' | 'acti
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
+  language: 'system',
   fontSize: 12,
   showLineNumbers: true,
   autoFetchInterval: 5,
   confirmBeforeDiscard: true,
   signCommits: false,
+  bypassHooks: false,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
@@ -66,6 +69,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
+  const { t } = useTranslation();
   const updateSettingsToStore = useSettingsStore((state) => state.updateSettings);
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -107,7 +111,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
       setOriginalSettings(settings);
       onSettingsChange?.(settings);
       onClose();
-      toast.success('Settings saved');
+      toast.success(t('settings.settingsSaved'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -124,18 +128,18 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
   };
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
-    { id: 'git', label: 'Git', icon: <GitBranch size={16} /> },
-    { id: 'diff', label: 'Diff & Editor', icon: <FileText size={16} /> },
-    { id: 'ai', label: 'AI', icon: <Sparkles size={16} /> },
-    { id: 'integrations', label: 'Integrations', icon: <Link2 size={16} /> },
-    { id: 'actions', label: 'Actions', icon: <Terminal size={16} /> },
+    { id: 'appearance', label: t('settings.tabs.appearance'), icon: <Palette size={16} /> },
+    { id: 'git', label: t('settings.tabs.git'), icon: <GitBranch size={16} /> },
+    { id: 'diff', label: t('settings.tabs.diff'), icon: <FileText size={16} /> },
+    { id: 'ai', label: t('settings.tabs.ai'), icon: <Sparkles size={16} /> },
+    { id: 'integrations', label: t('settings.tabs.integrations'), icon: <Link2 size={16} /> },
+    { id: 'actions', label: t('settings.tabs.actions'), icon: <Terminal size={16} /> },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-175 max-h-[80vh] flex flex-col overflow-hidden">
-        <DialogTitle icon={Settings}>Settings</DialogTitle>
+        <DialogTitle icon={Settings}>{t('settings.title')}</DialogTitle>
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
@@ -159,7 +163,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
           <div className="flex-1 py-5 px-6 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center h-50 text-(--text-muted)">
-                Loading settings...
+                {t('settings.loadingSettings')}
               </div>
             ) : (
               <>
@@ -190,16 +194,16 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
 
         <DialogFooter className="justify-between">
           <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
-            Reset
+            {t('common.reset')}
           </Button>
           <div className="flex gap-2">
             <DialogClose asChild>
               <Button variant="secondary" disabled={isSaving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
             </DialogClose>
             <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? t('common.saving') : t('common.save')}
             </Button>
           </div>
         </DialogFooter>
@@ -219,14 +223,20 @@ const groupClass = 'mb-5';
 const numberInputClass =
   'w-full max-w-30 py-2 px-3 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)';
 
+const LANGUAGES = [
+  { value: 'system', labelKey: 'settings.appearance.language.system' },
+  { value: 'en', label: 'English' },
+];
+
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const { t } = useTranslation();
   const [isClearingCache, setIsClearingCache] = useState(false);
 
   const handleClearAvatarCache = async () => {
     setIsClearingCache(true);
     try {
       await avatarApi.clearCache();
-      toast.success('Avatar cache cleared');
+      toast.success(t('settings.avatars.cacheCleared'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -236,24 +246,46 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Appearance</h3>
+      <h3 className={sectionTitleClass}>{t('settings.appearance.title')}</h3>
 
-      <FormField label="Theme" htmlFor="theme" hint="Choose your preferred color theme">
+      <FormField
+        label={t('settings.appearance.theme.label')}
+        htmlFor="theme"
+        hint={t('settings.appearance.theme.hint')}
+      >
         <Select
           id="theme"
           value={settings.theme}
           onValueChange={(value) => updateSetting('theme', value as ThemeType)}
         >
-          <SelectItem value={Theme.System}>System</SelectItem>
-          <SelectItem value={Theme.Light}>Light</SelectItem>
-          <SelectItem value={Theme.Dark}>Dark</SelectItem>
+          <SelectItem value={Theme.System}>{t('settings.appearance.theme.system')}</SelectItem>
+          <SelectItem value={Theme.Light}>{t('settings.appearance.theme.light')}</SelectItem>
+          <SelectItem value={Theme.Dark}>{t('settings.appearance.theme.dark')}</SelectItem>
         </Select>
       </FormField>
 
       <FormField
-        label="Font Size"
+        label={t('settings.appearance.language.label')}
+        htmlFor="language"
+        hint={t('settings.appearance.language.hint')}
+      >
+        <Select
+          id="language"
+          value={settings.language}
+          onValueChange={(value) => updateSetting('language', value)}
+        >
+          {LANGUAGES.map((lang) => (
+            <SelectItem key={lang.value} value={lang.value}>
+              {lang.labelKey ? t(lang.labelKey) : lang.label}
+            </SelectItem>
+          ))}
+        </Select>
+      </FormField>
+
+      <FormField
+        label={t('settings.appearance.fontSize.label')}
         htmlFor="fontSize"
-        hint="Base font size for the interface (10-24)"
+        hint={t('settings.appearance.fontSize.hint')}
       >
         <Input
           id="fontSize"
@@ -269,20 +301,20 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
       <div className={groupClass}>
         <CheckboxField
           id="show-line-numbers"
-          label="Show line numbers"
-          description="Display line numbers in diff and file views"
+          label={t('settings.appearance.showLineNumbers.label')}
+          description={t('settings.appearance.showLineNumbers.description')}
           checked={settings.showLineNumbers}
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
       </div>
 
-      <h3 className={sectionTitleClass}>Avatars</h3>
+      <h3 className={sectionTitleClass}>{t('settings.avatars.title')}</h3>
 
       <div className={groupClass}>
         <CheckboxField
           id="gravatar-enabled"
-          label="Enable Gravatar"
-          description="Show Gravatar avatars for commit authors when integration is not connected"
+          label={t('settings.avatars.gravatar.label')}
+          description={t('settings.avatars.gravatar.description')}
           checked={settings.gravatarEnabled}
           onCheckedChange={(checked) => updateSetting('gravatarEnabled', checked === true)}
         />
@@ -290,19 +322,17 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
 
       <div className={groupClass}>
         <Button variant="secondary" onClick={handleClearAvatarCache} disabled={isClearingCache}>
-          {isClearingCache ? 'Clearing...' : 'Clear Avatar Cache'}
+          {isClearingCache ? t('settings.avatars.clearingCache') : t('settings.avatars.clearCache')}
         </Button>
-        <p className="mt-1.5 text-xs text-(--text-muted)">
-          Remove all cached avatar images. They will be re-fetched as needed.
-        </p>
+        <p className="mt-1.5 text-xs text-(--text-muted)">{t('settings.avatars.cacheHint')}</p>
       </div>
 
-      <h3 className={sectionTitleClass}>Notifications</h3>
+      <h3 className={sectionTitleClass}>{t('settings.notifications.title')}</h3>
 
       <FormField
-        label="Notification History Capacity"
+        label={t('settings.notifications.historyCapacity.label')}
         htmlFor="notificationHistoryCapacity"
-        hint="Maximum number of notifications to keep in history (10-200)"
+        hint={t('settings.notifications.historyCapacity.hint')}
       >
         <Input
           id="notificationHistoryCapacity"
@@ -324,6 +354,7 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
 }
 
 function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const { t } = useTranslation();
   const [gpgKeys, setGpgKeys] = useState<GpgKey[]>([]);
   const [sshKeys, setSshKeys] = useState<SshKey[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
@@ -373,12 +404,12 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         updateSetting('signingKey', config.signingKey);
         if (config.gpgProgram) updateSetting('gpgProgram', config.gpgProgram);
         if (config.sshProgram) updateSetting('sshProgram', config.sshProgram);
-        setTestResult({ success: true, message: 'Configuration detected from git config' });
+        setTestResult({ success: true, message: t('settings.signing.configDetected') });
       } else {
-        setTestResult({ success: false, message: 'No signing key found in git config' });
+        setTestResult({ success: false, message: t('settings.signing.noKeyFound') });
       }
     } catch {
-      setTestResult({ success: false, message: 'Failed to detect configuration' });
+      setTestResult({ success: false, message: t('settings.signing.detectFailed') });
     } finally {
       setIsDetecting(false);
     }
@@ -395,12 +426,15 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         sshProgram: settings.sshProgram,
       });
       if (result.success) {
-        setTestResult({ success: true, message: `Signing works! Using: ${result.programUsed}` });
+        setTestResult({
+          success: true,
+          message: t('settings.signing.signingWorks', { program: result.programUsed }),
+        });
       } else {
-        setTestResult({ success: false, message: result.error || 'Signing test failed' });
+        setTestResult({ success: false, message: result.error || t('settings.signing.signingFailed') });
       }
     } catch {
-      setTestResult({ success: false, message: 'Failed to test signing' });
+      setTestResult({ success: false, message: t('settings.signing.signingFailed') });
     } finally {
       setIsTesting(false);
     }
@@ -413,12 +447,12 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Git</h3>
+      <h3 className={sectionTitleClass}>{t('settings.git.title')}</h3>
 
       <FormField
-        label="Auto-fetch Interval (minutes)"
+        label={t('settings.git.autoFetch.label')}
         htmlFor="autoFetch"
-        hint="Automatically fetch from remote (0 = disabled)"
+        hint={t('settings.git.autoFetch.hint')}
       >
         <Input
           id="autoFetch"
@@ -434,29 +468,29 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       <div className={groupClass}>
         <CheckboxField
           id="confirm-before-discard"
-          label="Confirm before discarding changes"
-          description="Show confirmation dialog before discarding changes"
+          label={t('settings.git.confirmBeforeDiscard.label')}
+          description={t('settings.git.confirmBeforeDiscard.description')}
           checked={settings.confirmBeforeDiscard}
           onCheckedChange={(checked) => updateSetting('confirmBeforeDiscard', checked === true)}
         />
       </div>
 
-      <h3 className={sectionTitleClass}>Commit Signing</h3>
+      <h3 className={sectionTitleClass}>{t('settings.signing.title')}</h3>
 
       <div className={groupClass}>
         <CheckboxField
           id="sign-commits"
-          label="Sign commits by default"
-          description="Automatically sign all commits"
+          label={t('settings.signing.signCommits.label')}
+          description={t('settings.signing.signCommits.description')}
           checked={settings.signCommits}
           onCheckedChange={(checked) => updateSetting('signCommits', checked === true)}
         />
       </div>
 
       <FormField
-        label="Signing Format"
+        label={t('settings.signing.format.label')}
         htmlFor="signingFormat"
-        hint="Choose GPG or SSH for signing commits"
+        hint={t('settings.signing.format.hint')}
       >
         <Select
           id="signingFormat"
@@ -473,12 +507,12 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
       </FormField>
 
       <FormField
-        label="Signing Key"
+        label={t('settings.signing.key.label')}
         htmlFor="signingKey"
         hint={
           settings.signingFormat === SigningFormat.Gpg
-            ? 'Select your GPG key or enter a key ID'
-            : 'Select your SSH key file'
+            ? t('settings.signing.key.hintGpg')
+            : t('settings.signing.key.hintSsh')
         }
       >
         <div className="flex gap-2">
@@ -491,7 +525,9 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             }}
             className="flex-1"
             disabled={isLoadingKeys}
-            placeholder={isLoadingKeys ? 'Loading keys...' : 'Select a key...'}
+            placeholder={
+              isLoadingKeys ? t('settings.signing.key.loadingKeys') : t('settings.signing.key.placeholder')
+            }
           >
             {availableKeys.map((key) => (
               <SelectItem key={key.value} value={key.value}>
@@ -500,45 +536,46 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             ))}
           </Select>
           <Button variant="secondary" onClick={handleDetectConfig} disabled={isDetecting}>
-            {isDetecting ? 'Detecting...' : 'Auto-detect'}
+            {isDetecting ? t('settings.signing.detecting') : t('settings.signing.autoDetect')}
           </Button>
         </div>
         {!settings.signingKey && availableKeys.length === 0 && !isLoadingKeys && (
           <p className="mt-1.5 text-xs text-warning">
-            No {settings.signingFormat === SigningFormat.Gpg ? 'GPG' : 'SSH'} keys found on this
-            system
+            {t('settings.signing.key.noKeysFound', {
+              format: settings.signingFormat === SigningFormat.Gpg ? 'GPG' : 'SSH',
+            })}
           </p>
         )}
       </FormField>
 
       {settings.signingFormat === SigningFormat.Gpg && (
         <FormField
-          label="GPG Program (optional)"
+          label={t('settings.signing.gpgProgram.label')}
           htmlFor="gpgProgram"
-          hint="Custom path to GPG executable (leave empty for auto-detect)"
+          hint={t('settings.signing.gpgProgram.hint')}
         >
           <Input
             id="gpgProgram"
             type="text"
             value={settings.gpgProgram || ''}
             onChange={(e) => updateSetting('gpgProgram', e.target.value || null)}
-            placeholder="Auto-detect"
+            placeholder={t('settings.signing.gpgProgram.placeholder')}
           />
         </FormField>
       )}
 
       {settings.signingFormat === SigningFormat.Ssh && (
         <FormField
-          label="SSH Program (optional)"
+          label={t('settings.signing.sshProgram.label')}
           htmlFor="sshProgram"
-          hint="Custom path to ssh-keygen executable (leave empty for auto-detect)"
+          hint={t('settings.signing.sshProgram.hint')}
         >
           <Input
             id="sshProgram"
             type="text"
             value={settings.sshProgram || ''}
             onChange={(e) => updateSetting('sshProgram', e.target.value || null)}
-            placeholder="Auto-detect"
+            placeholder={t('settings.signing.sshProgram.placeholder')}
           />
         </FormField>
       )}
@@ -549,7 +586,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           onClick={handleTestSigning}
           disabled={!settings.signingKey || isTesting}
         >
-          {isTesting ? 'Testing...' : 'Test Signing'}
+          {isTesting ? t('settings.signing.testing') : t('settings.signing.testSigning')}
         </Button>
         {testResult && (
           <p className={cn('mt-2 text-xs', testResult.success ? 'text-success' : 'text-error')}>
@@ -558,26 +595,26 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
         )}
       </div>
 
-      <h3 className={sectionTitleClass}>Environment</h3>
+      <h3 className={sectionTitleClass}>{t('settings.environment.title')}</h3>
 
       {isLoadingEnv ? (
-        <p className="text-sm text-(--text-muted)">Loading environment info...</p>
+        <p className="text-sm text-(--text-muted)">{t('settings.environment.loading')}</p>
       ) : gitEnv ? (
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <span className="text-(--text-secondary)">Git CLI:</span>
+          <span className="text-(--text-secondary)">{t('settings.environment.gitCli')}</span>
           <span className="text-(--text-primary) font-mono">
-            {gitEnv.gitVersion || 'Not found'}
+            {gitEnv.gitVersion || t('settings.environment.notFound')}
           </span>
 
-          <span className="text-(--text-secondary)">Git Path:</span>
+          <span className="text-(--text-secondary)">{t('settings.environment.gitPath')}</span>
           <span className="text-(--text-primary) font-mono text-xs break-all">
-            {gitEnv.gitPath || 'Not found'}
+            {gitEnv.gitPath || t('settings.environment.notFound')}
           </span>
 
-          <span className="text-(--text-secondary)">libgit2:</span>
+          <span className="text-(--text-secondary)">{t('settings.environment.libgit2')}</span>
           <span className="text-(--text-primary) font-mono">{gitEnv.libgit2Version}</span>
 
-          <span className="text-(--text-secondary)">Git LFS:</span>
+          <span className="text-(--text-secondary)">{t('settings.environment.gitLfs')}</span>
           <span className="text-(--text-primary)">
             {gitEnv.lfsInstalled ? (
               <span className="font-mono">
@@ -585,35 +622,37 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
               </span>
             ) : (
               <span className="text-(--text-muted)">
-                Not installed{' '}
+                {t('settings.environment.notInstalled')}{' '}
                 <a
                   href="https://git-lfs.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-(--accent-color) hover:underline"
                 >
-                  Install
+                  {t('common.install')}
                 </a>
               </span>
             )}
           </span>
         </div>
       ) : (
-        <p className="text-sm text-(--text-muted)">Failed to load environment info</p>
+        <p className="text-sm text-(--text-muted)">{t('settings.environment.loadFailed')}</p>
       )}
     </div>
   );
 }
 
 function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <h3 className={sectionTitleClass}>Diff & Editor</h3>
+      <h3 className={sectionTitleClass}>{t('settings.diff.title')}</h3>
 
       <FormField
-        label="Context Lines"
+        label={t('settings.diff.contextLines.label')}
         htmlFor="contextLines"
-        hint="Number of context lines to show in diffs (0-20)"
+        hint={t('settings.diff.contextLines.hint')}
       >
         <Input
           id="contextLines"
@@ -629,8 +668,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <div className={groupClass}>
         <CheckboxField
           id="diff-word-wrap"
-          label="Word wrap in diff view"
-          description="Wrap long lines in diff view"
+          label={t('settings.diff.wordWrap.label')}
+          description={t('settings.diff.wordWrap.description')}
           checked={settings.diffWordWrap}
           onCheckedChange={(checked) => updateSetting('diffWordWrap', checked === true)}
         />
@@ -639,20 +678,20 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <div className={groupClass}>
         <CheckboxField
           id="diff-side-by-side"
-          label="Side-by-side diff view"
-          description="Show diffs in split view by default"
+          label={t('settings.diff.sideBySide.label')}
+          description={t('settings.diff.sideBySide.description')}
           checked={settings.diffSideBySide}
           onCheckedChange={(checked) => updateSetting('diffSideBySide', checked === true)}
         />
       </div>
 
-      <h3 className={sectionTitleClass}>Commit</h3>
+      <h3 className={sectionTitleClass}>{t('settings.commit.title')}</h3>
 
       <div className={groupClass}>
         <CheckboxField
           id="spell-check-commit-messages"
-          label="Spell check commit messages"
-          description="Enable spell checking in commit message editor"
+          label={t('settings.commit.spellCheck.label')}
+          description={t('settings.commit.spellCheck.description')}
           checked={settings.spellCheckCommitMessages}
           onCheckedChange={(checked) => updateSetting('spellCheckCommitMessages', checked === true)}
         />
@@ -661,8 +700,8 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       <div className={groupClass}>
         <CheckboxField
           id="conventional-commits-enabled"
-          label="Enable conventional commits"
-          description="Use structured commit message format (type[scope]: description)"
+          label={t('settings.commit.conventionalCommits.label')}
+          description={t('settings.commit.conventionalCommits.description')}
           checked={settings.conventionalCommitsEnabled}
           onCheckedChange={(checked) =>
             updateSetting('conventionalCommitsEnabled', checked === true)
@@ -671,9 +710,9 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
       </div>
 
       <FormField
-        label="Custom Scopes"
+        label={t('settings.commit.customScopes.label')}
         htmlFor="conventionalCommitsScopes"
-        hint="Comma-separated list of scopes for quick access (e.g., ui, api, auth)"
+        hint={t('settings.commit.customScopes.hint')}
       >
         <Input
           id="conventionalCommitsScopes"
@@ -686,7 +725,7 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
               .filter(Boolean);
             updateSetting('conventionalCommitsScopes', scopes.length > 0 ? scopes : null);
           }}
-          placeholder="ui, api, auth, core"
+          placeholder={t('settings.commit.customScopes.placeholder')}
           disabled={!settings.conventionalCommitsEnabled}
         />
       </FormField>
@@ -695,6 +734,7 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
 }
 
 function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
+  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState('');
   const [hasKey, setHasKey] = useState(false);
   const [isLoadingKey, setIsLoadingKey] = useState(false);
@@ -762,7 +802,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
       await aiApi.setApiKey(settings.aiProvider, apiKey.trim());
       setHasKey(true);
       setApiKey('');
-      toast.success('API key saved');
+      toast.success(t('settings.ai.apiKey.saved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -775,7 +815,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
       await aiApi.deleteApiKey(settings.aiProvider);
       setHasKey(false);
       setTestResult(null);
-      toast.success('API key deleted');
+      toast.success(t('settings.ai.apiKey.deleted'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -787,9 +827,9 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
     try {
       const success = await aiApi.testConnection(settings.aiProvider);
       if (success) {
-        setTestResult({ success: true, message: 'Connection successful' });
+        setTestResult({ success: true, message: t('settings.ai.connectionSuccess') });
       } else {
-        setTestResult({ success: false, message: 'Connection failed' });
+        setTestResult({ success: false, message: t('settings.ai.connectionFailed') });
       }
     } catch (err) {
       setTestResult({ success: false, message: getErrorMessage(err) });
@@ -808,19 +848,23 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>AI Commit Messages</h3>
+      <h3 className={sectionTitleClass}>{t('settings.ai.title')}</h3>
 
       <div className={groupClass}>
         <CheckboxField
           id="ai-enabled"
-          label="Enable AI commit messages"
-          description="Generate commit messages from staged changes using AI"
+          label={t('settings.ai.enabled.label')}
+          description={t('settings.ai.enabled.description')}
           checked={settings.aiEnabled}
           onCheckedChange={(checked) => updateSetting('aiEnabled', checked === true)}
         />
       </div>
 
-      <FormField label="Provider" htmlFor="aiProvider" hint="Choose your AI provider">
+      <FormField
+        label={t('settings.ai.provider.label')}
+        htmlFor="aiProvider"
+        hint={t('settings.ai.provider.hint')}
+      >
         <Select
           id="aiProvider"
           value={settings.aiProvider}
@@ -830,17 +874,17 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
             setTestResult(null);
           }}
         >
-          <SelectItem value={AiProvider.OpenAi}>OpenAI</SelectItem>
-          <SelectItem value={AiProvider.Anthropic}>Anthropic</SelectItem>
-          <SelectItem value={AiProvider.Ollama}>Ollama (Local)</SelectItem>
+          <SelectItem value={AiProvider.OpenAi}>{t('settings.ai.provider.openai')}</SelectItem>
+          <SelectItem value={AiProvider.Anthropic}>{t('settings.ai.provider.anthropic')}</SelectItem>
+          <SelectItem value={AiProvider.Ollama}>{t('settings.ai.provider.ollama')}</SelectItem>
         </Select>
       </FormField>
 
       {providerRequiresApiKey && (
         <FormField
-          label="API Key"
+          label={t('settings.ai.apiKey.label')}
           htmlFor="aiApiKey"
-          hint={hasKey ? 'API key is configured' : 'Enter your API key'}
+          hint={hasKey ? t('settings.ai.apiKey.hintConfigured') : t('settings.ai.apiKey.hintEnter')}
         >
           <div className="flex gap-2">
             {hasKey ? (
@@ -853,7 +897,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
                   className="flex-1"
                 />
                 <Button variant="secondary" onClick={handleDeleteApiKey}>
-                  Remove
+                  {t('common.remove')}
                 </Button>
               </>
             ) : (
@@ -863,7 +907,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter API key..."
+                  placeholder={t('settings.ai.apiKey.placeholder')}
                   className="flex-1"
                   disabled={isLoadingKey}
                 />
@@ -872,7 +916,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
                   onClick={handleSaveApiKey}
                   disabled={!apiKey.trim() || isSavingKey}
                 >
-                  {isSavingKey ? 'Saving...' : 'Save'}
+                  {isSavingKey ? t('common.saving') : t('common.save')}
                 </Button>
               </>
             )}
@@ -882,24 +926,24 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
 
       {settings.aiProvider === AiProvider.Ollama && (
         <FormField
-          label="Ollama URL"
+          label={t('settings.ai.ollamaUrl.label')}
           htmlFor="aiOllamaUrl"
-          hint="URL of your Ollama server (default: http://localhost:11434)"
+          hint={t('settings.ai.ollamaUrl.hint')}
         >
           <Input
             id="aiOllamaUrl"
             type="text"
             value={settings.aiOllamaUrl || ''}
             onChange={(e) => updateSetting('aiOllamaUrl', e.target.value || null)}
-            placeholder="http://localhost:11434"
+            placeholder={t('settings.ai.ollamaUrl.placeholder')}
           />
         </FormField>
       )}
 
       <FormField
-        label="Model"
+        label={t('settings.ai.model.label')}
         htmlFor="aiModel"
-        hint={`Default: ${defaultModels[settings.aiProvider]}`}
+        hint={t('settings.ai.model.hint', { model: defaultModels[settings.aiProvider] })}
       >
         {settings.aiProvider === AiProvider.Ollama ? (
           <div className="flex gap-2">
@@ -911,7 +955,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
               disabled={isLoadingModels}
               placeholder={
                 isLoadingModels
-                  ? 'Loading models...'
+                  ? t('settings.ai.model.loadingModels')
                   : `Default (${defaultModels[settings.aiProvider]})`
               }
             >
@@ -922,7 +966,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
               ))}
             </Select>
             <Button variant="secondary" onClick={loadOllamaModels} disabled={isLoadingModels}>
-              Refresh
+              {t('common.refresh')}
             </Button>
           </div>
         ) : (
@@ -942,7 +986,7 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
           onClick={handleTestConnection}
           disabled={isTesting || (providerRequiresApiKey && !hasKey)}
         >
-          {isTesting ? 'Testing...' : 'Test Connection'}
+          {isTesting ? t('settings.signing.testing') : t('settings.ai.testConnection')}
         </Button>
         {testResult && (
           <p className={cn('mt-2 text-xs', testResult.success ? 'text-success' : 'text-error')}>
@@ -964,6 +1008,7 @@ const PROVIDERS: { id: ProviderTab; name: string; supported: boolean }[] = [
 ];
 
 function IntegrationsSettings() {
+  const { t } = useTranslation();
   const {
     detectedProvider,
     connectionStatus,
@@ -1022,7 +1067,7 @@ function IntegrationsSettings() {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Integrations</h3>
+      <h3 className={sectionTitleClass}>{t('settings.integrations.title')}</h3>
 
       {/* Provider Tabs */}
       <div className="flex border-b border-(--border-color) mb-4">
@@ -1047,7 +1092,7 @@ function IntegrationsSettings() {
       {/* Provider Content */}
       {!activeProvider?.supported ? (
         <div className="py-4 text-(--text-muted) text-sm">
-          <p>{activeProvider?.name} integration is coming soon.</p>
+          <p>{t('settings.integrations.comingSoon', { provider: activeProvider?.name })}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -1068,7 +1113,7 @@ function IntegrationsSettings() {
                 <div className="font-medium text-(--text-primary)">{activeProvider?.name}</div>
                 {connectionStatus?.connected && connectionStatus.username && (
                   <div className="text-sm text-(--text-muted)">
-                    Connected as {connectionStatus.username}
+                    {t('settings.integrations.connectedAs', { username: connectionStatus.username })}
                   </div>
                 )}
               </div>
@@ -1077,15 +1122,15 @@ function IntegrationsSettings() {
             <div className="flex gap-2">
               {connectionStatus?.connected ? (
                 <Button variant="secondary" onClick={handleDisconnect}>
-                  Disconnect
+                  {t('common.disconnect')}
                 </Button>
               ) : isConnecting ? (
                 <Button variant="secondary" onClick={cancelOAuth}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               ) : (
                 <Button variant="primary" onClick={handleConnect}>
-                  Connect
+                  {t('common.connect')}
                 </Button>
               )}
             </div>
@@ -1096,36 +1141,31 @@ function IntegrationsSettings() {
           {connectionStatus?.connected && (
             <div className="text-sm text-(--text-secondary)">
               <p>
-                Connected to {activeProvider?.name}. You can now view pull requests, issues, and CI
-                status in the sidebar.
+                {t('settings.integrations.connectedDescription', { provider: activeProvider?.name })}
               </p>
             </div>
           )}
 
           {!connectionStatus?.connected && (
             <div className="text-sm text-(--text-muted)">
-              <p>
-                Connect to {activeProvider?.name} to access pull requests, issues, CI/CD status, and
-                notifications.
-              </p>
+              <p>{t('settings.integrations.connectDescription', { provider: activeProvider?.name })}</p>
               <p className="mt-2">
-                <strong>Note:</strong> You will be redirected to {activeProvider?.name} to authorize
-                Axis. After authorization, you will be returned to the app automatically.
+                <strong>Note:</strong> {t('settings.integrations.authNote', { provider: activeProvider?.name })}
               </p>
             </div>
           )}
         </div>
       )}
 
-      <h3 className={sectionTitleClass}>About Integrations</h3>
+      <h3 className={sectionTitleClass}>{t('settings.integrations.aboutTitle')}</h3>
 
       <div className="text-sm text-(--text-secondary) space-y-2">
-        <p>Axis can connect to your Git hosting provider to show additional information:</p>
+        <p>{t('settings.integrations.aboutDescription')}</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Pull/Merge Requests - view, create, and merge PRs</li>
-          <li>Issues - view and create issues</li>
-          <li>CI/CD Status - see build and test status for commits</li>
-          <li>Notifications - stay updated on activity</li>
+          <li>{t('settings.integrations.features.pullRequests')}</li>
+          <li>{t('settings.integrations.features.issues')}</li>
+          <li>{t('settings.integrations.features.cicd')}</li>
+          <li>{t('settings.integrations.features.notifications')}</li>
         </ul>
       </div>
     </div>

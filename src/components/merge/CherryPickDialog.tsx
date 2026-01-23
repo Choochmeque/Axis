@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Cherry } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -31,6 +32,7 @@ export function CherryPickDialog({
   onCherryPickComplete,
   commits,
 }: CherryPickDialogProps) {
+  const { t } = useTranslation();
   const [noCommit, setNoCommit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function CherryPickDialog({
 
   const handleCherryPick = async () => {
     if (commits.length === 0) {
-      setError('No commits selected');
+      setError(t('merge.cherryPick.noCommitsError'));
       return;
     }
 
@@ -64,7 +66,7 @@ export function CherryPickDialog({
       if (cherryPickResult.success && cherryPickResult.conflicts.length === 0) {
         onCherryPickComplete?.(cherryPickResult);
         onClose();
-        toast.success('Cherry pick complete');
+        toast.success(t('notifications.success.cherryPickComplete'));
       } else {
         setResult(cherryPickResult);
         if (cherryPickResult.success) {
@@ -96,7 +98,7 @@ export function CherryPickDialog({
       if (continueResult.success && continueResult.conflicts.length === 0) {
         onCherryPickComplete?.(continueResult);
         onClose();
-        toast.success('Cherry pick complete');
+        toast.success(t('notifications.success.cherryPickComplete'));
       } else {
         setResult(continueResult);
         if (continueResult.success) {
@@ -117,7 +119,7 @@ export function CherryPickDialog({
       if (skipResult.success && skipResult.conflicts.length === 0) {
         onCherryPickComplete?.(skipResult);
         onClose();
-        toast.success('Cherry pick complete');
+        toast.success(t('notifications.success.cherryPickComplete'));
       } else {
         setResult(skipResult);
         if (skipResult.success) {
@@ -134,7 +136,7 @@ export function CherryPickDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle icon={Cherry}>Cherry Pick</DialogTitle>
+        <DialogTitle icon={Cherry}>{t('merge.cherryPick.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -153,7 +155,7 @@ export function CherryPickDialog({
             <>
               <div className="field">
                 <Label>
-                  {commits.length === 1 ? 'Commit to Cherry Pick' : 'Commits to Cherry Pick'}
+                  {commits.length === 1 ? t('merge.cherryPick.commitToPick') : t('merge.cherryPick.commitsToPick')}
                 </Label>
                 <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
                   {commits.map((commit) => (
@@ -174,8 +176,8 @@ export function CherryPickDialog({
 
               <CheckboxField
                 id="no-commit"
-                label="Stage changes only (--no-commit)"
-                description="Apply changes without creating a commit"
+                label={t('merge.cherryPick.noCommit')}
+                description={t('merge.cherryPick.noCommitDesc')}
                 checked={noCommit}
                 disabled={isLoading}
                 onCheckedChange={setNoCommit}
@@ -186,7 +188,7 @@ export function CherryPickDialog({
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
               <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
-                Conflicted Files
+                {t('merge.cherryPick.conflictedFiles')}
               </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
@@ -206,20 +208,20 @@ export function CherryPickDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                Abort
+                {t('merge.cherryPick.abort')}
               </Button>
               <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
-                Skip Commit
+                {t('merge.cherryPick.skipCommit')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                Continue
+                {t('merge.cherryPick.continue')}
               </Button>
             </>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="secondary" disabled={isLoading}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button
@@ -227,7 +229,7 @@ export function CherryPickDialog({
                 onClick={handleCherryPick}
                 disabled={isLoading || commits.length === 0}
               >
-                {isLoading ? 'Cherry Picking...' : 'Cherry Pick'}
+                {isLoading ? t('merge.cherryPick.picking') : t('merge.cherryPick.pickButton')}
               </Button>
             </>
           )}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitMerge } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -30,6 +31,7 @@ interface MergeDialogProps {
 }
 
 export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }: MergeDialogProps) {
+  const { t } = useTranslation();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [noFastForward, setNoFastForward] = useState(false);
@@ -66,7 +68,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
 
   const handleMerge = async () => {
     if (!selectedBranch) {
-      setError('Please select a branch to merge');
+      setError(t('merge.dialog.selectBranchError'));
       return;
     }
 
@@ -89,7 +91,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       if (mergeResult.success && mergeResult.conflicts.length === 0) {
         onMergeComplete?.(mergeResult);
         onClose();
-        toast.success(`Merged "${selectedBranch}" into ${currentBranch}`);
+        toast.success(t('notifications.success.mergeComplete'));
       } else {
         setResult(mergeResult);
         if (mergeResult.success) {
@@ -117,7 +119,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle icon={GitMerge}>Merge Branch</DialogTitle>
+        <DialogTitle icon={GitMerge}>{t('merge.dialog.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -134,19 +136,19 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
 
           {!result && (
             <>
-              <FormField label="Current Branch">
+              <FormField label={t('merge.dialog.currentBranch')}>
                 <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
                   {currentBranch}
                 </div>
               </FormField>
 
-              <FormField label="Merge From" htmlFor="merge-branch">
+              <FormField label={t('merge.dialog.mergeFrom')} htmlFor="merge-branch">
                 <Select
                   id="merge-branch"
                   value={selectedBranch}
                   onValueChange={setSelectedBranch}
                   disabled={isLoading}
-                  placeholder="Select a branch..."
+                  placeholder={t('merge.dialog.selectBranch')}
                 >
                   {branches.map((branch) => (
                     <SelectItem key={branch.fullName} value={branch.name}>
@@ -157,7 +159,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 </Select>
               </FormField>
 
-              <FormField label="Commit Message (optional)" htmlFor="merge-message">
+              <FormField label={t('merge.dialog.commitMessage')} htmlFor="merge-message">
                 <Textarea
                   id="merge-message"
                   value={customMessage}
@@ -171,8 +173,8 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
 
               <CheckboxField
                 id="no-ff"
-                label="Create merge commit (--no-ff)"
-                description="Always create a merge commit, even if fast-forward is possible"
+                label={t('merge.dialog.noFastForward')}
+                description={t('merge.dialog.noFastForwardDesc')}
                 checked={noFastForward}
                 disabled={isLoading || squash}
                 onCheckedChange={setNoFastForward}
@@ -180,8 +182,8 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
 
               <CheckboxField
                 id="squash"
-                label="Squash commits"
-                description="Combine all commits into a single commit"
+                label={t('merge.dialog.squash')}
+                description={t('merge.dialog.squashDesc')}
                 checked={squash}
                 disabled={isLoading}
                 onCheckedChange={(checked) => {
@@ -195,7 +197,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
               <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
-                Conflicted Files
+                {t('merge.dialog.conflictedFiles')}
               </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
@@ -215,17 +217,17 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
           {result ? (
             <>
               <Button variant="secondary" onClick={handleAbort}>
-                Abort Merge
+                {t('merge.dialog.abortMerge')}
               </Button>
               <Button variant="primary" onClick={onClose}>
-                Resolve Conflicts
+                {t('merge.dialog.resolveConflicts')}
               </Button>
             </>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="secondary" disabled={isLoading}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button
@@ -233,7 +235,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                 onClick={handleMerge}
                 disabled={isLoading || !selectedBranch}
               >
-                {isLoading ? 'Merging...' : 'Merge'}
+                {isLoading ? t('merge.dialog.merging') : t('merge.dialog.mergeButton')}
               </Button>
             </>
           )}

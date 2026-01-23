@@ -1,0 +1,486 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "delete": "Delete",
+    "remove": "Remove",
+    "close": "Close",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "refresh": "Refresh",
+    "install": "Install",
+    "test": "Test",
+    "welcome": "Welcome"
+  },
+  "errors": {
+    "gitNotInstalled": {
+      "title": "Git Not Installed",
+      "message": "Git CLI is required for Axis to function. Please install Git and restart the application.",
+      "downloadLink": "Download Git"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "loadingSettings": "Loading settings...",
+    "settingsSaved": "Settings saved",
+    "tabs": {
+      "appearance": "Appearance",
+      "git": "Git",
+      "diff": "Diff & Editor",
+      "ai": "AI",
+      "integrations": "Integrations",
+      "actions": "Actions"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "theme": {
+        "label": "Theme",
+        "hint": "Choose your preferred color theme",
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "language": {
+        "label": "Language",
+        "hint": "Choose your preferred language",
+        "system": "System"
+      },
+      "fontSize": {
+        "label": "Font Size",
+        "hint": "Base font size for the interface (10-24)"
+      },
+      "showLineNumbers": {
+        "label": "Show line numbers",
+        "description": "Display line numbers in diff and file views"
+      }
+    },
+    "avatars": {
+      "title": "Avatars",
+      "gravatar": {
+        "label": "Enable Gravatar",
+        "description": "Show Gravatar avatars for commit authors when integration is not connected"
+      },
+      "clearCache": "Clear Avatar Cache",
+      "clearingCache": "Clearing...",
+      "cacheCleared": "Avatar cache cleared",
+      "cacheHint": "Remove all cached avatar images. They will be re-fetched as needed."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "historyCapacity": {
+        "label": "Notification History Capacity",
+        "hint": "Maximum number of notifications to keep in history (10-200)"
+      }
+    },
+    "git": {
+      "title": "Git",
+      "autoFetch": {
+        "label": "Auto-fetch Interval (minutes)",
+        "hint": "Automatically fetch from remote (0 = disabled)"
+      },
+      "confirmBeforeDiscard": {
+        "label": "Confirm before discarding changes",
+        "description": "Show confirmation dialog before discarding changes"
+      }
+    },
+    "signing": {
+      "title": "Commit Signing",
+      "signCommits": {
+        "label": "Sign commits by default",
+        "description": "Automatically sign all commits"
+      },
+      "format": {
+        "label": "Signing Format",
+        "hint": "Choose GPG or SSH for signing commits"
+      },
+      "key": {
+        "label": "Signing Key",
+        "hintGpg": "Select your GPG key or enter a key ID",
+        "hintSsh": "Select your SSH key file",
+        "placeholder": "Select a key...",
+        "loadingKeys": "Loading keys...",
+        "noKeysFound": "No {{format}} keys found on this system"
+      },
+      "gpgProgram": {
+        "label": "GPG Program (optional)",
+        "hint": "Custom path to GPG executable (leave empty for auto-detect)",
+        "placeholder": "Auto-detect"
+      },
+      "sshProgram": {
+        "label": "SSH Program (optional)",
+        "hint": "Custom path to ssh-keygen executable (leave empty for auto-detect)",
+        "placeholder": "Auto-detect"
+      },
+      "autoDetect": "Auto-detect",
+      "detecting": "Detecting...",
+      "testSigning": "Test Signing",
+      "testing": "Testing...",
+      "configDetected": "Configuration detected from git config",
+      "noKeyFound": "No signing key found in git config",
+      "detectFailed": "Failed to detect configuration",
+      "signingWorks": "Signing works! Using: {{program}}",
+      "signingFailed": "Signing test failed"
+    },
+    "environment": {
+      "title": "Environment",
+      "loading": "Loading environment info...",
+      "loadFailed": "Failed to load environment info",
+      "gitCli": "Git CLI:",
+      "gitPath": "Git Path:",
+      "libgit2": "libgit2:",
+      "gitLfs": "Git LFS:",
+      "notFound": "Not found",
+      "notInstalled": "Not installed"
+    },
+    "diff": {
+      "title": "Diff & Editor",
+      "contextLines": {
+        "label": "Context Lines",
+        "hint": "Number of context lines to show in diffs (0-20)"
+      },
+      "wordWrap": {
+        "label": "Word wrap in diff view",
+        "description": "Wrap long lines in diff view"
+      },
+      "sideBySide": {
+        "label": "Side-by-side diff view",
+        "description": "Show diffs in split view by default"
+      }
+    },
+    "commit": {
+      "title": "Commit",
+      "spellCheck": {
+        "label": "Spell check commit messages",
+        "description": "Enable spell checking in commit message editor"
+      },
+      "conventionalCommits": {
+        "label": "Enable conventional commits",
+        "description": "Use structured commit message format (type[scope]: description)"
+      },
+      "customScopes": {
+        "label": "Custom Scopes",
+        "hint": "Comma-separated list of scopes for quick access (e.g., ui, api, auth)",
+        "placeholder": "ui, api, auth, core"
+      }
+    },
+    "ai": {
+      "title": "AI Commit Messages",
+      "enabled": {
+        "label": "Enable AI commit messages",
+        "description": "Generate commit messages from staged changes using AI"
+      },
+      "provider": {
+        "label": "Provider",
+        "hint": "Choose your AI provider",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "ollama": "Ollama (Local)"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "hintConfigured": "API key is configured",
+        "hintEnter": "Enter your API key",
+        "placeholder": "Enter API key...",
+        "saved": "API key saved",
+        "deleted": "API key deleted"
+      },
+      "ollamaUrl": {
+        "label": "Ollama URL",
+        "hint": "URL of your Ollama server (default: http://localhost:11434)",
+        "placeholder": "http://localhost:11434"
+      },
+      "model": {
+        "label": "Model",
+        "hint": "Default: {{model}}",
+        "loadingModels": "Loading models..."
+      },
+      "testConnection": "Test Connection",
+      "connectionSuccess": "Connection successful",
+      "connectionFailed": "Connection failed"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "comingSoon": "{{provider}} integration is coming soon.",
+      "connectedAs": "Connected as {{username}}",
+      "connectedDescription": "Connected to {{provider}}. You can now view pull requests, issues, and CI status in the sidebar.",
+      "connectDescription": "Connect to {{provider}} to access pull requests, issues, CI/CD status, and notifications.",
+      "authNote": "Note: You will be redirected to {{provider}} to authorize Axis. After authorization, you will be returned to the app automatically.",
+      "aboutTitle": "About Integrations",
+      "aboutDescription": "Axis can connect to your Git hosting provider to show additional information:",
+      "features": {
+        "pullRequests": "Pull/Merge Requests - view, create, and merge PRs",
+        "issues": "Issues - view and create issues",
+        "cicd": "CI/CD Status - see build and test status for commits",
+        "notifications": "Notifications - stay updated on activity"
+      }
+    },
+    "actions": {
+      "title": "Global Actions"
+    }
+  },
+  "welcome": {
+    "title": "Axis",
+    "subtitle": "Git Repository Manager",
+    "newRepository": "New Repository",
+    "openRepository": "Open Repository",
+    "cloneRepository": "Clone Repository",
+    "recentRepositories": "Recent Repositories",
+    "noRecentRepositories": "No recent repositories",
+    "selectRepository": "Select Repository"
+  },
+  "branches": {
+    "delete": {
+      "title": "Delete Branch",
+      "warning": "This action cannot be undone.",
+      "branchLabel": "Branch:",
+      "lastCommitLabel": "Last commit:",
+      "confirmMessage": "Are you sure you want to delete the branch \"{{name}}\"?",
+      "forceDelete": "Force delete (even if not fully merged)",
+      "deleteRemote": "Also delete remote branch ({{remote}})",
+      "notFullyMerged": "Branch is not fully merged. Check \"Force delete\" to delete anyway.",
+      "deleting": "Deleting...",
+      "deleteButton": "Delete Branch"
+    },
+    "create": {
+      "title": "Create Branch",
+      "nameLabel": "Branch Name",
+      "namePlaceholder": "feature/my-new-feature",
+      "baseLabel": "Base Branch",
+      "checkout": "Checkout after creating",
+      "creating": "Creating...",
+      "createButton": "Create Branch"
+    },
+    "rename": {
+      "title": "Rename Branch",
+      "currentLabel": "Current Name:",
+      "newLabel": "New Name",
+      "renaming": "Renaming...",
+      "renameButton": "Rename Branch"
+    },
+    "checkout": {
+      "title": "Checkout Branch",
+      "message": "You have uncommitted changes. What would you like to do?",
+      "stashChanges": "Stash changes",
+      "discardChanges": "Discard changes",
+      "checking": "Checking out..."
+    }
+  },
+  "stash": {
+    "dialog": {
+      "title": "Stash Changes",
+      "description": "This will stash all the changes in your working copy and return it to a clean state.",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "Optional stash message...",
+      "keepStaged": "Keep staged changes",
+      "stashing": "Stashing...",
+      "stashButton": "Stash"
+    },
+    "apply": "Apply",
+    "pop": "Pop",
+    "drop": "Drop",
+    "applySuccess": "Stash applied",
+    "popSuccess": "Stash popped",
+    "dropSuccess": "Stash dropped",
+    "createSuccess": "Changes stashed"
+  },
+  "staging": {
+    "loadingStatus": "Loading status...",
+    "dismiss": "Dismiss",
+    "changes": "Changes",
+    "conflicts": "Conflicts",
+    "stagedFiles": "Staged files",
+    "unstagedFiles": "Unstaged files",
+    "noStagedChanges": "No staged changes",
+    "noUnstagedChanges": "No unstaged changes",
+    "conventionalNotEnabled": "Enable conventional commits in settings",
+    "notConventionalFormat": "Existing message is not in conventional format",
+    "commitForm": {
+      "placeholder": "Commit message",
+      "amendPlaceholder": "Leave empty to keep existing message",
+      "pushToOrigin": "Push to origin/{{branch}}",
+      "commitButton": "Commit",
+      "amendButton": "Amend",
+      "committing": "Committing...",
+      "noChanges": "No changes to commit",
+      "type": "type",
+      "scope": "scope",
+      "subject": "subject",
+      "bodyOptional": "body (optional)"
+    },
+    "commitOptions": {
+      "title": "Commit Options...",
+      "amendLastCommit": "Amend last commit",
+      "bypassHooks": "Bypass commit hooks",
+      "signCommit": "Sign commit",
+      "signCommitNoKey": "Sign commit (no key configured)",
+      "signCommitUnavailable": "Sign commit (unavailable)",
+      "signOff": "Sign off",
+      "structuredFormat": "Structured format",
+      "generateWithAi": "Generate with AI",
+      "generating": "Generating..."
+    },
+    "files": {
+      "staged": "Staged",
+      "unstaged": "Unstaged",
+      "stageAll": "Stage All",
+      "unstageAll": "Unstage All",
+      "discardAll": "Discard All"
+    }
+  },
+  "merge": {
+    "dialog": {
+      "title": "Merge Branch",
+      "currentBranch": "Current Branch",
+      "mergeFrom": "Merge From",
+      "selectBranch": "Select a branch...",
+      "commitMessage": "Commit Message (optional)",
+      "noFastForward": "Create merge commit (--no-ff)",
+      "noFastForwardDesc": "Always create a merge commit, even if fast-forward is possible",
+      "squash": "Squash commits",
+      "squashDesc": "Combine all commits into a single commit",
+      "merging": "Merging...",
+      "mergeButton": "Merge",
+      "abortMerge": "Abort Merge",
+      "resolveConflicts": "Resolve Conflicts",
+      "conflictedFiles": "Conflicted Files",
+      "selectBranchError": "Please select a branch to merge"
+    },
+    "rebase": {
+      "title": "Rebase Branch",
+      "currentBranch": "Current Branch",
+      "rebaseOnto": "Rebase Onto",
+      "rebaseOntoCommit": "Rebase Onto Commit",
+      "selectBranch": "Select a branch...",
+      "loadingPreview": "Loading preview...",
+      "rebaseDescription": "This will replay all commits from <strong>{{source}}</strong> on top of <strong>{{target}}</strong>.",
+      "rebaseWarning": "Warning: Rebase rewrites commit history. Only rebase commits that haven't been pushed to a shared repository.",
+      "conflictedFiles": "Conflicted Files",
+      "rebasing": "Rebasing...",
+      "rebaseButton": "Rebase",
+      "abortRebase": "Abort Rebase",
+      "skipCommit": "Skip Commit",
+      "continue": "Continue",
+      "interactive": "Interactive...",
+      "loading": "Loading...",
+      "selectBranchError": "Please select a branch to rebase onto"
+    },
+    "cherryPick": {
+      "title": "Cherry Pick",
+      "commitToPick": "Commit to Cherry Pick",
+      "commitsToPick": "Commits to Cherry Pick",
+      "noCommit": "Stage changes only (--no-commit)",
+      "noCommitDesc": "Apply changes without creating a commit",
+      "conflictedFiles": "Conflicted Files",
+      "picking": "Cherry Picking...",
+      "pickButton": "Cherry Pick",
+      "abort": "Abort",
+      "skipCommit": "Skip Commit",
+      "continue": "Continue",
+      "noCommitsError": "No commits selected"
+    },
+    "revert": {
+      "title": "Revert Commit",
+      "commitToRevert": "Commit to Revert",
+      "commitsToRevert": "Commits to Revert",
+      "revertDescription": "Reverting a commit creates a new commit that undoes the changes introduced by the selected commit. This is safe for shared branches as it does not rewrite history.",
+      "noCommit": "Stage changes only (--no-commit)",
+      "noCommitDesc": "Apply revert changes without creating a commit",
+      "conflictedFiles": "Conflicted Files",
+      "reverting": "Reverting...",
+      "revertButton": "Revert",
+      "abort": "Abort",
+      "continue": "Continue",
+      "noCommitsError": "No commits selected"
+    }
+  },
+  "dialogs": {
+    "confirm": "Confirm",
+    "discard": {
+      "title": "Discard Changes",
+      "titleAll": "Discard All Changes",
+      "message": "Are you sure you want to discard changes to \"{{path}}\"? This cannot be undone.",
+      "messageAll": "Are you sure you want to discard all unstaged changes? This cannot be undone.",
+      "discardButton": "Discard"
+    },
+    "deleteFile": {
+      "title": "Delete File",
+      "message": "Are you sure you want to permanently delete \"{{path}}\"? This cannot be undone."
+    },
+    "clone": {
+      "title": "Clone Repository",
+      "urlLabel": "Repository URL",
+      "urlPlaceholder": "https://github.com/user/repo.git",
+      "directoryLabel": "Directory",
+      "browse": "Browse",
+      "cloning": "Cloning...",
+      "cloneButton": "Clone"
+    },
+    "init": {
+      "title": "Initialize Repository",
+      "directoryLabel": "Directory",
+      "browse": "Browse",
+      "initializing": "Initializing...",
+      "initButton": "Initialize"
+    }
+  },
+  "notifications": {
+    "success": {
+      "settingsSaved": "Settings saved",
+      "branchCreated": "Branch \"{{name}}\" created",
+      "branchDeleted": "Branch \"{{name}}\" deleted",
+      "branchRenamed": "Branch renamed to \"{{name}}\"",
+      "pullComplete": "Pull complete",
+      "pushComplete": "Push complete",
+      "fetchComplete": "Fetch complete",
+      "commitSuccess": "Committed successfully",
+      "stashCreated": "Changes stashed",
+      "stashApplied": "Stash applied",
+      "stashPopped": "Stash popped",
+      "stashDropped": "Stash dropped",
+      "tagCreated": "Tag \"{{name}}\" created",
+      "tagDeleted": "Tag \"{{name}}\" deleted",
+      "tagPushed": "Tag pushed",
+      "mergeComplete": "Merge complete",
+      "rebaseComplete": "Rebase complete",
+      "cherryPickComplete": "Cherry-pick complete",
+      "revertComplete": "Revert complete",
+      "copiedToClipboard": "Copied to clipboard",
+      "aiGenerated": "Generated with {{model}}"
+    },
+    "error": {
+      "loadFailed": "Failed to load",
+      "saveFailed": "Failed to save",
+      "operationFailed": "Operation failed",
+      "branchDeleteFailed": "Failed to delete branch",
+      "branchCreateFailed": "Failed to create branch",
+      "commitFailed": "Commit failed",
+      "pushFailed": "Push failed",
+      "pullFailed": "Pull failed",
+      "fetchFailed": "Fetch failed",
+      "mergeFailed": "Merge failed",
+      "rebaseFailed": "Rebase failed",
+      "stashFailed": "Stash failed",
+      "cloneFailed": "Clone failed"
+    }
+  },
+  "toolbar": {
+    "fetch": "Fetch",
+    "pull": "Pull",
+    "push": "Push",
+    "stash": "Stash",
+    "branch": "Branch",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "workspace": "Workspace",
+    "history": "History",
+    "branches": "Branches",
+    "tags": "Tags",
+    "stashes": "Stashes",
+    "remotes": "Remotes",
+    "submodules": "Submodules"
+  }
+}

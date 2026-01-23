@@ -8,6 +8,7 @@ use strum::{Display, EnumString};
 pub struct AppSettings {
     // Appearance
     pub theme: Theme,
+    pub language: String,
     pub font_size: u32,
     pub show_line_numbers: bool,
 
@@ -61,6 +62,7 @@ impl Default for AppSettings {
         Self {
             // Appearance
             theme: Theme::default(),
+            language: String::from("system"),
             font_size: 13,
             show_line_numbers: true,
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import {
   Dialog,
@@ -23,6 +24,8 @@ export function DeleteConfirmDialog({
   onConfirm,
   filePath,
 }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation();
+
   const handleConfirm = () => {
     onConfirm();
     onClose();
@@ -32,21 +35,21 @@ export function DeleteConfirmDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-100">
         <DialogTitle icon={AlertTriangle} iconClassName="text-error">
-          Delete File
+          {t('dialogs.deleteFile.title')}
         </DialogTitle>
 
         <DialogBody>
           <Alert variant="warning">
-            Are you sure you want to permanently delete "{filePath}"? This cannot be undone.
+            {t('dialogs.deleteFile.message', { path: filePath })}
           </Alert>
         </DialogBody>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleConfirm}>
-            Delete
+            {t('common.delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import i18n from '@/i18n';
 
 import { settingsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
@@ -20,11 +21,13 @@ interface SettingsState {
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
+  language: 'system',
   fontSize: 13,
   showLineNumbers: true,
   autoFetchInterval: 5,
   confirmBeforeDiscard: true,
   signCommits: false,
+  bypassHooks: false,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
@@ -112,6 +115,13 @@ function applySettings(settings: AppSettings) {
 
   // Apply notification history capacity
   useToastStore.getState().setHistoryCapacity(settings.notificationHistoryCapacity);
+
+  // Apply language
+  if (settings.language === 'system') {
+    i18n.changeLanguage();
+  } else {
+    i18n.changeLanguage(settings.language);
+  }
 }
 
 // Listen for system theme changes

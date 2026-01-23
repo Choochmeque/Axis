@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import {
   Dialog,
@@ -25,16 +26,18 @@ export function DiscardConfirmDialog({
   mode,
   filePath,
 }: DiscardConfirmDialogProps) {
+  const { t } = useTranslation();
+
   const handleConfirm = () => {
     onConfirm();
     onClose();
   };
 
-  const title = mode === 'all' ? 'Discard All Changes' : 'Discard Changes';
+  const title = mode === 'all' ? t('dialogs.discard.titleAll') : t('dialogs.discard.title');
   const message =
     mode === 'all'
-      ? 'Are you sure you want to discard all unstaged changes? This cannot be undone.'
-      : `Are you sure you want to discard changes to "${filePath}"? This cannot be undone.`;
+      ? t('dialogs.discard.messageAll')
+      : t('dialogs.discard.message', { path: filePath });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -49,10 +52,10 @@ export function DiscardConfirmDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleConfirm}>
-            Discard
+            {t('dialogs.discard.discardButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

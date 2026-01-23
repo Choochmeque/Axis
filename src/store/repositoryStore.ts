@@ -28,6 +28,17 @@ import {
   worktreeApi,
 } from '@/services/api';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { debounce } from '@/lib/debounce';
+
+// Debounce delay for load operations
+const DEBOUNCE_DELAY = 150;
+
+// Debounced loaders (initialized lazily)
+type DebouncedFn = ReturnType<typeof debounce>;
+let debouncedLoadStatus: DebouncedFn | null = null;
+let debouncedLoadBranches: DebouncedFn | null = null;
+let debouncedLoadTags: DebouncedFn | null = null;
+let debouncedLoadStashes: DebouncedFn | null = null;
 
 export type ViewType =
   | 'file-status'
@@ -298,30 +309,45 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   loadBranches: async () => {
-    try {
-      const branches = await branchApi.list();
-      set({ branches });
-    } catch (err) {
-      set({ error: getErrorMessage(err) });
+    if (!debouncedLoadBranches) {
+      debouncedLoadBranches = debounce(async () => {
+        try {
+          const branches = await branchApi.list();
+          set({ branches });
+        } catch (err) {
+          set({ error: getErrorMessage(err) });
+        }
+      }, DEBOUNCE_DELAY);
     }
+    debouncedLoadBranches();
   },
 
   loadTags: async () => {
-    try {
-      const tags = await tagApi.list();
-      set({ tags });
-    } catch (err) {
-      set({ error: getErrorMessage(err) });
+    if (!debouncedLoadTags) {
+      debouncedLoadTags = debounce(async () => {
+        try {
+          const tags = await tagApi.list();
+          set({ tags });
+        } catch (err) {
+          set({ error: getErrorMessage(err) });
+        }
+      }, DEBOUNCE_DELAY);
     }
+    debouncedLoadTags();
   },
 
   loadStashes: async () => {
-    try {
-      const stashes = await stashApi.list();
-      set({ stashes });
-    } catch (err) {
-      set({ error: getErrorMessage(err) });
+    if (!debouncedLoadStashes) {
+      debouncedLoadStashes = debounce(async () => {
+        try {
+          const stashes = await stashApi.list();
+          set({ stashes });
+        } catch (err) {
+          set({ error: getErrorMessage(err) });
+        }
+      }, DEBOUNCE_DELAY);
     }
+    debouncedLoadStashes();
   },
 
   loadSubmodules: async () => {
@@ -345,12 +371,17 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   loadStatus: async () => {
-    try {
-      const status = await repositoryApi.getStatus();
-      set({ status });
-    } catch (err) {
-      set({ error: getErrorMessage(err) });
+    if (!debouncedLoadStatus) {
+      debouncedLoadStatus = debounce(async () => {
+        try {
+          const status = await repositoryApi.getStatus();
+          set({ status });
+        } catch (err) {
+          set({ error: getErrorMessage(err) });
+        }
+      }, DEBOUNCE_DELAY);
     }
+    debouncedLoadStatus();
   },
 
   loadRecentRepositories: async () => {

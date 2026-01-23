@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useRepositoryStore } from './repositoryStore';
 import {
   repositoryApi,
@@ -7,6 +7,7 @@ import {
   tagApi,
   stashApi,
   submoduleApi,
+  worktreeApi,
 } from '../services/api';
 
 // Suppress unused import warnings - these are used in the mock
@@ -14,6 +15,7 @@ void graphApi;
 void tagApi;
 void stashApi;
 void submoduleApi;
+void worktreeApi;
 import type { GraphCommit, Branch } from '../types';
 import { BranchType, RepositoryState } from '../types';
 
@@ -41,6 +43,9 @@ vi.mock('../services/api', () => ({
   submoduleApi: {
     list: vi.fn(),
   },
+  worktreeApi: {
+    list: vi.fn(),
+  },
   diffApi: {
     getCommit: vi.fn(),
   },
@@ -51,6 +56,7 @@ vi.mock('../services/api', () => ({
 
 describe('repositoryStore', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     // Reset store state before each test
     useRepositoryStore.setState({
       repository: null,
@@ -63,6 +69,10 @@ describe('repositoryStore', () => {
       error: null,
     });
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('openRepository', () => {
@@ -123,9 +133,11 @@ describe('repositoryStore', () => {
       vi.mocked(tagApi.list).mockResolvedValue([]);
       vi.mocked(stashApi.list).mockResolvedValue([]);
       vi.mocked(submoduleApi.list).mockResolvedValue([]);
+      vi.mocked(worktreeApi.list).mockResolvedValue([]);
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useRepositoryStore.getState().openRepository('/path/to/repo');
+      await vi.runAllTimersAsync();
 
       const state = useRepositoryStore.getState();
       expect(state.repository).toEqual(mockRepo);
@@ -140,9 +152,10 @@ describe('repositoryStore', () => {
       vi.mocked(repositoryApi.open).mockRejectedValue(new Error('Not a git repository'));
 
       await expect(useRepositoryStore.getState().openRepository('/invalid/path')).rejects.toThrow();
+      await vi.runAllTimersAsync();
 
       const state = useRepositoryStore.getState();
-      expect(state.error).toBe('Error: Not a git repository');
+      expect(state.error).toBe('Not a git repository');
       expect(state.isLoading).toBe(false);
     });
   });

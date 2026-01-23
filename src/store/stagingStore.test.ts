@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useStagingStore } from './stagingStore';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
 
@@ -30,6 +30,7 @@ vi.mock('../services/api', () => ({
 
 describe('stagingStore', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     // Reset store state before each test
     useStagingStore.setState({
       status: null,
@@ -44,6 +45,10 @@ describe('stagingStore', () => {
       error: null,
     });
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('loadStatus', () => {
@@ -66,7 +71,8 @@ describe('stagingStore', () => {
 
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
-      await useStagingStore.getState().loadStatus();
+      useStagingStore.getState().loadStatus();
+      await vi.runAllTimersAsync();
 
       const state = useStagingStore.getState();
       expect(state.status).toEqual(mockStatus);
@@ -76,10 +82,11 @@ describe('stagingStore', () => {
     it('should set error on failure', async () => {
       vi.mocked(repositoryApi.getStatus).mockRejectedValue(new Error('Failed to get status'));
 
-      await useStagingStore.getState().loadStatus();
+      useStagingStore.getState().loadStatus();
+      await vi.runAllTimersAsync();
 
       const state = useStagingStore.getState();
-      expect(state.error).toBe('Error: Failed to get status');
+      expect(state.error).toBe('Failed to get status');
       expect(state.isLoadingStatus).toBe(false);
     });
   });
@@ -156,6 +163,7 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().stageFile('test.txt');
+      await vi.runAllTimersAsync();
 
       expect(stagingApi.stageFile).toHaveBeenCalledWith('test.txt');
       expect(repositoryApi.getStatus).toHaveBeenCalled();
@@ -169,6 +177,7 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().unstageFile('test.txt');
+      await vi.runAllTimersAsync();
 
       expect(stagingApi.unstageFile).toHaveBeenCalledWith('test.txt');
       expect(repositoryApi.getStatus).toHaveBeenCalled();
@@ -182,6 +191,7 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().discardFile('test.txt');
+      await vi.runAllTimersAsync();
 
       expect(stagingApi.discardFile).toHaveBeenCalledWith('test.txt');
       expect(repositoryApi.getStatus).toHaveBeenCalled();
@@ -203,6 +213,7 @@ describe('stagingStore', () => {
       vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
 
       await useStagingStore.getState().discardFile('test.txt');
+      await vi.runAllTimersAsync();
 
       const state = useStagingStore.getState();
       expect(state.selectedFile).toBeNull();
@@ -218,6 +229,7 @@ describe('stagingStore', () => {
       const patch =
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
+      await vi.runAllTimersAsync();
 
       expect(stagingApi.stageHunk).toHaveBeenCalledWith(patch);
       expect(repositoryApi.getStatus).toHaveBeenCalled();
@@ -253,6 +265,7 @@ describe('stagingStore', () => {
       const patch =
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
+      await vi.runAllTimersAsync();
 
       expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', false, expect.any(Object));
       expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
@@ -265,7 +278,7 @@ describe('stagingStore', () => {
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().stageHunk(patch);
 
-      expect(useStagingStore.getState().error).toBe('Error: Failed to stage hunk');
+      expect(useStagingStore.getState().error).toBe('Failed to stage hunk');
     });
   });
 
@@ -278,6 +291,7 @@ describe('stagingStore', () => {
       const patch =
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
+      await vi.runAllTimersAsync();
 
       expect(stagingApi.unstageHunk).toHaveBeenCalledWith(patch);
       expect(repositoryApi.getStatus).toHaveBeenCalled();
@@ -313,6 +327,7 @@ describe('stagingStore', () => {
       const patch =
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
+      await vi.runAllTimersAsync();
 
       expect(diffApi.getFile).toHaveBeenCalledWith('test.txt', true, expect.any(Object));
       expect(useStagingStore.getState().selectedFileDiff).toEqual(mockDiff);
@@ -325,7 +340,7 @@ describe('stagingStore', () => {
         'diff --git a/test.txt b/test.txt\n--- a/test.txt\n+++ b/test.txt\n@@ -1,1 +1,2 @@\n line1\n+line2\n';
       await useStagingStore.getState().unstageHunk(patch);
 
-      expect(useStagingStore.getState().error).toBe('Error: Failed to unstage hunk');
+      expect(useStagingStore.getState().error).toBe('Failed to unstage hunk');
     });
   });
 

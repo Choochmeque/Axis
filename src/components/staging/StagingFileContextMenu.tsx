@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FileCode,
   FolderOpen,
@@ -51,6 +52,7 @@ export function StagingFileContextMenu({
   onUnstage,
   onDiscard,
 }: StagingFileContextMenuProps) {
+  const { t } = useTranslation();
   const { repository } = useRepositoryStore();
   const deleteFile = useStagingStore((s) => s.deleteFile);
   const [showFileLog, setShowFileLog] = useState(false);
@@ -78,78 +80,78 @@ export function StagingFileContextMenu({
     <>
       <ContextMenu trigger={children}>
         <MenuItem icon={FileCode} disabled>
-          Open
+          {t('staging.contextMenu.open')}
         </MenuItem>
         <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
-          Show In Finder
+          {t('staging.contextMenu.showInFinder')}
         </MenuItem>
         <MenuItem icon={Copy} onSelect={handleCopyPath}>
-          Copy Path To Clipboard
+          {t('staging.contextMenu.copyPath')}
         </MenuItem>
         <MenuItem icon={Terminal} disabled>
-          Open In Terminal
+          {t('staging.contextMenu.openInTerminal')}
         </MenuItem>
         <MenuItem icon={Eye} disabled>
-          Quick Look
+          {t('staging.contextMenu.quickLook')}
         </MenuItem>
         <MenuSeparator />
         <MenuItem icon={Diff} disabled>
-          External Diff
+          {t('staging.contextMenu.externalDiff')}
         </MenuItem>
         <MenuItem icon={FileText} disabled>
-          Create Patch...
+          {t('staging.contextMenu.createPatch')}
         </MenuItem>
         <MenuItem icon={FilePlus} disabled>
-          Apply Patch...
+          {t('staging.contextMenu.applyPatch')}
         </MenuItem>
         <MenuSeparator />
 
         {/* Stage/Unstage */}
         {!isStaged && (
           <MenuItem icon={Plus} disabled={!onStage} onSelect={onStage}>
-            Add to index
+            {t('staging.contextMenu.addToIndex')}
           </MenuItem>
         )}
         {isStaged && (
           <MenuItem icon={Minus} disabled={!onUnstage} onSelect={onUnstage}>
-            Unstage from index
+            {t('staging.contextMenu.unstageFromIndex')}
           </MenuItem>
         )}
 
         {/* Delete - only for untracked files */}
         {canDelete && (
           <MenuItem icon={XCircle} danger onSelect={() => setShowDeleteDialog(true)}>
-            Delete
+            {t('staging.contextMenu.delete')}
           </MenuItem>
         )}
 
         {/* Stop Tracking - only for tracked files */}
         {isTracked && (
           <MenuItem icon={EyeOff} disabled>
-            Stop Tracking
+            {t('staging.contextMenu.stopTracking')}
           </MenuItem>
         )}
 
         <MenuItem icon={EyeOff} onSelect={() => setShowIgnoreDialog(true)}>
-          Ignore...
+          {t('staging.contextMenu.ignore')}
         </MenuItem>
         <MenuSeparator />
 
         <MenuItem icon={GitCommit} disabled>
-          Commit Selected...
+          {t('staging.contextMenu.commitSelected')}
         </MenuItem>
 
         {/* Reset - only for tracked files */}
         {isTracked && (
           <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
-            Reset...
+            {t('staging.contextMenu.reset')}
           </MenuItem>
         )}
 
         {/* Reset to Commit - only for tracked files */}
         {isTracked && (
           <MenuItem icon={RotateCcw} disabled>
-            Reset to Commit...
+            {t('staging.contextMenu.resetToCommit')}
           </MenuItem>
         )}
 
@@ -157,8 +159,8 @@ export function StagingFileContextMenu({
         {isConflicted && (
           <>
             <MenuSeparator />
-            <SubMenu icon={Diff} label="Resolve Conflicts">
-              <MenuItem disabled>Mark as Resolved</MenuItem>
+            <SubMenu icon={Diff} label={t('staging.contextMenu.resolveConflicts')}>
+              <MenuItem disabled>{t('staging.contextMenu.markAsResolved')}</MenuItem>
             </SubMenu>
           </>
         )}
@@ -166,18 +168,18 @@ export function StagingFileContextMenu({
         <MenuSeparator />
         {isTracked && (
           <MenuItem icon={History} onSelect={() => setShowFileLog(true)}>
-            Log Selected...
+            {t('staging.contextMenu.logSelected')}
           </MenuItem>
         )}
         <MenuItem icon={FileSearch} disabled>
-          Annotate Selected...
+          {t('staging.contextMenu.annotateSelected')}
         </MenuItem>
         <MenuSeparator />
         <MenuItem icon={Copy} disabled>
-          Copy...
+          {t('staging.contextMenu.copy')}
         </MenuItem>
         <MenuItem icon={Move} disabled>
-          Move...
+          {t('staging.contextMenu.move')}
         </MenuItem>
 
         <CustomActionsMenuSection context={ActionContext.File} variables={{ file: file.path }} />
@@ -186,10 +188,10 @@ export function StagingFileContextMenu({
           <>
             <MenuSeparator />
             <MenuItem icon={ChevronDown} disabled>
-              Expand All
+              {t('staging.contextMenu.expandAll')}
             </MenuItem>
             <MenuItem icon={ChevronUp} disabled>
-              Collapse All
+              {t('staging.contextMenu.collapseAll')}
             </MenuItem>
           </>
         )}

@@ -394,6 +394,93 @@
       "stageAll": "Stage All",
       "unstageAll": "Unstage All",
       "discardAll": "Discard All"
+    },
+    "filters": {
+      "sortBy": {
+        "path": "Path alphabetically",
+        "pathReversed": "Path alphabetically (reversed)",
+        "filename": "File name alphabetically",
+        "filenameReversed": "File name alphabetically (reversed)",
+        "status": "File status",
+        "checked": "Checked / unchecked"
+      },
+      "showOnly": {
+        "pending": "Pending",
+        "conflicts": "Conflicts",
+        "untracked": "Untracked",
+        "ignored": "Ignored",
+        "clean": "Clean",
+        "modified": "Modified",
+        "all": "All files"
+      },
+      "viewMode": {
+        "flatSingle": "Flat list (single column)",
+        "flatMulti": "Flat list (multiple columns)",
+        "tree": "Tree view"
+      },
+      "stagingMode": {
+        "noStaging": "No staging",
+        "fluid": "Fluid staging",
+        "splitView": "Split view staging"
+      },
+      "labels": {
+        "showOnly": "Show only",
+        "sortBy": "Sort by",
+        "view": "View",
+        "staging": "Staging",
+        "allFiles": "All files",
+        "sortedBy": "{{showOnly}}, sorted by {{sortBy}}"
+      }
+    },
+    "fileList": {
+      "filename": "Filename",
+      "path": "Path",
+      "noChanges": "No changes"
+    },
+    "contextMenu": {
+      "open": "Open",
+      "showInFinder": "Show In Finder",
+      "copyPath": "Copy Path To Clipboard",
+      "openInTerminal": "Open In Terminal",
+      "quickLook": "Quick Look",
+      "externalDiff": "External Diff",
+      "createPatch": "Create Patch...",
+      "applyPatch": "Apply Patch...",
+      "addToIndex": "Add to index",
+      "unstageFromIndex": "Unstage from index",
+      "delete": "Delete",
+      "stopTracking": "Stop Tracking",
+      "ignore": "Ignore...",
+      "commitSelected": "Commit Selected...",
+      "reset": "Reset...",
+      "resetToCommit": "Reset to Commit...",
+      "resolveConflicts": "Resolve Conflicts",
+      "markAsResolved": "Mark as Resolved",
+      "logSelected": "Log Selected...",
+      "annotateSelected": "Annotate Selected...",
+      "copy": "Copy...",
+      "move": "Move...",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All"
+    },
+    "ignoreDialog": {
+      "title": "Ignore File",
+      "loading": "Loading...",
+      "pattern": "Pattern",
+      "customPattern": "Custom pattern...",
+      "customPatternLabel": "Custom Pattern",
+      "customPatternPlaceholder": "e.g., *.log, build/, .env",
+      "targetGitignore": "Target .gitignore",
+      "addToGlobal": "Add to global gitignore",
+      "addToGlobalDesc": "Ignore this pattern in all repositories on this machine",
+      "addButton": "Add to .gitignore",
+      "adding": "Adding...",
+      "patternRequired": "Please enter a pattern",
+      "loadFailed": "Failed to load ignore options",
+      "addFailed": "Failed to add pattern"
+    },
+    "referenceMention": {
+      "noMatches": "No matching issues or PRs"
     }
   },
   "merge": {

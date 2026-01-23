@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, List, Columns2, ListTree, Square, Rows3, LayoutPanelTop } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,23 +62,23 @@ interface StagingFiltersProps {
   onStagingModeChange: (stagingMode: StagingMode) => void;
 }
 
-const sortByLabels: Record<StagingSortBy, string> = {
-  [StagingSortBy.Path]: 'Path alphabetically',
-  [StagingSortBy.PathReversed]: 'Path alphabetically (reversed)',
-  [StagingSortBy.Filename]: 'File name alphabetically',
-  [StagingSortBy.FilenameReversed]: 'File name alphabetically (reversed)',
-  [StagingSortBy.Status]: 'File status',
-  [StagingSortBy.Checked]: 'Checked / unchecked',
+const sortByKeys: Record<StagingSortBy, string> = {
+  [StagingSortBy.Path]: 'staging.filters.sortBy.path',
+  [StagingSortBy.PathReversed]: 'staging.filters.sortBy.pathReversed',
+  [StagingSortBy.Filename]: 'staging.filters.sortBy.filename',
+  [StagingSortBy.FilenameReversed]: 'staging.filters.sortBy.filenameReversed',
+  [StagingSortBy.Status]: 'staging.filters.sortBy.status',
+  [StagingSortBy.Checked]: 'staging.filters.sortBy.checked',
 };
 
-const showOnlyLabels: Record<StagingShowOnly, string> = {
-  [StagingShowOnly.Pending]: 'Pending',
-  [StagingShowOnly.Conflicts]: 'Conflicts',
-  [StagingShowOnly.Untracked]: 'Untracked',
-  [StagingShowOnly.Ignored]: 'Ignored',
-  [StagingShowOnly.Clean]: 'Clean',
-  [StagingShowOnly.Modified]: 'Modified',
-  [StagingShowOnly.All]: 'All files',
+const showOnlyKeys: Record<StagingShowOnly, string> = {
+  [StagingShowOnly.Pending]: 'staging.filters.showOnly.pending',
+  [StagingShowOnly.Conflicts]: 'staging.filters.showOnly.conflicts',
+  [StagingShowOnly.Untracked]: 'staging.filters.showOnly.untracked',
+  [StagingShowOnly.Ignored]: 'staging.filters.showOnly.ignored',
+  [StagingShowOnly.Clean]: 'staging.filters.showOnly.clean',
+  [StagingShowOnly.Modified]: 'staging.filters.showOnly.modified',
+  [StagingShowOnly.All]: 'staging.filters.showOnly.all',
 };
 
 export function StagingFilters({
@@ -90,19 +91,23 @@ export function StagingFilters({
   onViewModeChange,
   onStagingModeChange,
 }: StagingFiltersProps) {
+  const { t } = useTranslation();
   const showOnlyOptions = Object.values(StagingShowOnly) as StagingShowOnly[];
   const sortByOptions = Object.values(StagingSortBy) as StagingSortBy[];
 
   // Get display text for sort dropdown
   const getSortLabel = (): string => {
-    const showOnlyText = showOnly === StagingShowOnly.All ? 'All files' : showOnlyLabels[showOnly];
+    const showOnlyText =
+      showOnly === StagingShowOnly.All
+        ? t('staging.filters.labels.allFiles')
+        : t(showOnlyKeys[showOnly]);
     const sortByText =
       sortBy === StagingSortBy.Path
         ? 'path'
         : sortBy === StagingSortBy.Filename
           ? 'name'
-          : sortByLabels[sortBy];
-    return `${showOnlyText}, sorted by ${sortByText}`;
+          : t(sortByKeys[sortBy]);
+    return t('staging.filters.labels.sortedBy', { showOnly: showOnlyText, sortBy: sortByText });
   };
 
   return (
@@ -117,14 +122,14 @@ export function StagingFilters({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {/* Show Only Section */}
-          <DropdownMenuLabel>Show only</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('staging.filters.labels.showOnly')}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={showOnly}
             onValueChange={(value) => onShowOnlyChange(value as StagingShowOnly)}
           >
             {showOnlyOptions.map((option) => (
               <DropdownMenuRadioItem key={option} value={option}>
-                {showOnlyLabels[option]}
+                {t(showOnlyKeys[option])}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -132,14 +137,14 @@ export function StagingFilters({
           <DropdownMenuSeparator />
 
           {/* Sort By Section */}
-          <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('staging.filters.labels.sortBy')}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={sortBy}
             onValueChange={(value) => onSortByChange(value as StagingSortBy)}
           >
             {sortByOptions.map((option) => (
               <DropdownMenuRadioItem key={option} value={option}>
-                {sortByLabels[option]}
+                {t(sortByKeys[option])}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -158,44 +163,44 @@ export function StagingFilters({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {/* View Mode Section */}
-          <DropdownMenuLabel>View</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('staging.filters.labels.view')}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={viewMode}
             onValueChange={(value) => onViewModeChange(value as StagingViewMode)}
           >
             <DropdownMenuRadioItem value={StagingViewMode.FlatSingle}>
               <List size={14} className="mr-2" />
-              Flat list (single column)
+              {t('staging.filters.viewMode.flatSingle')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={StagingViewMode.FlatMulti}>
               <Columns2 size={14} className="mr-2" />
-              Flat list (multiple columns)
+              {t('staging.filters.viewMode.flatMulti')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={StagingViewMode.Tree}>
               <ListTree size={14} className="mr-2" />
-              Tree view
+              {t('staging.filters.viewMode.tree')}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Staging Mode Section */}
-          <DropdownMenuLabel>Staging</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('staging.filters.labels.staging')}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={stagingMode}
             onValueChange={(value) => onStagingModeChange(value as StagingMode)}
           >
             <DropdownMenuRadioItem value={StagingMode.NoStaging}>
               <Square size={14} className="mr-2" />
-              No staging
+              {t('staging.filters.stagingMode.noStaging')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={StagingMode.Fluid}>
               <Rows3 size={14} className="mr-2" />
-              Fluid staging
+              {t('staging.filters.stagingMode.fluid')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={StagingMode.SplitView}>
               <LayoutPanelTop size={14} className="mr-2" />
-              Split view staging
+              {t('staging.filters.stagingMode.splitView')}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>

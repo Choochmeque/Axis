@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { CircleDot, GitPullRequest } from 'lucide-react';
 
@@ -61,6 +62,7 @@ export function ReferenceMention({
   onSelect,
   onClose,
 }: ReferenceMentionProps) {
+  const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -154,7 +156,7 @@ export function ReferenceMention({
       style={{ top: position.top, left: position.left }}
     >
       {items.length === 0 ? (
-        <div className="reference-mention-empty">No matching issues or PRs</div>
+        <div className="reference-mention-empty">{t('staging.referenceMention.noMatches')}</div>
       ) : (
         items.map((item, index) => (
           <div

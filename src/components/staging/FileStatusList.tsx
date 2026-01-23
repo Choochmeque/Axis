@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Pencil,
@@ -54,6 +55,8 @@ export function FileStatusList({
   showDiscardButton = false,
   viewMode = StagingViewMode.FlatSingle,
 }: FileStatusListProps) {
+  const { t } = useTranslation();
+
   if (files.length === 0) {
     return null;
   }
@@ -80,9 +83,9 @@ export function FileStatusList({
             <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0">
               <div className="w-6 shrink-0" />
               <div className="w-6 shrink-0" />
-              <div className="flex-1 min-w-0 px-2">Filename</div>
+              <div className="flex-1 min-w-0 px-2">{t('staging.fileList.filename')}</div>
               <div className="col-divider" />
-              <div className="flex-1 min-w-0 px-2">Path</div>
+              <div className="flex-1 min-w-0 px-2">{t('staging.fileList.path')}</div>
             </div>
             {/* Table rows */}
             {files.map((file) => (
@@ -424,9 +427,13 @@ export function FluidFileList({
   onDiscard,
   viewMode = StagingViewMode.FlatSingle,
 }: FluidFileListProps) {
+  const { t } = useTranslation();
+
   if (files.length === 0) {
     return (
-      <div className="p-4 text-center text-(--text-tertiary) text-base italic">No changes</div>
+      <div className="p-4 text-center text-(--text-tertiary) text-base italic">
+        {t('staging.fileList.noChanges')}
+      </div>
     );
   }
 

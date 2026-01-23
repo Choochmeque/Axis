@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EyeOff } from 'lucide-react';
 import {
   Dialog,
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui';
 import { gitignoreApi } from '@/services/api';
 import { toast } from '@/hooks/useToast';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { useStagingStore } from '@/store/stagingStore';
 import type { IgnoreOptions, IgnoreSuggestion } from '@/types';
 
@@ -26,6 +28,7 @@ interface IgnoreDialogProps {
 }
 
 export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
+  const { t } = useTranslation();
   const loadStatus = useStagingStore((s) => s.loadStatus);
   const [options, setOptions] = useState<IgnoreOptions | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,18 +51,18 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
           }
         })
         .catch((err) => {
-          toast.error(`Failed to load ignore options: ${err}`);
+          toast.error(t('staging.ignoreDialog.loadFailed'), getErrorMessage(err));
           onClose();
         })
         .finally(() => setLoading(false));
     }
-  }, [isOpen, filePath, onClose]);
+  }, [isOpen, filePath, onClose, t]);
 
   const handleSubmit = async () => {
     const pattern = selectedPattern === 'custom' ? customPattern.trim() : selectedPattern;
 
     if (!pattern) {
-      toast.error('Please enter a pattern');
+      toast.error(t('staging.ignoreDialog.patternRequired'));
       return;
     }
 
@@ -73,7 +76,7 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
       await loadStatus();
       onClose();
     } catch (err) {
-      toast.error(`Failed to add pattern: ${err}`);
+      toast.error(t('staging.ignoreDialog.addFailed'), getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -86,14 +89,16 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={EyeOff}>Ignore File</DialogTitle>
+        <DialogTitle icon={EyeOff}>{t('staging.ignoreDialog.title')}</DialogTitle>
 
         <DialogBody>
           {loading ? (
-            <div className="text-center py-4 text-(--text-secondary)">Loading...</div>
+            <div className="text-center py-4 text-(--text-secondary)">
+              {t('staging.ignoreDialog.loading')}
+            </div>
           ) : options ? (
             <>
-              <FormField label="Pattern" htmlFor="ignore-pattern">
+              <FormField label={t('staging.ignoreDialog.pattern')} htmlFor="ignore-pattern">
                 <Select
                   id="ignore-pattern"
                   value={selectedPattern}
@@ -104,23 +109,29 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
                       {getSuggestionLabel(suggestion)}
                     </SelectItem>
                   ))}
-                  <SelectItem value="custom">Custom pattern...</SelectItem>
+                  <SelectItem value="custom">{t('staging.ignoreDialog.customPattern')}</SelectItem>
                 </Select>
               </FormField>
 
               {selectedPattern === 'custom' && (
-                <FormField label="Custom Pattern" htmlFor="custom-pattern">
+                <FormField
+                  label={t('staging.ignoreDialog.customPatternLabel')}
+                  htmlFor="custom-pattern"
+                >
                   <Input
                     id="custom-pattern"
                     type="text"
                     value={customPattern}
                     onChange={(e) => setCustomPattern(e.target.value)}
-                    placeholder="e.g., *.log, build/, .env"
+                    placeholder={t('staging.ignoreDialog.customPatternPlaceholder')}
                   />
                 </FormField>
               )}
 
-              <FormField label="Target .gitignore" htmlFor="target-gitignore">
+              <FormField
+                label={t('staging.ignoreDialog.targetGitignore')}
+                htmlFor="target-gitignore"
+              >
                 <Select
                   id="target-gitignore"
                   value={selectedGitignore}
@@ -137,8 +148,8 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
 
               <CheckboxField
                 id="use-global"
-                label="Add to global gitignore"
-                description="Ignore this pattern in all repositories on this machine"
+                label={t('staging.ignoreDialog.addToGlobal')}
+                description={t('staging.ignoreDialog.addToGlobalDesc')}
                 checked={useGlobal}
                 onCheckedChange={setUseGlobal}
               />
@@ -148,10 +159,10 @@ export function IgnoreDialog({ isOpen, onClose, filePath }: IgnoreDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="primary" onClick={handleSubmit} disabled={loading || submitting}>
-            {submitting ? 'Adding...' : 'Add to .gitignore'}
+            {submitting ? t('staging.ignoreDialog.adding') : t('staging.ignoreDialog.addButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

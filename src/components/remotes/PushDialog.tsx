@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowUpFromLine } from 'lucide-react';
 
 import { toast, useOperationProgress } from '@/hooks';
@@ -28,6 +29,7 @@ interface PushDialogProps {
 }
 
 export function PushDialog({ open, onOpenChange }: PushDialogProps) {
+  const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
   const [force, setForce] = useState(false);
@@ -87,7 +89,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
       await refreshRepository();
 
       onOpenChange(false);
-      toast.success('Push complete');
+      toast.success(t('remotes.push.complete'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -103,24 +105,24 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={ArrowUpFromLine}>Push to Remote</DialogTitle>
+        <DialogTitle icon={ArrowUpFromLine}>{t('remotes.push.title')}</DialogTitle>
 
         <DialogBody>
           {currentBranch && (
             <div className="dialog-info-box">
               <div className="flex justify-between text-base py-1">
-                <span className="text-(--text-secondary)">Current branch:</span>
+                <span className="text-(--text-secondary)">{t('remotes.push.currentBranch')}</span>
                 <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
               </div>
               {currentBranch.ahead !== null && currentBranch.ahead > 0 && (
                 <div className="flex justify-between text-base py-1">
-                  <span className="text-(--text-secondary)">Commits ahead:</span>
+                  <span className="text-(--text-secondary)">{t('remotes.push.commitsAhead')}</span>
                   <span className="text-(--text-primary) font-medium">{currentBranch.ahead}</span>
                 </div>
               )}
               {currentBranch.upstream && (
                 <div className="flex justify-between text-base py-1">
-                  <span className="text-(--text-secondary)">Upstream:</span>
+                  <span className="text-(--text-secondary)">{t('remotes.push.upstream')}</span>
                   <span className="text-(--text-primary) font-medium">
                     {currentBranch.upstream}
                   </span>
@@ -129,7 +131,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
             </div>
           )}
 
-          <FormField label="Push to Remote" htmlFor="remote-select">
+          <FormField label={t('remotes.push.remoteLabel')} htmlFor="remote-select">
             <Select
               id="remote-select"
               value={selectedRemote}
@@ -146,7 +148,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
           <CheckboxField
             id="set-upstream"
-            label="Set as upstream tracking branch"
+            label={t('remotes.push.setUpstream')}
             checked={setUpstream}
             onCheckedChange={setSetUpstream}
             disabled={isLoading}
@@ -154,7 +156,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
           <CheckboxField
             id="tags"
-            label="Include tags"
+            label={t('remotes.push.includeTags')}
             checked={tags}
             onCheckedChange={setTags}
             disabled={isLoading}
@@ -162,7 +164,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
           <CheckboxField
             id="force-push"
-            label="Force push (overwrites remote changes)"
+            label={t('remotes.push.forcePush')}
             checked={force}
             onCheckedChange={setForce}
             disabled={isLoading}
@@ -181,14 +183,14 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handlePush}
             disabled={isLoading || !selectedRemote || !currentBranch}
           >
-            {isLoading ? 'Pushing...' : 'Push'}
+            {isLoading ? t('remotes.push.pushing') : t('remotes.push.pushButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

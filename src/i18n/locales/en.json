@@ -1168,6 +1168,58 @@
       "createButton": "Create Branch"
     }
   },
+  "remotes": {
+    "add": {
+      "title": "Add Remote",
+      "nameLabel": "Remote Name",
+      "namePlaceholder": "origin",
+      "urlLabel": "Remote URL",
+      "urlPlaceholder": "https://github.com/user/repo.git",
+      "nameRequired": "Remote name is required",
+      "urlRequired": "Remote URL is required",
+      "adding": "Adding...",
+      "addButton": "Add Remote"
+    },
+    "push": {
+      "title": "Push to Remote",
+      "currentBranch": "Current branch:",
+      "commitsAhead": "Commits ahead:",
+      "upstream": "Upstream:",
+      "remoteLabel": "Push to Remote",
+      "setUpstream": "Set as upstream tracking branch",
+      "includeTags": "Include tags",
+      "forcePush": "Force push (overwrites remote changes)",
+      "pushing": "Pushing...",
+      "pushButton": "Push",
+      "complete": "Push complete"
+    },
+    "fetch": {
+      "title": "Fetch from Remote",
+      "fetchAll": "Fetch from all remotes",
+      "remoteLabel": "Remote",
+      "prune": "Prune deleted remote branches",
+      "fetching": "Fetching...",
+      "fetchButton": "Fetch",
+      "complete": "Fetch complete"
+    },
+    "pull": {
+      "title": "Pull from Remote",
+      "currentBranch": "Current branch:",
+      "commitsBehind": "Commits behind:",
+      "upstream": "Upstream:",
+      "remoteLabel": "Pull from Remote",
+      "rebase": "Rebase instead of merge",
+      "ffOnly": "Fast-forward only (abort if not possible)",
+      "pulling": "Pulling...",
+      "pullButton": "Pull",
+      "complete": "Pull complete",
+      "errors": {
+        "fastForward": "Cannot fast-forward. Try disabling \"Fast-forward only\" or enable rebase.",
+        "conflict": "Merge conflict detected. Please resolve conflicts manually.",
+        "rebase": "Rebase required. Please use the command line for interactive rebase."
+      }
+    }
+  },
   "lfs": {
     "title": "Git LFS",
     "notInstalled": {

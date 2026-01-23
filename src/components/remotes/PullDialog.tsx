@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowDownToLine } from 'lucide-react';
 
 import { toast, useOperationProgress } from '@/hooks';
@@ -28,6 +29,7 @@ interface PullDialogProps {
 }
 
 export function PullDialog({ open, onOpenChange }: PullDialogProps) {
+  const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
   const [rebase, setRebase] = useState(false);
@@ -81,15 +83,15 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
       await refreshRepository();
 
       onOpenChange(false);
-      toast.success('Pull complete');
+      toast.success(t('remotes.pull.complete'));
     } catch (err) {
       const errorMsg = getErrorMessage(err);
       if (errorMsg.includes('fast-forward')) {
-        setError('Cannot fast-forward. Try disabling "Fast-forward only" or enable rebase.');
+        setError(t('remotes.pull.errors.fastForward'));
       } else if (errorMsg.includes('conflict')) {
-        setError('Merge conflict detected. Please resolve conflicts manually.');
+        setError(t('remotes.pull.errors.conflict'));
       } else if (errorMsg.includes('rebase')) {
-        setError('Rebase required. Please use the command line for interactive rebase.');
+        setError(t('remotes.pull.errors.rebase'));
       } else {
         setError(errorMsg);
       }
@@ -106,24 +108,24 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={ArrowDownToLine}>Pull from Remote</DialogTitle>
+        <DialogTitle icon={ArrowDownToLine}>{t('remotes.pull.title')}</DialogTitle>
 
         <DialogBody>
           {currentBranch && (
             <div className="dialog-info-box">
               <div className="flex justify-between text-base py-1">
-                <span className="text-(--text-secondary)">Current branch:</span>
+                <span className="text-(--text-secondary)">{t('remotes.pull.currentBranch')}</span>
                 <span className="text-(--text-primary) font-medium">{currentBranch.name}</span>
               </div>
               {currentBranch.behind !== null && currentBranch.behind > 0 && (
                 <div className="flex justify-between text-base py-1">
-                  <span className="text-(--text-secondary)">Commits behind:</span>
+                  <span className="text-(--text-secondary)">{t('remotes.pull.commitsBehind')}</span>
                   <span className="text-(--text-primary) font-medium">{currentBranch.behind}</span>
                 </div>
               )}
               {currentBranch.upstream && (
                 <div className="flex justify-between text-base py-1">
-                  <span className="text-(--text-secondary)">Upstream:</span>
+                  <span className="text-(--text-secondary)">{t('remotes.pull.upstream')}</span>
                   <span className="text-(--text-primary) font-medium">
                     {currentBranch.upstream}
                   </span>
@@ -132,7 +134,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
             </div>
           )}
 
-          <FormField label="Pull from Remote" htmlFor="remote-select">
+          <FormField label={t('remotes.pull.remoteLabel')} htmlFor="remote-select">
             <Select
               id="remote-select"
               value={selectedRemote}
@@ -149,7 +151,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
 
           <CheckboxField
             id="rebase"
-            label="Rebase instead of merge"
+            label={t('remotes.pull.rebase')}
             checked={rebase}
             disabled={ffOnly || isLoading}
             onCheckedChange={(checked) => {
@@ -160,7 +162,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
 
           <CheckboxField
             id="ff-only"
-            label="Fast-forward only (abort if not possible)"
+            label={t('remotes.pull.ffOnly')}
             checked={ffOnly}
             disabled={rebase || isLoading}
             onCheckedChange={(checked) => {
@@ -182,14 +184,14 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handlePull}
             disabled={isLoading || !selectedRemote || !currentBranch}
           >
-            {isLoading ? 'Pulling...' : 'Pull'}
+            {isLoading ? t('remotes.pull.pulling') : t('remotes.pull.pullButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

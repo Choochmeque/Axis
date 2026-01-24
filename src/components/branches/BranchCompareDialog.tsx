@@ -177,6 +177,7 @@ export function BranchCompareDialog({
                           selectedFile={selectedFile}
                           onSelectFile={selectFile}
                           isLoading={isLoadingFiles}
+                          commitOid={selectedCommit?.oid}
                         />
                       </Panel>
                       <PanelResizeHandle className="resize-handle-vertical" />

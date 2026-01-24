@@ -9,6 +9,7 @@ interface CommitFileListProps {
   selectedFile: FileDiff | null;
   onSelectFile: (file: FileDiff) => void;
   isLoading?: boolean;
+  commitOid?: string;
 }
 
 const listClass = 'flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)';
@@ -21,6 +22,7 @@ export function CommitFileList({
   selectedFile,
   onSelectFile,
   isLoading = false,
+  commitOid,
 }: CommitFileListProps) {
   const { t } = useTranslation();
   const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
@@ -67,6 +69,7 @@ export function CommitFileList({
               selectedFile?.newPath === file.newPath && selectedFile?.oldPath === file.oldPath
             }
             onSelect={() => onSelectFile(file)}
+            commitOid={commitOid}
           />
         ))}
       </div>
@@ -78,15 +81,16 @@ interface CommitFileItemProps {
   file: FileDiff;
   isSelected: boolean;
   onSelect: () => void;
+  commitOid?: string;
 }
 
-function CommitFileItem({ file, isSelected, onSelect }: CommitFileItemProps) {
+function CommitFileItem({ file, isSelected, onSelect, commitOid }: CommitFileItemProps) {
   const path = file.newPath || file.oldPath || '';
   const statusColors = getStatusColors(file.status);
   const statusChar = getStatusChar(file.status);
 
   return (
-    <HistoryFileContextMenu file={file}>
+    <HistoryFileContextMenu file={file} commitOid={commitOid}>
       <div
         className={cn(
           'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',

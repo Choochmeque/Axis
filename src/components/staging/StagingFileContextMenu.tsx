@@ -28,6 +28,7 @@ import { useStagingStore } from '@/store/stagingStore';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
 import { FileLogDialog } from '../history/FileLogDialog';
+import { BlameDialog } from '../blame';
 import { IgnoreDialog } from './IgnoreDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
@@ -56,6 +57,7 @@ export function StagingFileContextMenu({
   const { repository } = useRepositoryStore();
   const deleteFile = useStagingStore((s) => s.deleteFile);
   const [showFileLog, setShowFileLog] = useState(false);
+  const [showBlame, setShowBlame] = useState(false);
   const [showIgnoreDialog, setShowIgnoreDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -171,9 +173,11 @@ export function StagingFileContextMenu({
             {t('staging.contextMenu.logSelected')}
           </MenuItem>
         )}
-        <MenuItem icon={FileSearch} disabled>
-          {t('staging.contextMenu.annotateSelected')}
-        </MenuItem>
+        {isTracked && (
+          <MenuItem icon={FileSearch} onSelect={() => setShowBlame(true)}>
+            {t('staging.contextMenu.annotateSelected')}
+          </MenuItem>
+        )}
         <MenuSeparator />
         <MenuItem icon={Copy} disabled>
           {t('staging.contextMenu.copy')}
@@ -202,6 +206,8 @@ export function StagingFileContextMenu({
         onClose={() => setShowFileLog(false)}
         filePaths={[file.path]}
       />
+
+      <BlameDialog isOpen={showBlame} onClose={() => setShowBlame(false)} filePath={file.path} />
 
       <IgnoreDialog
         isOpen={showIgnoreDialog}

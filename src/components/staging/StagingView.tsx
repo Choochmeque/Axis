@@ -116,7 +116,7 @@ export function StagingView() {
   } = useStagingStore();
   const { settings } = useSettingsStore();
 
-  // Filter state (UI only for now, filtering logic to be implemented)
+  // Filter state (TODO: UI only for now, filtering logic to be implemented)
   const [sortBy, setSortBy] = useState<StagingSortBy>(StagingSortBy.Path);
   const [showOnly, setShowOnly] = useState<StagingShowOnly>(StagingShowOnly.Pending);
   const [viewMode, setViewMode] = useState<StagingViewMode>(StagingViewMode.FlatSingle);

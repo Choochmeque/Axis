@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tag as TagIcon, Plus, RefreshCw, AlertCircle, X, Upload, Trash2 } from 'lucide-react';
 import { tagApi, remoteApi, branchApi } from '../../services/api';
 import type { Tag, Remote } from '../../types';
@@ -19,6 +20,7 @@ interface TagListProps {
 }
 
 export function TagList({ onRefresh, onTagSelect }: TagListProps) {
+  const { t } = useTranslation();
   const { loadBranches, loadCommits, loadStatus } = useRepositoryStore();
   const [tags, setTags] = useState<Tag[]>([]);
   const [remotes, setRemotes] = useState<Remote[]>([]);
@@ -36,7 +38,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
       setRemotes(remoteList);
     } catch (err) {
       console.error('Failed to load tags:', err);
-      setError('Failed to load tags');
+      setError(t('sidebar.tag.list.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +49,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
   }, [loadTags]);
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Delete tag '${name}'?`)) return;
+    if (!confirm(t('sidebar.tag.list.deleteConfirm', { name }))) return;
 
     try {
       const result = await tagApi.delete(name);
@@ -61,7 +63,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
       }
     } catch (err) {
       console.error('Failed to delete tag:', err);
-      setError('Failed to delete tag');
+      setError(t('sidebar.tag.list.deleteFailed'));
     }
   };
 
@@ -78,7 +80,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
       }
     } catch (err) {
       console.error('Failed to push tag:', err);
-      setError('Failed to push tag');
+      setError(t('sidebar.tag.list.pushFailed'));
     }
   };
 
@@ -90,7 +92,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
       await loadStatus();
     } catch (err) {
       console.error('Failed to checkout tag:', err);
-      setError(`Failed to checkout tag: ${err}`);
+      setError(t('sidebar.tag.list.checkoutFailed', { error: String(err) }));
     }
   };
 
@@ -105,7 +107,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <TagIcon size={16} />
-          <span>Tags</span>
+          <span>{t('sidebar.tag.list.title')}</span>
           <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
             {tags.length}
           </span>
@@ -114,11 +116,16 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
           <button
             className={btnIconClass}
             onClick={() => setShowCreateDialog(true)}
-            title="Create tag"
+            title={t('sidebar.tag.list.createTag')}
           >
             <Plus size={16} />
           </button>
-          <button className={btnIconClass} onClick={loadTags} title="Refresh" disabled={isLoading}>
+          <button
+            className={btnIconClass}
+            onClick={loadTags}
+            title={t('sidebar.tag.list.refresh')}
+            disabled={isLoading}
+          >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -139,7 +146,9 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
 
       <div className="flex-1 overflow-y-auto p-2">
         {tags.length === 0 ? (
-          <div className="py-6 text-center text-(--text-muted) text-sm">No tags</div>
+          <div className="py-6 text-center text-(--text-muted) text-sm">
+            {t('sidebar.tag.list.noTags')}
+          </div>
         ) : (
           tags.map((tag) => (
             <TagContextMenu
@@ -172,7 +181,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
                   </span>
                   {tag.isAnnotated && (
                     <span className="px-1.5 py-0.5 text-xs bg-(--accent-color)/10 text-(--accent-color) rounded">
-                      annotated
+                      {t('sidebar.tag.list.annotated')}
                     </span>
                   )}
                 </div>
@@ -201,10 +210,10 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
                           e.stopPropagation();
                           handlePush(tag.name);
                         }}
-                        title="Push tag to remote"
+                        title={t('sidebar.tag.list.pushToRemote')}
                       >
                         <Upload size={12} />
-                        Push
+                        {t('sidebar.tag.list.push')}
                       </button>
                     )}
                     <button
@@ -216,7 +225,7 @@ export function TagList({ onRefresh, onTagSelect }: TagListProps) {
                         e.stopPropagation();
                         handleDelete(tag.name);
                       }}
-                      title="Delete tag"
+                      title={t('sidebar.tag.list.deleteTag')}
                     >
                       <Trash2 size={12} />
                     </button>

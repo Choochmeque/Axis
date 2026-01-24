@@ -911,6 +911,50 @@
         "adding": "Adding...",
         "addButton": "Add Submodule"
       }
+    },
+    "tag": {
+      "list": {
+        "title": "Tags",
+        "createTag": "Create tag",
+        "refresh": "Refresh",
+        "noTags": "No tags",
+        "loadFailed": "Failed to load tags",
+        "deleteFailed": "Failed to delete tag",
+        "pushFailed": "Failed to push tag",
+        "checkoutFailed": "Failed to checkout tag: {{error}}",
+        "deleteConfirm": "Delete tag '{{name}}'?",
+        "annotated": "annotated",
+        "pushToRemote": "Push tag to remote",
+        "push": "Push",
+        "deleteTag": "Delete tag"
+      },
+      "dialog": {
+        "title": "Add Tag",
+        "tagNameLabel": "Tag Name:",
+        "tagNamePlaceholder": "v1.0.0",
+        "tagNameRequired": "Tag name is required",
+        "commitLabel": "Commit:",
+        "workingCopyParent": "Working copy parent",
+        "specifiedCommit": "Specified commit:",
+        "commitShaPlaceholder": "Commit SHA",
+        "pushTagLabel": "Push tag:",
+        "advancedOptions": "Advanced Options",
+        "moveExisting": "Move existing tag",
+        "lightweight": "Lightweight tag (not recommended)",
+        "messageLabel": "Message:",
+        "messagePlaceholder": "Tag message...",
+        "creating": "Creating...",
+        "addButton": "Add",
+        "tagCreated": "Tag \"{{name}}\" created"
+      },
+      "contextMenu": {
+        "copyName": "Copy Tag Name to Clipboard",
+        "checkout": "Checkout {{name}}",
+        "details": "Details...",
+        "diffAgainstCurrent": "Diff Against Current",
+        "pushTo": "Push to",
+        "delete": "Delete {{name}}"
+      }
     }
   },
   "customActions": {

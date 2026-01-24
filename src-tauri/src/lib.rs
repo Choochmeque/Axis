@@ -41,7 +41,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::unstage_files,
             crate::commands::unstage_all,
             crate::commands::discard_file,
-            crate::commands::discard_all,
+            crate::commands::discard_unstaged,
             crate::commands::create_commit,
             crate::commands::amend_commit,
             crate::commands::get_user_signature,

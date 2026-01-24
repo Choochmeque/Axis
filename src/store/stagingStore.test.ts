@@ -14,7 +14,7 @@ vi.mock('../services/api', () => ({
     stageHunk: vi.fn(),
     unstageHunk: vi.fn(),
     discardFile: vi.fn(),
-    discardAll: vi.fn(),
+    discardUnstaged: vi.fn(),
   },
   repositoryApi: {
     getStatus: vi.fn(),

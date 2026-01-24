@@ -80,10 +80,10 @@ pub async fn discard_file(state: State<'_, AppState>, path: String) -> Result<()
 
 #[tauri::command]
 #[specta::specta]
-pub async fn discard_all(state: State<'_, AppState>) -> Result<()> {
+pub async fn discard_unstaged(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.discard_all())
+        .with_git2(|git2| git2.discard_unstaged())
 }
 
 #[tauri::command]

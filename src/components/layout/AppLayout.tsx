@@ -3,6 +3,10 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { StatusBar } from './StatusBar';
+import { CheckoutConflictDialog } from '../branches';
+import { InteractiveRebaseDialog } from '../merge';
+import { ActionConfirmDialog, ActionOutputDialog } from '../custom-actions';
+import { useRepositoryStore } from '../../store/repositoryStore';
 import { useFileWatcher, useGitProgress } from '../../hooks';
 
 interface AppLayoutProps {
@@ -15,23 +19,40 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Listen for git operation progress events
   useGitProgress();
 
+  const { checkoutConflict, stashAndCheckout, discardAndCheckout, clearCheckoutConflict } =
+    useRepositoryStore();
+
   return (
-    <div className="flex flex-col h-full bg-(--bg-primary) text-(--text-primary)">
-      <Toolbar />
-      <div className="flex-1 flex overflow-hidden">
-        <PanelGroup direction="horizontal" autoSaveId="main-layout">
-          <Panel defaultSize={20} minSize={15} maxSize={40}>
-            <Sidebar />
-          </Panel>
-          <PanelResizeHandle className="resize-handle" />
-          <Panel minSize={50}>
-            <main className="flex-1 h-full flex flex-col overflow-hidden bg-(--bg-secondary)">
-              {children}
-            </main>
-          </Panel>
-        </PanelGroup>
+    <>
+      <div className="flex flex-col h-full bg-(--bg-primary) text-(--text-primary)">
+        <Toolbar />
+        <div className="flex-1 flex overflow-hidden">
+          <PanelGroup direction="horizontal" autoSaveId="main-layout">
+            <Panel defaultSize={20} minSize={15} maxSize={40}>
+              <Sidebar />
+            </Panel>
+            <PanelResizeHandle className="resize-handle" />
+            <Panel minSize={50}>
+              <main className="flex-1 h-full flex flex-col overflow-hidden bg-(--bg-secondary)">
+                {children}
+              </main>
+            </Panel>
+          </PanelGroup>
+        </div>
+        <StatusBar />
       </div>
-      <StatusBar />
-    </div>
+
+      <CheckoutConflictDialog
+        isOpen={checkoutConflict !== null}
+        onClose={clearCheckoutConflict}
+        targetBranch={checkoutConflict?.targetBranch ?? ''}
+        conflictingFiles={checkoutConflict?.files ?? []}
+        onStashAndSwitch={stashAndCheckout}
+        onDiscardAndSwitch={discardAndCheckout}
+      />
+      <InteractiveRebaseDialog />
+      <ActionConfirmDialog />
+      <ActionOutputDialog />
+    </>
   );
 }

@@ -11,7 +11,6 @@ import { ReflogView } from './components/reflog';
 import { LfsView } from './components/lfs';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { TabBar } from './components/layout/TabBar';
-import { InteractiveRebaseDialog } from './components/merge';
 import { useMenuActions, useCustomActionShortcuts, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
 import { notifyNewCommits } from './lib/actions';
@@ -21,7 +20,6 @@ import { useStagingStore } from './store/stagingStore';
 import { useIntegrationStore } from './store/integrationStore';
 import { useCustomActionsStore } from './store/customActionsStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
-import { ActionConfirmDialog, ActionOutputDialog } from './components/custom-actions';
 import { events } from '@/bindings/api';
 import { lfsApi } from './services/api';
 import './index.css';
@@ -301,9 +299,6 @@ function App() {
       <div className="flex-1 overflow-hidden">
         <AppLayout>{renderView()}</AppLayout>
       </div>
-      <InteractiveRebaseDialog />
-      <ActionConfirmDialog />
-      <ActionOutputDialog />
     </div>
   );
 }

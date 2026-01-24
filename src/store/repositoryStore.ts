@@ -31,7 +31,7 @@ import {
   worktreeApi,
   remoteApi,
 } from '@/services/api';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { getErrorMessage, isAxisError } from '@/lib/errorUtils';
 import { debounce, type DebouncedFn } from '@/lib/debounce';
 
 // Debounce delay for load operations
@@ -93,6 +93,13 @@ interface RepositoryState {
   selectedStashFile: FileDiff | null;
   isLoadingStashFiles: boolean;
 
+  // Checkout conflict state
+  checkoutConflict: {
+    files: string[];
+    targetBranch: string;
+    isRemote: boolean;
+  } | null;
+
   // Loading states
   isLoading: boolean;
   isLoadingCommits: boolean;
@@ -135,6 +142,12 @@ interface RepositoryState {
   // Stash detail actions
   selectStash: (stash: StashEntry | null) => Promise<void>;
   clearStashSelection: () => void;
+
+  // Checkout conflict actions
+  checkoutBranch: (branchName: string, isRemote?: boolean) => Promise<boolean>;
+  stashAndCheckout: () => Promise<void>;
+  discardAndCheckout: () => Promise<void>;
+  clearCheckoutConflict: () => void;
 }
 
 export const useRepositoryStore = create<RepositoryState>((set, get) => ({
@@ -164,6 +177,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   selectedStashFiles: [],
   selectedStashFile: null,
   isLoadingStashFiles: false,
+  checkoutConflict: null,
   isLoading: false,
   isLoadingCommits: false,
   isLoadingMoreCommits: false,
@@ -568,4 +582,80 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       selectedStashFile: null,
       isLoadingStashFiles: false,
     }),
+
+  checkoutBranch: async (branchName: string, isRemote = false): Promise<boolean> => {
+    try {
+      if (isRemote) {
+        const parts = branchName.split('/');
+        const remoteName = parts[0];
+        const remoteBranchName = parts.slice(1).join('/');
+        await branchApi.checkoutRemote(remoteName, remoteBranchName);
+      } else {
+        await branchApi.checkout(branchName, { create: false, force: false, track: null });
+      }
+      await get().loadBranches();
+      await get().loadCommits();
+      await get().loadStatus();
+      return true;
+    } catch (err) {
+      if (isAxisError(err) && err.type === 'CheckoutConflict') {
+        const files = Array.isArray(err.data) ? err.data : [];
+        set({
+          checkoutConflict: {
+            files,
+            targetBranch: branchName,
+            isRemote,
+          },
+        });
+        return false;
+      }
+      throw err;
+    }
+  },
+
+  stashAndCheckout: async () => {
+    const { checkoutConflict } = get();
+    if (!checkoutConflict) return;
+
+    const { targetBranch, isRemote } = checkoutConflict;
+    try {
+      await stashApi.save({
+        message: null,
+        includeUntracked: true,
+        keepIndex: false,
+        includeIgnored: false,
+      });
+      await get().checkoutBranch(targetBranch, isRemote);
+      set({ checkoutConflict: null });
+      await get().loadStashes();
+    } catch (err) {
+      toast.error(i18n.t('notifications.error.operationFailed'), getErrorMessage(err));
+    }
+  },
+
+  discardAndCheckout: async () => {
+    const { checkoutConflict } = get();
+    if (!checkoutConflict) return;
+
+    const { targetBranch, isRemote } = checkoutConflict;
+    try {
+      // Use force checkout
+      if (isRemote) {
+        const parts = targetBranch.split('/');
+        const remoteName = parts[0];
+        const remoteBranchName = parts.slice(1).join('/');
+        await branchApi.checkoutRemote(remoteName, remoteBranchName, undefined, true);
+      } else {
+        await branchApi.checkout(targetBranch, { create: false, force: true, track: null });
+      }
+      set({ checkoutConflict: null });
+      await get().loadBranches();
+      await get().loadCommits();
+      await get().loadStatus();
+    } catch (err) {
+      toast.error(i18n.t('notifications.error.operationFailed'), getErrorMessage(err));
+    }
+  },
+
+  clearCheckoutConflict: () => set({ checkoutConflict: null }),
 }));

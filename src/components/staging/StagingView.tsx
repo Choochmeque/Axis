@@ -273,6 +273,8 @@ export function StagingView() {
             files={conflictedFiles}
             selectedFile={selectedFile}
             onSelectFile={(file) => selectFile(file, false)}
+            onStage={stageFile}
+            onDiscard={handleDiscardFile}
             viewMode={viewMode}
           />
         </div>
@@ -378,6 +380,8 @@ export function StagingView() {
                 files={conflictedFiles}
                 selectedFile={selectedFile}
                 onSelectFile={(file) => selectFile(file, false)}
+                onStage={stageFile}
+                onDiscard={handleDiscardFile}
                 viewMode={viewMode}
               />
             </div>

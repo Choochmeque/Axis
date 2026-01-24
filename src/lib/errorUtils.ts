@@ -16,6 +16,7 @@ const FALLBACK_MESSAGE_KEYS: Partial<Record<AxisError['type'], string>> = {
   OAuthCancelled: 'lib.errors.oauthCancelled',
   IntegrationError: 'lib.errors.integrationError',
   IntegrationNotConnected: 'lib.errors.integrationNotConnected',
+  CheckoutConflict: 'lib.errors.checkoutConflict',
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 

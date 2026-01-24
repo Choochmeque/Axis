@@ -299,6 +299,17 @@
       "switching": "Switching...",
       "checkoutButton": "Checkout"
     },
+    "checkoutConflict": {
+      "title": "Uncommitted Changes",
+      "message": "Your local changes would be overwritten when switching to \"{{branch}}\". Please choose an option:",
+      "filesLabel": "{{count}} file with uncommitted changes:",
+      "filesLabel_plural": "{{count}} files with uncommitted changes:",
+      "hint": "Stashing will save your changes and can be restored later. Discarding will permanently delete your changes.",
+      "stashAndSwitch": "Stash & Switch",
+      "discardAndSwitch": "Discard & Switch",
+      "stashing": "Stashing...",
+      "discarding": "Discarding..."
+    },
     "compare": {
       "title": "Compare Branches",
       "ahead": "ahead",
@@ -1878,6 +1889,7 @@
       "oauthCancelled": "OAuth flow was cancelled",
       "integrationError": "Integration error",
       "integrationNotConnected": "Integration not connected",
+      "checkoutConflict": "Checkout conflict: uncommitted changes would be overwritten",
       "unknown": "An error occurred"
     },
     "dates": {

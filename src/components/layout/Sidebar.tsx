@@ -202,18 +202,17 @@ export function Sidebar() {
     }
   }, [repository]);
 
+  const { checkoutBranch } = useRepositoryStore();
+
   const handleBranchCheckout = useCallback(
     async (branchName: string) => {
       try {
-        await branchApi.checkout(branchName, { create: false, force: false, track: null });
-        await loadBranches();
-        await loadCommits();
-        await loadStatus();
+        await checkoutBranch(branchName, false);
       } catch (err) {
         toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
     },
-    [loadBranches, loadCommits, loadStatus, t]
+    [checkoutBranch, t]
   );
 
   const handleTagCheckout = useCallback(

@@ -83,6 +83,7 @@ pub async fn checkout_remote_branch(
     remote_name: String,
     branch_name: String,
     local_name: Option<String>,
+    force: bool,
 ) -> Result<()> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
@@ -92,7 +93,7 @@ pub async fn checkout_remote_branch(
 
     // Perform checkout
     git_service.with_git2(|git2| {
-        git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref())
+        git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
     })?;
 
     // Run post-checkout hook (informational, don't fail on error)

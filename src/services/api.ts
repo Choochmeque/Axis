@@ -124,8 +124,8 @@ export const branchApi = {
 
   checkout: (name: string, options: CheckoutOptions) => commands.checkoutBranch(name, options),
 
-  checkoutRemote: (remoteName: string, branchName: string, localName?: string) =>
-    commands.checkoutRemoteBranch(remoteName, branchName, localName ?? null),
+  checkoutRemote: (remoteName: string, branchName: string, localName?: string, force?: boolean) =>
+    commands.checkoutRemoteBranch(remoteName, branchName, localName ?? null, force ?? false),
 
   get: (name: string, branchType: BranchType) => commands.getBranch(name, branchType),
 
@@ -179,7 +179,7 @@ export const stagingApi = {
 
   discardFile: (path: string) => commands.discardFile(path),
 
-  discardAll: () => commands.discardAll(),
+  discardUnstaged: () => commands.discardUnstaged(),
 
   deleteFile: (path: string) => commands.deleteFile(path),
 

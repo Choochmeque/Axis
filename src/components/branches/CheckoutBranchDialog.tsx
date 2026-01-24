@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
-import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
 import {
@@ -32,7 +31,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { branches, loadBranches, refreshRepository } = useRepositoryStore();
+  const { branches, checkoutBranch } = useRepositoryStore();
   const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
   const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
   const currentBranch = branches.find((b) => b.isHead);
@@ -47,24 +46,14 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
     setError(null);
 
     try {
-      // Check if it's a remote branch
       const isRemote = selectedBranch.includes('/');
+      const success = await checkoutBranch(selectedBranch, isRemote);
 
-      if (isRemote) {
-        // Extract remote name and branch name
-        const parts = selectedBranch.split('/');
-        const remoteName = parts[0];
-        const branchName = parts.slice(1).join('/');
-        await branchApi.checkoutRemote(remoteName, branchName);
-      } else {
-        await branchApi.checkout(selectedBranch, { create: false, force: false, track: null });
+      if (success) {
+        setSelectedBranch('');
+        onOpenChange(false);
       }
-
-      await loadBranches();
-      await refreshRepository();
-
-      setSelectedBranch('');
-      onOpenChange(false);
+      // If not successful, the store will show the conflict dialog
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

@@ -53,6 +53,9 @@ pub enum AxisError {
     #[error("Merge conflict detected")]
     MergeConflict,
 
+    #[error("Checkout conflict: uncommitted changes would be overwritten")]
+    CheckoutConflict(Vec<String>),
+
     #[error("Authentication failed: {0}")]
     AuthenticationFailed(String),
 

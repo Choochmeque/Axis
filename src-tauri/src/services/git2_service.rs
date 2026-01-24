@@ -522,8 +522,8 @@ impl Git2Service {
         Ok(())
     }
 
-    /// Discard all unstaged changes
-    pub fn discard_all(&self) -> Result<()> {
+    /// Discard unstaged changes (reverts working tree to match the index)
+    pub fn discard_unstaged(&self) -> Result<()> {
         let mut checkout_opts = git2::build::CheckoutBuilder::new();
         checkout_opts.force();
 
@@ -955,10 +955,41 @@ impl Git2Service {
             checkout_builder.safe();
         }
 
-        self.repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
-        self.repo.set_head(refname)?;
+        // Collect conflicting files during checkout
+        let conflicting_files = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let conflicting_files_clone = conflicting_files.clone();
 
-        Ok(())
+        checkout_builder.notify_on(git2::CheckoutNotificationType::CONFLICT);
+        checkout_builder.notify(
+            move |_notification_type, path, _baseline, _target, _workdir| {
+                if let Some(path) = path {
+                    if let Some(path_str) = path.to_str() {
+                        if let Ok(mut files) = conflicting_files_clone.lock() {
+                            files.push(path_str.to_string());
+                        }
+                    }
+                }
+                true // Continue checkout to collect all conflicts
+            },
+        );
+
+        match self.repo.checkout_tree(&obj, Some(&mut checkout_builder)) {
+            Ok(_) => {
+                self.repo.set_head(refname)?;
+                Ok(())
+            }
+            Err(e)
+                if e.class() == git2::ErrorClass::Checkout
+                    && e.code() == git2::ErrorCode::Conflict =>
+            {
+                let files = conflicting_files
+                    .lock()
+                    .map(|f| f.clone())
+                    .unwrap_or_default();
+                Err(AxisError::CheckoutConflict(files))
+            }
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Checkout a remote branch (creates local tracking branch)
@@ -967,6 +998,7 @@ impl Git2Service {
         remote_name: &str,
         branch_name: &str,
         local_name: Option<&str>,
+        force: bool,
     ) -> Result<()> {
         let local_branch_name = local_name.unwrap_or(branch_name);
         let remote_ref = format!("{}/{}", remote_name, branch_name);
@@ -986,7 +1018,10 @@ impl Git2Service {
         // Checkout the new branch
         self.checkout_branch(
             local_branch_name,
-            &crate::models::CheckoutOptions::default(),
+            &crate::models::CheckoutOptions {
+                force,
+                ..Default::default()
+            },
         )
     }
 

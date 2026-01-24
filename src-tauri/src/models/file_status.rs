@@ -38,10 +38,14 @@ impl FileStatus {
         let unstaged_status = Self::get_unstaged_status(status);
         let is_conflict = status.is_conflicted();
 
-        let primary_status = staged_status
-            .clone()
-            .or_else(|| unstaged_status.clone())
-            .unwrap_or(StatusType::Untracked);
+        let primary_status = if is_conflict {
+            StatusType::Conflicted
+        } else {
+            staged_status
+                .clone()
+                .or_else(|| unstaged_status.clone())
+                .unwrap_or(StatusType::Untracked)
+        };
 
         FileStatus {
             path,

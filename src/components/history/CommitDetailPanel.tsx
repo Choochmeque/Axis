@@ -44,6 +44,7 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
                   selectedFile={selectedCommitFile}
                   onSelectFile={selectCommitFile}
                   isLoading={isLoadingCommitFiles}
+                  commitOid={commit.oid}
                 />
               </Panel>
               <PanelResizeHandle className="resize-handle-vertical" />

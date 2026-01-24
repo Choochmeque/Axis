@@ -1206,6 +1206,20 @@
       "description": "Description"
     }
   },
+  "blame": {
+    "title": "Blame: {{path}}",
+    "loading": "Loading blame...",
+    "errorLoading": "Failed to load blame",
+    "noContent": "No content to display",
+    "selectCommitForDetails": "Hover over a line to see commit details",
+    "header": {
+      "line": "Line",
+      "commit": "Commit",
+      "author": "Author",
+      "date": "Date",
+      "content": "Content"
+    }
+  },
   "integrations": {
     "notConnected": {
       "message": "Not connected to provider.",

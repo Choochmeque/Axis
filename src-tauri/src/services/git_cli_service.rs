@@ -129,7 +129,7 @@ impl GitCliService {
 
         if interactive {
             // For interactive rebase in a GUI app, we'd need to handle this differently
-            // For now, we'll use the non-interactive approach or prepare the todo file
+            // TODO: For now, we'll use the non-interactive approach or prepare the todo file
             args.push("-i");
         }
 

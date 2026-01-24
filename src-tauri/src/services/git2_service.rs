@@ -1471,7 +1471,7 @@ impl Git2Service {
         }
 
         // For non-fast-forward cases, we need to merge or rebase
-        // This is complex and better handled by Git CLI for now
+        // TODO: This is complex and better handled by Git CLI for now
         if options.rebase {
             return Err(AxisError::RebaseRequired);
         }

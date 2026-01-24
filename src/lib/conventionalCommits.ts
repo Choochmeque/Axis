@@ -1,15 +1,16 @@
+// Note: descriptionKey should be translated using i18n.t() when displayed
 export const COMMIT_TYPES = [
-  { value: 'feat', label: 'feat', description: 'A new feature' },
-  { value: 'fix', label: 'fix', description: 'A bug fix' },
-  { value: 'docs', label: 'docs', description: 'Documentation changes' },
-  { value: 'style', label: 'style', description: 'Code style changes' },
-  { value: 'refactor', label: 'refactor', description: 'Code refactoring' },
-  { value: 'perf', label: 'perf', description: 'Performance improvement' },
-  { value: 'test', label: 'test', description: 'Adding/fixing tests' },
-  { value: 'build', label: 'build', description: 'Build system changes' },
-  { value: 'ci', label: 'ci', description: 'CI configuration changes' },
-  { value: 'chore', label: 'chore', description: 'Other changes' },
-  { value: 'revert', label: 'revert', description: 'Revert a commit' },
+  { value: 'feat', label: 'feat', descriptionKey: 'lib.commitTypes.feat' },
+  { value: 'fix', label: 'fix', descriptionKey: 'lib.commitTypes.fix' },
+  { value: 'docs', label: 'docs', descriptionKey: 'lib.commitTypes.docs' },
+  { value: 'style', label: 'style', descriptionKey: 'lib.commitTypes.style' },
+  { value: 'refactor', label: 'refactor', descriptionKey: 'lib.commitTypes.refactor' },
+  { value: 'perf', label: 'perf', descriptionKey: 'lib.commitTypes.perf' },
+  { value: 'test', label: 'test', descriptionKey: 'lib.commitTypes.test' },
+  { value: 'build', label: 'build', descriptionKey: 'lib.commitTypes.build' },
+  { value: 'ci', label: 'ci', descriptionKey: 'lib.commitTypes.ci' },
+  { value: 'chore', label: 'chore', descriptionKey: 'lib.commitTypes.chore' },
+  { value: 'revert', label: 'revert', descriptionKey: 'lib.commitTypes.revert' },
 ] as const;
 
 export type CommitType = (typeof COMMIT_TYPES)[number]['value'];

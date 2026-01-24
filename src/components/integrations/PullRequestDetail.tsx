@@ -33,6 +33,7 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { shellApi } from '@/services/api';
 import { PrState, MergeMethod } from '@/types';
 import type { PullRequestDetail as PullRequestDetailType } from '@/types';
@@ -68,7 +69,9 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
         toast.success(t('integrations.pullRequests.merge.merged', { number: prDetail.number }));
         onClose();
       } catch (error) {
-        toast.error(t('integrations.pullRequests.merge.mergeFailed', { error: String(error) }));
+        toast.error(
+          t('integrations.pullRequests.merge.mergeFailed', { error: getErrorMessage(error) })
+        );
       } finally {
         setIsMerging(false);
       }

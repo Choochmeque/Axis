@@ -15,12 +15,14 @@ export interface ToastHistoryItem extends Toast {
   dismissedAt: number;
 }
 
+export type AddToastInput = Omit<Toast, 'id' | 'createdAt' | 'duration'> & { duration?: number };
+
 interface ToastState {
   toasts: Toast[];
   history: ToastHistoryItem[];
   historyCapacity: number;
 
-  addToast: (toast: Omit<Toast, 'id' | 'createdAt'>) => string;
+  addToast: (toast: AddToastInput) => string;
   removeToast: (id: string) => void;
   clearAll: () => void;
   clearHistory: () => void;

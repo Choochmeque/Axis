@@ -60,7 +60,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       applySettings(settings);
     } catch (error) {
       console.error('Failed to load settings:', error);
-      set({ settings: DEFAULT_SETTINGS, isLoading: false, error: 'Failed to load settings' });
+      set({
+        settings: DEFAULT_SETTINGS,
+        isLoading: false,
+        error: i18n.t('store.settings.loadFailed'),
+      });
       applySettings(DEFAULT_SETTINGS);
     }
   },

@@ -1755,5 +1755,128 @@
     "historyView": "History View",
     "searchView": "Search View",
     "closeDialog": "Close Dialog"
+  },
+  "store": {
+    "lfs": {
+      "initialized": "Git LFS initialized successfully",
+      "initFailed": "Failed to initialize LFS: {{error}}",
+      "trackingPattern": "Tracking pattern: {{pattern}}",
+      "trackFailed": "Failed to track pattern: {{error}}",
+      "untrackedPattern": "Untracked pattern: {{pattern}}",
+      "untrackFailed": "Failed to untrack pattern: {{error}}",
+      "objectsFetched": "LFS objects fetched",
+      "fetchFailed": "Failed to fetch LFS objects: {{error}}",
+      "objectsPulled": "LFS objects pulled",
+      "pullFailed": "Failed to pull LFS objects: {{error}}",
+      "objectsPushed": "LFS objects pushed",
+      "pushFailed": "Failed to push LFS objects: {{error}}",
+      "migrateFailed": "Failed to migrate: {{error}}",
+      "pruneFailed": "Failed to prune LFS objects: {{error}}"
+    },
+    "integration": {
+      "detectFailed": "Failed to detect provider: {{error}}",
+      "connectionCheckFailed": "Failed to check connection: {{error}}",
+      "noProviderDetected": "No provider detected",
+      "oauthFailed": "Failed to start OAuth: {{error}}",
+      "disconnectFailed": "Failed to disconnect: {{error}}",
+      "notConnected": "Not connected to provider",
+      "repoInfoFailed": "Failed to load repository info: {{error}}",
+      "prsFailed": "Failed to load pull requests: {{error}}",
+      "prsMoreFailed": "Failed to load more pull requests: {{error}}",
+      "prFailed": "Failed to get pull request: {{error}}",
+      "issuesFailed": "Failed to load issues: {{error}}",
+      "issuesMoreFailed": "Failed to load more issues: {{error}}",
+      "issueFailed": "Failed to get issue: {{error}}",
+      "ciRunsFailed": "Failed to load CI runs: {{error}}",
+      "ciRunsMoreFailed": "Failed to load more CI runs: {{error}}",
+      "notificationsFailed": "Failed to load notifications: {{error}}",
+      "notificationsMoreFailed": "Failed to load more notifications: {{error}}",
+      "markReadFailed": "Failed to mark notification as read: {{error}}",
+      "markAllReadFailed": "Failed to mark all notifications as read: {{error}}"
+    },
+    "repository": {
+      "openingRepository": "Opening repository",
+      "loadingCommits": "Loading commits",
+      "loadingMoreCommits": "Loading more commits",
+      "loadingCommitDetails": "Loading commit details",
+      "loadingStashDetails": "Loading stash details"
+    },
+    "staging": {
+      "loadingStatus": "Loading status",
+      "loadingDiff": "Loading diff",
+      "creatingCommit": "Creating commit",
+      "amendingCommit": "Amending commit",
+      "commitMessageRequired": "Commit message is required"
+    },
+    "customActions": {
+      "loadGlobalFailed": "Failed to load global actions",
+      "actionSaved": "Action saved",
+      "actionSavedMessage": "\"{{name}}\" has been saved",
+      "saveFailed": "Failed to save action",
+      "actionDeleted": "Action deleted",
+      "deleteFailed": "Failed to delete action",
+      "actionCompleted": "\"{{name}}\" completed",
+      "actionFailed": "\"{{name}}\" failed",
+      "executeFailed": "Failed to execute action"
+    },
+    "settings": {
+      "loadFailed": "Failed to load settings"
+    }
+  },
+  "lib": {
+    "actions": {
+      "copyFailed": "Copy failed",
+      "showInFinderFailed": "Show in Finder failed",
+      "newCommitsAvailable": "New Commits Available",
+      "commitsToPull": "{{count}} commit to pull from \"{{branch}}\"",
+      "commitsToPull_plural": "{{count}} commits to pull from \"{{branch}}\""
+    },
+    "commitTypes": {
+      "feat": "A new feature",
+      "fix": "A bug fix",
+      "docs": "Documentation changes",
+      "style": "Code style changes",
+      "refactor": "Code refactoring",
+      "perf": "Performance improvement",
+      "test": "Adding/fixing tests",
+      "build": "Build system changes",
+      "ci": "CI configuration changes",
+      "chore": "Other changes",
+      "revert": "Revert a commit"
+    },
+    "errors": {
+      "gitError": "Git operation failed",
+      "ioError": "File system error",
+      "databaseError": "Database error",
+      "serializationError": "Serialization error",
+      "noRepositoryOpen": "No repository is open",
+      "cannotFastForward": "Cannot fast-forward, merge or rebase required",
+      "rebaseRequired": "Rebase required",
+      "mergeConflict": "Merge conflict detected",
+      "oauthError": "OAuth authentication failed",
+      "oauthCancelled": "OAuth flow was cancelled",
+      "integrationError": "Integration error",
+      "integrationNotConnected": "Integration not connected",
+      "unknown": "An error occurred"
+    },
+    "dates": {
+      "justNow": "just now",
+      "yesterday": "yesterday",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "weeksAgo": "{{count}}w ago",
+      "lessThanMinuteAgo": "less than a minute ago",
+      "aboutMinuteAgo": "about a minute ago",
+      "minutesAgoLong": "{{count}} minutes ago",
+      "aboutHourAgo": "about an hour ago",
+      "aboutHoursAgo": "about {{count}} hours ago",
+      "dayAgo": "a day ago",
+      "daysAgoLong": "{{count}} days ago",
+      "aboutMonthAgo": "about a month ago",
+      "monthsAgo": "{{count}} months ago",
+      "aboutYearAgo": "about a year ago",
+      "yearsAgo": "{{count}} years ago"
+    }
   }
 }

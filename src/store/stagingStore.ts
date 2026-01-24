@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import i18n from '@/i18n';
 import { operations } from '@/store/operationStore';
 import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
 import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
@@ -118,7 +119,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
   loadStatus: async () => {
     if (!debouncedLoadStatus) {
       debouncedLoadStatus = debounce(async () => {
-        const opId = operations.start('Loading status', { category: 'file' });
+        const opId = operations.start(i18n.t('store.staging.loadingStatus'), { category: 'file' });
         set({ isLoadingStatus: true, error: null });
         try {
           const status = await repositoryApi.getStatus();
@@ -142,7 +143,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       return;
     }
 
-    const opId = operations.start('Loading diff', { category: 'file' });
+    const opId = operations.start(i18n.t('store.staging.loadingDiff'), { category: 'file' });
     set({ selectedFile: file, isSelectedFileStaged: staged, isLoadingDiff: true, error: null });
     try {
       const options = toDiffOptions(get().diffSettings);
@@ -323,11 +324,12 @@ export const useStagingStore = create<StagingState>((set, get) => ({
   createCommit: async (sign?: boolean, bypassHooks?: boolean) => {
     const { commitMessage } = get();
     if (!commitMessage.trim()) {
-      set({ error: 'Commit message is required' });
-      throw new Error('Commit message is required');
+      const errorMsg = i18n.t('store.staging.commitMessageRequired');
+      set({ error: errorMsg });
+      throw new Error(errorMsg);
     }
 
-    const opId = operations.start('Creating commit', { category: 'git' });
+    const opId = operations.start(i18n.t('store.staging.creatingCommit'), { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
       const oid = await commitApi.create(commitMessage, undefined, undefined, sign, bypassHooks);
@@ -356,7 +358,7 @@ export const useStagingStore = create<StagingState>((set, get) => ({
   amendCommit: async (bypassHooks?: boolean) => {
     const { commitMessage } = get();
 
-    const opId = operations.start('Amending commit', { category: 'git' });
+    const opId = operations.start(i18n.t('store.staging.amendingCommit'), { category: 'git' });
     set({ isCommitting: true, error: null });
     try {
       const oid = await commitApi.amend(commitMessage || undefined, bypassHooks);

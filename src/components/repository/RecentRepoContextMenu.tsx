@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import type { RecentRepository } from '@/types';
@@ -15,6 +16,7 @@ interface RecentRepoContextMenuProps {
 }
 
 export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRepoContextMenuProps) {
+  const { t } = useTranslation();
   const { loadRecentRepositories } = useRepositoryStore();
 
   const handleOpenInTab = () => {
@@ -30,7 +32,7 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
     });
 
     webview.once('tauri://error', (e) => {
-      toast.error('Open window failed', getErrorMessage(e));
+      toast.error(t('repository.contextMenu.openWindowFailed'), getErrorMessage(e));
     });
   };
 
@@ -39,21 +41,21 @@ export function RecentRepoContextMenu({ repo, children, onOpenInTab }: RecentRep
       await repositoryApi.removeRecentRepository(repo.path);
       await loadRecentRepositories();
     } catch (err) {
-      toast.error('Remove repository failed', getErrorMessage(err));
+      toast.error(t('repository.contextMenu.removeFailed'), getErrorMessage(err));
     }
   };
 
   return (
     <ContextMenu trigger={children}>
       <MenuItem icon={FolderOpen} onSelect={handleOpenInTab}>
-        Open
+        {t('repository.contextMenu.open')}
       </MenuItem>
       <MenuItem icon={ExternalLink} onSelect={handleOpenInNewWindow}>
-        Open in New Window
+        {t('repository.contextMenu.openInNewWindow')}
       </MenuItem>
       <MenuSeparator />
       <MenuItem icon={Trash2} danger onSelect={handleRemove}>
-        Remove from Recent
+        {t('repository.contextMenu.removeFromRecent')}
       </MenuItem>
     </ContextMenu>
   );

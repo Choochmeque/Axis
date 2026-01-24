@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, CheckCircle2, XCircle, SkipForward, X } from 'lucide-react';
 
 import { bisectApi } from '@/services/api';
@@ -12,6 +13,7 @@ interface BisectBannerProps {
 }
 
 export function BisectBanner({ onComplete }: BisectBannerProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<BisectState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,13 +38,15 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
 
       if (result.state.firstBadCommit) {
         toast.success(
-          'Bisect complete',
-          `First bad commit: ${result.state.firstBadCommit.substring(0, 7)}`
+          t('merge.bisect.notifications.complete'),
+          t('merge.bisect.notifications.firstBadCommit', {
+            oid: result.state.firstBadCommit.substring(0, 7),
+          })
         );
         onComplete?.();
       }
     } catch (err) {
-      toast.error('Bisect mark failed', getErrorMessage(err));
+      toast.error(t('merge.bisect.notifications.markFailed'), getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -53,10 +57,10 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
     try {
       await bisectApi.reset();
       setState(null);
-      toast.success('Bisect ended');
+      toast.success(t('merge.bisect.notifications.ended'));
       onComplete?.();
     } catch (err) {
-      toast.error('Failed to end bisect', getErrorMessage(err));
+      toast.error(t('merge.bisect.notifications.endFailed'), getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +74,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
     <div className="flex items-center gap-3 px-4 py-2 bg-warning/10 border-b border-warning/30">
       <Search size={16} className="text-warning" />
       <span className="text-sm font-medium">
-        Bisecting: testing{' '}
+        {t('merge.bisect.banner.testing')}{' '}
         <code className="px-1 py-0.5 bg-(--bg-secondary) rounded text-xs">
           {state.currentCommit?.substring(0, 7)}
         </code>
@@ -78,7 +82,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
 
       {state.stepsRemaining !== undefined && (
         <span className="text-xs text-(--text-secondary)">
-          (~{state.stepsRemaining} steps left)
+          {t('merge.bisect.banner.stepsLeft', { steps: state.stepsRemaining })}
         </span>
       )}
 
@@ -90,7 +94,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
           variant="ghost"
           onClick={() => handleMark(BisectMarkType.Good)}
           disabled={isLoading}
-          title="Mark as good"
+          title={t('merge.bisect.markGood')}
         >
           <CheckCircle2 size={14} className="text-success" />
         </Button>
@@ -99,7 +103,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
           variant="ghost"
           onClick={() => handleMark(BisectMarkType.Bad)}
           disabled={isLoading}
-          title="Mark as bad"
+          title={t('merge.bisect.markBad')}
         >
           <XCircle size={14} className="text-error" />
         </Button>
@@ -108,7 +112,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
           variant="ghost"
           onClick={() => handleMark(BisectMarkType.Skip)}
           disabled={isLoading}
-          title="Skip commit"
+          title={t('merge.bisect.skipCommit')}
         >
           <SkipForward size={14} />
         </Button>
@@ -117,7 +121,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
           variant="ghost"
           onClick={handleReset}
           disabled={isLoading}
-          title="End bisect"
+          title={t('merge.bisect.endBisect')}
         >
           <X size={14} />
         </Button>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { X, Archive, FileCode, Binary } from 'lucide-react';
 import { DiffLineType, DiffStatus } from '@/types';
 import type {
@@ -17,6 +18,7 @@ interface StashDiffViewProps {
 }
 
 export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffViewProps) {
+  const { t } = useTranslation();
   const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
   const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
@@ -30,7 +32,7 @@ export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffVie
             {stash.message || `stash@{${stash.index}}`}
           </span>
           <span className="text-sm text-(--text-tertiary)">
-            {stash.branch && `on ${stash.branch} · `}
+            {stash.branch && `${t('stash.diffView.on')} ${stash.branch} · `}
             {stash.author}
           </span>
         </div>
@@ -42,13 +44,13 @@ export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffVie
             <span className="text-xs font-medium font-mono text-error">-{totalDeletions}</span>
           )}
           <span className="text-xs text-(--text-secondary)">
-            {files.length} {files.length === 1 ? 'file' : 'files'}
+            {t('stash.diffView.filesCount', { count: files.length })}
           </span>
         </div>
         <button
           className="flex items-center justify-center w-6 h-6 border-none bg-transparent text-(--text-secondary) cursor-pointer rounded transition-colors shrink-0 hover:bg-(--bg-hover) hover:text-(--text-primary)"
           onClick={onClose}
-          title="Close"
+          title={t('stash.diffView.close')}
         >
           <X size={16} />
         </button>
@@ -57,11 +59,11 @@ export function StashDiffView({ stash, files, isLoading, onClose }: StashDiffVie
       {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center h-full text-(--text-tertiary) text-sm">
-          Loading stash diff...
+          {t('stash.diffView.loading')}
         </div>
       ) : files.length === 0 ? (
         <div className="flex items-center justify-center h-full text-(--text-tertiary) text-sm">
-          No changes in this stash
+          {t('stash.diffView.noChanges')}
         </div>
       ) : (
         <div className="flex-1 overflow-auto">
@@ -79,8 +81,9 @@ interface FileDiffSectionProps {
 }
 
 function FileDiffSection({ file }: FileDiffSectionProps) {
-  const fileName = file.newPath || file.oldPath || 'Unknown file';
-  const statusText = getStatusText(file.status);
+  const { t } = useTranslation();
+  const fileName = file.newPath || file.oldPath || t('stash.diffView.unknownFile');
+  const statusText = getStatusText(file.status, t);
   const statusColorClass = getStatusColorClass(file.status);
 
   if (file.binary) {
@@ -99,7 +102,7 @@ function FileDiffSection({ file }: FileDiffSectionProps) {
         </div>
         <div className="flex items-center justify-center gap-2 py-6 text-(--text-tertiary) text-sm">
           <Binary size={16} />
-          <span>Binary file</span>
+          <span>{t('stash.diffView.binaryFile')}</span>
         </div>
       </div>
     );
@@ -131,7 +134,7 @@ function FileDiffSection({ file }: FileDiffSectionProps) {
       {/* Hunks */}
       {file.hunks.length === 0 ? (
         <div className="py-4 text-center text-(--text-tertiary) text-sm">
-          No changes in this file
+          {t('stash.diffView.noFileChanges')}
         </div>
       ) : (
         <div className="min-w-fit">
@@ -226,24 +229,24 @@ function getLinePrefix(lineType: DiffLineTypeType): string {
   }
 }
 
-function getStatusText(status: string): string {
+function getStatusText(status: string, t: (key: string) => string): string {
   switch (status) {
     case DiffStatus.Added:
-      return 'Added';
+      return t('diff.status.added');
     case DiffStatus.Deleted:
-      return 'Deleted';
+      return t('diff.status.deleted');
     case DiffStatus.Modified:
-      return 'Modified';
+      return t('diff.status.modified');
     case DiffStatus.Renamed:
-      return 'Renamed';
+      return t('diff.status.renamed');
     case DiffStatus.Copied:
-      return 'Copied';
+      return t('diff.status.copied');
     case DiffStatus.TypeChanged:
-      return 'Type Changed';
+      return t('diff.status.typeChanged');
     case DiffStatus.Untracked:
-      return 'Untracked';
+      return t('diff.status.untracked');
     case DiffStatus.Conflicted:
-      return 'Conflicted';
+      return t('diff.status.conflicted');
     default:
       return status;
   }

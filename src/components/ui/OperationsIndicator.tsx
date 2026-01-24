@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -20,22 +21,23 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function formatProgressText(progress: OperationProgress): string {
+function formatProgressText(progress: OperationProgress, t: (key: string) => string): string {
   const bytes = formatBytes(progress.receivedBytes);
+  const stage = t(`ui.operations.stages.${progress.stage}`);
 
   if (
     progress.stage === ProgressStage.Resolving &&
     progress.totalDeltas &&
     progress.indexedDeltas
   ) {
-    return `Resolving: ${progress.indexedDeltas}/${progress.totalDeltas}`;
+    return `${stage}: ${progress.indexedDeltas}/${progress.totalDeltas}`;
   }
 
   if (progress.totalObjects && progress.receivedObjects !== undefined) {
-    return `${progress.stage}: ${progress.receivedObjects}/${progress.totalObjects} (${bytes})`;
+    return `${stage}: ${progress.receivedObjects}/${progress.totalObjects} (${bytes})`;
   }
 
-  return `${progress.stage}: ${bytes}`;
+  return `${stage}: ${bytes}`;
 }
 
 function getProgressPercent(progress: OperationProgress): number {
@@ -55,6 +57,7 @@ function getProgressPercent(progress: OperationProgress): number {
 }
 
 function OperationItem({ operation }: { operation: Operation }) {
+  const { t } = useTranslation();
   const [, forceUpdate] = useState(0);
 
   // Update duration every second
@@ -79,7 +82,7 @@ function OperationItem({ operation }: { operation: Operation }) {
             <div className="operations-progress-bar">
               <div className="operations-progress-fill" style={{ width: `${percent}%` }} />
             </div>
-            <div className="operations-progress-text">{formatProgressText(progress)}</div>
+            <div className="operations-progress-text">{formatProgressText(progress, t)}</div>
           </>
         )}
       </div>
@@ -93,6 +96,7 @@ interface OperationsIndicatorProps {
 }
 
 export function OperationsIndicator({ className }: OperationsIndicatorProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevProgressCountRef = useRef(0);
@@ -146,8 +150,8 @@ export function OperationsIndicator({ className }: OperationsIndicatorProps) {
       <button
         className="operations-trigger"
         onClick={() => setIsOpen(!isOpen)}
-        title={`${count} operation${count !== 1 ? 's' : ''} in progress`}
-        aria-label="Operations in progress"
+        title={t('ui.operations.count', { count })}
+        aria-label={t('ui.operations.ariaLabel')}
         aria-expanded={isOpen}
       >
         <Loader2 size={14} className="operations-spinner" />
@@ -156,7 +160,7 @@ export function OperationsIndicator({ className }: OperationsIndicatorProps) {
 
       {isOpen && (
         <div className="operations-dropdown">
-          <div className="operations-header">Operations in Progress</div>
+          <div className="operations-header">{t('ui.operations.title')}</div>
           <div className="operations-list">
             {operationsList.map((op) => (
               <OperationItem key={op.id} operation={op} />

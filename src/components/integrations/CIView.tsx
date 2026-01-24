@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui';
@@ -6,6 +7,7 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { CIRunList } from './CIRunList';
 
 export function CIView() {
+  const { t } = useTranslation();
   const {
     ciRuns,
     ciRunsHasMore,
@@ -36,8 +38,8 @@ export function CIView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-(--text-muted)">
-          <p>Not connected to provider.</p>
-          <p className="mt-2 text-sm">Connect in Settings to view CI/Actions.</p>
+          <p>{t('integrations.notConnected.message')}</p>
+          <p className="mt-2 text-sm">{t('integrations.notConnected.ciHint')}</p>
         </div>
       </div>
     );
@@ -47,7 +49,9 @@ export function CIView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-(--border-color) bg-(--bg-primary)">
-        <span className="text-sm font-medium text-(--text-primary)">CI / Actions</span>
+        <span className="text-sm font-medium text-(--text-primary)">
+          {t('integrations.ci.title')}
+        </span>
 
         <div className="flex-1" />
 
@@ -56,7 +60,7 @@ export function CIView() {
           size="sm"
           onClick={handleRefresh}
           disabled={isLoadingCiRuns}
-          title="Refresh"
+          title={t('integrations.common.refresh')}
         >
           <RefreshCw size={14} className={isLoadingCiRuns ? 'animate-spin' : ''} />
         </Button>

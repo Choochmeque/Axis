@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -98,6 +99,7 @@ const sectionHeaderClass =
 const sectionTitleClass = 'text-xs font-semibold uppercase text-(--text-secondary)';
 
 export function StagingView() {
+  const { t } = useTranslation();
   const {
     status,
     isLoadingStatus,
@@ -196,7 +198,7 @@ export function StagingView() {
     return (
       <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
         <div className="flex items-center justify-center h-full text-(--text-secondary)">
-          Loading status...
+          {t('staging.loadingStatus')}
         </div>
       </div>
     );
@@ -209,7 +211,7 @@ export function StagingView() {
           <pre className="whitespace-pre-wrap text-sm">{error}</pre>
         </Alert>
         <Button variant="secondary" size="sm" className="self-start" onClick={clearError}>
-          Dismiss
+          {t('staging.dismiss')}
         </Button>
       </div>
     );
@@ -236,7 +238,7 @@ export function StagingView() {
               }
             }}
           />
-          <span className={sectionTitleClass}>Changes</span>
+          <span className={sectionTitleClass}>{t('staging.changes')}</span>
           {totalFiles > 0 && (
             <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
               {totalStaged}/{totalFiles}
@@ -261,7 +263,7 @@ export function StagingView() {
         <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
           <div className={cn(sectionHeaderClass, 'bg-error/10')}>
             <div className="flex items-center gap-2">
-              <span className={sectionTitleClass}>Conflicts</span>
+              <span className={sectionTitleClass}>{t('staging.conflicts')}</span>
               <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                 {conflictedFiles.length}
               </span>
@@ -294,7 +296,7 @@ export function StagingView() {
                   }
                 }}
               />
-              <span className={sectionTitleClass}>Staged files</span>
+              <span className={sectionTitleClass}>{t('staging.stagedFiles')}</span>
               {hasStaged && (
                 <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {stagedFiles.length}
@@ -314,7 +316,7 @@ export function StagingView() {
             />
           ) : (
             <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-              No staged changes
+              {t('staging.noStagedChanges')}
             </div>
           )}
         </div>
@@ -335,7 +337,7 @@ export function StagingView() {
                   }
                 }}
               />
-              <span className={sectionTitleClass}>Unstaged files</span>
+              <span className={sectionTitleClass}>{t('staging.unstagedFiles')}</span>
               {hasUnstaged && (
                 <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {unstagedFiles.length}
@@ -357,7 +359,7 @@ export function StagingView() {
             />
           ) : (
             <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-              No unstaged changes
+              {t('staging.noUnstagedChanges')}
             </div>
           )}
 
@@ -366,7 +368,7 @@ export function StagingView() {
             <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
               <div className={cn(sectionHeaderClass, 'bg-error/10')}>
                 <div className="flex items-center gap-2">
-                  <span className={sectionTitleClass}>Conflicts</span>
+                  <span className={sectionTitleClass}>{t('staging.conflicts')}</span>
                   <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                     {conflictedFiles.length}
                   </span>

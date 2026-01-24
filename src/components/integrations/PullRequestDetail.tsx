@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   GitPullRequest,
   GitMerge,
@@ -32,6 +33,7 @@ import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { shellApi } from '@/services/api';
 import { PrState, MergeMethod } from '@/types';
 import type { PullRequestDetail as PullRequestDetailType } from '@/types';
@@ -48,6 +50,7 @@ const MERGE_METHOD_LABELS: Record<MergeMethod, string> = {
 };
 
 export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps) {
+  const { t } = useTranslation();
   const { mergePullRequest } = useIntegrationStore();
   const [isMerging, setIsMerging] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<MergeMethod>(MergeMethod.Merge);
@@ -63,15 +66,17 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
           commitTitle: null,
           commitMessage: null,
         });
-        toast.success(`PR #${prDetail.number} merged successfully`);
+        toast.success(t('integrations.pullRequests.merge.merged', { number: prDetail.number }));
         onClose();
       } catch (error) {
-        toast.error(`Failed to merge PR: ${error}`);
+        toast.error(
+          t('integrations.pullRequests.merge.mergeFailed', { error: getErrorMessage(error) })
+        );
       } finally {
         setIsMerging(false);
       }
     },
-    [prDetail, mergePullRequest, onClose]
+    [prDetail, mergePullRequest, onClose, t]
   );
 
   const openInBrowser = useCallback(() => {
@@ -83,7 +88,7 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
   if (!prDetail) {
     return (
       <div className="flex items-center justify-center h-full bg-(--bg-secondary)">
-        <div className="text-(--text-muted) text-sm">Select a pull request to view details</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.pullRequests.selectPr')}</div>
       </div>
     );
   }
@@ -105,11 +110,23 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
     const baseClass = 'px-2 py-0.5 text-xs rounded-full font-medium';
     switch (prDetail.state) {
       case PrState.Open:
-        return <span className={cn(baseClass, 'bg-success/20 text-success')}>Open</span>;
+        return (
+          <span className={cn(baseClass, 'bg-success/20 text-success')}>
+            {t('integrations.pullRequests.state.open')}
+          </span>
+        );
       case PrState.Merged:
-        return <span className={cn(baseClass, 'bg-purple-500/20 text-purple-500')}>Merged</span>;
+        return (
+          <span className={cn(baseClass, 'bg-purple-500/20 text-purple-500')}>
+            {t('integrations.pullRequests.state.merged')}
+          </span>
+        );
       case PrState.Closed:
-        return <span className={cn(baseClass, 'bg-error/20 text-error')}>Closed</span>;
+        return (
+          <span className={cn(baseClass, 'bg-error/20 text-error')}>
+            {t('integrations.pullRequests.state.closed')}
+          </span>
+        );
       default:
         return null;
     }
@@ -126,7 +143,7 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
             <h2 className="text-lg font-medium text-(--text-primary)">{prDetail.title}</h2>
             {prDetail.draft && (
               <span className="px-2 py-0.5 text-xs bg-(--bg-tertiary) text-(--text-muted) rounded">
-                Draft
+                {t('integrations.pullRequests.draft')}
               </span>
             )}
             {getStateBadge()}
@@ -142,10 +159,20 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={openInBrowser} title="Open in browser">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openInBrowser}
+            title={t('integrations.common.openInBrowser')}
+          >
             <ExternalLink size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            title={t('integrations.common.close')}
+          >
             <X size={14} />
           </Button>
         </div>
@@ -169,11 +196,19 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Created: {formatDateTime(prDetail.createdAt)}</span>
+            <span>
+              {t('integrations.pullRequests.detail.created', {
+                date: formatDateTime(prDetail.createdAt),
+              })}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Updated: {formatDateTime(prDetail.updatedAt)}</span>
+            <span>
+              {t('integrations.pullRequests.detail.updated', {
+                date: formatDateTime(prDetail.updatedAt),
+              })}
+            </span>
           </div>
         </div>
 
@@ -181,11 +216,15 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1 text-(--text-secondary)">
             <MessageSquare size={14} />
-            <span>{prDetail.commentsCount} comments</span>
+            <span>
+              {t('integrations.pullRequests.detail.comments', { count: prDetail.commentsCount })}
+            </span>
           </div>
           <div className="flex items-center gap-1 text-(--text-secondary)">
             <FileCode size={14} />
-            <span>{prDetail.changedFiles} files</span>
+            <span>
+              {t('integrations.pullRequests.detail.files', { count: prDetail.changedFiles })}
+            </span>
           </div>
           <div className="flex items-center gap-1 text-success">
             <Plus size={14} />
@@ -273,10 +312,10 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
               <div>
                 <div className="font-medium text-(--text-primary)">
                   {prDetail.mergeable === true
-                    ? 'This branch has no conflicts'
+                    ? t('integrations.pullRequests.merge.noConflicts')
                     : prDetail.mergeable === false
-                      ? 'This branch has conflicts'
-                      : 'Checking mergeability...'}
+                      ? t('integrations.pullRequests.merge.hasConflicts')
+                      : t('integrations.pullRequests.merge.checkingMergeability')}
                 </div>
               </div>
 
@@ -288,7 +327,9 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
                     onClick={() => handleMerge(selectedMethod)}
                     disabled={isMerging}
                   >
-                    {isMerging ? 'Merging...' : MERGE_METHOD_LABELS[selectedMethod]}
+                    {isMerging
+                      ? t('integrations.pullRequests.merge.merging')
+                      : MERGE_METHOD_LABELS[selectedMethod]}
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -306,13 +347,13 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
                         onValueChange={(value) => setSelectedMethod(value as MergeMethod)}
                       >
                         <DropdownMenuRadioItem value={MergeMethod.Merge}>
-                          Create a merge commit
+                          {t('integrations.pullRequests.merge.mergeCommit')}
                         </DropdownMenuRadioItem>
                         <DropdownMenuRadioItem value={MergeMethod.Squash}>
-                          Squash and merge
+                          {t('integrations.pullRequests.merge.squashMerge')}
                         </DropdownMenuRadioItem>
                         <DropdownMenuRadioItem value={MergeMethod.Rebase}>
-                          Rebase and merge
+                          {t('integrations.pullRequests.merge.rebaseMerge')}
                         </DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>

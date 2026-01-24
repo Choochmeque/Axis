@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as Tabs from '@radix-ui/react-tabs';
 import { FileCode, FolderOpen, Upload, Download } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -38,6 +39,7 @@ export function PatchDialog({
   commitSummary,
   onSuccess,
 }: PatchDialogProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'create' | 'apply'>(initialMode);
 
   // Create patch state
@@ -70,7 +72,7 @@ export function PatchDialog({
       const path = await open({
         directory: true,
         multiple: false,
-        title: 'Select Output Directory',
+        title: t('history.patch.selectOutputDir'),
       });
 
       if (path && typeof path === 'string') {
@@ -90,7 +92,7 @@ export function PatchDialog({
           { name: 'Patch Files', extensions: ['patch', 'diff'] },
           { name: 'All Files', extensions: ['*'] },
         ],
-        title: 'Select Patch File',
+        title: t('history.patch.selectPatchFileDialog'),
       });
 
       if (path && typeof path === 'string') {
@@ -103,7 +105,7 @@ export function PatchDialog({
 
   const handleCreatePatch = async () => {
     if (!outputDir.trim()) {
-      setError('Output directory is required');
+      setError(t('history.patch.outputDirRequired'));
       return;
     }
 
@@ -129,7 +131,7 @@ export function PatchDialog({
 
       onSuccess?.();
       onClose();
-      toast.success(patchResult.message || 'Patch created');
+      toast.success(patchResult.message || t('history.patch.patchCreated'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -139,7 +141,7 @@ export function PatchDialog({
 
   const handleApplyPatch = async () => {
     if (!patchPath.trim()) {
-      setError('Patch file is required');
+      setError(t('history.patch.patchFileRequired'));
       return;
     }
 
@@ -166,7 +168,10 @@ export function PatchDialog({
 
       onSuccess?.();
       onClose();
-      toast.success(patchResult.message || (checkOnly ? 'Patch is valid' : 'Patch applied'));
+      toast.success(
+        patchResult.message ||
+          (checkOnly ? t('history.patch.patchValid') : t('history.patch.patchApplied'))
+      );
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -181,7 +186,7 @@ export function PatchDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-112.5">
-        <DialogTitle icon={FileCode}>Patches</DialogTitle>
+        <DialogTitle icon={FileCode}>{t('history.patch.title')}</DialogTitle>
 
         <Tabs.Root
           value={activeTab}
@@ -196,14 +201,14 @@ export function PatchDialog({
               className="flex items-center gap-1.5 px-4 py-2 text-base text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
             >
               <Download size={14} />
-              Create Patch
+              {t('history.patch.createTab')}
             </Tabs.Trigger>
             <Tabs.Trigger
               value="apply"
               className="flex items-center gap-1.5 px-4 py-2 text-base text-(--text-secondary) border-b-2 border-transparent data-[state=active]:text-(--accent-color) data-[state=active]:border-(--accent-color) hover:text-(--text-primary) transition-colors"
             >
               <Upload size={14} />
-              Apply Patch
+              {t('history.patch.applyTab')}
             </Tabs.Trigger>
           </Tabs.List>
 
@@ -217,7 +222,7 @@ export function PatchDialog({
             <Tabs.Content value="create">
               {commitOid && (
                 <div className="field">
-                  <Label>Source Commit:</Label>
+                  <Label>{t('history.patch.sourceCommit')}</Label>
                   <div className="flex items-center gap-2 p-2 bg-(--bg-tertiary) rounded text-base">
                     <span className="font-mono text-(--text-secondary)">
                       {commitOid.slice(0, 7)}
@@ -231,14 +236,14 @@ export function PatchDialog({
                 </div>
               )}
 
-              <FormField label="Output Directory:" htmlFor="output-dir">
+              <FormField label={t('history.patch.outputDirectory')} htmlFor="output-dir">
                 <div className="flex gap-2">
                   <Input
                     id="output-dir"
                     type="text"
                     value={outputDir}
                     onChange={(e) => setOutputDir(e.target.value)}
-                    placeholder="Select directory..."
+                    placeholder={t('history.patch.selectDirectory')}
                     disabled={isLoading}
                     className="flex-1"
                   />
@@ -250,14 +255,14 @@ export function PatchDialog({
             </Tabs.Content>
 
             <Tabs.Content value="apply">
-              <FormField label="Patch File:" htmlFor="patch-path">
+              <FormField label={t('history.patch.patchFile')} htmlFor="patch-path">
                 <div className="flex gap-2">
                   <Input
                     id="patch-path"
                     type="text"
                     value={patchPath}
                     onChange={(e) => setPatchPath(e.target.value)}
-                    placeholder="Select patch file..."
+                    placeholder={t('history.patch.selectPatchFile')}
                     disabled={isLoading}
                     className="flex-1"
                   />
@@ -270,7 +275,7 @@ export function PatchDialog({
               <div className="flex flex-col gap-3 mt-4">
                 <CheckboxField
                   id="use-am"
-                  label="Create commit from patch (git am)"
+                  label={t('history.patch.createCommitFromPatch')}
                   checked={useAm}
                   disabled={isLoading}
                   onCheckedChange={setUseAm}
@@ -278,7 +283,7 @@ export function PatchDialog({
 
                 <CheckboxField
                   id="check-only"
-                  label="Check only (don't apply)"
+                  label={t('history.patch.checkOnly')}
                   checked={checkOnly}
                   disabled={isLoading || useAm}
                   onCheckedChange={setCheckOnly}
@@ -286,7 +291,7 @@ export function PatchDialog({
 
                 <CheckboxField
                   id="three-way"
-                  label="Use 3-way merge if patch fails"
+                  label={t('history.patch.threeWayMerge')}
                   checked={threeWay}
                   disabled={isLoading}
                   onCheckedChange={setThreeWay}
@@ -299,7 +304,7 @@ export function PatchDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isLoading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           {activeTab === 'create' ? (
@@ -308,7 +313,7 @@ export function PatchDialog({
               onClick={handleCreatePatch}
               disabled={isLoading || !outputDir.trim()}
             >
-              {isLoading ? 'Creating...' : 'Create Patch'}
+              {isLoading ? t('history.patch.creating') : t('history.patch.createButton')}
             </Button>
           ) : (
             <Button
@@ -316,7 +321,11 @@ export function PatchDialog({
               onClick={handleApplyPatch}
               disabled={isLoading || !patchPath.trim()}
             >
-              {isLoading ? 'Applying...' : checkOnly ? 'Check Patch' : 'Apply Patch'}
+              {isLoading
+                ? t('history.patch.applying')
+                : checkOnly
+                  ? t('history.patch.checkButton')
+                  : t('history.patch.applyButton')}
             </Button>
           )}
         </DialogFooter>

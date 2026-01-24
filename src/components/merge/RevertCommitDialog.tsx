@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Undo2 } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -31,6 +32,7 @@ export function RevertCommitDialog({
   onRevertComplete,
   commits,
 }: RevertCommitDialogProps) {
+  const { t } = useTranslation();
   const [noCommit, setNoCommit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function RevertCommitDialog({
 
   const handleRevert = async () => {
     if (commits.length === 0) {
-      setError('No commits selected');
+      setError(t('merge.revert.noCommitsError'));
       return;
     }
 
@@ -63,7 +65,7 @@ export function RevertCommitDialog({
       if (revertResult.success && revertResult.conflicts.length === 0) {
         onRevertComplete?.(revertResult);
         onClose();
-        toast.success('Revert complete');
+        toast.success(t('notifications.success.revertComplete'));
       } else {
         setResult(revertResult);
         if (revertResult.success) {
@@ -95,7 +97,7 @@ export function RevertCommitDialog({
       if (continueResult.success && continueResult.conflicts.length === 0) {
         onRevertComplete?.(continueResult);
         onClose();
-        toast.success('Revert complete');
+        toast.success(t('notifications.success.revertComplete'));
       } else {
         setResult(continueResult);
         if (continueResult.success) {
@@ -121,7 +123,7 @@ export function RevertCommitDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-125">
-        <DialogTitle icon={Undo2}>Revert Commit</DialogTitle>
+        <DialogTitle icon={Undo2}>{t('merge.revert.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -139,7 +141,11 @@ export function RevertCommitDialog({
           {!result && (
             <>
               <div className="field">
-                <Label>{commits.length === 1 ? 'Commit to Revert' : 'Commits to Revert'}</Label>
+                <Label>
+                  {commits.length === 1
+                    ? t('merge.revert.commitToRevert')
+                    : t('merge.revert.commitsToRevert')}
+                </Label>
                 <div className="max-h-50 overflow-y-auto border border-(--border-color) rounded-md">
                   {commits.map((commit) => (
                     <div
@@ -158,16 +164,13 @@ export function RevertCommitDialog({
               </div>
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-base text-(--text-secondary)">
-                <p className="m-0">
-                  Reverting a commit creates a new commit that undoes the changes introduced by the
-                  selected commit. This is safe for shared branches as it does not rewrite history.
-                </p>
+                <p className="m-0">{t('merge.revert.revertDescription')}</p>
               </div>
 
               <CheckboxField
                 id="no-commit-revert"
-                label="Stage changes only (--no-commit)"
-                description="Apply revert changes without creating a commit"
+                label={t('merge.revert.noCommit')}
+                description={t('merge.revert.noCommitDesc')}
                 checked={noCommit}
                 disabled={isLoading}
                 onCheckedChange={setNoCommit}
@@ -178,7 +181,7 @@ export function RevertCommitDialog({
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
               <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
-                Conflicted Files
+                {t('merge.revert.conflictedFiles')}
               </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
@@ -198,17 +201,17 @@ export function RevertCommitDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                Abort
+                {t('merge.revert.abort')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                Continue
+                {t('merge.revert.continue')}
               </Button>
             </>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="secondary" disabled={isLoading}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button
@@ -216,7 +219,7 @@ export function RevertCommitDialog({
                 onClick={handleRevert}
                 disabled={isLoading || commits.length === 0}
               >
-                {isLoading ? 'Reverting...' : 'Revert'}
+                {isLoading ? t('merge.revert.reverting') : t('merge.revert.revertButton')}
               </Button>
             </>
           )}

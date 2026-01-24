@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Archive } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -25,6 +26,7 @@ interface StashDialogProps {
 }
 
 export function StashDialog({ open, onOpenChange }: StashDialogProps) {
+  const { t } = useTranslation();
   const { refreshRepository, loadStashes } = useRepositoryStore();
   const { trackOperation } = useOperation();
   const [message, setMessage] = useState('');
@@ -55,7 +57,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
       setMessage('');
       setKeepStaged(false);
       onOpenChange(false);
-      toast.success('Changes stashed');
+      toast.success(t('stash.createSuccess'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -75,27 +77,25 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
-        <DialogTitle icon={Archive}>Stash Changes</DialogTitle>
+        <DialogTitle icon={Archive}>{t('stash.dialog.title')}</DialogTitle>
 
         <DialogBody>
-          <p className="text-base text-(--text-secondary) mb-4">
-            This will stash all the changes in your working copy and return it to a clean state.
-          </p>
+          <p className="text-base text-(--text-secondary) mb-4">{t('stash.dialog.description')}</p>
 
-          <FormField label="Message (optional)" htmlFor="stash-message">
+          <FormField label={t('stash.dialog.messageLabel')} htmlFor="stash-message">
             <Input
               id="stash-message"
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Optional stash message..."
+              placeholder={t('stash.dialog.messagePlaceholder')}
               autoFocus
             />
           </FormField>
 
           <CheckboxField
             id="keep-staged"
-            label="Keep staged changes"
+            label={t('stash.dialog.keepStaged')}
             checked={keepStaged}
             onCheckedChange={setKeepStaged}
           />
@@ -109,10 +109,10 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="primary" onClick={handleStash} disabled={isLoading}>
-            {isLoading ? 'Stashing...' : 'Stash'}
+            {isLoading ? t('stash.dialog.stashing') : t('stash.dialog.stashButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
 import { stashApi } from '../../services/api';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { formatTimestamp } from '@/lib/dateUtils';
 import {
   Dialog,
@@ -27,6 +29,7 @@ interface StashViewProps {
 }
 
 export function StashView({ onRefresh }: StashViewProps) {
+  const { t } = useTranslation();
   const [stashes, setStashes] = useState<StashEntry[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +47,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       setStashes(stashList);
     } catch (err) {
       console.error('Failed to load stashes:', err);
-      setError('Failed to load stashes');
+      setError(t('stash.view.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +74,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to save stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -79,13 +82,13 @@ export function StashView({ onRefresh }: StashViewProps) {
     try {
       const result = await stashApi.apply({ index, reinstateIndex: false });
       if (result.conflicts.length > 0) {
-        setError(`Stash applied with conflicts in: ${result.conflicts.join(', ')}`);
+        setError(t('stash.view.conflictsApply', { files: result.conflicts.join(', ') }));
       } else {
         onRefresh?.();
       }
     } catch (err) {
       console.error('Failed to apply stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to apply stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -93,14 +96,14 @@ export function StashView({ onRefresh }: StashViewProps) {
     try {
       const result = await stashApi.pop({ index, reinstateIndex: false });
       if (result.conflicts.length > 0) {
-        setError(`Stash applied with conflicts (not dropped): ${result.conflicts.join(', ')}`);
+        setError(t('stash.view.conflictsPop', { files: result.conflicts.join(', ') }));
       } else {
         await loadStashes();
         onRefresh?.();
       }
     } catch (err) {
       console.error('Failed to pop stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to pop stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -111,12 +114,12 @@ export function StashView({ onRefresh }: StashViewProps) {
       setSelectedIndex(null);
     } catch (err) {
       console.error('Failed to drop stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to drop stash');
+      setError(getErrorMessage(err));
     }
   };
 
   const handleBranch = async (index: number) => {
-    const branchName = prompt('Enter branch name:');
+    const branchName = prompt(t('stash.view.enterBranchName'));
     if (!branchName) return;
 
     try {
@@ -125,7 +128,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       onRefresh?.();
     } catch (err) {
       console.error('Failed to create branch from stash:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create branch from stash');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -134,7 +137,7 @@ export function StashView({ onRefresh }: StashViewProps) {
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <Archive size={16} />
-          <span>Stashes</span>
+          <span>{t('stash.view.title')}</span>
           <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
             {stashes.length}
           </span>
@@ -143,14 +146,14 @@ export function StashView({ onRefresh }: StashViewProps) {
           <button
             className={btnIconClass}
             onClick={() => setShowCreateDialog(true)}
-            title="Create stash"
+            title={t('stash.view.createStash')}
           >
             <Plus size={16} />
           </button>
           <button
             className={btnIconClass}
             onClick={loadStashes}
-            title="Refresh"
+            title={t('stash.view.refresh')}
             disabled={isLoading}
           >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -173,7 +176,9 @@ export function StashView({ onRefresh }: StashViewProps) {
 
       <div className="flex-1 overflow-y-auto p-2">
         {stashes.length === 0 ? (
-          <div className="py-6 text-center text-(--text-muted) text-sm">No stashes</div>
+          <div className="py-6 text-center text-(--text-muted) text-sm">
+            {t('stash.view.noStashes')}
+          </div>
         ) : (
           stashes.map((stash) => (
             <div
@@ -212,10 +217,10 @@ export function StashView({ onRefresh }: StashViewProps) {
                       e.stopPropagation();
                       handleApply(stash.index);
                     }}
-                    title="Apply stash (keep in list)"
+                    title={t('stash.view.applyHint')}
                   >
                     <Play size={12} />
-                    Apply
+                    {t('stash.apply')}
                   </button>
                   <button
                     className={cn(
@@ -226,9 +231,9 @@ export function StashView({ onRefresh }: StashViewProps) {
                       e.stopPropagation();
                       handlePop(stash.index);
                     }}
-                    title="Pop stash (apply and remove)"
+                    title={t('stash.view.popHint')}
                   >
-                    Pop
+                    {t('stash.pop')}
                   </button>
                   <button
                     className={cn(
@@ -239,7 +244,7 @@ export function StashView({ onRefresh }: StashViewProps) {
                       e.stopPropagation();
                       handleBranch(stash.index);
                     }}
-                    title="Create branch from stash"
+                    title={t('stash.view.branchHint')}
                   >
                     <GitBranch size={12} />
                   </button>
@@ -252,7 +257,7 @@ export function StashView({ onRefresh }: StashViewProps) {
                       e.stopPropagation();
                       handleDrop(stash.index);
                     }}
-                    title="Drop stash"
+                    title={t('stash.view.dropHint')}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -265,27 +270,27 @@ export function StashView({ onRefresh }: StashViewProps) {
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle icon={Archive}>Create Stash</DialogTitle>
+          <DialogTitle icon={Archive}>{t('stash.createDialog.title')}</DialogTitle>
 
           <DialogBody>
-            <FormField label="Message (optional)" htmlFor="stash-message">
+            <FormField label={t('stash.createDialog.messageLabel')} htmlFor="stash-message">
               <Input
                 id="stash-message"
                 type="text"
                 value={stashMessage}
                 onChange={(e) => setStashMessage(e.target.value)}
-                placeholder="Stash message..."
+                placeholder={t('stash.createDialog.messagePlaceholder')}
               />
             </FormField>
             <CheckboxField
               id="include-untracked"
-              label="Include untracked files"
+              label={t('stash.createDialog.includeUntracked')}
               checked={includeUntracked}
               onCheckedChange={(checked) => setIncludeUntracked(checked === true)}
             />
             <CheckboxField
               id="keep-index"
-              label="Keep staged changes in index"
+              label={t('stash.createDialog.keepIndex')}
               checked={keepIndex}
               onCheckedChange={(checked) => setKeepIndex(checked === true)}
             />
@@ -293,10 +298,10 @@ export function StashView({ onRefresh }: StashViewProps) {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+              <Button variant="secondary">{t('common.cancel')}</Button>
             </DialogClose>
             <Button variant="primary" onClick={handleSave}>
-              Create Stash
+              {t('stash.createDialog.createButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

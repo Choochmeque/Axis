@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { events } from '@/bindings/api';
+import i18n from '@/i18n';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { integrationApi } from '@/services/api';
 import { PrState, IssueState } from '@/types';
@@ -156,7 +157,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to detect provider:', error);
-      set({ error: `Failed to detect provider: ${getErrorMessage(error)}` });
+      set({ error: i18n.t('store.integration.detectFailed', { error: getErrorMessage(error) }) });
     }
   },
 
@@ -169,14 +170,16 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({ connectionStatus: status, error: null });
     } catch (error) {
       console.error('Failed to check connection:', error);
-      set({ error: `Failed to check connection: ${getErrorMessage(error)}` });
+      set({
+        error: i18n.t('store.integration.connectionCheckFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
   startOAuth: async () => {
     const { detectedProvider } = get();
     if (!detectedProvider) {
-      set({ error: 'No provider detected' });
+      set({ error: i18n.t('store.integration.noProviderDetected') });
       return;
     }
 
@@ -197,7 +200,10 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to start OAuth:', error);
-      set({ error: `Failed to start OAuth: ${getErrorMessage(error)}`, isConnecting: false });
+      set({
+        error: i18n.t('store.integration.oauthFailed', { error: getErrorMessage(error) }),
+        isConnecting: false,
+      });
     }
   },
 
@@ -242,7 +248,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to disconnect:', error);
-      set({ error: `Failed to disconnect: ${getErrorMessage(error)}` });
+      set({
+        error: i18n.t('store.integration.disconnectFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
@@ -255,7 +263,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({ repoInfo: info, error: null });
     } catch (error) {
       console.error('Failed to load repo info:', error);
-      set({ error: `Failed to load repository info: ${getErrorMessage(error)}` });
+      set({
+        error: i18n.t('store.integration.repoInfoFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
@@ -279,7 +289,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load pull requests:', error);
       set({
         isLoadingPrs: false,
-        error: `Failed to load pull requests: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.prsFailed', { error: getErrorMessage(error) }),
       });
     }
   },
@@ -306,7 +316,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load more pull requests:', error);
       set({
         isLoadingMorePrs: false,
-        error: `Failed to load more pull requests: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.prsMoreFailed', { error: getErrorMessage(error) }),
       });
     }
   },
@@ -320,14 +330,14 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({ selectedPr: pr, error: null });
     } catch (error) {
       console.error('Failed to get pull request:', error);
-      set({ error: `Failed to get pull request: ${getErrorMessage(error)}` });
+      set({ error: i18n.t('store.integration.prFailed', { error: getErrorMessage(error) }) });
     }
   },
 
   createPullRequest: async (options: CreatePrOptions) => {
     const { detectedProvider, connectionStatus } = get();
     if (!detectedProvider || !connectionStatus?.connected) {
-      throw new Error('Not connected to provider');
+      throw new Error(i18n.t('store.integration.notConnected'));
     }
 
     const pr = await integrationApi.createPr(detectedProvider, options);
@@ -341,7 +351,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
   mergePullRequest: async (number: number, options: MergePrOptions) => {
     const { detectedProvider, connectionStatus } = get();
     if (!detectedProvider || !connectionStatus?.connected) {
-      throw new Error('Not connected to provider');
+      throw new Error(i18n.t('store.integration.notConnected'));
     }
 
     await integrationApi.mergePr(detectedProvider, number, options);
@@ -386,7 +396,10 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to load issues:', error);
-      set({ isLoadingIssues: false, error: `Failed to load issues: ${getErrorMessage(error)}` });
+      set({
+        isLoadingIssues: false,
+        error: i18n.t('store.integration.issuesFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
@@ -418,7 +431,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load more issues:', error);
       set({
         isLoadingMoreIssues: false,
-        error: `Failed to load more issues: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.issuesMoreFailed', { error: getErrorMessage(error) }),
       });
     }
   },
@@ -432,14 +445,14 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({ selectedIssue: issue, error: null });
     } catch (error) {
       console.error('Failed to get issue:', error);
-      set({ error: `Failed to get issue: ${getErrorMessage(error)}` });
+      set({ error: i18n.t('store.integration.issueFailed', { error: getErrorMessage(error) }) });
     }
   },
 
   createIssue: async (options: CreateIssueOptions) => {
     const { detectedProvider, connectionStatus } = get();
     if (!detectedProvider || !connectionStatus?.connected) {
-      throw new Error('Not connected to provider');
+      throw new Error(i18n.t('store.integration.notConnected'));
     }
 
     const issue = await integrationApi.createIssue(detectedProvider, options);
@@ -483,7 +496,10 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to load CI runs:', error);
-      set({ isLoadingCiRuns: false, error: `Failed to load CI runs: ${getErrorMessage(error)}` });
+      set({
+        isLoadingCiRuns: false,
+        error: i18n.t('store.integration.ciRunsFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
@@ -509,7 +525,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load more CI runs:', error);
       set({
         isLoadingMoreCiRuns: false,
-        error: `Failed to load more CI runs: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.ciRunsMoreFailed', { error: getErrorMessage(error) }),
       });
     }
   },
@@ -526,7 +542,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
   getCommitStatus: async (sha: string) => {
     const { detectedProvider, connectionStatus } = get();
     if (!detectedProvider || !connectionStatus?.connected) {
-      throw new Error('Not connected to provider');
+      throw new Error(i18n.t('store.integration.notConnected'));
     }
 
     return await integrationApi.getCommitStatus(detectedProvider, sha);
@@ -561,7 +577,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load notifications:', error);
       set({
         isLoadingNotifications: false,
-        error: `Failed to load notifications: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.notificationsFailed', { error: getErrorMessage(error) }),
       });
     }
   },
@@ -598,7 +614,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       console.error('Failed to load more notifications:', error);
       set({
         isLoadingMoreNotifications: false,
-        error: `Failed to load more notifications: ${getErrorMessage(error)}`,
+        error: i18n.t('store.integration.notificationsMoreFailed', {
+          error: getErrorMessage(error),
+        }),
       });
     }
   },
@@ -618,7 +636,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
-      set({ error: `Failed to mark notification as read: ${getErrorMessage(error)}` });
+      set({
+        error: i18n.t('store.integration.markReadFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 
@@ -635,7 +655,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
-      set({ error: `Failed to mark all notifications as read: ${getErrorMessage(error)}` });
+      set({
+        error: i18n.t('store.integration.markAllReadFailed', { error: getErrorMessage(error) }),
+      });
     }
   },
 

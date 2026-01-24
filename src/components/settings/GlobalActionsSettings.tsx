@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Terminal, GripVertical } from 'lucide-react';
 import { Button, Alert } from '@/components/ui';
 import { ActionEditorDialog } from '@/components/custom-actions';
@@ -10,6 +11,7 @@ const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';
 
 export function GlobalActionsSettings() {
+  const { t } = useTranslation();
   const globalActions = useCustomActionsStore((s) => s.globalActions);
   const isLoading = useCustomActionsStore((s) => s.isLoading);
   const loadGlobalActions = useCustomActionsStore((s) => s.loadGlobalActions);
@@ -33,7 +35,7 @@ export function GlobalActionsSettings() {
   };
 
   const handleDelete = async (action: CustomAction) => {
-    if (confirm(`Delete action "${action.name}"?`)) {
+    if (confirm(t('actions.deleteConfirm', { name: action.name }))) {
       await deleteAction(action.id, ActionStorageType.Global);
     }
   };
@@ -41,24 +43,24 @@ export function GlobalActionsSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-50 text-(--text-muted)">
-        Loading actions...
+        {t('actions.loading')}
       </div>
     );
   }
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Global Actions</h3>
+      <h3 className={sectionTitleClass}>{t('actions.global.title')}</h3>
 
       <Alert variant="info" inline className="mb-4">
-        Global actions are available in all repositories.
+        {t('actions.global.info')}
       </Alert>
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-(--text-secondary)">
           {globalActions.length === 0
-            ? 'No global actions configured.'
-            : `${globalActions.length} action${globalActions.length === 1 ? '' : 's'}`}
+            ? t('actions.global.empty')
+            : t('actions.global.count', { count: globalActions.length })}
         </p>
         <Button variant="primary" size="sm" onClick={handleCreate}>
           <Plus className="w-4 h-4" />
@@ -100,7 +102,7 @@ export function GlobalActionsSettings() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleEdit(action)}
-                  aria-label="Edit action"
+                  aria-label={t('actions.editLabel')}
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
@@ -108,7 +110,7 @@ export function GlobalActionsSettings() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(action)}
-                  aria-label="Delete action"
+                  aria-label={t('actions.deleteLabel')}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>

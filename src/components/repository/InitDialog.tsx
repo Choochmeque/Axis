@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderPlus, FolderOpen } from 'lucide-react';
 import { repositoryApi } from '@/services/api';
@@ -25,6 +26,7 @@ interface InitDialogProps {
 }
 
 export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
+  const { t } = useTranslation();
   const [path, setPath] = useState('');
   const [bare, setBare] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select Directory for New Repository',
+      title: t('repository.init.selectDirectory'),
     });
 
     if (selected && typeof selected === 'string') {
@@ -47,7 +49,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
   const handleInit = async () => {
     if (!path.trim()) {
-      setError('Directory path is required');
+      setError(t('repository.init.pathRequired'));
       return;
     }
 
@@ -59,15 +61,14 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
       await loadRecentRepositories();
 
       // Create tab for new repository
-      const existingTab = findTabByPath(repo.path.toString());
+      const existingTab = findTabByPath(repo.path);
       if (existingTab) {
         setActiveTab(existingTab.id);
       } else {
         addTab({
           type: TabType.Repository,
-          path: repo.path.toString(),
+          path: repo.path,
           name: repo.name,
-          repository: repo,
         });
       }
 
@@ -91,13 +92,13 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-105">
-        <DialogTitle icon={FolderPlus}>Initialize Repository</DialogTitle>
+        <DialogTitle icon={FolderPlus}>{t('repository.init.title')}</DialogTitle>
 
         <DialogBody>
           <FormField
-            label="Directory"
+            label={t('repository.init.directoryLabel')}
             htmlFor="init-path"
-            hint="Select an empty directory or create a new one"
+            hint={t('repository.init.directoryHint')}
           >
             <div className="flex gap-2">
               <Input
@@ -106,7 +107,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="/path/to/new/repo"
+                placeholder={t('repository.init.directoryPlaceholder')}
                 autoFocus
                 className="flex-1"
               />
@@ -118,8 +119,8 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
           <CheckboxField
             id="bare"
-            label="Create bare repository"
-            description="Bare repositories have no working directory (for servers)"
+            label={t('repository.init.bareLabel')}
+            description={t('repository.init.bareDescription')}
             checked={bare}
             onCheckedChange={setBare}
           />
@@ -134,11 +135,11 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isLoading}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button variant="primary" onClick={handleInit} disabled={isLoading || !path.trim()}>
-            {isLoading ? 'Creating...' : 'Create Repository'}
+            {isLoading ? t('repository.init.creating') : t('repository.init.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

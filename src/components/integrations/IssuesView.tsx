@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Plus, RefreshCw } from 'lucide-react';
 
@@ -11,6 +12,7 @@ import { IssueState } from '@/types';
 import type { Issue } from '@/types';
 
 export function IssuesView() {
+  const { t } = useTranslation();
   const {
     issues,
     selectedIssue,
@@ -60,8 +62,8 @@ export function IssuesView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-(--text-muted)">
-          <p>Not connected to provider.</p>
-          <p className="mt-2 text-sm">Connect in Settings to view issues.</p>
+          <p>{t('integrations.notConnected.message')}</p>
+          <p className="mt-2 text-sm">{t('integrations.notConnected.issuesHint')}</p>
         </div>
       </div>
     );
@@ -71,7 +73,9 @@ export function IssuesView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-(--border-color) bg-(--bg-primary)">
-        <span className="text-sm font-medium text-(--text-primary)">Issues</span>
+        <span className="text-sm font-medium text-(--text-primary)">
+          {t('integrations.issues.title')}
+        </span>
 
         {/* Filter tabs */}
         <div className="flex items-center gap-1 ml-4">
@@ -83,7 +87,7 @@ export function IssuesView() {
             }`}
             onClick={() => setIssueFilter(IssueState.Open)}
           >
-            Open
+            {t('integrations.issues.filterOpen')}
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
@@ -93,7 +97,7 @@ export function IssuesView() {
             }`}
             onClick={() => setIssueFilter(IssueState.Closed)}
           >
-            Closed
+            {t('integrations.issues.filterClosed')}
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
@@ -103,7 +107,7 @@ export function IssuesView() {
             }`}
             onClick={() => setIssueFilter(IssueState.All)}
           >
-            All
+            {t('integrations.issues.filterAll')}
           </button>
         </div>
 
@@ -114,7 +118,7 @@ export function IssuesView() {
           size="sm"
           onClick={handleRefresh}
           disabled={isLoadingIssues}
-          title="Refresh"
+          title={t('integrations.common.refresh')}
         >
           <RefreshCw size={14} className={isLoadingIssues ? 'animate-spin' : ''} />
         </Button>
@@ -123,7 +127,7 @@ export function IssuesView() {
           variant="primary"
           size="sm"
           onClick={() => setShowCreateDialog(true)}
-          title="New Issue"
+          title={t('integrations.common.newIssue')}
         >
           <Plus size={14} />
         </Button>

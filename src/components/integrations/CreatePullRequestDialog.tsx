@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
 
 import {
@@ -33,6 +34,7 @@ export function CreatePullRequestDialog({
   onClose,
   onCreated,
 }: CreatePullRequestDialogProps) {
+  const { t } = useTranslation();
   const { branches, loadBranches } = useRepositoryStore();
   const { createPullRequest } = useIntegrationStore();
 
@@ -91,19 +93,19 @@ export function CreatePullRequestDialog({
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
-      setError('Title is required');
+      setError(t('integrations.pullRequests.create.titleRequired'));
       return;
     }
     if (!sourceBranch) {
-      setError('Source branch is required');
+      setError(t('integrations.pullRequests.create.sourceBranchRequired'));
       return;
     }
     if (!targetBranch) {
-      setError('Target branch is required');
+      setError(t('integrations.pullRequests.create.targetBranchRequired'));
       return;
     }
     if (!isSourceBranchPushed) {
-      setError('Source branch must be pushed to the remote first');
+      setError(t('integrations.pullRequests.create.sourceMustBePushed'));
       return;
     }
 
@@ -118,7 +120,7 @@ export function CreatePullRequestDialog({
         targetBranch,
         draft: isDraft,
       });
-      toast.success('Pull request created successfully');
+      toast.success(t('integrations.pullRequests.create.created'));
       onCreated();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -134,12 +136,13 @@ export function CreatePullRequestDialog({
     isSourceBranchPushed,
     createPullRequest,
     onCreated,
+    t,
   ]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
-        <DialogTitle icon={GitBranch}>Create Pull Request</DialogTitle>
+        <DialogTitle icon={GitBranch}>{t('integrations.pullRequests.create.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -149,11 +152,11 @@ export function CreatePullRequestDialog({
           )}
 
           <FormField
-            label="From (source)"
+            label={t('integrations.pullRequests.create.fromLabel')}
             htmlFor="pr-source"
             error={
               sourceBranch && !isSourceBranchPushed
-                ? 'This branch has not been pushed to the remote yet'
+                ? t('integrations.pullRequests.create.notPushed')
                 : undefined
             }
           >
@@ -161,23 +164,23 @@ export function CreatePullRequestDialog({
               id="pr-source"
               value={sourceBranch}
               onValueChange={setSourceBranch}
-              placeholder="Select branch"
+              placeholder={t('integrations.pullRequests.create.selectBranch')}
             >
               {localBranches.map((branch) => (
                 <SelectItem key={branch.name} value={branch.name}>
                   {branch.name}
-                  {branch.isHead ? ' (current)' : ''}
+                  {branch.isHead ? t('integrations.pullRequests.create.currentSuffix') : ''}
                 </SelectItem>
               ))}
             </Select>
           </FormField>
 
-          <FormField label="Into (target)" htmlFor="pr-target">
+          <FormField label={t('integrations.pullRequests.create.intoLabel')} htmlFor="pr-target">
             <Select
               id="pr-target"
               value={targetBranch}
               onValueChange={setTargetBranch}
-              placeholder="Select branch"
+              placeholder={t('integrations.pullRequests.create.selectBranch')}
             >
               {localBranches
                 .filter((branch) => branch.name !== sourceBranch)
@@ -189,29 +192,32 @@ export function CreatePullRequestDialog({
             </Select>
           </FormField>
 
-          <FormField label="Title" htmlFor="pr-title">
+          <FormField label={t('integrations.pullRequests.create.titleLabel')} htmlFor="pr-title">
             <Input
               id="pr-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Pull request title"
+              placeholder={t('integrations.pullRequests.create.titlePlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Description (optional)" htmlFor="pr-body">
+          <FormField
+            label={t('integrations.pullRequests.create.descriptionLabel')}
+            htmlFor="pr-body"
+          >
             <Textarea
               id="pr-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Add a description..."
+              placeholder={t('integrations.pullRequests.create.descriptionPlaceholder')}
               rows={6}
             />
           </FormField>
 
           <CheckboxField
             id="pr-draft"
-            label="Create as draft"
+            label={t('integrations.pullRequests.create.createAsDraft')}
             checked={isDraft}
             onCheckedChange={setIsDraft}
           />
@@ -220,7 +226,7 @@ export function CreatePullRequestDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isSubmitting}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -228,7 +234,9 @@ export function CreatePullRequestDialog({
             onClick={handleSubmit}
             disabled={isSubmitting || !title.trim() || !sourceBranch || !targetBranch}
           >
-            {isSubmitting ? 'Creating...' : 'Create Pull Request'}
+            {isSubmitting
+              ? t('integrations.pullRequests.create.creating')
+              : t('integrations.pullRequests.create.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

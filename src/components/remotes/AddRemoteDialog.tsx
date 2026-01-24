@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Cloud } from 'lucide-react';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -22,6 +23,7 @@ interface AddRemoteDialogProps {
 }
 
 export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
+  const { t } = useTranslation();
   const [remoteName, setRemoteName] = useState('');
   const [remoteUrl, setRemoteUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,12 +41,12 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
 
   const handleAdd = async () => {
     if (!remoteName.trim()) {
-      setError('Remote name is required');
+      setError(t('remotes.add.nameRequired'));
       return;
     }
 
     if (!remoteUrl.trim()) {
-      setError('Remote URL is required');
+      setError(t('remotes.add.urlRequired'));
       return;
     }
 
@@ -71,29 +73,29 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={Cloud}>Add Remote</DialogTitle>
+        <DialogTitle icon={Cloud}>{t('remotes.add.title')}</DialogTitle>
 
         <DialogBody>
-          <FormField label="Remote Name" htmlFor="remote-name">
+          <FormField label={t('remotes.add.nameLabel')} htmlFor="remote-name">
             <Input
               id="remote-name"
               type="text"
               value={remoteName}
               onChange={(e) => setRemoteName(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="origin"
+              placeholder={t('remotes.add.namePlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Remote URL" htmlFor="remote-url">
+          <FormField label={t('remotes.add.urlLabel')} htmlFor="remote-url">
             <Input
               id="remote-url"
               type="url"
               value={remoteUrl}
               onChange={(e) => setRemoteUrl(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="https://github.com/user/repo.git"
+              placeholder={t('remotes.add.urlPlaceholder')}
             />
           </FormField>
 
@@ -106,14 +108,14 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleAdd}
             disabled={isLoading || !remoteName.trim() || !remoteUrl.trim()}
           >
-            {isLoading ? 'Adding...' : 'Add Remote'}
+            {isLoading ? t('remotes.add.adding') : t('remotes.add.addButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

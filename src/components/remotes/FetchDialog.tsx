@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 
 import { toast, useOperationProgress } from '@/hooks';
@@ -29,6 +30,7 @@ interface FetchDialogProps {
 }
 
 export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
+  const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
   const [fetchAll, setFetchAll] = useState(true);
@@ -74,7 +76,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
       notifyNewCommits(useRepositoryStore.getState().branches);
 
       onOpenChange(false);
-      toast.success('Fetch complete');
+      toast.success(t('remotes.fetch.complete'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -90,19 +92,19 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={RefreshCw}>Fetch from Remote</DialogTitle>
+        <DialogTitle icon={RefreshCw}>{t('remotes.fetch.title')}</DialogTitle>
 
         <DialogBody>
           <CheckboxField
             id="fetch-all"
-            label="Fetch from all remotes"
+            label={t('remotes.fetch.fetchAll')}
             checked={fetchAll}
             onCheckedChange={setFetchAll}
             disabled={isLoading}
           />
 
           {!fetchAll && (
-            <FormField label="Remote" htmlFor="remote-select">
+            <FormField label={t('remotes.fetch.remoteLabel')} htmlFor="remote-select">
               <Select
                 id="remote-select"
                 value={selectedRemote}
@@ -120,7 +122,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
 
           <CheckboxField
             id="prune"
-            label="Prune deleted remote branches"
+            label={t('remotes.fetch.prune')}
             checked={prune}
             onCheckedChange={setPrune}
             disabled={isLoading}
@@ -139,14 +141,14 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleFetch}
             disabled={isLoading || (!fetchAll && !selectedRemote)}
           >
-            {isLoading ? 'Fetching...' : 'Fetch'}
+            {isLoading ? t('remotes.fetch.fetching') : t('remotes.fetch.fetchButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

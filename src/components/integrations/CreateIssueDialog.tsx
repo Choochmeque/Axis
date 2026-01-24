@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CircleDot } from 'lucide-react';
 
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -25,6 +26,7 @@ interface CreateIssueDialogProps {
 }
 
 export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDialogProps) {
+  const { t } = useTranslation();
   const { createIssue } = useIntegrationStore();
 
   const [title, setTitle] = useState('');
@@ -45,7 +47,7 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
-      setError('Title is required');
+      setError(t('integrations.issues.create.titleRequired'));
       return;
     }
 
@@ -64,19 +66,19 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
         labels: labelList,
         assignees: [],
       });
-      toast.success('Issue created successfully');
+      toast.success(t('integrations.issues.create.created'));
       onCreated();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
-  }, [title, body, labels, createIssue, onCreated]);
+  }, [title, body, labels, createIssue, onCreated, t]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
-        <DialogTitle icon={CircleDot}>Create Issue</DialogTitle>
+        <DialogTitle icon={CircleDot}>{t('integrations.issues.create.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -85,36 +87,36 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
             </Alert>
           )}
 
-          <FormField label="Title" htmlFor="issue-title">
+          <FormField label={t('integrations.issues.create.titleLabel')} htmlFor="issue-title">
             <Input
               id="issue-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Issue title"
+              placeholder={t('integrations.issues.create.titlePlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Description (optional)" htmlFor="issue-body">
+          <FormField label={t('integrations.issues.create.descriptionLabel')} htmlFor="issue-body">
             <Textarea
               id="issue-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Add a description..."
+              placeholder={t('integrations.issues.create.descriptionPlaceholder')}
               rows={8}
             />
           </FormField>
 
           <FormField
-            label="Labels (optional)"
+            label={t('integrations.issues.create.labelsLabel')}
             htmlFor="issue-labels"
-            hint="Separate multiple labels with commas"
+            hint={t('integrations.issues.create.labelsHint')}
           >
             <Input
               id="issue-labels"
               value={labels}
               onChange={(e) => setLabels(e.target.value)}
-              placeholder="bug, enhancement, help wanted"
+              placeholder={t('integrations.issues.create.labelsPlaceholder')}
             />
           </FormField>
         </DialogBody>
@@ -122,11 +124,13 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isSubmitting}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || !title.trim()}>
-            {isSubmitting ? 'Creating...' : 'Create Issue'}
+            {isSubmitting
+              ? t('integrations.issues.create.creating')
+              : t('integrations.issues.create.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

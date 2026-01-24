@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FolderGit2 } from 'lucide-react';
 import { submoduleApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -22,6 +23,7 @@ interface AddSubmoduleDialogProps {
 }
 
 export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogProps) {
+  const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
   const [branch, setBranch] = useState('');
@@ -51,12 +53,12 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
 
   const handleAdd = async () => {
     if (!url.trim()) {
-      setError('Repository URL is required');
+      setError(t('sidebar.submodule.addDialog.urlRequired'));
       return;
     }
 
     if (!path.trim()) {
-      setError('Path is required');
+      setError(t('sidebar.submodule.addDialog.pathRequired'));
       return;
     }
 
@@ -89,25 +91,25 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-120">
-        <DialogTitle icon={FolderGit2}>Add Submodule</DialogTitle>
+        <DialogTitle icon={FolderGit2}>{t('sidebar.submodule.addDialog.title')}</DialogTitle>
 
         <DialogBody>
-          <FormField label="Repository URL" htmlFor="submodule-url">
+          <FormField label={t('sidebar.submodule.addDialog.urlLabel')} htmlFor="submodule-url">
             <Input
               id="submodule-url"
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="https://github.com/user/repo.git"
+              placeholder={t('sidebar.submodule.addDialog.urlPlaceholder')}
               autoFocus
             />
           </FormField>
 
           <FormField
-            label="Path"
+            label={t('sidebar.submodule.addDialog.pathLabel')}
             htmlFor="submodule-path"
-            hint="Relative path where the submodule will be cloned"
+            hint={t('sidebar.submodule.addDialog.pathHint')}
           >
             <Input
               id="submodule-path"
@@ -115,18 +117,21 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
               value={path}
               onChange={(e) => setPath(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="libs/my-submodule"
+              placeholder={t('sidebar.submodule.addDialog.pathPlaceholder')}
             />
           </FormField>
 
-          <FormField label="Branch (optional)" htmlFor="submodule-branch">
+          <FormField
+            label={t('sidebar.submodule.addDialog.branchLabel')}
+            htmlFor="submodule-branch"
+          >
             <Input
               id="submodule-branch"
               type="text"
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="main"
+              placeholder={t('sidebar.submodule.addDialog.branchPlaceholder')}
             />
           </FormField>
 
@@ -139,14 +144,16 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleAdd}
             disabled={isLoading || !url.trim() || !path.trim()}
           >
-            {isLoading ? 'Adding...' : 'Add Submodule'}
+            {isLoading
+              ? t('sidebar.submodule.addDialog.adding')
+              : t('sidebar.submodule.addDialog.addButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

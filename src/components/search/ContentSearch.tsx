@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui';
 import { grepApi } from '@/services/api';
@@ -10,6 +11,7 @@ interface ContentSearchProps {
 }
 
 export function ContentSearch({ onFileSelect }: ContentSearchProps) {
+  const { t } = useTranslation();
   const [pattern, setPattern] = useState('');
   const [results, setResults] = useState<GrepResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +48,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       setExpandedFiles(files);
     } catch (err) {
       console.error('Search failed:', err);
-      setError('Search failed');
+      setError(t('search.failed'));
       setResults(null);
     } finally {
       setIsLoading(false);
@@ -92,7 +94,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       <div className="flex items-center py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <Search size={16} />
-          <span>Search in Files</span>
+          <span>{t('search.title')}</span>
         </div>
       </div>
 
@@ -104,7 +106,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search pattern..."
+            placeholder={t('search.placeholder')}
             className="w-full py-1.5 px-7 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)"
           />
           {pattern && (
@@ -124,7 +126,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
           onClick={handleSearch}
           disabled={isLoading || !pattern.trim()}
         >
-          {isLoading ? 'Searching...' : 'Search'}
+          {isLoading ? t('search.searching') : t('search.searchButton')}
         </button>
       </div>
 
@@ -134,7 +136,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
           onClick={() => setShowOptions(!showOptions)}
         >
           {showOptions ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <span>Options</span>
+          <span>{t('search.options')}</span>
         </button>
         {showOptions && (
           <div className="flex gap-4 py-2 px-1">
@@ -148,7 +150,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                 htmlFor="ignore-case"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
               >
-                Ignore case
+                {t('search.ignoreCase')}
               </label>
             </div>
             <div className="flex items-center gap-1.5">
@@ -161,7 +163,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                 htmlFor="whole-word"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
               >
-                Whole word
+                {t('search.wholeWord')}
               </label>
             </div>
             <div className="flex items-center gap-1.5">
@@ -174,7 +176,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                 htmlFor="use-regex"
                 className="text-xs text-(--text-secondary) cursor-pointer hover:text-(--text-primary)"
               >
-                Use regex
+                {t('search.useRegex')}
               </label>
             </div>
           </div>
@@ -191,8 +193,10 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       <div className="flex-1 overflow-y-auto">
         {results && (
           <div className="py-2 px-3 text-xs text-(--text-secondary) border-b border-(--border-color)">
-            {results.totalMatches} {results.totalMatches === 1 ? 'result' : 'results'} in{' '}
-            {Object.keys(groupedResults || {}).length} files
+            {t('search.results', {
+              count: results.totalMatches,
+              files: Object.keys(groupedResults || {}).length,
+            })}
           </div>
         )}
 
@@ -235,7 +239,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
 
         {results && results.totalMatches === 0 && (
           <div className="py-6 text-center text-(--text-muted)">
-            No results found for "{pattern}"
+            {t('search.noResults', { pattern })}
           </div>
         )}
       </div>

@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+
+import i18n from '@/i18n';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { lfsApi } from '@/services/api';
 import { useToastStore } from './toastStore';
 import type {
@@ -147,21 +150,21 @@ export const useLfsStore = create<LfsState>((set, get) => ({
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: 'Git LFS initialized successfully',
+          title: i18n.t('store.lfs.initialized'),
         });
         await get().loadStatus();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to initialize LFS: ${error}`,
+        title: i18n.t('store.lfs.initFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {
@@ -175,21 +178,21 @@ export const useLfsStore = create<LfsState>((set, get) => ({
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: `Tracking pattern: ${pattern}`,
+          title: i18n.t('store.lfs.trackingPattern', { pattern }),
         });
         await get().loadPatterns();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to track pattern: ${error}`,
+        title: i18n.t('store.lfs.trackFailed', { error: getErrorMessage(error) }),
       });
       return false;
     }
@@ -201,21 +204,21 @@ export const useLfsStore = create<LfsState>((set, get) => ({
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: `Untracked pattern: ${pattern}`,
+          title: i18n.t('store.lfs.untrackedPattern', { pattern }),
         });
         await get().loadPatterns();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to untrack pattern: ${error}`,
+        title: i18n.t('store.lfs.untrackFailed', { error: getErrorMessage(error) }),
       });
       return false;
     }
@@ -224,25 +227,27 @@ export const useLfsStore = create<LfsState>((set, get) => ({
   fetch: async (options?: LfsFetchOptions) => {
     set({ isFetching: true });
     try {
-      const result = await lfsApi.fetch(options ?? { all: false, recent: false, refs: [] });
+      const result = await lfsApi.fetch(
+        options ?? { all: false, recent: false, remote: null, refs: [] }
+      );
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: 'LFS objects fetched',
+          title: i18n.t('store.lfs.objectsFetched'),
         });
         await get().loadFiles();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to fetch LFS objects: ${error}`,
+        title: i18n.t('store.lfs.fetchFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {
@@ -253,25 +258,25 @@ export const useLfsStore = create<LfsState>((set, get) => ({
   pull: async (options?: LfsPullOptions) => {
     set({ isPulling: true });
     try {
-      const result = await lfsApi.pull(options ?? {});
+      const result = await lfsApi.pull(options ?? { remote: null });
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: 'LFS objects pulled',
+          title: i18n.t('store.lfs.objectsPulled'),
         });
         await get().loadFiles();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to pull LFS objects: ${error}`,
+        title: i18n.t('store.lfs.pullFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {
@@ -282,24 +287,24 @@ export const useLfsStore = create<LfsState>((set, get) => ({
   push: async (options?: LfsPushOptions) => {
     set({ isPushing: true });
     try {
-      const result = await lfsApi.push(options ?? { all: false, dryRun: false });
+      const result = await lfsApi.push(options ?? { remote: null, all: false, dryRun: false });
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: 'LFS objects pushed',
+          title: i18n.t('store.lfs.objectsPushed'),
         });
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to push LFS objects: ${error}`,
+        title: i18n.t('store.lfs.pushFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {
@@ -314,21 +319,21 @@ export const useLfsStore = create<LfsState>((set, get) => ({
       if (result.success) {
         useToastStore.getState().addToast({
           type: 'success',
-          message: result.message,
+          title: result.message,
         });
         await get().loadAll();
         return true;
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          message: result.message,
+          title: result.message,
         });
         return false;
       }
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to migrate: ${error}`,
+        title: i18n.t('store.lfs.migrateFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {
@@ -342,13 +347,13 @@ export const useLfsStore = create<LfsState>((set, get) => ({
       const result = await lfsApi.prune(options ?? { dryRun: false, verifyRemote: false });
       useToastStore.getState().addToast({
         type: result.success ? 'success' : 'error',
-        message: result.message,
+        title: result.message,
       });
       return result.success;
     } catch (error) {
       useToastStore.getState().addToast({
         type: 'error',
-        message: `Failed to prune LFS objects: ${error}`,
+        title: i18n.t('store.lfs.pruneFailed', { error: getErrorMessage(error) }),
       });
       return false;
     } finally {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { toast, useReferenceMention } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -33,6 +34,7 @@ import {
 } from '@/lib/conventionalCommits';
 
 export function CommitForm() {
+  const { t } = useTranslation();
   const {
     status,
     commitMessage,
@@ -186,7 +188,7 @@ export function CommitForm() {
 
   const handleStructuredModeToggle = (enabled: boolean) => {
     if (!settings?.conventionalCommitsEnabled) {
-      toast.info('Enable conventional commits in settings');
+      toast.info(t('staging.conventionalNotEnabled'));
       return;
     }
 
@@ -315,7 +317,7 @@ export function CommitForm() {
         }
       }
 
-      toast.success(`Generated with ${response.modelUsed}`);
+      toast.success(t('notifications.success.aiGenerated', { model: response.modelUsed }));
     } catch (err) {
       console.error('Failed to generate commit message:', err);
       toast.error(getErrorMessage(err));
@@ -334,7 +336,7 @@ export function CommitForm() {
       } else {
         // Fall back to free-form if message doesn't parse
         setStructuredMode(false);
-        toast.info('Existing message is not in conventional format');
+        toast.info(t('staging.notConventionalFormat'));
       }
     }
   }, [isAmending]);
@@ -358,42 +360,41 @@ export function CommitForm() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1 py-1 px-2 border-none bg-transparent text-(--text-secondary) text-xs cursor-pointer rounded transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)">
-              <span>Commit Options...</span>
+              <span>{t('staging.commitOptions.title')}</span>
               <ChevronDown size={12} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="min-w-45" align="end">
             <DropdownMenuCheckboxItem checked={isAmending} onCheckedChange={setIsAmending}>
-              Amend last commit
+              {t('staging.commitOptions.amendLastCommit')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={bypassHooks}
               onCheckedChange={setBypassHooks}
               disabled={!hasCommitHooks}
             >
-              Bypass commit hooks
+              {t('staging.commitOptions.bypassHooks')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={signCommit}
               onCheckedChange={setSignCommit}
               disabled={!signingAvailable}
             >
-              Sign commit
               {!signingAvailable && signingConfig
-                ? ' (no key configured)'
+                ? t('staging.commitOptions.signCommitNoKey')
                 : !signingAvailable
-                  ? ' (unavailable)'
-                  : ''}
+                  ? t('staging.commitOptions.signCommitUnavailable')
+                  : t('staging.commitOptions.signCommit')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem checked={signOff} onCheckedChange={setSignOff}>
-              Sign off
+              {t('staging.commitOptions.signOff')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={structuredMode}
               onCheckedChange={handleStructuredModeToggle}
               disabled={!settings?.conventionalCommitsEnabled}
             >
-              Structured format
+              {t('staging.commitOptions.structuredFormat')}
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -401,7 +402,9 @@ export function CommitForm() {
               disabled={!settings?.aiEnabled || stagedCount === 0 || isGeneratingMessage}
               icon={Sparkles}
             >
-              {isGeneratingMessage ? 'Generating...' : 'Generate with AI'}
+              {isGeneratingMessage
+                ? t('staging.commitOptions.generating')
+                : t('staging.commitOptions.generateWithAi')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -416,7 +419,7 @@ export function CommitForm() {
                 onValueChange={(value) => handleCommitPartChange('type', value as CommitType | '')}
                 className="cc-type-select"
                 disabled={isCommitting}
-                placeholder="type"
+                placeholder={t('staging.commitForm.type')}
               >
                 {COMMIT_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
@@ -428,7 +431,7 @@ export function CommitForm() {
                 type="text"
                 value={commitParts.scope}
                 onChange={(e) => handleCommitPartChange('scope', e.target.value)}
-                placeholder="scope"
+                placeholder={t('staging.commitForm.scope')}
                 className="cc-scope-input"
                 disabled={isCommitting}
                 list="cc-scopes"
@@ -453,7 +456,7 @@ export function CommitForm() {
               type="text"
               value={commitParts.subject}
               onChange={(e) => handleCommitPartChange('subject', e.target.value)}
-              placeholder="subject"
+              placeholder={t('staging.commitForm.subject')}
               className="cc-subject-input"
               disabled={isCommitting}
               onKeyDown={(e) => {
@@ -479,7 +482,7 @@ export function CommitForm() {
             </div>
             <textarea
               className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-sm resize-none cc-body focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
-              placeholder="body (optional)"
+              placeholder={t('staging.commitForm.bodyOptional')}
               value={commitParts.body}
               onChange={(e) => handleCommitPartChange('body', e.target.value)}
               disabled={isCommitting}
@@ -491,7 +494,11 @@ export function CommitForm() {
             <textarea
               ref={textareaRef}
               className="w-full h-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
-              placeholder={isAmending ? 'Leave empty to keep existing message' : 'Commit message'}
+              placeholder={
+                isAmending
+                  ? t('staging.commitForm.amendPlaceholder')
+                  : t('staging.commitForm.placeholder')
+              }
               value={localMessage}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
@@ -527,7 +534,9 @@ export function CommitForm() {
               htmlFor="push-after-commit"
               className="text-xs text-(--text-secondary) cursor-pointer select-none"
             >
-              Push to origin/{repository?.currentBranch || 'main'}
+              {t('staging.commitForm.pushToOrigin', {
+                branch: repository?.currentBranch || 'main',
+              })}
             </label>
           </div>
           <button
@@ -535,7 +544,11 @@ export function CommitForm() {
             onClick={handleCommit}
             disabled={!canCommit || isCommitting}
           >
-            {isCommitting ? 'Committing...' : isAmending ? 'Amend' : 'Commit'}
+            {isCommitting
+              ? t('staging.commitForm.committing')
+              : isAmending
+                ? t('staging.commitForm.amendButton')
+                : t('staging.commitForm.commitButton')}
             {stagedCount > 0 && <span className="opacity-80 font-normal">({stagedCount})</span>}
           </button>
         </div>

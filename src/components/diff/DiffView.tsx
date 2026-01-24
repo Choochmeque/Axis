@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Image } from 'lucide-react';
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
 import { DiffLineType, DiffStatus } from '@/types';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { diffApi } from '@/services/api';
 import { useStagingStore, DiffCompareMode, WhitespaceMode } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -93,6 +95,7 @@ function BinaryImageView({
   parentCommitOid,
   status,
 }: BinaryImageViewProps) {
+  const { t } = useTranslation();
   const [newImageUrl, setNewImageUrl] = useState<string | null>(null);
   const [oldImageUrl, setOldImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,7 +159,7 @@ function BinaryImageView({
         await Promise.all(promises);
       } catch (err) {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load image');
+        setError(getErrorMessage(err));
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -175,7 +178,7 @@ function BinaryImageView({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-(--text-tertiary) text-sm">
-        Loading image...
+        {t('diff.loadingImage')}
       </div>
     );
   }
@@ -184,7 +187,7 @@ function BinaryImageView({
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-(--text-tertiary) text-sm">
         <Image size={48} className="opacity-50" />
-        <span>Failed to load image</span>
+        <span>{t('diff.failedToLoadImage')}</span>
         <span className="text-xs text-error">{error}</span>
       </div>
     );
@@ -198,22 +201,26 @@ function BinaryImageView({
     return (
       <div className="flex h-full">
         <div className="flex-1 flex flex-col items-center justify-center p-4 gap-2 border-r border-(--border-color)">
-          <span className="text-xs font-medium text-(--text-secondary) mb-2">Before</span>
+          <span className="text-xs font-medium text-(--text-secondary) mb-2">
+            {t('diff.before')}
+          </span>
           {oldImageUrl ? (
-            <img src={oldImageUrl} alt="Before" className={imageClass} />
+            <img src={oldImageUrl} alt={t('diff.before')} className={imageClass} />
           ) : (
             <div className="flex items-center justify-center text-(--text-tertiary) text-sm">
-              <span>Not available</span>
+              <span>{t('diff.notAvailable')}</span>
             </div>
           )}
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-4 gap-2">
-          <span className="text-xs font-medium text-(--text-secondary) mb-2">After</span>
+          <span className="text-xs font-medium text-(--text-secondary) mb-2">
+            {t('diff.after')}
+          </span>
           {newImageUrl ? (
-            <img src={newImageUrl} alt="After" className={imageClass} />
+            <img src={newImageUrl} alt={t('diff.after')} className={imageClass} />
           ) : (
             <div className="flex items-center justify-center text-(--text-tertiary) text-sm">
-              <span>Not available</span>
+              <span>{t('diff.notAvailable')}</span>
             </div>
           )}
         </div>
@@ -230,7 +237,7 @@ function BinaryImageView({
         ) : (
           <div className="flex flex-col items-center gap-2 text-(--text-tertiary)">
             <Image size={48} className="opacity-50" />
-            <span>Image not available</span>
+            <span>{t('diff.imageNotAvailable')}</span>
           </div>
         )
       ) : (
@@ -247,8 +254,9 @@ interface ImageDiffHeaderProps {
 }
 
 function ImageDiffHeader({ diff }: ImageDiffHeaderProps) {
-  const fileName = diff.newPath || diff.oldPath || 'Unknown file';
-  const statusText = getStatusText(diff.status);
+  const { t } = useTranslation();
+  const fileName = diff.newPath || diff.oldPath || t('diff.unknownFile');
+  const statusText = getStatusText(diff.status, t);
   const statusColorClass = getStatusColorClass(diff.status);
 
   return (
@@ -299,6 +307,7 @@ export function DiffView({
   onUnstageHunk,
   onDiscardHunk,
 }: DiffViewProps) {
+  const { t } = useTranslation();
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
   const contextLinesInitialized = useRef(false);
   const viewModeInitialized = useRef(false);
@@ -370,7 +379,7 @@ export function DiffView({
   if (isLoading) {
     return (
       <div className={diffViewClass}>
-        <div className={emptyStateClass}>Loading diff...</div>
+        <div className={emptyStateClass}>{t('diff.loadingDiff')}</div>
       </div>
     );
   }
@@ -378,7 +387,7 @@ export function DiffView({
   if (!diff) {
     return (
       <div className={diffViewClass}>
-        <div className={emptyStateClass}>Select a file to view changes</div>
+        <div className={emptyStateClass}>{t('diff.selectFile')}</div>
       </div>
     );
   }
@@ -409,7 +418,7 @@ export function DiffView({
       <div className={diffViewClass}>
         <div className={cn(emptyStateClass, '[&>svg]:opacity-50')}>
           <Binary size={48} />
-          <span>Binary file</span>
+          <span>{t('diff.binaryFile')}</span>
         </div>
       </div>
     );
@@ -426,7 +435,7 @@ export function DiffView({
       />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
-          <div className={emptyStateClass}>No changes in this file</div>
+          <div className={emptyStateClass}>{t('diff.noChanges')}</div>
         ) : viewMode === 'unified' ? (
           <UnifiedDiff
             hunks={diff.hunks}
@@ -472,8 +481,9 @@ function DiffHeader({
   diffSettings,
   onDiffSettingsChange,
 }: DiffHeaderProps) {
-  const fileName = diff.newPath || diff.oldPath || 'Unknown file';
-  const statusText = getStatusText(diff.status);
+  const { t } = useTranslation();
+  const fileName = diff.newPath || diff.oldPath || t('diff.unknownFile');
+  const statusText = getStatusText(diff.status, t);
   const statusColorClass = getStatusColorClass(diff.status);
 
   return (
@@ -501,15 +511,15 @@ function DiffHeader({
       {/* Diff Settings Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="dropdown-button" title="Diff options">
-            <span>Context: {diffSettings.contextLines}</span>
+          <button className="dropdown-button" title={t('diff.options.title')}>
+            <span>{t('diff.options.context', { lines: diffSettings.contextLines })}</span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {/* External Diff */}
           <DropdownMenuItem disabled shortcut="⌘D">
-            External Diff
+            {t('diff.options.externalDiff')}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -522,17 +532,17 @@ function DiffHeader({
             }
           >
             <DropdownMenuRadioItem value={WhitespaceMode.Show}>
-              Show whitespace
+              {t('diff.options.showWhitespace')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={WhitespaceMode.Ignore}>
-              Ignore whitespace
+              {t('diff.options.ignoreWhitespace')}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
 
           <DropdownMenuSeparator />
 
           {/* Lines of Context */}
-          <DropdownMenuLabel>Lines of context</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('diff.options.linesOfContext')}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={String(diffSettings.contextLines)}
             onValueChange={(value) =>
@@ -556,10 +566,10 @@ function DiffHeader({
             }
           >
             <DropdownMenuRadioItem value={DiffCompareMode.Parent}>
-              Diff vs parent
+              {t('diff.options.diffVsParent')}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={DiffCompareMode.Merged}>
-              Diff vs merged
+              {t('diff.options.diffVsMerged')}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
@@ -573,7 +583,7 @@ function DiffHeader({
               'bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white'
           )}
           onClick={() => onViewModeChange('unified')}
-          title="Unified view"
+          title={t('diff.viewMode.unified')}
         >
           <Rows size={14} />
         </button>
@@ -584,7 +594,7 @@ function DiffHeader({
               'bg-(--accent-color) text-white hover:bg-(--accent-color) hover:text-white'
           )}
           onClick={() => onViewModeChange('split')}
-          title="Side-by-side view"
+          title={t('diff.viewMode.split')}
         >
           <Columns size={14} />
         </button>
@@ -617,6 +627,8 @@ function UnifiedDiff({
   onUnstageHunk,
   onDiscardHunk,
 }: UnifiedDiffProps) {
+  const { t } = useTranslation();
+
   return (
     <div className={cn(!wordWrap && 'min-w-fit')}>
       {hunks.map((hunk, hunkIndex) => (
@@ -630,10 +642,10 @@ function UnifiedDiff({
                 className={hunkActionClass}
                 onClick={() => onStageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Stage hunk"
+                title={t('diff.hunk.stageTitle')}
               >
                 <Plus size={14} />
-                <span>Stage</span>
+                <span>{t('diff.hunk.stage')}</span>
               </button>
             )}
             {mode === 'workdir' && onDiscardHunk && (
@@ -644,10 +656,10 @@ function UnifiedDiff({
                 )}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Discard hunk"
+                title={t('diff.hunk.discardTitle')}
               >
                 <X size={14} />
-                <span>Discard</span>
+                <span>{t('diff.hunk.discard')}</span>
               </button>
             )}
             {mode === 'staged' && onUnstageHunk && (
@@ -655,10 +667,10 @@ function UnifiedDiff({
                 className={hunkActionClass}
                 onClick={() => onUnstageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Unstage hunk"
+                title={t('diff.hunk.unstageTitle')}
               >
                 <Minus size={14} />
-                <span>Unstage</span>
+                <span>{t('diff.hunk.unstage')}</span>
               </button>
             )}
           </div>
@@ -735,6 +747,8 @@ function SplitDiff({
   onUnstageHunk,
   onDiscardHunk,
 }: SplitDiffProps) {
+  const { t } = useTranslation();
+
   return (
     <div className={cn(!wordWrap && 'min-w-fit')}>
       {hunks.map((hunk, hunkIndex) => (
@@ -748,10 +762,10 @@ function SplitDiff({
                 className={hunkActionClass}
                 onClick={() => onStageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Stage hunk"
+                title={t('diff.hunk.stageTitle')}
               >
                 <Plus size={14} />
-                <span>Stage</span>
+                <span>{t('diff.hunk.stage')}</span>
               </button>
             )}
             {mode === 'workdir' && onDiscardHunk && (
@@ -762,10 +776,10 @@ function SplitDiff({
                 )}
                 onClick={() => onDiscardHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Discard hunk"
+                title={t('diff.hunk.discardTitle')}
               >
                 <X size={14} />
-                <span>Discard</span>
+                <span>{t('diff.hunk.discard')}</span>
               </button>
             )}
             {mode === 'staged' && onUnstageHunk && (
@@ -773,10 +787,10 @@ function SplitDiff({
                 className={hunkActionClass}
                 onClick={() => onUnstageHunk(hunkIndex)}
                 disabled={loadingHunk !== null}
-                title="Unstage hunk"
+                title={t('diff.hunk.unstageTitle')}
               >
                 <Minus size={14} />
-                <span>Unstage</span>
+                <span>{t('diff.hunk.unstage')}</span>
               </button>
             )}
           </div>
@@ -946,24 +960,24 @@ function getLinePrefix(lineType: DiffLineTypeType): string {
   }
 }
 
-function getStatusText(status: string): string {
+function getStatusText(status: string, t: (key: string) => string): string {
   switch (status) {
     case DiffStatus.Added:
-      return 'Added';
+      return t('diff.status.added');
     case DiffStatus.Deleted:
-      return 'Deleted';
+      return t('diff.status.deleted');
     case DiffStatus.Modified:
-      return 'Modified';
+      return t('diff.status.modified');
     case DiffStatus.Renamed:
-      return 'Renamed';
+      return t('diff.status.renamed');
     case DiffStatus.Copied:
-      return 'Copied';
+      return t('diff.status.copied');
     case DiffStatus.TypeChanged:
-      return 'Type Changed';
+      return t('diff.status.typeChanged');
     case DiffStatus.Untracked:
-      return 'Untracked';
+      return t('diff.status.untracked');
     case DiffStatus.Conflicted:
-      return 'Conflicted';
+      return t('diff.status.conflicted');
     default:
       return status;
   }

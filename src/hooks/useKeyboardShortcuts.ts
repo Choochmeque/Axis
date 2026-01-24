@@ -156,19 +156,20 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
 }
 
 // Keyboard shortcut definitions for help display
+// Note: descriptionKey should be translated using t() when displayed
 export const KEYBOARD_SHORTCUTS = [
-  { key: '⌘/Ctrl + ,', description: 'Open Settings' },
-  { key: '⌘/Ctrl + O', description: 'Open Repository' },
-  { key: '⌘/Ctrl + R', description: 'Refresh' },
-  { key: '⌘/Ctrl + Enter', description: 'Commit' },
-  { key: '⌘/Ctrl + Shift + P', description: 'Push' },
-  { key: '⌘/Ctrl + Shift + L', description: 'Pull' },
-  { key: '⌘/Ctrl + Shift + F', description: 'Fetch' },
-  { key: '⌘/Ctrl + B', description: 'Create Branch' },
-  { key: '⌘/Ctrl + Shift + S', description: 'Stash' },
-  { key: '⌘/Ctrl + F', description: 'Search' },
-  { key: '1', description: 'File Status View' },
-  { key: '2', description: 'History View' },
-  { key: '3', description: 'Search View' },
-  { key: 'Escape', description: 'Close Dialog' },
+  { key: '⌘/Ctrl + ,', descriptionKey: 'shortcuts.openSettings' },
+  { key: '⌘/Ctrl + O', descriptionKey: 'shortcuts.openRepository' },
+  { key: '⌘/Ctrl + R', descriptionKey: 'shortcuts.refresh' },
+  { key: '⌘/Ctrl + Enter', descriptionKey: 'shortcuts.commit' },
+  { key: '⌘/Ctrl + Shift + P', descriptionKey: 'shortcuts.push' },
+  { key: '⌘/Ctrl + Shift + L', descriptionKey: 'shortcuts.pull' },
+  { key: '⌘/Ctrl + Shift + F', descriptionKey: 'shortcuts.fetch' },
+  { key: '⌘/Ctrl + B', descriptionKey: 'shortcuts.createBranch' },
+  { key: '⌘/Ctrl + Shift + S', descriptionKey: 'shortcuts.stash' },
+  { key: '⌘/Ctrl + F', descriptionKey: 'shortcuts.search' },
+  { key: '1', descriptionKey: 'shortcuts.fileStatusView' },
+  { key: '2', descriptionKey: 'shortcuts.historyView' },
+  { key: '3', descriptionKey: 'shortcuts.searchView' },
+  { key: 'Escape', descriptionKey: 'shortcuts.closeDialog' },
 ];

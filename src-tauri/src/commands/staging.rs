@@ -114,7 +114,7 @@ pub async fn create_commit(
 
         // 2. Run prepare-commit-msg hook
         let msg_file = path.join(".git/COMMIT_EDITMSG");
-        fs::write(&msg_file, &message).map_err(AxisError::IoError)?;
+        fs::write(&msg_file, &message)?;
 
         let msg_file_clone = msg_file.clone();
         let result =
@@ -125,7 +125,7 @@ pub async fn create_commit(
 
         // Read potentially modified message
         if !result.skipped {
-            final_message = fs::read_to_string(&msg_file).map_err(AxisError::IoError)?;
+            final_message = fs::read_to_string(&msg_file)?;
         }
 
         // 3. Run commit-msg hook
@@ -137,7 +137,7 @@ pub async fn create_commit(
 
         // Read potentially modified message again
         if !result.skipped {
-            final_message = fs::read_to_string(&msg_file).map_err(AxisError::IoError)?;
+            final_message = fs::read_to_string(&msg_file)?;
         }
     }
 
@@ -191,10 +191,10 @@ pub async fn amend_commit(
 
     let mut final_message = message.clone();
 
-    if !skip_hooks && final_message.is_some() {
+    if let (false, Some(msg)) = (skip_hooks, &final_message) {
         // Run commit-msg hook on the new message
         let msg_file = path.join(".git/COMMIT_EDITMSG");
-        fs::write(&msg_file, final_message.as_ref().unwrap()).map_err(AxisError::IoError)?;
+        fs::write(&msg_file, msg)?;
 
         let msg_file_clone = msg_file.clone();
         let result = git_service.with_hook(|hook| hook.run_commit_msg(&msg_file_clone));
@@ -204,7 +204,7 @@ pub async fn amend_commit(
 
         // Read potentially modified message
         if !result.skipped {
-            final_message = Some(fs::read_to_string(&msg_file).map_err(AxisError::IoError)?);
+            final_message = Some(fs::read_to_string(&msg_file)?);
         }
     }
 

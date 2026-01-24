@@ -1,4 +1,5 @@
 import { useMemo, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import type { RebasePreview } from '../../types';
 
@@ -15,6 +16,7 @@ const TEXT_OFFSET = 16;
 const MAX_COMMITS_SHOWN = 4;
 
 export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDiagramProps) {
+  const { t } = useTranslation();
   const { beforeData, afterData, svgHeight, hasMoreCommits, extraCommitCount } = useMemo(() => {
     const commitsToRebase = preview.commitsToRebase;
     const targetAhead = preview.targetCommitsAhead;
@@ -104,7 +106,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           fill="var(--text-tertiary)"
           fontStyle="italic"
         >
-          +{extraCommitCount} more
+          {t('merge.rebasePreview.more', { count: extraCommitCount })}
         </text>
       );
       elements.push(
@@ -261,7 +263,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
           fill="var(--text-tertiary)"
           fontStyle="italic"
         >
-          +{extraCommitCount} more
+          {t('merge.rebasePreview.more', { count: extraCommitCount })}
         </text>
       );
       elements.push(
@@ -349,7 +351,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
     return (
       <div className="rebase-preview-empty">
         <span className="text-sm text-(--text-secondary)">
-          No commits to rebase. Branch is already up to date.
+          {t('merge.rebasePreview.noCommits')}
         </span>
       </div>
     );
@@ -358,7 +360,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
   return (
     <div className="rebase-preview">
       <div className="rebase-preview-panel">
-        <div className="rebase-preview-header">Before</div>
+        <div className="rebase-preview-header">{t('merge.rebasePreview.before')}</div>
         <div className="rebase-preview-branch-info">
           <span className="rebase-preview-branch-name" style={{ color: 'var(--accent-color)' }}>
             {currentBranch}
@@ -374,7 +376,7 @@ export function RebasePreviewDiagram({ preview, currentBranch }: RebasePreviewDi
       </div>
 
       <div className="rebase-preview-panel">
-        <div className="rebase-preview-header">After</div>
+        <div className="rebase-preview-header">{t('merge.rebasePreview.after')}</div>
         <div className="rebase-preview-branch-info">
           <span
             className="rebase-preview-branch-name"

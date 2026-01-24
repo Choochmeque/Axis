@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   HardDrive,
   RefreshCw,
@@ -35,6 +36,7 @@ const btnSmallClass =
 type TabType = 'patterns' | 'files';
 
 export function LfsView() {
+  const { t } = useTranslation();
   const {
     status,
     patterns,
@@ -78,7 +80,7 @@ export function LfsView() {
   };
 
   const handleUntrack = async (pattern: string) => {
-    if (!confirm(`Untrack pattern "${pattern}"?`)) {
+    if (!confirm(t('lfs.patterns.untrackConfirm', { pattern }))) {
       return;
     }
     await untrack(pattern);
@@ -98,18 +100,16 @@ export function LfsView() {
         <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
           <div className="flex items-center gap-2 font-medium text-(--text-primary)">
             <HardDrive size={16} />
-            <span>Git LFS</span>
+            <span>{t('lfs.title')}</span>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-80">
             <AlertCircle size={48} className="mx-auto mb-4 text-(--text-muted)" />
             <h3 className="text-lg font-medium text-(--text-primary) mb-2">
-              Git LFS Not Installed
+              {t('lfs.notInstalled.title')}
             </h3>
-            <p className="text-sm text-(--text-muted) mb-4">
-              Git LFS is not installed on your system. Install it to manage large files efficiently.
-            </p>
+            <p className="text-sm text-(--text-muted) mb-4">{t('lfs.notInstalled.message')}</p>
             <a
               href="https://git-lfs.com"
               target="_blank"
@@ -120,7 +120,7 @@ export function LfsView() {
               )}
             >
               <ExternalLink size={14} />
-              Install Git LFS
+              {t('common.install')} Git LFS
             </a>
           </div>
         </div>
@@ -135,7 +135,7 @@ export function LfsView() {
         <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
           <div className="flex items-center gap-2 font-medium text-(--text-primary)">
             <HardDrive size={16} />
-            <span>Git LFS</span>
+            <span>{t('lfs.title')}</span>
             {status.version && (
               <span className="text-xs text-(--text-muted)">v{status.version}</span>
             )}
@@ -144,11 +144,10 @@ export function LfsView() {
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-80">
             <HardDrive size={48} className="mx-auto mb-4 text-(--text-muted)" />
-            <h3 className="text-lg font-medium text-(--text-primary) mb-2">Initialize Git LFS</h3>
-            <p className="text-sm text-(--text-muted) mb-4">
-              Git LFS is not initialized in this repository. Initialize it to start tracking large
-              files.
-            </p>
+            <h3 className="text-lg font-medium text-(--text-primary) mb-2">
+              {t('lfs.initialize.button')}
+            </h3>
+            <p className="text-sm text-(--text-muted) mb-4">{t('lfs.notInstalled.message')}</p>
             <button
               className={cn(
                 btnSmallClass,
@@ -157,7 +156,7 @@ export function LfsView() {
               onClick={() => install()}
               disabled={isInstalling}
             >
-              {isInstalling ? 'Initializing...' : 'Initialize LFS'}
+              {isInstalling ? t('lfs.initialize.initializing') : t('lfs.initialize.buttonShort')}
             </button>
           </div>
         </div>
@@ -174,7 +173,7 @@ export function LfsView() {
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <HardDrive size={16} />
-          <span>Git LFS</span>
+          <span>{t('lfs.title')}</span>
           {status?.version && (
             <span className="text-xs text-(--text-muted)">v{status.version}</span>
           )}
@@ -183,14 +182,14 @@ export function LfsView() {
           <button
             className={btnIconClass}
             onClick={() => setShowTrackDialog(true)}
-            title="Track pattern"
+            title={t('lfs.actions.trackPattern')}
           >
             <Plus size={16} />
           </button>
           <button
             className={btnIconClass}
             onClick={() => pull()}
-            title="Pull LFS objects"
+            title={t('lfs.actions.pullObjects')}
             disabled={isPulling || files.length === 0}
           >
             <Download size={16} className={isPulling ? 'animate-pulse' : ''} />
@@ -198,7 +197,7 @@ export function LfsView() {
           <button
             className={btnIconClass}
             onClick={() => push()}
-            title="Push LFS objects"
+            title={t('lfs.actions.pushObjects')}
             disabled={isPushing || files.length === 0}
           >
             <Upload size={16} className={isPushing ? 'animate-pulse' : ''} />
@@ -206,7 +205,7 @@ export function LfsView() {
           <button
             className={btnIconClass}
             onClick={() => loadAll()}
-            title="Refresh"
+            title={t('common.refresh')}
             disabled={isLoading}
           >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -239,7 +238,7 @@ export function LfsView() {
           )}
           onClick={() => setActiveTab('patterns')}
         >
-          Patterns ({patterns.length})
+          {t('lfs.tabs.patterns')} ({patterns.length})
         </button>
         <button
           className={cn(
@@ -250,7 +249,7 @@ export function LfsView() {
           )}
           onClick={() => setActiveTab('files')}
         >
-          Files ({files.length})
+          {t('lfs.tabs.files')} ({files.length})
         </button>
       </div>
 
@@ -260,7 +259,7 @@ export function LfsView() {
           <>
             {patterns.length === 0 ? (
               <div className="py-6 text-center text-(--text-muted) text-sm">
-                No tracked patterns. Click + to add one.
+                {t('lfs.patterns.empty')}
               </div>
             ) : (
               patterns.map((pattern, idx) => (
@@ -291,7 +290,9 @@ export function LfsView() {
         {activeTab === 'files' && (
           <>
             {files.length === 0 ? (
-              <div className="py-6 text-center text-(--text-muted) text-sm">No LFS files</div>
+              <div className="py-6 text-center text-(--text-muted) text-sm">
+                {t('lfs.files.empty')}
+              </div>
             ) : (
               <>
                 {/* Downloaded files */}
@@ -299,7 +300,7 @@ export function LfsView() {
                   <div className="mb-4">
                     <div className="flex items-center gap-2 px-2 py-1 text-xs text-(--text-muted) font-medium">
                       <Check size={12} className="text-success" />
-                      Downloaded ({downloadedFiles.length})
+                      {t('lfs.files.downloaded')} ({downloadedFiles.length})
                     </div>
                     {downloadedFiles.map((file) => (
                       <LfsFileItem key={file.path} file={file} formatSize={formatSize} />
@@ -312,7 +313,7 @@ export function LfsView() {
                   <div>
                     <div className="flex items-center gap-2 px-2 py-1 text-xs text-(--text-muted) font-medium">
                       <FileBox size={12} className="text-warning" />
-                      Pointers ({pointerFiles.length})
+                      {t('lfs.files.pointers')} ({pointerFiles.length})
                     </div>
                     {pointerFiles.map((file) => (
                       <LfsFileItem key={file.path} file={file} formatSize={formatSize} />
@@ -328,16 +329,16 @@ export function LfsView() {
       {/* Track Pattern Dialog */}
       <Dialog open={showTrackDialog} onOpenChange={setShowTrackDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle icon={Plus}>Track Pattern</DialogTitle>
+          <DialogTitle icon={Plus}>{t('lfs.trackDialog.title')}</DialogTitle>
 
           <DialogBody>
-            <FormField label="Pattern" htmlFor="lfs-pattern">
+            <FormField label={t('lfs.trackDialog.patternLabel')} htmlFor="lfs-pattern">
               <Input
                 id="lfs-pattern"
                 type="text"
                 value={trackPattern}
                 onChange={(e) => setTrackPattern(e.target.value)}
-                placeholder="*.psd, *.zip, assets/**/*.png"
+                placeholder={t('lfs.trackDialog.patternPlaceholder')}
               />
             </FormField>
             <p className="text-xs text-(--text-muted) mt-2">
@@ -347,10 +348,10 @@ export function LfsView() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+              <Button variant="secondary">{t('common.cancel')}</Button>
             </DialogClose>
             <Button variant="primary" onClick={handleTrack} disabled={!trackPattern.trim()}>
-              Track Pattern
+              {t('lfs.trackDialog.trackButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

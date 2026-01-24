@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
 import { conflictApi, operationApi } from '@/services/api';
 import { ConflictResolution } from '@/types';
@@ -17,6 +18,7 @@ interface ConflictResolverProps {
 }
 
 export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
+  const { t } = useTranslation();
   const [conflicts, setConflicts] = useState<ConflictedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [conflictContent, setConflictContent] = useState<ConflictContent | null>(null);
@@ -44,9 +46,9 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       }
     } catch (err) {
       console.error('Failed to load conflicts:', err);
-      setError('Failed to load conflicts');
+      setError(t('merge.conflictResolver.failedLoad'));
     }
-  }, [selectedFile, onAllResolved]);
+  }, [selectedFile, onAllResolved, t]);
 
   useEffect(() => {
     loadConflicts();
@@ -66,7 +68,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         setMergedContent(content.merged);
       } catch (err) {
         console.error('Failed to load conflict content:', err);
-        setError('Failed to load file content');
+        setError(t('merge.conflictResolver.failedLoadContent'));
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +86,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       setSelectedFile(null);
     } catch (err) {
       console.error('Failed to resolve conflict:', err);
-      setError('Failed to resolve conflict');
+      setError(t('merge.conflictResolver.failedResolve'));
     }
   };
 
@@ -97,7 +99,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       setSelectedFile(null);
     } catch (err) {
       console.error('Failed to resolve conflict:', err);
-      setError('Failed to resolve conflict');
+      setError(t('merge.conflictResolver.failedResolve'));
     }
   };
 
@@ -110,7 +112,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       setSelectedFile(null);
     } catch (err) {
       console.error('Failed to resolve conflict:', err);
-      setError('Failed to resolve conflict');
+      setError(t('merge.conflictResolver.failedResolve'));
     }
   };
 
@@ -118,21 +120,21 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     if (!operationState || operationState === 'None') return '';
     if ('Merging' in operationState) {
       const { branch } = operationState.Merging;
-      return `Merging${branch ? ` ${branch}` : ''}`;
+      return `${t('merge.conflictResolver.operations.merging')}${branch ? ` ${branch}` : ''}`;
     }
     if ('Rebasing' in operationState) {
       const { current, total } = operationState.Rebasing;
-      return `Rebasing${current != null && total != null ? ` (${String(current)}/${String(total)})` : ''}`;
+      return `${t('merge.conflictResolver.operations.rebasing')}${current != null && total != null ? ` (${String(current)}/${String(total)})` : ''}`;
     }
     if ('CherryPicking' in operationState) {
-      return 'Cherry Picking';
+      return t('merge.conflictResolver.operations.cherryPicking');
     }
     if ('Reverting' in operationState) {
-      return 'Reverting';
+      return t('merge.conflictResolver.operations.reverting');
     }
     if ('Bisecting' in operationState) {
       const { steps_remaining } = operationState.Bisecting;
-      return `Bisecting${steps_remaining != null ? ` (~${String(steps_remaining)} steps)` : ''}`;
+      return `${t('merge.conflictResolver.operations.bisecting')}${steps_remaining != null ? ` (~${String(steps_remaining)} steps)` : ''}`;
     }
     return '';
   };
@@ -146,14 +148,18 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       <div className="flex items-center justify-between py-3 px-4 bg-warning/10 border-b border-warning/30">
         <div className="flex items-center gap-2 text-sm font-semibold text-(--text-primary)">
           <AlertTriangle size={18} className="text-warning" />
-          <span>Resolve Conflicts</span>
+          <span>{t('merge.conflictResolver.title')}</span>
           {operationState && operationState !== 'None' && (
             <span className="py-0.5 px-2 text-sm font-medium bg-(--bg-secondary) rounded text-(--text-secondary)">
               {getOperationLabel()}
             </span>
           )}
         </div>
-        <button className={btnIconClass} onClick={loadConflicts} title="Refresh conflicts">
+        <button
+          className={btnIconClass}
+          onClick={loadConflicts}
+          title={t('merge.conflictResolver.refresh')}
+        >
           <RefreshCw size={16} />
         </button>
       </div>
@@ -174,7 +180,9 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
       <div className="flex flex-1 min-h-0">
         <div className="w-62.5 border-r border-(--border-color) bg-(--bg-secondary) overflow-y-auto">
           <div className="py-2 px-3 text-sm font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color)">
-            {conflicts.length} conflicted file{conflicts.length !== 1 ? 's' : ''}
+            {conflicts.length === 1
+              ? t('merge.conflictResolver.conflictedFiles', { count: conflicts.length })
+              : t('merge.conflictResolver.conflictedFilesPlural', { count: conflicts.length })}
           </div>
           {conflicts.map((conflict) => (
             <div
@@ -204,41 +212,41 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
-              Loading...
+              {t('merge.conflictResolver.loading')}
             </div>
           ) : conflictContent ? (
             <>
               <div className="flex flex-1 min-h-0 border-b border-(--border-color)">
                 <div className="flex-1 flex flex-col min-w-0 border-r border-(--border-color)">
                   <div className="flex items-center justify-between py-2 px-3 bg-(--accent-color)/10 border-b border-(--border-color) text-xs font-semibold text-(--accent-color)">
-                    <span>Ours (Current)</span>
+                    <span>{t('merge.conflictResolver.ours')}</span>
                     <button className={btnSmallClass} onClick={handleResolveOurs}>
-                      Use This
+                      {t('merge.conflictResolver.useThis')}
                     </button>
                   </div>
                   <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
-                    {conflictContent.ours || '(deleted)'}
+                    {conflictContent.ours || t('merge.conflictResolver.deleted')}
                   </pre>
                 </div>
 
                 <div className="flex-1 flex flex-col min-w-0">
                   <div className="flex items-center justify-between py-2 px-3 bg-(--color-branch-remote)/10 border-b border-(--border-color) text-xs font-semibold text-(--color-branch-remote)">
-                    <span>Theirs (Incoming)</span>
+                    <span>{t('merge.conflictResolver.theirs')}</span>
                     <button className={btnSmallClass} onClick={handleResolveTheirs}>
-                      Use This
+                      {t('merge.conflictResolver.useThis')}
                     </button>
                   </div>
                   <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
-                    {conflictContent.theirs || '(deleted)'}
+                    {conflictContent.theirs || t('merge.conflictResolver.deleted')}
                   </pre>
                 </div>
               </div>
 
               <div className="flex flex-col h-[40%] min-h-37.5">
                 <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success">
-                  <span>Merged Result</span>
+                  <span>{t('merge.conflictResolver.merged')}</span>
                   <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
-                    Mark Resolved
+                    {t('merge.conflictResolver.markResolved')}
                   </button>
                 </div>
                 <textarea
@@ -251,7 +259,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
-              Select a file to resolve conflicts
+              {t('merge.conflictResolver.selectFile')}
             </div>
           )}
         </div>

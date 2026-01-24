@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CircleDot, CheckCircle2, Clock, User, Loader2 } from 'lucide-react';
 
@@ -25,6 +26,7 @@ export function IssueList({
   onSelect,
   onLoadMore,
 }: IssueListProps) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -65,7 +67,7 @@ export function IssueList({
   if (isLoading && issues.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">Loading issues...</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.issues.loading')}</div>
       </div>
     );
   }
@@ -73,7 +75,7 @@ export function IssueList({
   if (issues.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">No issues found</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.issues.noIssues')}</div>
       </div>
     );
   }
@@ -154,7 +156,9 @@ export function IssueList({
             style={{ top: `${virtualizer.getTotalSize()}px` }}
           >
             <Loader2 size={16} className="animate-spin text-(--text-muted)" />
-            <span className="ml-2 text-sm text-(--text-muted)">Loading more...</span>
+            <span className="ml-2 text-sm text-(--text-muted)">
+              {t('integrations.issues.loadingMore')}
+            </span>
           </div>
         )}
       </div>

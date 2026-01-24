@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Copy, Check, Info, GitCompare, Upload, Trash2 } from 'lucide-react';
 import type { Tag, Remote } from '@/types';
 import { ActionContext } from '@/types';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { copyToClipboard } from '@/lib/actions';
 
 interface TagContextMenuProps {
   tag: Tag;
@@ -28,34 +28,27 @@ export function TagContextMenu({
   onPush,
   onDelete,
 }: TagContextMenuProps) {
-  const handleCopyName = async () => {
-    try {
-      await navigator.clipboard.writeText(tag.name);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Copy failed', getErrorMessage(err));
-    }
-  };
+  const { t } = useTranslation();
 
   return (
     <ContextMenu trigger={children}>
-      <MenuItem icon={Copy} onSelect={handleCopyName}>
-        Copy Tag Name to Clipboard
+      <MenuItem icon={Copy} onSelect={() => copyToClipboard(tag.name)}>
+        {t('sidebar.tag.contextMenu.copyName')}
       </MenuItem>
       <MenuSeparator />
       <MenuItem icon={Check} onSelect={onCheckout}>
-        Checkout {tag.name}
+        {t('sidebar.tag.contextMenu.checkout', { name: tag.name })}
       </MenuItem>
       <MenuItem icon={Info} disabled={!onShowDetails} onSelect={onShowDetails}>
-        Details...
+        {t('sidebar.tag.contextMenu.details')}
       </MenuItem>
       <MenuSeparator />
       <MenuItem icon={GitCompare} disabled={!onDiffAgainstCurrent} onSelect={onDiffAgainstCurrent}>
-        Diff Against Current
+        {t('sidebar.tag.contextMenu.diffAgainstCurrent')}
       </MenuItem>
       <MenuSeparator />
       {remotes.length > 0 && (
-        <SubMenu icon={Upload} label="Push to" minWidth="sm">
+        <SubMenu icon={Upload} label={t('sidebar.tag.contextMenu.pushTo')} minWidth="sm">
           {remotes.map((remote) => (
             <MenuItem key={remote.name} onSelect={() => onPush?.(remote.name)}>
               {remote.name}
@@ -64,7 +57,7 @@ export function TagContextMenu({
         </SubMenu>
       )}
       <MenuItem icon={Trash2} danger onSelect={onDelete}>
-        Delete {tag.name}
+        {t('sidebar.tag.contextMenu.delete', { name: tag.name })}
       </MenuItem>
 
       <CustomActionsMenuSection context={ActionContext.Tag} variables={{ tag: tag.name }} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -27,6 +28,7 @@ export function DeleteRemoteBranchDialog({
   onOpenChange,
   branch,
 }: DeleteRemoteBranchDialogProps) {
+  const { t } = useTranslation();
   const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,31 +63,35 @@ export function DeleteRemoteBranchDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle icon={Trash2}>Delete Remote Branch</DialogTitle>
+        <DialogTitle icon={Trash2}>{t('branches.deleteRemote.title')}</DialogTitle>
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">
-            This will delete the branch from the remote server.
+            {t('branches.deleteRemote.warning')}
           </Alert>
 
           <div className="dialog-info-box">
             <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">Remote:</span>
+              <span className="text-(--text-secondary)">
+                {t('branches.deleteRemote.remoteLabel')}
+              </span>
               <span className="text-(--text-primary) font-medium">{remoteName}</span>
             </div>
             <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">Branch:</span>
+              <span className="text-(--text-secondary)">
+                {t('branches.deleteRemote.branchLabel')}
+              </span>
               <span className="text-(--text-primary) font-medium">{branchName}</span>
             </div>
           </div>
 
           <p className="text-sm text-(--text-secondary) mb-4">
-            Are you sure you want to delete "{branchName}" from {remoteName}?
+            {t('branches.deleteRemote.confirmMessage', { branch: branchName, remote: remoteName })}
           </p>
 
           <CheckboxField
             id="force-delete-remote"
-            label="Force delete"
+            label={t('branches.deleteRemote.forceDelete')}
             checked={force}
             onCheckedChange={setForce}
           />
@@ -99,10 +105,12 @@ export function DeleteRemoteBranchDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading ? 'Deleting...' : 'Delete from Remote'}
+            {isLoading
+              ? t('branches.deleteRemote.deleting')
+              : t('branches.deleteRemote.deleteButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

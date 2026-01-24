@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 
 import { AppLayout } from './components/layout';
@@ -26,6 +27,7 @@ import { lfsApi } from './services/api';
 import './index.css';
 
 function App() {
+  const { t } = useTranslation();
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null);
 
   const { repository, currentView, openRepository, switchRepository, closeRepository } =
@@ -255,17 +257,13 @@ function App() {
   };
 
   // Git CLI not installed - show error
-  // Git CLI not installed - show error
   if (gitInstalled === false) {
     return (
       <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary) items-center justify-center">
         <div className="text-center max-w-md p-6">
           <AlertCircle size={64} className="mx-auto mb-4 text-error" />
-          <h1 className="text-2xl font-semibold mb-2">Git Not Installed</h1>
-          <p className="text-(--text-secondary) mb-6">
-            Git CLI is required for Axis to function. Please install Git and restart the
-            application.
-          </p>
+          <h1 className="text-2xl font-semibold mb-2">{t('errors.gitNotInstalled.title')}</h1>
+          <p className="text-(--text-secondary) mb-6">{t('errors.gitNotInstalled.message')}</p>
           <a
             href="https://git-scm.com/downloads"
             target="_blank"
@@ -273,7 +271,7 @@ function App() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-(--accent-color) text-white rounded hover:opacity-90 transition-opacity"
           >
             <ExternalLink size={16} />
-            Download Git
+            {t('errors.gitNotInstalled.downloadLink')}
           </a>
         </div>
       </div>

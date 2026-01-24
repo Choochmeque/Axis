@@ -3,6 +3,8 @@
  * All functions use native JS Date APIs - no external dependencies.
  */
 
+import i18n from '@/i18n';
+
 /**
  * Converts a timestamp to a Date object.
  */
@@ -24,22 +26,22 @@ export function formatRelativeTime(timestamp: number | string): string {
   const days = Math.floor(hours / 24);
 
   if (seconds < 60) {
-    return 'just now';
+    return i18n.t('lib.dates.justNow');
   }
   if (minutes < 60) {
-    return `${minutes}m ago`;
+    return i18n.t('lib.dates.minutesAgo', { count: minutes });
   }
   if (hours < 24) {
-    return `${hours}h ago`;
+    return i18n.t('lib.dates.hoursAgo', { count: hours });
   }
   if (days === 1) {
-    return 'yesterday';
+    return i18n.t('lib.dates.yesterday');
   }
   if (days < 7) {
-    return `${days}d ago`;
+    return i18n.t('lib.dates.daysAgo', { count: days });
   }
   if (days < 30) {
-    return `${Math.floor(days / 7)}w ago`;
+    return i18n.t('lib.dates.weeksAgo', { count: Math.floor(days / 7) });
   }
   return date.toLocaleDateString();
 }
@@ -60,36 +62,36 @@ export function formatTimeAgo(timestamp: number | string): string {
   const years = Math.floor(days / 365);
 
   if (seconds < 30) {
-    return 'less than a minute ago';
+    return i18n.t('lib.dates.lessThanMinuteAgo');
   }
   if (seconds < 90) {
-    return 'about a minute ago';
+    return i18n.t('lib.dates.aboutMinuteAgo');
   }
   if (minutes < 45) {
-    return `${minutes} minutes ago`;
+    return i18n.t('lib.dates.minutesAgoLong', { count: minutes });
   }
   if (minutes < 90) {
-    return 'about an hour ago';
+    return i18n.t('lib.dates.aboutHourAgo');
   }
   if (hours < 24) {
-    return `about ${hours} hours ago`;
+    return i18n.t('lib.dates.aboutHoursAgo', { count: hours });
   }
   if (hours < 42) {
-    return 'a day ago';
+    return i18n.t('lib.dates.dayAgo');
   }
   if (days < 30) {
-    return `${days} days ago`;
+    return i18n.t('lib.dates.daysAgoLong', { count: days });
   }
   if (days < 45) {
-    return 'about a month ago';
+    return i18n.t('lib.dates.aboutMonthAgo');
   }
   if (days < 365) {
-    return `${months} months ago`;
+    return i18n.t('lib.dates.monthsAgo', { count: months });
   }
   if (months < 18) {
-    return 'about a year ago';
+    return i18n.t('lib.dates.aboutYearAgo');
   }
-  return `${years} years ago`;
+  return i18n.t('lib.dates.yearsAgo', { count: years });
 }
 
 /**

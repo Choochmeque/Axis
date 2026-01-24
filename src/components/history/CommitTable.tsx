@@ -1,5 +1,6 @@
 // Extracted from vscode-git-graph main.ts renderTable()
 import { memo, useRef, useCallback, useLayoutEffect, useMemo, forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch, Tag } from 'lucide-react';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
@@ -104,6 +105,7 @@ const CommitRow = memo(
     },
     ref
   ) {
+    const { t } = useTranslation();
     const isUncommitted = commit.oid === UNCOMMITTED;
     const color = `var(--git-graph-color${vertexColour % 8})`;
 
@@ -133,16 +135,17 @@ const CommitRow = memo(
     // Commit dot for HEAD
     const showCommitDot = commit.oid === commitHead;
     const commitDotTitle = branchCheckedOutAtCommit
-      ? `The branch "${branchCheckedOutAtCommit}" is currently checked out at this commit.`
-      : 'This commit is currently checked out.';
+      ? t('history.table.branchCheckedOut', { branch: branchCheckedOutAtCommit })
+      : t('history.table.commitCheckedOut');
 
     // Display values
+    const uncommittedLabel = t('history.table.uncommittedChanges');
     const authorDisplay = isUncommitted ? '*' : commit.author.name;
     const authorTitle = isUncommitted
-      ? 'Uncommitted changes'
+      ? uncommittedLabel
       : `${commit.author.name} <${commit.author.email}>`;
     const commitDisplay = isUncommitted ? '*' : abbrevCommit(commit.oid);
-    const commitTitle = isUncommitted ? 'Uncommitted changes' : commit.oid;
+    const commitTitle = isUncommitted ? uncommittedLabel : commit.oid;
 
     const handleClick = useCallback(
       (e: React.MouseEvent) => {
@@ -241,6 +244,7 @@ export const CommitTable = memo(function CommitTable({
   onGraphWidthChange,
   tableHeaderRef,
 }: CommitTableProps) {
+  const { t } = useTranslation();
   const tableRef = useRef<HTMLTableElement>(null);
   const columnWidthsRef = useRef<number[]>([
     COLUMN_AUTO,
@@ -416,27 +420,27 @@ export const CommitTable = memo(function CommitTable({
             onMouseDown={handleResizeStart}
           >
             <th id="tableHeaderGraphCol" className="tableColHeader" data-col="0">
-              Graph
+              {t('history.table.graph')}
               <span className="resizeCol right" data-col="0" />
             </th>
             <th className="tableColHeader" data-col="1">
               <span className="resizeCol left" data-col="0" />
-              Description
+              {t('history.table.description')}
               <span className="resizeCol right" data-col="1" />
             </th>
             <th className="tableColHeader dateCol" data-col="2">
               <span className="resizeCol left" data-col="1" />
-              Date
+              {t('history.table.date')}
               <span className="resizeCol right" data-col="2" />
             </th>
             <th className="tableColHeader authorCol" data-col="3">
               <span className="resizeCol left" data-col="2" />
-              Author
+              {t('history.table.author')}
               <span className="resizeCol right" data-col="3" />
             </th>
             <th className="tableColHeader" data-col="4">
               <span className="resizeCol left" data-col="3" />
-              Commit
+              {t('history.table.commit')}
             </th>
           </tr>
         </thead>

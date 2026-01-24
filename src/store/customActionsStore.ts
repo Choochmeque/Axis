@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import i18n from '@/i18n';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { customActionsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
 import { ActionContext, ActionStorageType } from '@/types';
@@ -59,7 +61,7 @@ export const useCustomActionsStore = create<CustomActionsState>((set, get) => ({
       set({ globalActions });
     } catch (error) {
       console.error('Failed to load global actions:', error);
-      set({ error: 'Failed to load global actions' });
+      set({ error: i18n.t('store.customActions.loadGlobalFailed') });
     }
   },
 
@@ -93,15 +95,15 @@ export const useCustomActionsStore = create<CustomActionsState>((set, get) => ({
       }
       useToastStore.getState().addToast({
         type: 'success',
-        title: 'Action saved',
-        message: `"${action.name}" has been saved`,
+        title: i18n.t('store.customActions.actionSaved'),
+        description: i18n.t('store.customActions.actionSavedMessage', { name: action.name }),
       });
     } catch (error) {
       console.error('Failed to save action:', error);
       useToastStore.getState().addToast({
         type: 'error',
-        title: 'Failed to save action',
-        message: String(error),
+        title: i18n.t('store.customActions.saveFailed'),
+        description: getErrorMessage(error),
       });
       throw error;
     }
@@ -118,14 +120,14 @@ export const useCustomActionsStore = create<CustomActionsState>((set, get) => ({
       }
       useToastStore.getState().addToast({
         type: 'success',
-        title: 'Action deleted',
+        title: i18n.t('store.customActions.actionDeleted'),
       });
     } catch (error) {
       console.error('Failed to delete action:', error);
       useToastStore.getState().addToast({
         type: 'error',
-        title: 'Failed to delete action',
-        message: String(error),
+        title: i18n.t('store.customActions.deleteFailed'),
+        description: getErrorMessage(error),
       });
       throw error;
     }
@@ -205,14 +207,16 @@ export const useCustomActionsStore = create<CustomActionsState>((set, get) => ({
       if (result.exitCode === 0) {
         useToastStore.getState().addToast({
           type: 'success',
-          title: `"${action.name}" completed`,
-          message: result.stdout ? result.stdout.slice(0, 100) : undefined,
+          title: i18n.t('store.customActions.actionCompleted', { name: action.name }),
+          description: result.stdout ? result.stdout.slice(0, 100) : undefined,
         });
       } else {
         useToastStore.getState().addToast({
           type: 'error',
-          title: `"${action.name}" failed`,
-          message: result.stderr ? result.stderr.slice(0, 100) : `Exit code: ${result.exitCode}`,
+          title: i18n.t('store.customActions.actionFailed', { name: action.name }),
+          description: result.stderr
+            ? result.stderr.slice(0, 100)
+            : `Exit code: ${result.exitCode}`,
         });
       }
     } catch (error) {
@@ -220,8 +224,8 @@ export const useCustomActionsStore = create<CustomActionsState>((set, get) => ({
       set({ executingActionId: null });
       useToastStore.getState().addToast({
         type: 'error',
-        title: 'Failed to execute action',
-        message: String(error),
+        title: i18n.t('store.customActions.executeFailed'),
+        description: getErrorMessage(error),
       });
     }
   },

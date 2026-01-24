@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Plus, RefreshCw } from 'lucide-react';
 
@@ -11,6 +12,7 @@ import { PrState } from '@/types';
 import type { PullRequest } from '@/types';
 
 export function PullRequestsView() {
+  const { t } = useTranslation();
   const {
     pullRequests,
     selectedPr,
@@ -60,8 +62,8 @@ export function PullRequestsView() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-(--text-muted)">
-          <p>Not connected to provider.</p>
-          <p className="mt-2 text-sm">Connect in Settings to view pull requests.</p>
+          <p>{t('integrations.notConnected.message')}</p>
+          <p className="mt-2 text-sm">{t('integrations.notConnected.pullRequestsHint')}</p>
         </div>
       </div>
     );
@@ -71,7 +73,9 @@ export function PullRequestsView() {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-(--border-color) bg-(--bg-primary)">
-        <span className="text-sm font-medium text-(--text-primary)">Pull Requests</span>
+        <span className="text-sm font-medium text-(--text-primary)">
+          {t('integrations.pullRequests.title')}
+        </span>
 
         {/* Filter tabs */}
         <div className="flex items-center gap-1 ml-4">
@@ -83,7 +87,7 @@ export function PullRequestsView() {
             }`}
             onClick={() => setPrFilter(PrState.Open)}
           >
-            Open
+            {t('integrations.pullRequests.filterOpen')}
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
@@ -93,7 +97,7 @@ export function PullRequestsView() {
             }`}
             onClick={() => setPrFilter(PrState.Closed)}
           >
-            Closed
+            {t('integrations.pullRequests.filterClosed')}
           </button>
           <button
             className={`px-2 py-1 text-xs rounded ${
@@ -103,7 +107,7 @@ export function PullRequestsView() {
             }`}
             onClick={() => setPrFilter(PrState.All)}
           >
-            All
+            {t('integrations.pullRequests.filterAll')}
           </button>
         </div>
 
@@ -114,7 +118,7 @@ export function PullRequestsView() {
           size="sm"
           onClick={handleRefresh}
           disabled={isLoadingPrs}
-          title="Refresh"
+          title={t('integrations.common.refresh')}
         >
           <RefreshCw size={14} className={isLoadingPrs ? 'animate-spin' : ''} />
         </Button>
@@ -123,7 +127,7 @@ export function PullRequestsView() {
           variant="primary"
           size="sm"
           onClick={() => setShowCreateDialog(true)}
-          title="New PR"
+          title={t('integrations.common.newPr')}
         >
           <Plus size={14} />
         </Button>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import { BranchFilterType, BranchType, SortOrder } from '@/types';
 import type { SortOrder as SortOrderType } from '@/types';
 
 export function HistoryFilters() {
+  const { t } = useTranslation();
   const {
     branches,
     branchFilter,
@@ -26,12 +28,12 @@ export function HistoryFilters() {
 
   // Get display text for branch filter
   const getBranchFilterLabel = (): string => {
-    if (branchFilter === BranchFilterType.All) return 'All Branches';
-    if (branchFilter === BranchFilterType.Current) return 'Current Branch';
+    if (branchFilter === BranchFilterType.All) return t('history.filters.allBranches');
+    if (branchFilter === BranchFilterType.Current) return t('history.filters.currentBranch');
     if (typeof branchFilter === 'object' && 'Specific' in branchFilter) {
       return branchFilter.Specific;
     }
-    return 'All Branches';
+    return t('history.filters.allBranches');
   };
 
   const handleBranchFilterChange = (value: string) => {
@@ -80,13 +82,17 @@ export function HistoryFilters() {
             value={branchFilterValue}
             onValueChange={handleBranchFilterChange}
           >
-            <DropdownMenuRadioItem value="all">All Branches</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="current">Current Branch</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="all">
+              {t('history.filters.allBranches')}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="current">
+              {t('history.filters.currentBranch')}
+            </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           {localBranches.length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Branches</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('history.filters.branches')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={branchFilterValue}
                 onValueChange={handleBranchFilterChange}
@@ -109,7 +115,9 @@ export function HistoryFilters() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
-            <span>{includeRemotes ? 'Show Remote Branches' : 'Hide Remote Branches'}</span>
+            <span>
+              {includeRemotes ? t('history.filters.showRemote') : t('history.filters.hideRemote')}
+            </span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenuTrigger>
@@ -118,8 +126,12 @@ export function HistoryFilters() {
             value={includeRemotes ? 'show' : 'hide'}
             onValueChange={(value) => setIncludeRemotes(value === 'show')}
           >
-            <DropdownMenuRadioItem value="show">Show Remote Branches</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="hide">Hide Remote Branches</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="show">
+              {t('history.filters.showRemote')}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="hide">
+              {t('history.filters.hideRemote')}
+            </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -128,15 +140,21 @@ export function HistoryFilters() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="dropdown-button">
-            <span>{sortOrder === SortOrder.DateOrder ? 'Date Order' : 'Ancestor Order'}</span>
+            <span>
+              {sortOrder === SortOrder.DateOrder
+                ? t('history.filters.dateOrder')
+                : t('history.filters.ancestorOrder')}
+            </span>
             <ChevronDown size={12} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={sortOrder} onValueChange={handleSortOrderChange}>
-            <DropdownMenuRadioItem value={SortOrder.DateOrder}>Date Order</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value={SortOrder.DateOrder}>
+              {t('history.filters.dateOrder')}
+            </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value={SortOrder.AncestorOrder}>
-              Ancestor Order
+              {t('history.filters.ancestorOrder')}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>

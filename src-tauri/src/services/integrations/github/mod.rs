@@ -69,6 +69,16 @@ impl From<octocrab::models::Author> for IntegrationUser {
     }
 }
 
+impl From<octocrab::models::Label> for IntegrationLabel {
+    fn from(label: octocrab::models::Label) -> Self {
+        IntegrationLabel {
+            name: label.name,
+            color: label.color,
+            description: label.description,
+        }
+    }
+}
+
 impl From<octocrab::models::pulls::PullRequest> for PullRequest {
     fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
         PullRequest {
@@ -115,14 +125,10 @@ impl From<octocrab::models::issues::Issue> for Issue {
             author: issue.user.into(),
             labels: issue
                 .labels
-                .iter()
-                .map(|l| IntegrationLabel {
-                    name: l.name.clone(),
-                    color: l.color.clone(),
-                    description: l.description.clone(),
-                })
+                .into_iter()
+                .map(Into::into)
                 .collect(),
-            comments_count: issue.comments as u32,
+            comments_count: issue.comments,
             created_at: issue.created_at,
             updated_at: issue.updated_at,
             url: issue.html_url.to_string(),
@@ -576,12 +582,8 @@ impl IntegrationProvider for GitHubProvider {
             labels: pr
                 .labels
                 .unwrap_or_default()
-                .iter()
-                .map(|l| IntegrationLabel {
-                    name: l.name.clone(),
-                    color: l.color.clone(),
-                    description: l.description.clone(),
-                })
+                .into_iter()
+                .map(Into::into)
                 .collect(),
             assignees: pr
                 .assignees

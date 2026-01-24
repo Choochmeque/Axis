@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { GitPullRequest, GitMerge, XCircle, Clock, User, Loader2 } from 'lucide-react';
 
@@ -25,6 +26,7 @@ export function PullRequestList({
   onSelect,
   onLoadMore,
 }: PullRequestListProps) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -67,7 +69,7 @@ export function PullRequestList({
   if (isLoading && pullRequests.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">Loading pull requests...</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.pullRequests.loading')}</div>
       </div>
     );
   }
@@ -75,7 +77,9 @@ export function PullRequestList({
   if (pullRequests.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-(--text-muted) text-sm">No pull requests found</div>
+        <div className="text-(--text-muted) text-sm">
+          {t('integrations.pullRequests.noPullRequests')}
+        </div>
       </div>
     );
   }
@@ -112,7 +116,7 @@ export function PullRequestList({
                     <span className="font-medium text-(--text-primary) truncate">{pr.title}</span>
                     {pr.draft && (
                       <span className="px-1.5 py-0.5 text-xs bg-(--bg-tertiary) text-(--text-muted) rounded">
-                        Draft
+                        {t('integrations.pullRequests.draft')}
                       </span>
                     )}
                   </div>
@@ -145,7 +149,9 @@ export function PullRequestList({
             style={{ top: `${virtualizer.getTotalSize()}px` }}
           >
             <Loader2 size={16} className="animate-spin text-(--text-muted)" />
-            <span className="ml-2 text-sm text-(--text-muted)">Loading more...</span>
+            <span className="ml-2 text-sm text-(--text-muted)">
+              {t('integrations.pullRequests.loadingMore')}
+            </span>
           </div>
         )}
       </div>

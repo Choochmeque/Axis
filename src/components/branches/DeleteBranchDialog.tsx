@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -24,6 +25,7 @@ interface DeleteBranchDialogProps {
 }
 
 export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
+  const { t } = useTranslation();
   const [force, setForce] = useState(false);
   const [deleteRemote, setDeleteRemote] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,11 +102,11 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
       await loadBranches();
       await refreshRepository();
       onOpenChange(false);
-      toast.success(`Branch "${branch.name}" deleted`);
+      toast.success(t('notifications.success.branchDeleted', { name: branch.name }));
     } catch (err) {
       const errorMsg = getErrorMessage(err);
       if (errorMsg.includes('not fully merged') && !force) {
-        setError('Branch is not fully merged. Check "Force delete" to delete anyway.');
+        setError(t('branches.delete.notFullyMerged'));
       } else {
         setError(errorMsg);
       }
@@ -118,31 +120,33 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle icon={Trash2}>Delete Branch</DialogTitle>
+        <DialogTitle icon={Trash2}>{t('branches.delete.title')}</DialogTitle>
 
         <DialogBody>
           <Alert variant="warning" className="mb-4">
-            This action cannot be undone.
+            {t('branches.delete.warning')}
           </Alert>
 
           <div className="dialog-info-box">
             <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">Branch:</span>
+              <span className="text-(--text-secondary)">{t('branches.delete.branchLabel')}</span>
               <span className="text-(--text-primary) font-medium">{branch.name}</span>
             </div>
             <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">Last commit:</span>
+              <span className="text-(--text-secondary)">
+                {t('branches.delete.lastCommitLabel')}
+              </span>
               <span className="text-(--text-primary) font-medium">{branch.lastCommitSummary}</span>
             </div>
           </div>
 
           <p className="text-sm text-(--text-secondary) mb-4">
-            Are you sure you want to delete the branch "{branch.name}"?
+            {t('branches.delete.confirmMessage', { name: branch.name })}
           </p>
 
           <CheckboxField
             id="force-delete"
-            label="Force delete (even if not fully merged)"
+            label={t('branches.delete.forceDelete')}
             checked={force}
             onCheckedChange={setForce}
           />
@@ -150,7 +154,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
           {hasRemoteBranch && (
             <CheckboxField
               id="delete-remote"
-              label={`Also delete remote branch (${remoteBranchInfo?.displayName})`}
+              label={t('branches.delete.deleteRemote', { remote: remoteBranchInfo?.displayName })}
               checked={deleteRemote}
               onCheckedChange={setDeleteRemote}
             />
@@ -165,10 +169,10 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading ? 'Deleting...' : 'Delete Branch'}
+            {isLoading ? t('branches.delete.deleting') : t('branches.delete.deleteButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

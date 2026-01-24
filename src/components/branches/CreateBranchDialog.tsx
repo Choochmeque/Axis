@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
 import { toast } from '@/hooks';
+import { validateBranchName } from '@/lib/branchValidation';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -27,23 +29,8 @@ interface CreateBranchDialogProps {
   startPoint?: string;
 }
 
-// Validate branch name according to git rules
-function validateBranchName(name: string): string | null {
-  if (!name.trim()) return null; // Empty is handled separately
-
-  if (name.includes(' ')) return 'Branch name cannot contain spaces';
-  if (name.startsWith('.')) return 'Branch name cannot start with a dot';
-  if (name.endsWith('/')) return 'Branch name cannot end with a slash';
-  if (name.endsWith('.lock')) return 'Branch name cannot end with .lock';
-  if (name.includes('..')) return 'Branch name cannot contain consecutive dots';
-  if (/[~^:?*[\]\\@{]/.test(name)) return 'Branch name contains invalid characters';
-  // eslint-disable-next-line no-control-regex
-  if (/[\x00-\x1f\x7f]/.test(name)) return 'Branch name contains control characters';
-
-  return null;
-}
-
 export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBranchDialogProps) {
+  const { t } = useTranslation();
   const [branchName, setBranchName] = useState('');
   const [baseBranch, setBaseBranch] = useState(startPoint || '');
   const [checkout, setCheckout] = useState(true);
@@ -60,11 +47,11 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
     }
   }, [open, startPoint]);
 
-  const validationError = validateBranchName(branchName);
+  const validationError = validateBranchName(branchName, t);
 
   const handleCreate = async () => {
     if (!branchName.trim()) {
-      setError('Branch name is required');
+      setError(t('branches.validation.nameRequired'));
       return;
     }
 
@@ -93,7 +80,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
       setBranchName('');
       setBaseBranch('');
       onOpenChange(false);
-      toast.success(`Branch "${branchName.trim()}" created`);
+      toast.success(t('notifications.success.branchCreated', { name: branchName.trim() }));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -110,36 +97,41 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle icon={GitBranch}>Create Branch</DialogTitle>
+        <DialogTitle icon={GitBranch}>{t('branches.create.title')}</DialogTitle>
 
         <DialogBody>
-          <FormField label="Branch Name" htmlFor="branch-name" error={validationError ?? undefined}>
+          <FormField
+            label={t('branches.create.nameLabel')}
+            htmlFor="branch-name"
+            error={validationError ?? undefined}
+          >
             <Input
               id="branch-name"
               type="text"
               value={branchName}
               onChange={(e) => setBranchName(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="feature/my-feature"
+              placeholder={t('branches.create.namePlaceholder')}
               autoFocus
             />
           </FormField>
 
-          <FormField label="Starting Point" htmlFor="base-branch">
+          <FormField label={t('branches.create.startingPointLabel')} htmlFor="base-branch">
             <Select
               id="base-branch"
               value={baseBranch}
               onValueChange={setBaseBranch}
-              placeholder="Current HEAD"
+              placeholder={t('branches.create.startingPointPlaceholder')}
             >
               {startPoint && !localBranches.some((b) => b.name === startPoint) && (
                 <SelectItem value={startPoint}>
-                  {startPoint.length > 8 ? startPoint.slice(0, 8) : startPoint} (commit)
+                  {startPoint.length > 8 ? startPoint.slice(0, 8) : startPoint}{' '}
+                  {t('branches.create.commitSuffix')}
                 </SelectItem>
               )}
               {localBranches.map((branch) => (
                 <SelectItem key={branch.name} value={branch.name}>
-                  {branch.name} {branch.isHead && '(current)'}
+                  {branch.name} {branch.isHead && t('branches.create.currentSuffix')}
                 </SelectItem>
               ))}
             </Select>
@@ -147,7 +139,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
 
           <CheckboxField
             id="checkout"
-            label="Checkout new branch"
+            label={t('branches.create.checkoutNewBranch')}
             checked={checkout}
             onCheckedChange={setCheckout}
           />
@@ -161,14 +153,14 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleCreate}
             disabled={isLoading || !branchName.trim() || !!validationError}
           >
-            {isLoading ? 'Creating...' : 'Create Branch'}
+            {isLoading ? t('branches.create.creating') : t('branches.create.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

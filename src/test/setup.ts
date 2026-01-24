@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import '@/i18n';
 
 // Mock window.matchMedia for tests that import settingsStore
 Object.defineProperty(window, 'matchMedia', {

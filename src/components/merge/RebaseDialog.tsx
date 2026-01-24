@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitBranch, Loader2 } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -43,6 +44,7 @@ export function RebaseDialog({
   currentBranch,
   targetCommit,
 }: RebaseDialogProps) {
+  const { t } = useTranslation();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +107,7 @@ export function RebaseDialog({
     const rebaseTarget = targetCommit ? targetCommit.oid : selectedBranch;
 
     if (!rebaseTarget) {
-      setError('Please select a branch to rebase onto');
+      setError(t('merge.rebase.selectBranchError'));
       return;
     }
 
@@ -127,7 +129,7 @@ export function RebaseDialog({
       if (rebaseResult.success && rebaseResult.conflicts.length === 0) {
         onRebaseComplete?.(rebaseResult);
         onClose();
-        toast.success('Rebase complete');
+        toast.success(t('notifications.success.rebaseComplete'));
       } else {
         setResult(rebaseResult);
         if (rebaseResult.success) {
@@ -159,7 +161,7 @@ export function RebaseDialog({
       if (continueResult.success && continueResult.conflicts.length === 0) {
         onRebaseComplete?.(continueResult);
         onClose();
-        toast.success('Rebase complete');
+        toast.success(t('notifications.success.rebaseComplete'));
       } else {
         setResult(continueResult);
         if (continueResult.success) {
@@ -180,7 +182,7 @@ export function RebaseDialog({
       if (skipResult.success && skipResult.conflicts.length === 0) {
         onRebaseComplete?.(skipResult);
         onClose();
-        toast.success('Rebase complete');
+        toast.success(t('notifications.success.rebaseComplete'));
       } else {
         setResult(skipResult);
         if (skipResult.success) {
@@ -197,7 +199,7 @@ export function RebaseDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle icon={GitBranch}>Rebase Branch</DialogTitle>
+        <DialogTitle icon={GitBranch}>{t('merge.rebase.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -214,7 +216,7 @@ export function RebaseDialog({
 
           {!result && (
             <>
-              <FormField label="Current Branch">
+              <FormField label={t('merge.rebase.currentBranch')}>
                 <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
                   {currentBranch}
                 </div>
@@ -222,7 +224,7 @@ export function RebaseDialog({
 
               {targetCommit ? (
                 <div className="field">
-                  <Label>Rebase Onto Commit</Label>
+                  <Label>{t('merge.rebase.rebaseOntoCommit')}</Label>
                   <div className="flex items-center gap-3 py-2.5 px-3 border border-(--border-color) rounded-md bg-(--bg-secondary)">
                     <span className="shrink-0 font-mono text-xs font-semibold text-(--accent-color)">
                       {targetCommit.shortOid}
@@ -233,13 +235,13 @@ export function RebaseDialog({
                   </div>
                 </div>
               ) : (
-                <FormField label="Rebase Onto" htmlFor="rebase-branch">
+                <FormField label={t('merge.rebase.rebaseOnto')} htmlFor="rebase-branch">
                   <Select
                     id="rebase-branch"
                     value={selectedBranch}
                     onValueChange={setSelectedBranch}
                     disabled={isLoading}
-                    placeholder="Select a branch..."
+                    placeholder={t('merge.rebase.selectBranch')}
                   >
                     {branches.map((branch) => (
                       <SelectItem key={branch.fullName} value={branch.name}>
@@ -254,7 +256,9 @@ export function RebaseDialog({
               {isLoadingPreview && (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 size={16} className="animate-spin text-(--text-secondary)" />
-                  <span className="ml-2 text-sm text-(--text-secondary)">Loading preview...</span>
+                  <span className="ml-2 text-sm text-(--text-secondary)">
+                    {t('merge.rebase.loadingPreview')}
+                  </span>
                 </div>
               )}
 
@@ -264,18 +268,12 @@ export function RebaseDialog({
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-base text-(--text-secondary)">
                 <p className="m-0 mb-2">
-                  This will replay all commits from{' '}
-                  <strong className="text-(--text-primary) font-mono">{currentBranch}</strong> on
-                  top of{' '}
-                  <strong className="text-(--text-primary) font-mono">
-                    {targetCommit ? targetCommit.shortOid : selectedBranch || '...'}
-                  </strong>
-                  .
+                  {t('merge.rebaseDescription', {
+                    source: currentBranch,
+                    target: targetCommit ? targetCommit.shortOid : selectedBranch || '...',
+                  })}
                 </p>
-                <p className="m-0 text-xs text-warning">
-                  Warning: Rebase rewrites commit history. Only rebase commits that haven't been
-                  pushed to a shared repository.
-                </p>
+                <p className="m-0 text-xs text-warning">{t('merge.rebase.rebaseWarning')}</p>
               </div>
             </>
           )}
@@ -283,7 +281,7 @@ export function RebaseDialog({
           {result && result.conflicts.length > 0 && (
             <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
               <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
-                Conflicted Files
+                {t('merge.rebase.conflictedFiles')}
               </h4>
               <ul className="m-0 p-0 list-none">
                 {result.conflicts.map((conflict) => (
@@ -303,20 +301,20 @@ export function RebaseDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                Abort Rebase
+                {t('merge.rebase.abortRebase')}
               </Button>
               <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
-                Skip Commit
+                {t('merge.rebase.skipCommit')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                Continue
+                {t('merge.rebase.continue')}
               </Button>
             </>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="secondary" disabled={isLoading}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button
@@ -335,14 +333,14 @@ export function RebaseDialog({
                   !preview
                 }
               >
-                {isOpeningInteractive ? 'Loading...' : 'Interactive...'}
+                {isOpeningInteractive ? t('merge.rebase.loading') : t('merge.rebase.interactive')}
               </Button>
               <Button
                 variant="primary"
                 onClick={handleRebase}
                 disabled={isLoading || (!targetCommit && !selectedBranch)}
               >
-                {isLoading ? 'Rebasing...' : 'Rebase'}
+                {isLoading ? t('merge.rebase.rebasing') : t('merge.rebase.rebaseButton')}
               </Button>
             </>
           )}

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CircleDot,
   CheckCircle2,
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import type { IssueDetail as IssueDetailType } from '@/bindings/api';
+import { IssueState } from '@/types';
 
 interface IssueDetailProps {
   issueDetail: IssueDetailType | null;
@@ -29,6 +31,7 @@ interface IssueDetailProps {
 }
 
 export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
+  const { t } = useTranslation();
   const openInBrowser = useCallback(() => {
     if (issueDetail?.url) {
       shellApi.openUrl(issueDetail.url);
@@ -38,16 +41,16 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
   if (!issueDetail) {
     return (
       <div className="flex items-center justify-center h-full bg-(--bg-secondary)">
-        <div className="text-(--text-muted) text-sm">Select an issue to view details</div>
+        <div className="text-(--text-muted) text-sm">{t('integrations.issues.selectIssue')}</div>
       </div>
     );
   }
 
   const getStateIcon = () => {
     switch (issueDetail.state) {
-      case 'open':
+      case IssueState.Open:
         return <CircleDot size={20} className="text-success" />;
-      case 'closed':
+      case IssueState.Closed:
         return <CheckCircle2 size={20} className="text-purple-500" />;
       default:
         return <CircleDot size={20} />;
@@ -57,10 +60,18 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
   const getStateBadge = () => {
     const baseClass = 'px-2 py-0.5 text-xs rounded-full font-medium';
     switch (issueDetail.state) {
-      case 'open':
-        return <span className={cn(baseClass, 'bg-success/20 text-success')}>Open</span>;
-      case 'closed':
-        return <span className={cn(baseClass, 'bg-purple-500/20 text-purple-500')}>Closed</span>;
+      case IssueState.Open:
+        return (
+          <span className={cn(baseClass, 'bg-success/20 text-success')}>
+            {t('integrations.issues.state.open')}
+          </span>
+        );
+      case IssueState.Closed:
+        return (
+          <span className={cn(baseClass, 'bg-purple-500/20 text-purple-500')}>
+            {t('integrations.issues.state.closed')}
+          </span>
+        );
       default:
         return null;
     }
@@ -88,10 +99,20 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={openInBrowser} title="Open in browser">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openInBrowser}
+            title={t('integrations.common.openInBrowser')}
+          >
             <ExternalLink size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            title={t('integrations.common.close')}
+          >
             <X size={14} />
           </Button>
         </div>
@@ -103,11 +124,19 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Created: {formatDateTime(issueDetail.createdAt)}</span>
+            <span>
+              {t('integrations.issues.detail.created', {
+                date: formatDateTime(issueDetail.createdAt),
+              })}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-(--text-secondary)">
             <Calendar size={14} />
-            <span>Updated: {formatDateTime(issueDetail.updatedAt)}</span>
+            <span>
+              {t('integrations.issues.detail.updated', {
+                date: formatDateTime(issueDetail.updatedAt),
+              })}
+            </span>
           </div>
         </div>
 
@@ -115,7 +144,9 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1 text-(--text-secondary)">
             <MessageSquare size={14} />
-            <span>{issueDetail.commentsCount} comments</span>
+            <span>
+              {t('integrations.issues.detail.comments', { count: issueDetail.commentsCount })}
+            </span>
           </div>
         </div>
 
@@ -124,7 +155,7 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-(--text-secondary)">
               <Tag size={14} />
-              <span>Labels</span>
+              <span>{t('integrations.issues.detail.labels')}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {issueDetail.labels.map((label) => (
@@ -149,7 +180,7 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-(--text-secondary)">
               <Users size={14} />
-              <span>Assignees</span>
+              <span>{t('integrations.issues.detail.assignees')}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {issueDetail.assignees.map((assignee) => (
@@ -172,7 +203,9 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         {issueDetail.milestone && (
           <div className="flex items-center gap-2 text-sm text-(--text-secondary)">
             <Milestone size={14} />
-            <span>Milestone: {issueDetail.milestone}</span>
+            <span>
+              {t('integrations.issues.detail.milestone', { name: issueDetail.milestone })}
+            </span>
           </div>
         )}
 

@@ -1,20 +1,21 @@
 import type { AxisError } from '@/bindings/api';
+import i18n from '@/i18n';
 
-// Fallback messages for errors without data field
+// Fallback message keys for errors without data field
 /* eslint-disable @typescript-eslint/naming-convention */
-const FALLBACK_MESSAGES: Partial<Record<AxisError['type'], string>> = {
-  GitError: 'Git operation failed',
-  IoError: 'File system error',
-  DatabaseError: 'Database error',
-  SerializationError: 'Serialization error',
-  NoRepositoryOpen: 'No repository is open',
-  CannotFastForward: 'Cannot fast-forward, merge or rebase required',
-  RebaseRequired: 'Rebase required',
-  MergeConflict: 'Merge conflict detected',
-  OAuthError: 'OAuth authentication failed',
-  OAuthCancelled: 'OAuth flow was cancelled',
-  IntegrationError: 'Integration error',
-  IntegrationNotConnected: 'Integration not connected',
+const FALLBACK_MESSAGE_KEYS: Partial<Record<AxisError['type'], string>> = {
+  GitError: 'lib.errors.gitError',
+  IoError: 'lib.errors.ioError',
+  DatabaseError: 'lib.errors.databaseError',
+  SerializationError: 'lib.errors.serializationError',
+  NoRepositoryOpen: 'lib.errors.noRepositoryOpen',
+  CannotFastForward: 'lib.errors.cannotFastForward',
+  RebaseRequired: 'lib.errors.rebaseRequired',
+  MergeConflict: 'lib.errors.mergeConflict',
+  OAuthError: 'lib.errors.oauthError',
+  OAuthCancelled: 'lib.errors.oauthCancelled',
+  IntegrationError: 'lib.errors.integrationError',
+  IntegrationNotConnected: 'lib.errors.integrationNotConnected',
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -25,7 +26,8 @@ export function getErrorMessage(err: unknown): string {
       return String(err.data);
     }
     // Otherwise use fallback
-    return FALLBACK_MESSAGES[err.type] ?? 'An error occurred';
+    const key = FALLBACK_MESSAGE_KEYS[err.type];
+    return key ? i18n.t(key) : i18n.t('lib.errors.unknown');
   }
   if (err instanceof Error) {
     return err.message;

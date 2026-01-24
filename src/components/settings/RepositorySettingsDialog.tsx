@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import CodeEditor from '@uiw/react-textarea-code-editor';
 import {
   Settings,
@@ -43,6 +44,7 @@ interface RepositorySettingsDialogProps {
 type SettingsTab = 'identity' | 'remotes' | 'hooks' | 'actions';
 
 export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettingsDialogProps) {
+  const { t } = useTranslation();
   const repository = useRepositoryStore((s) => s.repository);
   const [activeTab, setActiveTab] = useState<SettingsTab>('identity');
   const [settings, setSettings] = useState<RepositorySettings | null>(null);
@@ -69,17 +71,17 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
   };
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'identity', label: 'Identity', icon: <User size={16} /> },
-    { id: 'remotes', label: 'Remotes', icon: <Globe size={16} /> },
-    { id: 'hooks', label: 'Hooks', icon: <FileCode2 size={16} /> },
-    { id: 'actions', label: 'Actions', icon: <Terminal size={16} /> },
+    { id: 'identity', label: t('repoSettings.tabs.identity'), icon: <User size={16} /> },
+    { id: 'remotes', label: t('repoSettings.tabs.remotes'), icon: <Globe size={16} /> },
+    { id: 'hooks', label: t('repoSettings.tabs.hooks'), icon: <FileCode2 size={16} /> },
+    { id: 'actions', label: t('repoSettings.tabs.actions'), icon: <Terminal size={16} /> },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-150 max-h-[80vh] flex flex-col overflow-hidden">
         <DialogTitle icon={Settings}>
-          Repository Settings
+          {t('repoSettings.title')}
           {repository && (
             <span className="ml-2 text-sm font-normal text-(--text-secondary)">
               {repository.name}
@@ -109,7 +111,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
           <div className="flex-1 py-5 px-6 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center h-50 text-(--text-muted)">
-                Loading settings...
+                {t('repoSettings.loading')}
               </div>
             ) : settings ? (
               <>
@@ -134,7 +136,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Close</Button>
+            <Button variant="secondary">{t('common.close')}</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
@@ -151,6 +153,7 @@ interface IdentitySettingsProps {
 }
 
 function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps) {
+  const { t } = useTranslation();
   const [userName, setUserName] = useState(settings.userName || '');
   const [userEmail, setUserEmail] = useState(settings.userEmail || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -177,9 +180,9 @@ function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps)
         userEmail: userEmail || null,
       });
       setHasChanges(false);
-      toast.success('Identity saved');
+      toast.success(t('repoSettings.identity.saved'));
     } catch (err) {
-      toast.error('Failed to save identity', getErrorMessage(err));
+      toast.error(t('repoSettings.identity.saveFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -192,30 +195,36 @@ function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps)
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Git Identity</h3>
+      <h3 className={sectionTitleClass}>{t('repoSettings.identity.title')}</h3>
       <p className="text-sm text-(--text-secondary) mb-4">
-        Override the global git identity for this repository only.
+        {t('repoSettings.identity.description')}
       </p>
 
       <FormField
-        label="Name"
+        label={t('repoSettings.identity.nameLabel')}
         htmlFor="userName"
-        hint={settings.globalUserName ? `Global: ${settings.globalUserName}` : 'No global name set'}
+        hint={
+          settings.globalUserName
+            ? t('repoSettings.identity.nameHint', { name: settings.globalUserName })
+            : t('repoSettings.identity.noGlobalName')
+        }
       >
         <Input
           id="userName"
           type="text"
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
-          placeholder={settings.globalUserName || 'Enter name...'}
+          placeholder={settings.globalUserName || t('repoSettings.identity.namePlaceholder')}
         />
       </FormField>
 
       <FormField
-        label="Email"
+        label={t('repoSettings.identity.emailLabel')}
         htmlFor="userEmail"
         hint={
-          settings.globalUserEmail ? `Global: ${settings.globalUserEmail}` : 'No global email set'
+          settings.globalUserEmail
+            ? t('repoSettings.identity.emailHint', { email: settings.globalUserEmail })
+            : t('repoSettings.identity.noGlobalEmail')
         }
       >
         <Input
@@ -223,16 +232,16 @@ function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps)
           type="email"
           value={userEmail}
           onChange={(e) => setUserEmail(e.target.value)}
-          placeholder={settings.globalUserEmail || 'Enter email...'}
+          placeholder={settings.globalUserEmail || t('repoSettings.identity.emailPlaceholder')}
         />
       </FormField>
 
       <div className="flex gap-2 mt-4">
         <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
-          Reset
+          {t('common.reset')}
         </Button>
         <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? t('common.saving') : t('common.save')}
         </Button>
       </div>
     </div>
@@ -245,6 +254,7 @@ interface RemotesSettingsProps {
 }
 
 function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
+  const { t } = useTranslation();
   const [editingRemote, setEditingRemote] = useState<Remote | null>(null);
   const [isAddingRemote, setIsAddingRemote] = useState(false);
   const [newRemoteName, setNewRemoteName] = useState('');
@@ -261,9 +271,9 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
       setNewRemoteUrl('');
       setIsAddingRemote(false);
       onRemotesChange();
-      toast.success(`Remote "${newRemoteName}" added`);
+      toast.success(t('repoSettings.remotes.added', { name: newRemoteName }));
     } catch (err) {
-      toast.error('Failed to add remote', getErrorMessage(err));
+      toast.error(t('repoSettings.remotes.addFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -277,9 +287,9 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
       setEditingRemote(null);
       setEditUrl('');
       onRemotesChange();
-      toast.success(`Remote "${editingRemote.name}" updated`);
+      toast.success(t('repoSettings.remotes.updated', { name: editingRemote.name }));
     } catch (err) {
-      toast.error('Failed to update remote', getErrorMessage(err));
+      toast.error(t('repoSettings.remotes.updateFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -290,9 +300,9 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
     try {
       await remoteApi.remove(remoteName);
       onRemotesChange();
-      toast.success(`Remote "${remoteName}" removed`);
+      toast.success(t('repoSettings.remotes.removed', { name: remoteName }));
     } catch (err) {
-      toast.error('Failed to remove remote', getErrorMessage(err));
+      toast.error(t('repoSettings.remotes.removeFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -317,10 +327,10 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Remotes</h3>
+      <h3 className={sectionTitleClass}>{t('repoSettings.remotes.title')}</h3>
 
       {remotes.length === 0 && !isAddingRemote ? (
-        <p className="text-sm text-(--text-secondary) mb-4">No remotes configured.</p>
+        <p className="text-sm text-(--text-secondary) mb-4">{t('repoSettings.remotes.empty')}</p>
       ) : (
         <div className="flex flex-col gap-2 mb-4">
           {remotes.map((remote) => (
@@ -335,7 +345,7 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                     type="text"
                     value={editUrl}
                     onChange={(e) => setEditUrl(e.target.value)}
-                    placeholder="URL"
+                    placeholder={t('repoSettings.remotes.urlPlaceholder')}
                     autoFocus
                   />
                   <div className="flex gap-2">
@@ -345,10 +355,10 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                       onClick={handleEditRemote}
                       disabled={!editUrl.trim() || isSaving}
                     >
-                      Save
+                      {t('common.save')}
                     </Button>
                     <Button variant="secondary" size="sm" onClick={cancelEditing}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
@@ -359,7 +369,7 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                     <div className="text-sm text-(--text-secondary) truncate">{remote.url}</div>
                     {remote.pushUrl && remote.pushUrl !== remote.url && (
                       <div className="text-xs text-(--text-muted) truncate">
-                        Push: {remote.pushUrl}
+                        {t('repoSettings.remotes.pushLabel')} {remote.pushUrl}
                       </div>
                     )}
                   </div>
@@ -367,7 +377,7 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => startEditing(remote)}
-                    title="Edit remote"
+                    title={t('repoSettings.remotes.editTitle')}
                   >
                     <Pencil size={14} />
                   </Button>
@@ -375,7 +385,7 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteRemote(remote.name)}
-                    title="Delete remote"
+                    title={t('repoSettings.remotes.deleteTitle')}
                     disabled={isSaving}
                   >
                     <Trash2 size={14} />
@@ -393,14 +403,14 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
             type="text"
             value={newRemoteName}
             onChange={(e) => setNewRemoteName(e.target.value)}
-            placeholder="Remote name (e.g., origin)"
+            placeholder={t('repoSettings.remotes.namePlaceholder')}
             autoFocus
           />
           <Input
             type="text"
             value={newRemoteUrl}
             onChange={(e) => setNewRemoteUrl(e.target.value)}
-            placeholder="Remote URL"
+            placeholder={t('repoSettings.remotes.urlFieldPlaceholder')}
           />
           <div className="flex gap-2">
             <Button
@@ -409,10 +419,10 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
               onClick={handleAddRemote}
               disabled={!newRemoteName.trim() || !newRemoteUrl.trim() || isSaving}
             >
-              Add
+              {t('repoSettings.remotes.add')}
             </Button>
             <Button variant="secondary" size="sm" onClick={cancelAdding}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </div>
@@ -451,6 +461,7 @@ const HOOK_LABELS: Record<string, string> = {
 const ALL_HOOK_TYPES = Object.keys(GitHookType) as Array<keyof typeof GitHookType>;
 
 function HooksSettings() {
+  const { t } = useTranslation();
   const [hooks, setHooks] = useState<HookInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -482,10 +493,14 @@ function HooksSettings() {
       setHooks((prev) =>
         prev.map((h) => (h.hookType === hook.hookType ? { ...h, enabled: newEnabled } : h))
       );
-      toast.success(`Hook ${newEnabled ? 'enabled' : 'disabled'}`);
+      toast.success(
+        newEnabled
+          ? t('repoSettings.hooks.notifications.enabled')
+          : t('repoSettings.hooks.notifications.disabled')
+      );
       document.dispatchEvent(new CustomEvent('hooks-changed'));
     } catch (err) {
-      toast.error('Failed to toggle hook', getErrorMessage(err));
+      toast.error(t('repoSettings.hooks.notifications.toggleFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -500,10 +515,10 @@ function HooksSettings() {
           h.hookType === hook.hookType ? { ...h, exists: false, enabled: false } : h
         )
       );
-      toast.success('Hook deleted');
+      toast.success(t('repoSettings.hooks.notifications.deleted'));
       document.dispatchEvent(new CustomEvent('hooks-changed'));
     } catch (err) {
-      toast.error('Failed to delete hook', getErrorMessage(err));
+      toast.error(t('repoSettings.hooks.notifications.deleteFailed'), getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -518,17 +533,22 @@ function HooksSettings() {
     try {
       if (isNew) {
         await hooksApi.create(hookType, content);
-        toast.success('Hook created');
+        toast.success(t('repoSettings.hooks.notifications.created'));
       } else {
         await hooksApi.update(hookType, content);
-        toast.success('Hook updated');
+        toast.success(t('repoSettings.hooks.notifications.updated'));
       }
       await loadHooks();
       setEditingHook(null);
       setCreatingHook(null);
       document.dispatchEvent(new CustomEvent('hooks-changed'));
     } catch (err) {
-      toast.error(isNew ? 'Failed to create hook' : 'Failed to update hook', getErrorMessage(err));
+      toast.error(
+        isNew
+          ? t('repoSettings.hooks.notifications.createFailed')
+          : t('repoSettings.hooks.notifications.updateFailed'),
+        getErrorMessage(err)
+      );
     } finally {
       setIsSaving(false);
     }
@@ -537,7 +557,7 @@ function HooksSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-50 text-(--text-muted)">
-        Loading hooks...
+        {t('repoSettings.hooks.loading')}
       </div>
     );
   }
@@ -554,10 +574,8 @@ function HooksSettings() {
 
   return (
     <div>
-      <h3 className={sectionTitleClass}>Git Hooks</h3>
-      <p className="text-sm text-(--text-secondary) mb-4">
-        Manage Git hooks for this repository. Hooks run automatically during Git operations.
-      </p>
+      <h3 className={sectionTitleClass}>{t('repoSettings.hooks.title')}</h3>
+      <p className="text-sm text-(--text-secondary) mb-4">{t('repoSettings.hooks.description')}</p>
 
       <div className="flex flex-col gap-2 mb-4">
         {hooks.map((hook) => (
@@ -576,10 +594,18 @@ function HooksSettings() {
               </div>
               {hook.exists && (
                 <div className="text-xs text-(--text-muted) truncate" title={hook.path}>
-                  {hook.enabled ? (hook.isExecutable ? 'Active' : 'Not executable') : 'Disabled'}
+                  {hook.enabled
+                    ? hook.isExecutable
+                      ? t('repoSettings.hooks.status.active')
+                      : t('repoSettings.hooks.status.notExecutable')
+                    : t('repoSettings.hooks.status.disabled')}
                 </div>
               )}
-              {!hook.exists && <div className="text-xs text-(--text-muted)">Not configured</div>}
+              {!hook.exists && (
+                <div className="text-xs text-(--text-muted)">
+                  {t('repoSettings.hooks.status.notConfigured')}
+                </div>
+              )}
             </div>
 
             {hook.exists ? (
@@ -589,7 +615,11 @@ function HooksSettings() {
                   size="sm"
                   onClick={() => handleToggle(hook)}
                   disabled={isSaving}
-                  title={hook.enabled ? 'Disable hook' : 'Enable hook'}
+                  title={
+                    hook.enabled
+                      ? t('repoSettings.hooks.actions.disable')
+                      : t('repoSettings.hooks.actions.enable')
+                  }
                 >
                   {hook.enabled ? (
                     <ToggleRight size={18} className="text-(--success-color)" />
@@ -601,7 +631,7 @@ function HooksSettings() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setEditingHook(hook)}
-                  title="Edit hook"
+                  title={t('repoSettings.hooks.actions.edit')}
                 >
                   <Pencil size={14} />
                 </Button>
@@ -610,7 +640,7 @@ function HooksSettings() {
                   size="sm"
                   onClick={() => handleDelete(hook)}
                   disabled={isSaving}
-                  title="Delete hook"
+                  title={t('repoSettings.hooks.actions.delete')}
                 >
                   <Trash2 size={14} />
                 </Button>
@@ -620,7 +650,7 @@ function HooksSettings() {
                 variant="secondary"
                 size="sm"
                 onClick={() => setCreatingHook(hook.hookType as keyof typeof GitHookType)}
-                title="Create hook"
+                title={t('repoSettings.hooks.actions.create')}
               >
                 <Plus size={14} />
               </Button>
@@ -630,7 +660,7 @@ function HooksSettings() {
       </div>
 
       {availableHookTypes.length > 0 && hooks.length === 0 && (
-        <p className="text-sm text-(--text-muted)">No hooks configured yet.</p>
+        <p className="text-sm text-(--text-muted)">{t('repoSettings.hooks.empty')}</p>
       )}
 
       {editingHook && (
@@ -667,10 +697,13 @@ interface HookEditorDialogProps {
 }
 
 function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEditorDialogProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [templates, setTemplates] = useState<HookTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const defaultScript = '#!/bin/bash\n\n# Add your hook script here\n';
 
   useEffect(() => {
     const load = async () => {
@@ -683,27 +716,27 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
             setContent(loadedTemplates[0].content);
             setSelectedTemplate(loadedTemplates[0].name);
           } else {
-            setContent('#!/bin/bash\n\n# Add your hook script here\n');
+            setContent(defaultScript);
           }
         } else {
           const details = await hooksApi.get(GitHookType[hookType]);
           setContent(details.content || '');
         }
       } catch (err) {
-        toast.error('Failed to load hook', getErrorMessage(err));
+        toast.error(t('repoSettings.hooks.notifications.loadFailed'), getErrorMessage(err));
       } finally {
         setIsLoading(false);
       }
     };
     load();
-  }, [hookType, isNew]);
+  }, [hookType, isNew, t]);
 
   const handleTemplateChange = (templateName: string) => {
     setSelectedTemplate(templateName);
     if (templateName === '_custom') {
-      setContent('#!/bin/bash\n\n# Add your hook script here\n');
+      setContent(defaultScript);
     } else {
-      const template = templates.find((t) => t.name === templateName);
+      const template = templates.find((tpl) => tpl.name === templateName);
       if (template) {
         setContent(template.content);
       }
@@ -716,39 +749,45 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
     }
   };
 
+  const hookLabel = HOOK_LABELS[hookType] || hookType;
+
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-150">
         <DialogTitle icon={FileCode2}>
-          {isNew ? 'Create' : 'Edit'} {HOOK_LABELS[hookType] || hookType} Hook
+          {isNew
+            ? t('repoSettings.hooks.editor.createTitle', { hook: hookLabel })
+            : t('repoSettings.hooks.editor.editTitle', { hook: hookLabel })}
         </DialogTitle>
 
         <DialogBody>
           {isLoading ? (
             <div className="flex items-center justify-center h-50 text-(--text-muted)">
-              Loading...
+              {t('repoSettings.hooks.editor.loading')}
             </div>
           ) : (
             <>
               {isNew && templates.length > 0 && (
-                <FormField label="Template" htmlFor="template">
+                <FormField label={t('repoSettings.hooks.editor.templateLabel')} htmlFor="template">
                   <Select
                     id="template"
                     value={selectedTemplate}
                     onValueChange={handleTemplateChange}
-                    placeholder="Select a template..."
+                    placeholder={t('repoSettings.hooks.editor.templatePlaceholder')}
                   >
-                    {templates.map((t) => (
-                      <SelectItem key={t.name} value={t.name}>
-                        {t.name}
+                    {templates.map((tpl) => (
+                      <SelectItem key={tpl.name} value={tpl.name}>
+                        {tpl.name}
                       </SelectItem>
                     ))}
-                    <SelectItem value="_custom">Custom</SelectItem>
+                    <SelectItem value="_custom">
+                      {t('repoSettings.hooks.editor.customTemplate')}
+                    </SelectItem>
                   </Select>
                 </FormField>
               )}
 
-              <FormField label="Hook Script" htmlFor="hookContent">
+              <FormField label={t('repoSettings.hooks.editor.scriptLabel')} htmlFor="hookContent">
                 <CodeEditor
                   id="hookContent"
                   value={content}
@@ -757,7 +796,7 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
                     setContent(e.target.value);
                     setSelectedTemplate('');
                   }}
-                  placeholder="#!/bin/bash"
+                  placeholder={t('repoSettings.hooks.editor.scriptPlaceholder')}
                   padding={12}
                   style={{
                     fontFamily: 'var(--font-mono)',
@@ -774,8 +813,7 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
               </FormField>
 
               <p className="text-xs text-(--text-muted) mt-2">
-                The hook script should start with a shebang (e.g., #!/bin/bash). It will be made
-                executable automatically.
+                {t('repoSettings.hooks.editor.hint')}
               </p>
             </>
           )}
@@ -784,7 +822,7 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="secondary" disabled={isSaving}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button
@@ -792,7 +830,7 @@ function HookEditorDialog({ hookType, isNew, onSave, onClose, isSaving }: HookEd
             onClick={handleSubmit}
             disabled={!content.trim() || isSaving || isLoading}
           >
-            {isSaving ? 'Saving...' : isNew ? 'Create' : 'Save'}
+            {isSaving ? t('common.saving') : isNew ? t('common.create') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

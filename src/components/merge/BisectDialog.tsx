@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, CheckCircle2, XCircle, SkipForward } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -33,6 +34,7 @@ export function BisectDialog({
   badCommit: initialBad,
   goodCommit: initialGood,
 }: BisectDialogProps) {
+  const { t } = useTranslation();
   const [badCommit, setBadCommit] = useState(initialBad ?? '');
   const [goodCommit, setGoodCommit] = useState(initialGood ?? '');
   const [bisectState, setBisectState] = useState<BisectState | null>(null);
@@ -64,7 +66,7 @@ export function BisectDialog({
 
   const handleStart = async () => {
     if (!goodCommit) {
-      setError('Please specify a good (old) commit');
+      setError(t('merge.bisect.specifyGoodCommit'));
       return;
     }
 
@@ -76,7 +78,7 @@ export function BisectDialog({
         { name: 'Bisect Start', description: 'Starting bisect session', category: 'git' },
         () =>
           bisectApi.start({
-            badCommit: badCommit || undefined,
+            badCommit: badCommit || null,
             goodCommit,
           })
       );
@@ -84,11 +86,13 @@ export function BisectDialog({
       if (result.success) {
         setBisectState(result.state);
         toast.success(
-          'Bisect started',
-          `Testing commit ${result.state.currentCommit?.substring(0, 7)}`
+          t('merge.bisect.notifications.started'),
+          t('merge.bisect.notifications.testingCommit', {
+            oid: result.state.currentCommit?.substring(0, 7),
+          })
         );
       } else {
-        setError(result.message);
+        setError(result.message ?? null);
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -119,16 +123,22 @@ export function BisectDialog({
 
       if (result.state.firstBadCommit) {
         toast.success(
-          'Bisect complete',
-          `First bad commit: ${result.state.firstBadCommit.substring(0, 7)}`
+          t('merge.bisect.notifications.complete'),
+          t('merge.bisect.notifications.firstBadCommit', {
+            oid: result.state.firstBadCommit.substring(0, 7),
+          })
         );
         setBisectState(result.state);
         onBisectComplete?.(result);
       } else if (result.success) {
         setBisectState(result.state);
-        toast.info('Testing next commit', result.state.currentCommit?.substring(0, 7));
+        toast.info(
+          t('merge.bisect.notifications.testingCommit', {
+            oid: result.state.currentCommit?.substring(0, 7),
+          })
+        );
       } else {
-        setError(result.message);
+        setError(result.message ?? null);
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -143,7 +153,7 @@ export function BisectDialog({
       await bisectApi.reset();
       setBisectState(null);
       onClose();
-      toast.success('Bisect ended');
+      toast.success(t('merge.bisect.notifications.ended'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -156,7 +166,7 @@ export function BisectDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-125">
-        <DialogTitle icon={Search}>Git Bisect</DialogTitle>
+        <DialogTitle icon={Search}>{t('merge.bisect.title')}</DialogTitle>
 
         <DialogBody>
           {error && (
@@ -169,7 +179,7 @@ export function BisectDialog({
             <div className="p-4 bg-success/10 border border-success/30 rounded-md mb-4">
               <div className="flex items-center gap-2 text-success font-semibold mb-2">
                 <CheckCircle2 size={18} />
-                <span>First Bad Commit Found</span>
+                <span>{t('merge.bisect.firstBadFound')}</span>
               </div>
               <code className="block p-2 bg-(--bg-secondary) rounded font-mono text-sm">
                 {bisectState.firstBadCommit}
@@ -179,31 +189,28 @@ export function BisectDialog({
 
           {!isActive && !bisectState?.firstBadCommit && (
             <>
-              <FormField label="Bad (New) Commit" htmlFor="bad-commit">
+              <FormField label={t('merge.bisect.badCommit')} htmlFor="bad-commit">
                 <Input
                   id="bad-commit"
                   value={badCommit}
                   onChange={(e) => setBadCommit(e.target.value)}
-                  placeholder="HEAD (leave empty for current)"
+                  placeholder={t('merge.bisect.badCommitPlaceholder')}
                   disabled={isLoading}
                 />
               </FormField>
 
-              <FormField label="Good (Old) Commit" htmlFor="good-commit" required>
+              <FormField label={t('merge.bisect.goodCommit')} htmlFor="good-commit">
                 <Input
                   id="good-commit"
                   value={goodCommit}
                   onChange={(e) => setGoodCommit(e.target.value)}
-                  placeholder="Enter commit hash or ref"
+                  placeholder={t('merge.bisect.goodCommitPlaceholder')}
                   disabled={isLoading}
                 />
               </FormField>
 
               <div className="p-3 bg-(--bg-secondary) rounded-md text-sm text-(--text-secondary)">
-                <p className="m-0">
-                  Bisect uses binary search to find the commit that introduced a bug. Specify a
-                  known good (working) commit and optionally a bad (broken) commit.
-                </p>
+                <p className="m-0">{t('merge.bisect.description')}</p>
               </div>
             </>
           )}
@@ -211,20 +218,24 @@ export function BisectDialog({
           {isActive && !bisectState?.firstBadCommit && (
             <>
               <div className="p-3 bg-(--bg-secondary) rounded-md mb-4">
-                <div className="text-sm text-(--text-secondary) mb-2">Current commit to test:</div>
+                <div className="text-sm text-(--text-secondary) mb-2">
+                  {t('merge.bisect.currentCommit')}
+                </div>
                 <code className="block p-2 bg-(--bg-primary) rounded font-mono text-sm text-(--accent-color)">
                   {bisectState?.currentCommit?.substring(0, 12)}
                 </code>
                 {bisectState?.stepsRemaining !== undefined && (
                   <div className="text-xs text-(--text-tertiary) mt-2">
-                    ~{bisectState.stepsRemaining} steps remaining ({bisectState.totalCommits}{' '}
-                    commits left)
+                    {t('merge.bisect.stepsRemaining', {
+                      steps: bisectState.stepsRemaining,
+                      total: bisectState.totalCommits,
+                    })}
                   </div>
                 )}
               </div>
 
               <div className="text-sm text-(--text-secondary) mb-3">
-                Test this commit and mark it:
+                {t('merge.bisect.testAndMark')}
               </div>
 
               <div className="flex gap-2 justify-center">
@@ -235,7 +246,7 @@ export function BisectDialog({
                   className="flex-1"
                 >
                   <CheckCircle2 size={16} className="text-success" />
-                  Good
+                  {t('merge.bisect.good')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -244,7 +255,7 @@ export function BisectDialog({
                   className="flex-1"
                 >
                   <XCircle size={16} className="text-error" />
-                  Bad
+                  {t('merge.bisect.bad')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -253,15 +264,21 @@ export function BisectDialog({
                   className="flex-1"
                 >
                   <SkipForward size={16} />
-                  Skip
+                  {t('merge.bisect.skip')}
                 </Button>
               </div>
 
               {((bisectState?.goodCommits?.length ?? 0) > 0 ||
                 (bisectState?.skippedCommits?.length ?? 0) > 0) && (
                 <div className="mt-4 text-xs text-(--text-tertiary)">
-                  <div>Good: {bisectState?.goodCommits?.length ?? 0} commits</div>
-                  <div>Skipped: {bisectState?.skippedCommits?.length ?? 0} commits</div>
+                  <div>
+                    {t('merge.bisect.goodCount', { count: bisectState?.goodCommits?.length ?? 0 })}
+                  </div>
+                  <div>
+                    {t('merge.bisect.skippedCount', {
+                      count: bisectState?.skippedCommits?.length ?? 0,
+                    })}
+                  </div>
                 </div>
               )}
             </>
@@ -272,21 +289,21 @@ export function BisectDialog({
           {isActive || bisectState?.firstBadCommit ? (
             <>
               <Button variant="destructive" onClick={handleReset} disabled={isLoading}>
-                End Bisect
+                {t('merge.bisect.endButton')}
               </Button>
               <DialogClose asChild>
-                <Button variant="secondary">Close</Button>
+                <Button variant="secondary">{t('common.close')}</Button>
               </DialogClose>
             </>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="secondary" disabled={isLoading}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button variant="primary" onClick={handleStart} disabled={isLoading || !goodCommit}>
-                {isLoading ? 'Starting...' : 'Start Bisect'}
+                {isLoading ? t('merge.bisect.starting') : t('merge.bisect.startButton')}
               </Button>
             </>
           )}

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsDialog } from './SettingsDialog';
 import { settingsApi } from '@/services/api';
-import { SigningFormat, Theme } from '@/types';
+import { AiProvider, SigningFormat, Theme } from '@/types';
 
 // Mock the API
 vi.mock('@/services/api', () => ({
@@ -31,11 +31,13 @@ vi.mock('@/store/settingsStore', () => ({
 
 const mockSettings = {
   theme: Theme.Dark,
+  language: 'system',
   fontSize: 12,
   showLineNumbers: true,
   autoFetchInterval: 5,
   confirmBeforeDiscard: true,
   signCommits: false,
+  bypassHooks: false,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
@@ -44,7 +46,14 @@ const mockSettings = {
   diffWordWrap: false,
   diffSideBySide: false,
   spellCheckCommitMessages: false,
+  conventionalCommitsEnabled: false,
+  conventionalCommitsScopes: null,
   notificationHistoryCapacity: 50,
+  aiEnabled: false,
+  aiProvider: AiProvider.OpenAi,
+  aiModel: null,
+  aiOllamaUrl: null,
+  gravatarEnabled: false,
 };
 
 describe('SettingsDialog', () => {

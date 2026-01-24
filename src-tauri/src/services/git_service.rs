@@ -1,6 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::services::{FileWatcher, Git2Service, GitCliService, HookService};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tauri::AppHandle;
 
 /// Unified service for Git operations, combining:
@@ -9,7 +9,6 @@ use tauri::AppHandle;
 /// - HookService (git hook execution and management)
 /// - FileWatcher (per-repo file watching)
 pub struct GitService {
-    path: PathBuf,
     git2: Git2Service,
     git_cli: GitCliService,
     hook: HookService,
@@ -26,17 +25,11 @@ impl GitService {
             .map_err(|e| AxisError::Other(format!("Failed to create file watcher: {e}")))?;
 
         Ok(Self {
-            path: path.to_path_buf(),
             git2,
             git_cli,
             hook,
             watcher,
         })
-    }
-
-    /// Get the repository path
-    pub fn path(&self) -> &Path {
-        &self.path
     }
 
     /// Access the Git2 (libgit2) service
@@ -67,11 +60,5 @@ impl GitService {
     /// Stop the file watcher
     pub fn stop_watcher(&self) {
         self.watcher.stop();
-    }
-}
-
-impl Drop for GitService {
-    fn drop(&mut self) {
-        // FileWatcher has its own Drop implementation that stops watching
     }
 }

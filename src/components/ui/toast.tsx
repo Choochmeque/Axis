@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, Check, AlertTriangle, Info, X, Bell } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
+  const { t } = useTranslation();
   const Icon = icons[toast.type];
   const [progress, setProgress] = useState(100);
 
@@ -61,7 +63,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
       <button
         className="toast-dismiss"
         onClick={() => onDismiss(toast.id)}
-        aria-label="Dismiss notification"
+        aria-label={t('ui.toast.dismiss')}
       >
         <X size={14} />
       </button>
@@ -75,6 +77,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
 }
 
 export function ToastContainer() {
+  const { t } = useTranslation();
   const toasts = useToastStore((s) => s.toasts);
   const removeToast = useToastStore((s) => s.removeToast);
 
@@ -83,7 +86,7 @@ export function ToastContainer() {
   }
 
   return (
-    <div className="toast-container" aria-label="Notifications">
+    <div className="toast-container" aria-label={t('ui.toast.notifications')}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={removeToast} />
       ))}
@@ -96,6 +99,7 @@ interface ToastHistoryDropdownProps {
 }
 
 export function ToastHistoryDropdown({ className }: ToastHistoryDropdownProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const history = useToastStore((s) => s.history);
@@ -134,8 +138,8 @@ export function ToastHistoryDropdown({ className }: ToastHistoryDropdownProps) {
       <button
         className="toast-history-trigger"
         onClick={() => setIsOpen(!isOpen)}
-        title="Notifications"
-        aria-label="Notifications"
+        title={t('ui.toast.notifications')}
+        aria-label={t('ui.toast.notifications')}
         aria-expanded={isOpen}
       >
         <Bell size={14} />
@@ -145,7 +149,7 @@ export function ToastHistoryDropdown({ className }: ToastHistoryDropdownProps) {
       {isOpen && (
         <div className="toast-history-dropdown">
           {history.length === 0 ? (
-            <div className="toast-history-empty">No notifications</div>
+            <div className="toast-history-empty">{t('ui.toast.noNotifications')}</div>
           ) : (
             <>
               <div className="toast-history-list">
@@ -154,7 +158,7 @@ export function ToastHistoryDropdown({ className }: ToastHistoryDropdownProps) {
                 ))}
               </div>
               <button className="toast-history-clear" onClick={clearHistory}>
-                Clear all
+                {t('ui.toast.clearAll')}
               </button>
             </>
           )}

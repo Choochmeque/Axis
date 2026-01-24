@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
@@ -12,6 +11,51 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+
+  // Split vendor chunks for better caching
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendorReact: ['react', 'react-dom'],
+          vendorUi: [
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip',
+          ],
+          vendorSyntax: ['react-syntax-highlighter'],
+          vendorMarkdown: ['react-markdown', 'remark-gfm', 'rehype-raw'],
+          vendorKonva: ['konva', 'react-konva'],
+          vendorTable: ['@tanstack/react-table', '@tanstack/react-virtual'],
+          vendorI18n: ['i18next', 'i18next-browser-languagedetector', 'react-i18next'],
+          vendorIcons: ['lucide-react'],
+          vendorTauri: [
+            '@tauri-apps/api',
+            '@tauri-apps/plugin-dialog',
+            '@tauri-apps/plugin-opener',
+          ],
+          vendorEditor: ['@uiw/react-textarea-code-editor'],
+          vendorMisc: [
+            'zustand',
+            'immer',
+            'clsx',
+            'tailwind-merge',
+            'class-variance-authority',
+            'crypto-js',
+            'react-hotkeys-hook',
+            'react-resizable-panels',
+          ],
+        },
+      },
     },
   },
 

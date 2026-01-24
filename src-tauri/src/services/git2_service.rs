@@ -1359,7 +1359,7 @@ impl Git2Service {
                     if r.starts_with('+') {
                         r.clone()
                     } else {
-                        format!("+{}", r)
+                        format!("+{r}")
                     }
                 })
                 .collect()
@@ -1455,7 +1455,7 @@ impl Git2Service {
                 refname,
                 fetch_commit.id(),
                 true,
-                &format!("pull: fast-forward {} from {}", branch_name, remote_ref),
+                &format!("pull: fast-forward {branch_name} from {remote_ref}"),
             )?;
 
             // Update working directory

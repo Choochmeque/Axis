@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FolderGit2,
   RefreshCw,
@@ -37,6 +38,7 @@ interface SubmoduleViewProps {
 }
 
 export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
+  const { t } = useTranslation();
   const [submodules, setSubmodules] = useState<Submodule[]>([]);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +58,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       setSubmodules(submoduleList);
     } catch (err) {
       console.error('Failed to load submodules:', err);
-      setError('Failed to load submodules');
+      setError(t('sidebar.submodule.view.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +70,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
   const handleAdd = async () => {
     if (!addUrl.trim() || !addPath.trim()) {
-      setError('URL and path are required');
+      setError(t('sidebar.submodule.addDialog.urlAndPathRequired'));
       return;
     }
 
@@ -94,7 +96,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       }
     } catch (err) {
       console.error('Failed to add submodule:', err);
-      setError('Failed to add submodule');
+      setError(t('sidebar.submodule.view.addFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +113,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       }
     } catch (err) {
       console.error('Failed to init submodule:', err);
-      setError('Failed to init submodule');
+      setError(t('sidebar.submodule.view.initFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -137,23 +139,23 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       }
     } catch (err) {
       console.error('Failed to update submodule:', err);
-      setError('Failed to update submodule');
+      setError(t('sidebar.submodule.view.updateFailed'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRemove = async (path: string) => {
-    if (!confirm(`Remove submodule '${path}'? This will delete the submodule directory.`)) {
+  const handleRemove = async (submodulePath: string) => {
+    if (!confirm(t('sidebar.submodule.view.removeConfirm', { path: submodulePath }))) {
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await submoduleApi.remove(path);
+      const result = await submoduleApi.remove(submodulePath);
       if (result.success) {
         await loadSubmodules();
-        if (selectedPath === path) {
+        if (selectedPath === submodulePath) {
           setSelectedPath(null);
         }
         onRefresh?.();
@@ -162,7 +164,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       }
     } catch (err) {
       console.error('Failed to remove submodule:', err);
-      setError('Failed to remove submodule');
+      setError(t('sidebar.submodule.view.removeFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -190,19 +192,19 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   const getStatusLabel = (status: SubmoduleStatusType) => {
     switch (status) {
       case SubmoduleStatus.Current:
-        return 'Up to date';
+        return t('sidebar.submodule.status.current');
       case SubmoduleStatus.Modified:
-        return 'Modified';
+        return t('sidebar.submodule.status.modified');
       case SubmoduleStatus.Uninitialized:
-        return 'Not initialized';
+        return t('sidebar.submodule.status.uninitialized');
       case SubmoduleStatus.Missing:
-        return 'Missing';
+        return t('sidebar.submodule.status.missing');
       case SubmoduleStatus.Conflict:
-        return 'Conflict';
+        return t('sidebar.submodule.status.conflict');
       case SubmoduleStatus.Dirty:
-        return 'Dirty';
+        return t('sidebar.submodule.status.dirty');
       default:
-        return 'Unknown';
+        return t('sidebar.submodule.status.unknown');
     }
   };
 
@@ -226,7 +228,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <FolderGit2 size={16} />
-          <span>Submodules</span>
+          <span>{t('sidebar.submodule.view.title')}</span>
           <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
             {submodules.length}
           </span>
@@ -235,14 +237,14 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
           <button
             className={btnIconClass}
             onClick={() => setShowAddDialog(true)}
-            title="Add submodule"
+            title={t('sidebar.submodule.view.addSubmodule')}
           >
             <Plus size={16} />
           </button>
           <button
             className={btnIconClass}
             onClick={() => handleUpdate()}
-            title="Update all submodules"
+            title={t('sidebar.submodule.view.updateAll')}
             disabled={isLoading || submodules.length === 0}
           >
             <Download size={16} />
@@ -250,7 +252,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
           <button
             className={btnIconClass}
             onClick={loadSubmodules}
-            title="Refresh"
+            title={t('sidebar.submodule.view.refresh')}
             disabled={isLoading}
           >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -273,7 +275,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
       <div className="flex-1 overflow-y-auto p-2">
         {submodules.length === 0 ? (
-          <div className="py-6 text-center text-(--text-muted) text-sm">No submodules</div>
+          <div className="py-6 text-center text-(--text-muted) text-sm">
+            {t('sidebar.submodule.view.noSubmodules')}
+          </div>
         ) : (
           submodules.map((submodule) => (
             <div
@@ -321,7 +325,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                         handleInit(submodule.path);
                       }}
                     >
-                      Initialize
+                      {t('sidebar.submodule.view.initialize')}
                     </button>
                   )}
                   <button
@@ -336,7 +340,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     disabled={submodule.status === SubmoduleStatus.Uninitialized}
                   >
                     <Download size={12} />
-                    Update
+                    {t('sidebar.submodule.view.update')}
                   </button>
                   <button
                     className={cn(
@@ -359,34 +363,37 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-100">
-          <DialogTitle icon={FolderGit2}>Add Submodule</DialogTitle>
+          <DialogTitle icon={FolderGit2}>{t('sidebar.submodule.addDialog.title')}</DialogTitle>
 
           <DialogBody>
-            <FormField label="Repository URL" htmlFor="submodule-url">
+            <FormField label={t('sidebar.submodule.addDialog.urlLabel')} htmlFor="submodule-url">
               <Input
                 id="submodule-url"
                 type="text"
                 value={addUrl}
                 onChange={(e) => setAddUrl(e.target.value)}
-                placeholder="https://github.com/user/repo.git"
+                placeholder={t('sidebar.submodule.addDialog.urlPlaceholder')}
               />
             </FormField>
-            <FormField label="Path" htmlFor="submodule-path">
+            <FormField label={t('sidebar.submodule.addDialog.pathLabel')} htmlFor="submodule-path">
               <Input
                 id="submodule-path"
                 type="text"
                 value={addPath}
                 onChange={(e) => setAddPath(e.target.value)}
-                placeholder="lib/submodule"
+                placeholder={t('sidebar.submodule.addDialog.pathPlaceholder')}
               />
             </FormField>
-            <FormField label="Branch (optional)" htmlFor="submodule-branch">
+            <FormField
+              label={t('sidebar.submodule.addDialog.branchLabel')}
+              htmlFor="submodule-branch"
+            >
               <Input
                 id="submodule-branch"
                 type="text"
                 value={addBranch}
                 onChange={(e) => setAddBranch(e.target.value)}
-                placeholder="main"
+                placeholder={t('sidebar.submodule.addDialog.branchPlaceholder')}
               />
             </FormField>
           </DialogBody>
@@ -394,7 +401,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="secondary" disabled={isLoading}>
-                Cancel
+                {t('common.cancel')}
               </Button>
             </DialogClose>
             <Button
@@ -402,7 +409,9 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
               onClick={handleAdd}
               disabled={isLoading || !addUrl.trim() || !addPath.trim()}
             >
-              {isLoading ? 'Adding...' : 'Add Submodule'}
+              {isLoading
+                ? t('sidebar.submodule.addDialog.adding')
+                : t('sidebar.submodule.addDialog.addButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

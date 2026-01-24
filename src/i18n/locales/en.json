@@ -872,7 +872,45 @@
       "addWorktree": "Add Worktree..."
     },
     "submodule": {
-      "modified": "Modified"
+      "view": {
+        "title": "Submodules",
+        "addSubmodule": "Add submodule",
+        "updateAll": "Update all submodules",
+        "refresh": "Refresh",
+        "noSubmodules": "No submodules",
+        "loadFailed": "Failed to load submodules",
+        "addFailed": "Failed to add submodule",
+        "initFailed": "Failed to init submodule",
+        "updateFailed": "Failed to update submodule",
+        "removeFailed": "Failed to remove submodule",
+        "removeConfirm": "Remove submodule '{{path}}'? This will delete the submodule directory.",
+        "initialize": "Initialize",
+        "update": "Update"
+      },
+      "status": {
+        "current": "Up to date",
+        "modified": "Modified",
+        "uninitialized": "Not initialized",
+        "missing": "Missing",
+        "conflict": "Conflict",
+        "dirty": "Dirty",
+        "unknown": "Unknown"
+      },
+      "addDialog": {
+        "title": "Add Submodule",
+        "urlLabel": "Repository URL",
+        "urlPlaceholder": "https://github.com/user/repo.git",
+        "urlRequired": "Repository URL is required",
+        "pathLabel": "Path",
+        "pathPlaceholder": "lib/submodule",
+        "pathRequired": "Path is required",
+        "pathHint": "Relative path where the submodule will be cloned",
+        "branchLabel": "Branch (optional)",
+        "branchPlaceholder": "main",
+        "urlAndPathRequired": "URL and path are required",
+        "adding": "Adding...",
+        "addButton": "Add Submodule"
+      }
     }
   },
   "customActions": {

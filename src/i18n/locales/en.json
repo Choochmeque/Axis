@@ -350,7 +350,54 @@
     "applySuccess": "Stash applied",
     "popSuccess": "Stash popped",
     "dropSuccess": "Stash dropped",
-    "createSuccess": "Changes stashed"
+    "createSuccess": "Changes stashed",
+    "view": {
+      "title": "Stashes",
+      "createStash": "Create stash",
+      "refresh": "Refresh",
+      "noStashes": "No stashes",
+      "loadFailed": "Failed to load stashes",
+      "conflictsApply": "Stash applied with conflicts in: {{files}}",
+      "conflictsPop": "Stash applied with conflicts (not dropped): {{files}}",
+      "enterBranchName": "Enter branch name:",
+      "applyHint": "Apply stash (keep in list)",
+      "popHint": "Pop stash (apply and remove)",
+      "branchHint": "Create branch from stash",
+      "dropHint": "Drop stash"
+    },
+    "createDialog": {
+      "title": "Create Stash",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "Stash message...",
+      "includeUntracked": "Include untracked files",
+      "keepIndex": "Keep staged changes in index",
+      "createButton": "Create Stash"
+    },
+    "contextMenu": {
+      "applyHint": "Keep in list",
+      "popHint": "Apply & remove",
+      "createBranch": "Create Branch",
+      "branchPlaceholder": "Branch name...",
+      "createButton": "Create",
+      "copyMessage": "Copy Message",
+      "dropStash": "Drop Stash",
+      "applyFailed": "Apply stash failed",
+      "popFailed": "Pop stash failed",
+      "dropFailed": "Drop stash failed",
+      "branchSuccess": "Branch created from stash",
+      "branchFailed": "Create branch failed"
+    },
+    "diffView": {
+      "close": "Close",
+      "loading": "Loading stash diff...",
+      "noChanges": "No changes in this stash",
+      "noFileChanges": "No changes in this file",
+      "filesCount": "{{count}} file",
+      "filesCount_plural": "{{count}} files",
+      "binaryFile": "Binary file",
+      "unknownFile": "Unknown file",
+      "on": "on"
+    }
   },
   "staging": {
     "loadingStatus": "Loading status...",

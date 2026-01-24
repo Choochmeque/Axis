@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Trash2, GitBranch, Copy, ChevronRight } from 'lucide-react';
 import {
   Button,
@@ -26,6 +27,7 @@ interface StashContextMenuProps {
 }
 
 export function StashContextMenu({ stash, children }: StashContextMenuProps) {
+  const { t } = useTranslation();
   const { refreshRepository, loadStashes, clearStashSelection } = useRepositoryStore();
   const [branchName, setBranchName] = useState('');
 
@@ -33,9 +35,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
     try {
       await stashApi.apply({ index: stash.index, reinstateIndex: false });
       await refreshRepository();
-      toast.success('Stash applied');
+      toast.success(t('stash.applySuccess'));
     } catch (err) {
-      toast.error('Apply stash failed', getErrorMessage(err));
+      toast.error(t('stash.contextMenu.applyFailed'), getErrorMessage(err));
     }
   };
 
@@ -45,9 +47,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       clearStashSelection();
       await loadStashes();
       await refreshRepository();
-      toast.success('Stash popped');
+      toast.success(t('stash.popSuccess'));
     } catch (err) {
-      toast.error('Pop stash failed', getErrorMessage(err));
+      toast.error(t('stash.contextMenu.popFailed'), getErrorMessage(err));
     }
   };
 
@@ -56,9 +58,9 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       await stashApi.drop(Number(stash.index));
       clearStashSelection();
       await loadStashes();
-      toast.success('Stash dropped');
+      toast.success(t('stash.dropSuccess'));
     } catch (err) {
-      toast.error('Drop stash failed', getErrorMessage(err));
+      toast.error(t('stash.contextMenu.dropFailed'), getErrorMessage(err));
     }
   };
 
@@ -69,19 +71,19 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       clearStashSelection();
       await loadStashes();
       await refreshRepository();
-      toast.success('Branch created from stash');
+      toast.success(t('stash.contextMenu.branchSuccess'));
     } catch (err) {
-      toast.error('Create branch failed', getErrorMessage(err));
+      toast.error(t('stash.contextMenu.branchFailed'), getErrorMessage(err));
     }
   };
 
   return (
     <ContextMenu trigger={children}>
-      <MenuItem icon={Play} onSelect={handleApply} hint="Keep in list">
-        Apply
+      <MenuItem icon={Play} onSelect={handleApply} hint={t('stash.contextMenu.applyHint')}>
+        {t('stash.apply')}
       </MenuItem>
-      <MenuItem icon={Play} onSelect={handlePop} hint="Apply & remove">
-        Pop
+      <MenuItem icon={Play} onSelect={handlePop} hint={t('stash.contextMenu.popHint')}>
+        {t('stash.pop')}
       </MenuItem>
       <MenuSeparator />
 
@@ -89,14 +91,14 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger className="menu-item">
           <GitBranch size={14} />
-          <span>Create Branch</span>
+          <span>{t('stash.contextMenu.createBranch')}</span>
           <ChevronRight size={14} className="menu-chevron" />
         </ContextMenuSubTrigger>
         <ContextMenuPortal>
           <ContextMenuSubContent className="menu-content min-w-48">
             <div className="p-2">
               <Input
-                placeholder="Branch name..."
+                placeholder={t('stash.contextMenu.branchPlaceholder')}
                 className="text-sm"
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
@@ -114,7 +116,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
                 onClick={() => handleBranch(branchName)}
                 disabled={!branchName.trim()}
               >
-                Create
+                {t('stash.contextMenu.createButton')}
               </Button>
             </div>
           </ContextMenuSubContent>
@@ -123,7 +125,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
       <MenuSeparator />
       <MenuItem icon={Copy} onSelect={() => copyToClipboard(stash.message)}>
-        Copy Message
+        {t('stash.contextMenu.copyMessage')}
       </MenuItem>
 
       <CustomActionsMenuSection
@@ -133,7 +135,7 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
       <MenuSeparator />
       <MenuItem icon={Trash2} danger onSelect={handleDrop}>
-        Drop Stash
+        {t('stash.contextMenu.dropStash')}
       </MenuItem>
     </ContextMenu>
   );

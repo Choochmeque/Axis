@@ -640,7 +640,8 @@ impl Git2Service {
                 self.repo.reference(target_name, oid, true, reflog_msg)?;
             } else {
                 // HEAD is not symbolic, create refs/heads/main
-                self.repo.reference("refs/heads/main", oid, true, reflog_msg)?;
+                self.repo
+                    .reference("refs/heads/main", oid, true, reflog_msg)?;
             }
         } else {
             self.repo.head()?.set_target(oid, reflog_msg)?;

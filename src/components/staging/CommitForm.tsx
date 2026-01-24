@@ -45,7 +45,7 @@ export function CommitForm() {
     createCommit,
     amendCommit,
   } = useStagingStore();
-  const { repository, branches } = useRepositoryStore();
+  const { repository, branches, remotes } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.isHead);
   const { settings } = useSettingsStore();
 
@@ -103,6 +103,13 @@ export function CommitForm() {
       setSignCommit(settings.signCommits);
     }
   }, [settings]);
+
+  // Uncheck push after commit if no remotes
+  useEffect(() => {
+    if (remotes.length === 0) {
+      setPushAfterCommit(false);
+    }
+  }, [remotes.length]);
 
   // Load author info when repository changes
   useEffect(() => {
@@ -529,6 +536,7 @@ export function CommitForm() {
               id="push-after-commit"
               checked={pushAfterCommit}
               onCheckedChange={(checked) => setPushAfterCommit(checked === true)}
+              disabled={remotes.length === 0}
             />
             <label
               htmlFor="push-after-commit"

@@ -30,13 +30,15 @@ const toolbarButtonClass =
 
 export function Toolbar() {
   const { t } = useTranslation();
-  const { repository, status, branches, setCurrentView, refreshRepository } = useRepositoryStore();
+  const { repository, status, branches, remotes, setCurrentView, refreshRepository } =
+    useRepositoryStore();
 
   // Get current branch for ahead/behind counts
   const currentBranch = branches.find((b) => b.isHead);
   const stagedCount = status?.staged?.length ?? 0;
   const aheadCount = currentBranch?.ahead ?? 0;
   const behindCount = currentBranch?.behind ?? 0;
+  const hasRemotes = remotes.length > 0;
 
   // Settings from store (used by menu actions)
   const showSettings = useSettingsStore((s) => s.showSettings);
@@ -104,7 +106,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.pull')}
-              disabled={repository.isUnborn}
+              disabled={repository.isUnborn || !hasRemotes}
               onClick={() => setPullOpen(true)}
             >
               <div className="relative">
@@ -120,7 +122,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.push')}
-              disabled={repository.isUnborn}
+              disabled={repository.isUnborn || !hasRemotes}
               onClick={() => setPushOpen(true)}
             >
               <div className="relative">
@@ -135,6 +137,7 @@ export function Toolbar() {
             </button>
             <button
               className={toolbarButtonClass}
+              disabled={!hasRemotes}
               onClick={() => setFetchOpen(true)}
               title={t('toolbar.fetch')}
             >

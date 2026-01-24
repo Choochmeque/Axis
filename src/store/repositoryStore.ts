@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import i18n from '@/i18n';
+import { toast } from '@/hooks';
 import { operations } from '@/store/operationStore';
 import { BranchFilterType, SortOrder } from '@/types';
 import type { BranchFilterType as BranchFilterTypeType, SortOrder as SortOrderType } from '@/types';
@@ -16,6 +17,7 @@ import type {
   FileDiff,
   Submodule,
   Worktree,
+  Remote,
 } from '@/types';
 import {
   repositoryApi,
@@ -27,6 +29,7 @@ import {
   commitApi,
   submoduleApi,
   worktreeApi,
+  remoteApi,
 } from '@/services/api';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { debounce, type DebouncedFn } from '@/lib/debounce';
@@ -60,6 +63,7 @@ interface RepositoryState {
   branches: Branch[];
   tags: Tag[];
   stashes: StashEntry[];
+  remotes: Remote[];
   submodules: Submodule[];
   worktrees: Worktree[];
   status: RepositoryStatus | null;
@@ -106,6 +110,7 @@ interface RepositoryState {
   loadBranches: () => Promise<void>;
   loadTags: () => Promise<void>;
   loadStashes: () => Promise<void>;
+  loadRemotes: () => Promise<void>;
   loadSubmodules: () => Promise<void>;
   loadWorktrees: () => Promise<void>;
   loadStatus: () => Promise<void>;
@@ -139,6 +144,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   branches: [],
   tags: [],
   stashes: [],
+  remotes: [],
   submodules: [],
   worktrees: [],
   status: null,
@@ -178,6 +184,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadBranches(),
         get().loadTags(),
         get().loadStashes(),
+        get().loadRemotes(),
         get().loadSubmodules(),
         get().loadWorktrees(),
         get().loadStatus(),
@@ -202,6 +209,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadBranches(),
         get().loadTags(),
         get().loadStashes(),
+        get().loadRemotes(),
         get().loadSubmodules(),
         get().loadWorktrees(),
         get().loadStatus(),
@@ -246,6 +254,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadBranches(),
         get().loadTags(),
         get().loadStashes(),
+        get().loadRemotes(),
         get().loadSubmodules(),
         get().loadWorktrees(),
         get().loadStatus(),
@@ -367,6 +376,17 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       }, DEBOUNCE_DELAY);
     }
     debouncedLoadStashes();
+  },
+
+  loadRemotes: async () => {
+    try {
+      const remotes = await remoteApi.list();
+      set({ remotes });
+    } catch (err) {
+      const errorMsg = getErrorMessage(err);
+      toast.error(i18n.t('notifications.error.loadRemotesFailed'), errorMsg);
+      set({ error: errorMsg });
+    }
   },
 
   loadSubmodules: async () => {

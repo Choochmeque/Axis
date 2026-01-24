@@ -39,7 +39,7 @@ import { useStagingStore } from '../../store/stagingStore';
 import { useLfsStore } from '../../store/lfsStore';
 import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
 import { cn, naturalCompare } from '../../lib/utils';
-import type { Branch, Remote } from '../../types';
+import type { Branch } from '../../types';
 import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
 import { TagDialog } from '../tags/TagDialog';
 import { TagContextMenu } from '../tags/TagContextMenu';
@@ -47,7 +47,7 @@ import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
 import { StashContextMenu } from '../stash';
 import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
-import { tagApi, remoteApi, branchApi } from '../../services/api';
+import { tagApi, branchApi } from '../../services/api';
 import { BranchType, PrState, IssueState, CIRunStatus } from '@/types';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -161,6 +161,7 @@ export function Sidebar() {
     branches,
     tags,
     stashes,
+    remotes,
     submodules,
     worktrees,
     status,
@@ -181,19 +182,6 @@ export function Sidebar() {
   const [showRemoteDialog, setShowRemoteDialog] = useState(false);
   const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
   const [showWorktreeDialog, setShowWorktreeDialog] = useState(false);
-  const [remotes, setRemotes] = useState<Remote[]>([]);
-
-  // Load remotes for tag context menu
-  useEffect(() => {
-    if (repository) {
-      remoteApi
-        .list()
-        .then(setRemotes)
-        .catch((err) =>
-          toast.error(t('notifications.error.loadRemotesFailed'), getErrorMessage(err))
-        );
-    }
-  }, [repository, t]);
 
   // Load LFS status when repository changes
   useEffect(() => {
@@ -666,7 +654,11 @@ export function Sidebar() {
             >
               {t('sidebar.contextMenu.addSubmodule')}
             </MenuItem>
-            <MenuItem icon={GitFork} onSelect={() => setShowWorktreeDialog(true)}>
+            <MenuItem
+              icon={GitFork}
+              disabled={repository?.isUnborn}
+              onSelect={() => setShowWorktreeDialog(true)}
+            >
               {t('sidebar.contextMenu.addWorktree')}
             </MenuItem>
           </ContextMenuContent>

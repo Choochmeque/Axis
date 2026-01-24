@@ -651,6 +651,7 @@ impl Git2Service {
         // Include untracked files in the diff with their content
         diff_opts.include_untracked(true);
         diff_opts.show_untracked_content(true);
+        diff_opts.recurse_untracked_dirs(true);
 
         let diff = self
             .repo
@@ -683,6 +684,7 @@ impl Git2Service {
         // Include untracked files in the diff with their content
         diff_opts.include_untracked(true);
         diff_opts.show_untracked_content(true);
+        diff_opts.recurse_untracked_dirs(true);
 
         let head = self.repo.head()?.peel_to_tree()?;
         let diff = self

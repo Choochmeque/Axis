@@ -492,6 +492,9 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       return;
     }
 
+    // Check if this is the special "uncommitted" entry
+    const isUncommitted = oid === 'uncommitted';
+
     // Check if commit is in loaded list
     const { commits } = get();
     const commitInList = commits.find((c) => c.oid === oid);
@@ -507,12 +510,12 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     });
 
     try {
-      // Fetch files and commit data in parallel
-      const [files, commitData] = await Promise.all([
-        diffApi.getCommit(oid),
-        // Only fetch commit data if not in list
-        commitInList ? Promise.resolve(null) : commitApi.getCommit(oid),
-      ]);
+      // For uncommitted changes, use getHead() to get diff vs HEAD
+      // For regular commits, use getCommit()
+      const files = isUncommitted ? await diffApi.getHead() : await diffApi.getCommit(oid);
+
+      // Only fetch commit data if not in list and not uncommitted
+      const commitData = isUncommitted || commitInList ? null : await commitApi.getCommit(oid);
 
       set({
         selectedCommitFiles: files,

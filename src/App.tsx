@@ -10,6 +10,7 @@ import { ContentSearch } from './components/search/ContentSearch';
 import { ReflogView } from './components/reflog';
 import { LfsView } from './components/lfs';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
+import { ConflictResolver } from './components/merge';
 import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, useCustomActionShortcuts, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
@@ -249,6 +250,15 @@ function App() {
         return <CIView key="ci" />;
       case 'notifications':
         return <NotificationsView key="notifications" />;
+      case 'conflicts':
+        return (
+          <ConflictResolver
+            onAllResolved={() => {
+              useRepositoryStore.getState().setCurrentView('file-status');
+              useStagingStore.getState().loadStatus();
+            }}
+          />
+        );
       default:
         return <WorkspaceView />;
     }

@@ -56,6 +56,9 @@ pub enum AxisError {
     #[error("Checkout conflict: uncommitted changes would be overwritten")]
     CheckoutConflict(Vec<String>),
 
+    #[error("Stash applied with conflicts")]
+    StashApplyConflict(Vec<String>),
+
     #[error("Authentication failed: {0}")]
     AuthenticationFailed(String),
 

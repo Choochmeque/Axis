@@ -53,7 +53,8 @@ export type ViewType =
   | 'pull-requests'
   | 'issues'
   | 'ci'
-  | 'notifications';
+  | 'notifications'
+  | 'conflicts';
 
 interface RepositoryState {
   // Data
@@ -142,6 +143,10 @@ interface RepositoryState {
   // Stash detail actions
   selectStash: (stash: StashEntry | null) => Promise<void>;
   clearStashSelection: () => void;
+
+  // Stash operations
+  applyStash: (index: number, reinstateIndex?: boolean) => Promise<boolean>;
+  popStash: (index: number, reinstateIndex?: boolean) => Promise<boolean>;
 
   // Checkout conflict actions
   checkoutBranch: (branchName: string, isRemote?: boolean) => Promise<boolean>;
@@ -582,6 +587,47 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       selectedStashFile: null,
       isLoadingStashFiles: false,
     }),
+
+  applyStash: async (index: number, reinstateIndex = false): Promise<boolean> => {
+    try {
+      await stashApi.apply({ index, reinstateIndex });
+      await get().refreshRepository();
+      toast.success(i18n.t('stash.applySuccess'));
+      return true;
+    } catch (err) {
+      if (isAxisError(err) && err.type === 'StashApplyConflict') {
+        await get().refreshRepository();
+        await get().loadStatus();
+        toast.warning(i18n.t('stash.applyConflict'));
+        set({ currentView: 'conflicts' });
+        return false;
+      }
+      toast.error(i18n.t('stash.contextMenu.applyFailed'), getErrorMessage(err));
+      return false;
+    }
+  },
+
+  popStash: async (index: number, reinstateIndex = false): Promise<boolean> => {
+    try {
+      await stashApi.pop({ index, reinstateIndex });
+      get().clearStashSelection();
+      await get().loadStashes();
+      await get().refreshRepository();
+      toast.success(i18n.t('stash.popSuccess'));
+      return true;
+    } catch (err) {
+      if (isAxisError(err) && err.type === 'StashApplyConflict') {
+        // Stash is NOT dropped when there are conflicts
+        await get().refreshRepository();
+        await get().loadStatus();
+        toast.warning(i18n.t('stash.popConflict'));
+        set({ currentView: 'conflicts' });
+        return false;
+      }
+      toast.error(i18n.t('stash.contextMenu.popFailed'), getErrorMessage(err));
+      return false;
+    }
+  },
 
   checkoutBranch: async (branchName: string, isRemote = false): Promise<boolean> => {
     try {

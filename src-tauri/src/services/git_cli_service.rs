@@ -547,18 +547,16 @@ impl GitCliService {
 
         let result = self.execute(&args)?;
 
-        if result.success {
+        // Git outputs CONFLICT to stdout
+        if result.stdout.contains("CONFLICT") {
+            let conflicts = self.get_conflicted_files()?;
+            Err(AxisError::StashApplyConflict(conflicts))
+        } else if result.success {
             Ok(StashResult {
                 message: "Stash applied successfully".to_string(),
                 files_affected: 0,
                 conflicts: Vec::new(),
             })
-        } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
-            // TODO: Get conflicted files and return proper error
-            let conflicts = self.get_conflicted_files()?;
-            Err(AxisError::GitError(
-                "Stash applied with conflicts".to_string(),
-            ))
         } else {
             Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
@@ -577,18 +575,16 @@ impl GitCliService {
 
         let result = self.execute(&args)?;
 
-        if result.success {
+        // Git outputs CONFLICT to stdout
+        if result.stdout.contains("CONFLICT") {
+            let conflicts = self.get_conflicted_files()?;
+            Err(AxisError::StashApplyConflict(conflicts))
+        } else if result.success {
             Ok(StashResult {
                 message: "Stash popped successfully".to_string(),
                 files_affected: 0,
                 conflicts: Vec::new(),
             })
-        } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
-            // TODO: Get conflicted files and return proper error
-            let conflicts = self.get_conflicted_files()?;
-            Err(AxisError::GitError(
-                "Stash applied with conflicts (not dropped)".to_string(),
-            ))
         } else {
             Err(AxisError::GitError(result.stderr.trim().to_string()))
         }

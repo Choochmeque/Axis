@@ -20,8 +20,11 @@ import {
   Move,
   ChevronDown,
   ChevronUp,
+  GitMerge,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
-import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
+import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 import { copyToClipboard, showInFinder } from '@/lib/actions';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
@@ -33,6 +36,9 @@ import { IgnoreDialog } from './IgnoreDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ActionContext } from '@/types';
+import { conflictApi } from '@/services/api';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;
@@ -81,32 +87,90 @@ export function StagingFileContextMenu({
   return (
     <>
       <ContextMenu trigger={children}>
-        <MenuItem icon={FileCode} disabled>
-          {t('staging.contextMenu.open')}
-        </MenuItem>
+        {/* Basic file actions - hide some for conflicted files */}
+        {!isConflicted && (
+          <MenuItem icon={FileCode} disabled>
+            {t('staging.contextMenu.open')}
+          </MenuItem>
+        )}
         <MenuItem icon={FolderOpen} onSelect={handleShowInFinder}>
           {t('staging.contextMenu.showInFinder')}
         </MenuItem>
         <MenuItem icon={Copy} onSelect={handleCopyPath}>
           {t('staging.contextMenu.copyPath')}
         </MenuItem>
-        <MenuItem icon={Terminal} disabled>
-          {t('staging.contextMenu.openInTerminal')}
-        </MenuItem>
-        <MenuItem icon={Eye} disabled>
-          {t('staging.contextMenu.quickLook')}
-        </MenuItem>
+        {!isConflicted && (
+          <>
+            <MenuItem icon={Terminal} disabled>
+              {t('staging.contextMenu.openInTerminal')}
+            </MenuItem>
+            <MenuItem icon={Eye} disabled>
+              {t('staging.contextMenu.quickLook')}
+            </MenuItem>
+          </>
+        )}
         <MenuSeparator />
+
+        {/* Diff/Patch - hide Create/Apply Patch for conflicted */}
         <MenuItem icon={Diff} disabled>
           {t('staging.contextMenu.externalDiff')}
         </MenuItem>
-        <MenuItem icon={FileText} disabled>
-          {t('staging.contextMenu.createPatch')}
-        </MenuItem>
-        <MenuItem icon={FilePlus} disabled>
-          {t('staging.contextMenu.applyPatch')}
-        </MenuItem>
+        {!isConflicted && (
+          <>
+            <MenuItem icon={FileText} disabled>
+              {t('staging.contextMenu.createPatch')}
+            </MenuItem>
+            <MenuItem icon={FilePlus} disabled>
+              {t('staging.contextMenu.applyPatch')}
+            </MenuItem>
+          </>
+        )}
         <MenuSeparator />
+
+        {/* Conflict resolution actions - only for conflicted files */}
+        {isConflicted && (
+          <>
+            <MenuItem
+              icon={ArrowLeft}
+              onSelect={async () => {
+                try {
+                  await conflictApi.resolveConflict(file.path, 'Ours', undefined);
+                  await useStagingStore.getState().loadStatus();
+                  useStagingStore.getState().selectFile(null, false);
+                  toast.success(t('staging.contextMenu.conflictResolved'));
+                } catch (err) {
+                  toast.error(t('staging.contextMenu.resolveConflictFailed'), getErrorMessage(err));
+                }
+              }}
+            >
+              {t('staging.contextMenu.useOurs')}
+            </MenuItem>
+            <MenuItem
+              icon={ArrowRight}
+              onSelect={async () => {
+                try {
+                  await conflictApi.resolveConflict(file.path, 'Theirs', undefined);
+                  await useStagingStore.getState().loadStatus();
+                  useStagingStore.getState().selectFile(null, false);
+                  toast.success(t('staging.contextMenu.conflictResolved'));
+                } catch (err) {
+                  toast.error(t('staging.contextMenu.resolveConflictFailed'), getErrorMessage(err));
+                }
+              }}
+            >
+              {t('staging.contextMenu.useTheirs')}
+            </MenuItem>
+            <MenuItem
+              icon={GitMerge}
+              onSelect={() => {
+                useRepositoryStore.getState().setCurrentView('conflicts');
+              }}
+            >
+              {t('staging.contextMenu.openConflictResolver')}
+            </MenuItem>
+            <MenuSeparator />
+          </>
+        )}
 
         {/* Stage/Unstage */}
         {!isStaged && (
@@ -127,43 +191,31 @@ export function StagingFileContextMenu({
           </MenuItem>
         )}
 
-        {/* Stop Tracking - only for tracked files */}
-        {isTracked && (
-          <MenuItem icon={EyeOff} disabled>
-            {t('staging.contextMenu.stopTracking')}
-          </MenuItem>
-        )}
-
-        <MenuItem icon={EyeOff} onSelect={() => setShowIgnoreDialog(true)}>
-          {t('staging.contextMenu.ignore')}
-        </MenuItem>
-        <MenuSeparator />
-
-        <MenuItem icon={GitCommit} disabled>
-          {t('staging.contextMenu.commitSelected')}
-        </MenuItem>
-
-        {/* Reset - only for tracked files */}
-        {isTracked && (
-          <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
-            {t('staging.contextMenu.reset')}
-          </MenuItem>
-        )}
-
-        {/* Reset to Commit - only for tracked files */}
-        {isTracked && (
-          <MenuItem icon={RotateCcw} disabled>
-            {t('staging.contextMenu.resetToCommit')}
-          </MenuItem>
-        )}
-
-        {/* Resolve Conflicts submenu - only for conflicted files */}
-        {isConflicted && (
+        {/* Non-conflict file actions */}
+        {!isConflicted && (
           <>
+            {isTracked && (
+              <MenuItem icon={EyeOff} disabled>
+                {t('staging.contextMenu.stopTracking')}
+              </MenuItem>
+            )}
+            <MenuItem icon={EyeOff} onSelect={() => setShowIgnoreDialog(true)}>
+              {t('staging.contextMenu.ignore')}
+            </MenuItem>
             <MenuSeparator />
-            <SubMenu icon={Diff} label={t('staging.contextMenu.resolveConflicts')}>
-              <MenuItem disabled>{t('staging.contextMenu.markAsResolved')}</MenuItem>
-            </SubMenu>
+            <MenuItem icon={GitCommit} disabled>
+              {t('staging.contextMenu.commitSelected')}
+            </MenuItem>
+            {isTracked && (
+              <MenuItem icon={RotateCcw} danger disabled={!canReset} onSelect={onDiscard}>
+                {t('staging.contextMenu.reset')}
+              </MenuItem>
+            )}
+            {isTracked && (
+              <MenuItem icon={RotateCcw} disabled>
+                {t('staging.contextMenu.resetToCommit')}
+              </MenuItem>
+            )}
           </>
         )}
 
@@ -178,13 +230,19 @@ export function StagingFileContextMenu({
             {t('staging.contextMenu.annotateSelected')}
           </MenuItem>
         )}
-        <MenuSeparator />
-        <MenuItem icon={Copy} disabled>
-          {t('staging.contextMenu.copy')}
-        </MenuItem>
-        <MenuItem icon={Move} disabled>
-          {t('staging.contextMenu.move')}
-        </MenuItem>
+
+        {/* Copy/Move - not for conflicted files */}
+        {!isConflicted && (
+          <>
+            <MenuSeparator />
+            <MenuItem icon={Copy} disabled>
+              {t('staging.contextMenu.copy')}
+            </MenuItem>
+            <MenuItem icon={Move} disabled>
+              {t('staging.contextMenu.move')}
+            </MenuItem>
+          </>
+        )}
 
         <CustomActionsMenuSection context={ActionContext.File} variables={{ file: file.path }} />
 

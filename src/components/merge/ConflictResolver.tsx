@@ -5,6 +5,7 @@ import { conflictApi, operationApi } from '@/services/api';
 import { ConflictResolution } from '@/types';
 import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';
@@ -45,7 +46,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         setSelectedFile(conflictedFiles[0].path);
       }
     } catch (err) {
-      console.error('Failed to load conflicts:', err);
+      console.error('Failed to load conflicts:', getErrorMessage(err));
       setError(t('merge.conflictResolver.failedLoad'));
     }
   }, [selectedFile, onAllResolved, t]);
@@ -67,7 +68,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         setConflictContent(content);
         setMergedContent(content.merged);
       } catch (err) {
-        console.error('Failed to load conflict content:', err);
+        console.error('Failed to load conflict content:', getErrorMessage(err));
         setError(t('merge.conflictResolver.failedLoadContent'));
       } finally {
         setIsLoading(false);
@@ -77,15 +78,28 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     loadContent();
   }, [selectedFile]);
 
+  const refreshAfterResolve = async () => {
+    const [remainingConflicts, opState] = await Promise.all([
+      conflictApi.getConflictedFiles(),
+      operationApi.getState(),
+    ]);
+    setConflicts(remainingConflicts);
+    setOperationState(opState);
+    // Auto-select next conflict or clear selection
+    setSelectedFile(remainingConflicts.length > 0 ? remainingConflicts[0].path : null);
+    if (remainingConflicts.length === 0 && opState !== 'None') {
+      onAllResolved?.();
+    }
+  };
+
   const handleResolveOurs = async () => {
     if (!selectedFile) return;
 
     try {
       await conflictApi.resolveConflict(selectedFile, ConflictResolution.Ours);
-      await loadConflicts();
-      setSelectedFile(null);
+      await refreshAfterResolve();
     } catch (err) {
-      console.error('Failed to resolve conflict:', err);
+      console.error('Failed to resolve conflict:', getErrorMessage(err));
       setError(t('merge.conflictResolver.failedResolve'));
     }
   };
@@ -95,10 +109,9 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
 
     try {
       await conflictApi.resolveConflict(selectedFile, ConflictResolution.Theirs);
-      await loadConflicts();
-      setSelectedFile(null);
+      await refreshAfterResolve();
     } catch (err) {
-      console.error('Failed to resolve conflict:', err);
+      console.error('Failed to resolve conflict:', getErrorMessage(err));
       setError(t('merge.conflictResolver.failedResolve'));
     }
   };
@@ -108,10 +121,9 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
 
     try {
       await conflictApi.resolveConflict(selectedFile, ConflictResolution.Merged, mergedContent);
-      await loadConflicts();
-      setSelectedFile(null);
+      await refreshAfterResolve();
     } catch (err) {
-      console.error('Failed to resolve conflict:', err);
+      console.error('Failed to resolve conflict:', getErrorMessage(err));
       setError(t('merge.conflictResolver.failedResolve'));
     }
   };
@@ -138,6 +150,13 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     }
     return '';
   };
+
+  // No conflicts and no ongoing operation - navigate away
+  useEffect(() => {
+    if (conflicts.length === 0 && operationState === 'None') {
+      onAllResolved?.();
+    }
+  }, [conflicts.length, operationState, onAllResolved]);
 
   if (conflicts.length === 0 && operationState === 'None') {
     return null;

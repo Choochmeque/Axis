@@ -80,6 +80,9 @@ interface RepositoryState {
   selectedCommitFile: FileDiff | null;
   isLoadingCommitFiles: boolean;
 
+  // Scroll to commit state
+  scrollTargetOid: string | null;
+
   // Stash detail state
   selectedStash: StashEntry | null;
   selectedStashFiles: FileDiff[];
@@ -120,6 +123,9 @@ interface RepositoryState {
   selectCommitFile: (file: FileDiff | null) => void;
   clearCommitSelection: () => void;
 
+  // Scroll to commit actions
+  setScrollTarget: (oid: string | null) => void;
+
   // Stash detail actions
   selectStash: (stash: StashEntry | null) => Promise<void>;
   clearStashSelection: () => void;
@@ -146,6 +152,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   selectedCommitFiles: [],
   selectedCommitFile: null,
   isLoadingCommitFiles: false,
+  scrollTargetOid: null,
   selectedStash: null,
   selectedStashFiles: [],
   selectedStashFile: null,
@@ -481,6 +488,8 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       selectedCommitFile: null,
       isLoadingCommitFiles: false,
     }),
+
+  setScrollTarget: (oid: string | null) => set({ scrollTargetOid: oid }),
 
   selectStash: async (stash: StashEntry | null) => {
     if (!stash) {

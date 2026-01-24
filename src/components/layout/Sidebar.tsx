@@ -167,6 +167,7 @@ export function Sidebar() {
     currentView,
     setCurrentView,
     selectCommit,
+    setScrollTarget,
     selectStash,
     selectedStash,
     clearStashSelection,
@@ -320,6 +321,7 @@ export function Sidebar() {
     clearStashSelection();
     setCurrentView('history');
     selectCommit(targetOid);
+    setScrollTarget(targetOid);
   };
 
   const handleStashClick = (stash: (typeof stashes)[0]) => {

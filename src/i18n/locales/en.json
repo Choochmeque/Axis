@@ -1204,6 +1204,12 @@
       "date": "Date",
       "user": "User",
       "description": "Description"
+    },
+    "scrollToCommit": {
+      "searching": "Searching for commit",
+      "progress": "{{count}} commits loaded",
+      "notFound": "Commit not found",
+      "notFoundDesc": "Commit {{oid}} was not found in loaded history"
     }
   },
   "blame": {

@@ -10,14 +10,16 @@ import { copyToClipboard } from '@/lib/actions';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;
+  onScrollToCommit?: (oid: string) => void;
 }
 
-export function CommitInfo({ commit }: CommitInfoProps) {
+export function CommitInfo({ commit, onScrollToCommit }: CommitInfoProps) {
   const { t } = useTranslation();
   const { selectCommit } = useRepositoryStore();
 
   const handleParentClick = (parentOid: string) => {
     selectCommit(parentOid);
+    onScrollToCommit?.(parentOid);
   };
 
   const rowClass = 'flex items-start gap-3 text-base';

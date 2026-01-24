@@ -6,4 +6,5 @@ export { useMenuActions } from './useMenuActions';
 export { useOperation } from './useOperation';
 export { useOperationProgress } from './useOperationProgress';
 export { useReferenceMention } from './useReferenceMention';
+export { useScrollToCommit } from './useScrollToCommit';
 export { useToast, toast } from './useToast';

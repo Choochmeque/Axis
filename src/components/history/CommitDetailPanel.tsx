@@ -10,9 +10,10 @@ import type { Commit, GraphCommit } from '../../types';
 interface CommitDetailPanelProps {
   commit: Commit | GraphCommit;
   onClose: () => void;
+  onScrollToCommit?: (oid: string) => void;
 }
 
-export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
+export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitDetailPanelProps) {
   const { t } = useTranslation();
   const { selectedCommitFiles, selectedCommitFile, isLoadingCommitFiles, selectCommitFile } =
     useRepositoryStore();
@@ -49,7 +50,7 @@ export function CommitDetailPanel({ commit, onClose }: CommitDetailPanelProps) {
               </Panel>
               <PanelResizeHandle className="resize-handle-vertical" />
               <Panel defaultSize={40} minSize={20}>
-                <CommitInfo commit={commit} />
+                <CommitInfo commit={commit} onScrollToCommit={onScrollToCommit} />
               </Panel>
             </PanelGroup>
           </Panel>

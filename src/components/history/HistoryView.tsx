@@ -2,9 +2,12 @@
 import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useRepositoryStore } from '@/store/repositoryStore';
 import { GitCommit, Loader2 } from 'lucide-react';
+
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useScrollToCommit } from '@/hooks';
 import type { GraphCommit } from '@/types';
+import { RefType } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { HistoryFilters } from './HistoryFilters';
 import {
@@ -16,7 +19,6 @@ import {
 } from './CommitGraph';
 import { CommitTable } from './CommitTable';
 import { BisectBanner } from '../merge/BisectBanner';
-import { RefType } from '@/types';
 
 export function HistoryView() {
   const { t } = useTranslation();
@@ -38,6 +40,8 @@ export function HistoryView() {
   const listRef = useRef<HTMLDivElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const tableHeaderRef = useRef<HTMLTableRowElement>(null);
+
+  const { scrollToCommit, cancelScroll, isSearching, progress } = useScrollToCommit(listRef);
 
   // Use commit from list if available, otherwise fall back to fetched data
   const selectedCommit = selectedCommitOid
@@ -150,6 +154,24 @@ export function HistoryView() {
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
+      {isSearching && (
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-(--bg-secondary) border-b border-(--border-color) text-xs">
+          <div className="flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin" />
+            <span>{t('history.scrollToCommit.searching')}</span>
+            <span className="text-(--text-tertiary)">
+              {t('history.scrollToCommit.progress', { count: progress })}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="text-(--accent-color) hover:underline cursor-pointer"
+            onClick={cancelScroll}
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
       <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
         <div id="commitGraphContent">
           <div id="commitGraph" ref={graphContainerRef} />
@@ -195,7 +217,11 @@ export function HistoryView() {
         </Panel>
         <PanelResizeHandle className="resize-handle-vertical" />
         <Panel defaultSize={50} minSize={30}>
-          <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
+          <CommitDetailPanel
+            commit={selectedCommit}
+            onClose={clearCommitSelection}
+            onScrollToCommit={scrollToCommit}
+          />
         </Panel>
       </PanelGroup>
     </div>

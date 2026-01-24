@@ -110,7 +110,6 @@ describe('StashView', () => {
   it('should call save when creating stash', async () => {
     vi.mocked(stashApi.list).mockResolvedValue([]);
     vi.mocked(stashApi.save).mockResolvedValue({
-      success: true,
       message: 'Stash created',
       filesAffected: 1,
       conflicts: [],

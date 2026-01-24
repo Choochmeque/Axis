@@ -847,7 +847,8 @@
       "noRemotes": "No remotes",
       "noStashes": "No stashes",
       "noWorktrees": "No worktrees",
-      "noSubmodules": "No submodules"
+      "noSubmodules": "No submodules",
+      "noCommitsYet": "No commits yet"
     },
     "badges": {
       "main": "main",

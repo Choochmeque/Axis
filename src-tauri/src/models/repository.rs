@@ -9,6 +9,7 @@ pub struct Repository {
     pub name: String,
     pub path: PathBuf,
     pub is_bare: bool,
+    pub is_unborn: bool,
     pub current_branch: Option<String>,
     pub state: RepositoryState,
 }

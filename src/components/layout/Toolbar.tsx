@@ -104,6 +104,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.pull')}
+              disabled={repository.isUnborn}
               onClick={() => setPullOpen(true)}
             >
               <div className="relative">
@@ -119,6 +120,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.push')}
+              disabled={repository.isUnborn}
               onClick={() => setPushOpen(true)}
             >
               <div className="relative">
@@ -146,6 +148,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.branch')}
+              disabled={repository.isUnborn}
               onClick={() => setCreateBranchOpen(true)}
             >
               <GitBranch size={18} />
@@ -154,6 +157,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.checkout')}
+              disabled={repository.isUnborn}
               onClick={() => setCheckoutBranchOpen(true)}
             >
               <GitMerge size={18} />
@@ -162,6 +166,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               title={t('toolbar.stash')}
+              disabled={repository.isUnborn}
               onClick={() => setStashOpen(true)}
             >
               <Archive size={18} />

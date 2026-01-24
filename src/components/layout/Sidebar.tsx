@@ -642,16 +642,28 @@ export function Sidebar() {
 
         <ContextMenuPortal>
           <ContextMenuContent className="menu-content">
-            <MenuItem icon={GitBranch} onSelect={() => setShowBranchDialog(true)}>
+            <MenuItem
+              icon={GitBranch}
+              disabled={repository?.isUnborn}
+              onSelect={() => setShowBranchDialog(true)}
+            >
               {t('sidebar.contextMenu.newBranch')}
             </MenuItem>
-            <MenuItem icon={Tag} onSelect={() => setShowTagDialog(true)}>
+            <MenuItem
+              icon={Tag}
+              disabled={repository?.isUnborn}
+              onSelect={() => setShowTagDialog(true)}
+            >
               {t('sidebar.contextMenu.newTag')}
             </MenuItem>
             <MenuItem icon={Cloud} onSelect={() => setShowRemoteDialog(true)}>
               {t('sidebar.contextMenu.newRemote')}
             </MenuItem>
-            <MenuItem icon={FolderGit2} onSelect={() => setShowSubmoduleDialog(true)}>
+            <MenuItem
+              icon={FolderGit2}
+              disabled={repository?.isUnborn}
+              onSelect={() => setShowSubmoduleDialog(true)}
+            >
               {t('sidebar.contextMenu.addSubmodule')}
             </MenuItem>
             <MenuItem icon={GitFork} onSelect={() => setShowWorktreeDialog(true)}>

@@ -137,6 +137,14 @@ impl Git2Service {
             .map(|oid| oid.to_string())
     }
 
+    /// Check if HEAD is unborn (no commits yet in the repository)
+    pub fn is_head_unborn(&self) -> bool {
+        match self.repo.head() {
+            Ok(_) => false,
+            Err(e) => e.code() == git2::ErrorCode::UnbornBranch,
+        }
+    }
+
     /// Get repository information
     pub fn get_repository_info(&self) -> Result<Repository> {
         let path = self
@@ -158,6 +166,7 @@ impl Git2Service {
             name,
             path: path.to_path_buf(),
             is_bare: self.repo.is_bare(),
+            is_unborn: self.is_head_unborn(),
             current_branch,
             state,
         })
@@ -220,6 +229,11 @@ impl Git2Service {
 
     /// Get commit history
     pub fn log(&self, options: LogOptions) -> Result<Vec<Commit>> {
+        // Return empty list for unborn HEAD (no commits yet)
+        if self.is_head_unborn() {
+            return Ok(Vec::new());
+        }
+
         let mut revwalk = self.repo.revwalk()?;
 
         // Set sorting based on options
@@ -611,9 +625,27 @@ impl Git2Service {
             .commit_signed(commit_str, &signature, Some("gpgsig"))?;
 
         // Update HEAD to point to the new commit
-        self.repo.head()?.set_target(oid, "commit (signed)")?;
+        self.update_head_to_commit(oid, "commit (signed)")?;
 
         Ok(oid.to_string())
+    }
+
+    /// Update HEAD to point to a commit, handling unborn HEAD case
+    fn update_head_to_commit(&self, oid: git2::Oid, reflog_msg: &str) -> Result<()> {
+        if self.is_head_unborn() {
+            // For unborn HEAD, we need to create the branch reference
+            // HEAD is a symbolic ref pointing to a branch that doesn't exist yet
+            let head_ref = self.repo.find_reference("HEAD")?;
+            if let Some(target_name) = head_ref.symbolic_target() {
+                self.repo.reference(target_name, oid, true, reflog_msg)?;
+            } else {
+                // HEAD is not symbolic, create refs/heads/main
+                self.repo.reference("refs/heads/main", oid, true, reflog_msg)?;
+            }
+        } else {
+            self.repo.head()?.set_target(oid, reflog_msg)?;
+        }
+        Ok(())
     }
 
     /// Amend the last commit

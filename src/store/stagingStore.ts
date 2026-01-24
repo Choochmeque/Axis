@@ -340,7 +340,11 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       // Refresh status and commit history
       await get().loadStatus();
       const repoStore = useRepositoryStore.getState();
-      await Promise.all([repoStore.loadCommits(), repoStore.loadBranches()]);
+      await Promise.all([
+        repoStore.reloadRepositoryInfo(),
+        repoStore.loadCommits(),
+        repoStore.loadBranches(),
+      ]);
       return oid;
     } catch (error) {
       set({

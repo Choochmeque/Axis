@@ -105,6 +105,7 @@ interface RepositoryState {
   switchRepository: (path: string) => Promise<void>;
   closeRepository: () => Promise<void>;
   refreshRepository: () => Promise<void>;
+  reloadRepositoryInfo: () => Promise<void>;
   loadCommits: (limit?: number, skip?: number) => Promise<void>;
   loadMoreCommits: () => Promise<void>;
   loadBranches: () => Promise<void>;
@@ -259,6 +260,15 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         get().loadWorktrees(),
         get().loadStatus(),
       ]);
+      set({ repository: updatedRepo });
+    } catch (err) {
+      set({ error: getErrorMessage(err) });
+    }
+  },
+
+  reloadRepositoryInfo: async () => {
+    try {
+      const updatedRepo = await repositoryApi.getInfo();
       set({ repository: updatedRepo });
     } catch (err) {
       set({ error: getErrorMessage(err) });

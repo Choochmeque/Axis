@@ -1649,5 +1649,36 @@
     "deleteConfirm": "Delete action \"{{name}}\"?",
     "editLabel": "Edit action",
     "deleteLabel": "Delete action"
+  },
+  "ui": {
+    "toast": {
+      "dismiss": "Dismiss notification",
+      "notifications": "Notifications",
+      "noNotifications": "No notifications",
+      "clearAll": "Clear all"
+    },
+    "operations": {
+      "title": "Operations in Progress",
+      "ariaLabel": "Operations in progress",
+      "count": "{{count}} operation in progress",
+      "count_plural": "{{count}} operations in progress",
+      "stages": {
+        "Connecting": "Connecting",
+        "Counting": "Counting",
+        "Compressing": "Compressing",
+        "Receiving": "Receiving",
+        "Resolving": "Resolving",
+        "Complete": "Complete",
+        "Failed": "Failed",
+        "Cancelled": "Cancelled"
+      }
+    },
+    "dataTable": {
+      "noData": "No data",
+      "loading": "Loading..."
+    },
+    "dialog": {
+      "close": "Close"
+    }
   }
 }

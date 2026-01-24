@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import type { OperationProgress } from '@/store/operationStore';
 import { ProgressStage } from '@/types';
 
@@ -9,22 +11,23 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function formatProgressText(progress: OperationProgress): string {
+function formatProgressText(progress: OperationProgress, t: (key: string) => string): string {
   const bytes = formatBytes(progress.receivedBytes);
+  const stage = t(`ui.operations.stages.${progress.stage}`);
 
   if (
     progress.stage === ProgressStage.Resolving &&
     progress.totalDeltas &&
     progress.indexedDeltas
   ) {
-    return `Resolving: ${progress.indexedDeltas}/${progress.totalDeltas}`;
+    return `${stage}: ${progress.indexedDeltas}/${progress.totalDeltas}`;
   }
 
   if (progress.totalObjects && progress.receivedObjects !== undefined) {
-    return `${progress.stage}: ${progress.receivedObjects}/${progress.totalObjects} (${bytes})`;
+    return `${stage}: ${progress.receivedObjects}/${progress.totalObjects} (${bytes})`;
   }
 
-  return `${progress.stage}: ${bytes}`;
+  return `${stage}: ${bytes}`;
 }
 
 function getProgressPercent(progress: OperationProgress): number {
@@ -49,6 +52,7 @@ interface OperationProgressBarProps {
 }
 
 export function OperationProgressBar({ progress, className }: OperationProgressBarProps) {
+  const { t } = useTranslation();
   const percent = getProgressPercent(progress);
 
   return (
@@ -56,7 +60,7 @@ export function OperationProgressBar({ progress, className }: OperationProgressB
       <div className="operations-progress-bar">
         <div className="operations-progress-fill" style={{ width: `${percent}%` }} />
       </div>
-      <div className="operations-progress-text">{formatProgressText(progress)}</div>
+      <div className="operations-progress-text">{formatProgressText(progress, t)}</div>
     </div>
   );
 }

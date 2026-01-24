@@ -1,6 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X, type LucideIcon } from 'lucide-react';
 import { forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 const Dialog = DialogPrimitive.Root;
@@ -39,26 +40,30 @@ interface DialogContentProps extends React.ComponentPropsWithoutRef<
 const DialogContent = forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, maxWidth = 'md', showClose = true, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      aria-describedby={undefined}
-      className={cn('dialog-content', maxWidthClasses[maxWidth], className)}
-      {...props}
-    >
-      {children}
-      {showClose && (
-        <DialogPrimitive.Close asChild>
-          <button className="btn-close absolute top-3 right-3" aria-label="Close">
-            <X size={16} />
-          </button>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(({ className, children, maxWidth = 'md', showClose = true, ...props }, ref) => {
+  const { t } = useTranslation();
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        aria-describedby={undefined}
+        className={cn('dialog-content', maxWidthClasses[maxWidth], className)}
+        {...props}
+      >
+        {children}
+        {showClose && (
+          <DialogPrimitive.Close asChild>
+            <button className="btn-close absolute top-3 right-3" aria-label={t('common.close')}>
+              <X size={16} />
+            </button>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+});
 DialogContent.displayName = 'DialogContent';
 
 interface DialogTitleProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title> {

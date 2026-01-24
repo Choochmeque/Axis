@@ -1436,6 +1436,56 @@
       }
     }
   },
+  "worktrees": {
+    "add": {
+      "title": "Add Worktree",
+      "description": "Create a new worktree linked to this repository. Each worktree can be checked out to a different branch.",
+      "pathLabel": "Path",
+      "pathHint": "Absolute path or path relative to repository",
+      "pathPlaceholder": "../my-repo-feature",
+      "branchLabel": "Branch",
+      "branchPlaceholder": "feature/my-feature",
+      "detachLabel": "Detached HEAD (no branch)",
+      "createBranchLabel": "Create new branch",
+      "baseLabel": "Base (optional)",
+      "baseHint": "Branch or commit to base new branch on",
+      "basePlaceholder": "main",
+      "pathRequired": "Path is required",
+      "branchRequired": "Branch name is required (or select detached HEAD)",
+      "creating": "Creating...",
+      "addButton": "Add Worktree"
+    },
+    "remove": {
+      "title": "Remove Worktree",
+      "confirmMessage": "Are you sure you want to remove the worktree at:",
+      "branchLabel": "Branch:",
+      "forceLabel": "Force removal (discard uncommitted changes)",
+      "removing": "Removing...",
+      "removeButton": "Remove"
+    },
+    "contextMenu": {
+      "switch": "Switch to Worktree",
+      "openInFinder": "Open in Finder",
+      "copyPath": "Copy Path",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "remove": "Remove Worktree"
+    },
+    "operations": {
+      "add": "Add Worktree",
+      "addDescription": "Creating worktree",
+      "remove": "Remove Worktree",
+      "removeDescription": "Removing worktree"
+    },
+    "notifications": {
+      "created": "Worktree created",
+      "removed": "Worktree removed",
+      "locked": "Worktree locked",
+      "unlocked": "Worktree unlocked",
+      "lockFailed": "Lock worktree failed",
+      "unlockFailed": "Unlock worktree failed"
+    }
+  },
   "repository": {
     "clone": {
       "title": "Clone Repository",

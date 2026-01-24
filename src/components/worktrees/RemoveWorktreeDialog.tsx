@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -25,6 +26,7 @@ interface RemoveWorktreeDialogProps {
 }
 
 export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWorktreeDialogProps) {
+  const { t } = useTranslation();
   const { loadWorktrees } = useRepositoryStore();
   const { trackOperation } = useOperation();
   const [force, setForce] = useState(false);
@@ -45,7 +47,11 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
 
     try {
       await trackOperation(
-        { name: 'Remove Worktree', description: 'Removing worktree', category: 'git' },
+        {
+          name: t('worktrees.operations.remove'),
+          description: t('worktrees.operations.removeDescription'),
+          category: 'git',
+        },
         async () => {
           await worktreeApi.remove({
             path: worktree.path,
@@ -56,7 +62,7 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
       );
 
       handleOpenChange(false);
-      toast.success('Worktree removed');
+      toast.success(t('worktrees.notifications.removed'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -67,11 +73,11 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
-        <DialogTitle icon={Trash2}>Remove Worktree</DialogTitle>
+        <DialogTitle icon={Trash2}>{t('worktrees.remove.title')}</DialogTitle>
 
         <DialogBody>
           <p className="text-base text-(--text-secondary) mb-4">
-            Are you sure you want to remove the worktree at:
+            {t('worktrees.remove.confirmMessage')}
           </p>
           <p className="font-mono text-sm bg-(--bg-tertiary) p-2 rounded mb-4 break-all">
             {worktree.path}
@@ -79,13 +85,13 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
 
           {worktree.branch && (
             <p className="text-sm text-(--text-secondary) mb-4">
-              Branch: <strong>{worktree.branch}</strong>
+              {t('worktrees.remove.branchLabel')} <strong>{worktree.branch}</strong>
             </p>
           )}
 
           <CheckboxField
             id="force-remove"
-            label="Force removal (discard uncommitted changes)"
+            label={t('worktrees.remove.forceLabel')}
             checked={force}
             onCheckedChange={setForce}
           />
@@ -99,10 +105,10 @@ export function RemoveWorktreeDialog({ open, onOpenChange, worktree }: RemoveWor
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleRemove} disabled={isLoading}>
-            {isLoading ? 'Removing...' : 'Remove'}
+            {isLoading ? t('worktrees.remove.removing') : t('worktrees.remove.removeButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

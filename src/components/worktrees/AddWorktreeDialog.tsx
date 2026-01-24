@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitFork } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
@@ -26,6 +27,7 @@ interface AddWorktreeDialogProps {
 }
 
 export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps) {
+  const { t } = useTranslation();
   const { loadWorktrees } = useRepositoryStore();
   const { trackOperation } = useOperation();
   const [path, setPath] = useState('');
@@ -61,12 +63,12 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
 
   const handleAdd = async () => {
     if (!path.trim()) {
-      setError('Path is required');
+      setError(t('worktrees.add.pathRequired'));
       return;
     }
 
     if (!detach && !branch.trim()) {
-      setError('Branch name is required (or select detached HEAD)');
+      setError(t('worktrees.add.branchRequired'));
       return;
     }
 
@@ -75,7 +77,11 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
 
     try {
       await trackOperation(
-        { name: 'Add Worktree', description: 'Creating worktree', category: 'git' },
+        {
+          name: t('worktrees.operations.add'),
+          description: t('worktrees.operations.addDescription'),
+          category: 'git',
+        },
         async () => {
           await worktreeApi.add({
             path: path.trim(),
@@ -90,7 +96,7 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
       );
 
       handleOpenChange(false);
-      toast.success('Worktree created');
+      toast.success(t('worktrees.notifications.created'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -101,32 +107,29 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogTitle icon={GitFork}>Add Worktree</DialogTitle>
+        <DialogTitle icon={GitFork}>{t('worktrees.add.title')}</DialogTitle>
 
         <DialogBody>
-          <p className="text-base text-(--text-secondary) mb-4">
-            Create a new worktree linked to this repository. Each worktree can be checked out to a
-            different branch.
-          </p>
+          <p className="text-base text-(--text-secondary) mb-4">{t('worktrees.add.description')}</p>
 
           <FormField
-            label="Path"
+            label={t('worktrees.add.pathLabel')}
             htmlFor="worktree-path"
-            hint="Absolute path or path relative to repository"
+            hint={t('worktrees.add.pathHint')}
           >
             <Input
               id="worktree-path"
               type="text"
               value={path}
               onChange={(e) => setPath(e.target.value)}
-              placeholder="../my-repo-feature"
+              placeholder={t('worktrees.add.pathPlaceholder')}
               autoFocus
             />
           </FormField>
 
           <CheckboxField
             id="detach-head"
-            label="Detached HEAD (no branch)"
+            label={t('worktrees.add.detachLabel')}
             checked={detach}
             onCheckedChange={(checked) => {
               setDetach(checked);
@@ -138,13 +141,13 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
 
           {!detach && (
             <>
-              <FormField label="Branch" htmlFor="worktree-branch">
+              <FormField label={t('worktrees.add.branchLabel')} htmlFor="worktree-branch">
                 <Input
                   id="worktree-branch"
                   type="text"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  placeholder="feature/my-feature"
+                  placeholder={t('worktrees.add.branchPlaceholder')}
                   list="branch-suggestions"
                 />
                 <datalist id="branch-suggestions">
@@ -156,23 +159,23 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
 
               <CheckboxField
                 id="create-branch"
-                label="Create new branch"
+                label={t('worktrees.add.createBranchLabel')}
                 checked={createBranch}
                 onCheckedChange={setCreateBranch}
               />
 
               {createBranch && (
                 <FormField
-                  label="Base (optional)"
+                  label={t('worktrees.add.baseLabel')}
                   htmlFor="worktree-base"
-                  hint="Branch or commit to base new branch on"
+                  hint={t('worktrees.add.baseHint')}
                 >
                   <Input
                     id="worktree-base"
                     type="text"
                     value={baseBranch}
                     onChange={(e) => setBaseBranch(e.target.value)}
-                    placeholder="main"
+                    placeholder={t('worktrees.add.basePlaceholder')}
                   />
                 </FormField>
               )}
@@ -188,14 +191,14 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button
             variant="primary"
             onClick={handleAdd}
             disabled={isLoading || !path.trim() || (!detach && !branch.trim())}
           >
-            {isLoading ? 'Creating...' : 'Add Worktree'}
+            {isLoading ? t('worktrees.add.creating') : t('worktrees.add.addButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

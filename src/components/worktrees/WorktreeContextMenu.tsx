@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Lock, Unlock, Trash2, FolderOpen, Copy } from 'lucide-react';
 
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
@@ -17,6 +18,7 @@ interface WorktreeContextMenuProps {
 }
 
 export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeContextMenuProps) {
+  const { t } = useTranslation();
   const { loadWorktrees } = useRepositoryStore();
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
@@ -28,9 +30,9 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
     try {
       await worktreeApi.lock(worktree.path);
       await loadWorktrees();
-      toast.success('Worktree locked');
+      toast.success(t('worktrees.notifications.locked'));
     } catch (err) {
-      toast.error('Lock worktree failed', getErrorMessage(err));
+      toast.error(t('worktrees.notifications.lockFailed'), getErrorMessage(err));
     }
   };
 
@@ -38,9 +40,9 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
     try {
       await worktreeApi.unlock(worktree.path);
       await loadWorktrees();
-      toast.success('Worktree unlocked');
+      toast.success(t('worktrees.notifications.unlocked'));
     } catch (err) {
-      toast.error('Unlock worktree failed', getErrorMessage(err));
+      toast.error(t('worktrees.notifications.unlockFailed'), getErrorMessage(err));
     }
   };
 
@@ -50,29 +52,29 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
         {!worktree.isMain && (
           <>
             <MenuItem icon={Play} onSelect={handleSwitch}>
-              Switch to Worktree
+              {t('worktrees.contextMenu.switch')}
             </MenuItem>
             <MenuSeparator />
           </>
         )}
 
         <MenuItem icon={FolderOpen} onSelect={() => showInFinder(worktree.path)}>
-          Open in Finder
+          {t('worktrees.contextMenu.openInFinder')}
         </MenuItem>
 
         <MenuItem icon={Copy} onSelect={() => copyToClipboard(worktree.path)}>
-          Copy Path
+          {t('worktrees.contextMenu.copyPath')}
         </MenuItem>
 
         <MenuSeparator />
 
         {worktree.isLocked ? (
           <MenuItem icon={Unlock} onSelect={handleUnlock}>
-            Unlock
+            {t('worktrees.contextMenu.unlock')}
           </MenuItem>
         ) : (
           <MenuItem icon={Lock} onSelect={handleLock}>
-            Lock
+            {t('worktrees.contextMenu.lock')}
           </MenuItem>
         )}
 
@@ -80,7 +82,7 @@ export function WorktreeContextMenu({ worktree, children, onSwitch }: WorktreeCo
           <>
             <MenuSeparator />
             <MenuItem icon={Trash2} danger onSelect={() => setShowRemoveDialog(true)}>
-              Remove Worktree
+              {t('worktrees.contextMenu.remove')}
             </MenuItem>
           </>
         )}

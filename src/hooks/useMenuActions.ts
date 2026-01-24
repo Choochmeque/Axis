@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { events } from '@/bindings/api';
@@ -12,6 +13,7 @@ import { useStagingStore } from '@/store/stagingStore';
 import { MenuAction } from '@/types';
 
 export function useMenuActions() {
+  const { t } = useTranslation();
   const { openRepository, closeRepository, refreshRepository, repository, branches } =
     useRepositoryStore();
   const { stageAll, unstageAll } = useStagingStore();
@@ -25,7 +27,7 @@ export function useMenuActions() {
           const selected = await open({
             directory: true,
             multiple: false,
-            title: 'Open Git Repository',
+            title: t('dialogs.openRepository.title'),
           });
           if (selected && typeof selected === 'string') {
             await openRepository(selected);
@@ -67,7 +69,7 @@ export function useMenuActions() {
               const branchName = repository.currentBranch || 'main';
               await remoteApi.pull('origin', branchName, { rebase: false, ffOnly: false });
               await refreshRepository();
-              toast.success('Pull complete');
+              toast.success(t('notifications.success.pullComplete'));
             } catch (err) {
               toast.error(getErrorMessage(err));
             }
@@ -85,7 +87,7 @@ export function useMenuActions() {
                 tags: false,
               });
               await refreshRepository();
-              toast.success('Push complete');
+              toast.success(t('notifications.success.pushComplete'));
             } catch (err) {
               toast.error(getErrorMessage(err));
             }
@@ -125,7 +127,7 @@ export function useMenuActions() {
                 includeIgnored: false,
               });
               await refreshRepository();
-              toast.success('Changes stashed');
+              toast.success(t('notifications.success.stashCreated'));
             } catch (err) {
               toast.error(getErrorMessage(err));
             }
@@ -137,7 +139,7 @@ export function useMenuActions() {
             try {
               await stashApi.pop({ index: 0, reinstateIndex: false });
               await refreshRepository();
-              toast.success('Stash applied');
+              toast.success(t('notifications.success.stashApplied'));
             } catch (err) {
               toast.error(getErrorMessage(err));
             }
@@ -149,6 +151,7 @@ export function useMenuActions() {
       }
     },
     [
+      t,
       openRepository,
       closeRepository,
       refreshRepository,

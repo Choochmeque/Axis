@@ -2,17 +2,13 @@ import { useEffect, useRef } from 'react';
 import { UnlistenFn } from '@tauri-apps/api/event';
 
 import { events } from '@/bindings/api';
+import i18n from '@/i18n';
 import { operations, OperationProgress } from '@/store/operationStore';
 import { GitOperationType, ProgressStage } from '@/types';
 
-/* eslint-disable @typescript-eslint/naming-convention */
-const OPERATION_NAMES: Record<GitOperationType, string> = {
-  Clone: 'Cloning repository',
-  Fetch: 'Fetching',
-  Push: 'Pushing',
-  Pull: 'Pulling',
-};
-/* eslint-enable @typescript-eslint/naming-convention */
+function getOperationName(operationType: GitOperationType): string {
+  return i18n.t(`ui.operations.names.${operationType}`);
+}
 
 export function useGitProgress() {
   const unlistenRef = useRef<UnlistenFn | null>(null);
@@ -55,7 +51,7 @@ export function useGitProgress() {
         };
 
         // Start operation if not exists, or update progress
-        operations.start(OPERATION_NAMES[operationType], {
+        operations.start(getOperationName(operationType), {
           id: operationId,
           category: 'git',
           operationType,

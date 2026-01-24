@@ -752,6 +752,9 @@
       "browse": "Browse",
       "initializing": "Initializing...",
       "initButton": "Initialize"
+    },
+    "openRepository": {
+      "title": "Open Git Repository"
     }
   },
   "notifications": {
@@ -1721,6 +1724,12 @@
         "Complete": "Complete",
         "Failed": "Failed",
         "Cancelled": "Cancelled"
+      },
+      "names": {
+        "Clone": "Cloning repository",
+        "Fetch": "Fetching",
+        "Push": "Pushing",
+        "Pull": "Pulling"
       }
     },
     "dataTable": {
@@ -1730,5 +1739,21 @@
     "dialog": {
       "close": "Close"
     }
+  },
+  "shortcuts": {
+    "openSettings": "Open Settings",
+    "openRepository": "Open Repository",
+    "refresh": "Refresh",
+    "commit": "Commit",
+    "push": "Push",
+    "pull": "Pull",
+    "fetch": "Fetch",
+    "createBranch": "Create Branch",
+    "stash": "Stash",
+    "search": "Search",
+    "fileStatusView": "File Status View",
+    "historyView": "History View",
+    "searchView": "Search View",
+    "closeDialog": "Close Dialog"
   }
 }

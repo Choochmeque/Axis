@@ -300,7 +300,7 @@ impl HookService {
     pub fn get_hook_details(&self, hook_type: GitHookType) -> Result<HookDetails> {
         let info = self.get_hook_info(hook_type);
         let content = if info.exists {
-            Some(fs::read_to_string(&info.path).map_err(AxisError::IoError)?)
+            Some(fs::read_to_string(&info.path).map_err(AxisError::from)?)
         } else {
             None
         };
@@ -311,7 +311,7 @@ impl HookService {
     /// Create a new hook
     pub fn create_hook(&self, hook_type: GitHookType, content: &str) -> Result<()> {
         // Ensure hooks directory exists
-        fs::create_dir_all(&self.hooks_path).map_err(AxisError::IoError)?;
+        fs::create_dir_all(&self.hooks_path).map_err(AxisError::from)?;
 
         let hook_path = self.hooks_path.join(hook_type.filename());
 
@@ -324,19 +324,19 @@ impl HookService {
         }
 
         // Write the hook file
-        let mut file = fs::File::create(&hook_path).map_err(AxisError::IoError)?;
+        let mut file = fs::File::create(&hook_path).map_err(AxisError::from)?;
         file.write_all(content.as_bytes())
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         // Make executable on Unix
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = fs::metadata(&hook_path)
-                .map_err(AxisError::IoError)?
+                .map_err(AxisError::from)?
                 .permissions();
             perms.set_mode(perms.mode() | 0o755);
-            fs::set_permissions(&hook_path, perms).map_err(AxisError::IoError)?;
+            fs::set_permissions(&hook_path, perms).map_err(AxisError::from)?;
         }
 
         Ok(())
@@ -354,18 +354,18 @@ impl HookService {
         }
 
         // Write the updated content
-        fs::write(&info.path, content).map_err(AxisError::IoError)?;
+        fs::write(&info.path, content).map_err(AxisError::from)?;
 
         // Ensure executable on Unix
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = fs::metadata(&info.path)
-                .map_err(AxisError::IoError)?
+                .map_err(AxisError::from)?
                 .permissions();
             if perms.mode() & 0o111 == 0 {
                 perms.set_mode(perms.mode() | 0o755);
-                fs::set_permissions(&info.path, perms).map_err(AxisError::IoError)?;
+                fs::set_permissions(&info.path, perms).map_err(AxisError::from)?;
             }
         }
 
@@ -383,7 +383,7 @@ impl HookService {
             )));
         }
 
-        fs::remove_file(&info.path).map_err(AxisError::IoError)?;
+        fs::remove_file(&info.path).map_err(AxisError::from)?;
         Ok(())
     }
 
@@ -395,11 +395,11 @@ impl HookService {
 
         if hook_path.exists() && hook_path.is_file() {
             // Currently enabled -> disable
-            fs::rename(&hook_path, &disabled_path).map_err(AxisError::IoError)?;
+            fs::rename(&hook_path, &disabled_path).map_err(AxisError::from)?;
             Ok(false) // Now disabled
         } else if disabled_path.exists() && disabled_path.is_file() {
             // Currently disabled -> enable
-            fs::rename(&disabled_path, &hook_path).map_err(AxisError::IoError)?;
+            fs::rename(&disabled_path, &hook_path).map_err(AxisError::from)?;
             Ok(true) // Now enabled
         } else {
             Err(AxisError::Other(format!(

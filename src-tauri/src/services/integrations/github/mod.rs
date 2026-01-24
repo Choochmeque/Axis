@@ -123,11 +123,7 @@ impl From<octocrab::models::issues::Issue> for Issue {
                 _ => IssueState::Open,
             },
             author: issue.user.into(),
-            labels: issue
-                .labels
-                .into_iter()
-                .map(Into::into)
-                .collect(),
+            labels: issue.labels.into_iter().map(Into::into).collect(),
             comments_count: issue.comments,
             created_at: issue.created_at,
             updated_at: issue.updated_at,

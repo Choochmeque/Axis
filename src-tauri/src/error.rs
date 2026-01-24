@@ -15,32 +15,16 @@ pub enum AxisError {
     InvalidRepositoryPath(String),
 
     #[error("Git operation failed: {0}")]
-    GitError(
-        #[serde(skip)]
-        #[from]
-        git2::Error,
-    ),
+    GitError(String),
 
     #[error("IO error: {0}")]
-    IoError(
-        #[serde(skip)]
-        #[from]
-        std::io::Error,
-    ),
+    IoError(String),
 
     #[error("Database error: {0}")]
-    DatabaseError(
-        #[serde(skip)]
-        #[from]
-        rusqlite::Error,
-    ),
+    DatabaseError(String),
 
     #[error("Serialization error: {0}")]
-    SerializationError(
-        #[serde(skip)]
-        #[from]
-        serde_json::Error,
-    ),
+    SerializationError(String),
 
     #[error("Invalid reference: {0}")]
     InvalidReference(String),
@@ -98,6 +82,30 @@ pub enum AxisError {
 
     #[error("OAuth flow cancelled")]
     OAuthCancelled,
+}
+
+impl From<git2::Error> for AxisError {
+    fn from(err: git2::Error) -> Self {
+        AxisError::GitError(err.to_string())
+    }
+}
+
+impl From<std::io::Error> for AxisError {
+    fn from(err: std::io::Error) -> Self {
+        AxisError::IoError(err.to_string())
+    }
+}
+
+impl From<rusqlite::Error> for AxisError {
+    fn from(err: rusqlite::Error) -> Self {
+        AxisError::DatabaseError(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for AxisError {
+    fn from(err: serde_json::Error) -> Self {
+        AxisError::SerializationError(err.to_string())
+    }
 }
 
 pub type Result<T> = std::result::Result<T, AxisError>;

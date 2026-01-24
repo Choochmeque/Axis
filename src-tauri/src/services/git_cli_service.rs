@@ -13,9 +13,10 @@ use crate::models::{
 use crate::models::{InteractiveRebaseEntry, RebaseAction};
 use chrono::{DateTime, Utc};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
+use tempfile::NamedTempFile;
 
 use bzip2::write::BzEncoder;
 use flate2::write::GzEncoder;
@@ -60,7 +61,7 @@ impl GitCliService {
             .args(args)
             .current_dir(&self.repo_path)
             .output()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         Ok(GitCommandResult::from(output))
     }
@@ -69,7 +70,7 @@ impl GitCliService {
     fn execute_checked(&self, args: &[&str]) -> Result<GitCommandResult> {
         let result = self.execute(args)?;
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Git command failed: {}",
                 result.stderr.trim()
             )));
@@ -176,9 +177,6 @@ impl GitCliService {
         entries: &[InteractiveRebaseEntry],
         autosquash: bool,
     ) -> Result<GitCommandResult> {
-        use std::io::Write;
-        use tempfile::NamedTempFile;
-
         // Build the todo file content (dropped commits are simply omitted)
         let todo_content = entries
             .iter()
@@ -195,8 +193,8 @@ impl GitCliService {
             .join("\n");
 
         // Write to temp file
-        let mut todo_file = NamedTempFile::new().map_err(AxisError::IoError)?;
-        writeln!(todo_file, "{}", todo_content).map_err(AxisError::IoError)?;
+        let mut todo_file = NamedTempFile::new().map_err(AxisError::from)?;
+        writeln!(todo_file, "{}", todo_content).map_err(AxisError::from)?;
         let todo_path = todo_file.path().to_string_lossy().to_string();
 
         // Build the GIT_SEQUENCE_EDITOR command based on platform
@@ -220,7 +218,7 @@ impl GitCliService {
             .env("GIT_SEQUENCE_EDITOR", &editor_cmd)
             .stdin(Stdio::null())
             .output()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         // Keep temp file alive until command completes
         drop(todo_file);
@@ -321,7 +319,7 @@ impl GitCliService {
         if result.success {
             Ok(result.stdout)
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Could not get base version: {}",
                 result.stderr
             )))
@@ -334,7 +332,7 @@ impl GitCliService {
         if result.success {
             Ok(result.stdout)
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Could not get ours version: {}",
                 result.stderr
             )))
@@ -347,7 +345,7 @@ impl GitCliService {
         if result.success {
             Ok(result.stdout)
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Could not get theirs version: {}",
                 result.stderr
             )))
@@ -532,7 +530,7 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -556,11 +554,13 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
-            // Get conflicted files
+            // TODO: Get conflicted files and return proper error
             let conflicts = self.get_conflicted_files()?;
-            Err(AxisError::Other("Stash applied with conflicts".to_string()))
+            Err(AxisError::GitError(
+                "Stash applied with conflicts".to_string(),
+            ))
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -584,12 +584,13 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else if result.stderr.contains("conflict") || result.stderr.contains("CONFLICT") {
+            // TODO: Get conflicted files and return proper error
             let conflicts = self.get_conflicted_files()?;
-            Err(AxisError::Other(
+            Err(AxisError::GitError(
                 "Stash applied with conflicts (not dropped)".to_string(),
             ))
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -605,7 +606,7 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -620,7 +621,7 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -637,7 +638,7 @@ impl GitCliService {
         if result.success {
             Ok(result.stdout)
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -653,7 +654,7 @@ impl GitCliService {
                 conflicts: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -717,7 +718,7 @@ impl GitCliService {
             if result.stderr.contains("No submodule mapping found") {
                 return Ok(Vec::new());
             }
-            return Err(AxisError::Other(result.stderr));
+            return Err(AxisError::GitError(result.stderr));
         }
 
         let mut submodules = Vec::new();
@@ -1120,7 +1121,7 @@ impl GitCliService {
     ) -> Result<GitFlowResult> {
         let config = self
             .gitflow_config()?
-            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
+            .ok_or_else(|| AxisError::GitError("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1165,7 +1166,7 @@ impl GitCliService {
     ) -> Result<GitFlowResult> {
         let config = self
             .gitflow_config()?
-            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
+            .ok_or_else(|| AxisError::GitError("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1280,7 +1281,7 @@ impl GitCliService {
     ) -> Result<GitFlowResult> {
         let config = self
             .gitflow_config()?
-            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
+            .ok_or_else(|| AxisError::GitError("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1311,7 +1312,7 @@ impl GitCliService {
     pub fn gitflow_list(&self, branch_type: GitFlowBranchType) -> Result<Vec<String>> {
         let config = self
             .gitflow_config()?
-            .ok_or_else(|| AxisError::Other("Git-flow is not initialized".to_string()))?;
+            .ok_or_else(|| AxisError::GitError("Git-flow is not initialized".to_string()))?;
 
         let prefix = match branch_type {
             GitFlowBranchType::Feature => &config.feature_prefix,
@@ -1483,9 +1484,6 @@ impl GitCliService {
     /// Stage a specific hunk from a file using git apply
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn stage_hunk(&self, patch: &str) -> Result<()> {
-        use std::io::Write;
-        use std::process::Stdio;
-
         let mut child = Command::new("git")
             .args(["apply", "--cached", "--unidiff-zero", "-"])
             .stdin(Stdio::piped())
@@ -1493,19 +1491,17 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(patch.as_bytes())
-                .map_err(AxisError::IoError)?;
+            stdin.write_all(patch.as_bytes()).map_err(AxisError::from)?;
         }
 
-        let output = child.wait_with_output().map_err(AxisError::IoError)?;
+        let output = child.wait_with_output().map_err(AxisError::from)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to stage hunk: {}",
                 stderr.trim()
             )));
@@ -1517,9 +1513,6 @@ impl GitCliService {
     /// Unstage a specific hunk from the index using git apply -R
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn unstage_hunk(&self, patch: &str) -> Result<()> {
-        use std::io::Write;
-        use std::process::Stdio;
-
         let mut child = Command::new("git")
             .args(["apply", "--cached", "--unidiff-zero", "-R", "-"])
             .stdin(Stdio::piped())
@@ -1527,19 +1520,17 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(patch.as_bytes())
-                .map_err(AxisError::IoError)?;
+            stdin.write_all(patch.as_bytes()).map_err(AxisError::from)?;
         }
 
-        let output = child.wait_with_output().map_err(AxisError::IoError)?;
+        let output = child.wait_with_output().map_err(AxisError::from)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to unstage hunk: {}",
                 stderr.trim()
             )));
@@ -1551,9 +1542,6 @@ impl GitCliService {
     /// Discard a specific hunk from the working directory using git apply -R
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn discard_hunk(&self, patch: &str) -> Result<()> {
-        use std::io::Write;
-        use std::process::Stdio;
-
         let mut child = Command::new("git")
             .args(["apply", "--unidiff-zero", "-R", "-"])
             .stdin(Stdio::piped())
@@ -1561,19 +1549,17 @@ impl GitCliService {
             .stderr(Stdio::piped())
             .current_dir(&self.repo_path)
             .spawn()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(patch.as_bytes())
-                .map_err(AxisError::IoError)?;
+            stdin.write_all(patch.as_bytes()).map_err(AxisError::from)?;
         }
 
-        let output = child.wait_with_output().map_err(AxisError::IoError)?;
+        let output = child.wait_with_output().map_err(AxisError::from)?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to discard hunk: {}",
                 stderr.trim()
             )));
@@ -1644,7 +1630,7 @@ impl GitCliService {
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
                 .spawn()
-                .map_err(AxisError::IoError)?;
+                .map_err(AxisError::from)?;
 
             let mut stdout = child
                 .stdout
@@ -1661,21 +1647,21 @@ impl GitCliService {
                 buffer
             });
 
-            let file = File::create(output_path).map_err(AxisError::IoError)?;
+            let file = File::create(output_path).map_err(AxisError::from)?;
             if actual_format == "tar.gz" {
                 let mut encoder = GzEncoder::new(file, Compression::default());
-                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::IoError)?;
-                encoder.finish().map_err(AxisError::IoError)?;
+                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::from)?;
+                encoder.finish().map_err(AxisError::from)?;
             } else {
                 let mut encoder = BzEncoder::new(file, bzip2::Compression::default());
-                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::IoError)?;
-                encoder.finish().map_err(AxisError::IoError)?;
+                std::io::copy(&mut stdout, &mut encoder).map_err(AxisError::from)?;
+                encoder.finish().map_err(AxisError::from)?;
             }
 
-            let status = child.wait().map_err(AxisError::IoError)?;
+            let status = child.wait().map_err(AxisError::from)?;
             let stderr = stderr_handle.join().unwrap_or_default();
             if !status.success() {
-                return Err(AxisError::Other(format!(
+                return Err(AxisError::GitError(format!(
                     "Failed to create archive: {}",
                     stderr.trim()
                 )));
@@ -1683,7 +1669,7 @@ impl GitCliService {
         } else {
             let result = self.execute(&args)?;
             if !result.success {
-                return Err(AxisError::Other(format!(
+                return Err(AxisError::GitError(format!(
                     "Failed to create archive: {}",
                     result.stderr.trim()
                 )));
@@ -1707,7 +1693,7 @@ impl GitCliService {
     pub fn format_patch(&self, range: &str, output_dir: &Path) -> Result<PatchResult> {
         // Ensure output directory exists
         if !output_dir.exists() {
-            std::fs::create_dir_all(output_dir).map_err(AxisError::IoError)?;
+            std::fs::create_dir_all(output_dir).map_err(AxisError::from)?;
         }
 
         let output_str = output_dir.to_string_lossy();
@@ -1716,7 +1702,7 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to create patches: {}",
                 result.stderr.trim()
             )));
@@ -1750,7 +1736,7 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to create patch: {}",
                 result.stderr.trim()
             )));
@@ -1763,7 +1749,7 @@ impl GitCliService {
         }
 
         // Write patch to file
-        std::fs::write(output_path, &result.stdout).map_err(AxisError::IoError)?;
+        std::fs::write(output_path, &result.stdout).map_err(AxisError::from)?;
 
         Ok(PatchResult {
             message: "Patch created successfully".to_string(),
@@ -1794,7 +1780,7 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to apply patch: {}",
                 result.stderr.trim()
             )));
@@ -1834,7 +1820,7 @@ impl GitCliService {
         let result = self.execute(&args)?;
 
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to apply patches: {}",
                 result.stderr.trim()
             )));
@@ -1856,7 +1842,7 @@ impl GitCliService {
                 patches: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to abort patch application: {}",
                 result.stderr.trim()
             )))
@@ -1873,7 +1859,7 @@ impl GitCliService {
                 patches: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to continue patch application: {}",
                 result.stderr.trim()
             )))
@@ -1890,7 +1876,7 @@ impl GitCliService {
                 patches: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to skip current patch: {}",
                 result.stderr.trim()
             )))
@@ -2050,7 +2036,7 @@ impl GitCliService {
         let result = self.execute(&["worktree", "list", "--porcelain"])?;
 
         if !result.success {
-            return Err(AxisError::Other(format!(
+            return Err(AxisError::GitError(format!(
                 "Failed to list worktrees: {}",
                 result.stderr.trim()
             )));
@@ -2181,7 +2167,7 @@ impl GitCliService {
                 path: Some(options.path.clone()),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -2204,7 +2190,7 @@ impl GitCliService {
                 path: Some(options.path.clone()),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -2230,7 +2216,7 @@ impl GitCliService {
                 path: Some(path.to_string()),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -2245,7 +2231,7 @@ impl GitCliService {
                 path: Some(path.to_string()),
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -2271,7 +2257,7 @@ impl GitCliService {
                 path: None,
             })
         } else {
-            Err(AxisError::Other(result.stderr.trim().to_string()))
+            Err(AxisError::GitError(result.stderr.trim().to_string()))
         }
     }
 
@@ -2282,7 +2268,7 @@ impl GitCliService {
         let output = Command::new("git")
             .args(["lfs", "version"])
             .output()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         if output.status.success() {
             let version_str = String::from_utf8_lossy(&output.stdout);
@@ -2326,7 +2312,7 @@ impl GitCliService {
         let version_output = Command::new("git")
             .args(["--version"])
             .output()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         let version = if version_output.status.success() {
             let version_str = String::from_utf8_lossy(&version_output.stdout);
@@ -2349,7 +2335,7 @@ impl GitCliService {
         let path_output = Command::new(path_cmd)
             .args(["git"])
             .output()
-            .map_err(AxisError::IoError)?;
+            .map_err(AxisError::from)?;
 
         let path = if path_output.status.success() {
             let path_str = String::from_utf8_lossy(&path_output.stdout);
@@ -2407,7 +2393,7 @@ impl GitCliService {
                 affected_files: Vec::new(),
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to initialize LFS: {}",
                 result.stderr.trim()
             )))
@@ -2425,7 +2411,7 @@ impl GitCliService {
                 affected_files: vec![".gitattributes".to_string()],
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to track pattern: {}",
                 result.stderr.trim()
             )))
@@ -2443,7 +2429,7 @@ impl GitCliService {
                 affected_files: vec![".gitattributes".to_string()],
             })
         } else {
-            Err(AxisError::Other(format!(
+            Err(AxisError::GitError(format!(
                 "Failed to untrack pattern: {}",
                 result.stderr.trim()
             )))
@@ -2724,7 +2710,7 @@ impl GitCliService {
         let result = self.execute(&["lfs", "env"])?;
 
         if !result.success {
-            return Err(AxisError::Other(
+            return Err(AxisError::GitError(
                 "Failed to get LFS environment".to_string(),
             ));
         }

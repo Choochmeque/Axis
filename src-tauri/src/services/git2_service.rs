@@ -2058,9 +2058,10 @@ impl Git2Service {
             String::from_utf8_lossy(blob.content()).to_string()
         } else {
             // Read from workdir
-            let workdir = self.repo.workdir().ok_or_else(|| {
-                AxisError::GitError(git2::Error::from_str("No working directory"))
-            })?;
+            let workdir = self
+                .repo
+                .workdir()
+                .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
             std::fs::read_to_string(workdir.join(path))?
         };
 

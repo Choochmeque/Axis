@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
 import { stashApi } from '../../services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import type { StashEntry } from '../../types';
 import { cn } from '../../lib/utils';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -78,32 +79,20 @@ export function StashView({ onRefresh }: StashViewProps) {
     }
   };
 
+  const { applyStash, popStash } = useRepositoryStore();
+
   const handleApply = async (index: number) => {
-    try {
-      const result = await stashApi.apply({ index, reinstateIndex: false });
-      if (result.conflicts.length > 0) {
-        setError(t('stash.view.conflictsApply', { files: result.conflicts.join(', ') }));
-      } else {
-        onRefresh?.();
-      }
-    } catch (err) {
-      console.error('Failed to apply stash:', err);
-      setError(getErrorMessage(err));
+    const success = await applyStash(index);
+    if (success) {
+      onRefresh?.();
     }
   };
 
   const handlePop = async (index: number) => {
-    try {
-      const result = await stashApi.pop({ index, reinstateIndex: false });
-      if (result.conflicts.length > 0) {
-        setError(t('stash.view.conflictsPop', { files: result.conflicts.join(', ') }));
-      } else {
-        await loadStashes();
-        onRefresh?.();
-      }
-    } catch (err) {
-      console.error('Failed to pop stash:', err);
-      setError(getErrorMessage(err));
+    const success = await popStash(index);
+    if (success) {
+      await loadStashes();
+      onRefresh?.();
     }
   };
 

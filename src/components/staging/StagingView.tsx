@@ -258,13 +258,13 @@ export function StagingView() {
         viewMode={viewMode}
       />
 
-      {/* Conflicts section */}
+      {/* Conflicts section - after changes list */}
       {hasConflicts && (
         <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
           <div className={cn(sectionHeaderClass, 'bg-error/10')}>
             <div className="flex items-center gap-2">
-              <span className={sectionTitleClass}>{t('staging.conflicts')}</span>
-              <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
+              <span className={cn(sectionTitleClass, 'text-error')}>{t('staging.conflicts')}</span>
+              <span className={cn('badge', 'text-sm font-normal text-error')}>
                 {conflictedFiles.length}
               </span>
             </div>
@@ -286,7 +286,7 @@ export function StagingView() {
   const renderSplitView = () => (
     <PanelGroup direction="vertical" autoSaveId="staging-layout" className="flex-1 min-h-0">
       {/* Staged changes section */}
-      <Panel defaultSize={50} minSize={20}>
+      <Panel defaultSize={hasConflicts ? 33 : 50} minSize={15}>
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
@@ -326,8 +326,37 @@ export function StagingView() {
 
       <PanelResizeHandle className="resize-handle-vertical" />
 
+      {/* Conflicts section - shown between staged and unstaged when there are conflicts */}
+      {hasConflicts && (
+        <>
+          <Panel defaultSize={34} minSize={15}>
+            <div className="flex flex-col h-full min-h-0 overflow-hidden">
+              <div className={cn(sectionHeaderClass, 'bg-error/10')}>
+                <div className="flex items-center gap-2">
+                  <span className={cn(sectionTitleClass, 'text-error')}>
+                    {t('staging.conflicts')}
+                  </span>
+                  <span className={cn('badge', 'text-sm font-normal text-error')}>
+                    {conflictedFiles.length}
+                  </span>
+                </div>
+              </div>
+              <FileStatusList
+                files={conflictedFiles}
+                selectedFile={selectedFile}
+                onSelectFile={(file) => selectFile(file, false)}
+                onStage={stageFile}
+                onDiscard={handleDiscardFile}
+                viewMode={viewMode}
+              />
+            </div>
+          </Panel>
+          <PanelResizeHandle className="resize-handle-vertical" />
+        </>
+      )}
+
       {/* Unstaged changes section */}
-      <Panel defaultSize={50} minSize={20}>
+      <Panel defaultSize={hasConflicts ? 33 : 50} minSize={15}>
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
@@ -362,28 +391,6 @@ export function StagingView() {
           ) : (
             <div className="p-4 text-center text-(--text-tertiary) text-base italic">
               {t('staging.noUnstagedChanges')}
-            </div>
-          )}
-
-          {/* Conflicts section */}
-          {hasConflicts && (
-            <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
-              <div className={cn(sectionHeaderClass, 'bg-error/10')}>
-                <div className="flex items-center gap-2">
-                  <span className={sectionTitleClass}>{t('staging.conflicts')}</span>
-                  <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
-                    {conflictedFiles.length}
-                  </span>
-                </div>
-              </div>
-              <FileStatusList
-                files={conflictedFiles}
-                selectedFile={selectedFile}
-                onSelectFile={(file) => selectFile(file, false)}
-                onStage={stageFile}
-                onDiscard={handleDiscardFile}
-                viewMode={viewMode}
-              />
             </div>
           )}
         </div>

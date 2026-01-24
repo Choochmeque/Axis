@@ -28,30 +28,9 @@ interface StashContextMenuProps {
 
 export function StashContextMenu({ stash, children }: StashContextMenuProps) {
   const { t } = useTranslation();
-  const { refreshRepository, loadStashes, clearStashSelection } = useRepositoryStore();
+  const { applyStash, popStash, loadStashes, clearStashSelection, refreshRepository } =
+    useRepositoryStore();
   const [branchName, setBranchName] = useState('');
-
-  const handleApply = async () => {
-    try {
-      await stashApi.apply({ index: stash.index, reinstateIndex: false });
-      await refreshRepository();
-      toast.success(t('stash.applySuccess'));
-    } catch (err) {
-      toast.error(t('stash.contextMenu.applyFailed'), getErrorMessage(err));
-    }
-  };
-
-  const handlePop = async () => {
-    try {
-      await stashApi.pop({ index: stash.index, reinstateIndex: false });
-      clearStashSelection();
-      await loadStashes();
-      await refreshRepository();
-      toast.success(t('stash.popSuccess'));
-    } catch (err) {
-      toast.error(t('stash.contextMenu.popFailed'), getErrorMessage(err));
-    }
-  };
 
   const handleDrop = async () => {
     try {
@@ -79,10 +58,18 @@ export function StashContextMenu({ stash, children }: StashContextMenuProps) {
 
   return (
     <ContextMenu trigger={children}>
-      <MenuItem icon={Play} onSelect={handleApply} hint={t('stash.contextMenu.applyHint')}>
+      <MenuItem
+        icon={Play}
+        onSelect={() => applyStash(stash.index)}
+        hint={t('stash.contextMenu.applyHint')}
+      >
         {t('stash.apply')}
       </MenuItem>
-      <MenuItem icon={Play} onSelect={handlePop} hint={t('stash.contextMenu.popHint')}>
+      <MenuItem
+        icon={Play}
+        onSelect={() => popStash(stash.index)}
+        hint={t('stash.contextMenu.popHint')}
+      >
         {t('stash.pop')}
       </MenuItem>
       <MenuSeparator />

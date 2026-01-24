@@ -17,6 +17,7 @@ const FALLBACK_MESSAGE_KEYS: Partial<Record<AxisError['type'], string>> = {
   IntegrationError: 'lib.errors.integrationError',
   IntegrationNotConnected: 'lib.errors.integrationNotConnected',
   CheckoutConflict: 'lib.errors.checkoutConflict',
+  StashApplyConflict: 'lib.errors.stashApplyConflict',
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 

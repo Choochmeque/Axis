@@ -51,7 +51,7 @@ pub async fn merge_branch(
                 conflicts: Vec::new(),
                 message: result.stdout.trim().to_string(),
             })
-        } else if result.stderr.contains("CONFLICT")
+        } else if result.stdout.contains("CONFLICT")
             || result.stderr.contains("Automatic merge failed")
         {
             // Merge has conflicts
@@ -172,7 +172,7 @@ pub async fn rebase_branch(
                 conflicts: Vec::new(),
                 message: result.stdout.trim().to_string(),
             })
-        } else if result.stderr.contains("CONFLICT") {
+        } else if result.stdout.contains("CONFLICT") {
             let conflicts = get_conflicted_files_internal(cli)?;
 
             Ok(RebaseResult {
@@ -227,7 +227,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
             conflicts: Vec::new(),
             message: "Rebase continued successfully.".to_string(),
         })
-    } else if result.stderr.contains("CONFLICT") {
+    } else if result.stdout.contains("CONFLICT") {
         let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(RebaseResult {
@@ -365,7 +365,7 @@ pub async fn interactive_rebase(
             conflicts: Vec::new(),
             message: result.stdout.trim().to_string(),
         })
-    } else if result.stderr.contains("CONFLICT") {
+    } else if result.stdout.contains("CONFLICT") {
         let conflicts = {
             let guard = git_service.lock();
             get_conflicted_files_internal(guard.git_cli())?
@@ -410,7 +410,7 @@ pub async fn cherry_pick(
 
         if !result.success {
             all_success = false;
-            if result.stderr.contains("CONFLICT") {
+            if result.stdout.contains("CONFLICT") {
                 all_conflicts.extend(get_conflicted_files_internal(cli)?);
                 break; // Stop on first conflict
             } else {
@@ -464,7 +464,7 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
             conflicts: Vec::new(),
             message: "Cherry-pick completed successfully.".to_string(),
         })
-    } else if result.stderr.contains("CONFLICT") {
+    } else if result.stdout.contains("CONFLICT") {
         let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(CherryPickResult {
@@ -498,7 +498,7 @@ pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickRe
             conflicts: Vec::new(),
             message: "Commit skipped.".to_string(),
         })
-    } else if result.stderr.contains("CONFLICT") {
+    } else if result.stdout.contains("CONFLICT") {
         let conflicts = get_conflicted_files_internal(cli)?;
 
         Ok(CherryPickResult {
@@ -536,7 +536,7 @@ pub async fn revert_commits(
 
         if !result.success {
             all_success = false;
-            if result.stderr.contains("CONFLICT") {
+            if result.stdout.contains("CONFLICT") {
                 all_conflicts.extend(get_conflicted_files_internal(cli)?);
                 break;
             } else {

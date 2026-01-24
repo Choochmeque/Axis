@@ -362,6 +362,8 @@
     "popSuccess": "Stash popped",
     "dropSuccess": "Stash dropped",
     "createSuccess": "Changes stashed",
+    "applyConflict": "Stash applied with conflicts - resolve them to continue",
+    "popConflict": "Stash applied with conflicts (not dropped) - resolve them to continue",
     "view": {
       "title": "Stashes",
       "createStash": "Create stash",
@@ -512,8 +514,11 @@
       "commitSelected": "Commit Selected...",
       "reset": "Reset...",
       "resetToCommit": "Reset to Commit...",
-      "resolveConflicts": "Resolve Conflicts",
-      "markAsResolved": "Mark as Resolved",
+      "useOurs": "Use Ours",
+      "useTheirs": "Use Theirs",
+      "openConflictResolver": "Open in Conflict Resolver",
+      "conflictResolved": "Conflict resolved",
+      "resolveConflictFailed": "Failed to resolve conflict",
       "logSelected": "Log Selected...",
       "annotateSelected": "Annotate Selected...",
       "copy": "Copy...",
@@ -1890,6 +1895,7 @@
       "integrationError": "Integration error",
       "integrationNotConnected": "Integration not connected",
       "checkoutConflict": "Checkout conflict: uncommitted changes would be overwritten",
+      "stashApplyConflict": "Stash applied with conflicts",
       "unknown": "An error occurred"
     },
     "dates": {

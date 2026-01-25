@@ -181,7 +181,7 @@ function FileStatusItemContent({
       onUnstage={onUnstage}
       onDiscard={onDiscard}
     >
-      <>
+      <div className="contents">
         <Checkbox
           checked={isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
@@ -196,7 +196,7 @@ function FileStatusItemContent({
         >
           {getFileName(file.path)}
         </span>
-      </>
+      </div>
     </StagingFileContextMenu>
   );
 }
@@ -239,7 +239,7 @@ function MultiColumnFileItemContent({
       onUnstage={onUnstage}
       onDiscard={onDiscard}
     >
-      <>
+      <div className="contents">
         <div className="w-6 shrink-0 flex items-center justify-center">
           <Checkbox
             checked={isStaged}
@@ -265,7 +265,7 @@ function MultiColumnFileItemContent({
             {getDirectory(file.path) || '.'}
           </span>
         </div>
-      </>
+      </div>
     </StagingFileContextMenu>
   );
 }
@@ -512,7 +512,7 @@ function FluidFileItemContent({ file, onStage, onUnstage, onDiscard }: FluidFile
       onUnstage={onUnstage}
       onDiscard={onDiscard}
     >
-      <>
+      <div className="contents">
         <Checkbox
           checked={file.isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
@@ -533,7 +533,7 @@ function FluidFileItemContent({ file, onStage, onUnstage, onDiscard }: FluidFile
         >
           {getDirectory(file.path)}
         </span>
-      </>
+      </div>
     </StagingFileContextMenu>
   );
 }

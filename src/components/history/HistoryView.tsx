@@ -1,24 +1,59 @@
-// Refactored to use vscode-git-graph approach
-import { useRef, useCallback, useEffect, useMemo } from 'react';
+// Refactored to use DataTable with virtualization
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { GitCommit, Loader2 } from 'lucide-react';
+import { GitBranch, GitCommit, Loader2, Tag } from 'lucide-react';
 
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { useScrollToCommit } from '@/hooks';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
+import { CommitContextMenu } from './CommitContextMenu';
 import { HistoryFilters } from './HistoryFilters';
-import {
-  CommitGraph,
-  defaultGraphConfig,
-  defaultMuteConfig,
-  buildCommitLookup,
-  createGraph,
-} from './CommitGraph';
-import { CommitTable } from './CommitTable';
 import { BisectBanner } from '../merge/BisectBanner';
+import { DataTable, type ColumnDef } from '@/components/ui/data-table';
+import { Avatar } from '@/components/ui';
+import { formatShortDate } from '@/lib/dateUtils';
+
+const UNCOMMITTED = 'uncommitted';
+
+function abbrevCommit(hash: string): string {
+  return hash.substring(0, 7);
+}
+
+interface GitRefProps {
+  name: string;
+  type: 'head' | 'remote' | 'tag';
+  color: string;
+  isActive?: boolean;
+  remotes?: string[];
+}
+
+function GitRef({ name, type, color, isActive, remotes }: GitRefProps) {
+  const Icon = type === 'tag' ? Tag : type === 'head' ? GitBranch : GitBranch;
+  const className = `gitRef ${type}${isActive ? ' active' : ''}`;
+  const style =
+    type === 'tag' ? { backgroundColor: 'var(--color-tag)' } : { backgroundColor: color };
+
+  return (
+    <span className={className} data-name={name} style={style}>
+      <Icon size={10} />
+      <span className="gitRefName" data-fullref={name}>
+        {name}
+      </span>
+      {remotes?.map((remote) => (
+        <span
+          key={remote}
+          className="gitRefHeadRemote"
+          data-remote={remote}
+          data-fullref={`${remote}/${name}`}
+        >
+          {remote}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export function HistoryView() {
   const { t } = useTranslation();
@@ -37,50 +72,134 @@ export function HistoryView() {
     loadStatus,
   } = useRepositoryStore();
 
-  const listRef = useRef<HTMLDivElement>(null);
-  const graphContainerRef = useRef<HTMLDivElement>(null);
-  const tableHeaderRef = useRef<HTMLTableRowElement>(null);
-
-  const { scrollToCommit, cancelScroll, isSearching, progress } = useScrollToCommit(listRef);
-
   // Use commit from list if available, otherwise fall back to fetched data
   const selectedCommit = selectedCommitOid
     ? (commits.find((c) => c.oid === selectedCommitOid) ?? selectedCommitData)
     : null;
 
-  // Determine current HEAD commit
-  const commitHead = useMemo(() => {
-    const headCommit = commits.find((c) =>
-      c.refs?.some((r) => r.isHead && r.refType === RefType.LocalBranch)
-    );
-    return headCommit?.oid ?? null;
-  }, [commits]);
+  // Define columns
+  const columns = useMemo(
+    (): ColumnDef<GraphCommit, unknown>[] => [
+      {
+        id: 'graph',
+        header: () => t('history.table.graph'),
+        size: 100,
+        minSize: 40,
+        cell: () => null, // Graph visualization placeholder
+      },
+      {
+        id: 'summary',
+        header: () => t('history.table.description'),
+        meta: { autoSize: true },
+        minSize: 200,
+        cell: ({ row }) => {
+          const commit = row.original;
+          const isUncommitted = commit.oid === UNCOMMITTED;
 
-  // Build graph data (single Graph instance used for both computation and rendering)
-  const graphData = useMemo(() => {
-    const commitLookup = buildCommitLookup(commits);
+          // Get refs
+          const localBranches = commit.refs?.filter((r) => r.refType === RefType.LocalBranch) ?? [];
+          const remoteBranches =
+            commit.refs?.filter((r) => r.refType === RefType.RemoteBranch) ?? [];
+          const tags = commit.refs?.filter((r) => r.refType === RefType.Tag) ?? [];
 
-    // Create dummy element for Graph (SVG will be moved to CommitGraph container)
-    const dummyElem = document.createElement('div');
-    const graph = createGraph(
-      dummyElem,
-      commits,
-      commitHead,
-      commitLookup,
-      defaultGraphConfig,
-      defaultMuteConfig
-    );
+          return (
+            <div className="flex items-center gap-2 px-2 overflow-hidden">
+              <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                {localBranches.map((ref) => (
+                  <GitRef
+                    key={ref.name}
+                    name={ref.name}
+                    type="head"
+                    color="var(--git-graph-color0)"
+                    isActive={ref.isHead}
+                  />
+                ))}
+                {remoteBranches.map((ref) => (
+                  <GitRef
+                    key={ref.name}
+                    name={ref.name}
+                    type="remote"
+                    color="var(--git-graph-color0)"
+                  />
+                ))}
+                {tags.map((ref) => (
+                  <GitRef key={ref.name} name={ref.name} type="tag" color="var(--color-tag)" />
+                ))}
+              </div>
+              <span className="truncate text-(--text-primary)">
+                {isUncommitted ? t('history.table.uncommittedChanges') : commit.summary}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'timestamp',
+        header: () => t('history.table.date'),
+        size: 100,
+        minSize: 80,
+        cell: ({ row }) => {
+          const date = formatShortDate(row.original.timestamp);
+          return (
+            <span className="px-2 text-(--text-secondary) text-sm" title={date.title}>
+              {date.formatted}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'author',
+        header: () => t('history.table.author'),
+        size: 150,
+        minSize: 100,
+        cell: ({ row }) => {
+          const commit = row.original;
+          const isUncommitted = commit.oid === UNCOMMITTED;
 
-    return {
-      vertexColours: graph.getVertexColours(),
-      widthsAtVertices: graph.getWidthsAtVertices(),
-      mutedCommits: graph.getMutedCommits(commitHead),
-      graph,
-    };
-  }, [commits, commitHead]);
+          return (
+            <div
+              className="flex items-center gap-2 px-2 overflow-hidden"
+              title={isUncommitted ? '' : `${commit.author.name} <${commit.author.email}>`}
+            >
+              {!isUncommitted && (
+                <Avatar
+                  email={commit.author.email}
+                  sha={commit.oid}
+                  name={commit.author.name}
+                  size={18}
+                />
+              )}
+              <span className="truncate text-(--text-secondary) text-sm">
+                {isUncommitted ? '*' : commit.author.name}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'oid',
+        header: () => t('history.table.commit'),
+        size: 80,
+        minSize: 70,
+        cell: ({ row }) => {
+          const oid = row.original.oid;
+          const isUncommitted = oid === UNCOMMITTED;
+          return (
+            <span
+              className="px-2 font-mono text-xs text-(--text-tertiary)"
+              title={isUncommitted ? '' : oid}
+            >
+              {isUncommitted ? '*' : abbrevCommit(oid)}
+            </span>
+          );
+        },
+      },
+    ],
+    [t]
+  );
 
   const handleCommitClick = useCallback(
-    (_index: number, commit: GraphCommit) => {
+    (commit: GraphCommit) => {
       if (selectedCommitOid === commit.oid) {
         clearCommitSelection();
       } else {
@@ -90,37 +209,30 @@ export function HistoryView() {
     [selectedCommitOid, selectCommit, clearCommitSelection]
   );
 
-  const handleScroll = useCallback(() => {
-    if (!listRef.current || isLoadingMoreCommits || !hasMoreCommits) return;
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const target = event.currentTarget;
+      if (isLoadingMoreCommits || !hasMoreCommits) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    const scrollThreshold = 200;
+      const { scrollTop, scrollHeight, clientHeight } = target;
+      const scrollThreshold = 200;
 
-    if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
-      loadMoreCommits();
-    }
-  }, [isLoadingMoreCommits, hasMoreCommits, loadMoreCommits]);
+      if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
+        loadMoreCommits();
+      }
+    },
+    [isLoadingMoreCommits, hasMoreCommits, loadMoreCommits]
+  );
 
-  // Scroll to selected commit when it changes
-  useEffect(() => {
-    if (!selectedCommitOid || !listRef.current) return;
+  const handleBisectComplete = async () => {
+    await loadCommits();
+    await loadStatus();
+  };
 
-    const row = listRef.current.querySelector(`[data-oid="${selectedCommitOid}"]`);
-    if (row) {
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [selectedCommitOid]);
-
-  // Handle graph column width change
-  const handleGraphWidthChange = useCallback((width: number) => {
-    if (graphContainerRef.current) {
-      graphContainerRef.current.style.width = width + 'px';
-    }
-  }, []);
-
-  if (isLoadingCommits) {
+  if (isLoadingCommits && commits.length === 0) {
     return (
       <div className="historyEmptyState">
+        <Loader2 size={48} strokeWidth={1} className="animate-spin" />
         <p>{t('history.loading')}</p>
       </div>
     );
@@ -145,61 +257,33 @@ export function HistoryView() {
     );
   }
 
-  const handleBisectComplete = async () => {
-    await loadCommits();
-    await loadStatus();
-  };
-
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
-      {isSearching && (
-        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-(--bg-secondary) border-b border-(--border-color) text-xs">
-          <div className="flex items-center gap-2">
-            <Loader2 size={14} className="animate-spin" />
-            <span>{t('history.scrollToCommit.searching')}</span>
-            <span className="text-(--text-tertiary)">
-              {t('history.scrollToCommit.progress', { count: progress })}
-            </span>
-          </div>
-          <button
-            type="button"
-            className="text-(--accent-color) hover:underline cursor-pointer"
-            onClick={cancelScroll}
-          >
-            {t('common.cancel')}
-          </button>
+      <DataTable
+        data={commits}
+        columns={columns}
+        selectedRowId={selectedCommitOid}
+        onRowClick={handleCommitClick}
+        getRowId={(commit) => commit.oid}
+        onScroll={handleScroll}
+        rowHeight={36}
+        emptyMessage={t('history.noCommits')}
+        isLoading={isLoadingCommits}
+        loadingMessage={t('history.loading')}
+        rowWrapper={(commit, children) => (
+          <CommitContextMenu key={commit.oid} commit={commit}>
+            {children}
+          </CommitContextMenu>
+        )}
+      />
+      {isLoadingMoreCommits && (
+        <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs border-t border-(--border-color)">
+          <Loader2 size={16} className="animate-spin" />
+          <span>{t('history.loadingMore')}</span>
         </div>
       )}
-      <div className="flex-1 min-h-0 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
-        <div id="commitGraphContent">
-          <div id="commitGraph" ref={graphContainerRef} />
-          <CommitGraph
-            graph={graphData.graph}
-            expandedCommitIndex={null}
-            containerRef={graphContainerRef}
-            tableHeaderRef={tableHeaderRef}
-          />
-          <CommitTable
-            commits={commits}
-            vertexColours={graphData.vertexColours}
-            widthsAtVertices={graphData.widthsAtVertices}
-            mutedCommits={graphData.mutedCommits}
-            commitHead={commitHead}
-            selectedCommitOid={selectedCommitOid}
-            onCommitClick={handleCommitClick}
-            onGraphWidthChange={handleGraphWidthChange}
-            tableHeaderRef={tableHeaderRef}
-          />
-        </div>
-        {isLoadingMoreCommits && (
-          <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
-            <Loader2 size={16} className="animate-spin" />
-            <span>{t('history.loadingMore')}</span>
-          </div>
-        )}
-      </div>
     </div>
   );
 
@@ -217,11 +301,7 @@ export function HistoryView() {
         </Panel>
         <PanelResizeHandle className="resize-handle-vertical" />
         <Panel defaultSize={50} minSize={30}>
-          <CommitDetailPanel
-            commit={selectedCommit}
-            onClose={clearCommitSelection}
-            onScrollToCommit={scrollToCommit}
-          />
+          <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
         </Panel>
       </PanelGroup>
     </div>

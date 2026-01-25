@@ -7,6 +7,7 @@ import {
   type ColumnResizeMode,
   type Row,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData> {
@@ -20,10 +21,12 @@ interface DataTableProps<TData> {
   className?: string;
   headerClassName?: string;
   rowClassName?: string | ((row: Row<TData>) => string);
+  rowWrapper?: (row: TData, children: React.ReactNode) => React.ReactNode;
   onScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
   emptyMessage?: string;
   isLoading?: boolean;
   loadingMessage?: string;
+  rowHeight?: number;
 }
 
 export function DataTable<TData>({
@@ -37,10 +40,12 @@ export function DataTable<TData>({
   className,
   headerClassName,
   rowClassName,
+  rowWrapper,
   onScroll,
   emptyMessage = 'No data',
   isLoading = false,
   loadingMessage = 'Loading...',
+  rowHeight = 36,
 }: DataTableProps<TData>) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +55,17 @@ export function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     columnResizeMode: resizable ? columnResizeMode : undefined,
     getRowId,
+  });
+
+  const { rows } = table.getRowModel();
+
+  const totalHeight = rows.length * rowHeight;
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 10,
   });
 
   const handleScroll = useCallback(
@@ -87,30 +103,36 @@ export function DataTable<TData>({
     );
   }
 
+  const virtualItems = virtualizer.getVirtualItems();
+
   return (
-    <div
-      ref={tableContainerRef}
-      className={cn('flex flex-col flex-1 min-h-0 overflow-auto', className)}
-      onScroll={handleScroll}
-    >
-      {/* Header */}
+    <div className={cn('flex flex-col flex-1 min-h-0', className)}>
+      {/* Header - fixed outside scroll area */}
       <div
         className={cn(
-          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0 z-10',
+          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) shrink-0',
           headerClassName
         )}
-        style={{ width: table.getCenterTotalSize() }}
       >
         {table.getHeaderGroups().map((headerGroup) =>
           headerGroup.headers.map((header) => (
             <div
               key={header.id}
-              className="relative"
-              style={{
-                width: header.getSize(),
-                minWidth: header.column.columnDef.minSize,
-                maxWidth: header.column.columnDef.maxSize,
-              }}
+              className={cn(
+                'relative',
+                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                  ? 'flex-1 min-w-0'
+                  : 'shrink-0'
+              )}
+              style={
+                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                  ? { minWidth: header.column.columnDef.minSize }
+                  : {
+                      width: header.getSize(),
+                      minWidth: header.column.columnDef.minSize,
+                      maxWidth: header.column.columnDef.maxSize,
+                    }
+              }
             >
               {header.isPlaceholder
                 ? null
@@ -130,29 +152,51 @@ export function DataTable<TData>({
         )}
       </div>
 
-      {/* Body */}
-      <div className="flex flex-col">
-        {table.getRowModel().rows.map((row) => (
-          <div
-            key={row.id}
-            className={getRowClassName(row)}
-            onClick={() => onRowClick?.(row.original)}
-            style={{ width: table.getCenterTotalSize() }}
-          >
-            {row.getVisibleCells().map((cell) => (
+      {/* Body - Scrollable virtualized area */}
+      <div ref={tableContainerRef} className="flex-1 overflow-auto min-h-0" onScroll={handleScroll}>
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          {virtualItems.map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            const rowContent = (
               <div
-                key={cell.id}
+                key={row.id}
+                className={getRowClassName(row)}
+                onClick={() => onRowClick?.(row.original)}
                 style={{
-                  width: cell.column.getSize(),
-                  minWidth: cell.column.columnDef.minSize,
-                  maxWidth: cell.column.columnDef.maxSize,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: rowHeight,
+                  transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                {row.getVisibleCells().map((cell) => (
+                  <div
+                    key={cell.id}
+                    className={
+                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                        ? 'flex-1 min-w-0'
+                        : 'shrink-0'
+                    }
+                    style={
+                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                        ? { minWidth: cell.column.columnDef.minSize }
+                        : {
+                            width: cell.column.getSize(),
+                            minWidth: cell.column.columnDef.minSize,
+                            maxWidth: cell.column.columnDef.maxSize,
+                          }
+                    }
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ))}
+            );
+            return rowWrapper ? rowWrapper(row.original, rowContent) : rowContent;
+          })}
+        </div>
       </div>
     </div>
   );

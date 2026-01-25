@@ -7,6 +7,8 @@ import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/type
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { debounce, type DebouncedFn } from '@/lib/debounce';
+import { getEmptyCommitParts, type ConventionalCommitParts } from '@/lib/conventionalCommits';
+import { normalizePath } from '@/lib/utils';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;
@@ -38,6 +40,15 @@ export interface DiffSettings {
   compareMode: DiffCompareMode;
 }
 
+// Per-repo cache for commit form state
+interface StagingRepoCache {
+  commitMessage: string;
+  isAmending: boolean;
+  pushAfterCommit: boolean;
+  structuredMode: boolean;
+  commitParts: ConventionalCommitParts;
+}
+
 interface StagingState {
   // Status
   status: RepositoryStatus | null;
@@ -56,6 +67,12 @@ interface StagingState {
   commitMessage: string;
   isAmending: boolean;
   isCommitting: boolean;
+  pushAfterCommit: boolean;
+  structuredMode: boolean;
+  commitParts: ConventionalCommitParts;
+
+  // Per-repo cache
+  repoCache: Map<string, StagingRepoCache>;
 
   // Errors
   error: string | null;
@@ -78,10 +95,18 @@ interface StagingState {
   deleteFile: (path: string) => Promise<void>;
   setCommitMessage: (message: string) => void;
   setIsAmending: (isAmending: boolean) => void;
+  setPushAfterCommit: (push: boolean) => void;
+  setStructuredMode: (mode: boolean) => void;
+  setCommitParts: (parts: ConventionalCommitParts) => void;
   createCommit: (sign?: boolean, bypassHooks?: boolean) => Promise<string>;
   amendCommit: (bypassHooks?: boolean) => Promise<string>;
   clearError: () => void;
   reset: () => void;
+
+  // Per-repo cache management
+  saveToCache: (repoPath: string) => void;
+  restoreFromCache: (repoPath: string) => boolean;
+  clearCache: (repoPath: string) => void;
 }
 
 const defaultDiffSettings: DiffSettings = {
@@ -101,6 +126,10 @@ const initialState = {
   commitMessage: '',
   isAmending: false,
   isCommitting: false,
+  pushAfterCommit: false,
+  structuredMode: false,
+  commitParts: getEmptyCommitParts(),
+  repoCache: new Map(),
   error: null,
 };
 
@@ -321,6 +350,18 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     set({ isAmending });
   },
 
+  setPushAfterCommit: (push: boolean) => {
+    set({ pushAfterCommit: push });
+  },
+
+  setStructuredMode: (mode: boolean) => {
+    set({ structuredMode: mode });
+  },
+
+  setCommitParts: (parts: ConventionalCommitParts) => {
+    set({ commitParts: parts });
+  },
+
   createCommit: async (sign?: boolean, bypassHooks?: boolean) => {
     const { commitMessage } = get();
     if (!commitMessage.trim()) {
@@ -395,5 +436,51 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   reset: () => {
     set(initialState);
+  },
+
+  saveToCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const { commitMessage, isAmending, pushAfterCommit, structuredMode, commitParts, repoCache } =
+      get();
+    const newCache = new Map(repoCache);
+    newCache.set(key, {
+      commitMessage,
+      isAmending,
+      pushAfterCommit,
+      structuredMode,
+      commitParts,
+    });
+    set({ repoCache: newCache });
+  },
+
+  restoreFromCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const cached = get().repoCache.get(key);
+    if (cached) {
+      set({
+        commitMessage: cached.commitMessage,
+        isAmending: cached.isAmending,
+        pushAfterCommit: cached.pushAfterCommit,
+        structuredMode: cached.structuredMode,
+        commitParts: cached.commitParts,
+      });
+      return true;
+    }
+    // Reset to defaults if no cache
+    set({
+      commitMessage: '',
+      isAmending: false,
+      pushAfterCommit: false,
+      structuredMode: false,
+      commitParts: getEmptyCommitParts(),
+    });
+    return false;
+  },
+
+  clearCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const newCache = new Map(get().repoCache);
+    newCache.delete(key);
+    set({ repoCache: newCache });
   },
 }));

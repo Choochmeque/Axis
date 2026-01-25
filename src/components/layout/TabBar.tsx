@@ -1,6 +1,9 @@
 import * as Tabs from '@radix-ui/react-tabs';
 import { X, Home } from 'lucide-react';
 import { TabType, useTabsStore, type Tab } from '@/store/tabsStore';
+import { useIntegrationStore } from '@/store/integrationStore';
+import { useStagingStore } from '@/store/stagingStore';
+import { commands } from '@/bindings/api';
 import { cn } from '@/lib/utils';
 
 interface TabBarProps {
@@ -27,6 +30,14 @@ export function TabBar({ onTabChange }: TabBarProps) {
 
   const handleCloseTab = (e: React.MouseEvent, tabId: string) => {
     e.stopPropagation();
+    const tab = tabs.find((t) => t.id === tabId);
+    if (tab?.path) {
+      // Clear frontend caches
+      useIntegrationStore.getState().clearCache(tab.path);
+      useStagingStore.getState().clearCache(tab.path);
+      // Close backend (frees GitService and CommitCache)
+      commands.closeRepositoryPath(tab.path);
+    }
     removeTab(tabId);
   };
 

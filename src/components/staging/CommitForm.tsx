@@ -40,8 +40,14 @@ export function CommitForm() {
     commitMessage,
     isAmending,
     isCommitting,
+    pushAfterCommit,
+    structuredMode,
+    commitParts,
     setCommitMessage,
     setIsAmending,
+    setPushAfterCommit,
+    setStructuredMode,
+    setCommitParts,
     createCommit,
     amendCommit,
   } = useStagingStore();
@@ -50,7 +56,6 @@ export function CommitForm() {
   const { settings } = useSettingsStore();
 
   const [localMessage, setLocalMessage] = useState(commitMessage);
-  const [pushAfterCommit, setPushAfterCommit] = useState(false);
   const [bypassHooks, setBypassHooks] = useState(false);
   // Initialize from settings, can be overridden per-commit
   const [signCommit, setSignCommit] = useState(settings?.signCommits ?? false);
@@ -61,10 +66,6 @@ export function CommitForm() {
   const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Conventional commits state
-  const [structuredMode, setStructuredMode] = useState(false);
-  const [commitParts, setCommitParts] = useState<ConventionalCommitParts>(getEmptyCommitParts());
 
   // Integration state for reference mentions
   const {

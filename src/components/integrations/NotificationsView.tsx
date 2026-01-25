@@ -16,13 +16,13 @@ export function NotificationsView() {
     isLoadingNotifications,
     isLoadingMoreNotifications,
     connectionStatus,
-    loadNotifications,
+    reloadNotifications,
     loadMoreNotifications,
     markAllNotificationsRead,
     setNotificationFilter,
   } = useIntegrationStore();
 
-  // Load notifications on mount (clearing is done in Sidebar click handler)
+  // Soft load notifications on mount (uses cached data if available)
   useEffect(() => {
     const state = useIntegrationStore.getState();
     if (state.connectionStatus?.connected && state.detectedProvider) {
@@ -31,8 +31,8 @@ export function NotificationsView() {
   }, []);
 
   const handleRefresh = useCallback(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    reloadNotifications();
+  }, [reloadNotifications]);
 
   const handleLoadMore = useCallback(() => {
     loadMoreNotifications();

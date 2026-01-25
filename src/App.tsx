@@ -15,6 +15,7 @@ import { TabBar } from './components/layout/TabBar';
 import { useMenuActions, useCustomActionShortcuts, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
 import { notifyNewCommits } from './lib/actions';
+import { normalizePath } from './lib/utils';
 import { useRepositoryStore } from './store/repositoryStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
@@ -92,7 +93,8 @@ function App() {
       markTabDirty(path);
 
       // If this is the active repo, reload branches and notify
-      if (useRepositoryStore.getState().repository?.path.toString() === path) {
+      const currentPath = useRepositoryStore.getState().repository?.path.toString();
+      if (currentPath && normalizePath(currentPath) === normalizePath(path)) {
         await useRepositoryStore.getState().loadBranches();
         notifyNewCommits(useRepositoryStore.getState().branches);
       }
@@ -155,7 +157,8 @@ function App() {
       repository &&
       activeTab &&
       activeTab.type === TabType.Repository &&
-      activeTab.path === repository.path.toString()
+      activeTab.path &&
+      normalizePath(activeTab.path) === normalizePath(repository.path.toString())
     ) {
       // Only update if name differs
       if (activeTab.name !== repository.name) {
@@ -201,11 +204,19 @@ function App() {
 
       if (!tab.path) return;
 
+      // Save current repo's UI state to cache before switching
+      const currentRepoPath = useRepositoryStore.getState().repository?.path.toString();
+      if (currentRepoPath) {
+        useIntegrationStore.getState().saveToCache(currentRepoPath);
+        useStagingStore.getState().saveToCache(currentRepoPath);
+      }
+
+      // Try to restore cached state for target repo (instant UI)
+      const hadIntegrationCache = useIntegrationStore.getState().restoreFromCache(tab.path);
+      useStagingStore.getState().restoreFromCache(tab.path);
+
       // Switch repository (uses backend cache for fast switching)
       try {
-        useStagingStore.getState().reset();
-        // Clear integration data when switching repos
-        useIntegrationStore.getState().reset();
         await switchRepository(tab.path);
         await useStagingStore.getState().loadStatus();
       } catch {
@@ -213,6 +224,10 @@ function App() {
         await openRepository(tab.path);
         await useStagingStore.getState().loadStatus();
       }
+
+      // Refresh integration data in background
+      // If we had cache, do soft refresh (keeps data visible). If no cache, do hard refresh.
+      useIntegrationStore.getState().refresh(!hadIntegrationCache);
 
       if (tab.isDirty) {
         clearTabDirty(tab.path);
@@ -233,15 +248,15 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'file-status':
-        return <WorkspaceView />;
+        return <WorkspaceView key="workspace" />;
       case 'history':
-        return <HistoryView />;
+        return <HistoryView key="history" />;
       case 'search':
-        return <ContentSearch />;
+        return <ContentSearch key="search" />;
       case 'reflog':
-        return <ReflogView />;
+        return <ReflogView key="reflog" />;
       case 'lfs':
-        return <LfsView />;
+        return <LfsView key="lfs" />;
       case 'pull-requests':
         return <PullRequestsView key="pull-requests" />;
       case 'issues':
@@ -253,6 +268,7 @@ function App() {
       case 'conflicts':
         return (
           <ConflictResolver
+            key="conflicts"
             onAllResolved={() => {
               useRepositoryStore.getState().setCurrentView('file-status');
               useStagingStore.getState().loadStatus();
@@ -260,7 +276,7 @@ function App() {
           />
         );
       default:
-        return <WorkspaceView />;
+        return <WorkspaceView key="workspace" />;
     }
   };
 

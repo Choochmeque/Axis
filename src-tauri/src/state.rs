@@ -278,6 +278,7 @@ impl AppState {
     /// Close a specific repository and remove from cache
     pub fn close_repository(&self, path: &Path) {
         self.repository_cache.remove(path);
+        self.commit_cache.invalidate_repo(path);
 
         // Clear active if this was it
         let mut active = self

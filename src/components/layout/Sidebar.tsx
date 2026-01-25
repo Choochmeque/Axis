@@ -757,10 +757,10 @@ function IntegrationsSection() {
     isLoadingIssues,
     isLoadingCiRuns,
     isLoadingNotifications,
-    loadPullRequests,
-    loadIssues,
-    loadCiRuns,
-    loadNotifications,
+    reloadPullRequests,
+    reloadIssues,
+    reloadCiRuns,
+    reloadNotifications,
   } = useIntegrationStore();
 
   const openPrCount = pullRequests.filter((pr) => pr.state === PrState.Open).length;
@@ -897,18 +897,18 @@ function IntegrationsSection() {
   // Load data when connected
   useEffect(() => {
     if (connectionStatus?.connected && detectedProvider) {
-      loadPullRequests();
-      loadIssues();
-      loadCiRuns();
-      loadNotifications();
+      reloadPullRequests();
+      reloadIssues();
+      reloadCiRuns();
+      reloadNotifications();
     }
   }, [
     connectionStatus?.connected,
     detectedProvider,
-    loadPullRequests,
-    loadIssues,
-    loadCiRuns,
-    loadNotifications,
+    reloadPullRequests,
+    reloadIssues,
+    reloadCiRuns,
+    reloadNotifications,
   ]);
 
   // Don't show section if no provider detected

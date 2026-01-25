@@ -2613,6 +2613,16 @@ impl Git2Service {
         Ok(entries)
     }
 
+    /// Get total count of reflog entries for a reference
+    pub fn get_reflog_count(&self, refname: &str) -> Result<usize> {
+        let reflog = self
+            .repo
+            .reflog(refname)
+            .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
+
+        Ok(reflog.len())
+    }
+
     /// Get list of available reflogs (references that have reflog)
     pub fn list_reflogs(&self) -> Result<Vec<String>> {
         let mut reflogs = vec!["HEAD".to_string()];

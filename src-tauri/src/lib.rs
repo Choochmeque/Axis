@@ -135,6 +135,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Reflog commands
             crate::commands::reflog_list,
             crate::commands::reflog_refs,
+            crate::commands::reflog_count,
             crate::commands::reflog_checkout,
             // Tag commands
             crate::commands::tag_list,

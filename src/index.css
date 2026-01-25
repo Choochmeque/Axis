@@ -1196,6 +1196,29 @@ code {
     min-height: 3rem;
     flex: 1;
   }
+
+  /* Virtual List */
+  .virtual-list-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .virtual-list-item:hover {
+    background-color: var(--bg-hover);
+  }
+
+  .virtual-list-item--selected {
+    background-color: var(--bg-active);
+  }
 }
 
 /* ==================== Interactive Rebase ==================== */

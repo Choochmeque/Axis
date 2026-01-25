@@ -75,3 +75,4 @@ export {
   type CellContext,
   type HeaderContext,
 } from './data-table';
+export { VirtualList } from './virtual-list';

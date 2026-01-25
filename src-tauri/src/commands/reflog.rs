@@ -26,6 +26,15 @@ pub async fn reflog_refs(state: State<'_, AppState>) -> Result<Vec<String>> {
         .with_git2(|git2| git2.list_reflogs())
 }
 
+/// Get total count of reflog entries for a reference
+#[tauri::command]
+#[specta::specta]
+pub async fn reflog_count(state: State<'_, AppState>, refname: String) -> Result<usize> {
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.get_reflog_count(&refname))
+}
+
 /// Checkout to a reflog entry (creates detached HEAD)
 #[tauri::command]
 #[specta::specta]

@@ -351,6 +351,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         includeRemotes: includeRemotes,
         sortOrder: sortOrder,
         fromRef: null,
+        includeUncommitted: true,
       });
       set({
         commits: [...commits, ...result.commits],

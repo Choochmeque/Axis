@@ -287,6 +287,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env_logger::init();
+
     let specta_builder = get_specta_builder();
     let specta_handler = specta_builder.invoke_handler();
     let extra_handler: Box<tauri::ipc::InvokeHandler<tauri::Wry>> =

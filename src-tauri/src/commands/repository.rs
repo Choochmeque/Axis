@@ -148,11 +148,9 @@ pub async fn get_repository_status(state: State<'_, AppState>) -> Result<Reposit
 #[specta::specta]
 pub async fn get_commit_history(
     state: State<'_, AppState>,
-    options: Option<LogOptions>,
+    options: LogOptions,
 ) -> Result<Vec<Commit>> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.log(options.unwrap_or_default()))
+    state.get_git_service()?.with_git2(|git2| git2.log(options))
 }
 
 #[tauri::command]

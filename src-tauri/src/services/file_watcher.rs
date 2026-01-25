@@ -2,6 +2,7 @@ use crate::events::{
     FilesChangedEvent, HeadChangedEvent, IndexChangedEvent, RefChangedEvent, RepositoryDirtyEvent,
     WatchErrorEvent,
 };
+use crate::state::AppState;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,7 +10,7 @@ use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_specta::Event as _;
 
 /// Per-repository file watcher that emits events based on active status.
@@ -181,6 +182,17 @@ impl FileWatcher {
                     if pending_head_changed {
                         let _ = HeadChangedEvent {}.emit(&app_handle);
                         pending_head_changed = false;
+
+                        // Invalidate commit cache on HEAD change
+                        if let Some(state) = app_handle.try_state::<AppState>() {
+                            state.commit_cache().invalidate_repo(&repo_path);
+                        }
+                    }
+                    if !pending_refs.is_empty() {
+                        // Invalidate commit cache on ref changes
+                        if let Some(state) = app_handle.try_state::<AppState>() {
+                            state.commit_cache().invalidate_repo(&repo_path);
+                        }
                     }
                     for ref_name in pending_refs.drain(..) {
                         let _ = RefChangedEvent { ref_name }.emit(&app_handle);

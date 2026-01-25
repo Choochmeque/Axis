@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   GitBranch,
@@ -21,56 +21,39 @@ import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useDialogStore } from '@/store/dialogStore';
 import { ResetMode } from '@/types';
 import type { GraphCommit, ResetMode as ResetModeType } from '@/types';
-import { TagDialog } from '../tags/TagDialog';
-import { CreateBranchDialog } from '../branches/CreateBranchDialog';
-import { CherryPickDialog } from '../merge/CherryPickDialog';
-import { ResetConfirmDialog } from '../merge/ResetConfirmDialog';
-import { RevertCommitDialog } from '../merge/RevertCommitDialog';
-import { RebaseDialog } from '../merge/RebaseDialog';
-import { BisectDialog } from '../merge/BisectDialog';
-import { ArchiveDialog } from './ArchiveDialog';
-import { PatchDialog } from './PatchDialog';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ActionContext } from '@/types';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;
-  children: ReactNode;
+  /** When provided, wraps children with ContextMenu. When omitted, renders just menu items. */
+  children?: ReactNode;
   onCheckout?: () => void;
-  onCreateBranch?: () => void;
-  onCreateTag?: () => void;
   onMerge?: () => void;
-  onRevert?: () => void;
-  onCherryPick?: () => void;
-  onReset?: (mode: ResetMode) => void;
 }
 
 export function CommitContextMenu({
   commit,
   children,
   onCheckout,
-  onCreateBranch,
-  onCreateTag,
   onMerge,
-  onRevert,
-  onCherryPick,
-  onReset,
 }: CommitContextMenuProps) {
   const { t } = useTranslation();
-  const { repository, loadBranches, loadTags, loadCommits, loadStatus } = useRepositoryStore();
-  const [showTagDialog, setShowTagDialog] = useState(false);
-  const [showBranchDialog, setShowBranchDialog] = useState(false);
-  const [showCherryPickDialog, setShowCherryPickDialog] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetMode, setResetMode] = useState<ResetModeType>(ResetMode.Mixed);
-  const [showRevertDialog, setShowRevertDialog] = useState(false);
-  const [showRebaseDialog, setShowRebaseDialog] = useState(false);
-  const [showBisectDialog, setShowBisectDialog] = useState(false);
-  const [bisectGoodCommit, setBisectGoodCommit] = useState<string | undefined>();
-  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [showPatchDialog, setShowPatchDialog] = useState(false);
+  const { repository, loadBranches, loadCommits, loadStatus } = useRepositoryStore();
+  const {
+    openTagDialog,
+    openCreateBranchDialog,
+    openCherryPickDialog,
+    openResetConfirmDialog,
+    openRevertCommitDialog,
+    openRebaseDialog,
+    openArchiveDialog,
+    openPatchDialog,
+    openBisectDialog,
+  } = useDialogStore();
 
   const handleCopySha = () => {
     copyToClipboard(commit.oid);
@@ -96,25 +79,14 @@ export function CommitContextMenu({
   };
 
   const handleCreateBranch = () => {
-    if (onCreateBranch) {
-      onCreateBranch();
-    } else {
-      setShowBranchDialog(true);
-    }
+    openCreateBranchDialog({ startPoint: commit.oid });
   };
 
   const handleCreateTag = () => {
-    if (onCreateTag) {
-      onCreateTag();
-    } else {
-      setShowTagDialog(true);
-    }
-  };
-
-  const handleTagCreated = async () => {
-    await loadTags();
-    await loadCommits();
-    setShowTagDialog(false);
+    openTagDialog({
+      targetCommit: commit.oid,
+      targetCommitSummary: commit.summary,
+    });
   };
 
   const handleMerge = () => {
@@ -125,233 +97,141 @@ export function CommitContextMenu({
   };
 
   const handleRebase = () => {
-    setShowRebaseDialog(true);
-  };
-
-  const handleRebaseComplete = async () => {
-    setShowRebaseDialog(false);
-    await loadCommits();
-    await loadStatus();
-    await loadBranches();
+    openRebaseDialog({
+      currentBranch: repository?.currentBranch ?? '',
+      targetCommit: commit,
+    });
   };
 
   const handleBisectGood = () => {
-    setBisectGoodCommit(commit.oid);
-    setShowBisectDialog(true);
+    openBisectDialog({ goodCommit: commit.oid });
   };
 
-  const handleBisectComplete = async () => {
-    setShowBisectDialog(false);
-    await loadCommits();
-    await loadStatus();
+  const handleArchive = () => {
+    openArchiveDialog({ commitOid: commit.oid, commitSummary: commit.summary });
+  };
+
+  const handlePatch = () => {
+    openPatchDialog({ mode: 'create', commitOid: commit.oid, commitSummary: commit.summary });
   };
 
   const handleRevert = () => {
-    if (onRevert) {
-      onRevert();
-    } else {
-      setShowRevertDialog(true);
-    }
-  };
-
-  const handleRevertComplete = async () => {
-    setShowRevertDialog(false);
-    await loadCommits();
-    await loadStatus();
+    openRevertCommitDialog({ commits: [commit] });
   };
 
   const handleCherryPick = () => {
-    if (onCherryPick) {
-      onCherryPick();
-    } else {
-      setShowCherryPickDialog(true);
-    }
-  };
-
-  const handleCherryPickComplete = async () => {
-    setShowCherryPickDialog(false);
-    await loadCommits();
-    await loadStatus();
+    openCherryPickDialog({ commits: [commit] });
   };
 
   const handleReset = (mode: ResetModeType) => {
-    if (onReset) {
-      onReset(mode);
-    } else {
-      setResetMode(mode);
-      setShowResetDialog(true);
-    }
+    openResetConfirmDialog({
+      commit,
+      mode,
+      currentBranch: repository?.currentBranch ?? 'unknown',
+    });
   };
 
-  const handleResetComplete = async () => {
-    setShowResetDialog(false);
-    await loadCommits();
-    await loadStatus();
-    await loadBranches();
-  };
-
-  return (
+  const menuItems = (
     <>
-      <ContextMenu trigger={children}>
-        <MenuItem icon={Check} onSelect={handleCheckout} shortcut={commit.shortOid}>
-          {t('history.contextMenu.checkout')}
-        </MenuItem>
-        <MenuItem icon={ArrowUpFromLine} disabled>
-          {t('history.contextMenu.pushRevision')}
-        </MenuItem>
-        <MenuSeparator />
-        <MenuItem icon={GitMerge} disabled onSelect={handleMerge}>
-          {t('history.contextMenu.mergeInto', {
-            branch: repository?.currentBranch ?? 'current branch',
-          })}
-        </MenuItem>
-        <MenuItem icon={GitMerge} className="[&>svg]:rotate-180" onSelect={handleRebase}>
-          {t('history.contextMenu.rebase')}
-        </MenuItem>
-        <MenuSeparator />
-        <MenuItem icon={Tag} onSelect={handleCreateTag}>
-          {t('history.contextMenu.tag')}
-        </MenuItem>
-        <MenuItem icon={PenTool} disabled>
-          {t('history.contextMenu.sign')}
-        </MenuItem>
-        <MenuItem icon={GitBranch} onSelect={handleCreateBranch}>
-          {t('history.contextMenu.branch')}
-        </MenuItem>
-        <MenuSeparator />
+      <MenuItem icon={Check} onSelect={handleCheckout} shortcut={commit.shortOid}>
+        {t('history.contextMenu.checkout')}
+      </MenuItem>
+      <MenuItem icon={ArrowUpFromLine} disabled>
+        {t('history.contextMenu.pushRevision')}
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={GitMerge} disabled onSelect={handleMerge}>
+        {t('history.contextMenu.mergeInto', {
+          branch: repository?.currentBranch ?? 'current branch',
+        })}
+      </MenuItem>
+      <MenuItem icon={GitMerge} className="[&>svg]:rotate-180" onSelect={handleRebase}>
+        {t('history.contextMenu.rebase')}
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Tag} onSelect={handleCreateTag}>
+        {t('history.contextMenu.tag')}
+      </MenuItem>
+      <MenuItem icon={PenTool} disabled>
+        {t('history.contextMenu.sign')}
+      </MenuItem>
+      <MenuItem icon={GitBranch} onSelect={handleCreateBranch}>
+        {t('history.contextMenu.branch')}
+      </MenuItem>
+      <MenuSeparator />
 
-        <SubMenu
-          icon={RotateCcw}
-          label={t('history.contextMenu.resetToHere', {
-            branch: repository?.currentBranch ?? 'branch',
-          })}
+      <SubMenu
+        icon={RotateCcw}
+        label={t('history.contextMenu.resetToHere', {
+          branch: repository?.currentBranch ?? 'branch',
+        })}
+      >
+        <MenuItem
+          onSelect={() => handleReset(ResetMode.Soft)}
+          hint={t('history.contextMenu.resetSoftHint')}
         >
-          <MenuItem
-            onSelect={() => handleReset(ResetMode.Soft)}
-            hint={t('history.contextMenu.resetSoftHint')}
-          >
-            {t('history.contextMenu.resetSoft')}
-          </MenuItem>
-          <MenuItem
-            onSelect={() => handleReset(ResetMode.Mixed)}
-            hint={t('history.contextMenu.resetMixedHint')}
-          >
-            {t('history.contextMenu.resetMixed')}
-          </MenuItem>
-          <MenuItem
-            danger
-            onSelect={() => handleReset(ResetMode.Hard)}
-            hint={t('history.contextMenu.resetHardHint')}
-          >
-            {t('history.contextMenu.resetHard')}
-          </MenuItem>
-        </SubMenu>
-
-        <MenuItem icon={Undo2} onSelect={handleRevert}>
-          {t('history.contextMenu.revertCommit')}
+          {t('history.contextMenu.resetSoft')}
         </MenuItem>
-        <MenuItem icon={CherryIcon} onSelect={handleCherryPick}>
-          {t('history.contextMenu.cherryPick')}
+        <MenuItem
+          onSelect={() => handleReset(ResetMode.Mixed)}
+          hint={t('history.contextMenu.resetMixedHint')}
+        >
+          {t('history.contextMenu.resetMixed')}
         </MenuItem>
-        <MenuItem icon={Search} onSelect={handleBisectGood}>
-          {t('history.contextMenu.bisectFromHere')}
+        <MenuItem
+          danger
+          onSelect={() => handleReset(ResetMode.Hard)}
+          hint={t('history.contextMenu.resetHardHint')}
+        >
+          {t('history.contextMenu.resetHard')}
         </MenuItem>
-        <MenuItem icon={FileText} onSelect={() => setShowPatchDialog(true)}>
-          {t('history.contextMenu.createPatch')}
+      </SubMenu>
+
+      <MenuItem icon={Undo2} onSelect={handleRevert}>
+        {t('history.contextMenu.revertCommit')}
+      </MenuItem>
+      <MenuItem icon={CherryIcon} onSelect={handleCherryPick}>
+        {t('history.contextMenu.cherryPick')}
+      </MenuItem>
+      <MenuItem icon={Search} onSelect={handleBisectGood}>
+        {t('history.contextMenu.bisectFromHere')}
+      </MenuItem>
+      <MenuItem icon={FileText} onSelect={handlePatch}>
+        {t('history.contextMenu.createPatch')}
+      </MenuItem>
+      <MenuSeparator />
+      <MenuItem icon={Archive} onSelect={handleArchive}>
+        {t('history.contextMenu.archive')}
+      </MenuItem>
+
+      <CustomActionsMenuSection
+        context={ActionContext.Commit}
+        variables={{
+          commitHash: commit.oid,
+          commitShort: commit.shortOid,
+          commitMessage: commit.summary,
+        }}
+      />
+
+      <MenuSeparator />
+
+      <SubMenu icon={Copy} label={t('history.contextMenu.copy')}>
+        <MenuItem onSelect={handleCopyShortSha} shortcut={commit.shortOid}>
+          {t('history.contextMenu.shortSha')}
         </MenuItem>
-        <MenuSeparator />
-        <MenuItem icon={Archive} onSelect={() => setShowArchiveDialog(true)}>
-          {t('history.contextMenu.archive')}
+        <MenuItem onSelect={handleCopySha}>{t('history.contextMenu.fullSha')}</MenuItem>
+        <MenuItem onSelect={() => copyToClipboard(commit.summary)}>
+          {t('history.contextMenu.commitMessage')}
         </MenuItem>
-
-        <CustomActionsMenuSection
-          context={ActionContext.Commit}
-          variables={{
-            commitHash: commit.oid,
-            commitShort: commit.shortOid,
-            commitMessage: commit.summary,
-          }}
-        />
-
-        <MenuSeparator />
-
-        <SubMenu icon={Copy} label={t('history.contextMenu.copy')}>
-          <MenuItem onSelect={handleCopyShortSha} shortcut={commit.shortOid}>
-            {t('history.contextMenu.shortSha')}
-          </MenuItem>
-          <MenuItem onSelect={handleCopySha}>{t('history.contextMenu.fullSha')}</MenuItem>
-          <MenuItem onSelect={() => copyToClipboard(commit.summary)}>
-            {t('history.contextMenu.commitMessage')}
-          </MenuItem>
-        </SubMenu>
-      </ContextMenu>
-
-      <TagDialog
-        isOpen={showTagDialog}
-        onClose={() => setShowTagDialog(false)}
-        onTagCreated={handleTagCreated}
-        targetCommit={commit.oid}
-        targetCommitSummary={commit.summary}
-      />
-
-      <CreateBranchDialog
-        open={showBranchDialog}
-        onOpenChange={setShowBranchDialog}
-        startPoint={commit.oid}
-      />
-
-      <CherryPickDialog
-        isOpen={showCherryPickDialog}
-        onClose={() => setShowCherryPickDialog(false)}
-        onCherryPickComplete={handleCherryPickComplete}
-        commits={[commit]}
-      />
-
-      <ResetConfirmDialog
-        isOpen={showResetDialog}
-        onClose={() => setShowResetDialog(false)}
-        onResetComplete={handleResetComplete}
-        commit={commit}
-        mode={resetMode}
-        currentBranch={repository?.currentBranch ?? 'unknown'}
-      />
-
-      <RevertCommitDialog
-        isOpen={showRevertDialog}
-        onClose={() => setShowRevertDialog(false)}
-        onRevertComplete={handleRevertComplete}
-        commits={[commit]}
-      />
-
-      <RebaseDialog
-        isOpen={showRebaseDialog}
-        onClose={() => setShowRebaseDialog(false)}
-        onRebaseComplete={handleRebaseComplete}
-        currentBranch={repository?.currentBranch ?? ''}
-        targetCommit={commit}
-      />
-
-      <ArchiveDialog
-        isOpen={showArchiveDialog}
-        onClose={() => setShowArchiveDialog(false)}
-        commitOid={commit.oid}
-        commitSummary={commit.summary}
-      />
-
-      <PatchDialog
-        isOpen={showPatchDialog}
-        onClose={() => setShowPatchDialog(false)}
-        mode="create"
-        commitOid={commit.oid}
-        commitSummary={commit.summary}
-      />
-
-      <BisectDialog
-        isOpen={showBisectDialog}
-        onClose={() => setShowBisectDialog(false)}
-        onBisectComplete={handleBisectComplete}
-        goodCommit={bisectGoodCommit}
-      />
+      </SubMenu>
     </>
   );
+
+  // When children provided, wrap with ContextMenu (original behavior)
+  // When children omitted, just render menu items (for use in external ContextMenuContent)
+  if (children) {
+    return <ContextMenu trigger={children}>{menuItems}</ContextMenu>;
+  }
+
+  return menuItems;
 }

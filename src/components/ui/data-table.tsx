@@ -15,6 +15,7 @@ interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   selectedRowId?: string | null;
   onRowClick?: (row: TData) => void;
+  onRowContextMenu?: (row: TData, event: React.MouseEvent) => void;
   getRowId?: (row: TData) => string;
   resizable?: boolean;
   columnResizeMode?: ColumnResizeMode;
@@ -34,6 +35,7 @@ export function DataTable<TData>({
   columns,
   selectedRowId,
   onRowClick,
+  onRowContextMenu,
   getRowId,
   resizable = true,
   columnResizeMode = 'onChange',
@@ -162,6 +164,7 @@ export function DataTable<TData>({
                 key={row.id}
                 className={getRowClassName(row)}
                 onClick={() => onRowClick?.(row.original)}
+                onContextMenu={(e) => onRowContextMenu?.(row.original, e)}
                 style={{
                   position: 'absolute',
                   top: 0,

@@ -1,5 +1,5 @@
 // Refactored to use DataTable with virtualization
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { GitBranch, GitCommit, Loader2, Tag } from 'lucide-react';
@@ -10,6 +10,12 @@ import { RefType } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
 import { HistoryFilters } from './HistoryFilters';
+import {
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+} from '@/components/ui';
 import { BisectBanner } from '../merge/BisectBanner';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { Avatar } from '@/components/ui';
@@ -76,6 +82,9 @@ export function HistoryView() {
   const selectedCommit = selectedCommitOid
     ? (commits.find((c) => c.oid === selectedCommitOid) ?? selectedCommitData)
     : null;
+
+  // Track commit for context menu
+  const [contextMenuCommit, setContextMenuCommit] = useState<GraphCommit | null>(null);
 
   // Define columns
   const columns = useMemo(
@@ -229,6 +238,10 @@ export function HistoryView() {
     await loadStatus();
   };
 
+  const handleRowContextMenu = useCallback((commit: GraphCommit) => {
+    setContextMenuCommit(commit);
+  }, []);
+
   if (isLoadingCommits && commits.length === 0) {
     return (
       <div className="historyEmptyState">
@@ -261,23 +274,30 @@ export function HistoryView() {
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
-      <DataTable
-        data={commits}
-        columns={columns}
-        selectedRowId={selectedCommitOid}
-        onRowClick={handleCommitClick}
-        getRowId={(commit) => commit.oid}
-        onScroll={handleScroll}
-        rowHeight={36}
-        emptyMessage={t('history.noCommits')}
-        isLoading={isLoadingCommits}
-        loadingMessage={t('history.loading')}
-        rowWrapper={(commit, children) => (
-          <CommitContextMenu key={commit.oid} commit={commit}>
-            {children}
-          </CommitContextMenu>
-        )}
-      />
+      <ContextMenuRoot>
+        <ContextMenuTrigger asChild>
+          <div className="flex flex-col flex-1 min-h-0">
+            <DataTable
+              data={commits}
+              columns={columns}
+              selectedRowId={selectedCommitOid}
+              onRowClick={handleCommitClick}
+              onRowContextMenu={handleRowContextMenu}
+              getRowId={(commit) => commit.oid}
+              onScroll={handleScroll}
+              rowHeight={36}
+              emptyMessage={t('history.noCommits')}
+              isLoading={isLoadingCommits}
+              loadingMessage={t('history.loading')}
+            />
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuPortal>
+          <ContextMenuContent className="menu-content">
+            {contextMenuCommit && <CommitContextMenu commit={contextMenuCommit} />}
+          </ContextMenuContent>
+        </ContextMenuPortal>
+      </ContextMenuRoot>
       {isLoadingMoreCommits && (
         <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs border-t border-(--border-color)">
           <Loader2 size={16} className="animate-spin" />

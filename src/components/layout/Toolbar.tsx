@@ -18,7 +18,8 @@ import { shellApi } from '@/services/api';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { showInFinder } from '@/lib/actions';
-import { CreateBranchDialog, CheckoutBranchDialog } from '../branches';
+import { CheckoutBranchDialog } from '../branches';
+import { useDialogStore } from '@/store/dialogStore';
 import { FetchDialog, PushDialog, PullDialog } from '../remotes';
 import { StashDialog } from '../stash';
 import { SettingsDialog } from '../settings/SettingsDialog';
@@ -44,8 +45,10 @@ export function Toolbar() {
   const showSettings = useSettingsStore((s) => s.showSettings);
   const setShowSettings = useSettingsStore((s) => s.setShowSettings);
 
+  // Global dialogs
+  const { openCreateBranchDialog } = useDialogStore();
+
   // Dialog states
-  const [createBranchOpen, setCreateBranchOpen] = useState(false);
   const [checkoutBranchOpen, setCheckoutBranchOpen] = useState(false);
   const [fetchOpen, setFetchOpen] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
@@ -79,7 +82,7 @@ export function Toolbar() {
     onPush: () => repository && setPushOpen(true),
     onPull: () => repository && setPullOpen(true),
     onFetch: () => repository && setFetchOpen(true),
-    onCreateBranch: () => repository && setCreateBranchOpen(true),
+    onCreateBranch: () => repository && openCreateBranchDialog(),
     onSearch: () => setCurrentView('search'),
   });
 
@@ -152,7 +155,7 @@ export function Toolbar() {
               className={toolbarButtonClass}
               title={t('toolbar.branch')}
               disabled={repository.isUnborn}
-              onClick={() => setCreateBranchOpen(true)}
+              onClick={() => openCreateBranchDialog()}
             >
               <GitBranch size={18} />
               <span>{t('toolbar.branch')}</span>
@@ -178,7 +181,6 @@ export function Toolbar() {
           </div>
 
           {/* Branch Dialogs */}
-          <CreateBranchDialog open={createBranchOpen} onOpenChange={setCreateBranchOpen} />
           <CheckoutBranchDialog open={checkoutBranchOpen} onOpenChange={setCheckoutBranchOpen} />
 
           {/* Remote Dialogs */}

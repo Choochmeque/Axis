@@ -207,26 +207,27 @@ function App() {
       // Save current repo's UI state to cache before switching
       const currentRepoPath = useRepositoryStore.getState().repository?.path.toString();
       if (currentRepoPath) {
+        useRepositoryStore.getState().saveToCache(currentRepoPath);
         useIntegrationStore.getState().saveToCache(currentRepoPath);
         useStagingStore.getState().saveToCache(currentRepoPath);
       }
 
       // Try to restore cached state for target repo (instant UI)
+      const hadRepoCache = useRepositoryStore.getState().restoreFromCache(tab.path);
       const hadIntegrationCache = useIntegrationStore.getState().restoreFromCache(tab.path);
       useStagingStore.getState().restoreFromCache(tab.path);
 
       // Switch repository (uses backend cache for fast switching)
       try {
         await switchRepository(tab.path);
-        await useStagingStore.getState().loadStatus();
       } catch {
         // Fallback to openRepository if switchRepository fails
         await openRepository(tab.path);
-        await useStagingStore.getState().loadStatus();
       }
 
-      // Refresh integration data in background
-      // If we had cache, do soft refresh (keeps data visible). If no cache, do hard refresh.
+      // Soft refresh in background - if no cache, force reload
+      useRepositoryStore.getState().refresh(!hadRepoCache);
+      useStagingStore.getState().loadStatus();
       useIntegrationStore.getState().refresh(!hadIntegrationCache);
 
       if (tab.isDirty) {

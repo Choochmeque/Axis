@@ -1,6 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs';
 import { X, Home } from 'lucide-react';
 import { TabType, useTabsStore, type Tab } from '@/store/tabsStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { useIntegrationStore } from '@/store/integrationStore';
 import { useStagingStore } from '@/store/stagingStore';
 import { commands } from '@/bindings/api';
@@ -33,6 +34,7 @@ export function TabBar({ onTabChange }: TabBarProps) {
     const tab = tabs.find((t) => t.id === tabId);
     if (tab?.path) {
       // Clear frontend caches
+      useRepositoryStore.getState().clearCache(tab.path);
       useIntegrationStore.getState().clearCache(tab.path);
       useStagingStore.getState().clearCache(tab.path);
       // Close backend (frees GitService and CommitCache)

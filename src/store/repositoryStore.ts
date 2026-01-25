@@ -33,6 +33,7 @@ import {
 } from '@/services/api';
 import { getErrorMessage, isAxisError } from '@/lib/errorUtils';
 import { debounce, type DebouncedFn } from '@/lib/debounce';
+import { normalizePath } from '@/lib/utils';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;
@@ -55,6 +56,21 @@ export type ViewType =
   | 'ci'
   | 'notifications'
   | 'conflicts';
+
+// Per-repo cache for view state
+interface RepoViewCache {
+  commits: GraphCommit[];
+  maxLane: number;
+  hasMoreCommits: boolean;
+  branches: Branch[];
+  tags: Tag[];
+  stashes: StashEntry[];
+  currentView: ViewType;
+  branchFilter: BranchFilterTypeType;
+  includeRemotes: boolean;
+  sortOrder: SortOrderType;
+  selectedCommitOid: string | null;
+}
 
 interface RepositoryState {
   // Data
@@ -100,6 +116,9 @@ interface RepositoryState {
     targetBranch: string;
     isRemote: boolean;
   } | null;
+
+  // Per-repo cache
+  repoCache: Map<string, RepoViewCache>;
 
   // Loading states
   isLoading: boolean;
@@ -153,6 +172,12 @@ interface RepositoryState {
   stashAndCheckout: () => Promise<void>;
   discardAndCheckout: () => Promise<void>;
   clearCheckoutConflict: () => void;
+
+  // Per-repo cache management
+  saveToCache: (repoPath: string) => void;
+  restoreFromCache: (repoPath: string) => boolean;
+  clearCache: (repoPath: string) => void;
+  refresh: (force?: boolean) => void;
 }
 
 export const useRepositoryStore = create<RepositoryState>((set, get) => ({
@@ -183,6 +208,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   selectedStashFile: null,
   isLoadingStashFiles: false,
   checkoutConflict: null,
+  repoCache: new Map(),
   isLoading: false,
   isLoadingCommits: false,
   isLoadingMoreCommits: false,
@@ -222,18 +248,6 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     try {
       const repository = await repositoryApi.switchActive(path);
       set({ repository, isLoading: false });
-
-      // Load data in parallel
-      await Promise.all([
-        get().loadCommits(),
-        get().loadBranches(),
-        get().loadTags(),
-        get().loadStashes(),
-        get().loadRemotes(),
-        get().loadSubmodules(),
-        get().loadWorktrees(),
-        get().loadStatus(),
-      ]);
     } catch (err) {
       set({ error: getErrorMessage(err), isLoading: false });
       throw err;
@@ -708,4 +722,82 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   clearCheckoutConflict: () => set({ checkoutConflict: null }),
+
+  saveToCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const {
+      commits,
+      maxLane,
+      hasMoreCommits,
+      branches,
+      tags,
+      stashes,
+      currentView,
+      branchFilter,
+      includeRemotes,
+      sortOrder,
+      selectedCommitOid,
+      repoCache,
+    } = get();
+    const newCache = new Map(repoCache);
+    newCache.set(key, {
+      commits,
+      maxLane,
+      hasMoreCommits,
+      branches,
+      tags,
+      stashes,
+      currentView,
+      branchFilter,
+      includeRemotes,
+      sortOrder,
+      selectedCommitOid,
+    });
+    set({ repoCache: newCache });
+  },
+
+  restoreFromCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const cached = get().repoCache.get(key);
+    if (cached) {
+      set({
+        commits: cached.commits,
+        maxLane: cached.maxLane,
+        hasMoreCommits: cached.hasMoreCommits,
+        branches: cached.branches,
+        tags: cached.tags,
+        stashes: cached.stashes,
+        currentView: cached.currentView,
+        branchFilter: cached.branchFilter,
+        includeRemotes: cached.includeRemotes,
+        sortOrder: cached.sortOrder,
+        selectedCommitOid: cached.selectedCommitOid,
+        // Clear selection details - will be reloaded if needed
+        selectedCommitFiles: [],
+        selectedCommitFile: null,
+      });
+      return true;
+    }
+    return false;
+  },
+
+  clearCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const newCache = new Map(get().repoCache);
+    newCache.delete(key);
+    set({ repoCache: newCache });
+  },
+
+  refresh: (force = false) => {
+    if (force) {
+      // Force reload - clear and fetch fresh
+      set({ commits: [], branches: [], tags: [], stashes: [] });
+    }
+    // Soft refresh - load in background (keeps existing data visible)
+    get().loadCommits();
+    get().loadBranches();
+    get().loadTags();
+    get().loadStashes();
+    get().loadStatus();
+  },
 }));

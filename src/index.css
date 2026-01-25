@@ -434,6 +434,22 @@ code {
     @apply p-3 bg-(--bg-secondary) rounded mb-4;
   }
 
+  /* Skeleton loading */
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .skeleton {
+    @apply bg-(--bg-tertiary) rounded;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+
   /* Context Menu classes */
   @keyframes menu-in {
     from {

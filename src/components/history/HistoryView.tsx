@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { GitBranch, GitCommit, Loader2, Tag } from 'lucide-react';
+import { Skeleton } from '@/components/ui';
 
 import { useRepositoryStore } from '@/store/repositoryStore';
 import type { GraphCommit } from '@/types';
@@ -244,9 +245,51 @@ export function HistoryView() {
 
   if (isLoadingCommits && commits.length === 0) {
     return (
-      <div className="historyEmptyState">
-        <Loader2 size={48} strokeWidth={1} className="animate-spin" />
-        <p>{t('history.loading')}</p>
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+        <HistoryFilters />
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Header row */}
+          <div className="flex items-center h-9 px-2 border-b border-(--border-color) bg-(--bg-tertiary)">
+            <div className="w-25 px-2">
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <div className="flex-1 px-2">
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <div className="w-25 px-2">
+              <Skeleton className="h-3 w-10" />
+            </div>
+            <div className="w-37.5 px-2">
+              <Skeleton className="h-3 w-14" />
+            </div>
+            <div className="w-20 px-2">
+              <Skeleton className="h-3 w-12" />
+            </div>
+          </div>
+          {/* Skeleton rows */}
+          <div className="flex-1 overflow-hidden">
+            {[65, 45, 80, 55, 70, 40, 75, 50, 60, 85, 48, 72, 58, 68, 52].map((width, i) => (
+              <div key={i} className="flex items-center h-9 px-2 border-b border-(--border-color)">
+                <div className="w-25 px-2">
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <div className="flex-1 px-2">
+                  <Skeleton className="h-3" style={{ width: `${width}%` }} />
+                </div>
+                <div className="w-25 px-2">
+                  <Skeleton className="h-3 w-14" />
+                </div>
+                <div className="w-37.5 px-2 flex items-center gap-2">
+                  <Skeleton className="h-4.5 w-4.5 rounded-full shrink-0" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <div className="w-20 px-2">
+                  <Skeleton className="h-3 w-14 font-mono" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

@@ -103,16 +103,11 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
             variant="ghost"
             size="sm"
             onClick={openInBrowser}
-            title={t('integrations.common.openInBrowser')}
+            title={t('common.openInBrowser')}
           >
             <ExternalLink size={14} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            title={t('integrations.common.close')}
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} title={t('common.close')}>
             <X size={14} />
           </Button>
         </div>

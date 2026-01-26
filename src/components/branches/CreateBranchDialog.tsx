@@ -160,7 +160,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
             onClick={handleCreate}
             disabled={isLoading || !branchName.trim() || !!validationError}
           >
-            {isLoading ? t('branches.create.creating') : t('branches.create.createButton')}
+            {isLoading ? t('common.creating') : t('branches.create.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

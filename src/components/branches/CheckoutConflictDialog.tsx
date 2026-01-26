@@ -91,7 +91,7 @@ export function CheckoutConflictDialog({
           </DialogClose>
           <Button variant="secondary" onClick={handleStashAndSwitch} disabled={isLoading !== null}>
             {isLoading === 'stash'
-              ? t('branches.checkoutConflict.stashing')
+              ? t('common.stashing')
               : t('branches.checkoutConflict.stashAndSwitch')}
           </Button>
           <Button

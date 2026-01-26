@@ -277,7 +277,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         <button
           className={btnIconClass}
           onClick={() => loadReflog(currentRef)}
-          title={t('reflog.refresh')}
+          title={t('common.refresh')}
           disabled={isLoading}
         >
           <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />

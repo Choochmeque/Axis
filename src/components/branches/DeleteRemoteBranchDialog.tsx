@@ -108,9 +108,7 @@ export function DeleteRemoteBranchDialog({
             <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading
-              ? t('branches.deleteRemote.deleting')
-              : t('branches.deleteRemote.deleteButton')}
+            {isLoading ? t('common.deleting') : t('branches.deleteRemote.deleteButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

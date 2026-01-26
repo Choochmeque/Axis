@@ -110,7 +110,7 @@ export function StashDialog({ isOpen, onClose }: StashDialogProps) {
             <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="primary" onClick={handleStash} disabled={isLoading}>
-            {isLoading ? t('stash.dialog.stashing') : t('stash.dialog.stashButton')}
+            {isLoading ? t('common.stashing') : t('stash.dialog.stashButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

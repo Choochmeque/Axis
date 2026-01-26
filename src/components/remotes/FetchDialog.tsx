@@ -148,7 +148,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
             onClick={handleFetch}
             disabled={isLoading || (!fetchAll && !selectedRemote)}
           >
-            {isLoading ? t('remotes.fetch.fetching') : t('remotes.fetch.fetchButton')}
+            {isLoading ? t('common.fetching') : t('remotes.fetch.fetchButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

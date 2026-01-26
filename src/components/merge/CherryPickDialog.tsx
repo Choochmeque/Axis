@@ -210,13 +210,13 @@ export function CherryPickDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                {t('merge.cherryPick.abort')}
+                {t('common.abort')}
               </Button>
               <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
-                {t('merge.cherryPick.skipCommit')}
+                {t('common.skipCommit')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                {t('merge.cherryPick.continue')}
+                {t('common.continue')}
               </Button>
             </>
           ) : (

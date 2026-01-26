@@ -191,7 +191,7 @@ export function PullDialog({ isOpen, onClose }: PullDialogProps) {
             onClick={handlePull}
             disabled={isLoading || !selectedRemote || !currentBranch}
           >
-            {isLoading ? t('remotes.pull.pulling') : t('remotes.pull.pullButton')}
+            {isLoading ? t('common.pulling') : t('remotes.pull.pullButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

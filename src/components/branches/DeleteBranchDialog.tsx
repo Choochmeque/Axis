@@ -172,7 +172,7 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
             <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading ? t('branches.delete.deleting') : t('branches.delete.deleteButton')}
+            {isLoading ? t('common.deleting') : t('branches.delete.deleteButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

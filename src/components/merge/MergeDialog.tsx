@@ -271,7 +271,7 @@ export function MergeDialog({
                 onClick={handleMerge}
                 disabled={isLoading || !selectedBranch}
               >
-                {isLoading ? t('merge.dialog.merging') : t('merge.dialog.mergeButton')}
+                {isLoading ? t('common.merging') : t('merge.dialog.mergeButton')}
               </Button>
             </>
           )}

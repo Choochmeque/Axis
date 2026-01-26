@@ -142,7 +142,7 @@ export function StashView({ onRefresh }: StashViewProps) {
           <button
             className={btnIconClass}
             onClick={loadStashes}
-            title={t('stash.view.refresh')}
+            title={t('common.refresh')}
             disabled={isLoading}
           >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -209,7 +209,7 @@ export function StashView({ onRefresh }: StashViewProps) {
                     title={t('stash.view.applyHint')}
                   >
                     <Play size={12} />
-                    {t('stash.apply')}
+                    {t('common.apply')}
                   </button>
                   <button
                     className={cn(

@@ -201,10 +201,10 @@ export function RevertCommitDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                {t('merge.revert.abort')}
+                {t('common.abort')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                {t('merge.revert.continue')}
+                {t('common.continue')}
               </Button>
             </>
           ) : (

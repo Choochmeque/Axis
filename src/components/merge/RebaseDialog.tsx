@@ -301,13 +301,13 @@ export function RebaseDialog({
           {result ? (
             <>
               <Button variant="destructive" onClick={handleAbort}>
-                {t('merge.rebase.abortRebase')}
+                {t('common.abort')}
               </Button>
               <Button variant="secondary" onClick={handleSkip} disabled={isLoading}>
-                {t('merge.rebase.skipCommit')}
+                {t('common.skipCommit')}
               </Button>
               <Button variant="primary" onClick={handleContinue} disabled={isLoading}>
-                {t('merge.rebase.continue')}
+                {t('common.continue')}
               </Button>
             </>
           ) : (
@@ -340,7 +340,7 @@ export function RebaseDialog({
                 onClick={handleRebase}
                 disabled={isLoading || (!targetCommit && !selectedBranch)}
               >
-                {isLoading ? t('merge.rebase.rebasing') : t('merge.rebase.rebaseButton')}
+                {isLoading ? t('common.rebasing') : t('merge.rebase.rebaseButton')}
               </Button>
             </>
           )}

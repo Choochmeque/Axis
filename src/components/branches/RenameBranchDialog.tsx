@@ -151,7 +151,7 @@ export function RenameBranchDialog({ isOpen, onClose, branch }: RenameBranchDial
             onClick={handleRename}
             disabled={isLoading || !newName.trim() || !!validationError || isUnchanged}
           >
-            {isLoading ? t('branches.rename.renaming') : t('branches.rename.renameButton')}
+            {isLoading ? t('common.renaming') : t('branches.rename.renameButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

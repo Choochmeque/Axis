@@ -152,7 +152,7 @@ export function NotificationList({
             <button
               className="p-1 hover:bg-(--bg-tertiary) rounded"
               onClick={(e) => openInBrowser(notification.url, e)}
-              title={t('integrations.notifications.openInBrowser')}
+              title={t('common.openInBrowser')}
             >
               <ExternalLink size={14} className="text-(--text-muted)" />
             </button>

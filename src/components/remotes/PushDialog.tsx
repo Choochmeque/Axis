@@ -190,7 +190,7 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
             onClick={handlePush}
             disabled={isLoading || !selectedRemote || !currentBranch}
           >
-            {isLoading ? t('remotes.push.pushing') : t('remotes.push.pushButton')}
+            {isLoading ? t('common.pushing') : t('remotes.push.pushButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

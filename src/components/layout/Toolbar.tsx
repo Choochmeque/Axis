@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   GitCommit,
@@ -13,17 +13,11 @@ import {
   Terminal,
 } from 'lucide-react';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useDialogStore } from '@/store/dialogStore';
 import { shellApi } from '@/services/api';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { showInFinder } from '@/lib/actions';
-import { CheckoutBranchDialog } from '../branches';
-import { useDialogStore } from '@/store/dialogStore';
-import { FetchDialog, PushDialog, PullDialog } from '../remotes';
-import { StashDialog } from '../stash';
-import { SettingsDialog } from '../settings/SettingsDialog';
-import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =
@@ -41,20 +35,17 @@ export function Toolbar() {
   const behindCount = currentBranch?.behind ?? 0;
   const hasRemotes = remotes.length > 0;
 
-  // Settings from store (used by menu actions)
-  const showSettings = useSettingsStore((s) => s.showSettings);
-  const setShowSettings = useSettingsStore((s) => s.setShowSettings);
-
-  // Global dialogs
-  const { openCreateBranchDialog } = useDialogStore();
-
-  // Dialog states
-  const [checkoutBranchOpen, setCheckoutBranchOpen] = useState(false);
-  const [fetchOpen, setFetchOpen] = useState(false);
-  const [pushOpen, setPushOpen] = useState(false);
-  const [pullOpen, setPullOpen] = useState(false);
-  const [stashOpen, setStashOpen] = useState(false);
-  const [repoSettingsOpen, setRepoSettingsOpen] = useState(false);
+  // Dialog actions from store
+  const {
+    openCreateBranchDialog,
+    openCheckoutBranchDialog,
+    openFetchDialog,
+    openPushDialog,
+    openPullDialog,
+    openStashDialog,
+    openSettingsDialog,
+    openRepositorySettingsDialog,
+  } = useDialogStore();
 
   const handleCommitClick = useCallback(() => {
     setCurrentView('file-status');
@@ -76,12 +67,12 @@ export function Toolbar() {
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
-    onOpenSettings: () => setShowSettings(true),
+    onOpenSettings: openSettingsDialog,
     onRefresh: handleRefresh,
     onCommit: handleCommitClick,
-    onPush: () => repository && setPushOpen(true),
-    onPull: () => repository && setPullOpen(true),
-    onFetch: () => repository && setFetchOpen(true),
+    onPush: () => repository && openPushDialog(),
+    onPull: () => repository && openPullDialog(),
+    onFetch: () => repository && openFetchDialog(),
     onCreateBranch: () => repository && openCreateBranchDialog(),
     onSearch: () => setCurrentView('search'),
   });
@@ -110,7 +101,7 @@ export function Toolbar() {
               className={toolbarButtonClass}
               title={t('toolbar.pull')}
               disabled={repository.isUnborn || !hasRemotes}
-              onClick={() => setPullOpen(true)}
+              onClick={openPullDialog}
             >
               <div className="relative">
                 <ArrowDownToLine size={18} />
@@ -126,7 +117,7 @@ export function Toolbar() {
               className={toolbarButtonClass}
               title={t('toolbar.push')}
               disabled={repository.isUnborn || !hasRemotes}
-              onClick={() => setPushOpen(true)}
+              onClick={openPushDialog}
             >
               <div className="relative">
                 <ArrowUpFromLine size={18} />
@@ -141,7 +132,7 @@ export function Toolbar() {
             <button
               className={toolbarButtonClass}
               disabled={!hasRemotes}
-              onClick={() => setFetchOpen(true)}
+              onClick={openFetchDialog}
               title={t('toolbar.fetch')}
             >
               <RefreshCw size={18} />
@@ -164,7 +155,7 @@ export function Toolbar() {
               className={toolbarButtonClass}
               title={t('toolbar.checkout')}
               disabled={repository.isUnborn}
-              onClick={() => setCheckoutBranchOpen(true)}
+              onClick={openCheckoutBranchDialog}
             >
               <GitMerge size={18} />
               <span>{t('toolbar.checkout')}</span>
@@ -173,23 +164,12 @@ export function Toolbar() {
               className={toolbarButtonClass}
               title={t('toolbar.stash')}
               disabled={repository.isUnborn}
-              onClick={() => setStashOpen(true)}
+              onClick={openStashDialog}
             >
               <Archive size={18} />
               <span>{t('toolbar.stash')}</span>
             </button>
           </div>
-
-          {/* Branch Dialogs */}
-          <CheckoutBranchDialog open={checkoutBranchOpen} onOpenChange={setCheckoutBranchOpen} />
-
-          {/* Remote Dialogs */}
-          <FetchDialog open={fetchOpen} onOpenChange={setFetchOpen} />
-          <PushDialog open={pushOpen} onOpenChange={setPushOpen} />
-          <PullDialog open={pullOpen} onOpenChange={setPullOpen} />
-
-          {/* Stash Dialog */}
-          <StashDialog open={stashOpen} onOpenChange={setStashOpen} />
         </>
       )}
 
@@ -215,7 +195,7 @@ export function Toolbar() {
           </button>
           <button
             className={toolbarButtonClass}
-            onClick={() => setRepoSettingsOpen(true)}
+            onClick={openRepositorySettingsDialog}
             title={t('toolbar.settings')}
           >
             <Settings size={18} />
@@ -223,13 +203,6 @@ export function Toolbar() {
           </button>
         </div>
       )}
-
-      {/* App Settings - accessible via Cmd+, keyboard shortcut */}
-      <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
-      <RepositorySettingsDialog
-        isOpen={repoSettingsOpen}
-        onClose={() => setRepoSettingsOpen(false)}
-      />
     </div>
   );
 }

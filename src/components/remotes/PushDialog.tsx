@@ -24,11 +24,11 @@ import {
 } from '@/components/ui';
 
 interface PushDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function PushDialog({ open, onOpenChange }: PushDialogProps) {
+export function PushDialog({ isOpen, onClose }: PushDialogProps) {
   const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
@@ -43,7 +43,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       loadRemotes();
       setError(null);
       setForce(false);
@@ -58,7 +58,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, currentBranch]);
+  }, [isOpen, currentBranch]);
 
   const loadRemotes = async () => {
     try {
@@ -88,7 +88,7 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
       await loadBranches();
       await refreshRepository();
 
-      onOpenChange(false);
+      onClose();
       toast.success(t('remotes.push.complete'));
     } catch (err) {
       setError(getErrorMessage(err));
@@ -99,11 +99,11 @@ export function PushDialog({ open, onOpenChange }: PushDialogProps) {
 
   const handleClose = () => {
     setError(null);
-    onOpenChange(false);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-120">
         <DialogTitle icon={ArrowUpFromLine}>{t('remotes.push.title')}</DialogTitle>
 

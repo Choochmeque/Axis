@@ -3,7 +3,14 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import { StatusBar } from './StatusBar';
-import { CheckoutConflictDialog, CreateBranchDialog } from '../branches';
+import {
+  CheckoutConflictDialog,
+  CreateBranchDialog,
+  CheckoutBranchDialog,
+  DeleteBranchDialog,
+  RenameBranchDialog,
+} from '../branches';
+import { BranchCompareDialog } from '../branches/BranchCompareDialog';
 import {
   CherryPickDialog,
   InteractiveRebaseDialog,
@@ -16,6 +23,11 @@ import { TagDialog } from '../tags/TagDialog';
 import { ArchiveDialog } from '../history/ArchiveDialog';
 import { PatchDialog } from '../history/PatchDialog';
 import { BisectDialog } from '../merge/BisectDialog';
+import { FetchDialog, PushDialog, PullDialog } from '../remotes';
+import { StashDialog } from '../stash/StashDialog';
+import { DiscardConfirmDialog } from '../staging/DiscardConfirmDialog';
+import { SettingsDialog } from '../settings/SettingsDialog';
+import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useDialogStore } from '../../store/dialogStore';
 import { useFileWatcher, useGitProgress } from '../../hooks';
@@ -57,6 +69,28 @@ export function AppLayout({ children }: AppLayoutProps) {
     closePatchDialog,
     bisectDialog,
     closeBisectDialog,
+    fetchDialog,
+    closeFetchDialog,
+    pushDialog,
+    closePushDialog,
+    pullDialog,
+    closePullDialog,
+    checkoutBranchDialog,
+    closeCheckoutBranchDialog,
+    deleteBranchDialog,
+    closeDeleteBranchDialog,
+    renameBranchDialog,
+    closeRenameBranchDialog,
+    branchCompareDialog,
+    closeBranchCompareDialog,
+    stashDialog,
+    closeStashDialog,
+    discardConfirmDialog,
+    closeDiscardConfirmDialog,
+    settingsDialog,
+    closeSettingsDialog,
+    repositorySettingsDialog,
+    closeRepositorySettingsDialog,
   } = useDialogStore();
   const { loadStatus, loadBranches, repository } = useRepositoryStore();
 
@@ -187,6 +221,45 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
         badCommit={bisectDialog.badCommit}
         goodCommit={bisectDialog.goodCommit}
+      />
+      <FetchDialog isOpen={fetchDialog.isOpen} onClose={closeFetchDialog} />
+      <PushDialog isOpen={pushDialog.isOpen} onClose={closePushDialog} />
+      <PullDialog isOpen={pullDialog.isOpen} onClose={closePullDialog} />
+      <CheckoutBranchDialog
+        isOpen={checkoutBranchDialog.isOpen}
+        onClose={closeCheckoutBranchDialog}
+      />
+      <DeleteBranchDialog
+        isOpen={deleteBranchDialog.isOpen}
+        onClose={closeDeleteBranchDialog}
+        branch={deleteBranchDialog.branch}
+      />
+      <RenameBranchDialog
+        isOpen={renameBranchDialog.isOpen}
+        onClose={closeRenameBranchDialog}
+        branch={renameBranchDialog.branch ?? null}
+      />
+      <BranchCompareDialog
+        isOpen={branchCompareDialog.isOpen}
+        onClose={closeBranchCompareDialog}
+        baseBranch={branchCompareDialog.baseBranch ?? null}
+        compareBranch={branchCompareDialog.compareBranch ?? null}
+      />
+      <StashDialog isOpen={stashDialog.isOpen} onClose={closeStashDialog} />
+      <DiscardConfirmDialog
+        isOpen={discardConfirmDialog.isOpen}
+        onClose={closeDiscardConfirmDialog}
+        mode={discardConfirmDialog.mode}
+        filePath={discardConfirmDialog.filePath}
+        onConfirm={() => {
+          discardConfirmDialog.onConfirm?.();
+          closeDiscardConfirmDialog();
+        }}
+      />
+      <SettingsDialog isOpen={settingsDialog.isOpen} onClose={closeSettingsDialog} />
+      <RepositorySettingsDialog
+        isOpen={repositorySettingsDialog.isOpen}
+        onClose={closeRepositorySettingsDialog}
       />
     </>
   );

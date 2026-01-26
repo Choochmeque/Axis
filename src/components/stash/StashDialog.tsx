@@ -21,11 +21,11 @@ import {
 } from '@/components/ui';
 
 interface StashDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function StashDialog({ open, onOpenChange }: StashDialogProps) {
+export function StashDialog({ isOpen, onClose }: StashDialogProps) {
   const { t } = useTranslation();
   const { refreshRepository, loadStashes } = useRepositoryStore();
   const { trackOperation } = useOperation();
@@ -56,7 +56,7 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
 
       setMessage('');
       setKeepStaged(false);
-      onOpenChange(false);
+      onClose();
       toast.success(t('stash.createSuccess'));
     } catch (err) {
       setError(getErrorMessage(err));
@@ -65,17 +65,15 @@ export function StashDialog({ open, onOpenChange }: StashDialogProps) {
     }
   };
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
-      setMessage('');
-      setKeepStaged(false);
-      setError(null);
-    }
-    onOpenChange(isOpen);
+  const handleClose = () => {
+    setMessage('');
+    setKeepStaged(false);
+    setError(null);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent>
         <DialogTitle icon={Archive}>{t('stash.dialog.title')}</DialogTitle>
 

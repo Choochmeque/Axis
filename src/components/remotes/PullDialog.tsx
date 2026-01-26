@@ -24,11 +24,11 @@ import {
 } from '@/components/ui';
 
 interface PullDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function PullDialog({ open, onOpenChange }: PullDialogProps) {
+export function PullDialog({ isOpen, onClose }: PullDialogProps) {
   const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
@@ -42,7 +42,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
   const currentBranch = branches.find((b) => b.isHead);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       loadRemotes();
       setError(null);
       setRebase(false);
@@ -55,7 +55,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, currentBranch]);
+  }, [isOpen, currentBranch]);
 
   const loadRemotes = async () => {
     try {
@@ -82,7 +82,7 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
       await loadCommits();
       await refreshRepository();
 
-      onOpenChange(false);
+      onClose();
       toast.success(t('remotes.pull.complete'));
     } catch (err) {
       const errorMsg = getErrorMessage(err);
@@ -102,11 +102,11 @@ export function PullDialog({ open, onOpenChange }: PullDialogProps) {
 
   const handleClose = () => {
     setError(null);
-    onOpenChange(false);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-120">
         <DialogTitle icon={ArrowDownToLine}>{t('remotes.pull.title')}</DialogTitle>
 

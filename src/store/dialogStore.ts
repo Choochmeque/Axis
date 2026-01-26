@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type {
   BisectResult,
+  Branch,
   Commit,
   CherryPickResult,
   RebaseResult,
@@ -80,6 +81,68 @@ interface BisectDialogState {
   onBisectComplete?: (result: BisectResult) => void;
 }
 
+// Fetch dialog state
+interface FetchDialogState {
+  isOpen: boolean;
+}
+
+// Push dialog state
+interface PushDialogState {
+  isOpen: boolean;
+}
+
+// Pull dialog state
+interface PullDialogState {
+  isOpen: boolean;
+}
+
+// Checkout branch dialog state
+interface CheckoutBranchDialogState {
+  isOpen: boolean;
+}
+
+// Delete branch dialog state
+interface DeleteBranchDialogState {
+  isOpen: boolean;
+  branch?: Branch;
+}
+
+// Rename branch dialog state
+interface RenameBranchDialogState {
+  isOpen: boolean;
+  branch?: Branch;
+}
+
+// Branch compare dialog state
+interface BranchCompareDialogState {
+  isOpen: boolean;
+  baseBranch?: Branch;
+  compareBranch?: Branch;
+}
+
+// Stash dialog state
+interface StashDialogState {
+  isOpen: boolean;
+}
+
+// Discard confirm dialog state
+interface DiscardConfirmDialogState {
+  isOpen: boolean;
+  mode: 'file' | 'all';
+  filePath?: string;
+  onConfirm?: () => void;
+}
+
+// Settings dialog state
+interface SettingsDialogState {
+  isOpen: boolean;
+}
+
+// Repository settings dialog state
+interface RepositorySettingsDialogState {
+  isOpen: boolean;
+}
+
 interface DialogState {
   // Tag dialog
   tagDialog: TagDialogState;
@@ -107,6 +170,39 @@ interface DialogState {
 
   // Bisect dialog
   bisectDialog: BisectDialogState;
+
+  // Fetch dialog
+  fetchDialog: FetchDialogState;
+
+  // Push dialog
+  pushDialog: PushDialogState;
+
+  // Pull dialog
+  pullDialog: PullDialogState;
+
+  // Checkout branch dialog
+  checkoutBranchDialog: CheckoutBranchDialogState;
+
+  // Delete branch dialog
+  deleteBranchDialog: DeleteBranchDialogState;
+
+  // Rename branch dialog
+  renameBranchDialog: RenameBranchDialogState;
+
+  // Branch compare dialog
+  branchCompareDialog: BranchCompareDialogState;
+
+  // Stash dialog
+  stashDialog: StashDialogState;
+
+  // Discard confirm dialog
+  discardConfirmDialog: DiscardConfirmDialogState;
+
+  // Settings dialog
+  settingsDialog: SettingsDialogState;
+
+  // Repository settings dialog
+  repositorySettingsDialog: RepositorySettingsDialogState;
 
   // Tag dialog actions
   openTagDialog: (options?: {
@@ -171,6 +267,54 @@ interface DialogState {
     onBisectComplete?: (result: BisectResult) => void;
   }) => void;
   closeBisectDialog: () => void;
+
+  // Fetch dialog actions
+  openFetchDialog: () => void;
+  closeFetchDialog: () => void;
+
+  // Push dialog actions
+  openPushDialog: () => void;
+  closePushDialog: () => void;
+
+  // Pull dialog actions
+  openPullDialog: () => void;
+  closePullDialog: () => void;
+
+  // Checkout branch dialog actions
+  openCheckoutBranchDialog: () => void;
+  closeCheckoutBranchDialog: () => void;
+
+  // Delete branch dialog actions
+  openDeleteBranchDialog: (options: { branch: Branch }) => void;
+  closeDeleteBranchDialog: () => void;
+
+  // Rename branch dialog actions
+  openRenameBranchDialog: (options: { branch: Branch }) => void;
+  closeRenameBranchDialog: () => void;
+
+  // Branch compare dialog actions
+  openBranchCompareDialog: (options: { baseBranch: Branch; compareBranch: Branch }) => void;
+  closeBranchCompareDialog: () => void;
+
+  // Stash dialog actions
+  openStashDialog: () => void;
+  closeStashDialog: () => void;
+
+  // Discard confirm dialog actions
+  openDiscardConfirmDialog: (options: {
+    mode: 'file' | 'all';
+    filePath?: string;
+    onConfirm?: () => void;
+  }) => void;
+  closeDiscardConfirmDialog: () => void;
+
+  // Settings dialog actions
+  openSettingsDialog: () => void;
+  closeSettingsDialog: () => void;
+
+  // Repository settings dialog actions
+  openRepositorySettingsDialog: () => void;
+  closeRepositorySettingsDialog: () => void;
 }
 
 const initialTagDialogState: TagDialogState = {
@@ -233,6 +377,57 @@ const initialBisectDialogState: BisectDialogState = {
   onBisectComplete: undefined,
 };
 
+const initialFetchDialogState: FetchDialogState = {
+  isOpen: false,
+};
+
+const initialPushDialogState: PushDialogState = {
+  isOpen: false,
+};
+
+const initialPullDialogState: PullDialogState = {
+  isOpen: false,
+};
+
+const initialCheckoutBranchDialogState: CheckoutBranchDialogState = {
+  isOpen: false,
+};
+
+const initialDeleteBranchDialogState: DeleteBranchDialogState = {
+  isOpen: false,
+  branch: undefined,
+};
+
+const initialRenameBranchDialogState: RenameBranchDialogState = {
+  isOpen: false,
+  branch: undefined,
+};
+
+const initialBranchCompareDialogState: BranchCompareDialogState = {
+  isOpen: false,
+  baseBranch: undefined,
+  compareBranch: undefined,
+};
+
+const initialStashDialogState: StashDialogState = {
+  isOpen: false,
+};
+
+const initialDiscardConfirmDialogState: DiscardConfirmDialogState = {
+  isOpen: false,
+  mode: 'file',
+  filePath: undefined,
+  onConfirm: undefined,
+};
+
+const initialSettingsDialogState: SettingsDialogState = {
+  isOpen: false,
+};
+
+const initialRepositorySettingsDialogState: RepositorySettingsDialogState = {
+  isOpen: false,
+};
+
 export const useDialogStore = create<DialogState>((set) => ({
   tagDialog: initialTagDialogState,
   createBranchDialog: initialCreateBranchDialogState,
@@ -243,6 +438,17 @@ export const useDialogStore = create<DialogState>((set) => ({
   archiveDialog: initialArchiveDialogState,
   patchDialog: initialPatchDialogState,
   bisectDialog: initialBisectDialogState,
+  fetchDialog: initialFetchDialogState,
+  pushDialog: initialPushDialogState,
+  pullDialog: initialPullDialogState,
+  checkoutBranchDialog: initialCheckoutBranchDialogState,
+  deleteBranchDialog: initialDeleteBranchDialogState,
+  renameBranchDialog: initialRenameBranchDialogState,
+  branchCompareDialog: initialBranchCompareDialogState,
+  stashDialog: initialStashDialogState,
+  discardConfirmDialog: initialDiscardConfirmDialogState,
+  settingsDialog: initialSettingsDialogState,
+  repositorySettingsDialog: initialRepositorySettingsDialogState,
 
   openTagDialog: (options) => {
     set({
@@ -374,5 +580,116 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeBisectDialog: () => {
     set({ bisectDialog: initialBisectDialogState });
+  },
+
+  openFetchDialog: () => {
+    set({ fetchDialog: { isOpen: true } });
+  },
+
+  closeFetchDialog: () => {
+    set({ fetchDialog: initialFetchDialogState });
+  },
+
+  openPushDialog: () => {
+    set({ pushDialog: { isOpen: true } });
+  },
+
+  closePushDialog: () => {
+    set({ pushDialog: initialPushDialogState });
+  },
+
+  openPullDialog: () => {
+    set({ pullDialog: { isOpen: true } });
+  },
+
+  closePullDialog: () => {
+    set({ pullDialog: initialPullDialogState });
+  },
+
+  openCheckoutBranchDialog: () => {
+    set({ checkoutBranchDialog: { isOpen: true } });
+  },
+
+  closeCheckoutBranchDialog: () => {
+    set({ checkoutBranchDialog: initialCheckoutBranchDialogState });
+  },
+
+  openDeleteBranchDialog: (options) => {
+    set({
+      deleteBranchDialog: {
+        isOpen: true,
+        branch: options.branch,
+      },
+    });
+  },
+
+  closeDeleteBranchDialog: () => {
+    set({ deleteBranchDialog: initialDeleteBranchDialogState });
+  },
+
+  openRenameBranchDialog: (options) => {
+    set({
+      renameBranchDialog: {
+        isOpen: true,
+        branch: options.branch,
+      },
+    });
+  },
+
+  closeRenameBranchDialog: () => {
+    set({ renameBranchDialog: initialRenameBranchDialogState });
+  },
+
+  openBranchCompareDialog: (options) => {
+    set({
+      branchCompareDialog: {
+        isOpen: true,
+        baseBranch: options.baseBranch,
+        compareBranch: options.compareBranch,
+      },
+    });
+  },
+
+  closeBranchCompareDialog: () => {
+    set({ branchCompareDialog: initialBranchCompareDialogState });
+  },
+
+  openStashDialog: () => {
+    set({ stashDialog: { isOpen: true } });
+  },
+
+  closeStashDialog: () => {
+    set({ stashDialog: initialStashDialogState });
+  },
+
+  openDiscardConfirmDialog: (options) => {
+    set({
+      discardConfirmDialog: {
+        isOpen: true,
+        mode: options.mode,
+        filePath: options.filePath,
+        onConfirm: options.onConfirm,
+      },
+    });
+  },
+
+  closeDiscardConfirmDialog: () => {
+    set({ discardConfirmDialog: initialDiscardConfirmDialogState });
+  },
+
+  openSettingsDialog: () => {
+    set({ settingsDialog: { isOpen: true } });
+  },
+
+  closeSettingsDialog: () => {
+    set({ settingsDialog: initialSettingsDialogState });
+  },
+
+  openRepositorySettingsDialog: () => {
+    set({ repositorySettingsDialog: { isOpen: true } });
+  },
+
+  closeRepositorySettingsDialog: () => {
+    set({ repositorySettingsDialog: initialRepositorySettingsDialogState });
   },
 }));

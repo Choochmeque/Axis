@@ -21,11 +21,11 @@ import {
 import { BranchType } from '@/types';
 
 interface CheckoutBranchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialogProps) {
+export function CheckoutBranchDialog({ isOpen, onClose }: CheckoutBranchDialogProps) {
   const { t } = useTranslation();
   const [selectedBranch, setSelectedBranch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +51,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
 
       if (success) {
         setSelectedBranch('');
-        onOpenChange(false);
+        onClose();
       }
       // If not successful, the store will show the conflict dialog
     } catch (err) {
@@ -62,7 +62,7 @@ export function CheckoutBranchDialog({ open, onOpenChange }: CheckoutBranchDialo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogTitle icon={GitBranch}>{t('branches.checkout.title')}</DialogTitle>
 

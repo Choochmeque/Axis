@@ -18,12 +18,8 @@ import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, branchApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useDialogStore } from '@/store/dialogStore';
 import type { Branch, Remote } from '@/types';
-import { RenameBranchDialog } from './RenameBranchDialog';
-import { DeleteBranchDialog } from './DeleteBranchDialog';
-import { BranchCompareDialog } from './BranchCompareDialog';
-import { PullDialog } from '../remotes/PullDialog';
-import { PushDialog } from '../remotes/PushDialog';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ActionContext } from '@/types';
 
@@ -35,16 +31,18 @@ interface BranchContextMenuProps {
 
 export function BranchContextMenu({ branch, children, onCheckout }: BranchContextMenuProps) {
   const { t } = useTranslation();
-  const [showRenameDialog, setShowRenameDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showPullDialog, setShowPullDialog] = useState(false);
-  const [showPushDialog, setShowPushDialog] = useState(false);
-  const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [remoteBranches, setRemoteBranches] = useState<Branch[]>([]);
   const [isSettingUpstream, setIsSettingUpstream] = useState(false);
 
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
+  const {
+    openRenameBranchDialog,
+    openDeleteBranchDialog,
+    openPullDialog,
+    openPushDialog,
+    openBranchCompareDialog,
+  } = useDialogStore();
   const currentBranch = branches.find((b) => b.isHead);
   const hasUpstream = !!branch.upstream;
   const isCurrentBranch = branch.isHead;
@@ -63,14 +61,6 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         toast.error(t('notifications.error.loadRemotesFailed'), getErrorMessage(err));
       }
     }
-  };
-
-  const handlePullTracked = () => {
-    setShowPullDialog(true);
-  };
-
-  const handlePushTracked = () => {
-    setShowPushDialog(true);
   };
 
   const handlePushToRemote = async (remoteName: string) => {
@@ -120,12 +110,12 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         <MenuSeparator />
 
         {hasUpstream && isCurrentBranch && (
-          <MenuItem icon={ArrowDownToLine} onSelect={handlePullTracked}>
+          <MenuItem icon={ArrowDownToLine} onSelect={openPullDialog}>
             {t('branches.contextMenu.pullTracked', { upstream: branch.upstream })}
           </MenuItem>
         )}
         {hasUpstream && isCurrentBranch && (
-          <MenuItem icon={ArrowUpFromLine} onSelect={handlePushTracked}>
+          <MenuItem icon={ArrowUpFromLine} onSelect={openPushDialog}>
             {t('branches.contextMenu.pushTracked', { upstream: branch.upstream })}
           </MenuItem>
         )}
@@ -181,16 +171,21 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
 
         <MenuSeparator />
         {!isCurrentBranch && (
-          <MenuItem icon={Diff} onSelect={() => setShowCompareDialog(true)}>
+          <MenuItem
+            icon={Diff}
+            onSelect={() =>
+              openBranchCompareDialog({ baseBranch: currentBranch!, compareBranch: branch })
+            }
+          >
             {t('branches.contextMenu.diffAgainstCurrent')}
           </MenuItem>
         )}
         {!isCurrentBranch && <MenuSeparator />}
-        <MenuItem icon={Pencil} onSelect={() => setShowRenameDialog(true)}>
+        <MenuItem icon={Pencil} onSelect={() => openRenameBranchDialog({ branch })}>
           {t('branches.contextMenu.rename')}
         </MenuItem>
         {!isCurrentBranch && (
-          <MenuItem icon={Trash2} danger onSelect={() => setShowDeleteDialog(true)}>
+          <MenuItem icon={Trash2} danger onSelect={() => openDeleteBranchDialog({ branch })}>
             {t('branches.contextMenu.delete', { name: branch.name })}
           </MenuItem>
         )}
@@ -209,29 +204,6 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
           {t('branches.contextMenu.createPullRequest')}
         </MenuItem>
       </ContextMenu>
-
-      <RenameBranchDialog
-        open={showRenameDialog}
-        onOpenChange={setShowRenameDialog}
-        branch={branch}
-      />
-
-      <PullDialog open={showPullDialog} onOpenChange={setShowPullDialog} />
-
-      <PushDialog open={showPushDialog} onOpenChange={setShowPushDialog} />
-
-      <DeleteBranchDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        branch={branch}
-      />
-
-      <BranchCompareDialog
-        open={showCompareDialog}
-        onOpenChange={setShowCompareDialog}
-        baseBranch={currentBranch ?? null}
-        compareBranch={branch}
-      />
     </>
   );
 }

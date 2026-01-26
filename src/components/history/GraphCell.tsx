@@ -28,6 +28,10 @@ export const GraphCell = memo(function GraphCell({
 
   const getColor = (colorIndex: number) => GRAPH_COLORS[(colorIndex ?? 0) % GRAPH_COLORS.length];
   const getX = (col: number) => col * columnWidth + columnWidth / 2;
+  const getLineClass = (isCommitted: boolean, isMergePreview?: boolean) => {
+    if (isMergePreview) return 'graph-line merge-preview';
+    return isCommitted ? 'graph-line' : 'graph-line uncommitted';
+  };
 
   // Generate unique clip path ID for this cell using row index
   const clipId = `graph-clip-${rowIndex}`;
@@ -51,7 +55,7 @@ export const GraphCell = memo(function GraphCell({
               y1={0}
               x2={x}
               y2={rowHeight}
-              className={lane.isCommitted ? 'graph-line' : 'graph-line uncommitted'}
+              className={getLineClass(lane.isCommitted, lane.isMergePreview)}
               stroke={getColor(lane.color)}
             />
           );
@@ -73,7 +77,7 @@ export const GraphCell = memo(function GraphCell({
               <path
                 key={`in-${i}`}
                 d={path}
-                className={line.isCommitted ? 'graph-line' : 'graph-line uncommitted'}
+                className={getLineClass(line.isCommitted, line.isMergePreview)}
                 stroke={getColor(line.color)}
                 fill="none"
               />
@@ -88,7 +92,7 @@ export const GraphCell = memo(function GraphCell({
               y1={y1}
               x2={x2}
               y2={y2}
-              className={line.isCommitted ? 'graph-line' : 'graph-line uncommitted'}
+              className={getLineClass(line.isCommitted, line.isMergePreview)}
               stroke={getColor(line.color)}
             />
           );
@@ -110,7 +114,7 @@ export const GraphCell = memo(function GraphCell({
               <path
                 key={`out-${i}`}
                 d={path}
-                className={line.isCommitted ? 'graph-line' : 'graph-line uncommitted'}
+                className={getLineClass(line.isCommitted, line.isMergePreview)}
                 stroke={getColor(line.color)}
                 fill="none"
               />
@@ -125,7 +129,7 @@ export const GraphCell = memo(function GraphCell({
               y1={y1}
               x2={x1}
               y2={y2}
-              className={line.isCommitted ? 'graph-line' : 'graph-line uncommitted'}
+              className={getLineClass(line.isCommitted, line.isMergePreview)}
               stroke={getColor(line.color)}
             />
           );

@@ -41,6 +41,8 @@ pub enum EdgeType {
     Merge,
     /// Branch edge (going to a different lane)
     Branch,
+    /// Merge preview edge (dashed line showing merge source)
+    MergePreview,
 }
 
 /// A reference (branch or tag) pointing to a commit

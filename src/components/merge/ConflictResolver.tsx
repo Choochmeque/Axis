@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
 import { conflictApi, operationApi } from '@/services/api';
 import { ConflictResolution } from '@/types';
@@ -196,93 +197,129 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         </div>
       )}
 
-      <div className="flex flex-1 min-h-0">
-        <div className="w-62.5 border-r border-(--border-color) bg-(--bg-secondary) overflow-y-auto">
-          <div className="py-2 px-3 text-sm font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color)">
-            {conflicts.length === 1
-              ? t('merge.conflictResolver.conflictedFiles', { count: conflicts.length })
-              : t('merge.conflictResolver.conflictedFilesPlural', { count: conflicts.length })}
-          </div>
-          {conflicts.map((conflict) => (
-            <div
-              key={conflict.path}
-              className={cn(
-                'flex items-center justify-between py-2 px-3 text-base cursor-pointer transition-colors border-b border-(--border-color)',
-                selectedFile === conflict.path
-                  ? 'bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5'
-                  : 'hover:bg-(--bg-hover)',
-                conflict.isResolved && 'opacity-60'
-              )}
-              onClick={() => setSelectedFile(conflict.path)}
-            >
-              <span
-                className={cn(
-                  'font-mono overflow-hidden text-ellipsis whitespace-nowrap',
-                  conflict.isResolved ? 'text-success' : 'text-warning'
-                )}
-              >
-                {conflict.path}
-              </span>
-              {conflict.isResolved && <Check size={14} className="text-success shrink-0" />}
+      <PanelGroup
+        direction="horizontal"
+        autoSaveId="conflict-resolver-main"
+        className="flex-1 min-h-0"
+      >
+        {/* File list panel */}
+        <Panel defaultSize={20} minSize={10} maxSize={40}>
+          <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
+            <div className="py-2 px-3 text-sm font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color) shrink-0">
+              {conflicts.length === 1
+                ? t('merge.conflictResolver.conflictedFiles', { count: conflicts.length })
+                : t('merge.conflictResolver.conflictedFilesPlural', { count: conflicts.length })}
             </div>
-          ))}
-        </div>
+            <div className="flex-1 overflow-y-auto">
+              {conflicts.map((conflict) => (
+                <div
+                  key={conflict.path}
+                  className={cn(
+                    'flex items-center justify-between py-2 px-3 text-base cursor-pointer transition-colors border-b border-(--border-color)',
+                    selectedFile === conflict.path
+                      ? 'bg-(--bg-active) border-l-2 border-l-(--accent-color) pl-2.5'
+                      : 'hover:bg-(--bg-hover)',
+                    conflict.isResolved && 'opacity-60'
+                  )}
+                  onClick={() => setSelectedFile(conflict.path)}
+                >
+                  <span
+                    className={cn(
+                      'font-mono overflow-hidden text-ellipsis whitespace-nowrap',
+                      conflict.isResolved ? 'text-success' : 'text-warning'
+                    )}
+                  >
+                    {conflict.path}
+                  </span>
+                  {conflict.isResolved && <Check size={14} className="text-success shrink-0" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Panel>
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <PanelResizeHandle className="resize-handle" />
+
+        {/* Content panel */}
+        <Panel defaultSize={80} minSize={50}>
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
               {t('merge.conflictResolver.loading')}
             </div>
           ) : conflictContent ? (
-            <>
-              <div className="flex flex-1 min-h-0 border-b border-(--border-color)">
-                <div className="flex-1 flex flex-col min-w-0 border-r border-(--border-color)">
-                  <div className="flex items-center justify-between py-2 px-3 bg-(--accent-color)/10 border-b border-(--border-color) text-xs font-semibold text-(--accent-color)">
-                    <span>{t('merge.conflictResolver.ours')}</span>
-                    <button className={btnSmallClass} onClick={handleResolveOurs}>
-                      {t('merge.conflictResolver.useThis')}
+            <PanelGroup
+              direction="vertical"
+              autoSaveId="conflict-resolver-vertical"
+              className="h-full"
+            >
+              {/* Ours/Theirs diff panel */}
+              <Panel defaultSize={60} minSize={20}>
+                <PanelGroup
+                  direction="horizontal"
+                  autoSaveId="conflict-resolver-diff"
+                  className="h-full"
+                >
+                  {/* Ours panel */}
+                  <Panel defaultSize={50} minSize={20}>
+                    <div className="flex flex-col h-full min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between py-2 px-3 bg-(--accent-color)/10 border-b border-(--border-color) text-xs font-semibold text-(--accent-color) shrink-0">
+                        <span>{t('merge.conflictResolver.ours')}</span>
+                        <button className={btnSmallClass} onClick={handleResolveOurs}>
+                          {t('merge.conflictResolver.useThis')}
+                        </button>
+                      </div>
+                      <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
+                        {conflictContent.ours || t('merge.conflictResolver.deleted')}
+                      </pre>
+                    </div>
+                  </Panel>
+
+                  <PanelResizeHandle className="resize-handle" />
+
+                  {/* Theirs panel */}
+                  <Panel defaultSize={50} minSize={20}>
+                    <div className="flex flex-col h-full min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between py-2 px-3 bg-(--color-branch-remote)/10 border-b border-(--border-color) text-xs font-semibold text-(--color-branch-remote) shrink-0">
+                        <span>{t('merge.conflictResolver.theirs')}</span>
+                        <button className={btnSmallClass} onClick={handleResolveTheirs}>
+                          {t('merge.conflictResolver.useThis')}
+                        </button>
+                      </div>
+                      <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
+                        {conflictContent.theirs || t('merge.conflictResolver.deleted')}
+                      </pre>
+                    </div>
+                  </Panel>
+                </PanelGroup>
+              </Panel>
+
+              <PanelResizeHandle className="resize-handle-vertical" />
+
+              {/* Merged result panel */}
+              <Panel defaultSize={40} minSize={15}>
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success shrink-0">
+                    <span>{t('merge.conflictResolver.merged')}</span>
+                    <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
+                      {t('merge.conflictResolver.markResolved')}
                     </button>
                   </div>
-                  <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
-                    {conflictContent.ours || t('merge.conflictResolver.deleted')}
-                  </pre>
+                  <textarea
+                    className="flex-1 m-0 p-3 font-mono text-xs leading-relaxed bg-(--bg-input) text-(--text-primary) border-none resize-none outline-none focus:bg-(--bg-primary)"
+                    value={mergedContent}
+                    onChange={(e) => setMergedContent(e.target.value)}
+                    spellCheck={false}
+                  />
                 </div>
-
-                <div className="flex-1 flex flex-col min-w-0">
-                  <div className="flex items-center justify-between py-2 px-3 bg-(--color-branch-remote)/10 border-b border-(--border-color) text-xs font-semibold text-(--color-branch-remote)">
-                    <span>{t('merge.conflictResolver.theirs')}</span>
-                    <button className={btnSmallClass} onClick={handleResolveTheirs}>
-                      {t('merge.conflictResolver.useThis')}
-                    </button>
-                  </div>
-                  <pre className="flex-1 m-0 p-3 overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap wrap-break-word bg-(--bg-primary) text-(--text-primary)">
-                    {conflictContent.theirs || t('merge.conflictResolver.deleted')}
-                  </pre>
-                </div>
-              </div>
-
-              <div className="flex flex-col h-[40%] min-h-37.5">
-                <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success">
-                  <span>{t('merge.conflictResolver.merged')}</span>
-                  <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
-                    {t('merge.conflictResolver.markResolved')}
-                  </button>
-                </div>
-                <textarea
-                  className="flex-1 m-0 p-3 font-mono text-xs leading-relaxed bg-(--bg-input) text-(--text-primary) border-none resize-none outline-none focus:bg-(--bg-primary)"
-                  value={mergedContent}
-                  onChange={(e) => setMergedContent(e.target.value)}
-                  spellCheck={false}
-                />
-              </div>
-            </>
+              </Panel>
+            </PanelGroup>
           ) : (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
               {t('merge.conflictResolver.selectFile')}
             </div>
           )}
-        </div>
-      </div>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }

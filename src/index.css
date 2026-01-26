@@ -1174,6 +1174,12 @@ code {
     stroke-width: 2;
   }
 
+  .graph-line.merge-preview {
+    stroke-dasharray: 5 3;
+    stroke: var(--accent-color);
+    opacity: 0.7;
+  }
+
   .graph-node {
     stroke-width: 1;
   }

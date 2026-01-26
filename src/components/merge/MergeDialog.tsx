@@ -41,6 +41,8 @@ export function MergeDialog({
 }: MergeDialogProps) {
   const { t } = useTranslation();
   const setCurrentView = useRepositoryStore((state) => state.setCurrentView);
+  const loadCommits = useRepositoryStore((state) => state.loadCommits);
+  const loadStatus = useRepositoryStore((state) => state.loadStatus);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [noFastForward, setNoFastForward] = useState(false);
@@ -106,6 +108,9 @@ export function MergeDialog({
         toast.success(t('notifications.success.mergeComplete'));
       } else {
         setResult(mergeResult);
+        // Always refresh commits to show merge preview line
+        await loadCommits();
+        await loadStatus();
         if (mergeResult.success) {
           onMergeComplete?.(mergeResult);
         }
@@ -122,6 +127,10 @@ export function MergeDialog({
       await mergeApi.abort();
       setResult(null);
       setError(null);
+      toast.success(t('merge.banner.aborted'));
+      // Refresh commits and status after abort
+      await loadCommits();
+      await loadStatus();
       onClose();
     } catch (err) {
       setError(getErrorMessage(err));

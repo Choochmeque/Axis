@@ -113,6 +113,21 @@ export class Branch {
     this.end = end;
   }
 
+  /**
+   * Get the raw line segments for this branch.
+   * Each line has p1 (start) and p2 (end) Points with x=column, y=row.
+   */
+  public getLines() {
+    return this.lines.map((line, i) => ({
+      fromColumn: line.p1.x,
+      fromRow: line.p1.y,
+      toColumn: line.p2.x,
+      toRow: line.p2.y,
+      isCommitted: i >= this.numUncommitted,
+      color: this.colour,
+    }));
+  }
+
   /* Rendering */
 
   public draw(svg: SVGElement, config: GG.GraphConfig, expandAt: number) {
@@ -631,6 +646,57 @@ export class Graph {
         this.config.grid.offsetX + this.vertices[i].getNextPoint().x * this.config.grid.x - 2;
     }
     return widths;
+  }
+
+  /**
+   * Get the actual column positions for each vertex.
+   * Returns array where positions[i] = column index for vertex i.
+   */
+  public getVertexPositions() {
+    const positions: number[] = [];
+    for (let i = 0; i < this.vertices.length; i++) {
+      positions[i] = this.vertices[i].getPoint().x;
+    }
+    return positions;
+  }
+
+  /**
+   * Get vertex data for per-row rendering.
+   * Returns array of objects with column, color, isCommitted, hasChildren, hasParents, isMerge.
+   */
+  public getVertexData() {
+    return this.vertices.map((v) => ({
+      column: v.getPoint().x,
+      color: v.getColour() % this.config.colours.length,
+      isCommitted: v.getIsCommitted(),
+      isMerge: v.isMerge(),
+      hasChildren: v.getChildren().length > 0,
+      hasParents: v.hasParents(),
+      parentColumns: v
+        .getParents()
+        .map((p) => (p.id >= 0 ? (this.vertices[p.id]?.getPoint().x ?? -1) : -1)),
+    }));
+  }
+
+  /**
+   * Get all branch line segments for per-row rendering.
+   * Returns array of line segments with fromColumn, fromRow, toColumn, toRow, color.
+   */
+  public getBranchLines() {
+    const allLines: Array<{
+      fromColumn: number;
+      fromRow: number;
+      toColumn: number;
+      toRow: number;
+      isCommitted: boolean;
+      color: number;
+    }> = [];
+
+    for (const branch of this.branches) {
+      allLines.push(...branch.getLines());
+    }
+
+    return allLines;
   }
 
   public getSvg(): SVGElement {

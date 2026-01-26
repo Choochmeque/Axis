@@ -11,6 +11,7 @@ import { RefType } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { CommitContextMenu } from './CommitContextMenu';
 import { HistoryFilters } from './HistoryFilters';
+import { GraphCell } from './GraphCell';
 import {
   ContextMenuRoot,
   ContextMenuTrigger,
@@ -21,6 +22,7 @@ import { BisectBanner } from '../merge/BisectBanner';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { Avatar } from '@/components/ui';
 import { formatShortDate } from '@/lib/dateUtils';
+import { computeGraphLayout, getMaxColumns, type RowGraphData } from '@/lib/graphLayout';
 
 const UNCOMMITTED = 'uncommitted';
 
@@ -87,15 +89,70 @@ export function HistoryView() {
   // Track commit for context menu
   const [contextMenuCommit, setContextMenuCommit] = useState<GraphCommit | null>(null);
 
+  // Find HEAD commit OID from refs
+  const headOid = useMemo(() => {
+    for (const commit of commits) {
+      const headRef = commit.refs?.find((r) => r.isHead);
+      if (headRef) return commit.oid;
+    }
+    return null;
+  }, [commits]);
+
+  // Compute graph layout for all commits
+  const graphLayout = useMemo((): RowGraphData[] => {
+    if (commits.length === 0) return [];
+    return computeGraphLayout(commits, headOid);
+  }, [commits, headOid]);
+
+  const maxGraphColumns = useMemo(() => getMaxColumns(graphLayout), [graphLayout]);
+
+  // Create lookup map for graph data by commit oid
+  const graphDataMap = useMemo(() => {
+    const map = new Map<string, RowGraphData>();
+    commits.forEach((commit, i) => {
+      if (graphLayout[i]) {
+        map.set(commit.oid, graphLayout[i]);
+      }
+    });
+    return map;
+  }, [commits, graphLayout]);
+
+  // Create lookup map for local branch names to their colors
+  const branchColorMap = useMemo(() => {
+    const map = new Map<string, number>();
+    commits.forEach((commit, i) => {
+      const graphData = graphLayout[i];
+      if (!graphData) return;
+      commit.refs?.forEach((ref) => {
+        if (ref.refType === RefType.LocalBranch && !map.has(ref.name)) {
+          map.set(ref.name, graphData.color);
+        }
+      });
+    });
+    return map;
+  }, [commits, graphLayout]);
+
   // Define columns
   const columns = useMemo(
     (): ColumnDef<GraphCommit, unknown>[] => [
       {
         id: 'graph',
         header: () => t('history.table.graph'),
-        size: 100,
-        minSize: 40,
-        cell: () => null, // Graph visualization placeholder
+        size: Math.max((maxGraphColumns + 1) * 16, 32),
+        minSize: 32,
+        cell: ({ row }) => {
+          const data = graphDataMap.get(row.original.oid);
+          if (!data) return null;
+          return (
+            <GraphCell
+              data={data}
+              rowHeight={36}
+              maxColumns={maxGraphColumns}
+              columnWidth={16}
+              rowIndex={row.index}
+            />
+          );
+        },
       },
       {
         id: 'summary',
@@ -105,6 +162,23 @@ export function HistoryView() {
         cell: ({ row }) => {
           const commit = row.original;
           const isUncommitted = commit.oid === UNCOMMITTED;
+          const graphData = graphDataMap.get(commit.oid);
+          const defaultColor = graphData?.color ?? 0;
+
+          // Helper to get color for a branch
+          const getBranchColor = (refName: string, isRemote: boolean) => {
+            if (isRemote) {
+              // Extract branch name from remote ref (e.g., "origin/main" -> "main")
+              const branchName = refName.includes('/')
+                ? refName.split('/').slice(1).join('/')
+                : refName;
+              const trackedColor = branchColorMap.get(branchName);
+              if (trackedColor !== undefined) {
+                return `var(--git-graph-color${trackedColor % 8})`;
+              }
+            }
+            return `var(--git-graph-color${defaultColor % 8})`;
+          };
 
           // Get refs
           const localBranches = commit.refs?.filter((r) => r.refType === RefType.LocalBranch) ?? [];
@@ -120,7 +194,7 @@ export function HistoryView() {
                     key={ref.name}
                     name={ref.name}
                     type="head"
-                    color="var(--git-graph-color0)"
+                    color={getBranchColor(ref.name, false)}
                     isActive={ref.isHead}
                   />
                 ))}
@@ -129,7 +203,7 @@ export function HistoryView() {
                     key={ref.name}
                     name={ref.name}
                     type="remote"
-                    color="var(--git-graph-color0)"
+                    color={getBranchColor(ref.name, true)}
                   />
                 ))}
                 {tags.map((ref) => (
@@ -205,7 +279,7 @@ export function HistoryView() {
         },
       },
     ],
-    [t]
+    [t, graphDataMap, maxGraphColumns, branchColorMap]
   );
 
   const handleCommitClick = useCallback(

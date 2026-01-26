@@ -1155,6 +1155,29 @@ code {
     flex-shrink: 0;
   }
 
+  /* Git Graph Cell */
+  .graph-cell {
+    flex-shrink: 0;
+  }
+
+  .graph-line {
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .graph-line.uncommitted {
+    stroke-dasharray: 3 2;
+    stroke: var(--git-graph-uncommitted);
+  }
+
+  .graph-line.merge {
+    stroke-width: 2;
+  }
+
+  .graph-node {
+    stroke-width: 1;
+  }
+
   /* Conventional Commits Form */
   .cc-form {
     display: flex;

@@ -12,3 +12,11 @@ export function cn(...inputs: ClassValue[]) {
 export function naturalCompare(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
+
+/**
+ * Normalize a path for consistent cache key usage.
+ * Removes trailing slashes to ensure paths match regardless of source.
+ */
+export function normalizePath(path: string): string {
+  return path.replace(/\/+$/, '');
+}

@@ -1,7 +1,8 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
 use crate::services::{
-    AvatarService, BackgroundFetchService, GitService, IntegrationService, ProgressRegistry,
+    AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
+    ProgressRegistry,
 };
 use crate::storage::Database;
 use std::collections::HashMap;
@@ -156,6 +157,7 @@ impl Default for RepositoryCache {
 pub struct AppState {
     active_repository_path: RwLock<Option<PathBuf>>,
     repository_cache: Arc<RepositoryCache>,
+    commit_cache: Arc<CommitCache>,
     database: Arc<Database>,
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
@@ -172,6 +174,7 @@ impl AppState {
         AppState {
             active_repository_path: RwLock::new(None),
             repository_cache: Arc::new(RepositoryCache::new()),
+            commit_cache: Arc::new(CommitCache::new()),
             database,
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
@@ -207,6 +210,11 @@ impl AppState {
     /// Get the repository cache (for background fetch service)
     pub fn repository_cache(&self) -> Arc<RepositoryCache> {
         Arc::clone(&self.repository_cache)
+    }
+
+    /// Get the commit cache for graph data
+    pub fn commit_cache(&self) -> Arc<CommitCache> {
+        Arc::clone(&self.commit_cache)
     }
 
     /// Get the avatar service
@@ -270,6 +278,7 @@ impl AppState {
     /// Close a specific repository and remove from cache
     pub fn close_repository(&self, path: &Path) {
         self.repository_cache.remove(path);
+        self.commit_cache.invalidate_repo(path);
 
         // Clear active if this was it
         let mut active = self

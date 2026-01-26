@@ -4,6 +4,7 @@ import { GitMerge } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { mergeApi, branchApi } from '../../services/api';
 import { BranchType, type Branch, type MergeResult } from '../../types';
 import { cn } from '../../lib/utils';
@@ -28,14 +29,25 @@ interface MergeDialogProps {
   onClose: () => void;
   onMergeComplete?: (result: MergeResult) => void;
   currentBranch: string;
+  sourceBranch?: string;
 }
 
-export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }: MergeDialogProps) {
+export function MergeDialog({
+  isOpen,
+  onClose,
+  onMergeComplete,
+  currentBranch,
+  sourceBranch,
+}: MergeDialogProps) {
   const { t } = useTranslation();
+  const setCurrentView = useRepositoryStore((state) => state.setCurrentView);
+  const loadCommits = useRepositoryStore((state) => state.loadCommits);
+  const loadStatus = useRepositoryStore((state) => state.loadStatus);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [noFastForward, setNoFastForward] = useState(false);
   const [squash, setSquash] = useState(false);
+  const [commitImmediately, setCommitImmediately] = useState(true);
   const [customMessage, setCustomMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,13 +59,14 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       loadBranches();
       setError(null);
       setResult(null);
-      setSelectedBranch('');
+      setSelectedBranch(sourceBranch ?? '');
       setNoFastForward(false);
       setSquash(false);
+      setCommitImmediately(true);
       setCustomMessage('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, sourceBranch]);
 
   const loadBranches = async () => {
     try {
@@ -85,6 +98,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
             noFf: noFastForward,
             ffOnly: false,
             squash,
+            noCommit: !commitImmediately,
           })
       );
 
@@ -94,6 +108,9 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
         toast.success(t('notifications.success.mergeComplete'));
       } else {
         setResult(mergeResult);
+        // Always refresh commits to show merge preview line
+        await loadCommits();
+        await loadStatus();
         if (mergeResult.success) {
           onMergeComplete?.(mergeResult);
         }
@@ -110,6 +127,10 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
       await mergeApi.abort();
       setResult(null);
       setError(null);
+      toast.success(t('merge.banner.aborted'));
+      // Refresh commits and status after abort
+      await loadCommits();
+      await loadStatus();
       onClose();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -136,7 +157,7 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
 
           {!result && (
             <>
-              <FormField label={t('merge.dialog.currentBranch')}>
+              <FormField label={t('merge.dialog.mergeInto')}>
                 <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
                   {currentBranch}
                 </div>
@@ -191,6 +212,15 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
                   if (checked) setNoFastForward(false);
                 }}
               />
+
+              <CheckboxField
+                id="commit-immediately"
+                label={t('merge.dialog.commitImmediately')}
+                description={t('merge.dialog.commitImmediatelyDesc')}
+                checked={commitImmediately}
+                disabled={isLoading}
+                onCheckedChange={setCommitImmediately}
+              />
             </>
           )}
 
@@ -219,7 +249,13 @@ export function MergeDialog({ isOpen, onClose, onMergeComplete, currentBranch }:
               <Button variant="secondary" onClick={handleAbort}>
                 {t('merge.dialog.abortMerge')}
               </Button>
-              <Button variant="primary" onClick={onClose}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setCurrentView('file-status');
+                  onClose();
+                }}
+              >
                 {t('merge.dialog.resolveConflicts')}
               </Button>
             </>

@@ -22,12 +22,12 @@ import {
 } from '@/components/ui';
 
 interface RenameBranchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   branch: Branch | null;
 }
 
-export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchDialogProps) {
+export function RenameBranchDialog({ isOpen, onClose, branch }: RenameBranchDialogProps) {
   const { t } = useTranslation();
   const [newName, setNewName] = useState('');
   const [force, setForce] = useState(false);
@@ -38,12 +38,12 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
 
   // Reset form when dialog opens or branch changes
   useEffect(() => {
-    if (open && branch) {
+    if (isOpen && branch) {
       setNewName(branch.name);
       setForce(false);
       setError(null);
     }
-  }, [open, branch]);
+  }, [isOpen, branch]);
 
   const validationError = validateBranchName(newName, t);
   const isUnchanged = newName.trim() === branch?.name;
@@ -53,7 +53,7 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
 
     // If name hasn't changed, just close
     if (isUnchanged) {
-      onOpenChange(false);
+      onClose();
       return;
     }
 
@@ -69,7 +69,7 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
       await branchApi.rename(branch.name, newName.trim(), force);
       await loadBranches();
       await refreshRepository();
-      onOpenChange(false);
+      onClose();
       toast.success(t('notifications.success.branchRenamed', { name: newName.trim() }));
     } catch (err) {
       const errorMsg = getErrorMessage(err);
@@ -92,7 +92,7 @@ export function RenameBranchDialog({ open, onOpenChange, branch }: RenameBranchD
   if (!branch) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogTitle icon={Pencil}>{t('branches.rename.title')}</DialogTitle>
 

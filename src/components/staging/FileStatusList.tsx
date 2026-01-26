@@ -13,7 +13,7 @@ import {
   ChevronDown,
   Folder,
 } from 'lucide-react';
-import { Checkbox, TreeView as UITreeView, buildTreeFromPaths } from '@/components/ui';
+import { Checkbox, TreeView as UITreeView, buildTreeFromPaths, VirtualList } from '@/components/ui';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
 import { cn } from '@/lib/utils';
@@ -24,9 +24,6 @@ import { StagingFileContextMenu } from './StagingFileContextMenu';
 export interface FluidFile extends FileStatus {
   isStaged: boolean;
 }
-
-const fileItemClass =
-  'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)';
 
 interface FileStatusListProps {
   files: FileStatus[];
@@ -61,26 +58,13 @@ export function FileStatusList({
     return null;
   }
 
-  const renderFileItem = (file: FileStatus) => (
-    <FileStatusItem
-      key={file.path}
-      file={file}
-      isSelected={selectedFile?.path === file.path}
-      onSelect={() => onSelectFile(file)}
-      onStage={showStageButton && onStage ? () => onStage(file.path) : undefined}
-      onUnstage={showUnstageButton && onUnstage ? () => onUnstage(file.path) : undefined}
-      onDiscard={showDiscardButton && onDiscard ? () => onDiscard(file.path) : undefined}
-      compact={viewMode === StagingViewMode.FlatMulti}
-    />
-  );
-
   const renderContent = () => {
     switch (viewMode) {
       case StagingViewMode.FlatMulti:
         return (
-          <div className="flex flex-col flex-1 overflow-y-auto">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Table header */}
-            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0">
+            <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) shrink-0">
               <div className="w-6 shrink-0" />
               <div className="w-6 shrink-0" />
               <div className="flex-1 min-w-0 px-2">{t('staging.fileList.filename')}</div>
@@ -88,17 +72,27 @@ export function FileStatusList({
               <div className="flex-1 min-w-0 px-2">{t('staging.fileList.path')}</div>
             </div>
             {/* Table rows */}
-            {files.map((file) => (
-              <MultiColumnFileItem
-                key={file.path}
-                file={file}
-                isSelected={selectedFile?.path === file.path}
-                onSelect={() => onSelectFile(file)}
-                onStage={showStageButton && onStage ? () => onStage(file.path) : undefined}
-                onUnstage={showUnstageButton && onUnstage ? () => onUnstage(file.path) : undefined}
-                onDiscard={showDiscardButton && onDiscard ? () => onDiscard(file.path) : undefined}
-              />
-            ))}
+            <VirtualList
+              items={files}
+              getItemKey={(file) => file.path}
+              itemHeight={36}
+              selectedItemKey={selectedFile?.path}
+              onItemClick={onSelectFile}
+              itemClassName="!py-1.5 !gap-0 !px-3"
+            >
+              {(file) => (
+                <MultiColumnFileItemContent
+                  file={file}
+                  onStage={showStageButton && onStage ? () => onStage(file.path) : undefined}
+                  onUnstage={
+                    showUnstageButton && onUnstage ? () => onUnstage(file.path) : undefined
+                  }
+                  onDiscard={
+                    showDiscardButton && onDiscard ? () => onDiscard(file.path) : undefined
+                  }
+                />
+              )}
+            </VirtualList>
           </div>
         );
       case StagingViewMode.Tree:
@@ -115,7 +109,23 @@ export function FileStatusList({
       case StagingViewMode.FlatSingle:
       default:
         return (
-          <div className="flex flex-col flex-1 overflow-y-auto">{files.map(renderFileItem)}</div>
+          <VirtualList
+            items={files}
+            getItemKey={(file) => file.path}
+            itemHeight={36}
+            selectedItemKey={selectedFile?.path}
+            onItemClick={onSelectFile}
+            itemClassName="!py-1.5 !gap-2"
+          >
+            {(file) => (
+              <FileStatusItemContent
+                file={file}
+                onStage={showStageButton && onStage ? () => onStage(file.path) : undefined}
+                onUnstage={showUnstageButton && onUnstage ? () => onUnstage(file.path) : undefined}
+                onDiscard={showDiscardButton && onDiscard ? () => onDiscard(file.path) : undefined}
+              />
+            )}
+          </VirtualList>
         );
     }
   };
@@ -133,29 +143,19 @@ export function FileStatusList({
   );
 }
 
-interface FileStatusItemProps {
+interface FileStatusItemContentProps {
   file: FileStatus;
-  isSelected: boolean;
-  onSelect: () => void;
   onStage?: () => void;
   onUnstage?: () => void;
   onDiscard?: () => void;
-  compact?: boolean;
-  indent?: number;
-  isTreeView?: boolean;
 }
 
-function FileStatusItem({
+function FileStatusItemContent({
   file,
-  isSelected,
-  onSelect,
   onStage,
   onUnstage,
   onDiscard,
-  compact = false,
-  indent = 0,
-  isTreeView = false,
-}: FileStatusItemProps) {
+}: FileStatusItemContentProps) {
   // Determine if displaying in staged or unstaged context based on available actions
   const isInStagedContext = onUnstage && !onStage;
   // Use appropriate status based on context
@@ -163,75 +163,25 @@ function FileStatusItem({
     ? file.stagedStatus || file.unstagedStatus || file.status
     : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
-
-  const renderStatusIcon = () => {
-    const Icon = getStatusIcon(status);
-    return <Icon className={cn('shrink-0', statusColorClass)} size={compact ? 12 : 14} />;
-  };
-
-  // Reuse the context check for isStaged
   const isStaged = isInStagedContext;
 
   const handleCheckboxChange = (checked: boolean) => {
     if (checked) {
-      // Checking = stage the file
       onStage?.();
     } else {
-      // Unchecking = unstage the file
       onUnstage?.();
     }
   };
-
-  if (compact) {
-    return (
-      <StagingFileContextMenu
-        file={file}
-        isStaged={!!isStaged}
-        isTreeView={isTreeView}
-        onStage={onStage}
-        onUnstage={onUnstage}
-        onDiscard={onDiscard}
-      >
-        <div
-          className={cn(
-            'flex items-center gap-1.5 py-1 px-2 cursor-pointer border-b border-r border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-            isSelected && 'bg-(--bg-active)'
-          )}
-          onClick={onSelect}
-          title={file.path}
-        >
-          <Checkbox
-            checked={isStaged}
-            onCheckedChange={(checked: boolean | 'indeterminate') => {
-              handleCheckboxChange(checked === true);
-            }}
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          />
-          {renderStatusIcon()}
-          <span className="flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)">
-            {getFileName(file.path)}
-          </span>
-        </div>
-      </StagingFileContextMenu>
-    );
-  }
 
   return (
     <StagingFileContextMenu
       file={file}
       isStaged={!!isStaged}
-      isTreeView={isTreeView}
       onStage={onStage}
       onUnstage={onUnstage}
       onDiscard={onDiscard}
     >
-      <div
-        className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')}
-        onClick={onSelect}
-        style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
-      >
-        {indent > 0 && <span className="w-3.5 shrink-0" />}{' '}
-        {/* Spacer to align with folder chevrons */}
+      <div className="contents">
         <Checkbox
           checked={isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
@@ -239,7 +189,7 @@ function FileStatusItem({
           }}
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         />
-        {renderStatusIcon()}
+        <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={file.path}
@@ -251,24 +201,19 @@ function FileStatusItem({
   );
 }
 
-// Multi-Column File Item Component (table row)
-interface MultiColumnFileItemProps {
+interface MultiColumnFileItemContentProps {
   file: FileStatus;
-  isSelected: boolean;
-  onSelect: () => void;
   onStage?: () => void;
   onUnstage?: () => void;
   onDiscard?: () => void;
 }
 
-function MultiColumnFileItem({
+function MultiColumnFileItemContent({
   file,
-  isSelected,
-  onSelect,
   onStage,
   onUnstage,
   onDiscard,
-}: MultiColumnFileItemProps) {
+}: MultiColumnFileItemContentProps) {
   // Determine if displaying in staged or unstaged context based on available actions
   const isInStagedContext = onUnstage && !onStage;
   // Use appropriate status based on context
@@ -276,8 +221,6 @@ function MultiColumnFileItem({
     ? file.stagedStatus || file.unstagedStatus || file.status
     : file.unstagedStatus || file.stagedStatus || file.status;
   const statusColorClass = getStatusColorClass(status);
-
-  // Check if this is a staged file (has only unstage action)
   const isStaged = isInStagedContext;
 
   const handleCheckboxChange = (checked: boolean) => {
@@ -288,11 +231,6 @@ function MultiColumnFileItem({
     }
   };
 
-  const renderStatusIcon = () => {
-    const Icon = getStatusIcon(status);
-    return <Icon className={cn('shrink-0', statusColorClass)} size={14} />;
-  };
-
   return (
     <StagingFileContextMenu
       file={file}
@@ -301,13 +239,7 @@ function MultiColumnFileItem({
       onUnstage={onUnstage}
       onDiscard={onDiscard}
     >
-      <div
-        className={cn(
-          'flex items-center py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-          isSelected && 'bg-(--bg-active)'
-        )}
-        onClick={onSelect}
-      >
+      <div className="contents">
         <div className="w-6 shrink-0 flex items-center justify-center">
           <Checkbox
             checked={isStaged}
@@ -317,7 +249,9 @@ function MultiColumnFileItem({
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         </div>
-        <div className="w-6 shrink-0 flex items-center justify-center">{renderStatusIcon()}</div>
+        <div className="w-6 shrink-0 flex items-center justify-center">
+          <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
+        </div>
         <div className="flex-1 min-w-0 px-2">
           <span className="text-base text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
             {getFileName(file.path)}
@@ -331,6 +265,82 @@ function MultiColumnFileItem({
             {getDirectory(file.path) || '.'}
           </span>
         </div>
+      </div>
+    </StagingFileContextMenu>
+  );
+}
+
+// FileStatusItem for tree view (needs different styling with indent)
+interface FileStatusItemProps {
+  file: FileStatus;
+  isSelected: boolean;
+  onSelect: () => void;
+  onStage?: () => void;
+  onUnstage?: () => void;
+  onDiscard?: () => void;
+  indent?: number;
+  isTreeView?: boolean;
+}
+
+function FileStatusItem({
+  file,
+  isSelected,
+  onSelect,
+  onStage,
+  onUnstage,
+  onDiscard,
+  indent = 0,
+  isTreeView = false,
+}: FileStatusItemProps) {
+  // Determine if displaying in staged or unstaged context based on available actions
+  const isInStagedContext = onUnstage && !onStage;
+  // Use appropriate status based on context
+  const status = isInStagedContext
+    ? file.stagedStatus || file.unstagedStatus || file.status
+    : file.unstagedStatus || file.stagedStatus || file.status;
+  const statusColorClass = getStatusColorClass(status);
+  const isStaged = isInStagedContext;
+
+  const handleCheckboxChange = (checked: boolean) => {
+    if (checked) {
+      onStage?.();
+    } else {
+      onUnstage?.();
+    }
+  };
+
+  return (
+    <StagingFileContextMenu
+      file={file}
+      isStaged={!!isStaged}
+      isTreeView={isTreeView}
+      onStage={onStage}
+      onUnstage={onUnstage}
+      onDiscard={onDiscard}
+    >
+      <div
+        className={cn(
+          'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+          isSelected && 'bg-(--bg-active)'
+        )}
+        onClick={onSelect}
+        style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
+      >
+        {indent > 0 && <span className="w-3.5 shrink-0" />}
+        <Checkbox
+          checked={isStaged}
+          onCheckedChange={(checked: boolean | 'indeterminate') => {
+            handleCheckboxChange(checked === true);
+          }}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        />
+        <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
+        <span
+          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          title={file.path}
+        >
+          {getFileName(file.path)}
+        </span>
       </div>
     </StagingFileContextMenu>
   );
@@ -437,18 +447,6 @@ export function FluidFileList({
     );
   }
 
-  const renderFileItem = (file: FluidFile) => (
-    <FluidFileItem
-      key={file.path}
-      file={file}
-      isSelected={selectedFile?.path === file.path}
-      onSelect={() => onSelectFile(file, file.isStaged)}
-      onStage={() => onStage(file.path)}
-      onUnstage={() => onUnstage(file.path)}
-      onDiscard={() => onDiscard(file.path)}
-    />
-  );
-
   if (viewMode === StagingViewMode.Tree) {
     return (
       <FluidTreeView
@@ -463,11 +461,84 @@ export function FluidFileList({
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">{files.map(renderFileItem)}</div>
+    <VirtualList
+      items={files}
+      getItemKey={(file) => file.path}
+      itemHeight={36}
+      selectedItemKey={selectedFile?.path}
+      onItemClick={(file) => onSelectFile(file, file.isStaged)}
+      itemClassName="!py-1.5 !gap-2"
+    >
+      {(file) => (
+        <FluidFileItemContent
+          file={file}
+          onStage={() => onStage(file.path)}
+          onUnstage={() => onUnstage(file.path)}
+          onDiscard={() => onDiscard(file.path)}
+        />
+      )}
+    </VirtualList>
   );
 }
 
-// Fluid File Item Component
+// Fluid File Item Content Component
+interface FluidFileItemContentProps {
+  file: FluidFile;
+  onStage: () => void;
+  onUnstage: () => void;
+  onDiscard: () => void;
+}
+
+function FluidFileItemContent({ file, onStage, onUnstage, onDiscard }: FluidFileItemContentProps) {
+  // Use appropriate status based on whether file is staged
+  const status = file.isStaged
+    ? file.stagedStatus || file.unstagedStatus || file.status
+    : file.unstagedStatus || file.stagedStatus || file.status;
+  const statusColorClass = getStatusColorClass(status);
+
+  const handleCheckboxChange = (checked: boolean) => {
+    if (checked) {
+      onStage();
+    } else {
+      onUnstage();
+    }
+  };
+
+  return (
+    <StagingFileContextMenu
+      file={file}
+      isStaged={file.isStaged}
+      onStage={onStage}
+      onUnstage={onUnstage}
+      onDiscard={onDiscard}
+    >
+      <div className="contents">
+        <Checkbox
+          checked={file.isStaged}
+          onCheckedChange={(checked: boolean | 'indeterminate') => {
+            handleCheckboxChange(checked === true);
+          }}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        />
+        <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
+        <span
+          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+          title={file.path}
+        >
+          {getFileName(file.path)}
+        </span>
+        <span
+          className="text-sm text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis max-w-40"
+          title={file.path}
+        >
+          {getDirectory(file.path)}
+        </span>
+      </div>
+    </StagingFileContextMenu>
+  );
+}
+
+// Fluid File Item for tree view (needs different styling with indent)
 interface FluidFileItemProps {
   file: FluidFile;
   isSelected: boolean;
@@ -501,11 +572,6 @@ function FluidFileItem({
     }
   };
 
-  const renderStatusIcon = () => {
-    const Icon = getStatusIcon(status);
-    return <Icon className={cn('shrink-0', statusColorClass)} size={14} />;
-  };
-
   return (
     <StagingFileContextMenu
       file={file}
@@ -515,7 +581,10 @@ function FluidFileItem({
       onDiscard={onDiscard}
     >
       <div
-        className={cn(fileItemClass, isSelected && 'bg-(--bg-active)')}
+        className={cn(
+          'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
+          isSelected && 'bg-(--bg-active)'
+        )}
         onClick={onSelect}
         style={{ paddingLeft: indent > 0 ? `${indent * 16 + 8}px` : undefined }}
       >
@@ -527,7 +596,7 @@ function FluidFileItem({
           }}
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         />
-        {renderStatusIcon()}
+        <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={file.path}
@@ -615,26 +684,32 @@ function FluidTreeView({
   );
 }
 
-function getStatusIcon(status: StatusTypeType) {
+interface StatusIconProps {
+  status: StatusTypeType;
+  className?: string;
+  size?: number;
+}
+
+function StatusIcon({ status, className, size = 14 }: StatusIconProps) {
   switch (status) {
     case StatusType.Added:
-      return Plus;
+      return <Plus className={className} size={size} />;
     case StatusType.Modified:
-      return Pencil;
+      return <Pencil className={className} size={size} />;
     case StatusType.Deleted:
-      return Trash2;
+      return <Trash2 className={className} size={size} />;
     case StatusType.Untracked:
-      return FileQuestion;
+      return <FileQuestion className={className} size={size} />;
     case StatusType.Renamed:
-      return ArrowRightLeft;
+      return <ArrowRightLeft className={className} size={size} />;
     case StatusType.Copied:
-      return Copy;
+      return <Copy className={className} size={size} />;
     case StatusType.Conflicted:
-      return AlertTriangle;
+      return <AlertTriangle className={className} size={size} />;
     case StatusType.TypeChanged:
-      return FileType;
+      return <FileType className={className} size={size} />;
     default:
-      return FileQuestion;
+      return <FileQuestion className={className} size={size} />;
   }
 }
 

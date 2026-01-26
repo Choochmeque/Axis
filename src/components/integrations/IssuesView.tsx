@@ -21,7 +21,7 @@ export function IssuesView() {
     isLoadingIssues,
     isLoadingMoreIssues,
     connectionStatus,
-    loadIssues,
+    reloadIssues,
     loadMoreIssues,
     getIssue,
     setIssueFilter,
@@ -30,7 +30,7 @@ export function IssuesView() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Load issues on mount (clearing is done in Sidebar click handler)
+  // Soft load issues on mount (uses cached data if available)
   useEffect(() => {
     const state = useIntegrationStore.getState();
     if (state.connectionStatus?.connected && state.detectedProvider) {
@@ -46,8 +46,8 @@ export function IssuesView() {
   );
 
   const handleRefresh = useCallback(() => {
-    loadIssues();
-  }, [loadIssues]);
+    reloadIssues();
+  }, [reloadIssues]);
 
   const handleLoadMore = useCallback(() => {
     loadMoreIssues();
@@ -55,8 +55,8 @@ export function IssuesView() {
 
   const handleIssueCreated = useCallback(() => {
     setShowCreateDialog(false);
-    loadIssues();
-  }, [loadIssues]);
+    reloadIssues();
+  }, [reloadIssues]);
 
   if (!connectionStatus?.connected) {
     return (

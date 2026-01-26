@@ -25,11 +25,11 @@ import {
 } from '@/components/ui';
 
 interface FetchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
+export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
   const { t } = useTranslation();
   const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
@@ -42,11 +42,11 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
   const fetchOperation = useOperationProgress('Fetch');
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       loadRemotes();
       setError(null);
     }
-  }, [open]);
+  }, [isOpen]);
 
   const loadRemotes = async () => {
     try {
@@ -75,7 +75,7 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
       await refreshRepository();
       notifyNewCommits(useRepositoryStore.getState().branches);
 
-      onOpenChange(false);
+      onClose();
       toast.success(t('remotes.fetch.complete'));
     } catch (err) {
       setError(getErrorMessage(err));
@@ -86,11 +86,11 @@ export function FetchDialog({ open, onOpenChange }: FetchDialogProps) {
 
   const handleClose = () => {
     setError(null);
-    onOpenChange(false);
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-120">
         <DialogTitle icon={RefreshCw}>{t('remotes.fetch.title')}</DialogTitle>
 

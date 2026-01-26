@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { DiffStatus } from '@/types';
 import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
+import { VirtualList } from '@/components/ui';
 import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 interface CommitFileListProps {
@@ -27,6 +28,9 @@ export function CommitFileList({
   const { t } = useTranslation();
   const totalAdditions = files.reduce((sum, f) => sum + Number(f.additions), 0);
   const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
+
+  const getFileKey = (file: FileDiff) => `${file.newPath ?? ''}|${file.oldPath ?? ''}`;
+  const selectedKey = selectedFile ? getFileKey(selectedFile) : null;
 
   if (isLoading) {
     return (
@@ -60,75 +64,65 @@ export function CommitFileList({
           <span className="text-error">-{totalDeletions}</span>
         </span>
       </div>
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-        {files.map((file) => (
-          <CommitFileItem
-            key={file.newPath || file.oldPath}
-            file={file}
-            isSelected={
-              selectedFile?.newPath === file.newPath && selectedFile?.oldPath === file.oldPath
-            }
-            onSelect={() => onSelectFile(file)}
-            commitOid={commitOid}
-          />
-        ))}
-      </div>
+      <VirtualList
+        items={files}
+        getItemKey={getFileKey}
+        itemHeight={36}
+        selectedItemKey={selectedKey}
+        onItemClick={onSelectFile}
+        itemClassName="!py-1.5 !gap-2"
+      >
+        {(file) => (
+          <HistoryFileContextMenu file={file} commitOid={commitOid}>
+            <CommitFileItemContent file={file} />
+          </HistoryFileContextMenu>
+        )}
+      </VirtualList>
     </div>
   );
 }
 
-interface CommitFileItemProps {
+interface CommitFileItemContentProps {
   file: FileDiff;
-  isSelected: boolean;
-  onSelect: () => void;
-  commitOid?: string;
 }
 
-function CommitFileItem({ file, isSelected, onSelect, commitOid }: CommitFileItemProps) {
+function CommitFileItemContent({ file }: CommitFileItemContentProps) {
   const path = file.newPath || file.oldPath || '';
   const statusColors = getStatusColors(file.status);
   const statusChar = getStatusChar(file.status);
 
   return (
-    <HistoryFileContextMenu file={file} commitOid={commitOid}>
-      <div
+    <>
+      <span
         className={cn(
-          'flex items-center gap-2 py-1.5 px-3 cursor-pointer border-b border-(--border-color) transition-colors hover:bg-(--bg-hover)',
-          isSelected && 'bg-(--bg-active)'
+          'flex items-center justify-center w-4.5 h-4.5 text-sm font-semibold rounded shrink-0',
+          statusColors.bg,
+          statusColors.text
         )}
-        onClick={onSelect}
+        title={file.status}
       >
-        <span
-          className={cn(
-            'flex items-center justify-center w-4.5 h-4.5 text-sm font-semibold rounded shrink-0',
-            statusColors.bg,
-            statusColors.text
-          )}
-          title={file.status}
-        >
-          {statusChar}
-        </span>
-        <span
-          className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-          title={path}
-        >
-          {getFileName(path)}
-          {file.oldPath && file.newPath && file.oldPath !== file.newPath && (
-            <span className="text-(--text-secondary) text-xs"> ({getFileName(file.oldPath)})</span>
-          )}
-        </span>
-        <span
-          className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
-          title={path}
-        >
-          {getDirectory(path)}
-        </span>
-        <span className="flex gap-1 text-sm font-medium shrink-0">
-          {file.additions > 0 && <span className="text-success">+{String(file.additions)}</span>}
-          {file.deletions > 0 && <span className="text-error">-{String(file.deletions)}</span>}
-        </span>
-      </div>
-    </HistoryFileContextMenu>
+        {statusChar}
+      </span>
+      <span
+        className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
+        title={path}
+      >
+        {getFileName(path)}
+        {file.oldPath && file.newPath && file.oldPath !== file.newPath && (
+          <span className="text-(--text-secondary) text-xs"> ({getFileName(file.oldPath)})</span>
+        )}
+      </span>
+      <span
+        className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
+        title={path}
+      >
+        {getDirectory(path)}
+      </span>
+      <span className="flex gap-1 text-sm font-medium shrink-0">
+        {file.additions > 0 && <span className="text-success">+{String(file.additions)}</span>}
+        {file.deletions > 0 && <span className="text-error">-{String(file.deletions)}</span>}
+      </span>
+    </>
   );
 }
 

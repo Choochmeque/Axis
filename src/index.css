@@ -434,6 +434,22 @@ code {
     @apply p-3 bg-(--bg-secondary) rounded mb-4;
   }
 
+  /* Skeleton loading */
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .skeleton {
+    @apply bg-(--bg-tertiary) rounded;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+
   /* Context Menu classes */
   @keyframes menu-in {
     from {
@@ -1139,6 +1155,35 @@ code {
     flex-shrink: 0;
   }
 
+  /* Git Graph Cell */
+  .graph-cell {
+    flex-shrink: 0;
+  }
+
+  .graph-line {
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .graph-line.uncommitted {
+    stroke-dasharray: 3 2;
+    stroke: var(--git-graph-uncommitted);
+  }
+
+  .graph-line.merge {
+    stroke-width: 2;
+  }
+
+  .graph-line.merge-preview {
+    stroke-dasharray: 5 3;
+    stroke: var(--accent-color);
+    opacity: 0.7;
+  }
+
+  .graph-node {
+    stroke-width: 1;
+  }
+
   /* Conventional Commits Form */
   .cc-form {
     display: flex;
@@ -1195,6 +1240,29 @@ code {
   .cc-body {
     min-height: 3rem;
     flex: 1;
+  }
+
+  /* Virtual List */
+  .virtual-list-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+
+  .virtual-list-item:hover {
+    background-color: var(--bg-hover);
+  }
+
+  .virtual-list-item--selected {
+    background-color: var(--bg-active);
   }
 }
 

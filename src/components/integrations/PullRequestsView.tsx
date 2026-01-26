@@ -21,7 +21,7 @@ export function PullRequestsView() {
     isLoadingPrs,
     isLoadingMorePrs,
     connectionStatus,
-    loadPullRequests,
+    reloadPullRequests,
     loadMorePullRequests,
     getPullRequest,
     setPrFilter,
@@ -30,7 +30,7 @@ export function PullRequestsView() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Load PRs on mount (clearing is done in Sidebar click handler)
+  // Soft load PRs on mount (uses cached data if available)
   useEffect(() => {
     const state = useIntegrationStore.getState();
     if (state.connectionStatus?.connected && state.detectedProvider) {
@@ -46,8 +46,8 @@ export function PullRequestsView() {
   );
 
   const handleRefresh = useCallback(() => {
-    loadPullRequests();
-  }, [loadPullRequests]);
+    reloadPullRequests();
+  }, [reloadPullRequests]);
 
   const handleLoadMore = useCallback(() => {
     loadMorePullRequests();
@@ -55,8 +55,8 @@ export function PullRequestsView() {
 
   const handlePrCreated = useCallback(() => {
     setShowCreateDialog(false);
-    loadPullRequests();
-  }, [loadPullRequests]);
+    reloadPullRequests();
+  }, [reloadPullRequests]);
 
   if (!connectionStatus?.connected) {
     return (

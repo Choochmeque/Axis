@@ -88,6 +88,7 @@ impl GitCliService {
         no_ff: bool,
         squash: bool,
         ff_only: bool,
+        no_commit: bool,
     ) -> Result<GitCommandResult> {
         let mut args = vec!["merge"];
 
@@ -100,6 +101,10 @@ impl GitCliService {
 
         if squash {
             args.push("--squash");
+        }
+
+        if no_commit {
+            args.push("--no-commit");
         }
 
         if let Some(msg) = message {
@@ -194,7 +199,7 @@ impl GitCliService {
 
         // Write to temp file
         let mut todo_file = NamedTempFile::new().map_err(AxisError::from)?;
-        writeln!(todo_file, "{}", todo_content).map_err(AxisError::from)?;
+        writeln!(todo_file, "{todo_content}").map_err(AxisError::from)?;
         let todo_path = todo_file.path().to_string_lossy().to_string();
 
         // Build the GIT_SEQUENCE_EDITOR command based on platform
@@ -248,7 +253,7 @@ impl GitCliService {
         to: &str,
         no_commit: bool,
     ) -> Result<GitCommandResult> {
-        let range = format!("{}..{}", from, to);
+        let range = format!("{from}..{to}");
         let mut args = vec!["cherry-pick"];
 
         if no_commit {
@@ -2921,7 +2926,7 @@ mod tests {
         // Go back to default branch and merge
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", None, false, false, false)
+            .merge("feature", None, false, false, false, false)
             .expect("should merge feature branch");
 
         assert!(result.success);
@@ -2941,7 +2946,14 @@ mod tests {
 
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", Some("Merge feature branch"), true, false, false)
+            .merge(
+                "feature",
+                Some("Merge feature branch"),
+                true,
+                false,
+                false,
+                false,
+            )
             .expect("should merge with no-ff");
 
         assert!(result.success);

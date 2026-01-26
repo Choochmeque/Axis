@@ -219,16 +219,16 @@ export function StagingFileContextMenu({
           </>
         )}
 
-        <MenuSeparator />
         {isTracked && (
-          <MenuItem icon={History} onSelect={() => setShowFileLog(true)}>
-            {t('staging.contextMenu.logSelected')}
-          </MenuItem>
-        )}
-        {isTracked && (
-          <MenuItem icon={FileSearch} onSelect={() => setShowBlame(true)}>
-            {t('staging.contextMenu.annotateSelected')}
-          </MenuItem>
+          <>
+            <MenuSeparator />
+            <MenuItem icon={History} onSelect={() => setShowFileLog(true)}>
+              {t('staging.contextMenu.logSelected')}
+            </MenuItem>
+            <MenuItem icon={FileSearch} onSelect={() => setShowBlame(true)}>
+              {t('staging.contextMenu.annotateSelected')}
+            </MenuItem>
+          </>
         )}
 
         {/* Copy/Move - not for conflicted files */}

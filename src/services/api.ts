@@ -326,6 +326,8 @@ export const reflogApi = {
 
   refs: () => commands.reflogRefs(),
 
+  count: (refname: string) => commands.reflogCount(refname),
+
   checkout: (reflogRef: string) => commands.reflogCheckout(reflogRef),
 };
 

@@ -1,6 +1,8 @@
 import { create, StateCreator } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+import { normalizePath } from '@/lib/utils';
+
 export interface Tab {
   id: string;
   type: TabType;
@@ -122,25 +124,24 @@ const createTabsSlice: StateCreator<TabsState> = (set, get) => ({
   },
 
   findTabByPath: (path) => {
-    // Normalize path for comparison (remove trailing slash)
-    const normalizedPath = path.replace(/\/$/, '');
-    return get().tabs.find((t) => t.path?.replace(/\/$/, '') === normalizedPath);
+    const key = normalizePath(path);
+    return get().tabs.find((t) => t.path && normalizePath(t.path) === key);
   },
 
   markTabDirty: (path) => {
-    const normalizedPath = path.replace(/\/$/, '');
+    const key = normalizePath(path);
     set((state) => ({
       tabs: state.tabs.map((tab) =>
-        tab.path?.replace(/\/$/, '') === normalizedPath ? { ...tab, isDirty: true } : tab
+        tab.path && normalizePath(tab.path) === key ? { ...tab, isDirty: true } : tab
       ),
     }));
   },
 
   clearTabDirty: (path) => {
-    const normalizedPath = path.replace(/\/$/, '');
+    const key = normalizePath(path);
     set((state) => ({
       tabs: state.tabs.map((tab) =>
-        tab.path?.replace(/\/$/, '') === normalizedPath ? { ...tab, isDirty: false } : tab
+        tab.path && normalizePath(tab.path) === key ? { ...tab, isDirty: false } : tab
       ),
     }));
   },

@@ -11,15 +11,15 @@ import { cn } from '@/lib/utils';
 import type { Branch } from '@/types';
 
 interface BranchCompareDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   baseBranch: Branch | null;
   compareBranch: Branch | null;
 }
 
 export function BranchCompareDialog({
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
   baseBranch,
   compareBranch,
 }: BranchCompareDialogProps) {
@@ -42,17 +42,17 @@ export function BranchCompareDialog({
 
   // Load comparison when dialog opens
   useEffect(() => {
-    if (open && baseBranch && compareBranch) {
+    if (isOpen && baseBranch && compareBranch) {
       compare(baseBranch.name, compareBranch.name);
     }
-  }, [open, baseBranch, compareBranch, compare]);
+  }, [isOpen, baseBranch, compareBranch, compare]);
 
   // Clean up when dialog closes
   useEffect(() => {
-    if (!open) {
+    if (!isOpen) {
       clear();
     }
-  }, [open, clear]);
+  }, [isOpen, clear]);
 
   if (!baseBranch || !compareBranch) return null;
 
@@ -65,7 +65,7 @@ export function BranchCompareDialog({
   const commitOid = activeTab === 'commits' ? selectedCommit?.oid : compareResult?.compareOid;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent maxWidth="2xl" className="h-[80vh] flex flex-col">
         <DialogTitle icon={Diff}>
           <div className="flex items-center gap-2">

@@ -14,11 +14,11 @@ export function CIView() {
     isLoadingCiRuns,
     isLoadingMoreCiRuns,
     connectionStatus,
-    loadCiRuns,
+    reloadCiRuns,
     loadMoreCiRuns,
   } = useIntegrationStore();
 
-  // Load CI runs on mount (clearing is done in Sidebar click handler)
+  // Soft load CI runs on mount (uses cached data if available)
   useEffect(() => {
     const state = useIntegrationStore.getState();
     if (state.connectionStatus?.connected && state.detectedProvider) {
@@ -27,8 +27,8 @@ export function CIView() {
   }, []);
 
   const handleRefresh = useCallback(() => {
-    loadCiRuns();
-  }, [loadCiRuns]);
+    reloadCiRuns();
+  }, [reloadCiRuns]);
 
   const handleLoadMore = useCallback(() => {
     loadMoreCiRuns();

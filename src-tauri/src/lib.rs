@@ -135,6 +135,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             // Reflog commands
             crate::commands::reflog_list,
             crate::commands::reflog_refs,
+            crate::commands::reflog_count,
             crate::commands::reflog_checkout,
             // Tag commands
             crate::commands::tag_list,
@@ -287,6 +288,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env_logger::init();
+
     let specta_builder = get_specta_builder();
     let specta_handler = specta_builder.invoke_handler();
     let extra_handler: Box<tauri::ipc::InvokeHandler<tauri::Wry>> =

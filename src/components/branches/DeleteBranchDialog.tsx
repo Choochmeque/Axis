@@ -19,12 +19,12 @@ import {
 } from '@/components/ui';
 
 interface DeleteBranchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   branch?: Branch;
 }
 
-export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchDialogProps) {
+export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDialogProps) {
   const { t } = useTranslation();
   const [force, setForce] = useState(false);
   const [deleteRemote, setDeleteRemote] = useState(false);
@@ -101,7 +101,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
 
       await loadBranches();
       await refreshRepository();
-      onOpenChange(false);
+      onClose();
       toast.success(t('notifications.success.branchDeleted', { name: branch.name }));
     } catch (err) {
       const errorMsg = getErrorMessage(err);
@@ -118,7 +118,7 @@ export function DeleteBranchDialog({ open, onOpenChange, branch }: DeleteBranchD
   if (!branch) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogTitle icon={Trash2}>{t('branches.delete.title')}</DialogTitle>
 

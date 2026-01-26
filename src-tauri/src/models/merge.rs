@@ -18,6 +18,8 @@ pub struct MergeOptions {
     pub squash: bool,
     /// If true, only fast-forward (fail if not possible)
     pub ff_only: bool,
+    /// If true, don't create a commit (stage changes only)
+    pub no_commit: bool,
 }
 
 /// Result of a merge operation

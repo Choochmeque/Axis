@@ -38,10 +38,10 @@ import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
 import { useLfsStore } from '../../store/lfsStore';
 import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
+import { useDialogStore } from '../../store/dialogStore';
 import { cn, naturalCompare } from '../../lib/utils';
 import type { Branch } from '../../types';
-import { CreateBranchDialog, BranchContextMenu, RemoteBranchContextMenu } from '../branches';
-import { TagDialog } from '../tags/TagDialog';
+import { BranchContextMenu, RemoteBranchContextMenu } from '../branches';
 import { TagContextMenu } from '../tags/TagContextMenu';
 import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
 import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
@@ -177,8 +177,6 @@ export function Sidebar() {
     loadCommits,
     loadStatus,
   } = useRepositoryStore();
-  const [showBranchDialog, setShowBranchDialog] = useState(false);
-  const [showTagDialog, setShowTagDialog] = useState(false);
   const [showRemoteDialog, setShowRemoteDialog] = useState(false);
   const [showSubmoduleDialog, setShowSubmoduleDialog] = useState(false);
   const [showWorktreeDialog, setShowWorktreeDialog] = useState(false);
@@ -255,10 +253,12 @@ export function Sidebar() {
     [loadTags, t]
   );
 
+  const { openTagDialog, openCreateBranchDialog } = useDialogStore();
+
   // Listen for menu events
   useEffect(() => {
-    const handleOpenBranchDialog = () => setShowBranchDialog(true);
-    const handleOpenTagDialog = () => setShowTagDialog(true);
+    const handleOpenBranchDialog = () => openCreateBranchDialog();
+    const handleOpenTagDialog = () => openTagDialog();
 
     document.addEventListener('open-new-branch-dialog', handleOpenBranchDialog);
     document.addEventListener('open-new-tag-dialog', handleOpenTagDialog);
@@ -267,7 +267,7 @@ export function Sidebar() {
       document.removeEventListener('open-new-branch-dialog', handleOpenBranchDialog);
       document.removeEventListener('open-new-tag-dialog', handleOpenTagDialog);
     };
-  }, []);
+  }, [openCreateBranchDialog, openTagDialog]);
 
   const localBranches = branches.filter((b) => b.branchType === BranchType.Local);
   const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
@@ -318,11 +318,6 @@ export function Sidebar() {
       setCurrentView('file-status');
       selectStash(stash);
     }
-  };
-
-  const handleTagCreated = async () => {
-    await loadTags();
-    setShowTagDialog(false);
   };
 
   return (
@@ -632,15 +627,11 @@ export function Sidebar() {
             <MenuItem
               icon={GitBranch}
               disabled={repository?.isUnborn}
-              onSelect={() => setShowBranchDialog(true)}
+              onSelect={() => openCreateBranchDialog()}
             >
               {t('sidebar.contextMenu.newBranch')}
             </MenuItem>
-            <MenuItem
-              icon={Tag}
-              disabled={repository?.isUnborn}
-              onSelect={() => setShowTagDialog(true)}
-            >
+            <MenuItem icon={Tag} disabled={repository?.isUnborn} onSelect={() => openTagDialog()}>
               {t('sidebar.contextMenu.newTag')}
             </MenuItem>
             <MenuItem icon={Cloud} onSelect={() => setShowRemoteDialog(true)}>
@@ -663,14 +654,6 @@ export function Sidebar() {
           </ContextMenuContent>
         </ContextMenuPortal>
       </ContextMenuRoot>
-
-      <CreateBranchDialog open={showBranchDialog} onOpenChange={setShowBranchDialog} />
-
-      <TagDialog
-        isOpen={showTagDialog}
-        onClose={() => setShowTagDialog(false)}
-        onTagCreated={handleTagCreated}
-      />
 
       <AddRemoteDialog open={showRemoteDialog} onOpenChange={setShowRemoteDialog} />
 
@@ -757,10 +740,10 @@ function IntegrationsSection() {
     isLoadingIssues,
     isLoadingCiRuns,
     isLoadingNotifications,
-    loadPullRequests,
-    loadIssues,
-    loadCiRuns,
-    loadNotifications,
+    reloadPullRequests,
+    reloadIssues,
+    reloadCiRuns,
+    reloadNotifications,
   } = useIntegrationStore();
 
   const openPrCount = pullRequests.filter((pr) => pr.state === PrState.Open).length;
@@ -897,18 +880,18 @@ function IntegrationsSection() {
   // Load data when connected
   useEffect(() => {
     if (connectionStatus?.connected && detectedProvider) {
-      loadPullRequests();
-      loadIssues();
-      loadCiRuns();
-      loadNotifications();
+      reloadPullRequests();
+      reloadIssues();
+      reloadCiRuns();
+      reloadNotifications();
     }
   }, [
     connectionStatus?.connected,
     detectedProvider,
-    loadPullRequests,
-    loadIssues,
-    loadCiRuns,
-    loadNotifications,
+    reloadPullRequests,
+    reloadIssues,
+    reloadCiRuns,
+    reloadNotifications,
   ]);
 
   // Don't show section if no provider detected

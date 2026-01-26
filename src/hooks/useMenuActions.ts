@@ -7,8 +7,8 @@ import { toast } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, stashApi } from '@/services/api';
+import { useDialogStore } from '@/store/dialogStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useStagingStore } from '@/store/stagingStore';
 import { MenuAction } from '@/types';
 
@@ -17,7 +17,7 @@ export function useMenuActions() {
   const { openRepository, closeRepository, refreshRepository, repository, branches } =
     useRepositoryStore();
   const { stageAll, unstageAll } = useStagingStore();
-  const { setShowSettings, showSettings } = useSettingsStore();
+  const { openSettingsDialog } = useDialogStore();
   const currentBranch = branches.find((b) => b.isHead);
 
   const handleMenuAction = useCallback(
@@ -44,7 +44,7 @@ export function useMenuActions() {
           break;
 
         case MenuAction.Settings:
-          setShowSettings(!showSettings);
+          openSettingsDialog();
           break;
 
         case MenuAction.ToggleSidebar:
@@ -159,8 +159,7 @@ export function useMenuActions() {
       currentBranch,
       stageAll,
       unstageAll,
-      setShowSettings,
-      showSettings,
+      openSettingsDialog,
     ]
   );
 

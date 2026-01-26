@@ -32,6 +32,7 @@ pub async fn merge_branch(
             options.no_ff,
             options.squash,
             options.ff_only,
+            options.no_commit,
         )?;
 
         if result.success {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   History,
@@ -15,7 +15,6 @@ import {
   GitBranch,
   Check,
   Copy,
-  Loader2,
 } from 'lucide-react';
 import { reflogApi, branchApi } from '@/services/api';
 import { ReflogAction } from '@/types';
@@ -34,6 +33,7 @@ import {
   Input,
   Select,
   SelectItem,
+  VirtualList,
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -42,7 +42,7 @@ import { copyToClipboard } from '@/lib/actions';
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
 const btnSmallClass =
-  'flex items-center gap-1 py-1 px-2 text-xs rounded cursor-pointer transition-colors border';
+  'flex items-center justify-center w-6 h-6 p-0 rounded cursor-pointer transition-colors border bg-(--bg-secondary) border-(--border-color) text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)';
 
 interface ReflogViewProps {
   onRefresh?: () => void;
@@ -85,42 +85,47 @@ const PAGE_SIZE = 50;
 export function ReflogView({ onRefresh }: ReflogViewProps) {
   const { t } = useTranslation();
 
-  const getActionLabel = (action: ReflogEntry['action']): string => {
-    if (typeof action === 'object' && 'Other' in action) {
-      return action.Other;
-    }
-    switch (action) {
-      case ReflogAction.Commit:
-        return t('reflog.actions.commit');
-      case ReflogAction.CommitAmend:
-        return t('reflog.actions.amend');
-      case ReflogAction.CommitInitial:
-        return t('reflog.actions.initial');
-      case ReflogAction.Checkout:
-        return t('reflog.actions.checkout');
-      case ReflogAction.Merge:
-        return t('reflog.actions.merge');
-      case ReflogAction.Rebase:
-        return t('reflog.actions.rebase');
-      case ReflogAction.Reset:
-        return t('reflog.actions.reset');
-      case ReflogAction.CherryPick:
-        return t('reflog.actions.cherryPick');
-      case ReflogAction.Revert:
-        return t('reflog.actions.revert');
-      case ReflogAction.Pull:
-        return t('reflog.actions.pull');
-      case ReflogAction.Clone:
-        return t('reflog.actions.clone');
-      case ReflogAction.Branch:
-        return t('reflog.actions.branch');
-      case ReflogAction.Stash:
-        return t('reflog.actions.stash');
-      default:
-        return t('reflog.actions.other');
-    }
-  };
+  const getActionLabel = useCallback(
+    (action: ReflogEntry['action']): string => {
+      if (typeof action === 'object' && 'Other' in action) {
+        return action.Other;
+      }
+      switch (action) {
+        case ReflogAction.Commit:
+          return t('reflog.actions.commit');
+        case ReflogAction.CommitAmend:
+          return t('reflog.actions.amend');
+        case ReflogAction.CommitInitial:
+          return t('reflog.actions.initial');
+        case ReflogAction.Checkout:
+          return t('reflog.actions.checkout');
+        case ReflogAction.Merge:
+          return t('reflog.actions.merge');
+        case ReflogAction.Rebase:
+          return t('reflog.actions.rebase');
+        case ReflogAction.Reset:
+          return t('reflog.actions.reset');
+        case ReflogAction.CherryPick:
+          return t('reflog.actions.cherryPick');
+        case ReflogAction.Revert:
+          return t('reflog.actions.revert');
+        case ReflogAction.Pull:
+          return t('reflog.actions.pull');
+        case ReflogAction.Clone:
+          return t('reflog.actions.clone');
+        case ReflogAction.Branch:
+          return t('reflog.actions.branch');
+        case ReflogAction.Stash:
+          return t('reflog.actions.stash');
+        default:
+          return t('reflog.actions.other');
+      }
+    },
+    [t]
+  );
+
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<ReflogEntry | null>(null);
   const [availableRefs, setAvailableRefs] = useState<string[]>(['HEAD']);
   const [currentRef, setCurrentRef] = useState('HEAD');
@@ -131,28 +136,34 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [branchName, setBranchName] = useState('');
 
-  const listRef = useRef<HTMLDivElement>(null);
   const { loadBranches, loadCommits } = useRepositoryStore();
 
-  const loadReflog = useCallback(async (refname: string) => {
-    setIsLoading(true);
-    setError(null);
-    setHasMore(true);
-    try {
-      const reflogEntries = await reflogApi.list({
-        refname,
-        limit: PAGE_SIZE,
-        skip: null,
-      });
-      setEntries(reflogEntries);
-      setHasMore(reflogEntries.length >= PAGE_SIZE);
-    } catch (err) {
-      console.error('Failed to load reflog:', err);
-      setError(t('reflog.failedToLoad'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const loadReflog = useCallback(
+    async (refname: string) => {
+      setIsLoading(true);
+      setError(null);
+      setHasMore(true);
+      try {
+        const [reflogEntries, count] = await Promise.all([
+          reflogApi.list({
+            refname,
+            limit: PAGE_SIZE,
+            skip: null,
+          }),
+          reflogApi.count(refname),
+        ]);
+        setEntries(reflogEntries);
+        setTotalCount(count);
+        setHasMore(reflogEntries.length >= PAGE_SIZE);
+      } catch (err) {
+        console.error('Failed to load reflog:', err);
+        setError(t('reflog.failedToLoad'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [t]
+  );
 
   const loadMoreEntries = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -175,17 +186,6 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     }
   }, [currentRef, entries.length, hasMore, isLoadingMore]);
 
-  const handleScroll = useCallback(() => {
-    if (!listRef.current || isLoadingMore || !hasMore) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    const scrollThreshold = 200;
-
-    if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
-      loadMoreEntries();
-    }
-  }, [isLoadingMore, hasMore, loadMoreEntries]);
-
   const loadAvailableRefs = useCallback(async () => {
     try {
       const refs = await reflogApi.refs();
@@ -205,7 +205,8 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     setSelectedEntry(null);
   };
 
-  const handleCheckout = async (entry: ReflogEntry) => {
+  const handleCheckout = async (entry: ReflogEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       await reflogApi.checkout(entry.reflogRef);
       await loadBranches();
@@ -215,6 +216,12 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       console.error('Failed to checkout:', err);
       setError(getErrorMessage(err));
     }
+  };
+
+  const handleOpenBranchDialog = (entry: ReflogEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedEntry(entry);
+    setShowBranchDialog(true);
   };
 
   const handleCreateBranch = async () => {
@@ -236,6 +243,11 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     }
   };
 
+  const handleCopySha = (entry: ReflogEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    copyToClipboard(entry.newOid);
+  };
+
   const getRefDisplayName = (ref: string) => {
     if (ref === 'HEAD') return 'HEAD';
     return ref.replace('refs/heads/', '');
@@ -243,7 +255,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
 
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary)">
-      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color) shrink-0">
         <div className="flex items-center gap-2 font-medium text-(--text-primary)">
           <History size={16} />
           <span>{t('reflog.title')}</span>
@@ -259,7 +271,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
             ))}
           </Select>
           <span className="px-1.5 text-xs bg-(--bg-tertiary) rounded-full text-(--text-secondary)">
-            {entries.length}
+            {totalCount ?? entries.length}
           </span>
         </div>
         <button
@@ -273,7 +285,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-xs">
+        <div className="flex items-center gap-2 py-2 px-3 m-2 bg-error/10 text-error rounded text-xs shrink-0">
           <AlertCircle size={14} />
           <span className="flex-1">{error}</span>
           <button
@@ -285,29 +297,30 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2" ref={listRef} onScroll={handleScroll}>
-        {entries.length === 0 ? (
-          <div className="py-6 text-center text-(--text-muted) text-sm">
-            {t('reflog.noEntries')}
-          </div>
-        ) : (
-          entries.map((entry) => {
-            const Icon = getActionIcon(entry.action);
-            const isSelected = selectedEntry?.reflogRef === entry.reflogRef;
+      <VirtualList
+        items={entries}
+        getItemKey={(entry) => entry.reflogRef}
+        itemHeight={64}
+        isLoading={isLoading}
+        emptyMessage={t('reflog.noEntries')}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={loadMoreEntries}
+        loadingMoreMessage={t('reflog.loadingMore')}
+        selectedItemKey={selectedEntry?.reflogRef}
+        onItemClick={(entry) =>
+          setSelectedEntry(selectedEntry?.reflogRef === entry.reflogRef ? null : entry)
+        }
+        className="flex-1"
+      >
+        {(entry) => {
+          const Icon = getActionIcon(entry.action);
+          return (
+            <>
+              <Icon size={14} className="text-(--accent-color) mt-0.5 shrink-0" />
 
-            return (
-              <div
-                key={entry.reflogRef}
-                className={cn(
-                  'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
-                  isSelected
-                    ? 'bg-(--bg-active) border-(--accent-color)'
-                    : 'bg-(--bg-primary) border-transparent hover:bg-(--bg-hover)'
-                )}
-                onClick={() => setSelectedEntry(isSelected ? null : entry)}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon size={14} className="text-(--accent-color)" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-semibold text-(--accent-color)">
                     {entry.shortNewOid}
                   </span>
@@ -315,67 +328,40 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
                     {getActionLabel(entry.action)}
                   </span>
                 </div>
-                <div className="text-sm text-(--text-primary) mb-1 truncate">{entry.message}</div>
+                <div className="text-sm text-(--text-primary) truncate">{entry.message}</div>
                 <div className="flex items-center gap-3 text-xs text-(--text-muted)">
                   <span>{entry.committerName}</span>
                   <span>{formatTimestamp(entry.timestamp)}</span>
                 </div>
-                {isSelected && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-(--border-color)">
-                    <button
-                      className={cn(
-                        btnSmallClass,
-                        'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCheckout(entry);
-                      }}
-                      title={t('reflog.entry.checkoutTitle')}
-                    >
-                      <Check size={12} />
-                      {t('reflog.entry.checkout')}
-                    </button>
-                    <button
-                      className={cn(
-                        btnSmallClass,
-                        'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowBranchDialog(true);
-                      }}
-                      title={t('reflog.entry.branchTitle')}
-                    >
-                      <GitBranch size={12} />
-                      {t('reflog.entry.branch')}
-                    </button>
-                    <button
-                      className={cn(
-                        btnSmallClass,
-                        'bg-(--bg-secondary) border-(--border-color) text-(--text-primary) hover:bg-(--bg-hover)'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(entry.newOid);
-                      }}
-                      title={t('reflog.entry.copyShaTitle')}
-                    >
-                      <Copy size={12} />
-                    </button>
-                  </div>
-                )}
               </div>
-            );
-          })
-        )}
-        {isLoadingMore && (
-          <div className="flex items-center justify-center gap-2 p-3 text-(--text-secondary) text-xs">
-            <Loader2 size={16} className="animate-spin" />
-            <span>{t('reflog.loadingMore')}</span>
-          </div>
-        )}
-      </div>
+
+              <div className="flex gap-1 shrink-0">
+                <button
+                  className={cn(btnSmallClass)}
+                  onClick={(e) => handleCheckout(entry, e)}
+                  title={t('reflog.entry.checkoutTitle')}
+                >
+                  <Check size={12} />
+                </button>
+                <button
+                  className={cn(btnSmallClass)}
+                  onClick={(e) => handleOpenBranchDialog(entry, e)}
+                  title={t('reflog.entry.branchTitle')}
+                >
+                  <GitBranch size={12} />
+                </button>
+                <button
+                  className={cn(btnSmallClass)}
+                  onClick={(e) => handleCopySha(entry, e)}
+                  title={t('reflog.entry.copyShaTitle')}
+                >
+                  <Copy size={12} />
+                </button>
+              </div>
+            </>
+          );
+        }}
+      </VirtualList>
 
       <Dialog open={showBranchDialog} onOpenChange={setShowBranchDialog}>
         <DialogContent className="max-w-100">

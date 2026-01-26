@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { events } from '@/bindings/api';
 import i18n from '@/i18n';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { normalizePath } from '@/lib/utils';
 import { integrationApi } from '@/services/api';
 import { PrState, IssueState } from '@/types';
 import type {
@@ -21,8 +22,31 @@ import type {
   CreateIssueOptions,
 } from '@/types';
 
+// Per-repository cache for integration data
+interface IntegrationRepoCache {
+  repoInfo: IntegrationRepoInfo | null;
+  pullRequests: PullRequest[];
+  selectedPr: PullRequestDetail | null;
+  prFilter: PrState;
+  prsPage: number;
+  prsHasMore: boolean;
+  issues: Issue[];
+  selectedIssue: IssueDetail | null;
+  issueFilter: IssueState;
+  issuesPage: number;
+  issuesHasMore: boolean;
+  ciRuns: CIRun[];
+  ciRunsPage: number;
+  ciRunsHasMore: boolean;
+  notifications: Notification[];
+  unreadCount: number;
+  notificationFilter: boolean;
+  notificationsPage: number;
+  notificationsHasMore: boolean;
+}
+
 interface IntegrationState {
-  // Connection status
+  // Connection status (provider-level, not cached per-repo)
   detectedProvider: DetectedProvider | null;
   connectionStatus: IntegrationStatus | null;
   isConnecting: boolean;
@@ -64,6 +88,9 @@ interface IntegrationState {
   isLoadingNotifications: boolean;
   isLoadingMoreNotifications: boolean;
 
+  // Per-repository cache
+  repoCache: Map<string, IntegrationRepoCache>;
+
   // Error state
   error: string | null;
 
@@ -76,7 +103,18 @@ interface IntegrationState {
 
   loadRepoInfo: () => Promise<void>;
 
-  loadPullRequests: (state?: PrState) => Promise<void>;
+  // Soft load (keeps existing data, updates in place)
+  loadPullRequests: () => Promise<void>;
+  loadIssues: () => Promise<void>;
+  loadCiRuns: () => Promise<void>;
+  loadNotifications: () => Promise<void>;
+
+  // Hard reload (clears data first, shows loading state)
+  reloadPullRequests: (state?: PrState) => Promise<void>;
+  reloadIssues: (state?: IssueState) => Promise<void>;
+  reloadCiRuns: () => Promise<void>;
+  reloadNotifications: (all?: boolean) => Promise<void>;
+
   loadMorePullRequests: () => Promise<void>;
   getPullRequest: (number: number) => Promise<void>;
   createPullRequest: (options: CreatePrOptions) => Promise<PullRequest>;
@@ -85,7 +123,6 @@ interface IntegrationState {
   clearSelectedPr: () => void;
   clearPrView: () => void;
 
-  loadIssues: (state?: IssueState) => Promise<void>;
   loadMoreIssues: () => Promise<void>;
   getIssue: (number: number) => Promise<void>;
   createIssue: (options: CreateIssueOptions) => Promise<Issue>;
@@ -93,17 +130,21 @@ interface IntegrationState {
   clearSelectedIssue: () => void;
   clearIssueView: () => void;
 
-  loadCiRuns: () => Promise<void>;
   loadMoreCiRuns: () => Promise<void>;
   clearCiView: () => void;
   getCommitStatus: (sha: string) => Promise<CommitStatus>;
 
-  loadNotifications: (all?: boolean) => Promise<void>;
   loadMoreNotifications: () => Promise<void>;
   markNotificationRead: (threadId: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
   setNotificationFilter: (all: boolean) => void;
   clearNotificationsView: () => void;
+
+  // Cache management
+  saveToCache: (repoPath: string) => void;
+  restoreFromCache: (repoPath: string) => boolean;
+  clearCache: (repoPath: string) => void;
+  refresh: (force?: boolean) => void;
 
   clearError: () => void;
   reset: () => void;
@@ -140,6 +181,7 @@ const initialState = {
   notificationsHasMore: false,
   isLoadingNotifications: false,
   isLoadingMoreNotifications: false,
+  repoCache: new Map<string, IntegrationRepoCache>(),
   error: null,
 };
 
@@ -194,9 +236,9 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       const { connectionStatus } = get();
       if (connectionStatus?.connected) {
         get().loadRepoInfo();
-        get().loadPullRequests();
-        get().loadIssues();
-        get().loadNotifications();
+        get().reloadPullRequests();
+        get().reloadIssues();
+        get().reloadNotifications();
       }
     } catch (error) {
       console.error('Failed to start OAuth:', error);
@@ -269,7 +311,27 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     }
   },
 
-  loadPullRequests: async (state?: PrState) => {
+  // Soft load - keeps existing data visible, updates in place when done
+  loadPullRequests: async () => {
+    const { detectedProvider, connectionStatus, prFilter } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+
+    try {
+      const result = await integrationApi.listPrs(detectedProvider, prFilter, 1);
+      set({
+        pullRequests: result.items,
+        prsPage: 1,
+        prsHasMore: result.hasMore,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Failed to load pull requests:', error);
+      // Silent fail on soft load - keep existing data
+    }
+  },
+
+  // Hard reload - clears data first, shows loading state
+  reloadPullRequests: async (state?: PrState) => {
     const { detectedProvider, connectionStatus, prFilter } = get();
     if (!detectedProvider || !connectionStatus?.connected) return;
 
@@ -343,7 +405,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     const pr = await integrationApi.createPr(detectedProvider, options);
 
     // Refresh PR list
-    get().loadPullRequests();
+    get().reloadPullRequests();
 
     return pr;
   },
@@ -358,13 +420,13 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
     // Refresh PR list, CI runs and clear selection
     set({ selectedPr: null });
-    get().loadPullRequests();
-    get().loadCiRuns();
+    get().reloadPullRequests();
+    get().reloadCiRuns();
   },
 
   setPrFilter: (state: PrState) => {
     set({ prFilter: state });
-    get().loadPullRequests(state);
+    get().reloadPullRequests(state);
   },
 
   clearSelectedPr: () => set({ selectedPr: null }),
@@ -378,7 +440,27 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       isLoadingMorePrs: false,
     }),
 
-  loadIssues: async (state?: IssueState) => {
+  // Soft load - keeps existing data visible, updates in place when done
+  loadIssues: async () => {
+    const { detectedProvider, connectionStatus, issueFilter } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+
+    try {
+      const result = await integrationApi.listIssues(detectedProvider, issueFilter, 1);
+      set({
+        issues: result.items,
+        issuesPage: 1,
+        issuesHasMore: result.hasMore,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Failed to load issues:', error);
+      // Silent fail on soft load - keep existing data
+    }
+  },
+
+  // Hard reload - clears data first, shows loading state
+  reloadIssues: async (state?: IssueState) => {
     const { detectedProvider, connectionStatus, issueFilter } = get();
     if (!detectedProvider || !connectionStatus?.connected) return;
 
@@ -458,14 +540,14 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     const issue = await integrationApi.createIssue(detectedProvider, options);
 
     // Refresh issue list
-    get().loadIssues();
+    get().reloadIssues();
 
     return issue;
   },
 
   setIssueFilter: (state: IssueState) => {
     set({ issueFilter: state });
-    get().loadIssues(state);
+    get().reloadIssues(state);
   },
 
   clearSelectedIssue: () => set({ selectedIssue: null }),
@@ -479,7 +561,27 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       isLoadingMoreIssues: false,
     }),
 
+  // Soft load - keeps existing data visible, updates in place when done
   loadCiRuns: async () => {
+    const { detectedProvider, connectionStatus } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+
+    try {
+      const result = await integrationApi.listCiRuns(detectedProvider, 1);
+      set({
+        ciRuns: result.runs,
+        ciRunsPage: 1,
+        ciRunsHasMore: result.hasMore,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Failed to load CI runs:', error);
+      // Silent fail on soft load - keep existing data
+    }
+  },
+
+  // Hard reload - clears data first, shows loading state
+  reloadCiRuns: async () => {
     const { detectedProvider, connectionStatus } = get();
     if (!detectedProvider || !connectionStatus?.connected) return;
 
@@ -548,7 +650,31 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
     return await integrationApi.getCommitStatus(detectedProvider, sha);
   },
 
-  loadNotifications: async (all?: boolean) => {
+  // Soft load - keeps existing data visible, updates in place when done
+  loadNotifications: async () => {
+    const { detectedProvider, connectionStatus, notificationFilter } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+
+    try {
+      const [result, unreadCount] = await Promise.all([
+        integrationApi.listNotifications(detectedProvider, notificationFilter, 1),
+        integrationApi.getUnreadCount(detectedProvider),
+      ]);
+      set({
+        notifications: result.items,
+        notificationsPage: 1,
+        notificationsHasMore: result.hasMore,
+        unreadCount,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+      // Silent fail on soft load - keep existing data
+    }
+  },
+
+  // Hard reload - clears data first, shows loading state
+  reloadNotifications: async (all?: boolean) => {
     const { detectedProvider, connectionStatus, notificationFilter } = get();
     if (!detectedProvider || !connectionStatus?.connected) return;
 
@@ -663,7 +789,7 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   setNotificationFilter: (all: boolean) => {
     set({ notificationFilter: all });
-    get().loadNotifications(all);
+    get().reloadNotifications(all);
   },
 
   clearNotificationsView: () =>
@@ -676,9 +802,110 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       isLoadingMoreNotifications: false,
     }),
 
+  // Save current state to cache for a repository
+  saveToCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const state = get();
+    const cache: IntegrationRepoCache = {
+      repoInfo: state.repoInfo,
+      pullRequests: state.pullRequests,
+      selectedPr: state.selectedPr,
+      prFilter: state.prFilter,
+      prsPage: state.prsPage,
+      prsHasMore: state.prsHasMore,
+      issues: state.issues,
+      selectedIssue: state.selectedIssue,
+      issueFilter: state.issueFilter,
+      issuesPage: state.issuesPage,
+      issuesHasMore: state.issuesHasMore,
+      ciRuns: state.ciRuns,
+      ciRunsPage: state.ciRunsPage,
+      ciRunsHasMore: state.ciRunsHasMore,
+      notifications: state.notifications,
+      unreadCount: state.unreadCount,
+      notificationFilter: state.notificationFilter,
+      notificationsPage: state.notificationsPage,
+      notificationsHasMore: state.notificationsHasMore,
+    };
+    const newCache = new Map(state.repoCache);
+    newCache.set(key, cache);
+    set({ repoCache: newCache });
+  },
+
+  // Restore state from cache for a repository
+  restoreFromCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const cached = get().repoCache.get(key);
+    if (!cached) return false;
+
+    set({
+      repoInfo: cached.repoInfo,
+      pullRequests: cached.pullRequests,
+      selectedPr: cached.selectedPr,
+      prFilter: cached.prFilter,
+      prsPage: cached.prsPage,
+      prsHasMore: cached.prsHasMore,
+      issues: cached.issues,
+      selectedIssue: cached.selectedIssue,
+      issueFilter: cached.issueFilter,
+      issuesPage: cached.issuesPage,
+      issuesHasMore: cached.issuesHasMore,
+      ciRuns: cached.ciRuns,
+      ciRunsPage: cached.ciRunsPage,
+      ciRunsHasMore: cached.ciRunsHasMore,
+      notifications: cached.notifications,
+      unreadCount: cached.unreadCount,
+      notificationFilter: cached.notificationFilter,
+      notificationsPage: cached.notificationsPage,
+      notificationsHasMore: cached.notificationsHasMore,
+      // Clear loading states
+      isLoadingPrs: false,
+      isLoadingMorePrs: false,
+      isLoadingIssues: false,
+      isLoadingMoreIssues: false,
+      isLoadingCiRuns: false,
+      isLoadingMoreCiRuns: false,
+      isLoadingNotifications: false,
+      isLoadingMoreNotifications: false,
+      error: null,
+    });
+    return true;
+  },
+
+  // Clear cache for a repository (called when tab is closed)
+  clearCache: (repoPath: string) => {
+    const key = normalizePath(repoPath);
+    const newCache = new Map(get().repoCache);
+    newCache.delete(key);
+    set({ repoCache: newCache });
+  },
+
+  // Refresh all integration data
+  // force=false (default): soft refresh - keeps cached data visible while updating
+  // force=true: hard refresh - clears data, shows loading state
+  refresh: (force = false) => {
+    const { connectionStatus, detectedProvider } = get();
+    if (!connectionStatus?.connected || !detectedProvider) return;
+
+    if (force) {
+      get().reloadPullRequests();
+      get().reloadIssues();
+      get().reloadCiRuns();
+      get().reloadNotifications();
+    } else {
+      get().loadPullRequests();
+      get().loadIssues();
+      get().loadCiRuns();
+      get().loadNotifications();
+    }
+  },
+
   clearError: () => set({ error: null }),
 
-  reset: () => set(initialState),
+  reset: () => {
+    const { repoCache } = get();
+    set({ ...initialState, repoCache }); // Preserve cache across resets
+  },
 }));
 
 // Setup integration event listeners

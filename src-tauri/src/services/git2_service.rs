@@ -1834,7 +1834,8 @@ impl Git2Service {
                             | git2::Status::WT_MODIFIED
                             | git2::Status::WT_DELETED
                             | git2::Status::WT_RENAMED
-                            | git2::Status::WT_TYPECHANGE,
+                            | git2::Status::WT_TYPECHANGE
+                            | git2::Status::CONFLICTED,
                     )
                 });
 
@@ -1847,16 +1848,44 @@ impl Git2Service {
                         .and_then(|h| h.target())
                         .map(|oid| oid.to_string());
 
-                    let parent_edges = if let Some(ref parent_oid) = head_oid {
-                        // Reserve lane 0 for uncommitted, HEAD continues on lane 0
-                        lane_state.get_lane_for_commit("uncommitted");
-                        vec![GraphEdge {
+                    // Reserve lane 0 for uncommitted
+                    lane_state.get_lane_for_commit("uncommitted");
+
+                    let mut parent_oids: Vec<String> = Vec::new();
+                    let mut parent_edges: Vec<GraphEdge> = Vec::new();
+
+                    // Add HEAD as first parent
+                    if let Some(ref parent_oid) = head_oid {
+                        parent_oids.push(parent_oid.clone());
+                        parent_edges.push(GraphEdge {
                             parent_oid: parent_oid.clone(),
                             parent_lane: 0,
                             edge_type: EdgeType::Straight,
-                        }]
+                        });
+                    }
+
+                    // Check for merge in progress - add MERGE_HEAD as second parent
+                    let merge_head_path = self.repo.path().join("MERGE_HEAD");
+                    let is_merging = if merge_head_path.exists() {
+                        if let Ok(merge_head_content) = std::fs::read_to_string(&merge_head_path) {
+                            let merge_head_oid = merge_head_content.trim();
+                            if !merge_head_oid.is_empty() {
+                                parent_oids.push(merge_head_oid.to_string());
+                                let merge_parent_lane = lane_state.get_parent_lane(merge_head_oid);
+                                parent_edges.push(GraphEdge {
+                                    parent_oid: merge_head_oid.to_string(),
+                                    parent_lane: merge_parent_lane,
+                                    edge_type: EdgeType::MergePreview,
+                                });
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
                     } else {
-                        vec![]
+                        false
                     };
 
                     let now = chrono::Utc::now();
@@ -1864,7 +1893,7 @@ impl Git2Service {
                         commit: Commit {
                             oid: "uncommitted".to_string(),
                             short_oid: "".to_string(),
-                            parent_oids: head_oid.map(|o| vec![o]).unwrap_or_default(),
+                            parent_oids,
                             message: "Uncommitted Changes".to_string(),
                             summary: "Uncommitted Changes".to_string(),
                             author: crate::models::Signature {
@@ -1878,7 +1907,7 @@ impl Git2Service {
                                 timestamp: now,
                             },
                             timestamp: now,
-                            is_merge: false,
+                            is_merge: is_merging,
                             signature: None,
                         },
                         lane: 0,
@@ -2611,6 +2640,16 @@ impl Git2Service {
             .collect();
 
         Ok(entries)
+    }
+
+    /// Get total count of reflog entries for a reference
+    pub fn get_reflog_count(&self, refname: &str) -> Result<usize> {
+        let reflog = self
+            .repo
+            .reflog(refname)
+            .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
+
+        Ok(reflog.len())
     }
 
     /// Get list of available reflogs (references that have reflog)

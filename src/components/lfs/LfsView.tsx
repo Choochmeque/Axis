@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   HardDrive,
@@ -25,8 +25,13 @@ import {
   Button,
   FormField,
   Input,
+  VirtualList,
 } from '@/components/ui';
 import type { LfsFile } from '@/bindings/api';
+
+type LfsListItem =
+  | { type: 'header'; label: string; icon: 'downloaded' | 'pointer'; count: number }
+  | { type: 'file'; file: LfsFile };
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -92,6 +97,32 @@ export function LfsView() {
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
   };
+
+  const downloadedFiles = files.filter((f) => f.isDownloaded);
+  const pointerFiles = files.filter((f) => !f.isDownloaded);
+
+  const fileListItems = useMemo<LfsListItem[]>(() => {
+    const items: LfsListItem[] = [];
+    if (downloadedFiles.length > 0) {
+      items.push({
+        type: 'header',
+        label: t('lfs.files.downloaded'),
+        icon: 'downloaded',
+        count: downloadedFiles.length,
+      });
+      items.push(...downloadedFiles.map((file): LfsListItem => ({ type: 'file', file })));
+    }
+    if (pointerFiles.length > 0) {
+      items.push({
+        type: 'header',
+        label: t('lfs.files.pointers'),
+        icon: 'pointer',
+        count: pointerFiles.length,
+      });
+      items.push(...pointerFiles.map((file): LfsListItem => ({ type: 'file', file })));
+    }
+    return items;
+  }, [downloadedFiles, pointerFiles, t]);
 
   // Not installed view
   if (status && !status.isInstalled) {
@@ -163,9 +194,6 @@ export function LfsView() {
       </div>
     );
   }
-
-  const downloadedFiles = files.filter((f) => f.isDownloaded);
-  const pointerFiles = files.filter((f) => !f.isDownloaded);
 
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary)">
@@ -288,41 +316,26 @@ export function LfsView() {
         )}
 
         {activeTab === 'files' && (
-          <>
-            {files.length === 0 ? (
-              <div className="py-6 text-center text-(--text-muted) text-sm">
-                {t('lfs.files.empty')}
-              </div>
-            ) : (
-              <>
-                {/* Downloaded files */}
-                {downloadedFiles.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 px-2 py-1 text-xs text-(--text-muted) font-medium">
-                      <Check size={12} className="text-success" />
-                      {t('lfs.files.downloaded')} ({downloadedFiles.length})
-                    </div>
-                    {downloadedFiles.map((file) => (
-                      <LfsFileItem key={file.path} file={file} formatSize={formatSize} />
-                    ))}
-                  </div>
-                )}
-
-                {/* Pointer files (not downloaded) */}
-                {pointerFiles.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 px-2 py-1 text-xs text-(--text-muted) font-medium">
-                      <FileBox size={12} className="text-warning" />
-                      {t('lfs.files.pointers')} ({pointerFiles.length})
-                    </div>
-                    {pointerFiles.map((file) => (
-                      <LfsFileItem key={file.path} file={file} formatSize={formatSize} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </>
+          <VirtualList
+            items={fileListItems}
+            getItemKey={(item, index) =>
+              item.type === 'header' ? `header-${index}` : item.file.path
+            }
+            itemHeight={36}
+            emptyMessage={t('lfs.files.empty')}
+            className="h-full"
+            itemClassName={(item) =>
+              item.type === 'header' ? '!cursor-default !hover:bg-transparent' : ''
+            }
+          >
+            {(item) =>
+              item.type === 'header' ? (
+                <LfsHeaderItem label={item.label} icon={item.icon} count={item.count} />
+              ) : (
+                <LfsFileItemContent file={item.file} formatSize={formatSize} />
+              )
+            }
+          </VirtualList>
         )}
       </div>
 
@@ -360,26 +373,43 @@ export function LfsView() {
   );
 }
 
-interface LfsFileItemProps {
+interface LfsHeaderItemProps {
+  label: string;
+  icon: 'downloaded' | 'pointer';
+  count: number;
+}
+
+function LfsHeaderItem({ label, icon, count }: LfsHeaderItemProps) {
+  return (
+    <div className="flex items-center gap-2 text-xs text-(--text-muted) font-medium">
+      {icon === 'downloaded' ? (
+        <Check size={12} className="text-success" />
+      ) : (
+        <FileBox size={12} className="text-warning" />
+      )}
+      {label} ({count})
+    </div>
+  );
+}
+
+interface LfsFileItemContentProps {
   file: LfsFile;
   formatSize: (bytes: number) => string;
 }
 
-function LfsFileItem({ file, formatSize }: LfsFileItemProps) {
+function LfsFileItemContent({ file, formatSize }: LfsFileItemContentProps) {
   return (
-    <div className="flex items-center justify-between p-2 mb-1 rounded bg-(--bg-primary) hover:bg-(--bg-hover)">
-      <div className="flex items-center gap-2 min-w-0">
-        {file.isDownloaded ? (
-          <Check size={14} className="text-success shrink-0" />
-        ) : (
-          <FileBox size={14} className="text-warning shrink-0" />
-        )}
-        <span className="text-sm text-(--text-primary) truncate">{file.path}</span>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs text-(--text-muted)">{formatSize(file.size)}</span>
-        <span className="font-mono text-xs text-(--text-muted)">{file.oid.substring(0, 8)}</span>
-      </div>
-    </div>
+    <>
+      {file.isDownloaded ? (
+        <Check size={14} className="text-success shrink-0" />
+      ) : (
+        <FileBox size={14} className="text-warning shrink-0" />
+      )}
+      <span className="flex-1 text-sm text-(--text-primary) truncate">{file.path}</span>
+      <span className="text-xs text-(--text-muted) shrink-0">{formatSize(file.size)}</span>
+      <span className="font-mono text-xs text-(--text-muted) shrink-0">
+        {file.oid.substring(0, 8)}
+      </span>
+    </>
   );
 }

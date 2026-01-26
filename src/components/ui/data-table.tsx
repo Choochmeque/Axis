@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useImperativeHandle, forwardRef, type Ref } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,41 +7,55 @@ import {
   type ColumnResizeMode,
   type Row,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
+
+export interface DataTableRef {
+  scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
+}
 
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData, unknown>[];
   selectedRowId?: string | null;
   onRowClick?: (row: TData) => void;
+  onRowContextMenu?: (row: TData, event: React.MouseEvent) => void;
   getRowId?: (row: TData) => string;
   resizable?: boolean;
   columnResizeMode?: ColumnResizeMode;
   className?: string;
   headerClassName?: string;
   rowClassName?: string | ((row: Row<TData>) => string);
+  rowWrapper?: (row: TData, children: React.ReactNode) => React.ReactNode;
   onScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
   emptyMessage?: string;
   isLoading?: boolean;
   loadingMessage?: string;
+  rowHeight?: number;
 }
 
-export function DataTable<TData>({
-  data,
-  columns,
-  selectedRowId,
-  onRowClick,
-  getRowId,
-  resizable = true,
-  columnResizeMode = 'onChange',
-  className,
-  headerClassName,
-  rowClassName,
-  onScroll,
-  emptyMessage = 'No data',
-  isLoading = false,
-  loadingMessage = 'Loading...',
-}: DataTableProps<TData>) {
+function DataTableInner<TData>(
+  {
+    data,
+    columns,
+    selectedRowId,
+    onRowClick,
+    onRowContextMenu,
+    getRowId,
+    resizable = true,
+    columnResizeMode = 'onChange',
+    className,
+    headerClassName,
+    rowClassName,
+    rowWrapper,
+    onScroll,
+    emptyMessage = 'No data',
+    isLoading = false,
+    loadingMessage = 'Loading...',
+    rowHeight = 36,
+  }: DataTableProps<TData>,
+  ref: Ref<DataTableRef>
+) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const table = useReactTable({
@@ -51,6 +65,24 @@ export function DataTable<TData>({
     columnResizeMode: resizable ? columnResizeMode : undefined,
     getRowId,
   });
+
+  const { rows } = table.getRowModel();
+
+  const totalHeight = rows.length * rowHeight;
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 10,
+  });
+
+  // Expose scrollToIndex method via ref
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => {
+      virtualizer.scrollToIndex(index, { align: options?.align ?? 'center' });
+    },
+  }));
 
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -87,30 +119,36 @@ export function DataTable<TData>({
     );
   }
 
+  const virtualItems = virtualizer.getVirtualItems();
+
   return (
-    <div
-      ref={tableContainerRef}
-      className={cn('flex flex-col flex-1 min-h-0 overflow-auto', className)}
-      onScroll={handleScroll}
-    >
-      {/* Header */}
+    <div className={cn('flex flex-col flex-1 min-h-0', className)}>
+      {/* Header - fixed outside scroll area */}
       <div
         className={cn(
-          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) sticky top-0 z-10',
+          'flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) shrink-0',
           headerClassName
         )}
-        style={{ width: table.getCenterTotalSize() }}
       >
         {table.getHeaderGroups().map((headerGroup) =>
           headerGroup.headers.map((header) => (
             <div
               key={header.id}
-              className="relative"
-              style={{
-                width: header.getSize(),
-                minWidth: header.column.columnDef.minSize,
-                maxWidth: header.column.columnDef.maxSize,
-              }}
+              className={cn(
+                'relative',
+                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                  ? 'flex-1 min-w-0'
+                  : 'shrink-0'
+              )}
+              style={
+                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                  ? { minWidth: header.column.columnDef.minSize }
+                  : {
+                      width: header.getSize(),
+                      minWidth: header.column.columnDef.minSize,
+                      maxWidth: header.column.columnDef.maxSize,
+                    }
+              }
             >
               {header.isPlaceholder
                 ? null
@@ -130,33 +168,61 @@ export function DataTable<TData>({
         )}
       </div>
 
-      {/* Body */}
-      <div className="flex flex-col">
-        {table.getRowModel().rows.map((row) => (
-          <div
-            key={row.id}
-            className={getRowClassName(row)}
-            onClick={() => onRowClick?.(row.original)}
-            style={{ width: table.getCenterTotalSize() }}
-          >
-            {row.getVisibleCells().map((cell) => (
+      {/* Body - Scrollable virtualized area */}
+      <div ref={tableContainerRef} className="flex-1 overflow-auto min-h-0" onScroll={handleScroll}>
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          {virtualItems.map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            const rowContent = (
               <div
-                key={cell.id}
+                key={row.id}
+                className={getRowClassName(row)}
+                onClick={() => onRowClick?.(row.original)}
+                onContextMenu={(e) => onRowContextMenu?.(row.original, e)}
                 style={{
-                  width: cell.column.getSize(),
-                  minWidth: cell.column.columnDef.minSize,
-                  maxWidth: cell.column.columnDef.maxSize,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: rowHeight,
+                  transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                {row.getVisibleCells().map((cell) => (
+                  <div
+                    key={cell.id}
+                    className={
+                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                        ? 'flex-1 min-w-0'
+                        : 'shrink-0'
+                    }
+                    style={
+                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                        ? { minWidth: cell.column.columnDef.minSize }
+                        : {
+                            width: cell.column.getSize(),
+                            minWidth: cell.column.columnDef.minSize,
+                            maxWidth: cell.column.columnDef.maxSize,
+                          }
+                    }
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ))}
+            );
+            return rowWrapper ? rowWrapper(row.original, rowContent) : rowContent;
+          })}
+        </div>
       </div>
     </div>
   );
 }
+
+// Wrap with forwardRef to expose scrollToIndex
+export const DataTable = forwardRef(DataTableInner) as <TData>(
+  props: DataTableProps<TData> & { ref?: Ref<DataTableRef> }
+) => ReturnType<typeof DataTableInner>;
 
 // Re-export useful types and utilities from @tanstack/react-table
 export {

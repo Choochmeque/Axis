@@ -19,6 +19,7 @@ import {
   ContextMenuContent,
 } from '@/components/ui';
 import { BisectBanner } from '../merge/BisectBanner';
+import { MergeBanner } from '../merge/MergeBanner';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { Avatar } from '@/components/ui';
 import { formatShortDate } from '@/lib/dateUtils';
@@ -391,6 +392,7 @@ export function HistoryView() {
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
+      <MergeBanner onComplete={handleBisectComplete} />
       <ContextMenuRoot>
         <ContextMenuTrigger asChild>
           <div className="flex flex-col flex-1 min-h-0">

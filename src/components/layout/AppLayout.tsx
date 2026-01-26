@@ -14,6 +14,7 @@ import { BranchCompareDialog } from '../branches/BranchCompareDialog';
 import {
   CherryPickDialog,
   InteractiveRebaseDialog,
+  MergeDialog,
   RebaseDialog,
   ResetConfirmDialog,
   RevertCommitDialog,
@@ -91,6 +92,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeSettingsDialog,
     repositorySettingsDialog,
     closeRepositorySettingsDialog,
+    mergeDialog,
+    closeMergeDialog,
   } = useDialogStore();
   const { loadStatus, loadBranches, repository } = useRepositoryStore();
 
@@ -192,6 +195,19 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
         currentBranch={rebaseDialog.currentBranch || repository?.currentBranch || ''}
         targetCommit={rebaseDialog.targetCommit}
+      />
+      <MergeDialog
+        isOpen={mergeDialog.isOpen}
+        onClose={closeMergeDialog}
+        onMergeComplete={async (result) => {
+          mergeDialog.onMergeComplete?.(result);
+          await loadCommits();
+          await loadStatus();
+          await loadBranches();
+          closeMergeDialog();
+        }}
+        currentBranch={repository?.currentBranch || ''}
+        sourceBranch={mergeDialog.sourceBranch}
       />
       <ArchiveDialog
         isOpen={archiveDialog.isOpen}

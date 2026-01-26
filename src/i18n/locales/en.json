@@ -549,7 +549,7 @@
   "merge": {
     "dialog": {
       "title": "Merge Branch",
-      "currentBranch": "Current Branch",
+      "mergeInto": "Merge Into",
       "mergeFrom": "Merge From",
       "selectBranch": "Select a branch...",
       "commitMessage": "Commit Message (optional)",
@@ -557,12 +557,21 @@
       "noFastForwardDesc": "Always create a merge commit, even if fast-forward is possible",
       "squash": "Squash commits",
       "squashDesc": "Combine all commits into a single commit",
+      "commitImmediately": "Commit merged changes immediately",
+      "commitImmediatelyDesc": "If unchecked, merged changes will be staged but not committed",
       "merging": "Merging...",
       "mergeButton": "Merge",
       "abortMerge": "Abort Merge",
       "resolveConflicts": "Resolve Conflicts",
       "conflictedFiles": "Conflicted Files",
       "selectBranchError": "Please select a branch to merge"
+    },
+    "banner": {
+      "inProgress": "Merge in progress",
+      "hint": "Commit or abort the merge to continue",
+      "abort": "Abort",
+      "aborted": "Merge aborted",
+      "abortFailed": "Failed to abort merge"
     },
     "rebase": {
       "title": "Rebase Branch",
@@ -1127,6 +1136,7 @@
       "checkout": "Checkout",
       "pushRevision": "Push revision...",
       "mergeInto": "Merge into {{branch}}...",
+      "merge": "Merge...",
       "rebase": "Rebase...",
       "tag": "Tag...",
       "sign": "Sign...",

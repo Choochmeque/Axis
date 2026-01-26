@@ -657,6 +657,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       } else {
         await branchApi.checkout(branchName, { create: false, force: false, track: null });
       }
+      await get().reloadRepositoryInfo();
       await get().loadBranches();
       await get().loadCommits();
       await get().loadStatus();
@@ -713,6 +714,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         await branchApi.checkout(targetBranch, { create: false, force: true, track: null });
       }
       set({ checkoutConflict: null });
+      await get().reloadRepositoryInfo();
       await get().loadBranches();
       await get().loadCommits();
       await get().loadStatus();

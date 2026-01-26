@@ -88,6 +88,7 @@ impl GitCliService {
         no_ff: bool,
         squash: bool,
         ff_only: bool,
+        no_commit: bool,
     ) -> Result<GitCommandResult> {
         let mut args = vec!["merge"];
 
@@ -100,6 +101,10 @@ impl GitCliService {
 
         if squash {
             args.push("--squash");
+        }
+
+        if no_commit {
+            args.push("--no-commit");
         }
 
         if let Some(msg) = message {
@@ -2921,7 +2926,7 @@ mod tests {
         // Go back to default branch and merge
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", None, false, false, false)
+            .merge("feature", None, false, false, false, false)
             .expect("should merge feature branch");
 
         assert!(result.success);
@@ -2941,7 +2946,14 @@ mod tests {
 
         checkout_branch(&tmp, &default_branch);
         let result = service
-            .merge("feature", Some("Merge feature branch"), true, false, false)
+            .merge(
+                "feature",
+                Some("Merge feature branch"),
+                true,
+                false,
+                false,
+                false,
+            )
             .expect("should merge with no-ff");
 
         assert!(result.success);

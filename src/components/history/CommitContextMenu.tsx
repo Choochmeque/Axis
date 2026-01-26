@@ -42,7 +42,8 @@ export function CommitContextMenu({
   onMerge,
 }: CommitContextMenuProps) {
   const { t } = useTranslation();
-  const { repository, loadBranches, loadCommits, loadStatus } = useRepositoryStore();
+  const { repository, loadBranches, loadCommits, loadStatus, reloadRepositoryInfo } =
+    useRepositoryStore();
   const {
     openTagDialog,
     openCreateBranchDialog,
@@ -53,6 +54,7 @@ export function CommitContextMenu({
     openArchiveDialog,
     openPatchDialog,
     openBisectDialog,
+    openMergeDialog,
   } = useDialogStore();
 
   const handleCopySha = () => {
@@ -69,6 +71,7 @@ export function CommitContextMenu({
     } else {
       try {
         await branchApi.checkout(commit.oid, { create: false, force: false, track: null });
+        await reloadRepositoryInfo();
         await loadBranches();
         await loadCommits();
         await loadStatus();
@@ -92,8 +95,13 @@ export function CommitContextMenu({
   const handleMerge = () => {
     if (onMerge) {
       onMerge();
+    } else {
+      // Find a local branch ref from this commit (excluding current branch)
+      const branchRef = commit.refs.find(
+        (ref) => ref.refType === 'LocalBranch' && ref.name !== repository?.currentBranch
+      );
+      openMergeDialog({ sourceBranch: branchRef?.name });
     }
-    // TODO: Open merge dialog
   };
 
   const handleRebase = () => {
@@ -140,10 +148,8 @@ export function CommitContextMenu({
         {t('history.contextMenu.pushRevision')}
       </MenuItem>
       <MenuSeparator />
-      <MenuItem icon={GitMerge} disabled onSelect={handleMerge}>
-        {t('history.contextMenu.mergeInto', {
-          branch: repository?.currentBranch ?? 'current branch',
-        })}
+      <MenuItem icon={GitMerge} onSelect={handleMerge}>
+        {t('history.contextMenu.merge')}
       </MenuItem>
       <MenuItem icon={GitMerge} className="[&>svg]:rotate-180" onSelect={handleRebase}>
         {t('history.contextMenu.rebase')}

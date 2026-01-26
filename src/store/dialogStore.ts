@@ -5,6 +5,7 @@ import type {
   Branch,
   Commit,
   CherryPickResult,
+  MergeResult,
   RebaseResult,
   ResetMode,
   RevertResult,
@@ -143,6 +144,13 @@ interface RepositorySettingsDialogState {
   isOpen: boolean;
 }
 
+// Merge dialog state
+interface MergeDialogState {
+  isOpen: boolean;
+  sourceBranch?: string;
+  onMergeComplete?: (result: MergeResult) => void;
+}
+
 interface DialogState {
   // Tag dialog
   tagDialog: TagDialogState;
@@ -203,6 +211,9 @@ interface DialogState {
 
   // Repository settings dialog
   repositorySettingsDialog: RepositorySettingsDialogState;
+
+  // Merge dialog
+  mergeDialog: MergeDialogState;
 
   // Tag dialog actions
   openTagDialog: (options?: {
@@ -315,6 +326,13 @@ interface DialogState {
   // Repository settings dialog actions
   openRepositorySettingsDialog: () => void;
   closeRepositorySettingsDialog: () => void;
+
+  // Merge dialog actions
+  openMergeDialog: (options?: {
+    sourceBranch?: string;
+    onMergeComplete?: (result: MergeResult) => void;
+  }) => void;
+  closeMergeDialog: () => void;
 }
 
 const initialTagDialogState: TagDialogState = {
@@ -428,6 +446,12 @@ const initialRepositorySettingsDialogState: RepositorySettingsDialogState = {
   isOpen: false,
 };
 
+const initialMergeDialogState: MergeDialogState = {
+  isOpen: false,
+  sourceBranch: undefined,
+  onMergeComplete: undefined,
+};
+
 export const useDialogStore = create<DialogState>((set) => ({
   tagDialog: initialTagDialogState,
   createBranchDialog: initialCreateBranchDialogState,
@@ -449,6 +473,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   discardConfirmDialog: initialDiscardConfirmDialogState,
   settingsDialog: initialSettingsDialogState,
   repositorySettingsDialog: initialRepositorySettingsDialogState,
+  mergeDialog: initialMergeDialogState,
 
   openTagDialog: (options) => {
     set({
@@ -691,5 +716,19 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeRepositorySettingsDialog: () => {
     set({ repositorySettingsDialog: initialRepositorySettingsDialogState });
+  },
+
+  openMergeDialog: (options) => {
+    set({
+      mergeDialog: {
+        isOpen: true,
+        sourceBranch: options?.sourceBranch,
+        onMergeComplete: options?.onMergeComplete,
+      },
+    });
+  },
+
+  closeMergeDialog: () => {
+    set({ mergeDialog: initialMergeDialogState });
   },
 }));

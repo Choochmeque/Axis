@@ -42,6 +42,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     openPullDialog,
     openPushDialog,
     openBranchCompareDialog,
+    openMergeDialog,
   } = useDialogStore();
   const currentBranch = branches.find((b) => b.isHead);
   const hasUpstream = !!branch.upstream;
@@ -98,7 +99,11 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         <MenuItem icon={GitBranch} disabled={isCurrentBranch} onSelect={onCheckout}>
           {t('branches.contextMenu.checkout', { name: branch.name })}
         </MenuItem>
-        <MenuItem icon={GitMerge} disabled>
+        <MenuItem
+          icon={GitMerge}
+          disabled={isCurrentBranch}
+          onSelect={() => openMergeDialog({ sourceBranch: branch.name })}
+        >
           {t('branches.contextMenu.mergeInto', {
             source: branch.name,
             target: currentBranch?.name ?? 'current',

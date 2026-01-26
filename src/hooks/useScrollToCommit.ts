@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useRepositoryStore } from '@/store/repositoryStore';
@@ -11,14 +11,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function scrollToElement(listRef: RefObject<HTMLDivElement | null>, oid: string): void {
-  requestAnimationFrame(() => {
-    const row = listRef.current?.querySelector(`[data-oid="${oid}"]`);
-    row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+interface UseScrollToCommitOptions {
+  scrollToIndex: (index: number) => void;
 }
 
-export function useScrollToCommit(listRef: RefObject<HTMLDivElement | null>) {
+export function useScrollToCommit({ scrollToIndex }: UseScrollToCommitOptions) {
   const { t } = useTranslation();
   const [isSearching, setIsSearching] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -32,8 +29,9 @@ export function useScrollToCommit(listRef: RefObject<HTMLDivElement | null>) {
       const { commits } = useRepositoryStore.getState();
 
       // Already loaded? Scroll immediately
-      if (commits.some((c) => c.oid === oid)) {
-        scrollToElement(listRef, oid);
+      const existingIndex = commits.findIndex((c) => c.oid === oid);
+      if (existingIndex !== -1) {
+        scrollToIndex(existingIndex);
         return;
       }
 
@@ -48,9 +46,10 @@ export function useScrollToCommit(listRef: RefObject<HTMLDivElement | null>) {
         const state = useRepositoryStore.getState();
 
         // Found?
-        if (state.commits.some((c) => c.oid === oid)) {
+        const foundIndex = state.commits.findIndex((c) => c.oid === oid);
+        if (foundIndex !== -1) {
           setIsSearching(false);
-          scrollToElement(listRef, oid);
+          scrollToIndex(foundIndex);
           return;
         }
 
@@ -79,7 +78,7 @@ export function useScrollToCommit(listRef: RefObject<HTMLDivElement | null>) {
         );
       }
     },
-    [listRef, t]
+    [scrollToIndex, t]
   );
 
   const cancelScroll = useCallback(() => {

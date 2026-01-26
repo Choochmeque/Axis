@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useImperativeHandle, forwardRef, type Ref } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -9,6 +9,10 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
+
+export interface DataTableRef {
+  scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
+}
 
 interface DataTableProps<TData> {
   data: TData[];
@@ -30,25 +34,28 @@ interface DataTableProps<TData> {
   rowHeight?: number;
 }
 
-export function DataTable<TData>({
-  data,
-  columns,
-  selectedRowId,
-  onRowClick,
-  onRowContextMenu,
-  getRowId,
-  resizable = true,
-  columnResizeMode = 'onChange',
-  className,
-  headerClassName,
-  rowClassName,
-  rowWrapper,
-  onScroll,
-  emptyMessage = 'No data',
-  isLoading = false,
-  loadingMessage = 'Loading...',
-  rowHeight = 36,
-}: DataTableProps<TData>) {
+function DataTableInner<TData>(
+  {
+    data,
+    columns,
+    selectedRowId,
+    onRowClick,
+    onRowContextMenu,
+    getRowId,
+    resizable = true,
+    columnResizeMode = 'onChange',
+    className,
+    headerClassName,
+    rowClassName,
+    rowWrapper,
+    onScroll,
+    emptyMessage = 'No data',
+    isLoading = false,
+    loadingMessage = 'Loading...',
+    rowHeight = 36,
+  }: DataTableProps<TData>,
+  ref: Ref<DataTableRef>
+) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const table = useReactTable({
@@ -69,6 +76,13 @@ export function DataTable<TData>({
     estimateSize: () => rowHeight,
     overscan: 10,
   });
+
+  // Expose scrollToIndex method via ref
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => {
+      virtualizer.scrollToIndex(index, { align: options?.align ?? 'center' });
+    },
+  }));
 
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -204,6 +218,11 @@ export function DataTable<TData>({
     </div>
   );
 }
+
+// Wrap with forwardRef to expose scrollToIndex
+export const DataTable = forwardRef(DataTableInner) as <TData>(
+  props: DataTableProps<TData> & { ref?: Ref<DataTableRef> }
+) => ReturnType<typeof DataTableInner>;
 
 // Re-export useful types and utilities from @tanstack/react-table
 export {

@@ -199,7 +199,7 @@ impl GitCliService {
 
         // Write to temp file
         let mut todo_file = NamedTempFile::new().map_err(AxisError::from)?;
-        writeln!(todo_file, "{}", todo_content).map_err(AxisError::from)?;
+        writeln!(todo_file, "{todo_content}").map_err(AxisError::from)?;
         let todo_path = todo_file.path().to_string_lossy().to_string();
 
         // Build the GIT_SEQUENCE_EDITOR command based on platform
@@ -253,7 +253,7 @@ impl GitCliService {
         to: &str,
         no_commit: bool,
     ) -> Result<GitCommandResult> {
-        let range = format!("{}..{}", from, to);
+        let range = format!("{from}..{to}");
         let mut args = vec!["cherry-pick"];
 
         if no_commit {

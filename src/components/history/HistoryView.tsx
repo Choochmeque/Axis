@@ -1,11 +1,12 @@
 // Refactored to use DataTable with virtualization
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { GitBranch, GitCommit, Loader2, Tag } from 'lucide-react';
+import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui';
 
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useScrollToCommit } from '@/hooks/useScrollToCommit';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
 import { CommitDetailPanel } from './CommitDetailPanel';
@@ -20,8 +21,8 @@ import {
 } from '@/components/ui';
 import { BisectBanner } from '../merge/BisectBanner';
 import { MergeBanner } from '../merge/MergeBanner';
-import { DataTable, type ColumnDef } from '@/components/ui/data-table';
-import { Avatar } from '@/components/ui';
+import { DataTable, type ColumnDef, type DataTableRef } from '@/components/ui/data-table';
+import { Avatar, Button } from '@/components/ui';
 import { formatShortDate } from '@/lib/dateUtils';
 import { computeGraphLayout, getMaxColumns, type RowGraphData } from '@/lib/graphLayout';
 
@@ -89,6 +90,16 @@ export function HistoryView() {
 
   // Track commit for context menu
   const [contextMenuCommit, setContextMenuCommit] = useState<GraphCommit | null>(null);
+
+  // DataTable ref for scrolling
+  const tableRef = useRef<DataTableRef>(null);
+
+  // Scroll to commit functionality
+  const scrollToIndex = useCallback((index: number) => {
+    tableRef.current?.scrollToIndex(index, { align: 'center' });
+  }, []);
+
+  const { isSearching, progress, cancelScroll } = useScrollToCommit({ scrollToIndex });
 
   // Find HEAD commit OID from refs
   const headOid = useMemo(() => {
@@ -393,10 +404,25 @@ export function HistoryView() {
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
       <MergeBanner onComplete={handleBisectComplete} />
+      {isSearching && (
+        <div className="flex items-center justify-between gap-2 px-4 py-2 bg-(--accent-color)/10 border-b border-(--accent-color)/30 text-sm">
+          <div className="flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin text-(--accent-color)" />
+            <span>{t('history.scrollToCommit.searching')}</span>
+            <span className="text-(--text-secondary)">
+              ({t('history.scrollToCommit.progress', { count: progress })})
+            </span>
+          </div>
+          <Button size="sm" variant="ghost" onClick={cancelScroll} title={t('common.cancel')}>
+            <X size={14} />
+          </Button>
+        </div>
+      )}
       <ContextMenuRoot>
         <ContextMenuTrigger asChild>
           <div className="flex flex-col flex-1 min-h-0">
             <DataTable
+              ref={tableRef}
               data={commits}
               columns={columns}
               selectedRowId={selectedCommitOid}

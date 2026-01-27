@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { ReflogView } from './ReflogView';
 import { ReflogAction } from '@/types';
 
@@ -31,18 +31,6 @@ const mockCount = vi.fn();
 const mockRefs = vi.fn();
 const mockCheckout = vi.fn();
 
-vi.mock('@/services/api', () => ({
-  reflogApi: {
-    list: (opts: unknown) => mockList(opts),
-    count: (ref: string) => mockCount(ref),
-    refs: () => mockRefs(),
-    checkout: (ref: string) => mockCheckout(ref),
-  },
-  branchApi: {
-    create: vi.fn(),
-  },
-}));
-
 const mockLoadBranches = vi.fn();
 const mockLoadCommits = vi.fn();
 
@@ -53,9 +41,37 @@ vi.mock('@/store/repositoryStore', () => ({
   }),
 }));
 
+const mockBranchCreate = vi.fn();
+vi.mock('@/services/api', () => ({
+  reflogApi: {
+    list: (opts: unknown) => mockList(opts),
+    count: (ref: string) => mockCount(ref),
+    refs: () => mockRefs(),
+    checkout: (ref: string) => mockCheckout(ref),
+  },
+  branchApi: {
+    create: (...args: unknown[]) => mockBranchCreate(...args),
+  },
+}));
+
 vi.mock('@/components/ui', () => ({
-  Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
-    open ? <div data-testid="dialog">{children}</div> : null,
+  Dialog: ({
+    children,
+    open,
+    onOpenChange,
+  }: {
+    children: React.ReactNode;
+    open: boolean;
+    onOpenChange?: (open: boolean) => void;
+  }) =>
+    open ? (
+      <div data-testid="dialog">
+        {children}
+        <button data-testid="close-dialog" onClick={() => onOpenChange?.(false)}>
+          Close
+        </button>
+      </div>
+    ) : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
   DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -110,21 +126,38 @@ vi.mock('@/components/ui', () => ({
     children,
     isLoading,
     emptyMessage,
+    onItemClick,
+    hasMore,
+    onLoadMore,
   }: {
     items: unknown[];
     children: (item: unknown) => React.ReactNode;
     isLoading: boolean;
     emptyMessage: string;
+    onItemClick?: (item: unknown) => void;
+    hasMore?: boolean;
+    onLoadMore?: () => void;
   }) => {
     if (isLoading) return <div data-testid="loading">Loading...</div>;
     if (items.length === 0) return <div data-testid="empty">{emptyMessage}</div>;
     return (
       <div data-testid="virtual-list">
         {items.map((item, i) => (
-          <div key={i} data-testid="reflog-entry">
+          <div
+            key={i}
+            data-testid="reflog-entry"
+            onClick={() => onItemClick?.(item)}
+            role="button"
+            tabIndex={0}
+          >
             {children(item)}
           </div>
         ))}
+        {hasMore && (
+          <button data-testid="load-more" onClick={onLoadMore}>
+            Load More
+          </button>
+        )}
       </div>
     );
   },
@@ -272,5 +305,118 @@ describe('ReflogView', () => {
     await waitFor(() => {
       expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
     });
+  });
+
+  it('should show error message when loading fails', async () => {
+    mockList.mockRejectedValueOnce(new Error('Failed to load'));
+
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('reflog.failedToLoad')).toBeInTheDocument();
+    });
+  });
+
+  it('should checkout entry when checkout button clicked', async () => {
+    mockCheckout.mockResolvedValueOnce(undefined);
+    const onRefresh = vi.fn();
+
+    render(<ReflogView onRefresh={onRefresh} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    });
+
+    // Find checkout button (first button with Check icon)
+    const checkoutButtons = screen.getAllByTitle('reflog.entry.checkoutTitle');
+    await act(async () => {
+      fireEvent.click(checkoutButtons[0]);
+    });
+
+    await waitFor(() => {
+      expect(mockCheckout).toHaveBeenCalledWith('HEAD@{0}');
+      expect(mockLoadBranches).toHaveBeenCalled();
+      expect(mockLoadCommits).toHaveBeenCalled();
+      expect(onRefresh).toHaveBeenCalled();
+    });
+  });
+
+  it('should copy SHA when copy button clicked', async () => {
+    const { copyToClipboard } = await import('@/lib/actions');
+
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    });
+
+    const copyButtons = screen.getAllByTitle('reflog.entry.copyShaTitle');
+    fireEvent.click(copyButtons[0]);
+
+    expect(copyToClipboard).toHaveBeenCalledWith('abc123456789');
+  });
+
+  it('should open branch dialog when branch button clicked', async () => {
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    });
+
+    const branchButtons = screen.getAllByTitle('reflog.entry.branchTitle');
+    fireEvent.click(branchButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.getByText('reflog.createBranch.title')).toBeInTheDocument();
+    });
+  });
+
+  it('should disable create button when branch name empty', async () => {
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    });
+
+    // Open branch dialog
+    const branchButtons = screen.getAllByTitle('reflog.entry.branchTitle');
+    fireEvent.click(branchButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+    });
+
+    const createButton = screen.getByText('reflog.createBranch.createButton');
+    expect(createButton).toBeDisabled();
+  });
+
+  it('should display ref names correctly', async () => {
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      const select = screen.getByRole('combobox');
+      expect(select).toBeInTheDocument();
+    });
+
+    // Check that refs are displayed with proper names
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveTextContent('HEAD');
+    expect(options[1]).toHaveTextContent('main'); // refs/heads/main -> main
+    expect(options[2]).toHaveTextContent('feature'); // refs/heads/feature -> feature
+  });
+
+  it('should select entry when clicked', async () => {
+    render(<ReflogView />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    });
+
+    const entries = screen.getAllByTestId('reflog-entry');
+    fireEvent.click(entries[0]);
+
+    // Click again to deselect
+    fireEvent.click(entries[0]);
   });
 });

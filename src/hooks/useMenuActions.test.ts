@@ -259,5 +259,407 @@ describe('useMenuActions', () => {
         expect.objectContaining({ type: 'open-new-tag-dialog' })
       );
     });
+
+    it('should handle ToggleSidebar action (currently noop)', async () => {
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      // Should not throw even though it's a TODO
+      await expect(
+        act(async () => {
+          await handler({ payload: { actionId: MenuAction.ToggleSidebar } });
+        })
+      ).resolves.not.toThrow();
+    });
+
+    it('should handle unknown action', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: 'unknown-action' } });
+      });
+
+      expect(consoleSpy).toHaveBeenCalledWith('Unhandled menu action:', 'unknown-action');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('repository-dependent actions', () => {
+    beforeEach(() => {
+      mocks.mockRepository.current = { path: '/test/repo', currentBranch: 'main' };
+      mocks.mockBranches.push({ isHead: true, upstream: 'origin/main', name: 'main' });
+    });
+
+    it('should handle Fetch action when repository exists', async () => {
+      const { remoteApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Fetch } });
+      });
+
+      expect(remoteApi.fetchAll).toHaveBeenCalled();
+      expect(mocks.mockRefreshRepository).toHaveBeenCalled();
+    });
+
+    it('should handle Fetch error', async () => {
+      const { remoteApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+      vi.mocked(remoteApi.fetchAll).mockRejectedValueOnce(new Error('Fetch failed'));
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Fetch } });
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Fetch failed');
+    });
+
+    it('should handle Pull action when repository exists', async () => {
+      const { remoteApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Pull } });
+      });
+
+      expect(remoteApi.pull).toHaveBeenCalledWith('origin', 'main', {
+        rebase: false,
+        ffOnly: false,
+      });
+      expect(mocks.mockRefreshRepository).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('notifications.success.pullComplete');
+    });
+
+    it('should handle Pull error', async () => {
+      const { remoteApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+      vi.mocked(remoteApi.pull).mockRejectedValueOnce(new Error('Pull failed'));
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Pull } });
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Pull failed');
+    });
+
+    it('should handle Push action when repository exists', async () => {
+      const { remoteApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Push } });
+      });
+
+      expect(remoteApi.pushCurrentBranch).toHaveBeenCalledWith('origin', {
+        force: false,
+        setUpstream: false, // upstream exists
+        tags: false,
+      });
+      expect(mocks.mockRefreshRepository).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('notifications.success.pushComplete');
+    });
+
+    it('should set upstream when branch has no upstream', async () => {
+      // Update branch to have no upstream
+      mocks.mockBranches.length = 0;
+      mocks.mockBranches.push({ isHead: true, upstream: null, name: 'feature' });
+
+      const { remoteApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Push } });
+      });
+
+      expect(remoteApi.pushCurrentBranch).toHaveBeenCalledWith('origin', {
+        force: false,
+        setUpstream: true, // no upstream, so needs to set it
+        tags: false,
+      });
+    });
+
+    it('should handle Push error', async () => {
+      const { remoteApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+      vi.mocked(remoteApi.pushCurrentBranch).mockRejectedValueOnce(new Error('Push failed'));
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Push } });
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Push failed');
+    });
+
+    it('should handle Stash action when repository exists', async () => {
+      const { stashApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Stash } });
+      });
+
+      expect(stashApi.save).toHaveBeenCalledWith({
+        message: null,
+        includeUntracked: false,
+        keepIndex: false,
+        includeIgnored: false,
+      });
+      expect(mocks.mockRefreshRepository).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('notifications.success.stashCreated');
+    });
+
+    it('should handle Stash error', async () => {
+      const { stashApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+      vi.mocked(stashApi.save).mockRejectedValueOnce(new Error('Stash failed'));
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Stash } });
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Stash failed');
+    });
+
+    it('should handle PopStash action when repository exists', async () => {
+      const { stashApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.PopStash } });
+      });
+
+      expect(stashApi.pop).toHaveBeenCalledWith({ index: 0, reinstateIndex: false });
+      expect(mocks.mockRefreshRepository).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('notifications.success.stashApplied');
+    });
+
+    it('should handle PopStash error', async () => {
+      const { stashApi } = await import('@/services/api');
+      const { toast } = await import('@/hooks');
+      vi.mocked(stashApi.pop).mockRejectedValueOnce(new Error('Pop failed'));
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.PopStash } });
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Pop failed');
+    });
+  });
+
+  describe('NewWindow action', () => {
+    it('should open dialog and open repository when path selected', async () => {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      vi.mocked(open).mockResolvedValueOnce('/path/to/repo');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.NewWindow } });
+      });
+
+      expect(open).toHaveBeenCalledWith({
+        directory: true,
+        multiple: false,
+        title: 'dialogs.openRepository.title',
+      });
+      expect(mocks.mockOpenRepository).toHaveBeenCalledWith('/path/to/repo');
+    });
+
+    it('should not open repository when dialog cancelled', async () => {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      vi.mocked(open).mockResolvedValueOnce(null);
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.NewWindow } });
+      });
+
+      expect(open).toHaveBeenCalled();
+      expect(mocks.mockOpenRepository).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('actions without repository', () => {
+    it('should not call fetch when repository is null', async () => {
+      const { remoteApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Fetch } });
+      });
+
+      expect(remoteApi.fetchAll).not.toHaveBeenCalled();
+    });
+
+    it('should not call pull when repository is null', async () => {
+      const { remoteApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Pull } });
+      });
+
+      expect(remoteApi.pull).not.toHaveBeenCalled();
+    });
+
+    it('should not call push when repository is null', async () => {
+      const { remoteApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Push } });
+      });
+
+      expect(remoteApi.pushCurrentBranch).not.toHaveBeenCalled();
+    });
+
+    it('should not call stash when repository is null', async () => {
+      const { stashApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.Stash } });
+      });
+
+      expect(stashApi.save).not.toHaveBeenCalled();
+    });
+
+    it('should not call pop stash when repository is null', async () => {
+      const { stashApi } = await import('@/services/api');
+
+      renderHook(() => useMenuActions());
+
+      await waitFor(() => {
+        expect(mocks.mockMenuActionListen).toHaveBeenCalled();
+      });
+
+      const handler = mocks.mockMenuActionListen.mock.calls[0][0];
+      await act(async () => {
+        await handler({ payload: { actionId: MenuAction.PopStash } });
+      });
+
+      expect(stashApi.pop).not.toHaveBeenCalled();
+    });
   });
 });

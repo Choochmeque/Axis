@@ -1,17 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
-import { KEYBOARD_SHORTCUTS } from './useKeyboardShortcuts';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { KEYBOARD_SHORTCUTS, useKeyboardShortcuts } from './useKeyboardShortcuts';
 
-// Note: Testing useKeyboardShortcuts hook directly is complex because it uses
-// react-hotkeys-hook which requires a full browser environment. Instead, we test
-// the exported KEYBOARD_SHORTCUTS constant and the structure of the hook.
+// Store registered hotkey handlers
+const hotkeyHandlers: Record<string, (e: KeyboardEvent) => void> = {};
+
+const mockSetCurrentView = vi.fn();
 
 vi.mock('react-hotkeys-hook', () => ({
-  useHotkeys: vi.fn(),
+  useHotkeys: vi.fn((key: string, handler: (e: KeyboardEvent) => void) => {
+    hotkeyHandlers[key] = handler;
+  }),
 }));
 
 vi.mock('../store/repositoryStore', () => ({
   useRepositoryStore: () => ({
-    setCurrentView: vi.fn(),
+    setCurrentView: mockSetCurrentView,
   }),
 }));
 
@@ -130,6 +134,205 @@ describe('useKeyboardShortcuts', () => {
       );
       expect(escapeShortcut).toBeDefined();
       expect(escapeShortcut?.key).toBe('Escape');
+    });
+  });
+
+  describe('useKeyboardShortcuts hook', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // Clear all registered handlers
+      Object.keys(hotkeyHandlers).forEach((key) => delete hotkeyHandlers[key]);
+    });
+
+    it('should register hotkeys when hook is called', () => {
+      const mockOptions = {
+        onOpenSettings: vi.fn(),
+        onOpenRepository: vi.fn(),
+        onRefresh: vi.fn(),
+        onCommit: vi.fn(),
+        onPush: vi.fn(),
+        onPull: vi.fn(),
+        onFetch: vi.fn(),
+        onCreateBranch: vi.fn(),
+        onStash: vi.fn(),
+        onSearch: vi.fn(),
+      };
+
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      // Check that all hotkeys are registered
+      expect(hotkeyHandlers['mod+,']).toBeDefined();
+      expect(hotkeyHandlers['mod+o']).toBeDefined();
+      expect(hotkeyHandlers['mod+r']).toBeDefined();
+      expect(hotkeyHandlers['mod+enter']).toBeDefined();
+      expect(hotkeyHandlers['mod+shift+p']).toBeDefined();
+      expect(hotkeyHandlers['mod+shift+l']).toBeDefined();
+      expect(hotkeyHandlers['mod+shift+f']).toBeDefined();
+      expect(hotkeyHandlers['mod+b']).toBeDefined();
+      expect(hotkeyHandlers['mod+shift+s']).toBeDefined();
+      expect(hotkeyHandlers['mod+f']).toBeDefined();
+      expect(hotkeyHandlers['1']).toBeDefined();
+      expect(hotkeyHandlers['2']).toBeDefined();
+      expect(hotkeyHandlers['3']).toBeDefined();
+      expect(hotkeyHandlers['escape']).toBeDefined();
+    });
+
+    it('should call onOpenSettings when mod+, is pressed', () => {
+      const mockOptions = { onOpenSettings: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+,']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onOpenSettings).toHaveBeenCalled();
+    });
+
+    it('should call onOpenRepository when mod+o is pressed', () => {
+      const mockOptions = { onOpenRepository: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+o']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onOpenRepository).toHaveBeenCalled();
+    });
+
+    it('should call onRefresh when mod+r is pressed', () => {
+      const mockOptions = { onRefresh: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+r']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onRefresh).toHaveBeenCalled();
+    });
+
+    it('should call onCommit when mod+enter is pressed', () => {
+      const mockOptions = { onCommit: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+enter']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onCommit).toHaveBeenCalled();
+    });
+
+    it('should call onPush when mod+shift+p is pressed', () => {
+      const mockOptions = { onPush: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+shift+p']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onPush).toHaveBeenCalled();
+    });
+
+    it('should call onPull when mod+shift+l is pressed', () => {
+      const mockOptions = { onPull: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+shift+l']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onPull).toHaveBeenCalled();
+    });
+
+    it('should call onFetch when mod+shift+f is pressed', () => {
+      const mockOptions = { onFetch: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+shift+f']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onFetch).toHaveBeenCalled();
+    });
+
+    it('should call onCreateBranch when mod+b is pressed', () => {
+      const mockOptions = { onCreateBranch: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+b']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onCreateBranch).toHaveBeenCalled();
+    });
+
+    it('should call onStash when mod+shift+s is pressed', () => {
+      const mockOptions = { onStash: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+shift+s']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onStash).toHaveBeenCalled();
+    });
+
+    it('should call onSearch when mod+f is pressed', () => {
+      const mockOptions = { onSearch: vi.fn() };
+      renderHook(() => useKeyboardShortcuts(mockOptions));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      hotkeyHandlers['mod+f']?.(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOptions.onSearch).toHaveBeenCalled();
+    });
+
+    it('should set file-status view when 1 is pressed', () => {
+      renderHook(() => useKeyboardShortcuts({}));
+
+      hotkeyHandlers['1']?.({} as KeyboardEvent);
+
+      expect(mockSetCurrentView).toHaveBeenCalledWith('file-status');
+    });
+
+    it('should set history view when 2 is pressed', () => {
+      renderHook(() => useKeyboardShortcuts({}));
+
+      hotkeyHandlers['2']?.({} as KeyboardEvent);
+
+      expect(mockSetCurrentView).toHaveBeenCalledWith('history');
+    });
+
+    it('should set search view when 3 is pressed', () => {
+      renderHook(() => useKeyboardShortcuts({}));
+
+      hotkeyHandlers['3']?.({} as KeyboardEvent);
+
+      expect(mockSetCurrentView).toHaveBeenCalledWith('search');
+    });
+
+    it('should register escape handler', () => {
+      renderHook(() => useKeyboardShortcuts({}));
+
+      // Escape handler should be registered but does nothing by default
+      expect(hotkeyHandlers['escape']).toBeDefined();
+      expect(() => hotkeyHandlers['escape']?.({} as KeyboardEvent)).not.toThrow();
+    });
+
+    it('should work with empty options', () => {
+      expect(() => {
+        renderHook(() => useKeyboardShortcuts());
+      }).not.toThrow();
+    });
+
+    it('should not throw when callback is undefined', () => {
+      renderHook(() => useKeyboardShortcuts({}));
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+      // Should not throw when callback is not provided
+      expect(() => hotkeyHandlers['mod+,']?.(mockEvent)).not.toThrow();
+      expect(() => hotkeyHandlers['mod+o']?.(mockEvent)).not.toThrow();
+      expect(() => hotkeyHandlers['mod+r']?.(mockEvent)).not.toThrow();
     });
   });
 });

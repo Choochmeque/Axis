@@ -158,6 +158,7 @@ vi.mock('./FileStatusList', () => ({
 
 vi.mock('./StagingFilters', () => ({
   StagingFilters: () => <div data-testid="staging-filters" />,
+  /* eslint-disable @typescript-eslint/naming-convention -- Mock matches actual module exports */
   StagingSortBy: {
     Path: 'path',
     PathReversed: 'path-reversed',
@@ -184,6 +185,7 @@ vi.mock('./StagingFilters', () => ({
     SplitView: 'split-view',
     FluidView: 'fluid-view',
   },
+  /* eslint-enable @typescript-eslint/naming-convention */
 }));
 
 function createFileStatus(path: string, status: StatusType, isStaged: boolean): FileStatus {

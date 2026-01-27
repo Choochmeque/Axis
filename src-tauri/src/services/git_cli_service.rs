@@ -3620,4 +3620,509 @@ mod tests {
 
         assert!(result.is_err());
     }
+
+    // ==================== Discard Hunk Tests ====================
+
+    #[test]
+    fn test_discard_hunk() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create and commit a file first
+        fs::write(tmp.path().join("discard.txt"), "original\n").expect("should write");
+        Command::new("git")
+            .args(["add", "discard.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should add");
+        Command::new("git")
+            .args(["commit", "-m", "Add discard.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should commit");
+
+        // Modify the file
+        fs::write(tmp.path().join("discard.txt"), "original\nmodified\n").expect("should modify");
+
+        // Get the diff
+        let diff_output = Command::new("git")
+            .args(["diff", "discard.txt"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should get diff");
+        let patch = String::from_utf8_lossy(&diff_output.stdout);
+
+        // Discard the changes
+        let result = service.discard_hunk(&patch);
+        assert!(result.is_ok(), "Failed to discard hunk: {:?}", result);
+
+        // Verify the file is back to original
+        let content = fs::read_to_string(tmp.path().join("discard.txt")).expect("should read file");
+        assert_eq!(content, "original\n");
+    }
+
+    // ==================== Worktree Tests ====================
+
+    #[test]
+    fn test_worktree_list_initial() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let worktrees = service.worktree_list().expect("should list worktrees");
+        // Main worktree is always present
+        assert!(!worktrees.is_empty());
+        assert!(!worktrees[0].path.is_empty());
+    }
+
+    #[test]
+    fn test_worktree_add() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        create_branch(&tmp, "feature-worktree");
+
+        let worktree_path = tmp.path().join("worktree-new");
+
+        let result = service
+            .worktree_add(&AddWorktreeOptions {
+                path: worktree_path.to_string_lossy().to_string(),
+                branch: Some("feature-worktree".to_string()),
+                create_branch: false,
+                ..Default::default()
+            })
+            .expect("should add worktree");
+
+        assert!(result.success, "worktree add failed: {}", result.message);
+
+        // Verify worktree exists
+        let worktrees = service.worktree_list().expect("should list worktrees");
+        assert_eq!(worktrees.len(), 2);
+    }
+
+    #[test]
+    fn test_worktree_prune_dry_run() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let result = service
+            .worktree_prune(true)
+            .expect("should prune worktrees");
+        assert!(result.success);
+    }
+
+    // ==================== Bisect Tests ====================
+
+    #[test]
+    fn test_is_bisecting_initially_false() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        assert!(!service.is_bisecting().expect("should check bisect state"));
+    }
+
+    #[test]
+    fn test_bisect_start_and_reset() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create a few commits
+        add_commit(&tmp, "file1.txt", "content1", "Commit 1");
+        add_commit(&tmp, "file2.txt", "content2", "Commit 2");
+
+        // Get commit hashes
+        let output = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should get HEAD hash");
+        let bad = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        let output = Command::new("git")
+            .args(["rev-parse", "HEAD~2"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should get earlier hash");
+        let good = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        // Start bisect
+        let result = service
+            .bisect_start(Some(&bad), &good)
+            .expect("should start bisect");
+        assert!(result.success, "bisect start failed: {}", result.stderr);
+
+        assert!(service.is_bisecting().expect("should be bisecting"));
+
+        // Get bisect state
+        let state = service.get_bisect_state().expect("should get bisect state");
+        assert!(state.is_active);
+
+        // Reset bisect
+        let result = service.bisect_reset(None).expect("should reset bisect");
+        assert!(result.success);
+
+        assert!(!service.is_bisecting().expect("should not be bisecting"));
+    }
+
+    #[test]
+    fn test_bisect_log_empty() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // When not bisecting, log returns an error or empty
+        let _ = service.bisect_log();
+    }
+
+    // ==================== Tag Remote Tests ====================
+
+    #[test]
+    fn test_tag_push_no_remote() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create a tag
+        Command::new("git")
+            .args(["tag", "v1.0.0"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should create tag");
+
+        // Try to push without remote (should fail)
+        let result = service.tag_push("v1.0.0", "origin");
+        // Expect error since no remote exists
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    // ==================== Archive Tests ====================
+
+    #[test]
+    fn test_archive_zip() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        add_commit(&tmp, "archive.txt", "archive content", "Add file");
+
+        let output_path = tmp.path().join("archive.zip");
+
+        let result = service
+            .archive("HEAD", "zip", &output_path, None)
+            .expect("should create archive");
+
+        assert!(!result.message.is_empty());
+        assert!(output_path.exists());
+    }
+
+    #[test]
+    fn test_archive_tar() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        add_commit(&tmp, "archive.txt", "archive content", "Add file");
+
+        let output_path = tmp.path().join("archive.tar");
+
+        let result = service
+            .archive("HEAD", "tar", &output_path, None)
+            .expect("should create tar archive");
+
+        assert!(!result.message.is_empty());
+        assert!(output_path.exists());
+    }
+
+    #[test]
+    fn test_archive_tar_gz() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        add_commit(&tmp, "archive.txt", "archive content", "Add file");
+
+        let output_path = tmp.path().join("archive.tar.gz");
+
+        let result = service
+            .archive("HEAD", "tar.gz", &output_path, None)
+            .expect("should create tar.gz archive");
+
+        assert!(!result.message.is_empty());
+        assert!(output_path.exists());
+    }
+
+    #[test]
+    fn test_archive_with_prefix() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let output_path = tmp.path().join("prefixed.zip");
+
+        let result = service
+            .archive("HEAD", "zip", &output_path, Some("myproject/"))
+            .expect("should create archive with prefix");
+
+        assert!(!result.message.is_empty());
+    }
+
+    // ==================== Format Patch Tests ====================
+
+    #[test]
+    fn test_format_patch() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        add_commit(&tmp, "patch1.txt", "content1", "Patch commit 1");
+        add_commit(&tmp, "patch2.txt", "content2", "Patch commit 2");
+
+        let output_dir = tmp.path().join("patches");
+        fs::create_dir_all(&output_dir).expect("should create output dir");
+
+        let result = service
+            .format_patch("HEAD~2..HEAD", &output_dir)
+            .expect("should format patches");
+
+        assert!(!result.message.is_empty());
+        assert!(!result.patches.is_empty());
+    }
+
+    // ==================== Cherry-pick Abort/Continue Tests ====================
+
+    #[test]
+    fn test_cherry_pick_abort_no_op() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Abort when not cherry-picking should fail
+        let result = service.cherry_pick_abort();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    #[test]
+    fn test_is_cherry_picking_false() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        assert!(!service
+            .is_cherry_picking()
+            .expect("should check cherry-pick"));
+    }
+
+    #[test]
+    fn test_is_reverting_false() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        assert!(!service.is_reverting().expect("should check reverting"));
+    }
+
+    // ==================== Conflict Resolution Tests ====================
+
+    #[test]
+    fn test_get_conflicted_files_none() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let conflicts = service
+            .get_conflicted_files()
+            .expect("should get conflicted files");
+        assert!(conflicts.is_empty());
+    }
+
+    // ==================== Reset Mode Tests ====================
+
+    #[test]
+    fn test_reset_mixed() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+        add_commit(&tmp, "mixed.txt", "content", "Add mixed");
+
+        let result = service
+            .reset("HEAD~1", ResetMode::Mixed)
+            .expect("should reset mixed");
+
+        assert!(result.success);
+        // File should still exist but be unstaged
+        assert!(tmp.path().join("mixed.txt").exists());
+    }
+
+    // ==================== Merge Abort/Continue Tests ====================
+
+    #[test]
+    fn test_merge_abort_no_merge() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Abort when not merging should fail
+        let result = service.merge_abort();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    #[test]
+    fn test_merge_continue_no_merge() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Continue when not merging should fail
+        let result = service.merge_continue();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    // ==================== Rebase Abort/Continue Tests ====================
+
+    #[test]
+    fn test_rebase_abort_no_rebase() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Abort when not rebasing should fail
+        let result = service.rebase_abort();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    #[test]
+    fn test_rebase_continue_no_rebase() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Continue when not rebasing should fail
+        let result = service.rebase_continue();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    #[test]
+    fn test_rebase_skip_no_rebase() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Skip when not rebasing should fail
+        let result = service.rebase_skip();
+        assert!(result.is_err() || !result.expect("should get result").success);
+    }
+
+    // ==================== Cherry-pick Range Tests ====================
+
+    #[test]
+    fn test_cherry_pick_range() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        let default_branch = get_default_branch(&tmp);
+
+        // Create a feature branch with commits
+        create_branch(&tmp, "feature-range");
+        checkout_branch(&tmp, "feature-range");
+        add_commit(&tmp, "range1.txt", "content1", "Range commit 1");
+        add_commit(&tmp, "range2.txt", "content2", "Range commit 2");
+
+        // Get commit hashes
+        let output = Command::new("git")
+            .args(["rev-parse", "HEAD~1"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should get hash");
+        let start = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        let output = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should get HEAD hash");
+        let end = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        // Go back to default branch
+        checkout_branch(&tmp, &default_branch);
+
+        let result = service
+            .cherry_pick_range(&start, &end, false)
+            .expect("should cherry-pick range");
+        assert!(
+            result.success,
+            "cherry-pick range failed: {}",
+            result.stderr
+        );
+    }
+
+    // ==================== Stash Show Tests ====================
+
+    #[test]
+    fn test_stash_show() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        // Create and stash a change
+        fs::write(tmp.path().join("show_test.txt"), "show content")
+            .expect("should write show_test.txt");
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should add files to staging");
+
+        service
+            .stash_save(&StashSaveOptions::default())
+            .expect("should save stash");
+
+        // Show the stash
+        let show = service.stash_show(None, false).expect("should show stash");
+        assert!(!show.is_empty());
+    }
+
+    #[test]
+    fn test_stash_show_stat_only() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&tmp);
+
+        fs::write(tmp.path().join("stat_test.txt"), "stat content")
+            .expect("should write stat_test.txt");
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(tmp.path())
+            .output()
+            .expect("should add files");
+
+        service
+            .stash_save(&StashSaveOptions::default())
+            .expect("should save stash");
+
+        let show = service
+            .stash_show(None, true)
+            .expect("should show stash stat");
+        assert!(!show.is_empty());
+    }
+
+    // ==================== Git Environment Tests ====================
+
+    #[test]
+    fn test_get_git_environment() {
+        let env = GitCliService::get_git_environment().expect("should get git environment");
+        assert!(env.git_version.is_some());
+        assert!(!env.git_version.expect("should have git version").is_empty());
+    }
+
+    #[test]
+    fn test_lfs_check_installed() {
+        let (installed, version) = GitCliService::lfs_check_installed().expect("should check LFS");
+        // LFS might or might not be installed - just verify the function works
+        if installed {
+            assert!(version.is_some());
+        }
+    }
+
+    // ==================== Operation Type Tests ====================
+
+    #[test]
+    fn test_operation_type_equality() {
+        assert_eq!(OperationType::Merge, OperationType::Merge);
+        assert_ne!(OperationType::Merge, OperationType::Rebase);
+        assert_ne!(OperationType::CherryPick, OperationType::Revert);
+    }
+
+    // ==================== GitCommandResult Tests ====================
+
+    #[test]
+    fn test_git_command_result_from_output() {
+        use std::os::unix::process::ExitStatusExt;
+        use std::process::ExitStatus;
+
+        let output = Output {
+            status: ExitStatus::from_raw(0),
+            stdout: b"success output".to_vec(),
+            stderr: b"".to_vec(),
+        };
+
+        let result = GitCommandResult::from(output);
+        assert!(result.success);
+        assert_eq!(result.stdout, "success output");
+        assert!(result.stderr.is_empty());
+    }
 }

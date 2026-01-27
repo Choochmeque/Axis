@@ -48,3 +48,117 @@ pub fn build_prompt(diff: &str, conventional_commits: bool) -> (String, String) 
     );
     (system.to_string(), user_prompt)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== build_prompt Tests ====================
+
+    #[test]
+    fn test_build_prompt_standard() {
+        let diff = "+ fn new_function() {}";
+        let (system, user) = build_prompt(diff, false);
+
+        assert!(system.contains("imperative mood"));
+        assert!(system.contains("72 characters"));
+        assert!(!system.contains("Conventional Commits"));
+        assert!(user.contains("```diff"));
+        assert!(user.contains("+ fn new_function() {}"));
+    }
+
+    #[test]
+    fn test_build_prompt_conventional_commits() {
+        let diff = "- old_line\n+ new_line";
+        let (system, user) = build_prompt(diff, true);
+
+        assert!(system.contains("Conventional Commits"));
+        assert!(system.contains("feat:"));
+        assert!(system.contains("fix:"));
+        assert!(system.contains("docs:"));
+        assert!(system.contains("refactor:"));
+        assert!(user.contains("- old_line"));
+        assert!(user.contains("+ new_line"));
+    }
+
+    #[test]
+    fn test_build_prompt_empty_diff() {
+        let (system, user) = build_prompt("", false);
+
+        assert!(!system.is_empty());
+        assert!(user.contains("```diff\n\n```"));
+    }
+
+    #[test]
+    fn test_build_prompt_multiline_diff() {
+        let diff = r#"diff --git a/file.rs b/file.rs
+--- a/file.rs
++++ b/file.rs
+@@ -1,3 +1,4 @@
+ fn main() {
++    println!("Hello");
+ }"#;
+
+        let (system, user) = build_prompt(diff, false);
+
+        assert!(user.contains("diff --git"));
+        assert!(user.contains("println!"));
+        assert!(!system.is_empty());
+    }
+
+    #[test]
+    fn test_build_prompt_standard_contains_guidelines() {
+        let (system, _) = build_prompt("test", false);
+
+        assert!(system.contains("Add, Fix, Update, Remove, Refactor"));
+        assert!(system.contains("WHAT changed and WHY"));
+        assert!(system.contains("Return ONLY the commit message"));
+    }
+
+    #[test]
+    fn test_build_prompt_conventional_contains_all_types() {
+        let (system, _) = build_prompt("test", true);
+
+        assert!(system.contains("feat:"));
+        assert!(system.contains("fix:"));
+        assert!(system.contains("docs:"));
+        assert!(system.contains("style:"));
+        assert!(system.contains("refactor:"));
+        assert!(system.contains("perf:"));
+        assert!(system.contains("test:"));
+        assert!(system.contains("build:"));
+        assert!(system.contains("ci:"));
+        assert!(system.contains("chore:"));
+        assert!(system.contains("revert:"));
+    }
+
+    #[test]
+    fn test_build_prompt_conventional_breaking_change() {
+        let (system, _) = build_prompt("test", true);
+
+        assert!(system.contains("breaking change"));
+        assert!(system.contains("!"));
+    }
+
+    #[test]
+    fn test_build_prompt_user_prompt_format() {
+        let diff = "test diff content";
+        let (_, user) = build_prompt(diff, false);
+
+        assert!(user.starts_with("Generate a commit message"));
+        assert!(user.contains("```diff"));
+        assert!(user.ends_with("```"));
+    }
+
+    #[test]
+    fn test_build_prompt_special_characters() {
+        let diff = r#"+ let s = "hello \"world\"";
++ let regex = r"\d+";
++ let path = "C:\\Users\\test";"#;
+
+        let (_, user) = build_prompt(diff, false);
+
+        assert!(user.contains(r#"\"world\""#));
+        assert!(user.contains(r"\d+"));
+    }
+}

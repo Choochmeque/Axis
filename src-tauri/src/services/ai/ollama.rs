@@ -160,3 +160,162 @@ impl AiProviderTrait for OllamaProvider {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== OllamaProvider Tests ====================
+
+    #[test]
+    fn test_ollama_provider_default() {
+        let provider = OllamaProvider::default();
+        assert_eq!(provider.base_url, "http://localhost:11434");
+    }
+
+    #[test]
+    fn test_ollama_provider_name() {
+        let provider = OllamaProvider::default();
+        assert_eq!(provider.name(), "Ollama");
+    }
+
+    #[test]
+    fn test_ollama_provider_default_model() {
+        let provider = OllamaProvider::default();
+        assert_eq!(provider.default_model(), "llama3.2");
+    }
+
+    #[test]
+    fn test_ollama_provider_requires_no_api_key() {
+        let provider = OllamaProvider::default();
+        assert!(!provider.requires_api_key());
+    }
+
+    #[test]
+    fn test_ollama_provider_custom_base_url() {
+        let provider = OllamaProvider {
+            base_url: "http://custom:8080".to_string(),
+        };
+        assert_eq!(provider.base_url, "http://custom:8080");
+    }
+
+    // ==================== OllamaRequest Serialization Tests ====================
+
+    #[test]
+    fn test_ollama_request_serialization() {
+        let request = OllamaRequest {
+            model: "llama3.2".to_string(),
+            messages: vec![
+                OllamaMessage {
+                    role: "system".to_string(),
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                OllamaMessage {
+                    role: "user".to_string(),
+                    content: "Hello".to_string(),
+                },
+            ],
+            stream: false,
+        };
+
+        let json = serde_json::to_string(&request).expect("should serialize");
+        assert!(json.contains("\"model\":\"llama3.2\""));
+        assert!(json.contains("\"role\":\"system\""));
+        assert!(json.contains("\"role\":\"user\""));
+        assert!(json.contains("\"stream\":false"));
+    }
+
+    #[test]
+    fn test_ollama_request_with_stream_true() {
+        let request = OllamaRequest {
+            model: "codellama".to_string(),
+            messages: vec![],
+            stream: true,
+        };
+
+        let json = serde_json::to_string(&request).expect("should serialize");
+        assert!(json.contains("\"stream\":true"));
+    }
+
+    #[test]
+    fn test_ollama_message_serialization() {
+        let message = OllamaMessage {
+            role: "assistant".to_string(),
+            content: "Here is your commit message".to_string(),
+        };
+
+        let json = serde_json::to_string(&message).expect("should serialize");
+        assert!(json.contains("\"role\":\"assistant\""));
+        assert!(json.contains("\"content\":\"Here is your commit message\""));
+    }
+
+    // ==================== OllamaResponse Deserialization Tests ====================
+
+    #[test]
+    fn test_ollama_response_deserialization() {
+        let json = r#"{
+            "message": {
+                "content": "fix: resolve null pointer exception"
+            }
+        }"#;
+
+        let response: OllamaResponse = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(
+            response.message.content,
+            "fix: resolve null pointer exception"
+        );
+    }
+
+    #[test]
+    fn test_ollama_message_response_deserialization() {
+        let json = r#"{"content": "Some generated text"}"#;
+
+        let response: OllamaMessageResponse =
+            serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(response.content, "Some generated text");
+    }
+
+    // ==================== OllamaModelsResponse Deserialization Tests ====================
+
+    #[test]
+    fn test_ollama_models_response_deserialization() {
+        let json = r#"{
+            "models": [
+                {"name": "llama3.2"},
+                {"name": "codellama"},
+                {"name": "mistral"}
+            ]
+        }"#;
+
+        let response: OllamaModelsResponse =
+            serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(response.models.len(), 3);
+        assert_eq!(response.models[0].name, "llama3.2");
+        assert_eq!(response.models[1].name, "codellama");
+        assert_eq!(response.models[2].name, "mistral");
+    }
+
+    #[test]
+    fn test_ollama_models_response_empty() {
+        let json = r#"{"models": []}"#;
+
+        let response: OllamaModelsResponse =
+            serde_json::from_str(json).expect("should deserialize");
+        assert!(response.models.is_empty());
+    }
+
+    #[test]
+    fn test_ollama_model_deserialization() {
+        let json = r#"{"name": "llama3.2:7b"}"#;
+
+        let model: OllamaModel = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(model.name, "llama3.2:7b");
+    }
+
+    // ==================== DEFAULT_OLLAMA_URL Tests ====================
+
+    #[test]
+    fn test_default_ollama_url() {
+        assert_eq!(DEFAULT_OLLAMA_URL, "http://localhost:11434");
+    }
+}

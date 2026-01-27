@@ -102,3 +102,237 @@ impl Default for AppSettings {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== Theme Tests ====================
+
+    #[test]
+    fn test_theme_default() {
+        let theme = Theme::default();
+        assert_eq!(theme, Theme::System);
+    }
+
+    #[test]
+    fn test_theme_equality() {
+        assert_eq!(Theme::Light, Theme::Light);
+        assert_eq!(Theme::Dark, Theme::Dark);
+        assert_eq!(Theme::System, Theme::System);
+        assert_ne!(Theme::Light, Theme::Dark);
+        assert_ne!(Theme::Light, Theme::System);
+    }
+
+    #[test]
+    fn test_theme_serialization() {
+        let light = Theme::Light;
+        let json = serde_json::to_string(&light).expect("should serialize");
+        assert_eq!(json, "\"Light\"");
+
+        let dark = Theme::Dark;
+        let json = serde_json::to_string(&dark).expect("should serialize");
+        assert_eq!(json, "\"Dark\"");
+
+        let system = Theme::System;
+        let json = serde_json::to_string(&system).expect("should serialize");
+        assert_eq!(json, "\"System\"");
+    }
+
+    #[test]
+    fn test_theme_deserialization() {
+        let light: Theme = serde_json::from_str("\"Light\"").expect("should deserialize");
+        assert_eq!(light, Theme::Light);
+
+        let dark: Theme = serde_json::from_str("\"Dark\"").expect("should deserialize");
+        assert_eq!(dark, Theme::Dark);
+
+        let system: Theme = serde_json::from_str("\"System\"").expect("should deserialize");
+        assert_eq!(system, Theme::System);
+    }
+
+    #[test]
+    fn test_theme_display() {
+        assert_eq!(Theme::Light.to_string(), "light");
+        assert_eq!(Theme::Dark.to_string(), "dark");
+        assert_eq!(Theme::System.to_string(), "system");
+    }
+
+    #[test]
+    fn test_theme_from_string() {
+        use std::str::FromStr;
+
+        let light = Theme::from_str("light").expect("should parse");
+        assert_eq!(light, Theme::Light);
+
+        let dark = Theme::from_str("dark").expect("should parse");
+        assert_eq!(dark, Theme::Dark);
+
+        let system = Theme::from_str("system").expect("should parse");
+        assert_eq!(system, Theme::System);
+    }
+
+    // ==================== AppSettings Tests ====================
+
+    #[test]
+    fn test_app_settings_default() {
+        let settings = AppSettings::default();
+
+        // Appearance
+        assert_eq!(settings.theme, Theme::System);
+        assert_eq!(settings.language, "system");
+        assert_eq!(settings.font_size, 13);
+        assert!(settings.show_line_numbers);
+
+        // Git
+        assert_eq!(settings.auto_fetch_interval, 5);
+        assert!(settings.confirm_before_discard);
+        assert!(!settings.sign_commits);
+        assert!(!settings.bypass_hooks);
+
+        // Signing
+        assert_eq!(settings.signing_format, SigningFormat::default());
+        assert!(settings.signing_key.is_none());
+        assert!(settings.gpg_program.is_none());
+        assert!(settings.ssh_program.is_none());
+
+        // Diff
+        assert_eq!(settings.diff_context_lines, 3);
+        assert!(!settings.diff_word_wrap);
+        assert!(!settings.diff_side_by_side);
+
+        // Commit
+        assert!(!settings.spell_check_commit_messages);
+        assert!(!settings.conventional_commits_enabled);
+        assert!(settings.conventional_commits_scopes.is_none());
+
+        // AI
+        assert!(!settings.ai_enabled);
+        assert_eq!(settings.ai_provider, AiProvider::default());
+        assert!(settings.ai_model.is_none());
+        assert!(settings.ai_ollama_url.is_none());
+
+        // Notifications
+        assert_eq!(settings.notification_history_capacity, 50);
+
+        // Avatars
+        assert!(!settings.gravatar_enabled);
+    }
+
+    #[test]
+    fn test_app_settings_custom() {
+        let settings = AppSettings {
+            theme: Theme::Dark,
+            language: "en".to_string(),
+            font_size: 14,
+            show_line_numbers: false,
+            auto_fetch_interval: 10,
+            confirm_before_discard: false,
+            sign_commits: true,
+            bypass_hooks: true,
+            signing_format: SigningFormat::Ssh,
+            signing_key: Some("~/.ssh/id_ed25519".to_string()),
+            gpg_program: None,
+            ssh_program: Some("/usr/bin/ssh".to_string()),
+            diff_context_lines: 5,
+            diff_word_wrap: true,
+            diff_side_by_side: true,
+            spell_check_commit_messages: true,
+            conventional_commits_enabled: true,
+            conventional_commits_scopes: Some(vec!["ui".to_string(), "api".to_string()]),
+            ai_enabled: true,
+            ai_provider: AiProvider::OpenAi,
+            ai_model: Some("gpt-4".to_string()),
+            ai_ollama_url: None,
+            notification_history_capacity: 100,
+            gravatar_enabled: true,
+        };
+
+        assert_eq!(settings.theme, Theme::Dark);
+        assert_eq!(settings.language, "en");
+        assert_eq!(settings.font_size, 14);
+        assert!(!settings.show_line_numbers);
+        assert_eq!(settings.auto_fetch_interval, 10);
+        assert!(settings.sign_commits);
+        assert!(settings.bypass_hooks);
+        assert_eq!(settings.signing_format, SigningFormat::Ssh);
+        assert!(settings.signing_key.is_some());
+        assert_eq!(settings.diff_context_lines, 5);
+        assert!(settings.diff_word_wrap);
+        assert!(settings.diff_side_by_side);
+        assert!(settings.conventional_commits_enabled);
+        assert!(settings.conventional_commits_scopes.is_some());
+        assert!(settings.ai_enabled);
+        assert_eq!(settings.ai_provider, AiProvider::OpenAi);
+        assert!(settings.gravatar_enabled);
+    }
+
+    #[test]
+    fn test_app_settings_serialization_roundtrip() {
+        let settings = AppSettings::default();
+
+        let json = serde_json::to_string(&settings).expect("should serialize");
+        let deserialized: AppSettings = serde_json::from_str(&json).expect("should deserialize");
+
+        assert_eq!(deserialized.theme, settings.theme);
+        assert_eq!(deserialized.language, settings.language);
+        assert_eq!(deserialized.font_size, settings.font_size);
+        assert_eq!(
+            deserialized.auto_fetch_interval,
+            settings.auto_fetch_interval
+        );
+        assert_eq!(deserialized.diff_context_lines, settings.diff_context_lines);
+        assert_eq!(deserialized.ai_enabled, settings.ai_enabled);
+    }
+
+    #[test]
+    fn test_app_settings_with_conventional_commits() {
+        let settings = AppSettings {
+            conventional_commits_enabled: true,
+            conventional_commits_scopes: Some(vec![
+                "feat".to_string(),
+                "fix".to_string(),
+                "docs".to_string(),
+            ]),
+            ..AppSettings::default()
+        };
+
+        assert!(settings.conventional_commits_enabled);
+        let scopes = settings
+            .conventional_commits_scopes
+            .expect("should have scopes");
+        assert_eq!(scopes.len(), 3);
+        assert!(scopes.contains(&"feat".to_string()));
+        assert!(scopes.contains(&"fix".to_string()));
+        assert!(scopes.contains(&"docs".to_string()));
+    }
+
+    #[test]
+    fn test_app_settings_with_ai_config() {
+        let settings = AppSettings {
+            ai_enabled: true,
+            ai_provider: AiProvider::Ollama,
+            ai_model: Some("llama2".to_string()),
+            ai_ollama_url: Some("http://localhost:11434".to_string()),
+            ..AppSettings::default()
+        };
+
+        assert!(settings.ai_enabled);
+        assert_eq!(settings.ai_provider, AiProvider::Ollama);
+        assert_eq!(settings.ai_model, Some("llama2".to_string()));
+        assert_eq!(
+            settings.ai_ollama_url,
+            Some("http://localhost:11434".to_string())
+        );
+    }
+
+    #[test]
+    fn test_app_settings_auto_fetch_disabled() {
+        let settings = AppSettings {
+            auto_fetch_interval: 0,
+            ..AppSettings::default()
+        };
+
+        assert_eq!(settings.auto_fetch_interval, 0);
+    }
+}

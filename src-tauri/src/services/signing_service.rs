@@ -563,3 +563,257 @@ fn extract_ssh_comment(pub_content: &str) -> Option<String> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    // ==================== Helper Function Tests ====================
+
+    #[test]
+    fn test_expand_path_with_tilde() {
+        let expanded = expand_path("~/.ssh/id_rsa");
+        assert!(!expanded.starts_with('~'));
+        assert!(expanded.contains(".ssh/id_rsa"));
+    }
+
+    #[test]
+    fn test_expand_path_without_tilde() {
+        let path = "/usr/bin/gpg";
+        let expanded = expand_path(path);
+        assert_eq!(expanded, path);
+    }
+
+    #[test]
+    fn test_expand_path_relative() {
+        let path = "relative/path";
+        let expanded = expand_path(path);
+        assert_eq!(expanded, path);
+    }
+
+    #[test]
+    fn test_extract_email_valid() {
+        let user_id = "John Doe <john@example.com>";
+        let email = extract_email(user_id);
+        assert_eq!(email, Some("john@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_extract_email_with_name() {
+        let user_id = "Jane Smith (work) <jane.smith@work.com>";
+        let email = extract_email(user_id);
+        assert_eq!(email, Some("jane.smith@work.com".to_string()));
+    }
+
+    #[test]
+    fn test_extract_email_no_brackets() {
+        let user_id = "No Email Here";
+        let email = extract_email(user_id);
+        assert!(email.is_none());
+    }
+
+    #[test]
+    fn test_extract_email_empty_brackets() {
+        let user_id = "User <>";
+        let email = extract_email(user_id);
+        assert_eq!(email, Some("".to_string()));
+    }
+
+    #[test]
+    fn test_extract_email_malformed() {
+        let user_id = "User >malformed<";
+        let email = extract_email(user_id);
+        assert!(email.is_none());
+    }
+
+    #[test]
+    fn test_detect_ssh_key_type_ed25519() {
+        let content = "-----BEGIN OPENSSH PRIVATE KEY-----\nED25519 key data\n-----END OPENSSH PRIVATE KEY-----";
+        assert_eq!(detect_ssh_key_type(content), "ed25519");
+    }
+
+    #[test]
+    fn test_detect_ssh_key_type_rsa() {
+        let content =
+            "-----BEGIN RSA PRIVATE KEY-----\nRSA key data\n-----END RSA PRIVATE KEY-----";
+        assert_eq!(detect_ssh_key_type(content), "rsa");
+    }
+
+    #[test]
+    fn test_detect_ssh_key_type_ecdsa() {
+        let content =
+            "-----BEGIN EC PRIVATE KEY-----\nECDSA key data\n-----END EC PRIVATE KEY-----";
+        assert_eq!(detect_ssh_key_type(content), "ecdsa");
+    }
+
+    #[test]
+    fn test_detect_ssh_key_type_dsa() {
+        let content =
+            "-----BEGIN DSA PRIVATE KEY-----\nDSA key data\n-----END DSA PRIVATE KEY-----";
+        assert_eq!(detect_ssh_key_type(content), "dsa");
+    }
+
+    #[test]
+    fn test_detect_ssh_key_type_unknown() {
+        let content = "-----BEGIN PRIVATE KEY-----\nsome key data\n-----END PRIVATE KEY-----";
+        assert_eq!(detect_ssh_key_type(content), "unknown");
+    }
+
+    #[test]
+    fn test_extract_ssh_comment_valid() {
+        let pub_content = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@hostname";
+        let comment = extract_ssh_comment(pub_content);
+        assert_eq!(comment, Some("user@hostname".to_string()));
+    }
+
+    #[test]
+    fn test_extract_ssh_comment_with_spaces() {
+        let pub_content = "ssh-rsa AAAAB3NzaC1yc2EAAAA... John Doe (work laptop)";
+        let comment = extract_ssh_comment(pub_content);
+        assert_eq!(comment, Some("John Doe (work laptop)".to_string()));
+    }
+
+    #[test]
+    fn test_extract_ssh_comment_no_comment() {
+        let pub_content = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+        let comment = extract_ssh_comment(pub_content);
+        assert!(comment.is_none());
+    }
+
+    #[test]
+    fn test_extract_ssh_comment_only_type() {
+        let pub_content = "ssh-ed25519";
+        let comment = extract_ssh_comment(pub_content);
+        assert!(comment.is_none());
+    }
+
+    // ==================== SigningService Tests ====================
+
+    #[test]
+    fn test_signing_service_new() {
+        let tmp = TempDir::new().expect("should create temp dir");
+        let service = SigningService::new(tmp.path());
+        assert_eq!(service.repo_path, tmp.path());
+    }
+
+    #[test]
+    fn test_find_gpg_program() {
+        // This may or may not find GPG depending on the system
+        let result = SigningService::find_gpg_program();
+        // Just test that it doesn't panic
+        if let Some(path) = result {
+            assert!(!path.to_string_lossy().is_empty());
+        }
+    }
+
+    #[test]
+    fn test_find_ssh_program() {
+        // This may or may not find ssh-keygen depending on the system
+        let result = SigningService::find_ssh_program();
+        // Just test that it doesn't panic
+        if let Some(path) = result {
+            assert!(!path.to_string_lossy().is_empty());
+        }
+    }
+
+    #[test]
+    fn test_is_signing_available_no_key() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+        let config = SigningConfig {
+            format: SigningFormat::Gpg,
+            signing_key: None,
+            gpg_program: None,
+            ssh_program: None,
+        };
+
+        let available = service
+            .is_signing_available(&config)
+            .expect("should check availability");
+        assert!(!available);
+    }
+
+    #[test]
+    fn test_is_signing_available_ssh_key_not_exists() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+        let config = SigningConfig {
+            format: SigningFormat::Ssh,
+            signing_key: Some("/nonexistent/path/to/key".to_string()),
+            gpg_program: None,
+            ssh_program: None,
+        };
+
+        let available = service
+            .is_signing_available(&config)
+            .expect("should check availability");
+        assert!(!available);
+    }
+
+    #[test]
+    fn test_get_config_from_git_default() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+        let config = service.get_config_from_git().expect("should get config");
+
+        // Default format should be GPG (unless overridden by global config)
+        // Just verify we can read config without error
+        assert!(config.format == SigningFormat::Gpg || config.format == SigningFormat::Ssh);
+    }
+
+    #[test]
+    fn test_sign_buffer_no_key() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+        let config = SigningConfig::default();
+
+        let result = service.sign_buffer("test content", &config);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_test_signing_no_key() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+        let config = SigningConfig::default();
+
+        let result = service.test_signing(&config);
+        assert!(!result.success);
+        assert!(result.error.is_some());
+    }
+
+    #[test]
+    fn test_list_ssh_keys_no_ssh_dir() {
+        let tmp = TempDir::new().expect("should create temp dir");
+
+        // Initialize a git repo in a temp dir (no .ssh folder)
+        git2::Repository::init(tmp.path()).expect("should init repo");
+
+        let service = SigningService::new(tmp.path());
+
+        // This should not error, just return whatever keys exist on the system
+        let result = service.list_ssh_keys();
+        assert!(result.is_ok());
+    }
+}

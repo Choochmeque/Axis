@@ -356,3 +356,185 @@ impl Default for ProgressRegistry {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== ProgressRegistry Tests ====================
+
+    #[test]
+    fn test_progress_registry_new() {
+        let registry = ProgressRegistry::new();
+        // Should be able to create a new registry
+        assert!(registry.emitters.lock().expect("should lock").is_empty());
+    }
+
+    #[test]
+    fn test_progress_registry_default() {
+        let registry = ProgressRegistry::default();
+        assert!(registry.emitters.lock().expect("should lock").is_empty());
+    }
+
+    #[test]
+    fn test_progress_registry_register() {
+        let registry = ProgressRegistry::new();
+        let token = registry.register("op-123");
+
+        // Token should start as not cancelled
+        assert!(!token.load(Ordering::SeqCst));
+
+        // Operation should be tracked
+        let emitters = registry.emitters.lock().expect("should lock");
+        assert!(emitters.contains_key("op-123"));
+    }
+
+    #[test]
+    fn test_progress_registry_register_multiple() {
+        let registry = ProgressRegistry::new();
+
+        let token1 = registry.register("op-1");
+        let token2 = registry.register("op-2");
+        let token3 = registry.register("op-3");
+
+        // All tokens should be independent
+        assert!(!token1.load(Ordering::SeqCst));
+        assert!(!token2.load(Ordering::SeqCst));
+        assert!(!token3.load(Ordering::SeqCst));
+
+        // All should be tracked
+        let emitters = registry.emitters.lock().expect("should lock");
+        assert_eq!(emitters.len(), 3);
+    }
+
+    #[test]
+    fn test_progress_registry_cancel() {
+        let registry = ProgressRegistry::new();
+        let token = registry.register("op-123");
+
+        // Initially not cancelled
+        assert!(!token.load(Ordering::SeqCst));
+
+        // Cancel the operation
+        let cancelled = registry.cancel("op-123");
+        assert!(cancelled);
+
+        // Token should now be cancelled
+        assert!(token.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_progress_registry_cancel_nonexistent() {
+        let registry = ProgressRegistry::new();
+
+        // Cancelling non-existent operation should return false
+        let cancelled = registry.cancel("nonexistent");
+        assert!(!cancelled);
+    }
+
+    #[test]
+    fn test_progress_registry_cancel_already_cancelled() {
+        let registry = ProgressRegistry::new();
+        let token = registry.register("op-123");
+
+        // Cancel twice
+        registry.cancel("op-123");
+        let second_cancel = registry.cancel("op-123");
+
+        // Should still return true (operation exists)
+        assert!(second_cancel);
+        assert!(token.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_progress_registry_cleanup() {
+        let registry = ProgressRegistry::new();
+        registry.register("op-123");
+
+        // Operation should exist
+        {
+            let emitters = registry.emitters.lock().expect("should lock");
+            assert!(emitters.contains_key("op-123"));
+        }
+
+        // Cleanup
+        registry.cleanup("op-123");
+
+        // Operation should be removed
+        let emitters = registry.emitters.lock().expect("should lock");
+        assert!(!emitters.contains_key("op-123"));
+    }
+
+    #[test]
+    fn test_progress_registry_cleanup_nonexistent() {
+        let registry = ProgressRegistry::new();
+
+        // Should not panic on cleaning up non-existent operation
+        registry.cleanup("nonexistent");
+    }
+
+    #[test]
+    fn test_progress_registry_cancel_after_cleanup() {
+        let registry = ProgressRegistry::new();
+        registry.register("op-123");
+        registry.cleanup("op-123");
+
+        // Cancelling after cleanup should return false
+        let cancelled = registry.cancel("op-123");
+        assert!(!cancelled);
+    }
+
+    #[test]
+    fn test_progress_registry_multiple_operations_cancel_one() {
+        let registry = ProgressRegistry::new();
+
+        let token1 = registry.register("op-1");
+        let token2 = registry.register("op-2");
+
+        // Cancel only op-1
+        registry.cancel("op-1");
+
+        // op-1 should be cancelled, op-2 should not
+        assert!(token1.load(Ordering::SeqCst));
+        assert!(!token2.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_progress_registry_token_shared() {
+        let registry = ProgressRegistry::new();
+        let token = registry.register("op-123");
+        let token_clone = Arc::clone(&token);
+
+        // Cancel via registry
+        registry.cancel("op-123");
+
+        // Both references should see the cancellation
+        assert!(token.load(Ordering::SeqCst));
+        assert!(token_clone.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_progress_registry_replace_operation() {
+        let registry = ProgressRegistry::new();
+
+        let token1 = registry.register("op-123");
+        token1.store(true, Ordering::SeqCst);
+
+        // Register same operation again
+        let token2 = registry.register("op-123");
+
+        // New token should be fresh (not cancelled)
+        assert!(!token2.load(Ordering::SeqCst));
+
+        // Old token should still be set
+        assert!(token1.load(Ordering::SeqCst));
+    }
+
+    // ==================== THROTTLE_INTERVAL Tests ====================
+
+    #[test]
+    fn test_throttle_interval_value() {
+        // Verify the constant is reasonable
+        assert_eq!(THROTTLE_INTERVAL, Duration::from_millis(100));
+    }
+}

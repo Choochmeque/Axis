@@ -115,3 +115,286 @@ impl From<serde_json::Error> for AxisError {
 }
 
 pub type Result<T> = std::result::Result<T, AxisError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== Error Display Tests ====================
+
+    #[test]
+    fn test_repository_not_found_display() {
+        let err = AxisError::RepositoryNotFound("/path/to/repo".to_string());
+        assert_eq!(err.to_string(), "Repository not found: /path/to/repo");
+    }
+
+    #[test]
+    fn test_repository_already_open_display() {
+        let err = AxisError::RepositoryAlreadyOpen("/path/to/repo".to_string());
+        assert_eq!(err.to_string(), "Repository already open: /path/to/repo");
+    }
+
+    #[test]
+    fn test_invalid_repository_path_display() {
+        let err = AxisError::InvalidRepositoryPath("/invalid/path".to_string());
+        assert_eq!(err.to_string(), "Invalid repository path: /invalid/path");
+    }
+
+    #[test]
+    fn test_git_error_display() {
+        let err = AxisError::GitError("reference not found".to_string());
+        assert_eq!(err.to_string(), "Git operation failed: reference not found");
+    }
+
+    #[test]
+    fn test_io_error_display() {
+        let err = AxisError::IoError("file not found".to_string());
+        assert_eq!(err.to_string(), "IO error: file not found");
+    }
+
+    #[test]
+    fn test_database_error_display() {
+        let err = AxisError::DatabaseError("connection failed".to_string());
+        assert_eq!(err.to_string(), "Database error: connection failed");
+    }
+
+    #[test]
+    fn test_serialization_error_display() {
+        let err = AxisError::SerializationError("invalid JSON".to_string());
+        assert_eq!(err.to_string(), "Serialization error: invalid JSON");
+    }
+
+    #[test]
+    fn test_invalid_reference_display() {
+        let err = AxisError::InvalidReference("bad-ref".to_string());
+        assert_eq!(err.to_string(), "Invalid reference: bad-ref");
+    }
+
+    #[test]
+    fn test_no_repository_open_display() {
+        let err = AxisError::NoRepositoryOpen;
+        assert_eq!(err.to_string(), "No repository is currently open");
+    }
+
+    #[test]
+    fn test_branch_not_found_display() {
+        let err = AxisError::BranchNotFound("feature".to_string());
+        assert_eq!(err.to_string(), "Branch not found: feature");
+    }
+
+    #[test]
+    fn test_branch_not_merged_display() {
+        let err = AxisError::BranchNotMerged("feature".to_string());
+        assert_eq!(err.to_string(), "Branch not fully merged: feature");
+    }
+
+    #[test]
+    fn test_remote_not_found_display() {
+        let err = AxisError::RemoteNotFound("upstream".to_string());
+        assert_eq!(err.to_string(), "Remote not found: upstream");
+    }
+
+    #[test]
+    fn test_file_not_found_display() {
+        let err = AxisError::FileNotFound("src/main.rs".to_string());
+        assert_eq!(err.to_string(), "File not found: src/main.rs");
+    }
+
+    #[test]
+    fn test_cannot_fast_forward_display() {
+        let err = AxisError::CannotFastForward;
+        assert_eq!(
+            err.to_string(),
+            "Cannot fast-forward, merge or rebase required"
+        );
+    }
+
+    #[test]
+    fn test_rebase_required_display() {
+        let err = AxisError::RebaseRequired;
+        assert_eq!(
+            err.to_string(),
+            "Rebase required - use Git CLI for interactive rebase"
+        );
+    }
+
+    #[test]
+    fn test_merge_conflict_display() {
+        let err = AxisError::MergeConflict;
+        assert_eq!(err.to_string(), "Merge conflict detected");
+    }
+
+    #[test]
+    fn test_checkout_conflict_display() {
+        let err = AxisError::CheckoutConflict(vec!["file1.rs".to_string(), "file2.rs".to_string()]);
+        assert_eq!(
+            err.to_string(),
+            "Checkout conflict: uncommitted changes would be overwritten"
+        );
+    }
+
+    #[test]
+    fn test_stash_apply_conflict_display() {
+        let err = AxisError::StashApplyConflict(vec!["conflict.rs".to_string()]);
+        assert_eq!(err.to_string(), "Stash applied with conflicts");
+    }
+
+    #[test]
+    fn test_authentication_failed_display() {
+        let err = AxisError::AuthenticationFailed("invalid credentials".to_string());
+        assert_eq!(
+            err.to_string(),
+            "Authentication failed: invalid credentials"
+        );
+    }
+
+    #[test]
+    fn test_ai_service_error_display() {
+        let err = AxisError::AiServiceError("rate limit exceeded".to_string());
+        assert_eq!(err.to_string(), "AI service error: rate limit exceeded");
+    }
+
+    #[test]
+    fn test_api_key_not_configured_display() {
+        let err = AxisError::ApiKeyNotConfigured("OpenAI".to_string());
+        assert_eq!(err.to_string(), "API key not configured for OpenAI");
+    }
+
+    #[test]
+    fn test_diff_too_large_display() {
+        let err = AxisError::DiffTooLarge(10_000_000);
+        assert_eq!(err.to_string(), "Diff too large: 10000000 bytes");
+    }
+
+    #[test]
+    fn test_other_error_display() {
+        let err = AxisError::Other("Something went wrong".to_string());
+        assert_eq!(err.to_string(), "Something went wrong");
+    }
+
+    #[test]
+    fn test_integration_not_connected_display() {
+        let err = AxisError::IntegrationNotConnected("GitHub".to_string());
+        assert_eq!(err.to_string(), "Integration not connected: GitHub");
+    }
+
+    #[test]
+    fn test_integration_error_display() {
+        let err = AxisError::IntegrationError("API request failed".to_string());
+        assert_eq!(err.to_string(), "Integration error: API request failed");
+    }
+
+    #[test]
+    fn test_provider_not_detected_display() {
+        let err = AxisError::ProviderNotDetected;
+        assert_eq!(err.to_string(), "Provider not detected");
+    }
+
+    #[test]
+    fn test_oauth_error_display() {
+        let err = AxisError::OAuthError("token expired".to_string());
+        assert_eq!(err.to_string(), "OAuth error: token expired");
+    }
+
+    #[test]
+    fn test_oauth_cancelled_display() {
+        let err = AxisError::OAuthCancelled;
+        assert_eq!(err.to_string(), "OAuth flow cancelled");
+    }
+
+    // ==================== From Conversion Tests ====================
+
+    #[test]
+    fn test_from_git2_error() {
+        let git_err = git2::Error::from_str("reference not found");
+        let axis_err: AxisError = git_err.into();
+        assert!(matches!(axis_err, AxisError::GitError(_)));
+        assert!(axis_err.to_string().contains("reference not found"));
+    }
+
+    #[test]
+    fn test_from_io_error() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let axis_err: AxisError = io_err.into();
+        assert!(matches!(axis_err, AxisError::IoError(_)));
+        assert!(axis_err.to_string().contains("file not found"));
+    }
+
+    #[test]
+    fn test_from_io_error_permission_denied() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied");
+        let axis_err: AxisError = io_err.into();
+        assert!(matches!(axis_err, AxisError::IoError(_)));
+        assert!(axis_err.to_string().contains("access denied"));
+    }
+
+    #[test]
+    fn test_from_serde_json_error() {
+        let json_result: std::result::Result<serde_json::Value, _> =
+            serde_json::from_str("invalid json");
+        let json_err = json_result.expect_err("should be an error");
+        let axis_err: AxisError = json_err.into();
+        assert!(matches!(axis_err, AxisError::SerializationError(_)));
+    }
+
+    // ==================== Serialization Tests ====================
+
+    #[test]
+    fn test_error_serialization_simple() {
+        let err = AxisError::NoRepositoryOpen;
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"NoRepositoryOpen\""));
+    }
+
+    #[test]
+    fn test_error_serialization_with_string() {
+        let err = AxisError::BranchNotFound("main".to_string());
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"BranchNotFound\""));
+        assert!(json.contains("\"data\":\"main\""));
+    }
+
+    #[test]
+    fn test_error_serialization_with_vec() {
+        let err = AxisError::CheckoutConflict(vec!["file1.rs".to_string(), "file2.rs".to_string()]);
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"CheckoutConflict\""));
+        assert!(json.contains("file1.rs"));
+        assert!(json.contains("file2.rs"));
+    }
+
+    #[test]
+    fn test_error_serialization_with_usize() {
+        let err = AxisError::DiffTooLarge(5000);
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"DiffTooLarge\""));
+        assert!(json.contains("5000"));
+    }
+
+    // ==================== Result Type Tests ====================
+
+    #[test]
+    fn test_result_ok() {
+        let result: Result<i32> = Ok(42);
+        assert!(result.is_ok());
+        assert_eq!(result.expect("should be ok"), 42);
+    }
+
+    #[test]
+    fn test_result_err() {
+        let result: Result<i32> = Err(AxisError::NoRepositoryOpen);
+        assert!(result.is_err());
+        let err = result.expect_err("should be error");
+        assert!(matches!(err, AxisError::NoRepositoryOpen));
+    }
+
+    // ==================== Debug Tests ====================
+
+    #[test]
+    fn test_error_debug() {
+        let err = AxisError::BranchNotFound("feature".to_string());
+        let debug_str = format!("{:?}", err);
+        assert!(debug_str.contains("BranchNotFound"));
+        assert!(debug_str.contains("feature"));
+    }
+}

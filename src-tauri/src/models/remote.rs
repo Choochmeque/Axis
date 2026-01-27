@@ -157,3 +157,379 @@ pub struct PullOptions {
     /// Fast-forward only
     pub ff_only: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== Remote Tests ====================
+
+    #[test]
+    fn test_remote_creation() {
+        let remote = Remote {
+            name: "origin".to_string(),
+            url: Some("https://github.com/user/repo.git".to_string()),
+            push_url: None,
+            fetch_refspecs: vec!["+refs/heads/*:refs/remotes/origin/*".to_string()],
+            push_refspecs: vec![],
+        };
+
+        assert_eq!(remote.name, "origin");
+        assert!(remote.url.is_some());
+        assert!(remote.push_url.is_none());
+        assert_eq!(remote.fetch_refspecs.len(), 1);
+    }
+
+    #[test]
+    fn test_remote_with_push_url() {
+        let remote = Remote {
+            name: "origin".to_string(),
+            url: Some("https://github.com/user/repo.git".to_string()),
+            push_url: Some("git@github.com:user/repo.git".to_string()),
+            fetch_refspecs: vec![],
+            push_refspecs: vec![],
+        };
+
+        assert!(remote.push_url.is_some());
+        assert_ne!(remote.url, remote.push_url);
+    }
+
+    #[test]
+    fn test_remote_serialization() {
+        let remote = Remote {
+            name: "upstream".to_string(),
+            url: Some("https://example.com/repo.git".to_string()),
+            push_url: None,
+            fetch_refspecs: vec!["ref1".to_string()],
+            push_refspecs: vec!["ref2".to_string()],
+        };
+
+        let json = serde_json::to_string(&remote).expect("should serialize");
+        assert!(json.contains("\"name\":\"upstream\""));
+        assert!(json.contains("\"fetchRefspecs\":[\"ref1\"]"));
+        assert!(json.contains("\"pushRefspecs\":[\"ref2\"]"));
+    }
+
+    // ==================== FetchProgress Tests ====================
+
+    #[test]
+    fn test_fetch_progress_default() {
+        let progress = FetchProgress::default();
+        assert_eq!(progress.total_objects, 0);
+        assert_eq!(progress.indexed_objects, 0);
+        assert_eq!(progress.received_objects, 0);
+        assert_eq!(progress.local_objects, 0);
+        assert_eq!(progress.total_deltas, 0);
+        assert_eq!(progress.indexed_deltas, 0);
+        assert_eq!(progress.received_bytes, 0);
+    }
+
+    #[test]
+    fn test_fetch_progress_in_progress() {
+        let progress = FetchProgress {
+            total_objects: 100,
+            indexed_objects: 50,
+            received_objects: 75,
+            local_objects: 10,
+            total_deltas: 20,
+            indexed_deltas: 15,
+            received_bytes: 1024,
+        };
+
+        assert_eq!(progress.total_objects, 100);
+        assert_eq!(progress.received_objects, 75);
+        assert_eq!(progress.received_bytes, 1024);
+    }
+
+    // ==================== PushProgress Tests ====================
+
+    #[test]
+    fn test_push_progress_default() {
+        let progress = PushProgress::default();
+        assert_eq!(progress.current, 0);
+        assert_eq!(progress.total, 0);
+        assert_eq!(progress.bytes, 0);
+    }
+
+    #[test]
+    fn test_push_progress_in_progress() {
+        let progress = PushProgress {
+            current: 5,
+            total: 10,
+            bytes: 2048,
+        };
+
+        assert_eq!(progress.current, 5);
+        assert_eq!(progress.total, 10);
+        assert_eq!(progress.bytes, 2048);
+    }
+
+    // ==================== RefUpdateStatus Tests ====================
+
+    #[test]
+    fn test_ref_update_status_serialization() {
+        let ff = RefUpdateStatus::FastForward;
+        let json = serde_json::to_string(&ff).expect("should serialize");
+        assert_eq!(json, "\"FastForward\"");
+
+        let forced = RefUpdateStatus::Forced;
+        let json = serde_json::to_string(&forced).expect("should serialize");
+        assert_eq!(json, "\"Forced\"");
+
+        let new = RefUpdateStatus::New;
+        let json = serde_json::to_string(&new).expect("should serialize");
+        assert_eq!(json, "\"New\"");
+
+        let deleted = RefUpdateStatus::Deleted;
+        let json = serde_json::to_string(&deleted).expect("should serialize");
+        assert_eq!(json, "\"Deleted\"");
+    }
+
+    // ==================== PushStatus Tests ====================
+
+    #[test]
+    fn test_push_status_serialization() {
+        let ok = PushStatus::Ok;
+        let json = serde_json::to_string(&ok).expect("should serialize");
+        assert_eq!(json, "\"Ok\"");
+
+        let rejected = PushStatus::Rejected;
+        let json = serde_json::to_string(&rejected).expect("should serialize");
+        assert_eq!(json, "\"Rejected\"");
+
+        let up_to_date = PushStatus::UpToDate;
+        let json = serde_json::to_string(&up_to_date).expect("should serialize");
+        assert_eq!(json, "\"UpToDate\"");
+    }
+
+    // ==================== UpdatedRef Tests ====================
+
+    #[test]
+    fn test_updated_ref_fast_forward() {
+        let updated = UpdatedRef {
+            ref_name: "refs/heads/main".to_string(),
+            old_oid: Some("abc123".to_string()),
+            new_oid: Some("def456".to_string()),
+            status: RefUpdateStatus::FastForward,
+        };
+
+        assert_eq!(updated.ref_name, "refs/heads/main");
+        assert!(updated.old_oid.is_some());
+        assert!(updated.new_oid.is_some());
+    }
+
+    #[test]
+    fn test_updated_ref_new_branch() {
+        let updated = UpdatedRef {
+            ref_name: "refs/heads/feature".to_string(),
+            old_oid: None,
+            new_oid: Some("xyz789".to_string()),
+            status: RefUpdateStatus::New,
+        };
+
+        assert!(updated.old_oid.is_none());
+        assert!(updated.new_oid.is_some());
+    }
+
+    // ==================== FetchResult Tests ====================
+
+    #[test]
+    fn test_fetch_result_creation() {
+        let result = FetchResult {
+            remote: "origin".to_string(),
+            updated_refs: vec![UpdatedRef {
+                ref_name: "refs/remotes/origin/main".to_string(),
+                old_oid: Some("old".to_string()),
+                new_oid: Some("new".to_string()),
+                status: RefUpdateStatus::FastForward,
+            }],
+            stats: FetchProgress::default(),
+        };
+
+        assert_eq!(result.remote, "origin");
+        assert_eq!(result.updated_refs.len(), 1);
+    }
+
+    // ==================== PushedRef Tests ====================
+
+    #[test]
+    fn test_pushed_ref_ok() {
+        let pushed = PushedRef {
+            ref_name: "refs/heads/main".to_string(),
+            status: PushStatus::Ok,
+            message: None,
+        };
+
+        assert!(matches!(pushed.status, PushStatus::Ok));
+        assert!(pushed.message.is_none());
+    }
+
+    #[test]
+    fn test_pushed_ref_rejected() {
+        let pushed = PushedRef {
+            ref_name: "refs/heads/main".to_string(),
+            status: PushStatus::Rejected,
+            message: Some("non-fast-forward".to_string()),
+        };
+
+        assert!(matches!(pushed.status, PushStatus::Rejected));
+        assert!(pushed.message.is_some());
+    }
+
+    // ==================== PushResult Tests ====================
+
+    #[test]
+    fn test_push_result_creation() {
+        let result = PushResult {
+            remote: "origin".to_string(),
+            pushed_refs: vec![PushedRef {
+                ref_name: "refs/heads/main".to_string(),
+                status: PushStatus::Ok,
+                message: None,
+            }],
+        };
+
+        assert_eq!(result.remote, "origin");
+        assert_eq!(result.pushed_refs.len(), 1);
+    }
+
+    // ==================== CheckoutOptions Tests ====================
+
+    #[test]
+    fn test_checkout_options_default() {
+        let opts = CheckoutOptions::default();
+        assert!(!opts.create);
+        assert!(!opts.force);
+        assert!(opts.track.is_none());
+    }
+
+    #[test]
+    fn test_checkout_options_create_branch() {
+        let opts = CheckoutOptions {
+            create: true,
+            force: false,
+            track: Some("origin/feature".to_string()),
+        };
+
+        assert!(opts.create);
+        assert!(!opts.force);
+        assert_eq!(opts.track, Some("origin/feature".to_string()));
+    }
+
+    // ==================== CreateBranchOptions Tests ====================
+
+    #[test]
+    fn test_create_branch_options_default() {
+        let opts = CreateBranchOptions::default();
+        assert!(opts.start_point.is_none());
+        assert!(!opts.force);
+        assert!(opts.track.is_none());
+    }
+
+    #[test]
+    fn test_create_branch_options_from_commit() {
+        let opts = CreateBranchOptions {
+            start_point: Some("abc123".to_string()),
+            force: false,
+            track: None,
+        };
+
+        assert_eq!(opts.start_point, Some("abc123".to_string()));
+    }
+
+    // ==================== DeleteBranchOptions Tests ====================
+
+    #[test]
+    fn test_delete_branch_options_default() {
+        let opts = DeleteBranchOptions::default();
+        assert!(!opts.force);
+        assert!(!opts.delete_remote);
+    }
+
+    #[test]
+    fn test_delete_branch_options_force() {
+        let opts = DeleteBranchOptions {
+            force: true,
+            delete_remote: true,
+        };
+
+        assert!(opts.force);
+        assert!(opts.delete_remote);
+    }
+
+    // ==================== FetchOptions Tests ====================
+
+    #[test]
+    fn test_fetch_options_default() {
+        let opts = FetchOptions::default();
+        assert!(!opts.prune);
+        assert!(!opts.tags);
+        assert!(opts.depth.is_none());
+    }
+
+    #[test]
+    fn test_fetch_options_custom() {
+        let opts = FetchOptions {
+            prune: true,
+            tags: true,
+            depth: Some(1),
+        };
+
+        assert!(opts.prune);
+        assert!(opts.tags);
+        assert_eq!(opts.depth, Some(1));
+    }
+
+    // ==================== PushOptions Tests ====================
+
+    #[test]
+    fn test_push_options_default() {
+        let opts = PushOptions::default();
+        assert!(!opts.force);
+        assert!(!opts.set_upstream);
+        assert!(!opts.tags);
+    }
+
+    #[test]
+    fn test_push_options_force_with_upstream() {
+        let opts = PushOptions {
+            force: true,
+            set_upstream: true,
+            tags: false,
+        };
+
+        assert!(opts.force);
+        assert!(opts.set_upstream);
+    }
+
+    // ==================== PullOptions Tests ====================
+
+    #[test]
+    fn test_pull_options_default() {
+        let opts = PullOptions::default();
+        assert!(!opts.rebase);
+        assert!(!opts.ff_only);
+    }
+
+    #[test]
+    fn test_pull_options_rebase() {
+        let opts = PullOptions {
+            rebase: true,
+            ff_only: false,
+        };
+
+        assert!(opts.rebase);
+        assert!(!opts.ff_only);
+    }
+
+    #[test]
+    fn test_pull_options_ff_only() {
+        let opts = PullOptions {
+            rebase: false,
+            ff_only: true,
+        };
+
+        assert!(!opts.rebase);
+        assert!(opts.ff_only);
+    }
+}

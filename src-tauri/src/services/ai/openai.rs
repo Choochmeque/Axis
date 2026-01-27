@@ -111,3 +111,119 @@ impl AiProviderTrait for OpenAiProvider {
         "OpenAI"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== OpenAiProvider Tests ====================
+
+    #[test]
+    fn test_openai_provider_name() {
+        let provider = OpenAiProvider;
+        assert_eq!(provider.name(), "OpenAI");
+    }
+
+    #[test]
+    fn test_openai_provider_default_model() {
+        let provider = OpenAiProvider;
+        assert_eq!(provider.default_model(), "gpt-4o-mini");
+    }
+
+    // ==================== OpenAiRequest Serialization Tests ====================
+
+    #[test]
+    fn test_openai_request_serialization() {
+        let request = OpenAiRequest {
+            model: "gpt-4o-mini".to_string(),
+            messages: vec![
+                OpenAiMessage {
+                    role: "system".to_string(),
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                OpenAiMessage {
+                    role: "user".to_string(),
+                    content: "Hello".to_string(),
+                },
+            ],
+            max_tokens: 500,
+            temperature: 0.3,
+        };
+
+        let json = serde_json::to_string(&request).expect("should serialize");
+        assert!(json.contains("\"model\":\"gpt-4o-mini\""));
+        assert!(json.contains("\"role\":\"system\""));
+        assert!(json.contains("\"role\":\"user\""));
+        assert!(json.contains("\"max_tokens\":500"));
+        assert!(json.contains("\"temperature\":0.3"));
+    }
+
+    #[test]
+    fn test_openai_message_serialization() {
+        let message = OpenAiMessage {
+            role: "assistant".to_string(),
+            content: "How can I help you?".to_string(),
+        };
+
+        let json = serde_json::to_string(&message).expect("should serialize");
+        assert!(json.contains("\"role\":\"assistant\""));
+        assert!(json.contains("\"content\":\"How can I help you?\""));
+    }
+
+    // ==================== OpenAiResponse Deserialization Tests ====================
+
+    #[test]
+    fn test_openai_response_deserialization() {
+        let json = r#"{
+            "choices": [
+                {
+                    "message": {
+                        "content": "fix: resolve authentication bug"
+                    }
+                }
+            ]
+        }"#;
+
+        let response: OpenAiResponse = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(response.choices.len(), 1);
+        assert_eq!(
+            response.choices[0].message.content,
+            "fix: resolve authentication bug"
+        );
+    }
+
+    #[test]
+    fn test_openai_response_empty_choices() {
+        let json = r#"{"choices": []}"#;
+
+        let response: OpenAiResponse = serde_json::from_str(json).expect("should deserialize");
+        assert!(response.choices.is_empty());
+    }
+
+    #[test]
+    fn test_openai_response_multiple_choices() {
+        let json = r#"{
+            "choices": [
+                {"message": {"content": "Option 1"}},
+                {"message": {"content": "Option 2"}}
+            ]
+        }"#;
+
+        let response: OpenAiResponse = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(response.choices.len(), 2);
+    }
+
+    // ==================== API Key Validation Tests ====================
+
+    #[tokio::test]
+    async fn test_generate_commit_message_no_api_key() {
+        let provider = OpenAiProvider;
+        let result = provider
+            .generate_commit_message("diff content", None, None, None, false)
+            .await;
+
+        assert!(result.is_err());
+        let err = result.expect_err("should be error");
+        assert!(err.to_string().contains("API key not configured"));
+    }
+}

@@ -364,3 +364,284 @@ impl AppState {
         self.background_fetch.is_running()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    // ==================== RepositoryCache Tests ====================
+
+    #[test]
+    fn test_repository_cache_new() {
+        let cache = RepositoryCache::new();
+        assert!(cache.is_empty());
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn test_repository_cache_default() {
+        let cache = RepositoryCache::default();
+        assert!(cache.is_empty());
+    }
+
+    #[test]
+    fn test_repository_cache_get_nonexistent() {
+        let cache = RepositoryCache::new();
+        let path = PathBuf::from("/nonexistent/repo");
+        let result = cache.get(&path);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_repository_cache_contains_empty() {
+        let cache = RepositoryCache::new();
+        let path = PathBuf::from("/some/path");
+        assert!(!cache.contains(&path));
+    }
+
+    #[test]
+    fn test_repository_cache_list_paths_empty() {
+        let cache = RepositoryCache::new();
+        let paths = cache.list_paths();
+        assert!(paths.is_empty());
+    }
+
+    #[test]
+    fn test_repository_cache_remove_nonexistent() {
+        let cache = RepositoryCache::new();
+        let path = PathBuf::from("/some/path");
+        // Should not panic when removing non-existent path
+        cache.remove(&path);
+        assert!(cache.is_empty());
+    }
+
+    #[test]
+    fn test_repository_cache_len_empty() {
+        let cache = RepositoryCache::new();
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn test_repository_cache_is_empty_true() {
+        let cache = RepositoryCache::new();
+        assert!(cache.is_empty());
+    }
+
+    // ==================== GitServiceHandle Tests ====================
+    // Note: GitServiceHandle requires a real GitService which needs a repository,
+    // so we use integration tests with temporary repos for those.
+
+    // ==================== AppState Basic Tests ====================
+    // Note: AppState requires Database and AppHandle, testing basic error paths
+
+    #[test]
+    fn test_app_state_get_current_repository_path_none() {
+        // Create a temporary in-memory database for testing
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Initially no repository should be active
+        assert!(state.get_current_repository_path().is_none());
+    }
+
+    #[test]
+    fn test_app_state_ensure_repository_open_error() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let result = state.ensure_repository_open();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_app_state_get_app_handle_error() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let result = state.get_app_handle();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_app_state_close_current_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Close when nothing is open should not panic
+        state.close_current_repository();
+        assert!(state.get_current_repository_path().is_none());
+    }
+
+    #[test]
+    fn test_app_state_close_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let path = PathBuf::from("/test/repo");
+        // Close non-existent repo should not panic
+        state.close_repository(&path);
+        assert!(state.get_current_repository_path().is_none());
+    }
+
+    #[test]
+    fn test_app_state_repository_cache() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let cache = state.repository_cache();
+        assert!(cache.is_empty());
+    }
+
+    #[test]
+    fn test_app_state_commit_cache() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Just verify we can get the commit cache
+        let _cache = state.commit_cache();
+    }
+
+    #[test]
+    fn test_app_state_avatar_service_not_initialized() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Avatar service is not initialized until set_app_handle is called
+        let result = state.avatar_service();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_app_state_integration_service() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Integration service is initialized in new()
+        let result = state.integration_service();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_app_state_progress_registry() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let registry = state.progress_registry();
+        // Verify registry works
+        let token = registry.register("test-op");
+        assert!(!token.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_app_state_background_fetch_not_running() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Initially not running
+        assert!(!state.is_background_fetch_running());
+    }
+
+    #[test]
+    fn test_app_state_stop_background_fetch() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Stop should not panic even if not running
+        state.stop_background_fetch();
+        assert!(!state.is_background_fetch_running());
+    }
+
+    #[test]
+    fn test_app_state_get_settings() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let result = state.get_settings();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_app_state_save_settings() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let settings = AppSettings::default();
+        let result = state.save_settings(&settings);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_app_state_get_recent_repositories_empty() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let result = state.get_recent_repositories();
+        assert!(result.is_ok());
+        assert!(result.expect("should get repos").is_empty());
+    }
+
+    #[test]
+    fn test_app_state_add_recent_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let path = PathBuf::from("/test/repo");
+        let result = state.add_recent_repository(&path, "test-repo");
+        assert!(result.is_ok());
+
+        let repos = state.get_recent_repositories().expect("should get repos");
+        assert_eq!(repos.len(), 1);
+    }
+
+    #[test]
+    fn test_app_state_remove_recent_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let path = PathBuf::from("/test/repo");
+        state
+            .add_recent_repository(&path, "test-repo")
+            .expect("should add");
+
+        let result = state.remove_recent_repository(&path);
+        assert!(result.is_ok());
+
+        let repos = state.get_recent_repositories().expect("should get repos");
+        assert!(repos.is_empty());
+    }
+
+    #[test]
+    fn test_app_state_secrets() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Initially no secret
+        assert!(!state.has_secret("test-key").expect("should check"));
+        assert!(state.get_secret("test-key").expect("should get").is_none());
+
+        // Set secret
+        state
+            .set_secret("test-key", "test-value")
+            .expect("should set");
+        assert!(state.has_secret("test-key").expect("should check"));
+        assert_eq!(
+            state.get_secret("test-key").expect("should get"),
+            Some("test-value".to_string())
+        );
+
+        // Delete secret
+        state.delete_secret("test-key").expect("should delete");
+        assert!(!state.has_secret("test-key").expect("should check"));
+    }
+
+    #[test]
+    fn test_app_state_get_git_service_error() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // No repository open
+        let result = state.get_git_service();
+        assert!(result.is_err());
+    }
+}

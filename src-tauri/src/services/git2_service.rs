@@ -3972,4 +3972,314 @@ mod tests {
             .expect("should list tags after delete")
             .is_empty());
     }
+
+    // ==================== File Operations Tests ====================
+
+    #[test]
+    fn test_get_file_blob() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let content = service
+            .get_file_blob("README.md", None)
+            .expect("should get file blob");
+        assert!(!content.is_empty());
+        assert_eq!(content, b"# Test Repository");
+    }
+
+    #[test]
+    fn test_get_file_blob_at_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let head_oid = service.get_head_oid();
+
+        // Modify the file
+        fs::write(tmp.path().join("README.md"), "# Modified").expect("should write");
+        service.stage_file("README.md").expect("should stage");
+        service
+            .create_commit("Modify README", None, None, None)
+            .expect("should commit");
+
+        // Get blob at original commit
+        let content = service
+            .get_file_blob("README.md", Some(&head_oid))
+            .expect("should get file blob at commit");
+        assert_eq!(content, b"# Test Repository");
+    }
+
+    #[test]
+    fn test_get_file_blob_nonexistent() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.get_file_blob("nonexistent.txt", None);
+        assert!(result.is_err());
+    }
+
+    // ==================== Reflog Tests ====================
+
+    #[test]
+    fn test_get_reflog_count() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let count = service
+            .get_reflog_count("HEAD")
+            .expect("should get reflog count");
+        assert!(count >= 1);
+    }
+
+    #[test]
+    fn test_list_reflogs() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let reflogs = service.list_reflogs().expect("should list reflogs");
+        assert!(!reflogs.is_empty());
+        assert!(reflogs.contains(&"HEAD".to_string()));
+    }
+
+    // ==================== Repository Info Tests ====================
+
+    #[test]
+    fn test_is_head_unborn() {
+        let (_tmp, service) = setup_test_repo();
+        // Before first commit, HEAD is unborn
+        assert!(service.is_head_unborn());
+    }
+
+    #[test]
+    fn test_is_head_unborn_after_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+        assert!(!service.is_head_unborn());
+    }
+
+    #[test]
+    fn test_get_head_oid_opt_none() {
+        let (_tmp, service) = setup_test_repo();
+        // Before first commit, HEAD OID should be None
+        let oid = service.get_head_oid_opt();
+        assert!(oid.is_none());
+    }
+
+    #[test]
+    fn test_get_head_oid_opt_some() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let oid = service.get_head_oid_opt();
+        assert!(oid.is_some());
+        assert!(!oid.expect("should have oid").is_empty());
+    }
+
+    // ==================== User Config Tests ====================
+
+    #[test]
+    fn test_get_user_signature() {
+        let (_tmp, service) = setup_test_repo();
+
+        // Configure user
+        service
+            .set_repo_user_config(Some("Test User"), Some("test@example.com"))
+            .expect("should set config");
+
+        let (name, email) = service
+            .get_user_signature()
+            .expect("should get user signature");
+
+        assert_eq!(name, "Test User");
+        assert_eq!(email, "test@example.com");
+    }
+
+    #[test]
+    fn test_get_repo_user_config() {
+        let (_tmp, service) = setup_test_repo();
+
+        // Initially may be None
+        let (name, email) = service
+            .get_repo_user_config()
+            .expect("should get repo user config");
+
+        // Values may or may not exist depending on system config
+        let _ = name;
+        let _ = email;
+    }
+
+    #[test]
+    fn test_set_repo_user_config() {
+        let (_tmp, service) = setup_test_repo();
+
+        service
+            .set_repo_user_config(Some("New User"), Some("new@example.com"))
+            .expect("should set repo user config");
+
+        let (name, email) = service.get_repo_user_config().expect("should get config");
+
+        assert_eq!(name, Some("New User".to_string()));
+        assert_eq!(email, Some("new@example.com".to_string()));
+    }
+
+    // ==================== Unstage Tests ====================
+
+    #[test]
+    fn test_unstage_all() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        fs::write(tmp.path().join("file1.txt"), "content1").expect("should write");
+        fs::write(tmp.path().join("file2.txt"), "content2").expect("should write");
+
+        service.stage_all().expect("should stage all");
+
+        let status = service.status().expect("should get status");
+        assert!(status.staged.len() >= 2);
+
+        service.unstage_all().expect("should unstage all");
+
+        let status = service.status().expect("should get status");
+        assert!(status.staged.is_empty());
+    }
+
+    #[test]
+    fn test_unstage_files() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        fs::write(tmp.path().join("unstage1.txt"), "content1").expect("should write");
+        fs::write(tmp.path().join("unstage2.txt"), "content2").expect("should write");
+
+        service
+            .stage_files(&["unstage1.txt".to_string(), "unstage2.txt".to_string()])
+            .expect("should stage files");
+
+        service
+            .unstage_files(&["unstage1.txt".to_string()])
+            .expect("should unstage file");
+
+        let status = service.status().expect("should get status");
+        // Only unstage2.txt should remain staged
+        assert_eq!(status.staged.len(), 1);
+    }
+
+    // ==================== Diff Tests ====================
+
+    #[test]
+    fn test_diff_head() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify file
+        fs::write(tmp.path().join("README.md"), "# Modified").expect("should write");
+
+        let diff = service
+            .diff_head(&crate::models::DiffOptions::default())
+            .expect("should diff head");
+
+        assert!(!diff.is_empty());
+    }
+
+    #[test]
+    fn test_diff_commits() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let first_commit = service.get_head_oid();
+
+        fs::write(tmp.path().join("diff_test.txt"), "new content").expect("should write");
+        service.stage_file("diff_test.txt").expect("should stage");
+        let second_commit = service
+            .create_commit("Second commit", None, None, None)
+            .expect("should commit");
+
+        let diff = service
+            .diff_commits(
+                &first_commit,
+                &second_commit,
+                &crate::models::DiffOptions::default(),
+            )
+            .expect("should diff commits");
+
+        assert!(!diff.is_empty());
+    }
+
+    // ==================== Get Commit Tests ====================
+
+    #[test]
+    fn test_get_commit() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let oid = service.get_head_oid();
+        let commit = service.get_commit(&oid).expect("should get commit");
+
+        assert_eq!(commit.oid, oid);
+        assert!(!commit.message.is_empty());
+    }
+
+    #[test]
+    fn test_get_commit_invalid() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.get_commit("invalid_oid");
+        assert!(result.is_err());
+    }
+
+    // ==================== Delete File Tests ====================
+
+    #[test]
+    fn test_delete_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create and stage a file
+        fs::write(tmp.path().join("to_delete.txt"), "content").expect("should write");
+        service.stage_file("to_delete.txt").expect("should stage");
+        service
+            .create_commit("Add file", None, None, None)
+            .expect("should commit");
+
+        // Delete the file
+        service.delete_file("to_delete.txt").expect("should delete");
+
+        assert!(!tmp.path().join("to_delete.txt").exists());
+    }
+
+    // ==================== Discard Unstaged Tests ====================
+
+    #[test]
+    fn test_discard_unstaged() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Modify file
+        fs::write(tmp.path().join("README.md"), "# Modified").expect("should write");
+
+        // Discard
+        service.discard_unstaged().expect("should discard");
+
+        // File should be back to original
+        let content = fs::read_to_string(tmp.path().join("README.md")).expect("should read");
+        assert_eq!(content, "# Test Repository");
+    }
+
+    // ==================== Set Branch Upstream Tests ====================
+
+    #[test]
+    fn test_set_branch_upstream_clear() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Get current branch name
+        let branch_name = service
+            .get_current_branch_name()
+            .expect("should have branch name");
+
+        // Clearing upstream when none exists should not error
+        service
+            .set_branch_upstream(&branch_name, None)
+            .expect("should clear upstream");
+    }
 }

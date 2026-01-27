@@ -422,3 +422,541 @@ impl HookService {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn setup_test_repo() -> (TempDir, git2::Repository) {
+        let tmp = TempDir::new().expect("should create temp directory");
+        let repo = git2::Repository::init(tmp.path()).expect("should init repo");
+        (tmp, repo)
+    }
+
+    // ==================== HookService Creation Tests ====================
+
+    #[test]
+    fn test_hook_service_new() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Use canonical paths to handle symlinks (e.g., /var -> /private/var on macOS)
+        let expected_path = repo.workdir().expect("should have workdir");
+        let actual_path = &service.repo_path;
+
+        // Both should resolve to the same canonical path
+        assert!(
+            actual_path
+                .canonicalize()
+                .ok()
+                .map(|p| expected_path
+                    .canonicalize()
+                    .ok()
+                    .map(|e| p == e)
+                    .unwrap_or(false))
+                .unwrap_or(false)
+                || actual_path == expected_path
+        );
+        assert!(service.hooks_path.ends_with("hooks"));
+    }
+
+    #[test]
+    fn test_hooks_path_default() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Default hooks path should be .git/hooks
+        let expected = repo.path().join("hooks");
+        assert_eq!(service.hooks_path(), expected);
+    }
+
+    // ==================== List Hooks Tests ====================
+
+    #[test]
+    fn test_list_hooks_empty_repo() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let hooks = service.list_hooks();
+
+        // Should return all hook types
+        assert!(!hooks.is_empty());
+
+        // All hooks should not exist in fresh repo
+        for hook in &hooks {
+            assert!(!hook.exists);
+            assert!(!hook.enabled);
+        }
+    }
+
+    #[test]
+    fn test_list_hooks_contains_all_types() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let hooks = service.list_hooks();
+        let hook_types: Vec<_> = hooks.iter().map(|h| h.hook_type).collect();
+
+        assert!(hook_types.contains(&GitHookType::PreCommit));
+        assert!(hook_types.contains(&GitHookType::CommitMsg));
+        assert!(hook_types.contains(&GitHookType::PostCommit));
+        assert!(hook_types.contains(&GitHookType::PrePush));
+    }
+
+    // ==================== Get Hook Info Tests ====================
+
+    #[test]
+    fn test_get_hook_info_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let info = service.get_hook_info(GitHookType::PreCommit);
+
+        assert!(!info.exists);
+        assert!(!info.enabled);
+        assert!(!info.is_executable);
+        assert!(info.path.contains("pre-commit"));
+    }
+
+    #[test]
+    fn test_get_hook_info_existing() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create hooks directory and hook file
+        fs::create_dir_all(&service.hooks_path).expect("should create hooks dir");
+        let hook_path = service.hooks_path.join("pre-commit");
+        fs::write(&hook_path, "#!/bin/sh\nexit 0").expect("should write hook");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&hook_path)
+                .expect("should get metadata")
+                .permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&hook_path, perms).expect("should set permissions");
+        }
+
+        let info = service.get_hook_info(GitHookType::PreCommit);
+
+        assert!(info.exists);
+        assert!(info.enabled);
+        #[cfg(unix)]
+        assert!(info.is_executable);
+    }
+
+    #[test]
+    fn test_get_hook_info_disabled() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create hooks directory and disabled hook file
+        fs::create_dir_all(&service.hooks_path).expect("should create hooks dir");
+        let disabled_path = service.hooks_path.join("pre-commit.disabled");
+        fs::write(&disabled_path, "#!/bin/sh\nexit 0").expect("should write hook");
+
+        let info = service.get_hook_info(GitHookType::PreCommit);
+
+        assert!(info.exists);
+        assert!(!info.enabled);
+    }
+
+    // ==================== Get Hook Details Tests ====================
+
+    #[test]
+    fn test_get_hook_details_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.get_hook_details(GitHookType::PreCommit);
+        let details = result.expect("should get details");
+
+        assert!(!details.info.exists);
+        assert!(details.content.is_none());
+    }
+
+    #[test]
+    fn test_get_hook_details_existing() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        fs::create_dir_all(&service.hooks_path).expect("should create hooks dir");
+        let hook_content = "#!/bin/sh\necho 'Hello from hook'";
+        let hook_path = service.hooks_path.join("pre-commit");
+        fs::write(&hook_path, hook_content).expect("should write hook");
+
+        let result = service.get_hook_details(GitHookType::PreCommit);
+        let details = result.expect("should get details");
+
+        assert!(details.info.exists);
+        assert_eq!(details.content, Some(hook_content.to_string()));
+    }
+
+    // ==================== Create Hook Tests ====================
+
+    #[test]
+    fn test_create_hook() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let content = "#!/bin/sh\nexit 0";
+        let result = service.create_hook(GitHookType::PreCommit, content);
+        assert!(result.is_ok());
+
+        let hook_path = service.hooks_path.join("pre-commit");
+        assert!(hook_path.exists());
+
+        let saved_content = fs::read_to_string(&hook_path).expect("should read hook");
+        assert_eq!(saved_content, content);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(&hook_path)
+                .expect("should get metadata")
+                .permissions()
+                .mode();
+            assert!(mode & 0o111 != 0, "Hook should be executable");
+        }
+    }
+
+    #[test]
+    fn test_create_hook_already_exists() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create first hook
+        let content = "#!/bin/sh\nexit 0";
+        service
+            .create_hook(GitHookType::PreCommit, content)
+            .expect("should create hook");
+
+        // Try to create again
+        let result = service.create_hook(GitHookType::PreCommit, content);
+        assert!(result.is_err());
+        assert!(result
+            .expect_err("should be error")
+            .to_string()
+            .contains("already exists"));
+    }
+
+    // ==================== Update Hook Tests ====================
+
+    #[test]
+    fn test_update_hook() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create hook first
+        let initial = "#!/bin/sh\nexit 0";
+        service
+            .create_hook(GitHookType::PreCommit, initial)
+            .expect("should create hook");
+
+        // Update hook
+        let updated = "#!/bin/sh\necho 'updated'\nexit 0";
+        let result = service.update_hook(GitHookType::PreCommit, updated);
+        assert!(result.is_ok());
+
+        let hook_path = service.hooks_path.join("pre-commit");
+        let content = fs::read_to_string(&hook_path).expect("should read hook");
+        assert_eq!(content, updated);
+    }
+
+    #[test]
+    fn test_update_hook_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.update_hook(GitHookType::PreCommit, "content");
+        assert!(result.is_err());
+        assert!(result
+            .expect_err("should be error")
+            .to_string()
+            .contains("does not exist"));
+    }
+
+    // ==================== Delete Hook Tests ====================
+
+    #[test]
+    fn test_delete_hook() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create hook first
+        service
+            .create_hook(GitHookType::PreCommit, "#!/bin/sh\nexit 0")
+            .expect("should create hook");
+
+        let hook_path = service.hooks_path.join("pre-commit");
+        assert!(hook_path.exists());
+
+        // Delete hook
+        let result = service.delete_hook(GitHookType::PreCommit);
+        assert!(result.is_ok());
+        assert!(!hook_path.exists());
+    }
+
+    #[test]
+    fn test_delete_hook_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.delete_hook(GitHookType::PreCommit);
+        assert!(result.is_err());
+        assert!(result
+            .expect_err("should be error")
+            .to_string()
+            .contains("does not exist"));
+    }
+
+    // ==================== Toggle Hook Tests ====================
+
+    #[test]
+    fn test_toggle_hook_disable() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create enabled hook
+        service
+            .create_hook(GitHookType::PreCommit, "#!/bin/sh\nexit 0")
+            .expect("should create hook");
+
+        // Toggle to disable
+        let result = service.toggle_hook(GitHookType::PreCommit);
+        assert!(result.is_ok());
+        assert!(!result.expect("should toggle"), "Should now be disabled");
+
+        let hook_path = service.hooks_path.join("pre-commit");
+        let disabled_path = service.hooks_path.join("pre-commit.disabled");
+        assert!(!hook_path.exists());
+        assert!(disabled_path.exists());
+    }
+
+    #[test]
+    fn test_toggle_hook_enable() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create disabled hook
+        fs::create_dir_all(&service.hooks_path).expect("should create dir");
+        let disabled_path = service.hooks_path.join("pre-commit.disabled");
+        fs::write(&disabled_path, "#!/bin/sh\nexit 0").expect("should write");
+
+        // Toggle to enable
+        let result = service.toggle_hook(GitHookType::PreCommit);
+        assert!(result.is_ok());
+        assert!(result.expect("should toggle"), "Should now be enabled");
+
+        let hook_path = service.hooks_path.join("pre-commit");
+        assert!(hook_path.exists());
+        assert!(!disabled_path.exists());
+    }
+
+    #[test]
+    fn test_toggle_hook_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.toggle_hook(GitHookType::PreCommit);
+        assert!(result.is_err());
+    }
+
+    // ==================== Templates Tests ====================
+
+    #[test]
+    fn test_get_templates() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let templates = service.get_templates();
+
+        // Should have some templates
+        assert!(!templates.is_empty());
+
+        // Each template should have required fields
+        for template in &templates {
+            assert!(!template.name.is_empty());
+            assert!(!template.content.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_get_templates_for_type() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let templates = service.get_templates_for_type(GitHookType::PreCommit);
+
+        // All templates should be for pre-commit
+        for template in &templates {
+            assert_eq!(template.hook_type, GitHookType::PreCommit);
+        }
+    }
+
+    // ==================== Hook Exists Tests ====================
+
+    #[test]
+    fn test_hook_exists_false() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        assert!(!service.hook_exists(GitHookType::PreCommit));
+    }
+
+    #[test]
+    fn test_hook_exists_true() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        service
+            .create_hook(GitHookType::PreCommit, "#!/bin/sh\nexit 0")
+            .expect("should create hook");
+
+        assert!(service.hook_exists(GitHookType::PreCommit));
+    }
+
+    #[test]
+    fn test_hook_exists_directory_not_file() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create a directory with the hook name
+        fs::create_dir_all(service.hooks_path.join("pre-commit")).expect("should create dir");
+
+        assert!(!service.hook_exists(GitHookType::PreCommit));
+    }
+
+    // ==================== Execute Hook Tests ====================
+
+    #[test]
+    fn test_execute_hook_nonexistent() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.run_pre_commit();
+
+        assert!(result.skipped);
+        assert!(result.success);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_execute_hook_success() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create a simple hook that succeeds
+        let hook_content = "#!/bin/sh\necho 'Success'\nexit 0";
+        service
+            .create_hook(GitHookType::PreCommit, hook_content)
+            .expect("should create hook");
+
+        let result = service.run_pre_commit();
+
+        assert!(!result.skipped);
+        assert!(result.success);
+        assert_eq!(result.exit_code, 0);
+        assert!(result.stdout.contains("Success"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_execute_hook_failure() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create a hook that fails
+        let hook_content = "#!/bin/sh\necho 'Error' >&2\nexit 1";
+        service
+            .create_hook(GitHookType::PreCommit, hook_content)
+            .expect("should create hook");
+
+        let result = service.run_pre_commit();
+
+        assert!(!result.skipped);
+        assert!(!result.success);
+        assert_eq!(result.exit_code, 1);
+        assert!(result.stderr.contains("Error"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_hook_not_executable_info() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // Create hooks directory and non-executable hook
+        fs::create_dir_all(&service.hooks_path).expect("should create hooks dir");
+        let hook_path = service.hooks_path.join("pre-commit");
+        fs::write(&hook_path, "#!/bin/sh\nexit 0").expect("should write hook");
+
+        // Explicitly remove execute permission
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = fs::metadata(&hook_path)
+            .expect("should get metadata")
+            .permissions();
+        perms.set_mode(0o644);
+        fs::set_permissions(&hook_path, perms).expect("should set permissions");
+
+        // When getting hook info, it should show exists but not executable
+        let info = service.get_hook_info(GitHookType::PreCommit);
+        assert!(info.exists);
+        assert!(!info.is_executable);
+
+        // hook_exists should return false since file is not executable
+        assert!(!service.hook_exists(GitHookType::PreCommit));
+    }
+
+    // ==================== Hook Runner Tests ====================
+
+    #[test]
+    fn test_run_post_merge() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        // No hook exists, should be skipped
+        let result = service.run_post_merge(false);
+        assert!(result.skipped);
+    }
+
+    #[test]
+    fn test_run_post_checkout() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.run_post_checkout("abc123", "def456", true);
+        assert!(result.skipped);
+    }
+
+    #[test]
+    fn test_run_pre_rebase() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let result = service.run_pre_rebase("upstream", Some("feature"));
+        assert!(result.skipped);
+    }
+
+    #[test]
+    fn test_run_pre_push() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let refs = "refs/heads/main abc123 refs/heads/main def456\n";
+        let result = service.run_pre_push("origin", "https://example.com/repo.git", refs);
+        assert!(result.skipped);
+    }
+
+    #[test]
+    fn test_run_post_rewrite() {
+        let (_tmp, repo) = setup_test_repo();
+        let service = HookService::new(&repo);
+
+        let rewrites = "abc123 def456\n";
+        let result = service.run_post_rewrite("rebase", rewrites);
+        assert!(result.skipped);
+    }
+}

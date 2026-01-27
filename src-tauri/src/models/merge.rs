@@ -336,3 +336,394 @@ pub struct ResetOptions {
     /// Reset mode (soft, mixed, hard)
     pub mode: ResetMode,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ==================== MergeType Tests ====================
+
+    #[test]
+    fn test_merge_type_equality() {
+        assert_eq!(MergeType::UpToDate, MergeType::UpToDate);
+        assert_eq!(MergeType::FastForward, MergeType::FastForward);
+        assert_eq!(MergeType::Normal, MergeType::Normal);
+        assert_eq!(MergeType::Conflicted, MergeType::Conflicted);
+        assert_ne!(MergeType::FastForward, MergeType::Normal);
+    }
+
+    #[test]
+    fn test_merge_type_serialization() {
+        assert_eq!(
+            serde_json::to_string(&MergeType::UpToDate).expect("serialize"),
+            "\"UpToDate\""
+        );
+        assert_eq!(
+            serde_json::to_string(&MergeType::FastForward).expect("serialize"),
+            "\"FastForward\""
+        );
+        assert_eq!(
+            serde_json::to_string(&MergeType::Normal).expect("serialize"),
+            "\"Normal\""
+        );
+        assert_eq!(
+            serde_json::to_string(&MergeType::Conflicted).expect("serialize"),
+            "\"Conflicted\""
+        );
+    }
+
+    // ==================== MergeOptions Tests ====================
+
+    #[test]
+    fn test_merge_options_default() {
+        let opts = MergeOptions::default();
+        assert!(opts.branch.is_empty());
+        assert!(opts.message.is_none());
+        assert!(!opts.no_ff);
+        assert!(!opts.squash);
+        assert!(!opts.ff_only);
+        assert!(!opts.no_commit);
+    }
+
+    #[test]
+    fn test_merge_options_no_ff() {
+        let opts = MergeOptions {
+            branch: "feature".to_string(),
+            message: Some("Merge feature".to_string()),
+            no_ff: true,
+            squash: false,
+            ff_only: false,
+            no_commit: false,
+        };
+        assert!(opts.no_ff);
+        assert_eq!(opts.branch, "feature");
+    }
+
+    #[test]
+    fn test_merge_options_squash() {
+        let opts = MergeOptions {
+            branch: "feature".to_string(),
+            squash: true,
+            ..Default::default()
+        };
+        assert!(opts.squash);
+    }
+
+    // ==================== MergeResult Tests ====================
+
+    #[test]
+    fn test_merge_result_fast_forward() {
+        let result = MergeResult {
+            success: true,
+            merge_type: MergeType::FastForward,
+            commit_oid: Some("abc123".to_string()),
+            conflicts: vec![],
+            message: "Fast-forward".to_string(),
+        };
+        assert!(result.success);
+        assert_eq!(result.merge_type, MergeType::FastForward);
+        assert!(result.conflicts.is_empty());
+    }
+
+    #[test]
+    fn test_merge_result_with_conflicts() {
+        let result = MergeResult {
+            success: false,
+            merge_type: MergeType::Conflicted,
+            commit_oid: None,
+            conflicts: vec![ConflictedFile {
+                path: "file1.rs".to_string(),
+                conflict_type: ConflictType::Content,
+                is_resolved: false,
+            }],
+            message: "Merge conflict".to_string(),
+        };
+        assert!(!result.success);
+        assert_eq!(result.conflicts.len(), 1);
+    }
+
+    // ==================== ConflictType Tests ====================
+
+    #[test]
+    fn test_conflict_type_equality() {
+        assert_eq!(ConflictType::Content, ConflictType::Content);
+        assert_eq!(ConflictType::DeleteModify, ConflictType::DeleteModify);
+        assert_ne!(ConflictType::Content, ConflictType::Binary);
+    }
+
+    #[test]
+    fn test_conflict_type_serialization() {
+        assert_eq!(
+            serde_json::to_string(&ConflictType::Content).expect("serialize"),
+            "\"Content\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ConflictType::DeleteModify).expect("serialize"),
+            "\"DeleteModify\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ConflictType::AddAdd).expect("serialize"),
+            "\"AddAdd\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ConflictType::Binary).expect("serialize"),
+            "\"Binary\""
+        );
+    }
+
+    // ==================== ConflictedFile Tests ====================
+
+    #[test]
+    fn test_conflicted_file_unresolved() {
+        let file = ConflictedFile {
+            path: "src/main.rs".to_string(),
+            conflict_type: ConflictType::Content,
+            is_resolved: false,
+        };
+        assert_eq!(file.path, "src/main.rs");
+        assert!(!file.is_resolved);
+    }
+
+    #[test]
+    fn test_conflicted_file_resolved() {
+        let file = ConflictedFile {
+            path: "README.md".to_string(),
+            conflict_type: ConflictType::DeleteModify,
+            is_resolved: true,
+        };
+        assert!(file.is_resolved);
+    }
+
+    // ==================== RebaseOptions Tests ====================
+
+    #[test]
+    fn test_rebase_options_default() {
+        let opts = RebaseOptions::default();
+        assert!(opts.onto.is_empty());
+        assert!(!opts.interactive);
+        assert!(!opts.preserve_merges);
+        assert!(!opts.autosquash);
+    }
+
+    #[test]
+    fn test_rebase_options_interactive() {
+        let opts = RebaseOptions {
+            onto: "main".to_string(),
+            interactive: true,
+            preserve_merges: false,
+            autosquash: true,
+        };
+        assert!(opts.interactive);
+        assert!(opts.autosquash);
+    }
+
+    // ==================== RebaseAction Tests ====================
+
+    #[test]
+    fn test_rebase_action_default() {
+        let action = RebaseAction::default();
+        assert_eq!(action, RebaseAction::Pick);
+    }
+
+    #[test]
+    fn test_rebase_action_display() {
+        assert_eq!(RebaseAction::Pick.to_string(), "pick");
+        assert_eq!(RebaseAction::Reword.to_string(), "reword");
+        assert_eq!(RebaseAction::Edit.to_string(), "edit");
+        assert_eq!(RebaseAction::Squash.to_string(), "squash");
+        assert_eq!(RebaseAction::Fixup.to_string(), "fixup");
+        assert_eq!(RebaseAction::Drop.to_string(), "drop");
+    }
+
+    #[test]
+    fn test_rebase_action_from_str() {
+        use std::str::FromStr;
+        assert_eq!(
+            RebaseAction::from_str("pick").expect("parse"),
+            RebaseAction::Pick
+        );
+        assert_eq!(
+            RebaseAction::from_str("squash").expect("parse"),
+            RebaseAction::Squash
+        );
+        assert_eq!(
+            RebaseAction::from_str("drop").expect("parse"),
+            RebaseAction::Drop
+        );
+    }
+
+    // ==================== CherryPickOptions Tests ====================
+
+    #[test]
+    fn test_cherry_pick_options_default() {
+        let opts = CherryPickOptions::default();
+        assert!(opts.commits.is_empty());
+        assert!(!opts.no_commit);
+        assert!(!opts.allow_empty);
+    }
+
+    #[test]
+    fn test_cherry_pick_options_multiple_commits() {
+        let opts = CherryPickOptions {
+            commits: vec!["abc".to_string(), "def".to_string()],
+            no_commit: true,
+            allow_empty: false,
+        };
+        assert_eq!(opts.commits.len(), 2);
+        assert!(opts.no_commit);
+    }
+
+    // ==================== RevertOptions Tests ====================
+
+    #[test]
+    fn test_revert_options_default() {
+        let opts = RevertOptions::default();
+        assert!(opts.commits.is_empty());
+        assert!(!opts.no_commit);
+    }
+
+    // ==================== ConflictResolution Tests ====================
+
+    #[test]
+    fn test_conflict_resolution_equality() {
+        assert_eq!(ConflictResolution::Ours, ConflictResolution::Ours);
+        assert_eq!(ConflictResolution::Theirs, ConflictResolution::Theirs);
+        assert_eq!(ConflictResolution::Merged, ConflictResolution::Merged);
+        assert_ne!(ConflictResolution::Ours, ConflictResolution::Theirs);
+    }
+
+    #[test]
+    fn test_conflict_resolution_serialization() {
+        assert_eq!(
+            serde_json::to_string(&ConflictResolution::Ours).expect("serialize"),
+            "\"Ours\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ConflictResolution::Theirs).expect("serialize"),
+            "\"Theirs\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ConflictResolution::Merged).expect("serialize"),
+            "\"Merged\""
+        );
+    }
+
+    // ==================== OperationState Tests ====================
+
+    #[test]
+    fn test_operation_state_default() {
+        let state = OperationState::default();
+        assert_eq!(state, OperationState::None);
+    }
+
+    #[test]
+    fn test_operation_state_merging() {
+        let state = OperationState::Merging {
+            branch: Some("feature".to_string()),
+        };
+        assert!(matches!(state, OperationState::Merging { .. }));
+    }
+
+    #[test]
+    fn test_operation_state_rebasing() {
+        let state = OperationState::Rebasing {
+            onto: Some("main".to_string()),
+            current: Some(3),
+            total: Some(5),
+        };
+        if let OperationState::Rebasing { current, total, .. } = state {
+            assert_eq!(current, Some(3));
+            assert_eq!(total, Some(5));
+        } else {
+            panic!("Expected Rebasing state");
+        }
+    }
+
+    #[test]
+    fn test_operation_state_serialization() {
+        let state = OperationState::CherryPicking {
+            commit: Some("abc123".to_string()),
+        };
+        let json = serde_json::to_string(&state).expect("should serialize");
+        assert!(json.contains("CherryPicking"));
+    }
+
+    // ==================== ResetMode Tests ====================
+
+    #[test]
+    fn test_reset_mode_default() {
+        let mode = ResetMode::default();
+        assert_eq!(mode, ResetMode::Mixed);
+    }
+
+    #[test]
+    fn test_reset_mode_equality() {
+        assert_eq!(ResetMode::Soft, ResetMode::Soft);
+        assert_eq!(ResetMode::Mixed, ResetMode::Mixed);
+        assert_eq!(ResetMode::Hard, ResetMode::Hard);
+        assert_ne!(ResetMode::Soft, ResetMode::Hard);
+    }
+
+    #[test]
+    fn test_reset_mode_serialization() {
+        assert_eq!(
+            serde_json::to_string(&ResetMode::Soft).expect("serialize"),
+            "\"Soft\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ResetMode::Mixed).expect("serialize"),
+            "\"Mixed\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ResetMode::Hard).expect("serialize"),
+            "\"Hard\""
+        );
+    }
+
+    // ==================== ResetOptions Tests ====================
+
+    #[test]
+    fn test_reset_options_default() {
+        let opts = ResetOptions::default();
+        assert!(opts.target.is_empty());
+        assert_eq!(opts.mode, ResetMode::Mixed);
+    }
+
+    #[test]
+    fn test_reset_options_hard() {
+        let opts = ResetOptions {
+            target: "HEAD~1".to_string(),
+            mode: ResetMode::Hard,
+        };
+        assert_eq!(opts.target, "HEAD~1");
+        assert_eq!(opts.mode, ResetMode::Hard);
+    }
+
+    // ==================== ConflictContent Tests ====================
+
+    #[test]
+    fn test_conflict_content_all_present() {
+        let content = ConflictContent {
+            path: "file.rs".to_string(),
+            base: Some("base content".to_string()),
+            ours: Some("our content".to_string()),
+            theirs: Some("their content".to_string()),
+            merged: "<<<<<<\nours\n======\ntheirs\n>>>>>>".to_string(),
+        };
+        assert!(content.base.is_some());
+        assert!(content.ours.is_some());
+        assert!(content.theirs.is_some());
+    }
+
+    #[test]
+    fn test_conflict_content_new_file() {
+        let content = ConflictContent {
+            path: "new.rs".to_string(),
+            base: None,
+            ours: Some("our version".to_string()),
+            theirs: Some("their version".to_string()),
+            merged: "conflict".to_string(),
+        };
+        assert!(content.base.is_none());
+    }
+}

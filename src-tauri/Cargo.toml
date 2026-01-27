@@ -76,3 +76,8 @@ http = "1"
 tauri-specta = { version = "2.0.0-rc.21", features = ["derive", "typescript"] }
 specta = { version = "2.0.0-rc.22", features = ["derive", "chrono"] }
 specta-typescript = "0.0.9"
+
+[dev-dependencies]
+mockall = "0.13"
+wiremock = "0.6"
+tokio-test = "0.4"

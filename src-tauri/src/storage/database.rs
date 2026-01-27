@@ -250,6 +250,17 @@ impl Database {
 
         Ok(())
     }
+
+    /// Create an in-memory database for testing
+    #[cfg(test)]
+    pub fn open_in_memory() -> Result<Self> {
+        let conn = Connection::open_in_memory()?;
+        let db = Database {
+            conn: Mutex::new(conn),
+        };
+        db.init_schema()?;
+        Ok(db)
+    }
 }
 
 #[cfg(test)]

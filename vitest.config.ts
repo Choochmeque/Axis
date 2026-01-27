@@ -19,6 +19,7 @@ export default defineConfig({
       reporter: ['text', 'html', 'clover', 'json'],
       exclude: [
         'src/bindings/**',
+        'src/i18n/**',
         'src/test/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',

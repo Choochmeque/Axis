@@ -46,20 +46,36 @@ describe('IssueList', () => {
     {
       number: 1,
       title: 'Bug: Something is broken',
-      state: 'open',
-      author: { login: 'user1', avatarUrl: 'https://example.com/avatar1.png' },
+      state: 'Open',
+      provider: 'GitHub',
+      author: {
+        login: 'user1',
+        avatarUrl: 'https://example.com/avatar1.png',
+        url: 'https://github.com/user1',
+      },
       createdAt: '2024-01-15T10:30:00Z',
+      updatedAt: '2024-01-15T10:30:00Z',
+      commentsCount: 5,
+      url: 'https://github.com/test/repo/issues/1',
       labels: [
-        { name: 'bug', color: 'FF0000' },
-        { name: 'priority-high', color: '00FF00' },
+        { name: 'bug', color: 'FF0000', description: 'Bug label' },
+        { name: 'priority-high', color: '00FF00', description: 'High priority' },
       ],
     },
     {
       number: 2,
       title: 'Feature: Add new functionality',
-      state: 'closed',
-      author: { login: 'user2', avatarUrl: 'https://example.com/avatar2.png' },
+      state: 'Closed',
+      provider: 'GitHub',
+      author: {
+        login: 'user2',
+        avatarUrl: 'https://example.com/avatar2.png',
+        url: 'https://github.com/user2',
+      },
       createdAt: '2024-01-10T09:00:00Z',
+      updatedAt: '2024-01-10T09:00:00Z',
+      commentsCount: 0,
+      url: 'https://github.com/test/repo/issues/2',
       labels: [],
     },
   ];
@@ -130,11 +146,11 @@ describe('IssueList', () => {
     const issueWithManyLabels: Issue = {
       ...mockIssues[0],
       labels: [
-        { name: 'label1', color: 'FF0000' },
-        { name: 'label2', color: '00FF00' },
-        { name: 'label3', color: '0000FF' },
-        { name: 'label4', color: 'FFFF00' },
-        { name: 'label5', color: '00FFFF' },
+        { name: 'label1', color: 'FF0000', description: 'Label 1' },
+        { name: 'label2', color: '00FF00', description: 'Label 2' },
+        { name: 'label3', color: '0000FF', description: 'Label 3' },
+        { name: 'label4', color: 'FFFF00', description: 'Label 4' },
+        { name: 'label5', color: '00FFFF', description: 'Label 5' },
       ],
     };
 

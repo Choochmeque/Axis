@@ -1,0 +1,116 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { CIView } from './CIView';
+
+// Mock stores
+const mockLoadCiRuns = vi.fn();
+const mockReloadCiRuns = vi.fn();
+const mockLoadMoreCiRuns = vi.fn();
+
+let mockStoreState = {
+  ciRuns: [],
+  ciRunsHasMore: false,
+  isLoadingCiRuns: false,
+  isLoadingMoreCiRuns: false,
+  connectionStatus: { connected: true },
+  detectedProvider: 'GitHub',
+  loadCiRuns: mockLoadCiRuns,
+  reloadCiRuns: mockReloadCiRuns,
+  loadMoreCiRuns: mockLoadMoreCiRuns,
+};
+
+vi.mock('@/store/integrationStore', () => ({
+  useIntegrationStore: Object.assign(() => mockStoreState, {
+    getState: () => mockStoreState,
+  }),
+}));
+
+// Mock child components
+vi.mock('./CIRunList', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  CIRunList: ({ ciRuns, isLoading }: any) => (
+    <div data-testid="ci-run-list">{isLoading ? 'Loading...' : `${ciRuns.length} CI runs`}</div>
+  ),
+}));
+
+// Mock i18n
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
+// Mock UI components
+vi.mock('@/components/ui', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Button: ({ children, onClick, disabled, title }: any) => (
+    <button onClick={onClick} disabled={disabled} title={title}>
+      {children}
+    </button>
+  ),
+}));
+
+describe('CIView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockStoreState = {
+      ciRuns: [],
+      ciRunsHasMore: false,
+      isLoadingCiRuns: false,
+      isLoadingMoreCiRuns: false,
+      connectionStatus: { connected: true },
+      detectedProvider: 'GitHub',
+      loadCiRuns: mockLoadCiRuns,
+      reloadCiRuns: mockReloadCiRuns,
+      loadMoreCiRuns: mockLoadMoreCiRuns,
+    };
+  });
+
+  it('should show not connected message when not connected', () => {
+    mockStoreState.connectionStatus = { connected: false };
+
+    render(<CIView />);
+
+    expect(screen.getByText('integrations.notConnected.message')).toBeInTheDocument();
+    expect(screen.getByText('integrations.notConnected.ciHint')).toBeInTheDocument();
+  });
+
+  it('should render CI view when connected', () => {
+    render(<CIView />);
+
+    expect(screen.getByText('integrations.ci.title')).toBeInTheDocument();
+    expect(screen.getByTestId('ci-run-list')).toBeInTheDocument();
+  });
+
+  it('should call reloadCiRuns when refresh is clicked', () => {
+    render(<CIView />);
+
+    fireEvent.click(screen.getByTitle('integrations.common.refresh'));
+
+    expect(mockReloadCiRuns).toHaveBeenCalled();
+  });
+
+  it('should show loading state', () => {
+    mockStoreState.isLoadingCiRuns = true;
+
+    render(<CIView />);
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
+  it('should disable refresh button when loading', () => {
+    mockStoreState.isLoadingCiRuns = true;
+
+    render(<CIView />);
+
+    expect(screen.getByTitle('integrations.common.refresh')).toBeDisabled();
+  });
+
+  it('should display CI runs count', () => {
+    mockStoreState.ciRuns = [{ id: 1 }, { id: 2 }, { id: 3 }];
+
+    render(<CIView />);
+
+    expect(screen.getByText('3 CI runs')).toBeInTheDocument();
+  });
+});

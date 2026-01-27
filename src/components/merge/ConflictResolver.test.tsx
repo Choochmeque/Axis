@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { ConflictResolver } from './ConflictResolver';
-import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ConflictedFile = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ConflictContent = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type OperationState = any;
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -54,6 +60,7 @@ describe('ConflictResolver', () => {
   };
 
   const mockMergingState: OperationState = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     Merging: { branch: 'feature-branch' },
   };
 
@@ -103,6 +110,7 @@ describe('ConflictResolver', () => {
 
   it('should display operation label for rebasing', async () => {
     mockGetState.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       Rebasing: { current: 2, total: 5 },
     });
 

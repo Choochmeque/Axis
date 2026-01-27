@@ -34,7 +34,7 @@ git2 = "0.19"
 tokio = { version = "1", features = ["full"] }
 
 # Database
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled"] }
 
 # Error handling
 thiserror = "1"

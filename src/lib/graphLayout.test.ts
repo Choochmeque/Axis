@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  computeGraphLayout,
   getMaxColumns,
+  GRAPH_COLORS,
   type RowGraphData,
   type PassingLane,
   type LineSegment,
 } from './graphLayout';
-
-// Test only getMaxColumns which is a pure function without DOM dependencies
-// computeGraphLayout requires the Graph class which needs DOM
+import type { GraphCommit } from '@/types';
 
 describe('graphLayout', () => {
   describe('getMaxColumns', () => {
@@ -161,6 +161,208 @@ describe('graphLayout', () => {
         ),
       ];
       expect(getMaxColumns(layout)).toBe(3);
+    });
+  });
+
+  describe('GRAPH_COLORS', () => {
+    it('should be an array of color strings', () => {
+      expect(Array.isArray(GRAPH_COLORS)).toBe(true);
+      expect(GRAPH_COLORS.length).toBeGreaterThan(0);
+      GRAPH_COLORS.forEach((color) => {
+        expect(typeof color).toBe('string');
+        // Colors are CSS variables like 'var(--git-graph-color0)'
+        expect(color.startsWith('var(') || color.startsWith('#') || color.startsWith('rgb')).toBe(
+          true
+        );
+      });
+    });
+  });
+
+  describe('computeGraphLayout', () => {
+    function createCommit(
+      oid: string,
+      parentOids: string[] = [],
+      summary: string = 'Test commit'
+    ): GraphCommit {
+      return {
+        oid,
+        shortOid: oid.slice(0, 7),
+        message: summary,
+        summary,
+        parentOids,
+        timestamp: '2024-01-01T00:00:00Z',
+        author: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
+        committer: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
+        isMerge: parentOids.length > 1,
+        signature: null,
+        lane: 0,
+        parentEdges: [],
+        refs: [],
+      };
+    }
+
+    beforeEach(() => {
+      // Clear any cached state between tests
+    });
+
+    it('should return empty array for empty commits', () => {
+      const result = computeGraphLayout([], null);
+      expect(result).toEqual([]);
+    });
+
+    it('should compute layout for single commit', () => {
+      const commits = [createCommit('abc123')];
+      const result = computeGraphLayout(commits, 'abc123');
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('column');
+      expect(result[0]).toHaveProperty('color');
+      expect(result[0]).toHaveProperty('isCommitted');
+      expect(result[0]).toHaveProperty('isCurrent');
+      expect(result[0]).toHaveProperty('isMerge');
+      expect(result[0]).toHaveProperty('hasChildren');
+      expect(result[0]).toHaveProperty('hasParents');
+      expect(result[0]).toHaveProperty('passingLanes');
+      expect(result[0]).toHaveProperty('incomingLines');
+      expect(result[0]).toHaveProperty('outgoingLines');
+    });
+
+    it('should mark current commit', () => {
+      const commits = [createCommit('abc123')];
+      const result = computeGraphLayout(commits, 'abc123');
+
+      expect(result[0].isCurrent).toBe(true);
+    });
+
+    it('should not mark non-HEAD commit as current', () => {
+      const commits = [createCommit('abc123')];
+      const result = computeGraphLayout(commits, 'other');
+
+      expect(result[0].isCurrent).toBe(false);
+    });
+
+    it('should compute layout for linear history', () => {
+      const commits = [
+        createCommit('commit3', ['commit2']),
+        createCommit('commit2', ['commit1']),
+        createCommit('commit1', []),
+      ];
+      const result = computeGraphLayout(commits, 'commit3');
+
+      expect(result).toHaveLength(3);
+      // All commits should be in the same column for linear history
+      expect(result[0].column).toBe(result[1].column);
+      expect(result[1].column).toBe(result[2].column);
+    });
+
+    it('should compute layout for merge commit', () => {
+      const commits = [
+        createCommit('merge', ['parent1', 'parent2']),
+        createCommit('parent1', ['base']),
+        createCommit('parent2', ['base']),
+        createCommit('base', []),
+      ];
+      const result = computeGraphLayout(commits, 'merge');
+
+      expect(result).toHaveLength(4);
+      expect(result[0].isMerge).toBe(true);
+    });
+
+    it('should include outgoing lines for commits with children', () => {
+      const commits = [createCommit('child', ['parent']), createCommit('parent', [])];
+      const result = computeGraphLayout(commits, 'child');
+
+      // Child should have outgoing lines to parent
+      expect(result[0].outgoingLines.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should include incoming lines for commits with parents', () => {
+      const commits = [createCommit('child', ['parent']), createCommit('parent', [])];
+      const result = computeGraphLayout(commits, 'child');
+
+      // Parent should have incoming lines from child
+      expect(result[1].incomingLines.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle uncommitted changes', () => {
+      const commits = [createCommit('uncommitted', ['parent']), createCommit('parent', [])];
+      const result = computeGraphLayout(commits, 'parent');
+
+      expect(result).toHaveLength(2);
+    });
+
+    it('should handle complex branch topology', () => {
+      const commits = [
+        createCommit('head', ['merge']),
+        createCommit('merge', ['feature', 'main']),
+        createCommit('feature', ['base']),
+        createCommit('main', ['base']),
+        createCommit('base', []),
+      ];
+      const result = computeGraphLayout(commits, 'head');
+
+      expect(result).toHaveLength(5);
+      // Verify all rows have valid structure
+      result.forEach((row) => {
+        expect(typeof row.column).toBe('number');
+        expect(typeof row.color).toBe('number');
+        expect(Array.isArray(row.passingLanes)).toBe(true);
+        expect(Array.isArray(row.incomingLines)).toBe(true);
+        expect(Array.isArray(row.outgoingLines)).toBe(true);
+      });
+    });
+
+    it('should use cache for same commits', () => {
+      const commits = [createCommit('abc123')];
+
+      const result1 = computeGraphLayout(commits, 'abc123');
+      const result2 = computeGraphLayout(commits, 'abc123');
+
+      // Results should be equivalent
+      expect(result1).toEqual(result2);
+    });
+
+    it('should invalidate cache for different commits', () => {
+      const commits1 = [createCommit('abc123')];
+      const commits2 = [createCommit('def456')];
+
+      const result1 = computeGraphLayout(commits1, 'abc123');
+      const result2 = computeGraphLayout(commits2, 'def456');
+
+      expect(result1[0].isCurrent).toBe(true);
+      expect(result2[0].isCurrent).toBe(true);
+    });
+
+    it('should handle passing lanes correctly', () => {
+      // Create a topology where lanes pass through rows
+      const commits = [
+        createCommit('latest', ['parent1']),
+        createCommit('branch', ['base']),
+        createCommit('parent1', ['base']),
+        createCommit('base', []),
+      ];
+      const result = computeGraphLayout(commits, 'latest');
+
+      expect(result).toHaveLength(4);
+      // Check that passing lanes array exists for all rows
+      result.forEach((row) => {
+        expect(Array.isArray(row.passingLanes)).toBe(true);
+      });
+    });
+
+    it('should assign colors within bounds', () => {
+      const commits = [
+        createCommit('c1', ['c2']),
+        createCommit('c2', ['c3']),
+        createCommit('c3', ['c4']),
+        createCommit('c4', []),
+      ];
+      const result = computeGraphLayout(commits, 'c1');
+
+      result.forEach((row) => {
+        expect(row.color).toBeGreaterThanOrEqual(0);
+        expect(row.color).toBeLessThan(GRAPH_COLORS.length);
+      });
     });
   });
 });

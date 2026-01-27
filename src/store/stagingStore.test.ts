@@ -411,4 +411,389 @@ describe('stagingStore', () => {
       expect(useStagingStore.getState().error).toBeNull();
     });
   });
+
+  describe('stageFiles', () => {
+    it('should stage multiple files and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFiles).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFiles(['file1.txt', 'file2.txt']);
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.stageFiles).toHaveBeenCalledWith(['file1.txt', 'file2.txt']);
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.stageFiles).mockRejectedValue(new Error('Failed to stage files'));
+
+      await useStagingStore.getState().stageFiles(['file1.txt']);
+
+      expect(useStagingStore.getState().error).toBe('Failed to stage files');
+    });
+  });
+
+  describe('stageAll', () => {
+    it('should stage all files and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageAll).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageAll();
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.stageAll).toHaveBeenCalled();
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.stageAll).mockRejectedValue(new Error('Failed to stage all'));
+
+      await useStagingStore.getState().stageAll();
+
+      expect(useStagingStore.getState().error).toBe('Failed to stage all');
+    });
+  });
+
+  describe('unstageFiles', () => {
+    it('should unstage multiple files and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.unstageFiles).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().unstageFiles(['file1.txt', 'file2.txt']);
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.unstageFiles).toHaveBeenCalledWith(['file1.txt', 'file2.txt']);
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.unstageFiles).mockRejectedValue(new Error('Failed to unstage files'));
+
+      await useStagingStore.getState().unstageFiles(['file1.txt']);
+
+      expect(useStagingStore.getState().error).toBe('Failed to unstage files');
+    });
+  });
+
+  describe('unstageAll', () => {
+    it('should unstage all files and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.unstageAll).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().unstageAll();
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.unstageAll).toHaveBeenCalled();
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.unstageAll).mockRejectedValue(new Error('Failed to unstage all'));
+
+      await useStagingStore.getState().unstageAll();
+
+      expect(useStagingStore.getState().error).toBe('Failed to unstage all');
+    });
+  });
+
+  describe('discardUnstaged', () => {
+    it('should discard all unstaged changes and reload status', async () => {
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.discardUnstaged).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().discardUnstaged();
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.discardUnstaged).toHaveBeenCalled();
+      expect(repositoryApi.getStatus).toHaveBeenCalled();
+    });
+
+    it('should clear selected file after discard', async () => {
+      const mockFile = {
+        path: 'test.txt',
+        status: 'Modified' as const,
+        stagedStatus: null,
+        unstagedStatus: 'Modified' as const,
+        isConflict: false,
+        oldPath: null,
+      };
+      useStagingStore.setState({ selectedFile: mockFile });
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.discardUnstaged).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().discardUnstaged();
+      await vi.runAllTimersAsync();
+
+      expect(useStagingStore.getState().selectedFile).toBeNull();
+    });
+
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.discardUnstaged).mockRejectedValue(new Error('Failed to discard'));
+
+      await useStagingStore.getState().discardUnstaged();
+
+      expect(useStagingStore.getState().error).toBe('Failed to discard');
+    });
+  });
+
+  describe('setIsAmending', () => {
+    it('should update isAmending state', () => {
+      useStagingStore.getState().setIsAmending(true);
+
+      expect(useStagingStore.getState().isAmending).toBe(true);
+    });
+  });
+
+  describe('setPushAfterCommit', () => {
+    it('should update pushAfterCommit state', () => {
+      useStagingStore.getState().setPushAfterCommit(true);
+
+      expect(useStagingStore.getState().pushAfterCommit).toBe(true);
+    });
+  });
+
+  describe('setStructuredMode', () => {
+    it('should update structuredMode state', () => {
+      useStagingStore.getState().setStructuredMode(true);
+
+      expect(useStagingStore.getState().structuredMode).toBe(true);
+    });
+  });
+
+  describe('setCommitParts', () => {
+    it('should update commitParts state', () => {
+      const parts = {
+        type: 'feat' as const,
+        scope: 'core',
+        subject: 'test',
+        body: '',
+        breaking: false,
+      };
+      useStagingStore.getState().setCommitParts(parts);
+
+      expect(useStagingStore.getState().commitParts).toEqual(parts);
+    });
+  });
+
+  describe('cache management', () => {
+    it('should save state to cache', () => {
+      useStagingStore.setState({
+        commitMessage: 'Test message',
+        isAmending: true,
+        pushAfterCommit: true,
+        structuredMode: true,
+        commitParts: {
+          type: 'feat' as const,
+          scope: '',
+          subject: 'test',
+          body: '',
+          breaking: false,
+        },
+      });
+
+      useStagingStore.getState().saveToCache('/path/to/repo');
+
+      expect(useStagingStore.getState().repoCache.has('/path/to/repo')).toBe(true);
+    });
+
+    it('should restore state from cache', () => {
+      const cached = {
+        commitMessage: 'Cached message',
+        isAmending: true,
+        pushAfterCommit: true,
+        structuredMode: true,
+        commitParts: {
+          type: 'fix' as const,
+          scope: 'ui',
+          subject: 'bug',
+          body: '',
+          breaking: false,
+        },
+      };
+      const cache = new Map();
+      cache.set('/path/to/repo', cached);
+      useStagingStore.setState({ repoCache: cache });
+
+      const result = useStagingStore.getState().restoreFromCache('/path/to/repo');
+
+      expect(result).toBe(true);
+      expect(useStagingStore.getState().commitMessage).toBe('Cached message');
+      expect(useStagingStore.getState().isAmending).toBe(true);
+      expect(useStagingStore.getState().structuredMode).toBe(true);
+    });
+
+    it('should return false and reset when no cache exists', () => {
+      useStagingStore.setState({
+        commitMessage: 'Some message',
+        isAmending: true,
+      });
+
+      const result = useStagingStore.getState().restoreFromCache('/nonexistent');
+
+      expect(result).toBe(false);
+      expect(useStagingStore.getState().commitMessage).toBe('');
+      expect(useStagingStore.getState().isAmending).toBe(false);
+    });
+
+    it('should clear cache for repo', () => {
+      const cache = new Map();
+      cache.set('/path/to/repo', { commitMessage: 'test' });
+      useStagingStore.setState({ repoCache: cache });
+
+      useStagingStore.getState().clearCache('/path/to/repo');
+
+      expect(useStagingStore.getState().repoCache.has('/path/to/repo')).toBe(false);
+    });
+  });
+
+  describe('reset', () => {
+    it('should reset store to initial state', () => {
+      useStagingStore.setState({
+        status: { staged: [], unstaged: [], untracked: [], conflicted: [] },
+        commitMessage: 'Test',
+        isAmending: true,
+        error: 'Error',
+      });
+
+      useStagingStore.getState().reset();
+
+      const state = useStagingStore.getState();
+      expect(state.status).toBeNull();
+      expect(state.commitMessage).toBe('');
+      expect(state.isAmending).toBe(false);
+      expect(state.error).toBeNull();
+    });
+  });
+
+  describe('stageFile error handling', () => {
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.stageFile).mockRejectedValue(new Error('Failed to stage'));
+
+      await useStagingStore.getState().stageFile('test.txt');
+
+      expect(useStagingStore.getState().error).toBe('Failed to stage');
+    });
+  });
+
+  describe('unstageFile error handling', () => {
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.unstageFile).mockRejectedValue(new Error('Failed to unstage'));
+
+      await useStagingStore.getState().unstageFile('test.txt');
+
+      expect(useStagingStore.getState().error).toBe('Failed to unstage');
+    });
+  });
+
+  describe('discardFile error handling', () => {
+    it('should set error on failure', async () => {
+      vi.mocked(stagingApi.discardFile).mockRejectedValue(new Error('Failed to discard'));
+
+      await useStagingStore.getState().discardFile('test.txt');
+
+      expect(useStagingStore.getState().error).toBe('Failed to discard');
+    });
+  });
+
+  describe('selectFile error handling', () => {
+    it('should set error on failure', async () => {
+      const mockFile = {
+        path: 'test.txt',
+        status: 'Modified' as const,
+        stagedStatus: null,
+        unstagedStatus: 'Modified' as const,
+        isConflict: false,
+        oldPath: null,
+      };
+      vi.mocked(diffApi.getFile).mockRejectedValue(new Error('Failed to load diff'));
+
+      await useStagingStore.getState().selectFile(mockFile, false);
+
+      expect(useStagingStore.getState().error).toBe('Failed to load diff');
+      expect(useStagingStore.getState().selectedFileDiff).toBeNull();
+    });
+  });
+
+  describe('amendCommit error handling', () => {
+    it('should set error on failure', async () => {
+      useStagingStore.setState({ commitMessage: 'Test', isAmending: true });
+      vi.mocked(commitApi.amend).mockRejectedValue(new Error('Failed to amend'));
+
+      await expect(useStagingStore.getState().amendCommit()).rejects.toThrow();
+
+      expect(useStagingStore.getState().error).toBe('Failed to amend');
+      expect(useStagingStore.getState().isCommitting).toBe(false);
+    });
+  });
+
+  describe('createCommit error handling', () => {
+    it('should set error on failure', async () => {
+      useStagingStore.setState({ commitMessage: 'Test commit' });
+      vi.mocked(commitApi.create).mockRejectedValue(new Error('Failed to create commit'));
+
+      await expect(useStagingStore.getState().createCommit()).rejects.toThrow();
+
+      expect(useStagingStore.getState().error).toBe('Failed to create commit');
+      expect(useStagingStore.getState().isCommitting).toBe(false);
+    });
+  });
+
+  describe('createCommit with options', () => {
+    it('should pass sign option to API', async () => {
+      useStagingStore.setState({ commitMessage: 'Test commit' });
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+
+      vi.mocked(commitApi.create).mockResolvedValue('abc123');
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().createCommit(true, false);
+
+      expect(commitApi.create).toHaveBeenCalledWith(
+        'Test commit',
+        undefined,
+        undefined,
+        true,
+        false
+      );
+    });
+
+    it('should pass bypassHooks option to API', async () => {
+      useStagingStore.setState({ commitMessage: 'Test commit' });
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+
+      vi.mocked(commitApi.create).mockResolvedValue('abc123');
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().createCommit(false, true);
+
+      expect(commitApi.create).toHaveBeenCalledWith(
+        'Test commit',
+        undefined,
+        undefined,
+        false,
+        true
+      );
+    });
+  });
+
+  describe('amendCommit with options', () => {
+    it('should pass bypassHooks option to API', async () => {
+      useStagingStore.setState({ commitMessage: 'Amended', isAmending: true });
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+
+      vi.mocked(commitApi.amend).mockResolvedValue('def456');
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().amendCommit(true);
+
+      expect(commitApi.amend).toHaveBeenCalledWith('Amended', true);
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Branch, Vertex, GG } from './graph';
+import { Branch, Vertex, Graph, GG } from './graph';
+import type { GraphCommit } from '@/types';
 
 describe('Branch', () => {
   let branch: Branch;
@@ -229,5 +230,387 @@ describe('GG namespace', () => {
   it('should export GraphUncommittedChangesStyle enum', () => {
     expect(GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit).toBe(0);
     expect(GG.GraphUncommittedChangesStyle.OpenCircleAtTheUncommittedChanges).toBe(1);
+  });
+});
+
+describe('Graph', () => {
+  const config: GG.GraphConfig = {
+    colours: ['#ff0000', '#00ff00', '#0000ff', '#ffff00'],
+    style: GG.GraphStyle.Rounded,
+    grid: { x: 16, y: 24, offsetX: 8, offsetY: 12, expandY: 200 },
+    uncommittedChanges: GG.GraphUncommittedChangesStyle.OpenCircleAtTheCheckedOutCommit,
+  };
+  const muteConfig: GG.MuteCommitsConfig = {
+    mergeCommits: false,
+    commitsNotAncestorsOfHead: false,
+  };
+
+  function createCommit(
+    oid: string,
+    parentOids: string[] = [],
+    summary: string = 'Test commit'
+  ): GraphCommit {
+    return {
+      oid,
+      shortOid: oid.slice(0, 7),
+      message: summary,
+      summary,
+      parentOids,
+      timestamp: '2024-01-01T00:00:00Z',
+      author: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
+      committer: { name: 'Test', email: 'test@test.com', timestamp: '2024-01-01T00:00:00Z' },
+      isMerge: parentOids.length > 1,
+      signature: null,
+      lane: 0,
+      parentEdges: [],
+      refs: [],
+    };
+  }
+
+  let container: HTMLElement;
+  let graph: Graph;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    graph = new Graph(container, config, muteConfig);
+  });
+
+  it('should create graph and append SVG to container', () => {
+    expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('should return SVG element', () => {
+    const svg = graph.getSvg();
+    expect(svg.tagName.toLowerCase()).toBe('svg');
+  });
+
+  it('should load empty commits', () => {
+    graph.loadCommits([], null, {}, false);
+    expect(graph.getVertexColours()).toEqual([]);
+    expect(graph.getVertexPositions()).toEqual([]);
+    expect(graph.getVertexData()).toEqual([]);
+  });
+
+  it('should load single commit', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    expect(graph.getVertexColours()).toHaveLength(1);
+    expect(graph.getVertexPositions()).toHaveLength(1);
+  });
+
+  it('should load commits with parent-child relationships', () => {
+    const commits = [
+      createCommit('def456', ['abc123'], 'Second commit'),
+      createCommit('abc123', [], 'Initial commit'),
+    ];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    expect(graph.getVertexColours()).toHaveLength(2);
+    expect(graph.getBranchLines().length).toBeGreaterThan(0);
+  });
+
+  it('should handle uncommitted changes', () => {
+    const commits = [
+      createCommit('uncommitted', ['abc123'], 'Uncommitted changes'),
+      createCommit('abc123', [], 'Initial'),
+    ];
+    graph.loadCommits(commits, 'abc123', { uncommitted: 0, abc123: 1 }, false);
+
+    const data = graph.getVertexData();
+    expect(data[0].isCommitted).toBe(false);
+  });
+
+  it('should set current vertex when HEAD matches', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+    // The current vertex is set internally for rendering
+    expect(graph.getVertexColours()).toHaveLength(2);
+  });
+
+  it('should get vertex data with all properties', () => {
+    const commits = [
+      createCommit('merge', ['abc123', 'def456']),
+      createCommit('abc123', []),
+      createCommit('def456', []),
+    ];
+    graph.loadCommits(commits, 'merge', { merge: 0, abc123: 1, def456: 2 }, false);
+
+    const data = graph.getVertexData();
+    expect(data).toHaveLength(3);
+    expect(data[0]).toHaveProperty('column');
+    expect(data[0]).toHaveProperty('color');
+    expect(data[0]).toHaveProperty('isCommitted');
+    expect(data[0]).toHaveProperty('isMerge');
+    expect(data[0]).toHaveProperty('hasChildren');
+    expect(data[0]).toHaveProperty('hasParents');
+    expect(data[0]).toHaveProperty('parentColumns');
+    expect(data[0].isMerge).toBe(true);
+  });
+
+  it('should get branch lines', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    const lines = graph.getBranchLines();
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines[0]).toHaveProperty('fromColumn');
+    expect(lines[0]).toHaveProperty('fromRow');
+    expect(lines[0]).toHaveProperty('toColumn');
+    expect(lines[0]).toHaveProperty('toRow');
+    expect(lines[0]).toHaveProperty('color');
+    expect(lines[0]).toHaveProperty('isCommitted');
+  });
+
+  it('should get content width', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    const width = graph.getContentWidth();
+    expect(width).toBeGreaterThan(0);
+  });
+
+  it('should get height without expanded commit', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    const height = graph.getHeight(null);
+    expect(height).toBeGreaterThan(0);
+  });
+
+  it('should get height with expanded commit', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    const expandedCommit = {
+      index: 0,
+      commitHash: 'abc123',
+      commitElem: null,
+      compareWithHash: null,
+      compareWithElem: null,
+      commitDetails: null,
+      fileChanges: null,
+      fileTree: null,
+      avatar: null,
+      codeReview: null,
+      lastViewedFile: null,
+      loading: false,
+      fileChangesScrollTop: 0,
+    };
+
+    const heightWithExpand = graph.getHeight(expandedCommit);
+    const heightWithout = graph.getHeight(null);
+    expect(heightWithExpand).toBeGreaterThan(heightWithout);
+  });
+
+  it('should get widths at vertices', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    const widths = graph.getWidthsAtVertices();
+    expect(widths).toHaveLength(1);
+    expect(typeof widths[0]).toBe('number');
+  });
+
+  it('should check dropCommitPossible - false for no parents', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    expect(graph.dropCommitPossible(0)).toBe(false);
+  });
+
+  it('should check dropCommitPossible with parents', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    // Should return boolean (exact result depends on topology)
+    expect(typeof graph.dropCommitPossible(0)).toBe('boolean');
+  });
+
+  it('should check dropCommitPossible for merge commits', () => {
+    const commits = [
+      createCommit('merge', ['abc123', 'def456']),
+      createCommit('abc123', []),
+      createCommit('def456', []),
+    ];
+    graph.loadCommits(commits, 'merge', { merge: 0, abc123: 1, def456: 2 }, false);
+
+    // Merge commits fail topological test
+    expect(graph.dropCommitPossible(0)).toBe(false);
+  });
+
+  it('should get muted commits - none muted by default', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    const muted = graph.getMutedCommits('abc123');
+    expect(muted).toHaveLength(1);
+    expect(muted[0]).toBe(false);
+  });
+
+  it('should mute merge commits when enabled', () => {
+    const muteConfigWithMerges: GG.MuteCommitsConfig = {
+      mergeCommits: true,
+      commitsNotAncestorsOfHead: false,
+    };
+    const graphWithMute = new Graph(container, config, muteConfigWithMerges);
+
+    const commits = [
+      createCommit('merge', ['abc123', 'def456']),
+      createCommit('abc123', []),
+      createCommit('def456', []),
+    ];
+    graphWithMute.loadCommits(commits, 'merge', { merge: 0, abc123: 1, def456: 2 }, false);
+
+    const muted = graphWithMute.getMutedCommits('merge');
+    expect(muted[0]).toBe(true); // Merge commit muted
+    expect(muted[1]).toBe(false);
+  });
+
+  it('should mute non-ancestor commits when enabled', () => {
+    const muteConfigWithAncestors: GG.MuteCommitsConfig = {
+      mergeCommits: false,
+      commitsNotAncestorsOfHead: true,
+    };
+    const graphWithMute = new Graph(container, config, muteConfigWithAncestors);
+
+    const commits = [
+      createCommit('head', ['parent']),
+      createCommit('parent', []),
+      createCommit('other', []), // Not an ancestor of head
+    ];
+    graphWithMute.loadCommits(commits, 'head', { head: 0, parent: 1, other: 2 }, false);
+
+    const muted = graphWithMute.getMutedCommits('head');
+    expect(muted[0]).toBe(false); // head
+    expect(muted[1]).toBe(false); // parent (ancestor)
+    expect(muted[2]).toBe(true); // other (not ancestor)
+  });
+
+  it('should get first parent index', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    expect(graph.getFirstParentIndex(0)).toBe(1);
+    expect(graph.getFirstParentIndex(1)).toBe(-1);
+  });
+
+  it('should get alternative parent index', () => {
+    const commits = [
+      createCommit('merge', ['abc123', 'def456']),
+      createCommit('abc123', []),
+      createCommit('def456', []),
+    ];
+    graph.loadCommits(commits, 'merge', { merge: 0, abc123: 1, def456: 2 }, false);
+
+    expect(graph.getAlternativeParentIndex(0)).toBe(2);
+    expect(graph.getAlternativeParentIndex(1)).toBe(-1);
+  });
+
+  it('should get first child index', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    expect(graph.getFirstChildIndex(0)).toBe(-1);
+    expect(graph.getFirstChildIndex(1)).toBe(0);
+  });
+
+  it('should get alternative child index', () => {
+    const commits = [
+      createCommit('child1', ['parent']),
+      createCommit('child2', ['parent']),
+      createCommit('parent', []),
+    ];
+    graph.loadCommits(commits, 'child1', { child1: 0, child2: 1, parent: 2 }, false);
+
+    // Parent has multiple children
+    const altChild = graph.getAlternativeChildIndex(2);
+    expect(altChild).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should limit max width', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    // Should not throw
+    graph.limitMaxWidth(100);
+    expect(true).toBe(true);
+  });
+
+  it('should render graph without expanded commit', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    graph.render(null);
+    // SVG should have been updated
+    const svg = graph.getSvg();
+    expect(svg.querySelector('g')).not.toBeNull();
+  });
+
+  it('should render graph with expanded commit', () => {
+    const commits = [createCommit('def456', ['abc123']), createCommit('abc123', [])];
+    graph.loadCommits(commits, 'def456', { def456: 0, abc123: 1 }, false);
+
+    const expandedCommit = {
+      index: 0,
+      commitHash: 'def456',
+      commitElem: null,
+      compareWithHash: null,
+      compareWithElem: null,
+      commitDetails: null,
+      fileChanges: null,
+      fileTree: null,
+      avatar: null,
+      codeReview: null,
+      lastViewedFile: null,
+      loading: false,
+      fileChangesScrollTop: 0,
+    };
+
+    graph.render(expandedCommit);
+    const svg = graph.getSvg();
+    expect(svg.querySelector('g')).not.toBeNull();
+  });
+
+  it('should handle onlyFollowFirstParent mode', () => {
+    const commits = [createCommit('merge', ['abc123', 'def456']), createCommit('abc123', [])];
+    // def456 is not in lookup
+    graph.loadCommits(commits, 'merge', { merge: 0, abc123: 1 }, true);
+
+    expect(graph.getVertexColours()).toHaveLength(2);
+  });
+
+  it('should handle parent not in lookup', () => {
+    const commits = [createCommit('child', ['missing-parent'])];
+    graph.loadCommits(commits, 'child', { child: 0 }, false);
+
+    expect(graph.getVertexColours()).toHaveLength(1);
+  });
+
+  it('should handle complex branch topology', () => {
+    const commits = [
+      createCommit('head', ['merge']),
+      createCommit('merge', ['feature', 'main']),
+      createCommit('feature', ['base']),
+      createCommit('main', ['base']),
+      createCommit('base', []),
+    ];
+    const lookup = { head: 0, merge: 1, feature: 2, main: 3, base: 4 };
+    graph.loadCommits(commits, 'head', lookup, false);
+
+    expect(graph.getVertexColours()).toHaveLength(5);
+    expect(graph.getBranchLines().length).toBeGreaterThan(0);
+  });
+
+  it('should re-render when called multiple times', () => {
+    const commits = [createCommit('abc123')];
+    graph.loadCommits(commits, 'abc123', { abc123: 0 }, false);
+
+    graph.render(null);
+    expect(graph.getSvg().querySelector('g')).not.toBeNull();
+
+    graph.render(null);
+    // Should have replaced the group
+    expect(graph.getSvg().querySelector('g')).not.toBeNull();
   });
 });

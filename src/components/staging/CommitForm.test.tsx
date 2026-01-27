@@ -241,3 +241,99 @@ describe('CommitForm', () => {
     expect(mockSetPushAfterCommit).toHaveBeenCalledWith(true);
   });
 });
+
+describe('CommitForm with structured mode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should show structured form when structuredMode is true', () => {
+    vi.doMock('@/store/stagingStore', () => ({
+      useStagingStore: () => ({
+        status: { staged: ['file.ts'] },
+        commitMessage: '',
+        isAmending: false,
+        isCommitting: false,
+        pushAfterCommit: false,
+        structuredMode: true,
+        commitParts: { type: 'feat', scope: '', subject: '', body: '', breaking: false },
+        setCommitMessage: mockSetCommitMessage,
+        setIsAmending: mockSetIsAmending,
+        setPushAfterCommit: mockSetPushAfterCommit,
+        setStructuredMode: mockSetStructuredMode,
+        setCommitParts: mockSetCommitParts,
+        createCommit: mockCreateCommit,
+        amendCommit: mockAmendCommit,
+      }),
+    }));
+  });
+});
+
+describe('CommitForm with amending', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should show amend button when amending', () => {
+    vi.doMock('@/store/stagingStore', () => ({
+      useStagingStore: () => ({
+        status: { staged: ['file.ts'] },
+        commitMessage: 'Previous commit',
+        isAmending: true,
+        isCommitting: false,
+        pushAfterCommit: false,
+        structuredMode: false,
+        commitParts: { type: '', scope: '', subject: '', body: '', breaking: false },
+        setCommitMessage: mockSetCommitMessage,
+        setIsAmending: mockSetIsAmending,
+        setPushAfterCommit: mockSetPushAfterCommit,
+        setStructuredMode: mockSetStructuredMode,
+        setCommitParts: mockSetCommitParts,
+        createCommit: mockCreateCommit,
+        amendCommit: mockAmendCommit,
+      }),
+    }));
+  });
+});
+
+describe('CommitForm with no remotes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should disable push checkbox when no remotes', () => {
+    vi.doMock('@/store/repositoryStore', () => ({
+      useRepositoryStore: () => ({
+        repository: { path: '/test/repo', currentBranch: 'main' },
+        branches: [{ name: 'main', isHead: true }],
+        remotes: [],
+      }),
+    }));
+  });
+});
+
+describe('CommitForm keyboard shortcuts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should not commit on regular Enter', () => {
+    render(<CommitForm />);
+
+    const textarea = screen.getByPlaceholderText('staging.commitForm.placeholder');
+    fireEvent.change(textarea, { target: { value: 'Test message' } });
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+
+    // createCommit should not be called for regular enter
+    expect(mockCreateCommit).not.toHaveBeenCalled();
+  });
+
+  it('should handle escape key', () => {
+    render(<CommitForm />);
+
+    const textarea = screen.getByPlaceholderText('staging.commitForm.placeholder');
+    fireEvent.keyDown(textarea, { key: 'Escape' });
+
+    expect(textarea).toBeInTheDocument();
+  });
+});

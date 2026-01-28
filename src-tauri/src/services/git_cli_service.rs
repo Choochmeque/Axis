@@ -4111,11 +4111,23 @@ mod tests {
 
     #[test]
     fn test_git_command_result_from_output() {
-        use std::os::unix::process::ExitStatusExt;
         use std::process::ExitStatus;
 
+        fn success_status() -> ExitStatus {
+            #[cfg(unix)]
+            {
+                use std::os::unix::process::ExitStatusExt;
+                ExitStatus::from_raw(0)
+            }
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::ExitStatusExt;
+                ExitStatus::from_raw(0)
+            }
+        }
+
         let output = Output {
-            status: ExitStatus::from_raw(0),
+            status: success_status(),
             stdout: b"success output".to_vec(),
             stderr: b"".to_vec(),
         };

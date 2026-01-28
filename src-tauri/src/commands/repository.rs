@@ -155,10 +155,7 @@ pub async fn get_commit_history(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_branches(
-    state: State<'_, AppState>,
-    filter: BranchFilter,
-) -> Result<Vec<Branch>> {
+pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> Result<Vec<Branch>> {
     state
         .get_git_service()?
         .with_git2(|git2| git2.list_branches(filter))

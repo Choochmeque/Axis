@@ -26,7 +26,6 @@ pub enum BranchType {
     Remote,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BranchFilter {

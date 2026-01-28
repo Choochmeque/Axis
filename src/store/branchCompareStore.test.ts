@@ -19,38 +19,39 @@ import { branchApi, diffApi } from '@/services/api';
 
 describe('branchCompareStore', () => {
   const mockFileDiff: FileDiff = {
-    path: 'src/test.ts',
     oldPath: null,
+    newPath: 'src/newFile.ts',
+    oldOid: null,
+    newOid: 'def456',
     status: 'Modified',
+    binary: false,
+    hunks: [],
     additions: 10,
     deletions: 5,
-    isBinary: false,
-    hunks: [],
   };
 
   const mockCommit: Commit = {
     oid: 'abc123',
     shortOid: 'abc123',
+    message: 'This is a test commit message',
     summary: 'Test commit',
-    body: null,
-    time: Date.now(),
-    author: { name: 'Test', email: 'test@example.com' },
-    committer: { name: 'Test', email: 'test@example.com' },
-    parents: [],
-    refs: [],
-    isHead: false,
+    author: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
+    committer: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
+    parentOids: [],
+    timestamp: new Date().toISOString(),
     isMerge: false,
     signature: null,
-    gpgStatus: null,
   };
 
   const mockCompareResult: BranchCompareResult = {
     baseRef: 'main',
     compareRef: 'feature',
-    aheadCount: 2,
-    behindCount: 1,
+    baseOid: 'def456',
+    compareOid: 'abc123',
+    mergeBaseOid: '789abc',
+    aheadCommits: [mockCommit],
+    behindCommits: [],
     files: [mockFileDiff],
-    commits: [mockCommit],
   };
 
   beforeEach(() => {

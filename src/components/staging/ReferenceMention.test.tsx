@@ -11,9 +11,9 @@ vi.mock('react-i18next', () => ({
 
 describe('ReferenceMention', () => {
   const mockItems: ReferenceItem[] = [
-    { type: 'issue', number: 1, title: 'Fix bug' },
-    { type: 'pr', number: 2, title: 'Add feature' },
-    { type: 'issue', number: 3, title: 'Update docs' },
+    { type: 'issue', number: 1, title: 'Fix bug', state: 'Open' },
+    { type: 'pr', number: 2, title: 'Add feature', state: 'Merged' },
+    { type: 'issue', number: 3, title: 'Update docs', state: 'Open' },
   ];
 
   let mockAnchorElement: HTMLTextAreaElement;

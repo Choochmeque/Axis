@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useOperationProgress } from './useOperationProgress';
 import type { Operation } from '@/store/operationStore';
+import { ProgressStage } from '@/types';
 
 const mockOperations = new Map<string, Operation>();
 
@@ -83,7 +84,7 @@ describe('useOperationProgress', () => {
       category: 'git',
       operationType: 'Fetch',
       progress: {
-        stage: 'Receiving',
+        stage: ProgressStage.Receiving,
         receivedObjects: 10,
         totalObjects: 50,
       },
@@ -95,7 +96,7 @@ describe('useOperationProgress', () => {
       category: 'git',
       operationType: 'Fetch',
       progress: {
-        stage: 'Indexing',
+        stage: ProgressStage.Resolving,
         indexedObjects: 50,
         totalObjects: 100,
       },

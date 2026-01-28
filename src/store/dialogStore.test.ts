@@ -7,27 +7,27 @@ describe('dialogStore', () => {
   const mockCommit: Commit = {
     oid: 'abc123',
     shortOid: 'abc123',
+    message: 'This is a test commit message',
     summary: 'Test commit',
-    body: null,
-    time: Date.now(),
-    author: { name: 'Test', email: 'test@example.com' },
-    committer: { name: 'Test', email: 'test@example.com' },
-    parents: [],
-    refs: [],
-    isHead: false,
+    author: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
+    committer: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
+    parentOids: [],
+    timestamp: new Date().toISOString(),
     isMerge: false,
     signature: null,
-    gpgStatus: null,
   };
 
   const mockBranch: Branch = {
     name: 'main',
+    fullName: 'refs/heads/main',
+    branchType: 'Local',
     isHead: true,
-    isRemote: false,
     upstream: null,
-    upstreamName: null,
-    lastCommitSummary: null,
-    lastCommitOid: null,
+    ahead: null,
+    behind: null,
+    targetOid: 'abc123',
+    lastCommitSummary: 'Initial commit',
+    lastCommitTime: new Date().toISOString(),
   };
 
   beforeEach(() => {

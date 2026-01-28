@@ -68,9 +68,19 @@ const mockEntries: InteractiveRebaseEntry[] = [
 ];
 
 const mockPreview: InteractiveRebasePreview = {
-  commitsToRebase: [],
-  hasConflicts: false,
-  willRewrite: 2,
+  preview: {
+    commitsToRebase: [],
+    mergeBase: {
+      oid: '789abc',
+      shortOid: '789abc',
+      message: 'Merge base commit message',
+      author: {},
+      summary: 'Merge base commit',
+    },
+    target: { name: 'main', oid: '789abc', shortOid: '789abc', summary: 'Target commit' },
+    targetCommitsAhead: 1,
+  },
+  entries: [],
 };
 
 let mockStoreState = {
@@ -94,7 +104,7 @@ vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: () => ({
     getTotalSize: () => 88,
     getVirtualItems: () =>
-      mockStoreState.entries.map((entry, index) => ({
+      mockStoreState.entries.map((_entry, index) => ({
         key: index,
         index,
         size: 44,

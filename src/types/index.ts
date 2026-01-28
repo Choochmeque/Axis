@@ -359,6 +359,7 @@ export const EdgeType: { [K in EdgeTypeType]: K } = {
   Straight: 'Straight',
   Merge: 'Merge',
   Branch: 'Branch',
+  MergePreview: 'MergePreview',
 };
 
 export type EdgeType = EdgeTypeType;

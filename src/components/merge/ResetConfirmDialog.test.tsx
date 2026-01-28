@@ -33,18 +33,14 @@ describe('ResetConfirmDialog', () => {
   const mockCommit: Commit = {
     oid: 'abc123def456',
     shortOid: 'abc123d',
+    message: 'This is a test commit message',
     summary: 'Test commit message',
-    body: '',
-    authorName: 'Test Author',
-    authorEmail: 'test@example.com',
-    authorTime: new Date().toISOString(),
-    committerName: 'Test Committer',
-    committerEmail: 'test@example.com',
-    committerTime: new Date().toISOString(),
+    author: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
+    committer: { name: 'Test', email: 'test@example.com', timestamp: new Date().toISOString() },
     parentOids: [],
+    timestamp: new Date().toISOString(),
     isMerge: false,
-    branchNames: [],
-    tagNames: [],
+    signature: null,
   };
 
   const defaultProps = {

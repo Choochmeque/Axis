@@ -23,17 +23,31 @@ vi.mock('@/components/custom-actions', () => ({
 describe('TagContextMenu', () => {
   const mockTag: Tag = {
     name: 'v1.0.0',
-    oid: 'abc123',
-    message: 'Release v1.0.0',
-    taggerName: 'Test User',
-    taggerEmail: 'test@example.com',
-    taggedAt: new Date().toISOString(),
+    fullName: 'refs/tags/v1.0.0',
+    targetOid: 'abc123def456',
+    shortOid: 'abc123d',
     isAnnotated: true,
+    message: 'Release v1.0.0',
+    tagger: { name: 'Test User', email: 'test@example.com', timestamp: new Date().toISOString() },
+    targetSummary: 'This is a test commit message',
+    targetTime: new Date().toISOString(),
   };
 
   const mockRemotes: Remote[] = [
-    { name: 'origin', url: 'https://github.com/user/repo.git', direction: 'Push' },
-    { name: 'upstream', url: 'https://github.com/org/repo.git', direction: 'Push' },
+    {
+      name: 'origin',
+      url: 'https://github.com/user/repo.git',
+      pushUrl: null,
+      fetchRefspecs: [],
+      pushRefspecs: [],
+    },
+    {
+      name: 'upstream',
+      url: 'https://github.com/org/repo.git',
+      pushUrl: null,
+      fetchRefspecs: [],
+      pushRefspecs: [],
+    },
   ];
 
   const defaultProps = {

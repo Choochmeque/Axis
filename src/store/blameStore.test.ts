@@ -12,14 +12,33 @@ vi.mock('@/lib/errorUtils', () => ({
 }));
 
 import { blameApi } from '@/services/api';
+import { BlameResult } from '@/types';
 
 describe('blameStore', () => {
-  const mockBlameResult = {
+  const mockBlameResult: BlameResult = {
+    path: 'test.ts',
     lines: [
-      { lineNumber: 1, content: 'line 1', commitOid: 'abc123', author: 'Test User' },
-      { lineNumber: 2, content: 'line 2', commitOid: 'abc123', author: 'Test User' },
+      {
+        lineNumber: 1,
+        commitOid: 'abc123',
+        shortOid: 'abc123',
+        author: 'Test User',
+        timestamp: new Date().toISOString(),
+        content: 'line 1',
+        originalLine: 1,
+        isGroupStart: true,
+      },
+      {
+        lineNumber: 2,
+        commitOid: 'abc123',
+        shortOid: 'abc123',
+        author: 'Test User',
+        timestamp: new Date().toISOString(),
+        content: 'line 2',
+        originalLine: 2,
+        isGroupStart: false,
+      },
     ],
-    commits: [{ oid: 'abc123', author: 'Test User', message: 'Initial commit' }],
   };
 
   beforeEach(() => {
@@ -67,11 +86,11 @@ describe('blameStore', () => {
     });
 
     it('should set loading state during fetch', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: BlameResult) => void;
       const pendingPromise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
-      vi.mocked(blameApi.file).mockReturnValue(pendingPromise as Promise<unknown>);
+      vi.mocked(blameApi.file).mockReturnValue(pendingPromise as Promise<BlameResult>);
 
       const loadPromise = useBlameStore.getState().loadBlame('test.ts');
 

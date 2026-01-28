@@ -2259,11 +2259,12 @@ impl Git2Service {
 
     /// List all tags
     pub fn tag_list(&self, repo: Option<&git2::Repository>) -> Result<Vec<Tag>> {
-        // TODO: fix this ugly unwrap
-        let repo = if repo.is_none() {
-            &self.repo()?
-        } else {
-            repo.unwrap()
+        let repo = {
+            if let Some(r) = repo {
+                r
+            } else {
+                &self.repo()?
+            }
         };
         let tag_names = repo.tag_names(None)?;
         let mut tags = Vec::new();

@@ -384,7 +384,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     if (!debouncedLoadBranches) {
       debouncedLoadBranches = debounce(async () => {
         try {
-          const branches = await branchApi.list();
+          const branches = await branchApi.list({ includeLocal: true, includeRemote: true });
           set({ branches });
         } catch (err) {
           set({ error: getErrorMessage(err) });

@@ -54,7 +54,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
       try {
         const [remotesData, branchesData] = await Promise.all([
           remoteApi.list(),
-          branchApi.list(false, true), // Only remote branches
+          branchApi.list({ includeLocal: false, includeRemote: true }), // Only remote branches
         ]);
         setRemotes(remotesData);
         setRemoteBranches(branchesData);

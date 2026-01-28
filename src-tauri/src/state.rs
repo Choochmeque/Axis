@@ -14,12 +14,14 @@ use tauri::{AppHandle, Manager};
 #[derive(Clone)]
 pub struct GitServiceHandle {
     inner: Arc<Mutex<GitService>>,
+    inner2: Arc<GitService>,
 }
 
 impl GitServiceHandle {
-    pub fn new(service: GitService) -> Self {
+    pub fn new(service: GitService, service2: GitService) -> Self {
         Self {
             inner: Arc::new(Mutex::new(service)),
+            inner2: Arc::new(service2),
         }
     }
 
@@ -28,12 +30,16 @@ impl GitServiceHandle {
     }
 
     /// Access git2 service directly (convenience method)
-    pub fn with_git2<F, R>(&self, f: F) -> R
+    pub async fn with_git2<F, R>(&self, f: F) -> R
     where
-        F: FnOnce(&crate::services::Git2Service) -> R,
+        F: FnOnce(&crate::services::Git2Service) -> R + Send + 'static,
+        R: Send + 'static,
     {
-        let guard = self.lock();
-        f(guard.git2())
+        let inner = self.inner2.clone();
+        tauri::async_runtime::spawn_blocking(move || f(inner.git2()))
+            .await
+            .map_err(|e| AxisError::Other(format!("git task panicked: {e}")))
+            .expect("AA")
     }
 
     /// Access git CLI service directly (convenience method)
@@ -91,7 +97,11 @@ impl RepositoryCache {
 
         // Open and cache
         let service = GitService::open(path, app_handle.clone(), is_active)?;
-        let handle = GitServiceHandle::new(service);
+
+        // TODO: this is a temporary workaround until we refactor GitService to avoid double init
+        let service2 = GitService::open(path, app_handle.clone(), is_active)?;
+
+        let handle = GitServiceHandle::new(service, service2);
 
         let mut repos = self.repos.write().unwrap_or_else(|e| e.into_inner());
         repos.insert(path.to_path_buf(), handle.clone());

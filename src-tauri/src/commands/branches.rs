@@ -15,7 +15,8 @@ pub async fn create_branch(
 ) -> Result<Branch> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.create_branch(&name, &options))
+        .with_git2(move |git2| git2.create_branch(&name, &options))
+        .await
 }
 
 /// Delete a branch
@@ -28,7 +29,8 @@ pub async fn delete_branch(
 ) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.delete_branch(&name, force.unwrap_or(false)))
+        .with_git2(move |git2| git2.delete_branch(&name, force.unwrap_or(false)))
+        .await
 }
 
 /// Rename a branch
@@ -42,7 +44,8 @@ pub async fn rename_branch(
 ) -> Result<Branch> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.rename_branch(&old_name, &new_name, force.unwrap_or(false)))
+        .with_git2(move |git2| git2.rename_branch(&old_name, &new_name, force.unwrap_or(false)))
+        .await
 }
 
 /// Checkout a branch
@@ -57,14 +60,16 @@ pub async fn checkout_branch(
     let git_service = state.get_git_service()?;
 
     // Get HEAD before checkout for post-checkout hook
-    let prev_head = git_service.with_git2(|git2| git2.get_head_oid());
+    let prev_head = git_service.with_git2(|git2| git2.get_head_oid()).await;
 
     // Perform checkout
-    git_service.with_git2(|git2| git2.checkout_branch(&name, &options))?;
+    git_service
+        .with_git2(move |git2| git2.checkout_branch(&name, &options))
+        .await?;
 
     // Run post-checkout hook (informational, don't fail on error)
     if !settings.bypass_hooks {
-        let new_head = git_service.with_git2(|git2| git2.get_head_oid());
+        let new_head = git_service.with_git2(|git2| git2.get_head_oid()).await;
         let result =
             git_service.with_hook(|hook| hook.run_post_checkout(&prev_head, &new_head, true));
         if !result.skipped && !result.success {
@@ -89,16 +94,18 @@ pub async fn checkout_remote_branch(
     let git_service = state.get_git_service()?;
 
     // Get HEAD before checkout for post-checkout hook
-    let prev_head = git_service.with_git2(|git2| git2.get_head_oid());
+    let prev_head = git_service.with_git2(|git2| git2.get_head_oid()).await;
 
     // Perform checkout
-    git_service.with_git2(|git2| {
-        git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
-    })?;
+    git_service
+        .with_git2(move |git2| {
+            git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
+        })
+        .await?;
 
     // Run post-checkout hook (informational, don't fail on error)
     if !settings.bypass_hooks {
-        let new_head = git_service.with_git2(|git2| git2.get_head_oid());
+        let new_head = git_service.with_git2(|git2| git2.get_head_oid()).await;
         let result =
             git_service.with_hook(|hook| hook.run_post_checkout(&prev_head, &new_head, true));
         if !result.skipped && !result.success {
@@ -119,7 +126,8 @@ pub async fn get_branch(
 ) -> Result<Branch> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_branch(&name, branch_type))
+        .with_git2(move |git2| git2.get_branch(&name, branch_type))
+        .await
 }
 
 /// Set the upstream branch for a local branch
@@ -132,7 +140,8 @@ pub async fn set_branch_upstream(
 ) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.set_branch_upstream(&branch_name, upstream.as_deref()))
+        .with_git2(move |git2| git2.set_branch_upstream(&branch_name, upstream.as_deref()))
+        .await
 }
 
 /// Delete a remote branch
@@ -144,9 +153,12 @@ pub async fn delete_remote_branch(
     branch_name: String,
     force: Option<bool>,
 ) -> Result<()> {
-    state.get_git_service()?.with_git2(|git2| {
-        git2.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false))
-    })
+    state
+        .get_git_service()?
+        .with_git2(move |git2| {
+            git2.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false))
+        })
+        .await
 }
 
 /// Compare two branches to find commits ahead/behind and file differences
@@ -159,5 +171,6 @@ pub async fn compare_branches(
 ) -> Result<BranchCompareResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.compare_branches(&base_ref, &compare_ref))
+        .with_git2(move |git2| git2.compare_branches(&base_ref, &compare_ref))
+        .await
 }

@@ -12,6 +12,7 @@ pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
     state
         .get_git_service()?
         .with_git2(|git2| git2.tag_list(None))
+        .await
 }
 
 /// Create a new tag
@@ -24,7 +25,8 @@ pub async fn tag_create(
 ) -> Result<TagResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.tag_create(&name, &options))
+        .with_git2(move |git2| git2.tag_create(&name, &options))
+        .await
 }
 
 /// Delete a local tag
@@ -33,7 +35,8 @@ pub async fn tag_create(
 pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.tag_delete(&name))
+        .with_git2(move |git2| git2.tag_delete(&name))
+        .await
 }
 
 /// Push a tag to a remote

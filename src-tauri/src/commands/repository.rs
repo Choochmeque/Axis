@@ -23,7 +23,7 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
 
     // Get repo info from the cached service
     let handle = state.get_git_service()?;
-    let repo_info = handle.with_git2(|git2| git2.get_repository_info())?;
+    let repo_info = handle.with_git2(|git2| git2.get_repository_info()).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -136,12 +136,16 @@ pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repositor
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_repository_info())
+        .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    state.get_git_service()?.with_git2(|git2| git2.status())
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.status())
+        .await
 }
 
 #[tauri::command]
@@ -150,7 +154,10 @@ pub async fn get_commit_history(
     state: State<'_, AppState>,
     options: LogOptions,
 ) -> Result<Vec<Commit>> {
-    state.get_git_service()?.with_git2(|git2| git2.log(options))
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.log(options))
+        .await
 }
 
 #[tauri::command]
@@ -159,6 +166,7 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
     state
         .get_git_service()?
         .with_git2(|git2| git2.list_branches(filter))
+        .await
 }
 
 #[tauri::command]
@@ -166,7 +174,8 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_commit(&oid))
+        .with_git2(move |git2| git2.get_commit(&oid))
+        .await
 }
 
 #[tauri::command]

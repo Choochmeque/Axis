@@ -12,7 +12,8 @@ pub async fn add_to_gitignore(
 ) -> Result<IgnoreResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.add_to_gitignore(&pattern, &gitignore_path))
+        .with_git2(move |git2| git2.add_to_gitignore(&pattern, &gitignore_path))
+        .await
 }
 
 #[tauri::command]
@@ -23,7 +24,8 @@ pub async fn add_to_global_gitignore(
 ) -> Result<IgnoreResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.add_to_global_gitignore(&pattern))
+        .with_git2(move |git2| git2.add_to_global_gitignore(&pattern))
+        .await
 }
 
 #[tauri::command]
@@ -34,5 +36,6 @@ pub async fn get_ignore_options(
 ) -> Result<IgnoreOptions> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_ignore_options(&file_path))
+        .with_git2(move |git2| git2.get_ignore_options(&file_path))
+        .await
 }

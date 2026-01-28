@@ -28,10 +28,11 @@ fn build_push_refs_stdin(
         // Get local SHA
         let local_sha = git_service
             .with_git2(|git2| {
-                git2.repo()
-                    .revparse_single(&local_ref)
-                    .ok()
-                    .map(|obj| obj.id().to_string())
+                git2.repo().ok().and_then(|repo| {
+                    repo.revparse_single(&local_ref)
+                        .ok()
+                        .map(|obj| obj.id().to_string())
+                })
             })
             .unwrap_or_else(|| "0".repeat(40));
 
@@ -46,10 +47,11 @@ fn build_push_refs_stdin(
                         .unwrap_or(refspec)
                         .replace("refs/heads/", "")
                 );
-                git2.repo()
-                    .revparse_single(&remote_ref_name)
-                    .ok()
-                    .map(|obj| obj.id().to_string())
+                git2.repo().ok().and_then(|repo| {
+                    repo.revparse_single(&remote_ref_name)
+                        .ok()
+                        .map(|obj| obj.id().to_string())
+                })
             })
             .unwrap_or_else(|| "0".repeat(40));
 
@@ -131,20 +133,27 @@ pub async fn fetch_remote(
     options: FetchOptions,
 ) -> Result<FetchResult> {
     let app_handle = state.get_app_handle()?;
+    let git_service = state.get_git_service()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
-    let result = state.get_git_service()?.with_git2(|git2| {
-        git2.fetch(
-            &remote_name,
-            &options,
-            None,
-            Some(ctx.make_receive_callback(GitOperationType::Fetch)),
-        )
-    });
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let result = git_service.with_git2(|git2| {
+            git2.fetch(
+                &remote_name,
+                &options,
+                None,
+                Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+            )
+        });
 
-    ctx.handle_result(&result, GitOperationType::Fetch);
+        ctx.handle_result(&result, GitOperationType::Fetch);
+
+        result
+    })
+    .await
+    .map_err(|e| AxisError::Other(format!("Failed to fetch remote: {e}")))?;
 
     result
 }
@@ -226,12 +235,7 @@ pub async fn push_current_branch(
     // Run pre-push hook (can abort)
     if !skip_hooks {
         // Get current branch name
-        let current_branch = git_service.with_git2(|git2| {
-            git2.repo()
-                .head()
-                .ok()
-                .and_then(|h| h.shorthand().map(|s| s.to_string()))
-        });
+        let current_branch = git_service.with_git2(|git2| git2.get_current_branch());
 
         if let Some(branch) = &current_branch {
             // Get remote URL for the hook

@@ -179,15 +179,15 @@ impl ProgressEmitter {
 }
 
 /// Context for tracking progress of a single operation with automatic cleanup
-pub struct ProgressContext<'a> {
+pub struct ProgressContext {
     pub operation_id: String,
     emitter: Arc<ProgressEmitter>,
     cancel_token: Arc<AtomicBool>,
-    registry: &'a ProgressRegistry,
+    registry: Arc<ProgressRegistry>,
 }
 
-impl<'a> ProgressContext<'a> {
-    pub fn new(app_handle: AppHandle, registry: &'a ProgressRegistry) -> Self {
+impl ProgressContext {
+    pub fn new(app_handle: AppHandle, registry: Arc<ProgressRegistry>) -> Self {
         let operation_id = uuid::Uuid::new_v4().to_string();
         let cancel_token = registry.register(&operation_id);
         let emitter = Arc::new(ProgressEmitter::new(app_handle));
@@ -307,7 +307,7 @@ impl<'a> ProgressContext<'a> {
     }
 }
 
-impl Drop for ProgressContext<'_> {
+impl Drop for ProgressContext {
     fn drop(&mut self) {
         self.emitter.cleanup_operation(&self.operation_id);
         self.registry.cleanup(&self.operation_id);

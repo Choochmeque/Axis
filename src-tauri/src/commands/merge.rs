@@ -134,12 +134,7 @@ pub async fn rebase_branch(
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
     // Get current branch name for pre-rebase hook
-    let current_branch = git_service.with_git2(|git2| {
-        git2.repo()
-            .head()
-            .ok()
-            .and_then(|h| h.shorthand().map(|s| s.to_string()))
-    });
+    let current_branch = git_service.with_git2(|git2| git2.get_current_branch());
 
     // Run pre-rebase hook (can abort)
     if !skip_hooks {
@@ -319,12 +314,7 @@ pub async fn interactive_rebase(
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
     // Get current branch for pre-rebase hook
-    let current_branch = git_service.with_git2(|git2| {
-        git2.repo()
-            .head()
-            .ok()
-            .and_then(|h| h.shorthand().map(|s| s.to_string()))
-    });
+    let current_branch = git_service.with_git2(|git2| git2.get_current_branch());
 
     // Run pre-rebase hook
     if !skip_hooks {

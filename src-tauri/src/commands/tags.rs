@@ -9,7 +9,9 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
-    state.get_git_service()?.with_git2(|git2| git2.tag_list())
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.tag_list(None))
 }
 
 /// Create a new tag

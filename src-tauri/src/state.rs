@@ -32,7 +32,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::Git2Service) -> R,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = self.lock();
         f(guard.git2())
     }
 
@@ -41,7 +41,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::GitCliService) -> R,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = self.lock();
         f(guard.git_cli())
     }
 
@@ -50,7 +50,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::HookService) -> R,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = self.lock();
         f(guard.hook())
     }
 }
@@ -163,7 +163,7 @@ pub struct AppState {
     background_fetch: BackgroundFetchService,
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
     integration_service: RwLock<Option<Arc<IntegrationService>>>,
-    progress_registry: ProgressRegistry,
+    progress_registry: Arc<ProgressRegistry>,
 }
 
 impl AppState {
@@ -180,7 +180,7 @@ impl AppState {
             background_fetch: BackgroundFetchService::new(),
             avatar_service: RwLock::new(None),
             integration_service: RwLock::new(Some(Arc::new(integration_service))),
-            progress_registry: ProgressRegistry::new(),
+            progress_registry: Arc::new(ProgressRegistry::new()),
         }
     }
 
@@ -236,8 +236,8 @@ impl AppState {
     }
 
     /// Get the progress registry for operation cancellation
-    pub fn progress_registry(&self) -> &ProgressRegistry {
-        &self.progress_registry
+    pub fn progress_registry(&self) -> Arc<ProgressRegistry> {
+        self.progress_registry.clone()
     }
 
     /// Set/switch the active repository (adds to cache if needed)

@@ -1,38 +1,39 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    Branch, BranchFilter, BranchFilterType, BranchType, Commit, CreateTagOptions, EdgeType,
-    FileStatus, GraphCommit, GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion,
-    IgnoreSuggestionType, LaneState, LogOptions, RebasePreview, RebaseTarget, ReflogAction,
-    ReflogEntry, ReflogOptions, Repository, RepositoryState, RepositoryStatus, SigningConfig,
-    SortOrder, Tag, TagResult, TagSignature,
+    BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchType, Commit,
+    CreateTagOptions, EdgeType, FileLogResult, FileStatus, GraphCommit, GraphEdge, GraphResult,
+    IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType, LaneState, LogOptions,
+    RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository,
+    RepositoryState, RepositoryStatus, SearchResult, SigningConfig, SortOrder, Tag, TagResult,
+    TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
 use git2::{
     build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks, Repository as Git2Repository,
-    StatusOptions,
+    RepositoryInitOptions, StatusOptions,
 };
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct Git2Service {
-    repo: Git2Repository,
+    path: PathBuf,
 }
 
 impl Git2Service {
     /// Open an existing repository
     pub fn open(path: &Path) -> Result<Self> {
-        let repo = Git2Repository::open(path)?;
-        Ok(Git2Service { repo })
+        let _ = Git2Repository::open(path)?;
+        Ok(Git2Service {
+            path: path.to_path_buf(),
+        })
     }
 
     /// Initialize a new repository
     pub fn init(path: &Path, bare: bool) -> Result<Self> {
-        let repo = if bare {
-            Git2Repository::init_bare(path)?
-        } else {
-            Git2Repository::init(path)?
-        };
-        Ok(Git2Service { repo })
+        let _ = Git2Repository::init_opts(path, RepositoryInitOptions::new().bare(bare))?;
+        Ok(Git2Service {
+            path: path.to_path_buf(),
+        })
     }
 
     /// Clone a repository from a URL with optional progress callback
@@ -109,16 +110,32 @@ impl Git2Service {
         fetch_options.remote_callbacks(callbacks);
 
         // Build and execute clone
-        let repo = RepoBuilder::new()
+        RepoBuilder::new()
             .fetch_options(fetch_options)
             .clone(url, path)?;
 
-        Ok(Git2Service { repo })
+        Ok(Git2Service {
+            path: path.to_path_buf(),
+        })
     }
 
-    /// Get a reference to the underlying git2 repository
-    pub fn repo(&self) -> &Git2Repository {
-        &self.repo
+    /// Get the underlying git2 Repository
+    pub fn repo(&self) -> Result<Git2Repository> {
+        Git2Repository::open(&self.path).map_err(Into::into)
+    }
+
+    /// Get the repository path
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// Get current branch
+    pub fn get_current_branch(&self) -> Option<String> {
+        self.repo().ok().and_then(|repo| {
+            repo.head()
+                .ok()
+                .and_then(|h| h.shorthand().map(|s| s.to_string()))
+        })
     }
 
     /// Get the current HEAD commit OID as a string
@@ -130,16 +147,17 @@ impl Git2Service {
     /// Get the current HEAD commit OID as an optional string
     /// Returns None if HEAD doesn't exist
     pub fn get_head_oid_opt(&self) -> Option<String> {
-        self.repo
-            .head()
-            .ok()
-            .and_then(|h| h.target())
-            .map(|oid| oid.to_string())
+        self.repo().ok().and_then(|repo| {
+            repo.head()
+                .ok()
+                .and_then(|h| h.target())
+                .map(|oid| oid.to_string())
+        })
     }
 
     /// Check if HEAD is unborn (no commits yet in the repository)
-    pub fn is_head_unborn(&self) -> bool {
-        match self.repo.head() {
+    pub fn is_head_unborn(repo: &Git2Repository) -> bool {
+        match repo.head() {
             Ok(_) => false,
             Err(e) => e.code() == git2::ErrorCode::UnbornBranch,
         }
@@ -147,10 +165,10 @@ impl Git2Service {
 
     /// Get repository information
     pub fn get_repository_info(&self) -> Result<Repository> {
-        let path = self
-            .repo
+        let repo = self.repo()?;
+        let path = repo
             .workdir()
-            .or_else(|| self.repo.path().parent())
+            .or_else(|| self.path().parent())
             .ok_or_else(|| AxisError::InvalidRepositoryPath("Unknown path".to_string()))?;
 
         let name = path
@@ -159,14 +177,14 @@ impl Git2Service {
             .unwrap_or_else(|| "Unknown".to_string());
 
         let current_branch = self.get_current_branch_name();
-        let state = RepositoryState::from(self.repo.state());
+        let state = RepositoryState::from(repo.state());
 
         Ok(Repository {
             id: uuid::Uuid::new_v4().to_string(),
             name,
             path: path.to_path_buf(),
-            is_bare: self.repo.is_bare(),
-            is_unborn: self.is_head_unborn(),
+            is_bare: repo.is_bare(),
+            is_unborn: Self::is_head_unborn(&repo),
             current_branch,
             state,
         })
@@ -174,7 +192,7 @@ impl Git2Service {
 
     /// Get git user signature (name and email from config)
     pub fn get_user_signature(&self) -> Result<(String, String)> {
-        let sig = self.repo.signature()?;
+        let sig = self.repo()?.signature()?;
         let name = sig.name().unwrap_or("Unknown").to_string();
         let email = sig.email().unwrap_or("unknown@example.com").to_string();
         Ok((name, email))
@@ -182,13 +200,15 @@ impl Git2Service {
 
     /// Get the current branch name
     pub fn get_current_branch_name(&self) -> Option<String> {
-        self.repo.head().ok().and_then(|head| {
-            if head.is_branch() {
-                head.shorthand().map(|s| s.to_string())
-            } else {
-                // Detached HEAD - return short commit hash
-                head.target().map(|oid| oid.to_string()[..7].to_string())
-            }
+        self.repo().ok().and_then(|repo| {
+            repo.head().ok().and_then(|head| {
+                if head.is_branch() {
+                    head.shorthand().map(|s| s.to_string())
+                } else {
+                    // Detached HEAD - return short commit hash
+                    head.target().map(|oid| oid.to_string()[..7].to_string())
+                }
+            })
         })
     }
 
@@ -200,7 +220,8 @@ impl Git2Service {
             .include_ignored(false)
             .include_unmodified(false);
 
-        let statuses = self.repo.statuses(Some(&mut opts))?;
+        let repo = self.repo()?;
+        let statuses = repo.statuses(Some(&mut opts))?;
 
         let mut result = RepositoryStatus::default();
 
@@ -229,12 +250,14 @@ impl Git2Service {
 
     /// Get commit history
     pub fn log(&self, options: LogOptions) -> Result<Vec<Commit>> {
+        let repo = self.repo()?;
+
         // Return empty list for unborn HEAD (no commits yet)
-        if self.is_head_unborn() {
+        if Self::is_head_unborn(&repo) {
             return Ok(Vec::new());
         }
 
-        let mut revwalk = self.repo.revwalk()?;
+        let mut revwalk = repo.revwalk()?;
 
         // Set sorting based on options
         match options.sort_order {
@@ -248,7 +271,7 @@ impl Git2Service {
 
         // Handle from_ref if specified (overrides branch_filter)
         if let Some(ref from_ref) = options.from_ref {
-            let obj = self.repo.revparse_single(from_ref)?;
+            let obj = repo.revparse_single(from_ref)?;
             revwalk.push(obj.id())?;
         } else {
             // Apply branch filter
@@ -259,14 +282,14 @@ impl Git2Service {
                 BranchFilterType::Specific(branch_name) => {
                     // Try local branch first, then remote
                     let ref_name = format!("refs/heads/{}", branch_name);
-                    if let Ok(reference) = self.repo.find_reference(&ref_name) {
+                    if let Ok(reference) = repo.find_reference(&ref_name) {
                         if let Some(oid) = reference.target() {
                             revwalk.push(oid)?;
                         }
                     } else {
                         // Try as remote branch
                         let ref_name = format!("refs/remotes/{}", branch_name);
-                        if let Ok(reference) = self.repo.find_reference(&ref_name) {
+                        if let Ok(reference) = repo.find_reference(&ref_name) {
                             if let Some(oid) = reference.target() {
                                 revwalk.push(oid)?;
                             }
@@ -278,7 +301,7 @@ impl Git2Service {
                 }
                 BranchFilterType::All => {
                     // Push all local branches
-                    for branch_result in self.repo.branches(Some(git2::BranchType::Local))? {
+                    for branch_result in repo.branches(Some(git2::BranchType::Local))? {
                         if let Ok((branch, _)) = branch_result {
                             if let Some(oid) = branch.get().target() {
                                 let _ = revwalk.push(oid);
@@ -287,7 +310,7 @@ impl Git2Service {
                     }
                     // Push remote branches if included
                     if options.include_remotes {
-                        for branch_result in self.repo.branches(Some(git2::BranchType::Remote))? {
+                        for branch_result in repo.branches(Some(git2::BranchType::Remote))? {
                             if let Ok((branch, _)) = branch_result {
                                 if let Some(oid) = branch.get().target() {
                                     let _ = revwalk.push(oid);
@@ -312,8 +335,8 @@ impl Git2Service {
             }
 
             let oid = oid_result?;
-            let commit = self.repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit, &self.repo));
+            let commit = repo.find_commit(oid)?;
+            commits.push(Commit::from_git2_commit(&commit, &repo));
         }
 
         Ok(commits)
@@ -330,7 +353,8 @@ impl Git2Service {
             (false, false) => return Ok(branches),
         };
 
-        let git_branches = self.repo.branches(branch_type)?;
+        let repo = self.repo()?;
+        let git_branches = repo.branches(branch_type)?;
 
         for branch_result in git_branches {
             let (branch, branch_type) = branch_result?;
@@ -340,7 +364,7 @@ impl Git2Service {
                 let target_oid = reference.target();
 
                 if let Some(oid) = target_oid {
-                    let commit = self.repo.find_commit(oid)?;
+                    let commit = repo.find_commit(oid)?;
                     let is_head = branch.is_head();
 
                     let (ahead, behind) = self.get_ahead_behind(&branch)?;
@@ -397,7 +421,7 @@ impl Git2Service {
 
         match (local_oid, upstream_oid) {
             (Some(local), Some(upstream)) => {
-                let (ahead, behind) = self.repo.graph_ahead_behind(local, upstream)?;
+                let (ahead, behind) = self.repo()?.graph_ahead_behind(local, upstream)?;
                 Ok((Some(ahead), Some(behind)))
             }
             _ => Ok((None, None)),
@@ -408,17 +432,18 @@ impl Git2Service {
     pub fn get_commit(&self, oid_str: &str) -> Result<Commit> {
         let oid = git2::Oid::from_str(oid_str)
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
-        let commit = self.repo.find_commit(oid)?;
-        Ok(Commit::from_git2_commit(&commit, &self.repo))
+        let repo = self.repo()?;
+        let commit = repo.find_commit(oid)?;
+        Ok(Commit::from_git2_commit(&commit, &repo))
     }
 
     // ==================== Staging Operations ====================
 
     /// Stage a file (add to index)
     pub fn stage_file(&self, path: &str) -> Result<()> {
-        let mut index = self.repo.index()?;
-        let full_path = self
-            .repo
+        let repo = self.repo()?;
+        let mut index = repo.index()?;
+        let full_path = repo
             .workdir()
             .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?
             .join(path);
@@ -433,9 +458,9 @@ impl Git2Service {
 
     /// Stage multiple files
     pub fn stage_files(&self, paths: &[String]) -> Result<()> {
-        let mut index = self.repo.index()?;
-        let workdir = self
-            .repo
+        let repo = self.repo()?;
+        let mut index = repo.index()?;
+        let workdir = repo
             .workdir()
             .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
         for path in paths {
@@ -452,7 +477,7 @@ impl Git2Service {
 
     /// Stage all changes (equivalent to git add -A)
     pub fn stage_all(&self) -> Result<()> {
-        let mut index = self.repo.index()?;
+        let mut index = self.repo()?.index()?;
         index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
         Ok(())
@@ -460,16 +485,16 @@ impl Git2Service {
 
     /// Unstage a file (remove from index, keeping workdir changes)
     pub fn unstage_file(&self, path: &str) -> Result<()> {
-        let head = self.repo.head()?;
+        let repo = self.repo()?;
+        let head = repo.head()?;
         let head_commit = head.peel_to_commit()?;
         let head_tree = head_commit.tree()?;
 
-        let mut index = self.repo.index()?;
-
+        let mut index = repo.index()?;
         // Check if file exists in HEAD
         if let Ok(entry) = head_tree.get_path(Path::new(path)) {
             // File exists in HEAD - reset to HEAD version
-            let obj = entry.to_object(&self.repo)?;
+            let obj = entry.to_object(&repo)?;
             if let Some(blob) = obj.as_blob() {
                 index.add(&git2::IndexEntry {
                     ctime: git2::IndexTime::new(0, 0),
@@ -505,10 +530,10 @@ impl Git2Service {
 
     /// Unstage all files (reset index to HEAD)
     pub fn unstage_all(&self) -> Result<()> {
-        let head = self.repo.head()?;
+        let repo = self.repo()?;
+        let head = repo.head()?;
         let head_commit = head.peel_to_commit()?;
-        self.repo
-            .reset(head_commit.as_object(), git2::ResetType::Mixed, None)?;
+        repo.reset(head_commit.as_object(), git2::ResetType::Mixed, None)?;
         Ok(())
     }
 
@@ -518,7 +543,8 @@ impl Git2Service {
         checkout_opts.force();
         checkout_opts.path(path);
 
-        self.repo.checkout_index(None, Some(&mut checkout_opts))?;
+        self.repo()?
+            .checkout_index(None, Some(&mut checkout_opts))?;
         Ok(())
     }
 
@@ -527,14 +553,15 @@ impl Git2Service {
         let mut checkout_opts = git2::build::CheckoutBuilder::new();
         checkout_opts.force();
 
-        self.repo.checkout_index(None, Some(&mut checkout_opts))?;
+        self.repo()?
+            .checkout_index(None, Some(&mut checkout_opts))?;
         Ok(())
     }
 
     /// Delete an untracked file from the working directory
     pub fn delete_file(&self, path: &str) -> Result<()> {
-        let workdir = self
-            .repo
+        let repo = self.repo()?;
+        let workdir = repo
             .workdir()
             .ok_or_else(|| AxisError::Other("Bare repository".to_string()))?;
         let file_path = workdir.join(path);
@@ -559,19 +586,20 @@ impl Git2Service {
         author_email: Option<&str>,
         signing_config: Option<&SigningConfig>,
     ) -> Result<String> {
-        let mut index = self.repo.index()?;
+        let repo = self.repo()?;
+        let mut index = repo.index()?;
         let tree_id = index.write_tree()?;
-        let tree = self.repo.find_tree(tree_id)?;
+        let tree = repo.find_tree(tree_id)?;
 
         // Get signature
         let sig = if let (Some(name), Some(email)) = (author_name, author_email) {
             git2::Signature::now(name, email)?
         } else {
-            self.repo.signature()?
+            repo.signature()?
         };
 
         // Get parent commit(s)
-        let parents = if let Ok(head) = self.repo.head() {
+        let parents = if let Ok(head) = repo.head() {
             if let Ok(commit) = head.peel_to_commit() {
                 vec![commit]
             } else {
@@ -586,14 +614,19 @@ impl Git2Service {
         // Sign the commit if config is provided with a key
         if let Some(config) = signing_config {
             if config.signing_key.is_some() {
-                return self.create_commit_signed(message, &sig, &tree, &parent_refs, config);
+                return self.create_commit_signed(
+                    &repo,
+                    message,
+                    &sig,
+                    &tree,
+                    &parent_refs,
+                    config,
+                );
             }
         }
 
         // Create unsigned commit
-        let oid = self
-            .repo
-            .commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)?;
+        let oid = repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)?;
 
         Ok(oid.to_string())
     }
@@ -601,6 +634,7 @@ impl Git2Service {
     /// Internal: Create a signed commit
     fn create_commit_signed(
         &self,
+        repo: &Git2Repository,
         message: &str,
         sig: &git2::Signature,
         tree: &git2::Tree,
@@ -608,55 +642,55 @@ impl Git2Service {
         signing_config: &SigningConfig,
     ) -> Result<String> {
         // Create the unsigned commit buffer
-        let commit_buf = self
-            .repo
-            .commit_create_buffer(sig, sig, message, tree, parents)?;
+        let commit_buf = repo.commit_create_buffer(sig, sig, message, tree, parents)?;
 
         let commit_str = std::str::from_utf8(&commit_buf)
-            .map_err(|e| AxisError::Other(format!("Invalid commit buffer: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Invalid commit buffer: {e}")))?;
 
         // Sign the commit buffer
-        let signing_service = SigningService::new(self.repo.path());
+        let signing_service = SigningService::new(self.path());
         let signature = signing_service.sign_buffer(commit_str, signing_config)?;
 
         // Create the signed commit
-        let oid = self
-            .repo
-            .commit_signed(commit_str, &signature, Some("gpgsig"))?;
+        let oid = repo.commit_signed(commit_str, &signature, Some("gpgsig"))?;
 
         // Update HEAD to point to the new commit
-        self.update_head_to_commit(oid, "commit (signed)")?;
+        Self::update_head_to_commit(&repo, oid, "commit (signed)")?;
 
         Ok(oid.to_string())
     }
 
     /// Update HEAD to point to a commit, handling unborn HEAD case
-    fn update_head_to_commit(&self, oid: git2::Oid, reflog_msg: &str) -> Result<()> {
-        if self.is_head_unborn() {
+    fn update_head_to_commit(
+        repo: &Git2Repository,
+        oid: git2::Oid,
+        reflog_msg: &str,
+    ) -> Result<()> {
+        if Self::is_head_unborn(&repo) {
             // For unborn HEAD, we need to create the branch reference
             // HEAD is a symbolic ref pointing to a branch that doesn't exist yet
-            let head_ref = self.repo.find_reference("HEAD")?;
+            let head_ref = repo.find_reference("HEAD")?;
             if let Some(target_name) = head_ref.symbolic_target() {
-                self.repo.reference(target_name, oid, true, reflog_msg)?;
+                repo.reference(target_name, oid, true, reflog_msg)?;
             } else {
                 // HEAD is not symbolic, create refs/heads/main
-                self.repo
-                    .reference("refs/heads/main", oid, true, reflog_msg)?;
+                repo.reference("refs/heads/main", oid, true, reflog_msg)?;
             }
         } else {
-            self.repo.head()?.set_target(oid, reflog_msg)?;
+            repo.head()?.set_target(oid, reflog_msg)?;
         }
         Ok(())
     }
 
     /// Amend the last commit
     pub fn amend_commit(&self, message: Option<&str>) -> Result<String> {
-        let head = self.repo.head()?;
+        let repo = self.repo()?;
+        let head = repo.head()?;
         let head_commit = head.peel_to_commit()?;
 
-        let mut index = self.repo.index()?;
+        let mut index = repo.index()?;
         let tree_id = index.write_tree()?;
-        let tree = self.repo.find_tree(tree_id)?;
+        let tree = repo.find_tree(tree_id)?;
 
         let message = message.unwrap_or_else(|| head_commit.message().unwrap_or(""));
 
@@ -686,9 +720,8 @@ impl Git2Service {
         diff_opts.show_untracked_content(true);
         diff_opts.recurse_untracked_dirs(true);
 
-        let diff = self
-            .repo
-            .diff_index_to_workdir(None, Some(&mut diff_opts))?;
+        let repo = self.repo()?;
+        let diff = repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
@@ -697,13 +730,12 @@ impl Git2Service {
         &self,
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
+        let repo = self.repo()?;
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
 
-        let head = self.repo.head()?.peel_to_tree()?;
-        let diff = self
-            .repo
-            .diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
+        let head = repo.head()?.peel_to_tree()?;
+        let diff = repo.diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
@@ -712,6 +744,7 @@ impl Git2Service {
         &self,
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
+        let repo = self.repo()?;
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
         // Include untracked files in the diff with their content
@@ -719,10 +752,8 @@ impl Git2Service {
         diff_opts.show_untracked_content(true);
         diff_opts.recurse_untracked_dirs(true);
 
-        let head = self.repo.head()?.peel_to_tree()?;
-        let diff = self
-            .repo
-            .diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
+        let head = repo.head()?.peel_to_tree()?;
+        let diff = repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
@@ -732,9 +763,10 @@ impl Git2Service {
         oid_str: &str,
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
+        let repo = self.repo()?;
         let oid = git2::Oid::from_str(oid_str)
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
-        let commit = self.repo.find_commit(oid)?;
+        let commit = repo.find_commit(oid)?;
         let tree = commit.tree()?;
 
         let mut diff_opts = git2::DiffOptions::new();
@@ -747,8 +779,7 @@ impl Git2Service {
         };
 
         let diff =
-            self.repo
-                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+            repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
 
         self.parse_diff(&diff)
     }
@@ -760,13 +791,14 @@ impl Git2Service {
         to_oid: &str,
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
+        let repo = self.repo()?;
         let from = git2::Oid::from_str(from_oid)
             .map_err(|_| AxisError::InvalidReference(from_oid.to_string()))?;
         let to = git2::Oid::from_str(to_oid)
             .map_err(|_| AxisError::InvalidReference(to_oid.to_string()))?;
 
-        let from_commit = self.repo.find_commit(from)?;
-        let to_commit = self.repo.find_commit(to)?;
+        let from_commit = repo.find_commit(from)?;
+        let to_commit = repo.find_commit(to)?;
 
         let from_tree = from_commit.tree()?;
         let to_tree = to_commit.tree()?;
@@ -775,8 +807,7 @@ impl Git2Service {
         self.apply_diff_options(&mut diff_opts, options);
 
         let diff =
-            self.repo
-                .diff_tree_to_tree(Some(&from_tree), Some(&to_tree), Some(&mut diff_opts))?;
+            repo.diff_tree_to_tree(Some(&from_tree), Some(&to_tree), Some(&mut diff_opts))?;
 
         self.parse_diff(&diff)
     }
@@ -804,20 +835,20 @@ impl Git2Service {
     /// If commit_oid is Some, gets the file from that commit's tree
     /// If commit_oid is None, reads the file from the working directory
     pub fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
+        let repo = self.repo()?;
         if let Some(oid_str) = commit_oid {
             // Get blob from a specific commit
             let oid = git2::Oid::from_str(oid_str)?;
-            let commit = self.repo.find_commit(oid)?;
+            let commit = repo.find_commit(oid)?;
             let tree = commit.tree()?;
             let entry = tree.get_path(std::path::Path::new(path))?;
-            let blob = entry.to_object(&self.repo)?.peel_to_blob()?;
+            let blob = entry.to_object(&repo)?.peel_to_blob()?;
             Ok(blob.content().to_vec())
         } else {
             // Read from working directory
-            let repo_path = self
-                .repo
+            let repo_path = repo
                 .workdir()
-                .ok_or_else(|| crate::error::AxisError::Other("No working directory".into()))?;
+                .ok_or_else(|| AxisError::Other("No working directory".into()))?;
             let file_path = repo_path.join(path);
             Ok(std::fs::read(&file_path)?)
         }
@@ -848,14 +879,15 @@ impl Git2Service {
         name: &str,
         options: &crate::models::CreateBranchOptions,
     ) -> Result<Branch> {
+        let repo = self.repo()?;
         let target = if let Some(ref start_point) = options.start_point {
-            let obj = self.repo.revparse_single(start_point)?;
-            self.repo.find_commit(obj.id())?
+            let obj = repo.revparse_single(start_point)?;
+            repo.find_commit(obj.id())?
         } else {
-            self.repo.head()?.peel_to_commit()?
+            repo.head()?.peel_to_commit()?
         };
 
-        let mut branch = self.repo.branch(name, &target, options.force)?;
+        let mut branch = repo.branch(name, &target, options.force)?;
 
         // Set up tracking if specified
         if let Some(ref upstream) = options.track {
@@ -867,14 +899,15 @@ impl Git2Service {
 
     /// Delete a branch
     pub fn delete_branch(&self, name: &str, force: bool) -> Result<()> {
-        let mut branch = self.repo.find_branch(name, git2::BranchType::Local)?;
+        let repo = self.repo()?;
+        let mut branch = repo.find_branch(name, git2::BranchType::Local)?;
 
         if !force {
             // Check if branch is fully merged
-            let head = self.repo.head()?;
+            let head = repo.head()?;
             if let Ok(head_commit) = head.peel_to_commit() {
                 let branch_commit = branch.get().peel_to_commit()?;
-                let merge_base = self.repo.merge_base(head_commit.id(), branch_commit.id())?;
+                let merge_base = repo.merge_base(head_commit.id(), branch_commit.id())?;
                 if merge_base != branch_commit.id() {
                     return Err(AxisError::BranchNotMerged(name.to_string()));
                 }
@@ -893,7 +926,7 @@ impl Git2Service {
         force: bool,
     ) -> Result<()> {
         // Use push with a delete refspec (empty source = delete)
-        let refspec = format!(":refs/heads/{}", branch_name);
+        let refspec = format!(":refs/heads/{branch_name}");
         let options = crate::models::PushOptions {
             force,
             set_upstream: false,
@@ -910,7 +943,8 @@ impl Git2Service {
 
     /// Rename a branch
     pub fn rename_branch(&self, old_name: &str, new_name: &str, force: bool) -> Result<Branch> {
-        let mut branch = self.repo.find_branch(old_name, git2::BranchType::Local)?;
+        let repo = self.repo()?;
+        let mut branch = repo.find_branch(old_name, git2::BranchType::Local)?;
         let new_branch = branch.rename(new_name, force)?;
         self.branch_to_model(&new_branch, git2::BranchType::Local)
     }
@@ -921,13 +955,14 @@ impl Git2Service {
         name: &str,
         options: &crate::models::CheckoutOptions,
     ) -> Result<()> {
+        let repo = self.repo()?;
         // If create is true and branch doesn't exist, create it first
         let branch = if options.create {
-            match self.repo.find_branch(name, git2::BranchType::Local) {
+            match repo.find_branch(name, git2::BranchType::Local) {
                 Ok(b) => b,
                 Err(_) => {
-                    let head = self.repo.head()?.peel_to_commit()?;
-                    let mut new_branch = self.repo.branch(name, &head, false)?;
+                    let head = repo.head()?.peel_to_commit()?;
+                    let mut new_branch = repo.branch(name, &head, false)?;
 
                     // Set up tracking if specified
                     if let Some(ref upstream) = options.track {
@@ -938,7 +973,7 @@ impl Git2Service {
                 }
             }
         } else {
-            self.repo.find_branch(name, git2::BranchType::Local)?
+            repo.find_branch(name, git2::BranchType::Local)?
         };
 
         let refname = branch
@@ -946,7 +981,7 @@ impl Git2Service {
             .name()
             .ok_or_else(|| AxisError::InvalidReference(name.to_string()))?;
 
-        let obj = self.repo.revparse_single(refname)?;
+        let obj = repo.revparse_single(refname)?;
 
         let mut checkout_builder = git2::build::CheckoutBuilder::new();
         if options.force {
@@ -973,9 +1008,9 @@ impl Git2Service {
             },
         );
 
-        match self.repo.checkout_tree(&obj, Some(&mut checkout_builder)) {
+        match repo.checkout_tree(&obj, Some(&mut checkout_builder)) {
             Ok(_) => {
-                self.repo.set_head(refname)?;
+                repo.set_head(refname)?;
                 Ok(())
             }
             Err(e)
@@ -1000,17 +1035,16 @@ impl Git2Service {
         local_name: Option<&str>,
         force: bool,
     ) -> Result<()> {
+        let repo = self.repo()?;
         let local_branch_name = local_name.unwrap_or(branch_name);
-        let remote_ref = format!("{}/{}", remote_name, branch_name);
+        let remote_ref = format!("{remote_name}/{branch_name}");
 
         // Find the remote branch
-        let remote_branch = self
-            .repo
-            .find_branch(&remote_ref, git2::BranchType::Remote)?;
+        let remote_branch = repo.find_branch(&remote_ref, git2::BranchType::Remote)?;
         let target = remote_branch.get().peel_to_commit()?;
 
         // Create local branch
-        let mut local_branch = self.repo.branch(local_branch_name, &target, false)?;
+        let mut local_branch = repo.branch(local_branch_name, &target, false)?;
 
         // Set upstream
         local_branch.set_upstream(Some(&remote_ref))?;
@@ -1031,7 +1065,8 @@ impl Git2Service {
             BranchType::Local => git2::BranchType::Local,
             BranchType::Remote => git2::BranchType::Remote,
         };
-        let branch = self.repo.find_branch(name, git_branch_type)?;
+        let repo = self.repo()?;
+        let branch = repo.find_branch(name, git_branch_type)?;
         self.branch_to_model(&branch, git_branch_type)
     }
 
@@ -1047,7 +1082,8 @@ impl Git2Service {
             .target()
             .ok_or_else(|| AxisError::InvalidReference(name.clone()))?;
 
-        let commit = self.repo.find_commit(oid)?;
+        let repo = self.repo()?;
+        let commit = repo.find_commit(oid)?;
         // Use branch.is_head() to check if this branch is currently checked out
         let is_head = branch.is_head();
 
@@ -1082,13 +1118,12 @@ impl Git2Service {
         base_ref: &str,
         compare_ref: &str,
     ) -> Result<crate::models::BranchCompareResult> {
+        let repo = self.repo()?;
         // Resolve refs to OIDs
-        let base_obj = self
-            .repo
+        let base_obj = repo
             .revparse_single(base_ref)
             .map_err(|_| AxisError::InvalidReference(base_ref.to_string()))?;
-        let compare_obj = self
-            .repo
+        let compare_obj = repo
             .revparse_single(compare_ref)
             .map_err(|_| AxisError::InvalidReference(compare_ref.to_string()))?;
 
@@ -1096,7 +1131,7 @@ impl Git2Service {
         let compare_oid = compare_obj.id();
 
         // Find merge base (common ancestor)
-        let merge_base_oid = self.repo.merge_base(base_oid, compare_oid).ok();
+        let merge_base_oid = repo.merge_base(base_oid, compare_oid).ok();
 
         // Get commits ahead (in base/current but not in compare)
         // These are commits the current branch has that the compare branch doesn't
@@ -1133,7 +1168,8 @@ impl Git2Service {
         from_oid: Option<git2::Oid>,
         to_oid: git2::Oid,
     ) -> Result<Vec<Commit>> {
-        let mut revwalk = self.repo.revwalk()?;
+        let repo = self.repo()?;
+        let mut revwalk = repo.revwalk()?;
         revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
         revwalk.push(to_oid)?;
 
@@ -1145,8 +1181,8 @@ impl Git2Service {
         let mut commits = Vec::new();
         for oid_result in revwalk {
             let oid = oid_result?;
-            let commit = self.repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit, &self.repo));
+            let commit = repo.find_commit(oid)?;
+            commits.push(Commit::from_git2_commit(&commit, &repo));
         }
 
         Ok(commits)
@@ -1156,11 +1192,12 @@ impl Git2Service {
 
     /// List all remotes
     pub fn list_remotes(&self) -> Result<Vec<crate::models::Remote>> {
-        let remote_names = self.repo.remotes()?;
+        let repo = self.repo()?;
+        let remote_names = repo.remotes()?;
         let mut remotes = Vec::new();
 
         for name in remote_names.iter().flatten() {
-            if let Ok(remote) = self.repo.find_remote(name) {
+            if let Ok(remote) = repo.find_remote(name) {
                 remotes.push(crate::models::Remote {
                     name: name.to_string(),
                     url: remote.url().map(|s| s.to_string()),
@@ -1186,7 +1223,8 @@ impl Git2Service {
 
     /// Get a single remote by name
     pub fn get_remote(&self, name: &str) -> Result<crate::models::Remote> {
-        let remote = self.repo.find_remote(name)?;
+        let repo = self.repo()?;
+        let remote = repo.find_remote(name)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
             url: remote.url().map(|s| s.to_string()),
@@ -1208,7 +1246,8 @@ impl Git2Service {
 
     /// Add a new remote
     pub fn add_remote(&self, name: &str, url: &str) -> Result<crate::models::Remote> {
-        let remote = self.repo.remote(name, url)?;
+        let repo = self.repo()?;
+        let remote = repo.remote(name, url)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
             url: remote.url().map(|s| s.to_string()),
@@ -1230,31 +1269,31 @@ impl Git2Service {
 
     /// Remove a remote
     pub fn remove_remote(&self, name: &str) -> Result<()> {
-        self.repo.remote_delete(name)?;
+        self.repo()?.remote_delete(name)?;
         Ok(())
     }
 
     /// Rename a remote
     pub fn rename_remote(&self, old_name: &str, new_name: &str) -> Result<Vec<String>> {
-        let problems = self.repo.remote_rename(old_name, new_name)?;
+        let problems = self.repo()?.remote_rename(old_name, new_name)?;
         Ok(problems.iter().flatten().map(|s| s.to_string()).collect())
     }
 
     /// Set the URL for a remote
     pub fn set_remote_url(&self, name: &str, url: &str) -> Result<()> {
-        self.repo.remote_set_url(name, url)?;
+        self.repo()?.remote_set_url(name, url)?;
         Ok(())
     }
 
     /// Set the push URL for a remote
     pub fn set_remote_push_url(&self, name: &str, url: &str) -> Result<()> {
-        self.repo.remote_set_pushurl(name, Some(url))?;
+        self.repo()?.remote_set_pushurl(name, Some(url))?;
         Ok(())
     }
 
     /// Get repository-local user.name and user.email from .git/config
     pub fn get_repo_user_config(&self) -> Result<(Option<String>, Option<String>)> {
-        let config = self.repo.config()?;
+        let config = self.repo()?.config()?;
 
         let user_name = config
             .get_entry("user.name")
@@ -1273,7 +1312,7 @@ impl Git2Service {
 
     /// Get global user.name and user.email
     pub fn get_global_user_config(&self) -> Result<(Option<String>, Option<String>)> {
-        let config = self.repo.config()?;
+        let config = self.repo()?.config()?;
 
         let user_name = config.get_string("user.name").ok();
         let user_email = config.get_string("user.email").ok();
@@ -1283,7 +1322,10 @@ impl Git2Service {
 
     /// Set repository-local user.name and user.email in .git/config
     pub fn set_repo_user_config(&self, name: Option<&str>, email: Option<&str>) -> Result<()> {
-        let mut config = self.repo.config()?.open_level(git2::ConfigLevel::Local)?;
+        let mut config = self
+            .repo()?
+            .config()?
+            .open_level(git2::ConfigLevel::Local)?;
 
         match name {
             Some(n) if !n.is_empty() => config.set_str("user.name", n)?,
@@ -1314,7 +1356,9 @@ impl Git2Service {
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
     {
-        let mut remote = self.repo.find_remote(remote_name)?;
+        let repo = Git2Repository::open(&self.path)?;
+
+        let mut remote = repo.find_remote(remote_name)?;
 
         let mut fetch_opts = git2::FetchOptions::new();
 
@@ -1390,7 +1434,9 @@ impl Git2Service {
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
     {
-        let mut remote = self.repo.find_remote(remote_name)?;
+        let repo = Git2Repository::open(&self.path)?;
+
+        let mut remote = repo.find_remote(remote_name)?;
 
         let mut push_opts = git2::PushOptions::new();
 
@@ -1457,12 +1503,13 @@ impl Git2Service {
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
     {
-        let head = self.repo.head()?;
+        let repo = self.repo()?;
+        let head = repo.head()?;
         let branch_name = head
             .shorthand()
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
-        let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
+        let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
         let result = self.push(remote_name, &[refspec], options, progress_cb)?;
 
         // Set upstream tracking if requested
@@ -1494,21 +1541,19 @@ impl Git2Service {
             progress_cb,
         )?;
 
+        let repo = self.repo()?;
+
         // Get the remote tracking branch
-        let remote_ref = format!("{}/{}", remote_name, branch_name);
-        let fetch_head = self
-            .repo
-            .find_reference(&format!("refs/remotes/{}", remote_ref))?;
+        let remote_ref = format!("{remote_name}/{branch_name}");
+        let fetch_head = repo.find_reference(&format!("refs/remotes/{remote_ref}"))?;
         let fetch_commit = fetch_head.peel_to_commit()?;
 
         // Get local branch commit
-        let local_ref = self.repo.head()?;
+        let local_ref = repo.head()?;
         let local_commit = local_ref.peel_to_commit()?;
 
         // Check if we can fast-forward
-        let (ahead, behind) = self
-            .repo
-            .graph_ahead_behind(local_commit.id(), fetch_commit.id())?;
+        let (ahead, behind) = repo.graph_ahead_behind(local_commit.id(), fetch_commit.id())?;
 
         if behind == 0 {
             // Already up to date
@@ -1521,7 +1566,7 @@ impl Git2Service {
                 .name()
                 .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
-            self.repo.reference(
+            repo.reference(
                 refname,
                 fetch_commit.id(),
                 true,
@@ -1531,7 +1576,7 @@ impl Git2Service {
             // Update working directory
             let mut checkout_opts = git2::build::CheckoutBuilder::new();
             checkout_opts.force();
-            self.repo.checkout_head(Some(&mut checkout_opts))?;
+            repo.checkout_head(Some(&mut checkout_opts))?;
 
             return Ok(());
         }
@@ -1547,8 +1592,8 @@ impl Git2Service {
         }
 
         // Perform merge using git2
-        let annotated = self.repo.find_annotated_commit(fetch_commit.id())?;
-        let (analysis, _preference) = self.repo.merge_analysis(&[&annotated])?;
+        let annotated = repo.find_annotated_commit(fetch_commit.id())?;
+        let (analysis, _preference) = repo.merge_analysis(&[&annotated])?;
 
         if analysis.is_up_to_date() {
             return Ok(());
@@ -1560,29 +1605,27 @@ impl Git2Service {
                 .name()
                 .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
-            self.repo
-                .reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
-            self.repo
-                .checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
+            repo.reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
+            repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
             return Ok(());
         }
 
         if analysis.is_normal() {
             // Perform merge
-            self.repo.merge(&[&annotated], None, None)?;
+            repo.merge(&[&annotated], None, None)?;
 
             // Check for conflicts
-            if self.repo.index()?.has_conflicts() {
+            if repo.index()?.has_conflicts() {
                 return Err(AxisError::MergeConflict);
             }
 
             // Create merge commit
-            let tree_id = self.repo.index()?.write_tree()?;
-            let tree = self.repo.find_tree(tree_id)?;
-            let sig = self.repo.signature()?;
-            let message = format!("Merge branch '{}' of {}", branch_name, remote_name);
+            let tree_id = repo.index()?.write_tree()?;
+            let tree = repo.find_tree(tree_id)?;
+            let sig = repo.signature()?;
+            let message = format!("Merge branch '{branch_name}' of {remote_name}");
 
-            self.repo.commit(
+            repo.commit(
                 Some("HEAD"),
                 &sig,
                 &sig,
@@ -1592,7 +1635,7 @@ impl Git2Service {
             )?;
 
             // Clean up merge state
-            self.repo.cleanup_state()?;
+            repo.cleanup_state()?;
         }
 
         Ok(())
@@ -1600,9 +1643,8 @@ impl Git2Service {
 
     /// Set upstream tracking branch for a local branch
     pub fn set_branch_upstream(&self, branch_name: &str, upstream: Option<&str>) -> Result<()> {
-        let mut branch = self
-            .repo
-            .find_branch(branch_name, git2::BranchType::Local)?;
+        let repo = self.repo()?;
+        let mut branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
         branch.set_upstream(upstream)?;
         Ok(())
     }
@@ -1757,13 +1799,14 @@ impl Git2Service {
         &self,
         options: crate::models::GraphOptions,
     ) -> Result<crate::models::GraphResult> {
-        let mut revwalk = self.repo.revwalk()?;
+        let repo = self.repo()?;
+        let mut revwalk = repo.revwalk()?;
 
         // Configure revwalk based on branch filter
         match &options.branch_filter {
             BranchFilterType::All => {
                 // Add all branches (local and optionally remote)
-                for branch_result in self.repo.branches(None)? {
+                for branch_result in repo.branches(None)? {
                     let (branch, branch_type) = branch_result?;
                     // Skip remote branches if not included
                     if !options.include_remotes && branch_type == git2::BranchType::Remote {
@@ -1780,23 +1823,19 @@ impl Git2Service {
             }
             BranchFilterType::Specific(branch_name) => {
                 // Specific branch
-                if let Ok(reference) = self
-                    .repo
-                    .find_reference(&format!("refs/heads/{}", branch_name))
-                {
+                if let Ok(reference) = repo.find_reference(&format!("refs/heads/{branch_name}")) {
                     if let Some(oid) = reference.target() {
                         revwalk.push(oid)?;
                     }
-                } else if let Ok(reference) = self
-                    .repo
-                    .find_reference(&format!("refs/remotes/{}", branch_name))
+                } else if let Ok(reference) =
+                    repo.find_reference(&format!("refs/remotes/{branch_name}"))
                 {
                     if let Some(oid) = reference.target() {
                         revwalk.push(oid)?;
                     }
                 } else {
                     // Try parsing as a ref
-                    let obj = self.repo.revparse_single(branch_name)?;
+                    let obj = repo.revparse_single(branch_name)?;
                     revwalk.push(obj.id())?;
                 }
             }
@@ -1810,7 +1849,7 @@ impl Git2Service {
         revwalk.set_sorting(sorting)?;
 
         // Collect refs for each commit
-        let commit_refs = self.collect_commit_refs()?;
+        let commit_refs = Self::collect_commit_refs(&repo)?;
 
         // Process commits and build graph
         let mut lane_state = LaneState::new();
@@ -1821,7 +1860,7 @@ impl Git2Service {
 
         // Check for uncommitted changes if requested
         if options.include_uncommitted && skip == 0 {
-            if let Ok(statuses) = self.repo.statuses(None) {
+            if let Ok(statuses) = repo.statuses(None) {
                 let has_changes = statuses.iter().any(|s| {
                     let status = s.status();
                     status.intersects(
@@ -1841,8 +1880,7 @@ impl Git2Service {
 
                 if has_changes {
                     // Get HEAD commit as parent
-                    let head_oid = self
-                        .repo
+                    let head_oid = repo
                         .head()
                         .ok()
                         .and_then(|h| h.target())
@@ -1865,7 +1903,7 @@ impl Git2Service {
                     }
 
                     // Check for merge in progress - add MERGE_HEAD as second parent
-                    let merge_head_path = self.repo.path().join("MERGE_HEAD");
+                    let merge_head_path = self.path().join("MERGE_HEAD");
                     let is_merging = if merge_head_path.exists() {
                         if let Ok(merge_head_content) = std::fs::read_to_string(&merge_head_path) {
                             let merge_head_oid = merge_head_content.trim();
@@ -1934,7 +1972,7 @@ impl Git2Service {
                 break;
             }
 
-            let commit = self.repo.find_commit(oid)?;
+            let commit = repo.find_commit(oid)?;
             let oid_str = oid.to_string();
 
             // Get lane for this commit
@@ -1976,7 +2014,7 @@ impl Git2Service {
             let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();
 
             graph_commits.push(GraphCommit {
-                commit: Commit::from_git2_commit(&commit, &self.repo),
+                commit: Commit::from_git2_commit(&commit, &repo),
                 lane,
                 parent_edges,
                 refs,
@@ -1995,7 +2033,7 @@ impl Git2Service {
 
     /// Collect all refs (branches and tags) and map them to commit OIDs
     fn collect_commit_refs(
-        &self,
+        repo: &git2::Repository,
     ) -> Result<std::collections::HashMap<String, Vec<crate::models::CommitRef>>> {
         use crate::models::{CommitRef, RefType};
         use std::collections::HashMap;
@@ -2003,10 +2041,10 @@ impl Git2Service {
         let mut commit_refs: HashMap<String, Vec<CommitRef>> = HashMap::new();
 
         // Get HEAD for is_head check
-        let head_oid = self.repo.head().ok().and_then(|h| h.target());
+        let head_oid = repo.head().ok().and_then(|h| h.target());
 
         // Collect branches
-        for branch_result in self.repo.branches(None)? {
+        for branch_result in repo.branches(None)? {
             let (branch, branch_type) = branch_result?;
             if let (Some(name), Some(oid)) = (branch.name()?, branch.get().target()) {
                 let oid_str = oid.to_string();
@@ -2025,13 +2063,13 @@ impl Git2Service {
         }
 
         // Collect tags
-        self.repo.tag_foreach(|oid, name| {
+        repo.tag_foreach(|oid, name| {
             let name_str = String::from_utf8_lossy(name);
             // Remove "refs/tags/" prefix
             let short_name = name_str.strip_prefix("refs/tags/").unwrap_or(&name_str);
 
             // Resolve annotated tags to their target commit
-            let target_oid = if let Ok(tag) = self.repo.find_tag(oid) {
+            let target_oid = if let Ok(tag) = repo.find_tag(oid) {
                 tag.target_id()
             } else {
                 oid
@@ -2054,16 +2092,13 @@ impl Git2Service {
     // ==================== Search Operations ====================
 
     /// Search commits by message, author, or hash
-    pub fn search_commits(
-        &self,
-        options: crate::models::SearchOptions,
-    ) -> Result<crate::models::SearchResult> {
-        use crate::models::SearchResult;
+    pub fn search_commits(&self, options: crate::models::SearchOptions) -> Result<SearchResult> {
+        let repo = self.repo()?;
 
         let query = options.query.to_lowercase();
         let limit = options.limit.unwrap_or(50);
 
-        let mut revwalk = self.repo.revwalk()?;
+        let mut revwalk = repo.revwalk()?;
         revwalk.push_head()?;
         revwalk.set_sorting(git2::Sort::TIME)?;
 
@@ -2072,7 +2107,7 @@ impl Git2Service {
 
         for oid_result in revwalk {
             let oid = oid_result?;
-            let commit = self.repo.find_commit(oid)?;
+            let commit = repo.find_commit(oid)?;
 
             let mut is_match = false;
 
@@ -2113,7 +2148,7 @@ impl Git2Service {
             if is_match {
                 total_matches += 1;
                 if matches.len() < limit {
-                    matches.push(Commit::from_git2_commit(&commit, &self.repo));
+                    matches.push(Commit::from_git2_commit(&commit, &repo));
                 }
             }
         }
@@ -2127,12 +2162,8 @@ impl Git2Service {
     // ==================== Blame Operations ====================
 
     /// Get blame information for a file
-    pub fn blame_file(
-        &self,
-        path: &str,
-        commit_oid: Option<&str>,
-    ) -> Result<crate::models::BlameResult> {
-        use crate::models::{BlameLine, BlameResult};
+    pub fn blame_file(&self, path: &str, commit_oid: Option<&str>) -> Result<BlameResult> {
+        let repo = self.repo()?;
 
         let mut blame_opts = git2::BlameOptions::new();
 
@@ -2143,22 +2174,19 @@ impl Git2Service {
             blame_opts.newest_commit(oid);
         }
 
-        let blame = self
-            .repo
-            .blame_file(Path::new(path), Some(&mut blame_opts))?;
+        let blame = repo.blame_file(Path::new(path), Some(&mut blame_opts))?;
 
         // Read file content to get line contents
         let file_content = if let Some(oid_str) = commit_oid {
             let oid = git2::Oid::from_str(oid_str)?;
-            let commit = self.repo.find_commit(oid)?;
+            let commit = repo.find_commit(oid)?;
             let tree = commit.tree()?;
             let entry = tree.get_path(Path::new(path))?;
-            let blob = entry.to_object(&self.repo)?.peel_to_blob()?;
+            let blob = entry.to_object(&repo)?.peel_to_blob()?;
             String::from_utf8_lossy(blob.content()).to_string()
         } else {
             // Read from workdir
-            let workdir = self
-                .repo
+            let workdir = repo
                 .workdir()
                 .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
             std::fs::read_to_string(workdir.join(path))?
@@ -2176,7 +2204,7 @@ impl Git2Service {
                 let is_group_start = last_oid != Some(commit_oid);
                 last_oid = Some(commit_oid);
 
-                let (author, timestamp) = if let Ok(commit) = self.repo.find_commit(commit_oid) {
+                let (author, timestamp) = if let Ok(commit) = repo.find_commit(commit_oid) {
                     let sig = commit.author();
                     (
                         sig.name().unwrap_or("Unknown").to_string(),
@@ -2214,10 +2242,11 @@ impl Git2Service {
 
     /// Get commit count for a reference (for pagination info)
     pub fn get_commit_count(&self, from_ref: Option<&str>) -> Result<usize> {
-        let mut revwalk = self.repo.revwalk()?;
+        let repo = self.repo()?;
+        let mut revwalk = repo.revwalk()?;
 
         if let Some(ref_name) = from_ref {
-            let obj = self.repo.revparse_single(ref_name)?;
+            let obj = repo.revparse_single(ref_name)?;
             revwalk.push(obj.id())?;
         } else {
             revwalk.push_head()?;
@@ -2229,13 +2258,19 @@ impl Git2Service {
     // ==================== Tag Operations ====================
 
     /// List all tags
-    pub fn tag_list(&self) -> Result<Vec<Tag>> {
-        let tag_names = self.repo.tag_names(None)?;
+    pub fn tag_list(&self, repo: Option<&git2::Repository>) -> Result<Vec<Tag>> {
+        // TODO: fix this ugly unwrap
+        let repo = if repo.is_none() {
+            &self.repo()?
+        } else {
+            repo.unwrap()
+        };
+        let tag_names = repo.tag_names(None)?;
         let mut tags = Vec::new();
 
         for name in tag_names.iter().flatten() {
-            let full_name = format!("refs/tags/{}", name);
-            let reference = self.repo.find_reference(&full_name)?;
+            let full_name = format!("refs/tags/{name}");
+            let reference = repo.find_reference(&full_name)?;
 
             // Peel to get the target (works for both lightweight and annotated)
             let target_obj = reference.peel(git2::ObjectType::Commit)?;
@@ -2294,44 +2329,43 @@ impl Git2Service {
 
     /// Create a new tag
     pub fn tag_create(&self, name: &str, options: &CreateTagOptions) -> Result<TagResult> {
+        let repo = self.repo()?;
         // Get target commit
         let target_ref = options.target.as_deref().unwrap_or("HEAD");
-        let obj = self.repo.revparse_single(target_ref)?;
+        let obj = repo.revparse_single(target_ref)?;
         let commit = obj.peel_to_commit()?;
 
         // Check if tag exists
-        let tag_ref = format!("refs/tags/{}", name);
-        if self.repo.find_reference(&tag_ref).is_ok() {
+        let tag_ref = format!("refs/tags/{name}");
+        if repo.find_reference(&tag_ref).is_ok() {
             if !options.force {
                 return Ok(TagResult {
                     success: false,
-                    message: format!("Tag '{}' already exists", name),
+                    message: format!("Tag '{name}' already exists"),
                     tag: None,
                 });
             }
             // Delete existing tag if force is set
-            self.repo.find_reference(&tag_ref)?.delete()?;
+            repo.find_reference(&tag_ref)?.delete()?;
         }
 
         if options.annotated {
             // Create annotated tag
-            let sig = self.repo.signature()?;
+            let sig = repo.signature()?;
             let message = options.message.as_deref().unwrap_or("");
-            self.repo
-                .tag(name, commit.as_object(), &sig, message, options.force)?;
+            repo.tag(name, commit.as_object(), &sig, message, options.force)?;
         } else {
             // Create lightweight tag
-            self.repo
-                .tag_lightweight(name, commit.as_object(), options.force)?;
+            repo.tag_lightweight(name, commit.as_object(), options.force)?;
         }
 
         // Return the created tag
-        let tags = self.tag_list()?;
+        let tags = self.tag_list(Some(&repo))?;
         let created_tag = tags.into_iter().find(|t| t.name == name);
 
         Ok(TagResult {
             success: true,
-            message: format!("Tag '{}' created successfully", name),
+            message: format!("Tag '{name}' created successfully"),
             tag: created_tag,
         })
     }
@@ -2340,7 +2374,7 @@ impl Git2Service {
     pub fn tag_delete(&self, name: &str) -> Result<TagResult> {
         let tag_ref = format!("refs/tags/{}", name);
 
-        match self.repo.find_reference(&tag_ref) {
+        match self.repo()?.find_reference(&tag_ref) {
             Ok(mut reference) => {
                 reference.delete()?;
                 Ok(TagResult {
@@ -2361,19 +2395,19 @@ impl Git2Service {
 
     /// Get preview data for a rebase operation
     pub fn get_rebase_preview(&self, onto: &str) -> Result<RebasePreview> {
+        let repo = self.repo()?;
         // Get HEAD commit (current branch tip)
-        let head = self.repo.head()?;
+        let head = repo.head()?;
         let head_commit = head.peel_to_commit()?;
 
         // Resolve the "onto" target
-        let target_obj = self.repo.revparse_single(onto)?;
+        let target_obj = repo.revparse_single(onto)?;
         let target_commit = target_obj
             .peel_to_commit()
             .map_err(|_| AxisError::InvalidReference(onto.to_string()))?;
 
         // Find merge-base between HEAD and target
-        let merge_base_oid = self
-            .repo
+        let merge_base_oid = repo
             .merge_base(head_commit.id(), target_commit.id())
             .map_err(|_| {
                 AxisError::Other(format!(
@@ -2381,10 +2415,10 @@ impl Git2Service {
                     onto
                 ))
             })?;
-        let merge_base_commit = self.repo.find_commit(merge_base_oid)?;
+        let merge_base_commit = repo.find_commit(merge_base_oid)?;
 
         // Collect commits to rebase (from HEAD to merge-base, exclusive)
-        let mut revwalk = self.repo.revwalk()?;
+        let mut revwalk = repo.revwalk()?;
         revwalk.push(head_commit.id())?;
         revwalk.hide(merge_base_oid)?;
         revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)?;
@@ -2392,22 +2426,22 @@ impl Git2Service {
         let mut commits_to_rebase = Vec::new();
         for oid_result in revwalk {
             let oid = oid_result?;
-            let commit = self.repo.find_commit(oid)?;
-            commits_to_rebase.push(Commit::from_git2_commit(&commit, &self.repo));
+            let commit = repo.find_commit(oid)?;
+            commits_to_rebase.push(Commit::from_git2_commit(&commit, &repo));
         }
 
         // Count commits on target since merge-base
-        let mut target_revwalk = self.repo.revwalk()?;
+        let mut target_revwalk = repo.revwalk()?;
         target_revwalk.push(target_commit.id())?;
         target_revwalk.hide(merge_base_oid)?;
         let target_commits_ahead = target_revwalk.count();
 
         // Determine target name (try to find a branch name)
-        let target_name = self.resolve_ref_name(onto);
+        let target_name = Self::resolve_ref_name(&repo, onto);
 
         Ok(RebasePreview {
             commits_to_rebase,
-            merge_base: Commit::from_git2_commit(&merge_base_commit, &self.repo),
+            merge_base: Commit::from_git2_commit(&merge_base_commit, &repo),
             target: RebaseTarget {
                 name: target_name,
                 oid: target_commit.id().to_string(),
@@ -2419,16 +2453,16 @@ impl Git2Service {
     }
 
     /// Helper to resolve a ref spec to a friendly name
-    fn resolve_ref_name(&self, spec: &str) -> String {
+    fn resolve_ref_name(repo: &git2::Repository, spec: &str) -> String {
         // Try as local branch first
-        if let Ok(branch) = self.repo.find_branch(spec, git2::BranchType::Local) {
+        if let Ok(branch) = repo.find_branch(spec, git2::BranchType::Local) {
             if let Ok(Some(name)) = branch.name() {
                 return name.to_string();
             }
         }
 
         // Try as remote branch
-        if let Ok(branch) = self.repo.find_branch(spec, git2::BranchType::Remote) {
+        if let Ok(branch) = repo.find_branch(spec, git2::BranchType::Remote) {
             if let Ok(Some(name)) = branch.name() {
                 return name.to_string();
             }
@@ -2444,8 +2478,8 @@ impl Git2Service {
     pub fn get_file_history(
         &self,
         options: crate::models::FileLogOptions,
-    ) -> Result<crate::models::FileLogResult> {
-        use crate::models::FileLogResult;
+    ) -> Result<FileLogResult> {
+        let repo = self.repo()?;
 
         let limit = options.limit.unwrap_or(50);
         let skip = options.skip.unwrap_or(0);
@@ -2457,7 +2491,7 @@ impl Git2Service {
             });
         }
 
-        let mut revwalk = self.repo.revwalk()?;
+        let mut revwalk = repo.revwalk()?;
         revwalk.push_head()?;
         revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
 
@@ -2467,7 +2501,7 @@ impl Git2Service {
 
         for oid_result in revwalk {
             let oid = oid_result?;
-            let commit = self.repo.find_commit(oid)?;
+            let commit = repo.find_commit(oid)?;
 
             // Check if this commit touches any of the specified paths
             if self.commit_touches_paths(&commit, &options.paths, options.follow_renames)? {
@@ -2478,7 +2512,7 @@ impl Git2Service {
 
                 found += 1;
                 if found <= limit {
-                    commits.push(Commit::from_git2_commit(&commit, &self.repo));
+                    commits.push(Commit::from_git2_commit(&commit, &repo));
                 } else {
                     // We found one more than limit, so there are more
                     return Ok(FileLogResult {
@@ -2502,6 +2536,7 @@ impl Git2Service {
         paths: &[String],
         follow_renames: bool,
     ) -> Result<bool> {
+        let repo = self.repo()?;
         let tree = commit.tree()?;
 
         let parent_tree = if commit.parent_count() > 0 {
@@ -2518,14 +2553,13 @@ impl Git2Service {
         }
 
         let diff =
-            self.repo
-                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+            repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
 
         // If follow_renames is enabled, find renames and check old paths too
         if follow_renames && diff.stats()?.files_changed() == 0 {
             // No direct match, check for renames by looking at full diff
             let mut full_diff_opts = git2::DiffOptions::new();
-            let full_diff = self.repo.diff_tree_to_tree(
+            let full_diff = repo.diff_tree_to_tree(
                 parent_tree.as_ref(),
                 Some(&tree),
                 Some(&mut full_diff_opts),
@@ -2574,9 +2608,10 @@ impl Git2Service {
         path: &str,
         options: &crate::models::DiffOptions,
     ) -> Result<Option<crate::models::FileDiff>> {
+        let repo = self.repo()?;
         let oid = git2::Oid::from_str(commit_oid)
             .map_err(|_| AxisError::InvalidReference(commit_oid.to_string()))?;
-        let commit = self.repo.find_commit(oid)?;
+        let commit = repo.find_commit(oid)?;
         let tree = commit.tree()?;
 
         let parent_tree = if commit.parent_count() > 0 {
@@ -2590,8 +2625,7 @@ impl Git2Service {
         diff_opts.pathspec(path);
 
         let diff =
-            self.repo
-                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+            repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
 
         let diffs = self.parse_diff(&diff)?;
         Ok(diffs.into_iter().next())
@@ -2603,7 +2637,7 @@ impl Git2Service {
     pub fn get_reflog(&self, options: &ReflogOptions) -> Result<Vec<ReflogEntry>> {
         let refname = options.refname.as_deref().unwrap_or("HEAD");
         let reflog = self
-            .repo
+            .repo()?
             .reflog(refname)
             .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
 
@@ -2645,7 +2679,7 @@ impl Git2Service {
     /// Get total count of reflog entries for a reference
     pub fn get_reflog_count(&self, refname: &str) -> Result<usize> {
         let reflog = self
-            .repo
+            .repo()?
             .reflog(refname)
             .map_err(|e| AxisError::Other(format!("Failed to get reflog for {refname}: {e}")))?;
 
@@ -2654,16 +2688,17 @@ impl Git2Service {
 
     /// Get list of available reflogs (references that have reflog)
     pub fn list_reflogs(&self) -> Result<Vec<String>> {
+        let repo = self.repo()?;
         let mut reflogs = vec!["HEAD".to_string()];
 
         // Add local branches
-        let branches = self.repo.branches(Some(git2::BranchType::Local))?;
+        let branches = repo.branches(Some(git2::BranchType::Local))?;
         for branch_result in branches {
             if let Ok((branch, _)) = branch_result {
                 if let Ok(Some(name)) = branch.name() {
                     let refname = format!("refs/heads/{name}");
                     // Check if reflog exists by trying to open it
-                    if self.repo.reflog(&refname).is_ok() {
+                    if repo.reflog(&refname).is_ok() {
                         reflogs.push(refname);
                     }
                 }
@@ -2675,16 +2710,16 @@ impl Git2Service {
 
     /// Checkout to a reflog entry (creates detached HEAD)
     pub fn checkout_reflog_entry(&self, reflog_ref: &str) -> Result<()> {
-        let obj = self
-            .repo
+        let repo = self.repo()?;
+        let obj = repo
             .revparse_single(reflog_ref)
             .map_err(|_| AxisError::InvalidReference(reflog_ref.to_string()))?;
 
         let mut checkout_builder = git2::build::CheckoutBuilder::new();
         checkout_builder.safe();
 
-        self.repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
-        self.repo.set_head_detached(obj.id())?;
+        repo.checkout_tree(&obj, Some(&mut checkout_builder))?;
+        repo.set_head_detached(obj.id())?;
 
         Ok(())
     }
@@ -2732,8 +2767,8 @@ impl Git2Service {
         pattern: &str,
         gitignore_rel_path: &str,
     ) -> Result<IgnoreResult> {
-        let workdir = self
-            .repo
+        let repo = self.repo()?;
+        let workdir = repo
             .workdir()
             .ok_or_else(|| AxisError::Other("Cannot add to gitignore in bare repository".into()))?;
 
@@ -2776,7 +2811,7 @@ impl Git2Service {
     /// Add a pattern to the global gitignore file
     pub fn add_to_global_gitignore(&self, pattern: &str) -> Result<IgnoreResult> {
         // Try to get global gitignore path from git config
-        let config = self.repo.config()?;
+        let config = self.repo()?.config()?;
         let global_path = config
             .get_string("core.excludesfile")
             .map(|p| shellexpand::tilde(&p).to_string())
@@ -2820,7 +2855,8 @@ impl Git2Service {
 
     /// Get ignore options for a file (ancestor .gitignore files and pattern suggestions)
     pub fn get_ignore_options(&self, file_path: &str) -> Result<IgnoreOptions> {
-        let workdir = self.repo.workdir().ok_or_else(|| {
+        let repo = self.repo()?;
+        let workdir = repo.workdir().ok_or_else(|| {
             AxisError::Other("Cannot get ignore options in bare repository".into())
         })?;
 
@@ -2925,8 +2961,10 @@ mod tests {
         let file_path = tmp.path().join("README.md");
         fs::write(&file_path, "# Test Repository").expect("should write README.md file");
 
+        let repo = service.repo().expect("should get repository");
+
         // Stage the file
-        let mut index = service.repo.index().expect("should get repository index");
+        let mut index = repo.index().expect("should get repository index");
         index
             .add_path(Path::new("README.md"))
             .expect("should add README.md to index");
@@ -2934,16 +2972,11 @@ mod tests {
 
         // Create commit
         let tree_id = index.write_tree().expect("should write tree from index");
-        let tree = service
-            .repo
-            .find_tree(tree_id)
-            .expect("should find tree by id");
+        let tree = repo.find_tree(tree_id).expect("should find tree by id");
         let sig =
             git2::Signature::now("Test User", "test@example.com").expect("should create signature");
 
-        service
-            .repo
-            .commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
             .expect("should create initial commit");
     }
 
@@ -3041,16 +3074,15 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
+        let repo = service.repo().expect("should get repository");
+
         // Create a new branch at the same commit (doesn't checkout)
-        let head_commit = service
-            .repo
+        let head_commit = repo
             .head()
             .expect("should get HEAD")
             .peel_to_commit()
             .expect("should peel to commit");
-        service
-            .repo
-            .branch("feature-branch", &head_commit, false)
+        repo.branch("feature-branch", &head_commit, false)
             .expect("should create branch");
 
         // Both branches now point to the same commit
@@ -3923,7 +3955,7 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let tags = service.tag_list().expect("should list tags");
+        let tags = service.tag_list(None).expect("should list tags");
         assert!(tags.is_empty());
     }
 
@@ -3937,7 +3969,7 @@ mod tests {
             .expect("should create lightweight tag");
         assert!(result.success);
 
-        let tags = service.tag_list().expect("should list tags");
+        let tags = service.tag_list(None).expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v1.0.0");
         assert!(!tags[0].is_annotated);
@@ -3961,7 +3993,7 @@ mod tests {
 
         assert!(result.success);
 
-        let tags = service.tag_list().expect("should list tags");
+        let tags = service.tag_list(None).expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v2.0.0");
         assert!(tags[0].is_annotated);
@@ -3976,14 +4008,14 @@ mod tests {
         service
             .tag_create("v1.0.0", &CreateTagOptions::default())
             .expect("should create tag");
-        assert_eq!(service.tag_list().expect("should list tags").len(), 1);
+        assert_eq!(service.tag_list(None).expect("should list tags").len(), 1);
 
         // Delete the tag
         let result = service.tag_delete("v1.0.0").expect("should delete tag");
         assert!(result.success);
 
         assert!(service
-            .tag_list()
+            .tag_list(None)
             .expect("should list tags after delete")
             .is_empty());
     }
@@ -4060,15 +4092,17 @@ mod tests {
     #[test]
     fn test_is_head_unborn() {
         let (_tmp, service) = setup_test_repo();
+        let repo = service.repo().expect("should get repo");
         // Before first commit, HEAD is unborn
-        assert!(service.is_head_unborn());
+        assert!(Git2Service::is_head_unborn(&repo));
     }
 
     #[test]
     fn test_is_head_unborn_after_commit() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
-        assert!(!service.is_head_unborn());
+        let repo = service.repo().expect("should get repo");
+        assert!(!Git2Service::is_head_unborn(&repo));
     }
 
     #[test]

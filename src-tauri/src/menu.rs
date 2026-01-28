@@ -165,7 +165,7 @@ fn create_file_menu(app: &AppHandle<Wry>) -> tauri::Result<Submenu<Wry>> {
         let separator3 = PredefinedMenuItem::separator(app)?;
         let settings = MenuItem::with_id(
             app,
-            menu_ids::SETTINGS,
+            MenuAction::Settings,
             "Settings...",
             true,
             Some("CmdOrCtrl+,"),

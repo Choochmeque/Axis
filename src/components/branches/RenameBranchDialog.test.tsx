@@ -106,6 +106,7 @@ vi.mock('@/components/ui', () => ({
 describe('RenameBranchDialog', () => {
   const mockBranch: Branch = {
     name: 'feature-branch',
+    fullName: 'refs/heads/feature-branch',
     branchType: 'Local',
     isHead: false,
     targetOid: 'abc123',
@@ -113,6 +114,7 @@ describe('RenameBranchDialog', () => {
     ahead: null,
     behind: null,
     lastCommitSummary: 'Test commit',
+    lastCommitTime: '2024-01-15T10:30:00Z',
   };
 
   beforeEach(() => {

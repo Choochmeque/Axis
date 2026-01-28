@@ -76,9 +76,12 @@ describe('WorktreeContextMenu', () => {
   const mockWorktree: Worktree = {
     path: '/path/to/worktree',
     branch: 'feature-branch',
+    headOid: 'abc123',
     shortOid: 'abc123',
     isMain: false,
     isLocked: false,
+    lockReason: null,
+    isPrunable: false,
   };
 
   beforeEach(() => {

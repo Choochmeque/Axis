@@ -92,14 +92,22 @@ describe('CherryPickDialog', () => {
     {
       oid: 'abc123def456',
       shortOid: 'abc123d',
+      message: 'Test commit message',
       summary: 'Test commit message',
-      body: null,
-      time: 1705312200,
-      author: { name: 'Test Author', email: 'test@example.com', time: 1705312200 },
-      committer: { name: 'Test Author', email: 'test@example.com', time: 1705312200 },
+      author: {
+        name: 'Test Author',
+        email: 'test@example.com',
+        timestamp: new Date().toISOString(),
+      },
+      committer: {
+        name: 'Test Author',
+        email: 'test@example.com',
+        timestamp: new Date().toISOString(),
+      },
       parentOids: [],
+      timestamp: new Date().toISOString(),
       isMerge: false,
-      refs: [],
+      signature: null,
     },
   ];
 

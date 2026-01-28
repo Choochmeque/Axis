@@ -46,8 +46,8 @@ describe('CommitDetailPanel', () => {
   const mockCommit: Commit = {
     oid: 'abc123',
     shortOid: 'abc123',
+    message: 'Test commit summary',
     summary: 'Test commit summary',
-    body: 'Test commit body',
     author: { name: 'Test Author', email: 'test@example.com', timestamp: new Date().toISOString() },
     committer: {
       name: 'Test Committer',
@@ -55,8 +55,9 @@ describe('CommitDetailPanel', () => {
       timestamp: new Date().toISOString(),
     },
     parentOids: ['parent1'],
+    timestamp: new Date().toISOString(),
+    isMerge: false,
     signature: null,
-    gpgVerification: null,
   };
 
   it('should render commit summary in header', () => {

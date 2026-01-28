@@ -67,27 +67,65 @@ const mockEntries: InteractiveRebaseEntry[] = [
   },
 ];
 
+const mockSignature = {
+  name: 'Test Author',
+  email: 'test@example.com',
+  timestamp: new Date().toISOString(),
+};
+
+const mockCommits = [
+  {
+    oid: 'abc123',
+    shortOid: 'abc123',
+    message: 'First commit',
+    summary: 'First commit',
+    author: mockSignature,
+    committer: mockSignature,
+    parentOids: [],
+    timestamp: new Date().toISOString(),
+    isMerge: false,
+    signature: null,
+  },
+  {
+    oid: 'def456',
+    shortOid: 'def456',
+    message: 'Second commit',
+    summary: 'Second commit',
+    author: mockSignature,
+    committer: mockSignature,
+    parentOids: [],
+    timestamp: new Date().toISOString(),
+    isMerge: false,
+    signature: null,
+  },
+];
+
 const mockPreview: InteractiveRebasePreview = {
   preview: {
-    commitsToRebase: [],
+    commitsToRebase: mockCommits,
     mergeBase: {
       oid: '789abc',
       shortOid: '789abc',
       message: 'Merge base commit message',
-      author: {},
       summary: 'Merge base commit',
+      author: mockSignature,
+      committer: mockSignature,
+      parentOids: [],
+      timestamp: new Date().toISOString(),
+      isMerge: false,
+      signature: null,
     },
     target: { name: 'main', oid: '789abc', shortOid: '789abc', summary: 'Target commit' },
     targetCommitsAhead: 1,
   },
-  entries: [],
+  entries: mockEntries,
 };
 
 let mockStoreState = {
   isOpen: false,
   entries: [] as InteractiveRebaseEntry[],
   onto: 'HEAD~2',
-  preview: null as { preview: InteractiveRebasePreview } | null,
+  preview: null as InteractiveRebasePreview | null,
   isLoading: false,
   error: null as string | null,
   close: vi.fn(),
@@ -270,9 +308,7 @@ describe('InteractiveRebaseDialog', () => {
   it('should show history warning when preview has commits', () => {
     mockStoreState.isOpen = true;
     mockStoreState.entries = mockEntries;
-    mockStoreState.preview = {
-      preview: { ...mockPreview, commitsToRebase: mockEntries },
-    };
+    mockStoreState.preview = mockPreview;
 
     render(<InteractiveRebaseDialog />);
 

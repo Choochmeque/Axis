@@ -1,19 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CIView } from './CIView';
+import type { CIRun, DetectedProvider, IntegrationStatus } from '@/types';
 
 // Mock stores
 const mockLoadCiRuns = vi.fn();
 const mockReloadCiRuns = vi.fn();
 const mockLoadMoreCiRuns = vi.fn();
 
-let mockStoreState = {
+type MockIntegrationState = {
+  ciRuns: CIRun[];
+  ciRunsHasMore: boolean;
+  isLoadingCiRuns: boolean;
+  isLoadingMoreCiRuns: boolean;
+  connectionStatus: IntegrationStatus | null;
+  detectedProvider: DetectedProvider | null;
+  loadCiRuns: typeof mockLoadCiRuns;
+  reloadCiRuns: typeof mockReloadCiRuns;
+  loadMoreCiRuns: typeof mockLoadMoreCiRuns;
+};
+
+let mockStoreState: MockIntegrationState = {
   ciRuns: [],
   ciRunsHasMore: false,
   isLoadingCiRuns: false,
   isLoadingMoreCiRuns: false,
-  connectionStatus: { connected: true },
-  detectedProvider: 'GitHub',
+  connectionStatus: {
+    provider: 'GitHub',
+    connected: true,
+    username: null,
+    avatarUrl: null,
+  },
+  detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
   loadCiRuns: mockLoadCiRuns,
   reloadCiRuns: mockReloadCiRuns,
   loadMoreCiRuns: mockLoadMoreCiRuns,
@@ -58,8 +76,13 @@ describe('CIView', () => {
       ciRunsHasMore: false,
       isLoadingCiRuns: false,
       isLoadingMoreCiRuns: false,
-      connectionStatus: { connected: true },
-      detectedProvider: 'GitHub',
+      connectionStatus: {
+        provider: 'GitHub',
+        connected: true,
+        username: null,
+        avatarUrl: null,
+      },
+      detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
       loadCiRuns: mockLoadCiRuns,
       reloadCiRuns: mockReloadCiRuns,
       loadMoreCiRuns: mockLoadMoreCiRuns,
@@ -67,7 +90,12 @@ describe('CIView', () => {
   });
 
   it('should show not connected message when not connected', () => {
-    mockStoreState.connectionStatus = { connected: false };
+    mockStoreState.connectionStatus = {
+      provider: 'GitHub',
+      connected: false,
+      username: null,
+      avatarUrl: null,
+    };
 
     render(<CIView />);
 
@@ -107,7 +135,47 @@ describe('CIView', () => {
   });
 
   it('should display CI runs count', () => {
-    mockStoreState.ciRuns = [{ id: 1 }, { id: 2 }, { id: 3 }];
+    mockStoreState.ciRuns = [
+      {
+        provider: 'GitHub',
+        id: '1',
+        name: 'CI',
+        status: 'Queued',
+        conclusion: null,
+        commitSha: 'abc123',
+        branch: 'main',
+        event: 'push',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/1',
+      },
+      {
+        provider: 'GitHub',
+        id: '2',
+        name: 'CI',
+        status: 'Queued',
+        conclusion: null,
+        commitSha: 'def456',
+        branch: 'main',
+        event: 'push',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/2',
+      },
+      {
+        provider: 'GitHub',
+        id: '3',
+        name: 'CI',
+        status: 'Queued',
+        conclusion: null,
+        commitSha: 'ghi789',
+        branch: 'main',
+        event: 'push',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/3',
+      },
+    ];
 
     render(<CIView />);
 

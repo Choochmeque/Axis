@@ -77,7 +77,7 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     };
 
     loadContent();
-  }, [selectedFile]);
+  }, [selectedFile, t]);
 
   const refreshAfterResolve = async () => {
     const [remainingConflicts, opState] = await Promise.all([

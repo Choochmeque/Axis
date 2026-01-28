@@ -117,7 +117,10 @@ describe('PullRequestDetail', () => {
     changedFiles: 5,
     additions: 100,
     deletions: 50,
+    commitsCount: 2,
     mergeable: true,
+    assignees: [],
+    reviewers: [],
   };
 
   beforeEach(() => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PullRequestsView } from './PullRequestsView';
+import type { PullRequest, PullRequestDetail, DetectedProvider, IntegrationStatus } from '@/types';
 import { PrState } from '@/types';
 
 // Mock stores
@@ -11,15 +12,37 @@ const mockGetPullRequest = vi.fn();
 const mockSetPrFilter = vi.fn();
 const mockClearSelectedPr = vi.fn();
 
-let mockStoreState = {
+type MockIntegrationState = {
+  pullRequests: PullRequest[];
+  selectedPr: PullRequestDetail | null;
+  prFilter: PrState;
+  prsHasMore: boolean;
+  isLoadingPrs: boolean;
+  isLoadingMorePrs: boolean;
+  connectionStatus: IntegrationStatus | null;
+  detectedProvider: DetectedProvider | null;
+  loadPullRequests: typeof mockLoadPullRequests;
+  reloadPullRequests: typeof mockReloadPullRequests;
+  loadMorePullRequests: typeof mockLoadMorePullRequests;
+  getPullRequest: typeof mockGetPullRequest;
+  setPrFilter: typeof mockSetPrFilter;
+  clearSelectedPr: typeof mockClearSelectedPr;
+};
+
+let mockStoreState: MockIntegrationState = {
   pullRequests: [],
   selectedPr: null,
   prFilter: PrState.Open,
   prsHasMore: false,
   isLoadingPrs: false,
   isLoadingMorePrs: false,
-  connectionStatus: { connected: true },
-  detectedProvider: 'GitHub',
+  connectionStatus: {
+    provider: 'GitHub',
+    connected: true,
+    username: null,
+    avatarUrl: null,
+  },
+  detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
   loadPullRequests: mockLoadPullRequests,
   reloadPullRequests: mockReloadPullRequests,
   loadMorePullRequests: mockLoadMorePullRequests,
@@ -106,8 +129,13 @@ describe('PullRequestsView', () => {
       prsHasMore: false,
       isLoadingPrs: false,
       isLoadingMorePrs: false,
-      connectionStatus: { connected: true },
-      detectedProvider: 'GitHub',
+      connectionStatus: {
+        provider: 'GitHub',
+        connected: true,
+        username: null,
+        avatarUrl: null,
+      },
+      detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
       loadPullRequests: mockLoadPullRequests,
       reloadPullRequests: mockReloadPullRequests,
       loadMorePullRequests: mockLoadMorePullRequests,
@@ -118,7 +146,12 @@ describe('PullRequestsView', () => {
   });
 
   it('should show not connected message when not connected', () => {
-    mockStoreState.connectionStatus = { connected: false };
+    mockStoreState.connectionStatus = {
+      provider: 'GitHub',
+      connected: false,
+      username: null,
+      avatarUrl: null,
+    };
 
     render(<PullRequestsView />);
 
@@ -180,7 +213,29 @@ describe('PullRequestsView', () => {
   });
 
   it('should show PR detail panel when PR is selected', () => {
-    mockStoreState.selectedPr = { number: 1, title: 'Test PR' };
+    mockStoreState.selectedPr = {
+      provider: 'GitHub',
+      number: 1,
+      title: 'Test PR',
+      state: PrState.Open,
+      author: { login: 'tester', avatarUrl: 'https://example.com/avatar.png', url: 'https://x' },
+      sourceBranch: 'feature',
+      targetBranch: 'main',
+      draft: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      url: 'https://example.com/pr/1',
+      body: null,
+      additions: 1,
+      deletions: 1,
+      changedFiles: 1,
+      commitsCount: 1,
+      commentsCount: 0,
+      mergeable: true,
+      labels: [],
+      assignees: [],
+      reviewers: [],
+    };
 
     render(<PullRequestsView />);
 
@@ -189,7 +244,21 @@ describe('PullRequestsView', () => {
   });
 
   it('should call getPullRequest when PR is selected from list', () => {
-    mockStoreState.pullRequests = [{ number: 1, title: 'Test PR' }];
+    mockStoreState.pullRequests = [
+      {
+        provider: 'GitHub',
+        number: 1,
+        title: 'Test PR',
+        state: PrState.Open,
+        author: { login: 'tester', avatarUrl: 'https://example.com/avatar.png', url: 'https://x' },
+        sourceBranch: 'feature',
+        targetBranch: 'main',
+        draft: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/pr/1',
+      },
+    ];
 
     render(<PullRequestsView />);
 

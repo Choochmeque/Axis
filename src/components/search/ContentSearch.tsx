@@ -53,7 +53,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [pattern, ignoreCase, wordRegexp, useRegex]);
+  }, [pattern, ignoreCase, wordRegexp, useRegex, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {

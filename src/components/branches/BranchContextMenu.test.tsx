@@ -69,10 +69,14 @@ describe('BranchContextMenu', () => {
   const mockBranch: Branch = {
     name: 'feature',
     fullName: 'refs/heads/feature',
+    branchType: 'Local',
     isHead: false,
-    isRemote: false,
+    upstream: null,
     ahead: 0,
     behind: 0,
+    targetOid: 'abc123',
+    lastCommitSummary: 'Initial commit',
+    lastCommitTime: '2024-01-15T10:30:00Z',
   };
 
   it('should render trigger element', () => {
@@ -133,10 +137,14 @@ describe('BranchContextMenu', () => {
     const remoteBranch: Branch = {
       name: 'origin/main',
       fullName: 'refs/remotes/origin/main',
+      branchType: 'Remote',
       isHead: false,
-      isRemote: true,
+      upstream: null,
       ahead: 5,
       behind: 2,
+      targetOid: 'def456',
+      lastCommitSummary: 'Remote commit',
+      lastCommitTime: '2024-01-16T12:00:00Z',
     };
 
     render(

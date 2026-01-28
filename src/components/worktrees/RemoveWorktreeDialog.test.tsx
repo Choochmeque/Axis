@@ -91,9 +91,12 @@ describe('RemoveWorktreeDialog', () => {
   const mockWorktree: Worktree = {
     path: '/path/to/worktree',
     branch: 'feature-branch',
-    head: 'abc123',
+    headOid: 'abc123',
+    shortOid: 'abc123',
     isLocked: false,
-    pruneReason: null,
+    lockReason: null,
+    isMain: false,
+    isPrunable: false,
   };
 
   beforeEach(() => {

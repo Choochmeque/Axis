@@ -26,13 +26,14 @@ describe('useOperationProgress', () => {
     mockOperations.set('op-1', {
       id: 'op-1',
       name: 'Fetch',
-      startTime: Date.now(),
+      startedAt: Date.now(),
       category: 'git',
       operationType: 'Fetch',
       progress: {
         stage: 'Receiving',
         receivedObjects: 10,
         totalObjects: 100,
+        receivedBytes: 0,
       },
     });
 
@@ -45,13 +46,14 @@ describe('useOperationProgress', () => {
     const operation: Operation = {
       id: 'op-1',
       name: 'Clone',
-      startTime: Date.now(),
+      startedAt: Date.now(),
       category: 'git',
       operationType: 'Clone',
       progress: {
         stage: 'Receiving',
         receivedObjects: 50,
         totalObjects: 100,
+        receivedBytes: 0,
       },
     };
     mockOperations.set('op-1', operation);
@@ -65,7 +67,7 @@ describe('useOperationProgress', () => {
     mockOperations.set('op-1', {
       id: 'op-1',
       name: 'Clone',
-      startTime: Date.now(),
+      startedAt: Date.now(),
       category: 'git',
       operationType: 'Clone',
       // No progress property
@@ -80,25 +82,27 @@ describe('useOperationProgress', () => {
     const operation1: Operation = {
       id: 'op-1',
       name: 'Fetch 1',
-      startTime: Date.now(),
+      startedAt: Date.now(),
       category: 'git',
       operationType: 'Fetch',
       progress: {
         stage: ProgressStage.Receiving,
         receivedObjects: 10,
         totalObjects: 50,
+        receivedBytes: 0,
       },
     };
     const operation2: Operation = {
       id: 'op-2',
       name: 'Fetch 2',
-      startTime: Date.now(),
+      startedAt: Date.now(),
       category: 'git',
       operationType: 'Fetch',
       progress: {
         stage: ProgressStage.Resolving,
         indexedObjects: 50,
         totalObjects: 100,
+        receivedBytes: 0,
       },
     };
 

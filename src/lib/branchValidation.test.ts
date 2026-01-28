@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { validateBranchName } from './branchValidation';
 import type { TFunction } from 'i18next';
 
-const mockT: TFunction = vi.fn((key: string) => key);
+const mockT = vi.fn((key: string) => key) as unknown as TFunction;
 
 describe('branchValidation', () => {
   describe('validateBranchName', () => {

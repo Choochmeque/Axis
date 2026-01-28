@@ -52,7 +52,7 @@ export function StashView({ onRefresh }: StashViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadStashes();

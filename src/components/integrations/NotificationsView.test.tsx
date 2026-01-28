@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NotificationsView } from './NotificationsView';
+import type { Notification, DetectedProvider, IntegrationStatus } from '@/types';
 
 // Mock stores
 const mockLoadNotifications = vi.fn();
@@ -9,15 +10,36 @@ const mockLoadMoreNotifications = vi.fn();
 const mockMarkAllNotificationsRead = vi.fn();
 const mockSetNotificationFilter = vi.fn();
 
-let mockStoreState = {
+type MockIntegrationState = {
+  notifications: Notification[];
+  unreadCount: number;
+  notificationFilter: boolean;
+  notificationsHasMore: boolean;
+  isLoadingNotifications: boolean;
+  isLoadingMoreNotifications: boolean;
+  connectionStatus: IntegrationStatus | null;
+  detectedProvider: DetectedProvider | null;
+  loadNotifications: typeof mockLoadNotifications;
+  reloadNotifications: typeof mockReloadNotifications;
+  loadMoreNotifications: typeof mockLoadMoreNotifications;
+  markAllNotificationsRead: typeof mockMarkAllNotificationsRead;
+  setNotificationFilter: typeof mockSetNotificationFilter;
+};
+
+let mockStoreState: MockIntegrationState = {
   notifications: [],
   unreadCount: 0,
   notificationFilter: false,
   notificationsHasMore: false,
   isLoadingNotifications: false,
   isLoadingMoreNotifications: false,
-  connectionStatus: { connected: true },
-  detectedProvider: 'GitHub',
+  connectionStatus: {
+    provider: 'GitHub',
+    connected: true,
+    username: null,
+    avatarUrl: null,
+  },
+  detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
   loadNotifications: mockLoadNotifications,
   reloadNotifications: mockReloadNotifications,
   loadMoreNotifications: mockLoadMoreNotifications,
@@ -73,8 +95,13 @@ describe('NotificationsView', () => {
       notificationsHasMore: false,
       isLoadingNotifications: false,
       isLoadingMoreNotifications: false,
-      connectionStatus: { connected: true },
-      detectedProvider: 'GitHub',
+      connectionStatus: {
+        provider: 'GitHub',
+        connected: true,
+        username: null,
+        avatarUrl: null,
+      },
+      detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
       loadNotifications: mockLoadNotifications,
       reloadNotifications: mockReloadNotifications,
       loadMoreNotifications: mockLoadMoreNotifications,
@@ -84,7 +111,12 @@ describe('NotificationsView', () => {
   });
 
   it('should show not connected message when not connected', () => {
-    mockStoreState.connectionStatus = { connected: false };
+    mockStoreState.connectionStatus = {
+      provider: 'GitHub',
+      connected: false,
+      username: null,
+      avatarUrl: null,
+    };
 
     render(<NotificationsView />);
 
@@ -173,7 +205,32 @@ describe('NotificationsView', () => {
   });
 
   it('should display notifications count', () => {
-    mockStoreState.notifications = [{ id: 1 }, { id: 2 }];
+    mockStoreState.notifications = [
+      {
+        provider: 'GitHub',
+        id: '1',
+        reason: 'Subscribed',
+        unread: false,
+        subjectTitle: 'Issue #1',
+        subjectType: 'Issue',
+        subjectUrl: 'https://example.com/issue/1',
+        repository: 'acme/repo',
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/notifications/1',
+      },
+      {
+        provider: 'GitHub',
+        id: '2',
+        reason: 'Mention',
+        unread: true,
+        subjectTitle: 'PR #2',
+        subjectType: 'PullRequest',
+        subjectUrl: 'https://example.com/pr/2',
+        repository: 'acme/repo',
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/notifications/2',
+      },
+    ];
 
     render(<NotificationsView />);
 

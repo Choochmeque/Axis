@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IssuesView } from './IssuesView';
+import type { Issue, IssueDetail, DetectedProvider, IntegrationStatus } from '@/types';
 import { IssueState } from '@/types';
 
 // Mock stores
@@ -11,15 +12,37 @@ const mockGetIssue = vi.fn();
 const mockSetIssueFilter = vi.fn();
 const mockClearSelectedIssue = vi.fn();
 
-let mockStoreState = {
+type MockIntegrationState = {
+  issues: Issue[];
+  selectedIssue: IssueDetail | null;
+  issueFilter: IssueState;
+  issuesHasMore: boolean;
+  isLoadingIssues: boolean;
+  isLoadingMoreIssues: boolean;
+  connectionStatus: IntegrationStatus | null;
+  detectedProvider: DetectedProvider | null;
+  loadIssues: typeof mockLoadIssues;
+  reloadIssues: typeof mockReloadIssues;
+  loadMoreIssues: typeof mockLoadMoreIssues;
+  getIssue: typeof mockGetIssue;
+  setIssueFilter: typeof mockSetIssueFilter;
+  clearSelectedIssue: typeof mockClearSelectedIssue;
+};
+
+let mockStoreState: MockIntegrationState = {
   issues: [],
   selectedIssue: null,
   issueFilter: IssueState.Open,
   issuesHasMore: false,
   isLoadingIssues: false,
   isLoadingMoreIssues: false,
-  connectionStatus: { connected: true },
-  detectedProvider: 'GitHub',
+  connectionStatus: {
+    provider: 'GitHub',
+    connected: true,
+    username: null,
+    avatarUrl: null,
+  },
+  detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
   loadIssues: mockLoadIssues,
   reloadIssues: mockReloadIssues,
   loadMoreIssues: mockLoadMoreIssues,
@@ -110,8 +133,13 @@ describe('IssuesView', () => {
       issuesHasMore: false,
       isLoadingIssues: false,
       isLoadingMoreIssues: false,
-      connectionStatus: { connected: true },
-      detectedProvider: 'GitHub',
+      connectionStatus: {
+        provider: 'GitHub',
+        connected: true,
+        username: null,
+        avatarUrl: null,
+      },
+      detectedProvider: { provider: 'GitHub', owner: 'acme', repo: 'repo' },
       loadIssues: mockLoadIssues,
       reloadIssues: mockReloadIssues,
       loadMoreIssues: mockLoadMoreIssues,
@@ -122,7 +150,12 @@ describe('IssuesView', () => {
   });
 
   it('should show not connected message when not connected', () => {
-    mockStoreState.connectionStatus = { connected: false };
+    mockStoreState.connectionStatus = {
+      provider: 'GitHub',
+      connected: false,
+      username: null,
+      avatarUrl: null,
+    };
 
     render(<IssuesView />);
 
@@ -184,7 +217,21 @@ describe('IssuesView', () => {
   });
 
   it('should show issue detail panel when issue is selected', () => {
-    mockStoreState.selectedIssue = { number: 1, title: 'Test Issue' };
+    mockStoreState.selectedIssue = {
+      provider: 'GitHub',
+      number: 1,
+      title: 'Test Issue',
+      state: IssueState.Open,
+      author: { login: 'tester', avatarUrl: 'https://example.com/avatar.png', url: 'https://x' },
+      labels: [],
+      commentsCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      url: 'https://example.com/issue/1',
+      body: null,
+      assignees: [],
+      milestone: null,
+    };
 
     render(<IssuesView />);
 
@@ -193,7 +240,20 @@ describe('IssuesView', () => {
   });
 
   it('should call getIssue when issue is selected from list', () => {
-    mockStoreState.issues = [{ number: 1, title: 'Test Issue' }];
+    mockStoreState.issues = [
+      {
+        provider: 'GitHub',
+        number: 1,
+        title: 'Test Issue',
+        state: IssueState.Open,
+        author: { login: 'tester', avatarUrl: 'https://example.com/avatar.png', url: 'https://x' },
+        labels: [],
+        commentsCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        url: 'https://example.com/issue/1',
+      },
+    ];
 
     render(<IssuesView />);
 

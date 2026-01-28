@@ -269,14 +269,22 @@ describe('RebaseDialog', () => {
     const targetCommit = {
       oid: 'abc123def456',
       shortOid: 'abc123d',
+      message: 'Target commit message',
       summary: 'Target commit message',
-      body: null,
-      time: 1705312200,
-      author: { name: 'Test', email: 'test@example.com', time: 1705312200 },
-      committer: { name: 'Test', email: 'test@example.com', time: 1705312200 },
+      author: {
+        name: 'Test',
+        email: 'test@example.com',
+        timestamp: new Date().toISOString(),
+      },
+      committer: {
+        name: 'Test',
+        email: 'test@example.com',
+        timestamp: new Date().toISOString(),
+      },
       parentOids: [],
+      timestamp: new Date().toISOString(),
       isMerge: false,
-      refs: [],
+      signature: null,
     };
 
     render(<RebaseDialog {...defaultProps} targetCommit={targetCommit} />);

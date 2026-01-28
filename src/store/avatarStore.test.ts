@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAvatarStore, getAvatarSrcUrl } from './avatarStore';
+import type { AvatarSource, AvatarResponse } from '@/types';
 
 vi.mock('@/services/api', () => ({
   avatarApi: {
@@ -15,6 +16,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 import { avatarApi } from '@/services/api';
 
 describe('avatarStore', () => {
+  const makeAvatar = (path: string | null, source: AvatarSource = 'Gravatar'): AvatarResponse => ({
+    source,
+    path,
+  });
+
   beforeEach(() => {
     useAvatarStore.setState({ avatars: new Map() });
     vi.clearAllMocks();
@@ -22,7 +28,7 @@ describe('avatarStore', () => {
 
   describe('getAvatar', () => {
     it('should return cached avatar if available', async () => {
-      const cachedAvatar = { email: 'test@example.com', path: '/cache/avatar.png' };
+      const cachedAvatar = makeAvatar('/cache/avatar.png');
       useAvatarStore.setState({
         avatars: new Map([['test@example.com', cachedAvatar]]),
       });
@@ -34,7 +40,7 @@ describe('avatarStore', () => {
     });
 
     it('should normalize email to lowercase', async () => {
-      const cachedAvatar = { email: 'test@example.com', path: '/cache/avatar.png' };
+      const cachedAvatar = makeAvatar('/cache/avatar.png');
       useAvatarStore.setState({
         avatars: new Map([['test@example.com', cachedAvatar]]),
       });
@@ -45,7 +51,7 @@ describe('avatarStore', () => {
     });
 
     it('should trim email whitespace', async () => {
-      const cachedAvatar = { email: 'test@example.com', path: '/cache/avatar.png' };
+      const cachedAvatar = makeAvatar('/cache/avatar.png');
       useAvatarStore.setState({
         avatars: new Map([['test@example.com', cachedAvatar]]),
       });
@@ -56,7 +62,7 @@ describe('avatarStore', () => {
     });
 
     it('should fetch avatar from API if not cached', async () => {
-      const apiResponse = { email: 'new@example.com', path: '/cache/new-avatar.png' };
+      const apiResponse = makeAvatar('/cache/new-avatar.png');
       vi.mocked(avatarApi.get).mockResolvedValue(apiResponse);
 
       const result = await useAvatarStore.getState().getAvatar('new@example.com');
@@ -66,10 +72,7 @@ describe('avatarStore', () => {
     });
 
     it('should pass sha parameter to API', async () => {
-      vi.mocked(avatarApi.get).mockResolvedValue({
-        email: 'test@example.com',
-        path: '/cache/avatar.png',
-      });
+      vi.mocked(avatarApi.get).mockResolvedValue(makeAvatar('/cache/avatar.png'));
 
       await useAvatarStore.getState().getAvatar('test@example.com', 'abc123');
 
@@ -77,7 +80,7 @@ describe('avatarStore', () => {
     });
 
     it('should cache fetched avatar', async () => {
-      const apiResponse = { email: 'new@example.com', path: '/cache/new-avatar.png' };
+      const apiResponse = makeAvatar('/cache/new-avatar.png');
       vi.mocked(avatarApi.get).mockResolvedValue(apiResponse);
 
       await useAvatarStore.getState().getAvatar('new@example.com');
@@ -98,11 +101,9 @@ describe('avatarStore', () => {
   describe('clearCache', () => {
     it('should clear in-memory cache', async () => {
       useAvatarStore.setState({
-        avatars: new Map([
-          ['test@example.com', { email: 'test@example.com', path: '/cache/avatar.png' }],
-        ]),
+        avatars: new Map([['test@example.com', makeAvatar('/cache/avatar.png')]]),
       });
-      vi.mocked(avatarApi.clearCache).mockResolvedValue(undefined);
+      vi.mocked(avatarApi.clearCache).mockResolvedValue(null);
 
       await useAvatarStore.getState().clearCache();
 
@@ -110,7 +111,7 @@ describe('avatarStore', () => {
     });
 
     it('should call API clearCache', async () => {
-      vi.mocked(avatarApi.clearCache).mockResolvedValue(undefined);
+      vi.mocked(avatarApi.clearCache).mockResolvedValue(null);
 
       await useAvatarStore.getState().clearCache();
 
@@ -119,9 +120,7 @@ describe('avatarStore', () => {
 
     it('should handle API error gracefully', async () => {
       useAvatarStore.setState({
-        avatars: new Map([
-          ['test@example.com', { email: 'test@example.com', path: '/cache/avatar.png' }],
-        ]),
+        avatars: new Map([['test@example.com', makeAvatar('/cache/avatar.png')]]),
       });
       vi.mocked(avatarApi.clearCache).mockRejectedValue(new Error('Failed'));
 
@@ -135,9 +134,7 @@ describe('avatarStore', () => {
   describe('getAvatarUrl', () => {
     it('should return converted URL for cached avatar with path', () => {
       useAvatarStore.setState({
-        avatars: new Map([
-          ['test@example.com', { email: 'test@example.com', path: '/cache/avatar.png' }],
-        ]),
+        avatars: new Map([['test@example.com', makeAvatar('/cache/avatar.png')]]),
       });
 
       const url = useAvatarStore.getState().getAvatarUrl('test@example.com');
@@ -153,7 +150,7 @@ describe('avatarStore', () => {
 
     it('should return null for cached avatar without path', () => {
       useAvatarStore.setState({
-        avatars: new Map([['test@example.com', { email: 'test@example.com', path: null }]]),
+        avatars: new Map([['test@example.com', makeAvatar(null)]]),
       });
 
       const url = useAvatarStore.getState().getAvatarUrl('test@example.com');
@@ -163,9 +160,7 @@ describe('avatarStore', () => {
 
     it('should normalize email for lookup', () => {
       useAvatarStore.setState({
-        avatars: new Map([
-          ['test@example.com', { email: 'test@example.com', path: '/cache/avatar.png' }],
-        ]),
+        avatars: new Map([['test@example.com', makeAvatar('/cache/avatar.png')]]),
       });
 
       const url = useAvatarStore.getState().getAvatarUrl('TEST@EXAMPLE.COM');
@@ -176,7 +171,7 @@ describe('avatarStore', () => {
 
   describe('getAvatarSrcUrl', () => {
     it('should return converted URL for response with path', () => {
-      const response = { email: 'test@example.com', path: '/cache/avatar.png' };
+      const response = makeAvatar('/cache/avatar.png');
 
       const url = getAvatarSrcUrl(response);
 
@@ -190,7 +185,7 @@ describe('avatarStore', () => {
     });
 
     it('should return null for response without path', () => {
-      const response = { email: 'test@example.com', path: null };
+      const response = makeAvatar(null);
 
       const url = getAvatarSrcUrl(response);
 

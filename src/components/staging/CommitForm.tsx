@@ -110,7 +110,7 @@ export function CommitForm() {
     if (remotes.length === 0) {
       setPushAfterCommit(false);
     }
-  }, [remotes.length]);
+  }, [remotes.length, setPushAfterCommit]);
 
   // Load author info when repository changes
   useEffect(() => {
@@ -347,7 +347,7 @@ export function CommitForm() {
         toast.info(t('staging.notConventionalFormat'));
       }
     }
-  }, [isAmending]);
+  }, [isAmending, structuredMode, localMessage, setCommitParts, setStructuredMode, t]);
 
   const stagedCount = status?.staged.length ?? 0;
   const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);

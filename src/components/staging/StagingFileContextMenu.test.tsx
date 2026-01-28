@@ -89,6 +89,8 @@ describe('StagingFileContextMenu', () => {
     status: StatusType.Modified,
     stagedStatus: StatusType.Modified,
     unstagedStatus: null,
+    isConflict: false,
+    oldPath: null,
   };
 
   const defaultProps = {

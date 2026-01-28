@@ -32,10 +32,9 @@ describe('BlameView', () => {
       commitOid: 'abc123',
       shortOid: 'abc123',
       author: 'Test Author',
-      authorEmail: 'test@example.com',
       timestamp: '2024-01-15T10:30:00Z',
-      summary: 'Initial commit',
       isGroupStart: true,
+      originalLine: 1,
     },
     {
       lineNumber: 2,
@@ -43,10 +42,9 @@ describe('BlameView', () => {
       commitOid: 'abc123',
       shortOid: 'abc123',
       author: 'Test Author',
-      authorEmail: 'test@example.com',
       timestamp: '2024-01-15T10:30:00Z',
-      summary: 'Initial commit',
       isGroupStart: false,
+      originalLine: 2,
     },
   ];
 

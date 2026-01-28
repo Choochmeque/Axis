@@ -62,7 +62,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadSubmodules();

@@ -14,6 +14,7 @@ export type {
 
   // Branch types
   Branch,
+  BranchFilter,
   BranchCompareResult,
   CreateBranchOptions,
   CheckoutOptions,

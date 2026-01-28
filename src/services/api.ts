@@ -58,6 +58,7 @@ import type {
   PullOptions,
   GitHookType,
   CheckoutOptions,
+  BranchFilter,
 } from '@/types';
 
 export const repositoryApi = {
@@ -109,8 +110,7 @@ export const commitApi = {
 };
 
 export const branchApi = {
-  list: (includeLocal: boolean = true, includeRemote: boolean = true) =>
-    commands.getBranches(includeLocal, includeRemote),
+  list: (filter: BranchFilter) => commands.getBranches(filter),
 
   create: (name: string, options: CreateBranchOptions) => commands.createBranch(name, options),
 

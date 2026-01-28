@@ -157,13 +157,8 @@ pub async fn get_commit_history(
 #[specta::specta]
 pub async fn get_branches(
     state: State<'_, AppState>,
-    include_local: bool,
-    include_remote: bool,
+    filter: BranchFilter,
 ) -> Result<Vec<Branch>> {
-    let filter = BranchFilter {
-        include_local,
-        include_remote,
-    };
     state
         .get_git_service()?
         .with_git2(|git2| git2.list_branches(filter))

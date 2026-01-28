@@ -26,33 +26,12 @@ pub enum BranchType {
     Remote,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct BranchFilter {
     pub include_local: bool,
     pub include_remote: bool,
-}
-
-impl BranchFilter {
-    pub fn all() -> Self {
-        BranchFilter {
-            include_local: true,
-            include_remote: true,
-        }
-    }
-
-    pub fn local_only() -> Self {
-        BranchFilter {
-            include_local: true,
-            include_remote: false,
-        }
-    }
-
-    pub fn remote_only() -> Self {
-        BranchFilter {
-            include_local: false,
-            include_remote: true,
-        }
-    }
 }
 
 /// Result of comparing two branches
@@ -117,27 +96,6 @@ mod tests {
         let filter = BranchFilter::default();
         assert!(!filter.include_local);
         assert!(!filter.include_remote);
-    }
-
-    #[test]
-    fn test_branch_filter_all() {
-        let filter = BranchFilter::all();
-        assert!(filter.include_local);
-        assert!(filter.include_remote);
-    }
-
-    #[test]
-    fn test_branch_filter_local_only() {
-        let filter = BranchFilter::local_only();
-        assert!(filter.include_local);
-        assert!(!filter.include_remote);
-    }
-
-    #[test]
-    fn test_branch_filter_remote_only() {
-        let filter = BranchFilter::remote_only();
-        assert!(!filter.include_local);
-        assert!(filter.include_remote);
     }
 
     #[test]

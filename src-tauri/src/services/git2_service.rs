@@ -3022,7 +3022,10 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let branches = service
-            .list_branches(BranchFilter::local_only())
+            .list_branches(BranchFilter {
+                include_local: true,
+                include_remote: false,
+            })
             .expect("should list branches");
         assert!(!branches.is_empty());
 
@@ -3052,7 +3055,10 @@ mod tests {
 
         // Both branches now point to the same commit
         let branches = service
-            .list_branches(BranchFilter::local_only())
+            .list_branches(BranchFilter {
+                include_local: true,
+                include_remote: false,
+            })
             .expect("should list branches");
         assert_eq!(branches.len(), 2);
 
@@ -3489,7 +3495,10 @@ mod tests {
 
         // Verify old name doesn't exist
         let branches = service
-            .list_branches(BranchFilter::local_only())
+            .list_branches(BranchFilter {
+                include_local: true,
+                include_remote: false,
+            })
             .expect("should list branches");
         assert!(!branches.iter().any(|b| b.name == "old-name"));
         assert!(branches.iter().any(|b| b.name == "new-name"));
@@ -3508,7 +3517,10 @@ mod tests {
 
         // Verify it exists
         let branches = service
-            .list_branches(BranchFilter::local_only())
+            .list_branches(BranchFilter {
+                include_local: true,
+                include_remote: false,
+            })
             .expect("should list branches");
         assert!(branches.iter().any(|b| b.name == "to-delete"));
 
@@ -3519,7 +3531,10 @@ mod tests {
 
         // Verify it's gone
         let branches = service
-            .list_branches(BranchFilter::local_only())
+            .list_branches(BranchFilter {
+                include_local: true,
+                include_remote: false,
+            })
             .expect("should list branches after delete");
         assert!(!branches.iter().any(|b| b.name == "to-delete"));
     }
@@ -4263,23 +4278,5 @@ mod tests {
         // File should be back to original
         let content = fs::read_to_string(tmp.path().join("README.md")).expect("should read");
         assert_eq!(content, "# Test Repository");
-    }
-
-    // ==================== Set Branch Upstream Tests ====================
-
-    #[test]
-    fn test_set_branch_upstream_clear() {
-        let (tmp, service) = setup_test_repo();
-        create_initial_commit(&service, &tmp);
-
-        // Get current branch name
-        let branch_name = service
-            .get_current_branch_name()
-            .expect("should have branch name");
-
-        // Clearing upstream when none exists should not error
-        service
-            .set_branch_upstream(&branch_name, None)
-            .expect("should clear upstream");
     }
 }

@@ -11,7 +11,7 @@ use crate::services::SigningService;
 use chrono::{DateTime, Utc};
 use git2::{
     build::RepoBuilder, Cred, FetchOptions, RemoteCallbacks, Repository as Git2Repository,
-    RepositoryInitOptions, StatusOptions,
+    StatusOptions,
 };
 use std::path::{Path, PathBuf};
 
@@ -30,7 +30,12 @@ impl Git2Service {
 
     /// Initialize a new repository
     pub fn init(path: &Path, bare: bool) -> Result<Self> {
-        let _ = Git2Repository::init_opts(path, RepositoryInitOptions::new().bare(bare))?;
+        if bare {
+            Git2Repository::init_bare(path)?;
+        } else {
+            Git2Repository::init(path)?;
+        }
+
         Ok(Git2Service {
             path: path.to_path_buf(),
         })
@@ -367,7 +372,7 @@ impl Git2Service {
                     let commit = repo.find_commit(oid)?;
                     let is_head = branch.is_head();
 
-                    let (ahead, behind) = self.get_ahead_behind(&branch)?;
+                    let (ahead, behind) = Self::get_ahead_behind(&repo, &branch)?;
 
                     let upstream = branch
                         .upstream()
@@ -410,7 +415,10 @@ impl Git2Service {
     }
 
     /// Get ahead/behind counts for a branch compared to its upstream
-    fn get_ahead_behind(&self, branch: &git2::Branch) -> Result<(Option<usize>, Option<usize>)> {
+    fn get_ahead_behind(
+        repo: &Git2Repository,
+        branch: &git2::Branch,
+    ) -> Result<(Option<usize>, Option<usize>)> {
         let upstream = match branch.upstream() {
             Ok(u) => u,
             Err(_) => return Ok((None, None)),
@@ -421,7 +429,7 @@ impl Git2Service {
 
         match (local_oid, upstream_oid) {
             (Some(local), Some(upstream)) => {
-                let (ahead, behind) = self.repo()?.graph_ahead_behind(local, upstream)?;
+                let (ahead, behind) = repo.graph_ahead_behind(local, upstream)?;
                 Ok((Some(ahead), Some(behind)))
             }
             _ => Ok((None, None)),
@@ -894,7 +902,7 @@ impl Git2Service {
             branch.set_upstream(Some(upstream))?;
         }
 
-        self.branch_to_model(&branch, git2::BranchType::Local)
+        Self::branch_to_model(&repo, &branch, git2::BranchType::Local)
     }
 
     /// Delete a branch
@@ -946,7 +954,7 @@ impl Git2Service {
         let repo = self.repo()?;
         let mut branch = repo.find_branch(old_name, git2::BranchType::Local)?;
         let new_branch = branch.rename(new_name, force)?;
-        self.branch_to_model(&new_branch, git2::BranchType::Local)
+        Self::branch_to_model(&repo, &new_branch, git2::BranchType::Local)
     }
 
     /// Checkout a branch
@@ -1067,12 +1075,12 @@ impl Git2Service {
         };
         let repo = self.repo()?;
         let branch = repo.find_branch(name, git_branch_type)?;
-        self.branch_to_model(&branch, git_branch_type)
+        Self::branch_to_model(&repo, &branch, git_branch_type)
     }
 
     /// Convert a git2 Branch to our Branch model
     fn branch_to_model(
-        &self,
+        repo: &Git2Repository,
         branch: &git2::Branch,
         branch_type: git2::BranchType,
     ) -> Result<Branch> {
@@ -1082,12 +1090,11 @@ impl Git2Service {
             .target()
             .ok_or_else(|| AxisError::InvalidReference(name.clone()))?;
 
-        let repo = self.repo()?;
         let commit = repo.find_commit(oid)?;
         // Use branch.is_head() to check if this branch is currently checked out
         let is_head = branch.is_head();
 
-        let (ahead, behind) = self.get_ahead_behind(branch)?;
+        let (ahead, behind) = Self::get_ahead_behind(repo, branch)?;
         let upstream = branch
             .upstream()
             .ok()
@@ -1135,11 +1142,11 @@ impl Git2Service {
 
         // Get commits ahead (in base/current but not in compare)
         // These are commits the current branch has that the compare branch doesn't
-        let ahead_commits = self.commits_between(merge_base_oid, base_oid)?;
+        let ahead_commits = Self::commits_between(&repo, merge_base_oid, base_oid)?;
 
         // Get commits behind (in compare but not in base/current)
         // These are commits the compare branch has that the current branch doesn't
-        let behind_commits = self.commits_between(merge_base_oid, compare_oid)?;
+        let behind_commits = Self::commits_between(&repo, merge_base_oid, compare_oid)?;
 
         // Get aggregate file diff (changes in base/current branch since merge_base)
         // This shows what the current branch introduces relative to the compare branch
@@ -1164,11 +1171,10 @@ impl Git2Service {
 
     /// Get commits between two points (from merge_base to target)
     fn commits_between(
-        &self,
+        repo: &Git2Repository,
         from_oid: Option<git2::Oid>,
         to_oid: git2::Oid,
     ) -> Result<Vec<Commit>> {
-        let repo = self.repo()?;
         let mut revwalk = repo.revwalk()?;
         revwalk.set_sorting(git2::Sort::TIME | git2::Sort::TOPOLOGICAL)?;
         revwalk.push(to_oid)?;
@@ -1356,7 +1362,7 @@ impl Git2Service {
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
     {
-        let repo = Git2Repository::open(&self.path)?;
+        let repo = self.repo()?;
 
         let mut remote = repo.find_remote(remote_name)?;
 
@@ -1434,7 +1440,7 @@ impl Git2Service {
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
     {
-        let repo = Git2Repository::open(&self.path)?;
+        let repo = self.repo()?;
 
         let mut remote = repo.find_remote(remote_name)?;
 
@@ -1514,7 +1520,7 @@ impl Git2Service {
 
         // Set upstream tracking if requested
         if options.set_upstream {
-            let upstream_ref = format!("{}/{}", remote_name, branch_name);
+            let upstream_ref = format!("{remote_name}/{branch_name}");
             self.set_branch_upstream(branch_name, Some(&upstream_ref))?;
         }
 
@@ -2033,7 +2039,7 @@ impl Git2Service {
 
     /// Collect all refs (branches and tags) and map them to commit OIDs
     fn collect_commit_refs(
-        repo: &git2::Repository,
+        repo: &Git2Repository,
     ) -> Result<std::collections::HashMap<String, Vec<crate::models::CommitRef>>> {
         use crate::models::{CommitRef, RefType};
         use std::collections::HashMap;
@@ -2258,7 +2264,7 @@ impl Git2Service {
     // ==================== Tag Operations ====================
 
     /// List all tags
-    pub fn tag_list(&self, repo: Option<&git2::Repository>) -> Result<Vec<Tag>> {
+    pub fn tag_list(&self, repo: Option<&Git2Repository>) -> Result<Vec<Tag>> {
         let repo = {
             if let Some(r) = repo {
                 r
@@ -2373,20 +2379,20 @@ impl Git2Service {
 
     /// Delete a tag
     pub fn tag_delete(&self, name: &str) -> Result<TagResult> {
-        let tag_ref = format!("refs/tags/{}", name);
+        let tag_ref = format!("refs/tags/{name}");
 
         match self.repo()?.find_reference(&tag_ref) {
             Ok(mut reference) => {
                 reference.delete()?;
                 Ok(TagResult {
                     success: true,
-                    message: format!("Tag '{}' deleted successfully", name),
+                    message: format!("Tag '{name}' deleted successfully"),
                     tag: None,
                 })
             }
             Err(_) => Ok(TagResult {
                 success: false,
-                message: format!("Tag '{}' not found", name),
+                message: format!("Tag '{name}' not found"),
                 tag: None,
             }),
         }
@@ -2454,7 +2460,7 @@ impl Git2Service {
     }
 
     /// Helper to resolve a ref spec to a friendly name
-    fn resolve_ref_name(repo: &git2::Repository, spec: &str) -> String {
+    fn resolve_ref_name(repo: &Git2Repository, spec: &str) -> String {
         // Try as local branch first
         if let Ok(branch) = repo.find_branch(spec, git2::BranchType::Local) {
             if let Ok(Some(name)) = branch.name() {
@@ -2505,7 +2511,7 @@ impl Git2Service {
             let commit = repo.find_commit(oid)?;
 
             // Check if this commit touches any of the specified paths
-            if self.commit_touches_paths(&commit, &options.paths, options.follow_renames)? {
+            if self.commit_touches_paths(&repo, &commit, &options.paths, options.follow_renames)? {
                 if skipped < skip {
                     skipped += 1;
                     continue;
@@ -2533,11 +2539,11 @@ impl Git2Service {
     /// Check if a commit modified any of the specified paths
     fn commit_touches_paths(
         &self,
+        repo: &Git2Repository,
         commit: &git2::Commit,
         paths: &[String],
         follow_renames: bool,
     ) -> Result<bool> {
-        let repo = self.repo()?;
         let tree = commit.tree()?;
 
         let parent_tree = if commit.parent_count() > 0 {

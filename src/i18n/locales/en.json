@@ -1592,7 +1592,10 @@
       "prune": "Prune deleted remote branches",
       "fetching": "Fetching...",
       "fetchButton": "Fetch",
-      "complete": "Fetch complete"
+      "complete": "Fetch complete",
+      "cancelConfirm": "A fetch operation is currently in progress. Do you want to cancel it?",
+      "cancelOperation": "Cancel Fetch",
+      "continueOperation": "Continue"
     },
     "pull": {
       "title": "Pull from Remote",

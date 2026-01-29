@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 
 import { toast, useOperationProgress } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { remoteApi } from '../../services/api';
+import { remoteApi, shellApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote } from '../../types';
 import {
@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogBody,
   DialogFooter,
-  DialogClose,
   Button,
   FormField,
   Select,
@@ -37,6 +36,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
   const [prune, setPrune] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
   const fetchOperation = useOperationProgress('Fetch');
@@ -45,6 +45,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
     if (isOpen) {
       loadRemotes();
       setError(null);
+      setShowCancelConfirm(false);
     }
   }, [isOpen]);
 
@@ -84,10 +85,27 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
     }
   };
 
-  const handleClose = () => {
+  const cancelOperation = useCallback(async () => {
+    if (fetchOperation) {
+      try {
+        await shellApi.cancelOperation(fetchOperation.id);
+      } catch (err) {
+        console.warn('Failed to cancel fetch operation:', err);
+      }
+    }
+    setShowCancelConfirm(false);
     setError(null);
     onClose();
-  };
+  }, [fetchOperation, onClose]);
+
+  const handleClose = useCallback(() => {
+    if (isLoading && fetchOperation) {
+      setShowCancelConfirm(true);
+      return;
+    }
+    setError(null);
+    onClose();
+  }, [isLoading, fetchOperation, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -95,61 +113,80 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
         <DialogTitle icon={RefreshCw}>{t('remotes.fetch.title')}</DialogTitle>
 
         <DialogBody>
-          <CheckboxField
-            id="fetch-all"
-            label={t('remotes.fetch.fetchAll')}
-            checked={fetchAll}
-            onCheckedChange={setFetchAll}
-            disabled={isLoading}
-          />
+          {showCancelConfirm ? (
+            <Alert variant="warning">{t('remotes.fetch.cancelConfirm')}</Alert>
+          ) : (
+            <>
+              <CheckboxField
+                id="fetch-all"
+                label={t('remotes.fetch.fetchAll')}
+                checked={fetchAll}
+                onCheckedChange={setFetchAll}
+                disabled={isLoading}
+              />
 
-          {!fetchAll && (
-            <FormField label={t('remotes.fetch.remoteLabel')} htmlFor="remote-select">
-              <Select
-                id="remote-select"
-                value={selectedRemote}
-                onValueChange={setSelectedRemote}
-                disabled={remotes.length === 0 || isLoading}
-              >
-                {remotes.map((remote) => (
-                  <SelectItem key={remote.name} value={remote.name}>
-                    {remote.name} ({remote.url})
-                  </SelectItem>
-                ))}
-              </Select>
-            </FormField>
-          )}
+              {!fetchAll && (
+                <FormField label={t('remotes.fetch.remoteLabel')} htmlFor="remote-select">
+                  <Select
+                    id="remote-select"
+                    value={selectedRemote}
+                    onValueChange={setSelectedRemote}
+                    disabled={remotes.length === 0 || isLoading}
+                  >
+                    {remotes.map((remote) => (
+                      <SelectItem key={remote.name} value={remote.name}>
+                        {remote.name} ({remote.url})
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
 
-          <CheckboxField
-            id="prune"
-            label={t('remotes.fetch.prune')}
-            checked={prune}
-            onCheckedChange={setPrune}
-            disabled={isLoading}
-          />
+              <CheckboxField
+                id="prune"
+                label={t('remotes.fetch.prune')}
+                checked={prune}
+                onCheckedChange={setPrune}
+                disabled={isLoading}
+              />
 
-          {fetchOperation?.progress && (
-            <OperationProgressBar progress={fetchOperation.progress} className="mt-3" />
-          )}
+              {fetchOperation?.progress && (
+                <OperationProgressBar progress={fetchOperation.progress} className="mt-3" />
+              )}
 
-          {error && (
-            <Alert variant="error" inline className="mt-3">
-              {error}
-            </Alert>
+              {error && (
+                <Alert variant="error" inline className="mt-3">
+                  {error}
+                </Alert>
+              )}
+            </>
           )}
         </DialogBody>
 
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button
-            variant="primary"
-            onClick={handleFetch}
-            disabled={isLoading || (!fetchAll && !selectedRemote)}
-          >
-            {isLoading ? t('common.fetching') : t('remotes.fetch.fetchButton')}
-          </Button>
+          {showCancelConfirm ? (
+            <>
+              <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
+                {t('remotes.fetch.continueOperation')}
+              </Button>
+              <Button variant="destructive" onClick={cancelOperation}>
+                {t('remotes.fetch.cancelOperation')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={handleClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleFetch}
+                disabled={isLoading || (!fetchAll && !selectedRemote)}
+              >
+                {isLoading ? t('common.fetching') : t('remotes.fetch.fetchButton')}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

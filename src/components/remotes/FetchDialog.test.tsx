@@ -6,12 +6,16 @@ import { FetchDialog } from './FetchDialog';
 const mockFetch = vi.fn();
 const mockFetchAll = vi.fn();
 const mockList = vi.fn();
+const mockCancelOperation = vi.fn();
 
 vi.mock('../../services/api', () => ({
   remoteApi: {
     fetch: (...args: unknown[]) => mockFetch(...args),
     fetchAll: () => mockFetchAll(),
     list: () => mockList(),
+  },
+  shellApi: {
+    cancelOperation: (id: string) => mockCancelOperation(id),
   },
 }));
 
@@ -33,12 +37,13 @@ vi.mock('../../store/repositoryStore', () => ({
 }));
 
 // Mock hooks
+let mockOperationProgress: { id: string; progress: object } | null = null;
 vi.mock('@/hooks', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
   },
-  useOperationProgress: () => null,
+  useOperationProgress: () => mockOperationProgress,
 }));
 
 // Mock actions
@@ -61,7 +66,13 @@ vi.mock('react-i18next', () => ({
 // Mock UI components
 vi.mock('@/components/ui', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
+  Dialog: ({ children, open, onOpenChange }: any) =>
+    open ? (
+      <div data-testid="dialog">
+        <button data-testid="dialog-overlay" onClick={() => onOpenChange(false)} />
+        {children}
+      </div>
+    ) : null,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,8 +81,6 @@ vi.mock('@/components/ui', () => ({
   DialogBody: ({ children }: any) => <div data-testid="dialog-body">{children}</div>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DialogFooter: ({ children }: any) => <div data-testid="dialog-footer">{children}</div>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  DialogClose: ({ children }: any) => children,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>
@@ -120,7 +129,7 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  OperationProgressBar: ({ progress }: any) => <div data-testid="progress-bar">{progress}%</div>,
+  OperationProgressBar: () => <div data-testid="progress-bar" />,
 }));
 
 describe('FetchDialog', () => {
@@ -128,6 +137,7 @@ describe('FetchDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockOperationProgress = null;
     mockList.mockResolvedValue([
       { name: 'origin', url: 'https://github.com/test/repo.git' },
       { name: 'upstream', url: 'https://github.com/upstream/repo.git' },
@@ -255,6 +265,116 @@ describe('FetchDialog', () => {
           prune: true,
         })
       );
+    });
+  });
+
+  it('should close directly when no operation is in progress', () => {
+    render(<FetchDialog isOpen={true} onClose={mockOnClose} />);
+
+    fireEvent.click(screen.getByText('common.cancel'));
+
+    expect(mockOnClose).toHaveBeenCalled();
+    expect(screen.queryByText('remotes.fetch.cancelConfirm')).not.toBeInTheDocument();
+  });
+
+  it('should show cancel confirmation when closing during ongoing operation', async () => {
+    mockOperationProgress = { id: 'op-1', progress: { stage: 'Receiving' } };
+    // Make fetchAll hang so isLoading stays true
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+
+    render(<FetchDialog isOpen={true} onClose={mockOnClose} />);
+
+    // Start fetch
+    fireEvent.click(screen.getByText('remotes.fetch.fetchButton'));
+
+    // Try to close via cancel button
+    await waitFor(() => {
+      expect(screen.getByText('common.cancel')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('common.cancel'));
+
+    // Should show confirmation, not close
+    expect(mockOnClose).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('remotes.fetch.cancelConfirm')).toBeInTheDocument();
+    });
+  });
+
+  it('should cancel operation when confirmed', async () => {
+    mockOperationProgress = { id: 'op-fetch-1', progress: { stage: 'Receiving' } };
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+    mockCancelOperation.mockResolvedValue(true);
+
+    render(<FetchDialog isOpen={true} onClose={mockOnClose} />);
+
+    // Start fetch
+    fireEvent.click(screen.getByText('remotes.fetch.fetchButton'));
+
+    // Try to close
+    await waitFor(() => {
+      expect(screen.getByText('common.cancel')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('common.cancel'));
+
+    // Confirm cancel
+    await waitFor(() => {
+      expect(screen.getByText('remotes.fetch.cancelOperation')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('remotes.fetch.cancelOperation'));
+
+    await waitFor(() => {
+      expect(mockCancelOperation).toHaveBeenCalledWith('op-fetch-1');
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  it('should return to dialog when continue is clicked', async () => {
+    mockOperationProgress = { id: 'op-1', progress: { stage: 'Receiving' } };
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+
+    render(<FetchDialog isOpen={true} onClose={mockOnClose} />);
+
+    // Start fetch
+    fireEvent.click(screen.getByText('remotes.fetch.fetchButton'));
+
+    // Try to close
+    await waitFor(() => {
+      expect(screen.getByText('common.cancel')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('common.cancel'));
+
+    // Click continue
+    await waitFor(() => {
+      expect(screen.getByText('remotes.fetch.continueOperation')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('remotes.fetch.continueOperation'));
+
+    // Should not close, should be back to normal view
+    expect(mockOnClose).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('remotes.fetch.cancelConfirm')).not.toBeInTheDocument();
+    });
+  });
+
+  it('should show cancel confirmation when clicking overlay during operation', async () => {
+    mockOperationProgress = { id: 'op-1', progress: { stage: 'Receiving' } };
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+
+    render(<FetchDialog isOpen={true} onClose={mockOnClose} />);
+
+    // Start fetch
+    fireEvent.click(screen.getByText('remotes.fetch.fetchButton'));
+
+    // Click overlay (triggers onOpenChange(false))
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog-overlay')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('dialog-overlay'));
+
+    // Should show confirmation, not close
+    expect(mockOnClose).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('remotes.fetch.cancelConfirm')).toBeInTheDocument();
     });
   });
 });

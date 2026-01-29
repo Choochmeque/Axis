@@ -79,18 +79,19 @@ impl Commit {
             None
         };
 
-        let signer = match (data_string.as_deref(), is_gpg, is_ssh) {
-            (Some(data), true, _) => SigningService::verify_gpg_signature(sig_str, data),
-            (Some(data), _, true) => {
-                SigningService::verify_ssh_signature(sig_str, data, repo.path())
-            }
-            _ => None,
-        };
+        // TODO: verify signature on demand and cache result (not here)
+        // let signer = match (data_string.as_deref(), is_gpg, is_ssh) {
+        //     (Some(data), true, _) => SigningService::verify_gpg_signature(sig_str, data),
+        //     (Some(data), _, true) => {
+        //         SigningService::verify_ssh_signature(sig_str, data, repo.path())
+        //     }
+        //     _ => None,
+        // };
 
         Some(CommitSignature {
             format,
-            verified: signer.is_some(),
-            signer,
+            verified: false, // signer.is_some(),
+            signer: None,
         })
     }
 }

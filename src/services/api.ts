@@ -474,6 +474,8 @@ export const shellApi = {
   openTerminal: (path: string) => commands.openTerminal(path),
 
   openUrl: (url: string) => commands.openUrl(url),
+
+  cancelOperation: (operationId: string) => commands.cancelOperation(operationId),
 };
 
 export const archiveApi = {

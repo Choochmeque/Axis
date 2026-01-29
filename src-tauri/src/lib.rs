@@ -33,6 +33,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::show_in_folder,
             crate::commands::open_url,
             crate::commands::open_terminal,
+            crate::commands::cancel_operation,
             // Staging commands
             crate::commands::stage_file,
             crate::commands::stage_files,

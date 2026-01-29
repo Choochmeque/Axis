@@ -286,14 +286,14 @@ impl Git2Service {
                 }
                 BranchFilterType::Specific(branch_name) => {
                     // Try local branch first, then remote
-                    let ref_name = format!("refs/heads/{}", branch_name);
+                    let ref_name = format!("refs/heads/{branch_name}");
                     if let Ok(reference) = repo.find_reference(&ref_name) {
                         if let Some(oid) = reference.target() {
                             revwalk.push(oid)?;
                         }
                     } else {
                         // Try as remote branch
-                        let ref_name = format!("refs/remotes/{}", branch_name);
+                        let ref_name = format!("refs/remotes/{branch_name}");
                         if let Ok(reference) = repo.find_reference(&ref_name) {
                             if let Some(oid) = reference.target() {
                                 revwalk.push(oid)?;

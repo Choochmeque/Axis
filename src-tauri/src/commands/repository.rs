@@ -269,3 +269,9 @@ pub async fn open_terminal(path: String) -> Result<()> {
 
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn cancel_operation(state: State<'_, AppState>, operation_id: String) -> bool {
+    state.progress_registry().cancel(&operation_id)
+}

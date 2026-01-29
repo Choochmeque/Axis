@@ -14,44 +14,22 @@ const THROTTLE_INTERVAL: Duration = Duration::from_millis(100);
 pub struct ProgressEmitter {
     app_handle: AppHandle,
     last_emit: Mutex<HashMap<String, Instant>>,
-    cancelled: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    cancelled: HashMap<String, Arc<AtomicBool>>,
 }
 
 impl ProgressEmitter {
-    pub fn new(app_handle: AppHandle) -> Self {
+    pub fn new(app_handle: AppHandle, operation_id: &str, cancel_token: Arc<AtomicBool>) -> Self {
         Self {
             app_handle,
             last_emit: Mutex::new(HashMap::new()),
-            cancelled: Mutex::new(HashMap::new()),
+            cancelled: HashMap::from([(operation_id.to_string(), cancel_token)]),
         }
-    }
-
-    /// Register an operation and get a cancellation token
-    pub fn register_operation(&self, operation_id: &str) -> Arc<AtomicBool> {
-        let cancel_token = Arc::new(AtomicBool::new(false));
-        if let Ok(mut cancelled) = self.cancelled.lock() {
-            cancelled.insert(operation_id.to_string(), Arc::clone(&cancel_token));
-        }
-        cancel_token
-    }
-
-    /// Cancel an operation by ID
-    pub fn cancel_operation(&self, operation_id: &str) -> bool {
-        if let Ok(cancelled) = self.cancelled.lock() {
-            if let Some(token) = cancelled.get(operation_id) {
-                token.store(true, Ordering::SeqCst);
-                return true;
-            }
-        }
-        false
     }
 
     /// Check if an operation is cancelled
     pub fn is_cancelled(&self, operation_id: &str) -> bool {
-        if let Ok(cancelled) = self.cancelled.lock() {
-            if let Some(token) = cancelled.get(operation_id) {
-                return token.load(Ordering::SeqCst);
-            }
+        if let Some(token) = self.cancelled.get(operation_id) {
+            return token.load(Ordering::SeqCst);
         }
         false
     }
@@ -166,16 +144,6 @@ impl ProgressEmitter {
         );
         self.emit_progress(event, true);
     }
-
-    /// Clean up tracking for an operation
-    pub fn cleanup_operation(&self, operation_id: &str) {
-        if let Ok(mut last_emit) = self.last_emit.lock() {
-            last_emit.remove(operation_id);
-        }
-        if let Ok(mut cancelled) = self.cancelled.lock() {
-            cancelled.remove(operation_id);
-        }
-    }
 }
 
 /// Context for tracking progress of a single operation with automatic cleanup
@@ -190,7 +158,11 @@ impl ProgressContext {
     pub fn new(app_handle: AppHandle, registry: Arc<ProgressRegistry>) -> Self {
         let operation_id = uuid::Uuid::new_v4().to_string();
         let cancel_token = registry.register(&operation_id);
-        let emitter = Arc::new(ProgressEmitter::new(app_handle));
+        let emitter = Arc::new(ProgressEmitter::new(
+            app_handle,
+            &operation_id,
+            cancel_token.clone(),
+        ));
 
         Self {
             operation_id,
@@ -202,12 +174,12 @@ impl ProgressContext {
 
     /// Get a clone of the cancel token for use in callbacks
     pub fn cancel_token(&self) -> Arc<AtomicBool> {
-        Arc::clone(&self.cancel_token)
+        self.cancel_token.clone()
     }
 
     /// Get a clone of the emitter for use in callbacks
     pub fn emitter(&self) -> Arc<ProgressEmitter> {
-        Arc::clone(&self.emitter)
+        self.emitter.clone()
     }
 
     /// Check if the operation was cancelled
@@ -309,7 +281,6 @@ impl ProgressContext {
 
 impl Drop for ProgressContext {
     fn drop(&mut self) {
-        self.emitter.cleanup_operation(&self.operation_id);
         self.registry.cleanup(&self.operation_id);
     }
 }

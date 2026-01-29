@@ -54,6 +54,9 @@ async openUrl(url: string) : Promise<null> {
 async openTerminal(path: string) : Promise<null> {
     return await TAURI_INVOKE("open_terminal", { path });
 },
+async cancelOperation(operationId: string) : Promise<boolean> {
+    return await TAURI_INVOKE("cancel_operation", { operationId });
+},
 async stageFile(path: string) : Promise<null> {
     return await TAURI_INVOKE("stage_file", { path });
 },

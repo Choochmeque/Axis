@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::SigningFormat;
+use crate::services::SigningService;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -63,8 +64,6 @@ impl Commit {
     }
 
     fn extract_signature(repo: &git2::Repository, oid: git2::Oid) -> Option<CommitSignature> {
-        use crate::services::SigningService;
-
         let (sig_buf, signed_data) = repo.extract_signature(&oid, Some("gpgsig")).ok()?;
         let sig_str = std::str::from_utf8(&sig_buf).ok()?;
         let data_string = String::from_utf8(signed_data.to_vec()).ok();

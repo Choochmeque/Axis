@@ -113,6 +113,8 @@ fn build_certificate_check_callback(
 
         if !known_hosts_path.exists() {
             log::debug!("No known_hosts file found at {known_hosts_path:?}, accepting host key for {hostname}");
+            // TODO: In the future, prompt the user before accepting unknown hosts
+            append_to_known_hosts(hostname, &known_hosts_expanded);
             return Ok(CertificateCheckStatus::CertificateOk);
         }
 
@@ -165,7 +167,79 @@ fn build_certificate_check_callback(
         } else {
             // Host not in known_hosts — accept like StrictHostKeyChecking=accept-new
             log::info!("Host {hostname} not found in known_hosts, accepting new host key");
+            // TODO: In the future, prompt the user before accepting unknown hosts
+            append_to_known_hosts(hostname, &known_hosts_expanded);
             Ok(CertificateCheckStatus::CertificateOk)
+        }
+    }
+}
+
+/// Run `ssh-keyscan` to fetch host keys and append them to known_hosts.
+/// Creates ~/.ssh directory and known_hosts file if they don't exist.
+// TODO: Replace with user prompt dialog before auto-accepting
+fn append_to_known_hosts(hostname: &str, known_hosts_path: &str) {
+    let ssh_dir = shellexpand::tilde("~/.ssh").to_string();
+    let ssh_dir_path = std::path::Path::new(&ssh_dir);
+
+    // Ensure ~/.ssh directory exists
+    if !ssh_dir_path.exists() {
+        if let Err(e) = std::fs::create_dir_all(ssh_dir_path) {
+            log::warn!("Failed to create ~/.ssh directory: {e}");
+            return;
+        }
+        // Set directory permissions to 700 on Unix
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Err(e) =
+                std::fs::set_permissions(ssh_dir_path, std::fs::Permissions::from_mode(0o700))
+            {
+                log::warn!("Failed to set ~/.ssh permissions: {e}");
+            }
+        }
+    }
+
+    // Run ssh-keyscan to get the host keys
+    let output = match std::process::Command::new("ssh-keyscan")
+        .arg(hostname)
+        .output()
+    {
+        Ok(output) => output,
+        Err(e) => {
+            log::warn!("Failed to run ssh-keyscan for {hostname}: {e}");
+            return;
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        log::warn!("ssh-keyscan failed for {hostname}: {stderr}");
+        return;
+    }
+
+    let keys = String::from_utf8_lossy(&output.stdout);
+    if keys.trim().is_empty() {
+        log::warn!("ssh-keyscan returned no keys for {hostname}");
+        return;
+    }
+
+    // Append to known_hosts
+    let known_hosts = std::path::Path::new(known_hosts_path);
+    match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(known_hosts)
+    {
+        Ok(mut file) => {
+            use std::io::Write;
+            if let Err(e) = write!(file, "{keys}") {
+                log::warn!("Failed to write to known_hosts: {e}");
+            } else {
+                log::info!("Added {hostname} to known_hosts via ssh-keyscan");
+            }
+        }
+        Err(e) => {
+            log::warn!("Failed to open known_hosts for writing: {e}");
         }
     }
 }

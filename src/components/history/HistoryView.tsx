@@ -335,22 +335,12 @@ export function HistoryView() {
         <HistoryFilters />
         <div className="flex flex-col flex-1 min-h-0">
           {/* Header row */}
-          <div className="flex items-center h-9 px-2 border-b border-(--border-color) bg-(--bg-tertiary)">
-            <div className="w-25 px-2">
-              <Skeleton className="h-3 w-12" />
-            </div>
-            <div className="flex-1 px-2">
-              <Skeleton className="h-3 w-20" />
-            </div>
-            <div className="w-25 px-2">
-              <Skeleton className="h-3 w-10" />
-            </div>
-            <div className="w-37.5 px-2">
-              <Skeleton className="h-3 w-14" />
-            </div>
-            <div className="w-20 px-2">
-              <Skeleton className="h-3 w-12" />
-            </div>
+          <div className="flex items-center py-1.5 px-3 border-b border-(--border-color) bg-(--bg-header) text-sm font-medium uppercase text-(--text-secondary) shrink-0">
+            <div className="w-25 shrink-0">{t('history.table.graph')}</div>
+            <div className="flex-1 min-w-0">{t('history.table.description')}</div>
+            <div className="w-25 shrink-0">{t('history.table.date')}</div>
+            <div className="w-37.5 shrink-0">{t('history.table.author')}</div>
+            <div className="w-20 shrink-0">{t('history.table.commit')}</div>
           </div>
           {/* Skeleton rows */}
           <div className="flex-1 overflow-hidden">

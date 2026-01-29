@@ -19,6 +19,83 @@ pub struct Git2Service {
     path: PathBuf,
 }
 
+/// Build a credentials callback with optional SSH key override.
+/// When `ssh_key_path` is Some, the configured key is tried first before agent/default fallback.
+fn build_credentials_callback(
+    ssh_key_path: Option<String>,
+) -> impl FnMut(&str, Option<&str>, git2::CredentialType) -> std::result::Result<Cred, git2::Error>
+{
+    move |_url, username_from_url, allowed_types| {
+        if allowed_types.contains(git2::CredentialType::SSH_KEY) {
+            if let Some(username) = username_from_url {
+                // 1. Try configured SSH key first
+                if let Some(ref key_path) = ssh_key_path {
+                    let expanded = shellexpand::tilde(key_path).to_string();
+                    let private_key = std::path::Path::new(&expanded);
+                    if private_key.exists() {
+                        let pub_path = format!("{expanded}.pub");
+                        let pub_key = std::path::Path::new(&pub_path);
+                        let pub_key_opt = if pub_key.exists() {
+                            Some(pub_key as &std::path::Path)
+                        } else {
+                            None
+                        };
+                        if let Ok(cred) = Cred::ssh_key(username, pub_key_opt, private_key, None) {
+                            return Ok(cred);
+                        }
+                    }
+                }
+
+                // 2. Try SSH agent
+                if let Ok(cred) = Cred::ssh_key_from_agent(username) {
+                    return Ok(cred);
+                }
+
+                // 3. Try default SSH key locations
+                let home = std::env::var("HOME").unwrap_or_default();
+                let ssh_dir = std::path::Path::new(&home).join(".ssh");
+
+                for key_name in &["id_ed25519", "id_rsa"] {
+                    let private_key = ssh_dir.join(key_name);
+                    if private_key.exists() {
+                        let public_key = ssh_dir.join(format!("{key_name}.pub"));
+                        let public_key_opt = if public_key.exists() {
+                            Some(public_key.as_path())
+                        } else {
+                            None
+                        };
+
+                        if let Ok(cred) =
+                            Cred::ssh_key(username, public_key_opt, &private_key, None)
+                        {
+                            return Ok(cred);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Try credential helper for HTTPS
+        if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
+            if let Ok(cred) = Cred::credential_helper(
+                &git2::Config::open_default()
+                    .unwrap_or_else(|_| git2::Config::new().expect("should create empty config")),
+                _url,
+                username_from_url,
+            ) {
+                return Ok(cred);
+            }
+        }
+
+        // Default credentials (for public repos)
+        if allowed_types.contains(git2::CredentialType::DEFAULT) {
+            return Cred::default();
+        }
+
+        Err(git2::Error::from_str("no valid credentials found"))
+    }
+}
+
 impl Git2Service {
     /// Open an existing repository
     pub fn open(path: &Path) -> Result<Self> {
@@ -43,67 +120,18 @@ impl Git2Service {
 
     /// Clone a repository from a URL with optional progress callback
     /// The callback receives progress stats and returns true to continue or false to cancel
-    pub fn clone<F>(url: &str, path: &Path, progress_cb: Option<F>) -> Result<Self>
+    pub fn clone<F>(
+        url: &str,
+        path: &Path,
+        progress_cb: Option<F>,
+        ssh_key_path: Option<String>,
+    ) -> Result<Self>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
     {
         let mut callbacks = RemoteCallbacks::new();
 
-        // Set up authentication callback
-        callbacks.credentials(|_url, username_from_url, allowed_types| {
-            // Try SSH agent first
-            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
-                if let Some(username) = username_from_url {
-                    // Try SSH agent
-                    if let Ok(cred) = Cred::ssh_key_from_agent(username) {
-                        return Ok(cred);
-                    }
-
-                    // Try default SSH key locations
-                    let home = std::env::var("HOME").unwrap_or_default();
-                    let ssh_dir = std::path::Path::new(&home).join(".ssh");
-
-                    // Try ed25519 key first, then RSA
-                    for key_name in &["id_ed25519", "id_rsa"] {
-                        let private_key = ssh_dir.join(key_name);
-                        if private_key.exists() {
-                            let public_key = ssh_dir.join(format!("{}.pub", key_name));
-                            let public_key_opt = if public_key.exists() {
-                                Some(public_key.as_path())
-                            } else {
-                                None
-                            };
-
-                            if let Ok(cred) =
-                                Cred::ssh_key(username, public_key_opt, &private_key, None)
-                            {
-                                return Ok(cred);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Try credential helper for HTTPS
-            if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
-                if let Ok(cred) = Cred::credential_helper(
-                    &git2::Config::open_default().unwrap_or_else(|_| {
-                        git2::Config::new().expect("should create empty config")
-                    }),
-                    _url,
-                    username_from_url,
-                ) {
-                    return Ok(cred);
-                }
-            }
-
-            // Default credentials (for public repos)
-            if allowed_types.contains(git2::CredentialType::DEFAULT) {
-                return Cred::default();
-            }
-
-            Err(git2::Error::from_str("No valid credentials found"))
-        });
+        callbacks.credentials(build_credentials_callback(ssh_key_path));
 
         // Set up progress callback if provided
         if let Some(mut cb) = progress_cb {
@@ -932,6 +960,7 @@ impl Git2Service {
         remote_name: &str,
         branch_name: &str,
         force: bool,
+        ssh_key_path: Option<String>,
     ) -> Result<()> {
         // Use push with a delete refspec (empty source = delete)
         let refspec = format!(":refs/heads/{branch_name}");
@@ -945,6 +974,7 @@ impl Git2Service {
             &[refspec],
             &options,
             None::<fn(usize, usize, usize) -> bool>,
+            ssh_key_path,
         )?;
         Ok(())
     }
@@ -1358,6 +1388,7 @@ impl Git2Service {
         options: &crate::models::FetchOptions,
         refspecs: Option<&[&str]>,
         progress_cb: Option<F>,
+        ssh_key_path: Option<String>,
     ) -> Result<crate::models::FetchResult>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
@@ -1370,21 +1401,7 @@ impl Git2Service {
 
         // Set up callbacks for progress and credentials
         let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.credentials(|_url, username_from_url, allowed_types| {
-            // Try SSH agent first
-            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
-                if let Some(username) = username_from_url {
-                    return git2::Cred::ssh_key_from_agent(username);
-                }
-            }
-
-            // Try default credentials
-            if allowed_types.contains(git2::CredentialType::DEFAULT) {
-                return git2::Cred::default();
-            }
-
-            Err(git2::Error::from_str("no valid credentials found"))
-        });
+        callbacks.credentials(build_credentials_callback(ssh_key_path));
 
         // Set up progress callback if provided
         if let Some(mut cb) = progress_cb {
@@ -1436,6 +1453,7 @@ impl Git2Service {
         refspecs: &[String],
         options: &crate::models::PushOptions,
         progress_cb: Option<F>,
+        ssh_key_path: Option<String>,
     ) -> Result<crate::models::PushResult>
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
@@ -1448,21 +1466,7 @@ impl Git2Service {
 
         // Set up callbacks for credentials
         let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.credentials(|_url, username_from_url, allowed_types| {
-            // Try SSH agent first
-            if allowed_types.contains(git2::CredentialType::SSH_KEY) {
-                if let Some(username) = username_from_url {
-                    return git2::Cred::ssh_key_from_agent(username);
-                }
-            }
-
-            // Try default credentials
-            if allowed_types.contains(git2::CredentialType::DEFAULT) {
-                return git2::Cred::default();
-            }
-
-            Err(git2::Error::from_str("no valid credentials found"))
-        });
+        callbacks.credentials(build_credentials_callback(ssh_key_path));
 
         // Set up progress callback if provided
         if let Some(mut cb) = progress_cb {
@@ -1505,6 +1509,7 @@ impl Git2Service {
         remote_name: &str,
         options: &crate::models::PushOptions,
         progress_cb: Option<F>,
+        ssh_key_path: Option<String>,
     ) -> Result<crate::models::PushResult>
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
@@ -1516,7 +1521,7 @@ impl Git2Service {
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
-        let result = self.push(remote_name, &[refspec], options, progress_cb)?;
+        let result = self.push(remote_name, &[refspec], options, progress_cb, ssh_key_path)?;
 
         // Set upstream tracking if requested
         if options.set_upstream {
@@ -1535,6 +1540,7 @@ impl Git2Service {
         branch_name: &str,
         options: &crate::models::PullOptions,
         progress_cb: Option<F>,
+        ssh_key_path: Option<String>,
     ) -> Result<()>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
@@ -1545,6 +1551,7 @@ impl Git2Service {
             &crate::models::FetchOptions::default(),
             None,
             progress_cb,
+            ssh_key_path,
         )?;
 
         let repo = self.repo()?;

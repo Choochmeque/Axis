@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Branch } from '@/types';
 import { BranchType } from '@/types';
 
@@ -27,6 +27,11 @@ vi.mock('@/services/api', () => ({
   },
 }));
 
+const mockWriteText = vi.fn();
+vi.mock('@tauri-apps/plugin-clipboard-manager', () => ({
+  writeText: (...args: unknown[]) => mockWriteText(...args),
+}));
+
 vi.mock('@/services/nativeNotification', () => ({
   notify: (title: string, body: string) => mockNotify(title, body),
 }));
@@ -35,31 +40,15 @@ vi.mock('@/services/nativeNotification', () => ({
 import { copyToClipboard, showInFinder, notifyNewCommits } from './actions';
 
 describe('copyToClipboard', () => {
-  const originalClipboard = navigator.clipboard;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
-      writable: true,
-      configurable: true,
-    });
-  });
-
-  afterEach(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      value: originalClipboard,
-      writable: true,
-      configurable: true,
-    });
+    mockWriteText.mockResolvedValue(undefined);
   });
 
   it('should copy text to clipboard successfully', async () => {
     const result = await copyToClipboard('test text');
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('test text');
+    expect(mockWriteText).toHaveBeenCalledWith('test text');
     expect(mockToastSuccess).toHaveBeenCalledWith('notifications.success.copiedToClipboard');
     expect(result).toBe(true);
   });
@@ -71,7 +60,7 @@ describe('copyToClipboard', () => {
   });
 
   it('should handle clipboard error', async () => {
-    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('Copy failed'));
+    mockWriteText.mockRejectedValue(new Error('Copy failed'));
 
     const result = await copyToClipboard('test');
 

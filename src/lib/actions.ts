@@ -1,3 +1,5 @@
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+
 import { toast } from '@/hooks/useToast';
 import i18n from '@/i18n';
 import { shellApi } from '@/services/api';
@@ -11,7 +13,7 @@ export async function copyToClipboard(
   successMessage = i18n.t('notifications.success.copiedToClipboard')
 ): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
+    await writeText(text);
     toast.success(successMessage);
     return true;
   } catch (err) {

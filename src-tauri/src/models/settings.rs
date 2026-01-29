@@ -40,6 +40,9 @@ pub struct AppSettings {
     pub ai_model: Option<String>,
     pub ai_ollama_url: Option<String>,
 
+    // SSH
+    pub default_ssh_key: Option<String>,
+
     // Notifications
     pub notification_history_capacity: u32,
 
@@ -93,6 +96,9 @@ impl Default for AppSettings {
             ai_provider: AiProvider::default(),
             ai_model: None,
             ai_ollama_url: None,
+
+            // SSH
+            default_ssh_key: None,
 
             // Notifications
             notification_history_capacity: 50,
@@ -212,6 +218,9 @@ mod tests {
         assert!(settings.ai_model.is_none());
         assert!(settings.ai_ollama_url.is_none());
 
+        // SSH
+        assert!(settings.default_ssh_key.is_none());
+
         // Notifications
         assert_eq!(settings.notification_history_capacity, 50);
 
@@ -244,6 +253,7 @@ mod tests {
             ai_provider: AiProvider::OpenAi,
             ai_model: Some("gpt-4".to_string()),
             ai_ollama_url: None,
+            default_ssh_key: Some("~/.ssh/id_work".to_string()),
             notification_history_capacity: 100,
             gravatar_enabled: true,
         };

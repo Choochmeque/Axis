@@ -138,6 +138,13 @@ export type {
   SigningTestResult,
   SignatureVerification,
 
+  // SSH Key Management types
+  SshKeyInfo,
+  GenerateSshKeyOptions,
+  ImportSshKeyOptions,
+  ExportSshKeyOptions,
+  RemoteSshKeyMapping,
+
   // Archive types
   ArchiveOptions,
   ArchiveResult,
@@ -253,6 +260,8 @@ import type {
   GitOperationType as GitOperationTypeType,
   // Hook types
   GitHookType as GitHookTypeType,
+  // SSH Key types
+  SshKeyAlgorithm as SshKeyAlgorithmType,
 } from '../bindings/api';
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';
@@ -629,6 +638,15 @@ export const GitOperationType: { [K in GitOperationTypeType]: K } = {
 };
 
 export type GitOperationType = GitOperationTypeType;
+
+// SSH Key enum helpers
+export const SshKeyAlgorithm: { [K in SshKeyAlgorithmType]: K } = {
+  Ed25519: 'Ed25519',
+  Rsa: 'Rsa',
+  Ecdsa: 'Ecdsa',
+};
+
+export type SshKeyAlgorithm = SshKeyAlgorithmType;
 
 // Hook enum helpers
 export const GitHookType: { [K in GitHookTypeType]: K } = {

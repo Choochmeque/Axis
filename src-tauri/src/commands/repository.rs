@@ -79,11 +79,16 @@ pub async fn clone_repository(
 
     ctx.emit(GitOperationType::Clone, ProgressStage::Connecting, None);
 
+    // Resolve global default SSH key for clone
+    let settings = state.get_settings()?;
+    let ssh_key = settings.default_ssh_key.clone();
+
     // Clone the repository first (this creates a new Git2Service internally)
     let result = Git2Service::clone(
         &url,
         &path,
         Some(ctx.make_receive_callback(GitOperationType::Clone)),
+        ssh_key,
     );
 
     ctx.handle_result(&result, GitOperationType::Clone);

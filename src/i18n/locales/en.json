@@ -68,7 +68,8 @@
       "diff": "Diff & Editor",
       "ai": "AI",
       "integrations": "Integrations",
-      "actions": "Actions"
+      "actions": "Actions",
+      "sshKeys": "SSH Keys"
     },
     "appearance": {
       "title": "Appearance",
@@ -109,17 +110,6 @@
       "historyCapacity": {
         "label": "Notification History Capacity",
         "hint": "Maximum number of notifications to keep in history (10-200)"
-      }
-    },
-    "git": {
-      "title": "Git",
-      "autoFetch": {
-        "label": "Auto-fetch Interval (minutes)",
-        "hint": "Automatically fetch from remote (0 = disabled)"
-      },
-      "confirmBeforeDiscard": {
-        "label": "Confirm before discarding changes",
-        "description": "Show confirmation dialog before discarding changes"
       }
     },
     "signing": {
@@ -255,6 +245,105 @@
     },
     "actions": {
       "title": "Global Actions"
+    },
+    "sshKeys": {
+      "title": "SSH Keys",
+      "description": "Manage SSH keys stored in ~/.ssh for authentication with remote repositories.",
+      "noKeys": "No SSH keys found",
+      "noKeysHint": "Generate or import an SSH key to get started.",
+      "keyType": "Type",
+      "comment": "Comment",
+      "fingerprint": "Fingerprint",
+      "created": "Created",
+      "noComment": "No comment",
+      "actions": {
+        "copyPublicKey": "Copy Public Key",
+        "export": "Export",
+        "delete": "Delete"
+      },
+      "generate": {
+        "title": "Generate SSH Key",
+        "algorithm": {
+          "label": "Algorithm",
+          "hint": "Ed25519 is recommended for most use cases"
+        },
+        "comment": {
+          "label": "Comment",
+          "hint": "Usually your email address",
+          "placeholder": "user@example.com"
+        },
+        "filename": {
+          "label": "Filename",
+          "hint": "Name of the key file in ~/.ssh",
+          "placeholder": "id_ed25519"
+        },
+        "passphrase": {
+          "label": "Passphrase (optional)",
+          "hint": "Leave empty for no passphrase",
+          "placeholder": "Enter passphrase..."
+        },
+        "bits": {
+          "label": "Key Size (bits)",
+          "hint": "Key size for RSA/ECDSA (ignored for Ed25519)"
+        },
+        "generating": "Generating...",
+        "generateButton": "Generate Key",
+        "filenameRequired": "Filename is required"
+      },
+      "import": {
+        "title": "Import SSH Key",
+        "selectFile": "Select SSH Key File",
+        "filename": {
+          "label": "Target Filename",
+          "hint": "Name for the imported key in ~/.ssh",
+          "placeholder": "imported_key"
+        },
+        "importing": "Importing...",
+        "importButton": "Import Key",
+        "filenameRequired": "Target filename is required"
+      },
+      "export": {
+        "title": "Export SSH Key",
+        "selectDirectory": "Select Export Directory",
+        "publicOnly": "Export public key only",
+        "publicOnlyDesc": "Only export the public key file (recommended for sharing)",
+        "exporting": "Exporting...",
+        "exportButton": "Export Key"
+      },
+      "delete": {
+        "title": "Delete SSH Key",
+        "confirmMessage": "Are you sure you want to delete \"{{name}}\"? This will remove both the private and public key files.",
+        "warning": "This action cannot be undone."
+      },
+      "notifications": {
+        "generated": "SSH key generated",
+        "imported": "SSH key imported",
+        "exported": "SSH key exported",
+        "deleted": "SSH key deleted",
+        "publicKeyCopied": "Public key copied to clipboard",
+        "generateFailed": "Failed to generate SSH key",
+        "importFailed": "Failed to import SSH key",
+        "exportFailed": "Failed to export SSH key",
+        "deleteFailed": "Failed to delete SSH key",
+        "copyFailed": "Failed to copy public key"
+      }
+    },
+    "git": {
+      "title": "Git",
+      "autoFetch": {
+        "label": "Auto-fetch Interval (minutes)",
+        "hint": "Automatically fetch from remote (0 = disabled)"
+      },
+      "confirmBeforeDiscard": {
+        "label": "Confirm before discarding changes",
+        "description": "Show confirmation dialog before discarding changes"
+      },
+      "defaultSshKey": {
+        "label": "Default SSH Key",
+        "hint": "SSH key to use for remote operations when no per-remote key is configured",
+        "auto": "Auto (system default)",
+        "autoDescription": "Let Git and SSH agent decide which key to use"
+      }
     }
   },
   "welcome": {
@@ -1710,7 +1799,16 @@
       "updated": "Remote \"{{name}}\" updated",
       "updateFailed": "Failed to update remote",
       "removed": "Remote \"{{name}}\" removed",
-      "removeFailed": "Failed to remove remote"
+      "removeFailed": "Failed to remove remote",
+      "sshKey": {
+        "label": "SSH Key",
+        "useGlobalDefault": "Use global default",
+        "auto": "Auto (system default)",
+        "saved": "SSH key saved for remote",
+        "removed": "SSH key removed for remote",
+        "saveFailed": "Failed to save SSH key for remote",
+        "removeFailed": "Failed to remove SSH key for remote"
+      }
     },
     "hooks": {
       "title": "Git Hooks",

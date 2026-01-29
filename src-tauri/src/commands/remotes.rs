@@ -150,6 +150,7 @@ pub async fn fetch_remote(
 ) -> Result<FetchResult> {
     let app_handle = state.get_app_handle()?;
     let git_service = state.get_git_service()?;
+    let ssh_key = state.resolve_ssh_key_for_remote(&remote_name)?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
@@ -161,6 +162,7 @@ pub async fn fetch_remote(
                 &options,
                 None,
                 Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+                ssh_key,
             );
 
             ctx.handle_result(&result, GitOperationType::Fetch);
@@ -181,6 +183,7 @@ pub async fn push_remote(
 ) -> Result<PushResult> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
+    let ssh_key = state.resolve_ssh_key_for_remote(&remote_name)?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -227,6 +230,7 @@ pub async fn push_remote(
                 &refspecs,
                 &options,
                 Some(ctx.make_send_callback(GitOperationType::Push)),
+                ssh_key,
             );
 
             ctx.handle_result(&result, GitOperationType::Push);
@@ -246,6 +250,7 @@ pub async fn push_current_branch(
 ) -> Result<PushResult> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
+    let ssh_key = state.resolve_ssh_key_for_remote(&remote_name)?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -299,6 +304,7 @@ pub async fn push_current_branch(
                 &remote_name,
                 &options,
                 Some(ctx.make_send_callback(GitOperationType::Push)),
+                ssh_key,
             );
 
             ctx.handle_result(&result, GitOperationType::Push);
@@ -317,6 +323,7 @@ pub async fn pull_remote(
     options: PullOptions,
 ) -> Result<()> {
     let app_handle = state.get_app_handle()?;
+    let ssh_key = state.resolve_ssh_key_for_remote(&remote_name)?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Pull, ProgressStage::Connecting, None);
@@ -329,6 +336,7 @@ pub async fn pull_remote(
                 &branch_name,
                 &options,
                 Some(ctx.make_receive_callback(GitOperationType::Pull)),
+                ssh_key,
             );
 
             ctx.handle_result(&result, GitOperationType::Pull);
@@ -350,7 +358,9 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let options = FetchOptions::default();
 
     let mut results = Vec::new();
+    let mut errors = Vec::new();
     for remote in remotes {
+        let ssh_key = state.resolve_ssh_key_for_remote(&remote.name)?;
         let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
         ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
@@ -359,6 +369,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             &options,
             None,
             Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+            ssh_key,
         ) {
             Ok(result) => {
                 ctx.emit_complete(GitOperationType::Fetch);
@@ -367,8 +378,16 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             Err(e) => {
                 ctx.emit_failed(GitOperationType::Fetch, &e.to_string());
                 log::error!("Failed to fetch from {}: {e}", remote.name);
+                errors.push(format!("{}: {e}", remote.name));
             }
         }
+    }
+
+    if results.is_empty() && !errors.is_empty() {
+        return Err(AxisError::Other(format!(
+            "Failed to fetch:\n{}",
+            errors.join("\n")
+        )));
     }
 
     Ok(results)

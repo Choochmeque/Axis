@@ -60,6 +60,9 @@ import type {
   GitHookType,
   CheckoutOptions,
   BranchFilter,
+  GenerateSshKeyOptions,
+  ImportSshKeyOptions,
+  ExportSshKeyOptions,
 } from '@/types';
 
 export const repositoryApi = {
@@ -622,6 +625,32 @@ export const avatarApi = {
   get: (email: string, sha?: string) => commands.getAvatar(email, sha ?? null),
 
   clearCache: () => commands.clearAvatarCache(),
+};
+
+export const sshKeysApi = {
+  list: () => commands.listSshKeysInfo(),
+
+  generate: (options: GenerateSshKeyOptions) => commands.generateSshKey(options),
+
+  getPublicKey: (keyPath: string) => commands.getSshPublicKey(keyPath),
+
+  getFingerprint: (keyPath: string) => commands.getSshKeyFingerprint(keyPath),
+
+  delete: (keyPath: string) => commands.deleteSshKey(keyPath),
+
+  import: (options: ImportSshKeyOptions) => commands.importSshKey(options),
+
+  export: (options: ExportSshKeyOptions) => commands.exportSshKey(options),
+};
+
+export const remoteSshKeysApi = {
+  get: (remoteName: string) => commands.getRemoteSshKey(remoteName),
+
+  set: (remoteName: string, sshKeyPath: string) => commands.setRemoteSshKey(remoteName, sshKeyPath),
+
+  delete: (remoteName: string) => commands.deleteRemoteSshKey(remoteName),
+
+  list: () => commands.listRemoteSshKeys(),
 };
 
 export const customActionsApi = {

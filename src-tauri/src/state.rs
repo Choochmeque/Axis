@@ -2,7 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
-    ProgressRegistry, SignatureVerificationCache,
+    ProgressRegistry, SignatureVerificationCache, SshKeyService,
 };
 use crate::storage::Database;
 use std::collections::HashMap;
@@ -379,6 +379,29 @@ impl AppState {
     /// Check if background fetch is running
     pub fn is_background_fetch_running(&self) -> bool {
         self.background_fetch.is_running()
+    }
+
+    /// Get a reference to the database
+    pub fn database(&self) -> &Database {
+        &self.database
+    }
+
+    /// Get the current repository path as a string
+    pub fn get_repo_path_string(&self) -> Result<String> {
+        let path = self.ensure_repository_open()?;
+        Ok(path.to_string_lossy().to_string())
+    }
+
+    /// Resolve the SSH key for a remote operation
+    pub fn resolve_ssh_key_for_remote(&self, remote_name: &str) -> Result<Option<String>> {
+        let settings = self.get_settings()?;
+        let repo_path = self.get_repo_path_string()?;
+        Ok(SshKeyService::resolve_ssh_key(
+            &self.database,
+            &repo_path,
+            remote_name,
+            &settings.default_ssh_key,
+        ))
     }
 }
 

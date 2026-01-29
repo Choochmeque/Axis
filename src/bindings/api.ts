@@ -1039,6 +1039,39 @@ async integrationMarkAllNotificationsRead(detected: DetectedProvider) : Promise<
 async integrationGetUnreadCount(detected: DetectedProvider) : Promise<number> {
     return await TAURI_INVOKE("integration_get_unread_count", { detected });
 },
+async listSshKeysInfo() : Promise<SshKeyInfo[]> {
+    return await TAURI_INVOKE("list_ssh_keys_info");
+},
+async generateSshKey(options: GenerateSshKeyOptions) : Promise<SshKeyInfo> {
+    return await TAURI_INVOKE("generate_ssh_key", { options });
+},
+async getSshPublicKey(keyPath: string) : Promise<string> {
+    return await TAURI_INVOKE("get_ssh_public_key", { keyPath });
+},
+async getSshKeyFingerprint(keyPath: string) : Promise<string> {
+    return await TAURI_INVOKE("get_ssh_key_fingerprint", { keyPath });
+},
+async deleteSshKey(keyPath: string) : Promise<null> {
+    return await TAURI_INVOKE("delete_ssh_key", { keyPath });
+},
+async importSshKey(options: ImportSshKeyOptions) : Promise<SshKeyInfo> {
+    return await TAURI_INVOKE("import_ssh_key", { options });
+},
+async exportSshKey(options: ExportSshKeyOptions) : Promise<null> {
+    return await TAURI_INVOKE("export_ssh_key", { options });
+},
+async getRemoteSshKey(remoteName: string) : Promise<string | null> {
+    return await TAURI_INVOKE("get_remote_ssh_key", { remoteName });
+},
+async setRemoteSshKey(remoteName: string, sshKeyPath: string) : Promise<null> {
+    return await TAURI_INVOKE("set_remote_ssh_key", { remoteName, sshKeyPath });
+},
+async deleteRemoteSshKey(remoteName: string) : Promise<null> {
+    return await TAURI_INVOKE("delete_remote_ssh_key", { remoteName });
+},
+async listRemoteSshKeys() : Promise<RemoteSshKeyMapping[]> {
+    return await TAURI_INVOKE("list_remote_ssh_keys");
+},
 /**
  * Get avatar for a commit author
  * If sha provided and integration connected, fetches avatar from provider API
@@ -1300,7 +1333,7 @@ force: boolean;
  */
 detach: boolean }
 export type AiProvider = "OpenAi" | "Anthropic" | "Ollama"
-export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean }
+export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean }
 /**
  * Options for applying mailbox patches (git am)
  */
@@ -1355,7 +1388,7 @@ prefix: string | null }
 export type ArchiveResult = { message: string; outputPath: string | null; sizeBytes: number | null }
 export type AvatarResponse = { source: AvatarSource; path: string | null }
 export type AvatarSource = "Integration" | "Gravatar" | "Default"
-export type AxisError = { type: "RepositoryNotFound"; data: string } | { type: "RepositoryAlreadyOpen"; data: string } | { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "RemoteNotFound"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AuthenticationFailed"; data: string } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "ProviderNotDetected" } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" }
+export type AxisError = { type: "RepositoryNotFound"; data: string } | { type: "RepositoryAlreadyOpen"; data: string } | { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "RemoteNotFound"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AuthenticationFailed"; data: string } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "ProviderNotDetected" } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" } | { type: "SshKeyError"; data: string } | { type: "SshKeyAlreadyExists"; data: string } | { type: "SshKeygenNotFound" } | { type: "InvalidKeyFilename"; data: string }
 /**
  * Mark type for bisect marking operations
  */
@@ -1883,6 +1916,22 @@ export type EdgeType =
  */
 "MergePreview"
 /**
+ * Options for exporting an SSH key
+ */
+export type ExportSshKeyOptions = { 
+/**
+ * Path to the key to export
+ */
+keyPath: string; 
+/**
+ * Target directory to export to
+ */
+targetDir: string; 
+/**
+ * Export only the public key
+ */
+publicOnly: boolean }
+/**
  * Options for fetch operations
  */
 export type FetchOptions = { 
@@ -1964,6 +2013,30 @@ range: string;
  */
 outputDir: string }
 export type GenerateCommitMessageResponse = { message: string; modelUsed: string }
+/**
+ * Options for generating a new SSH key
+ */
+export type GenerateSshKeyOptions = { 
+/**
+ * Algorithm to use
+ */
+algorithm: SshKeyAlgorithm; 
+/**
+ * Comment for the key (usually email)
+ */
+comment: string | null; 
+/**
+ * Passphrase to protect the key (empty string = no passphrase)
+ */
+passphrase: string | null; 
+/**
+ * Filename for the key (without path, stored in ~/.ssh/)
+ */
+filename: string; 
+/**
+ * Bit size (only for RSA/ECDSA, ignored for Ed25519)
+ */
+bits: number | null }
 /**
  * Git environment information for settings display
  */
@@ -2311,6 +2384,18 @@ export type IgnoreSuggestionType =
  * File name anywhere (e.g., "bar.txt")
  */
 "FileName"
+/**
+ * Options for importing an SSH key
+ */
+export type ImportSshKeyOptions = { 
+/**
+ * Source path of the key file to import
+ */
+sourcePath: string; 
+/**
+ * Target filename in ~/.ssh/ (without path)
+ */
+targetFilename: string }
 /**
  * The index (staging area) changed
  */
@@ -3057,6 +3142,18 @@ export type Remote = { name: string; url: string | null; pushUrl: string | null;
  */
 export type RemoteFetchedEvent = { path: string; newCommits: number }
 /**
+ * Mapping of a remote to an SSH key path
+ */
+export type RemoteSshKeyMapping = { 
+/**
+ * Remote name
+ */
+remoteName: string; 
+/**
+ * Path to the SSH key
+ */
+sshKeyPath: string }
+/**
  * Options for removing a worktree
  */
 export type RemoveWorktreeOptions = { 
@@ -3257,6 +3354,42 @@ keyType: string;
  * Comment from the public key (usually email)
  */
 comment: string | null }
+/**
+ * SSH key algorithm
+ */
+export type SshKeyAlgorithm = "Ed25519" | "Rsa" | "Ecdsa"
+/**
+ * Detailed information about an SSH key
+ */
+export type SshKeyInfo = { 
+/**
+ * Path to the private key file
+ */
+path: string; 
+/**
+ * Path to the public key file
+ */
+publicKeyPath: string; 
+/**
+ * Key algorithm type
+ */
+keyType: SshKeyAlgorithm; 
+/**
+ * Comment from the public key (usually email)
+ */
+comment: string | null; 
+/**
+ * Key fingerprint (SHA256)
+ */
+fingerprint: string | null; 
+/**
+ * Key bit size (relevant for RSA/ECDSA)
+ */
+bits: number | null; 
+/**
+ * Creation timestamp (ISO 8601)
+ */
+createdAt: string | null }
 /**
  * Options for applying/popping a stash
  */

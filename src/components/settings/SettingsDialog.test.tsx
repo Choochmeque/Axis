@@ -16,6 +16,25 @@ vi.mock('@/services/api', () => ({
     getConfig: vi.fn().mockResolvedValue({}),
     testSigning: vi.fn().mockResolvedValue({ success: true }),
   },
+  sshKeysApi: {
+    list: vi.fn().mockResolvedValue([]),
+  },
+  lfsApi: {
+    getGitEnvironment: vi.fn().mockResolvedValue({
+      gitVersion: '2.40.0',
+      gitPath: '/usr/bin/git',
+      libgit2Version: '1.7.0',
+      lfsInstalled: false,
+      lfsVersion: null,
+    }),
+  },
+  avatarApi: {
+    clearCache: vi.fn().mockResolvedValue(undefined),
+  },
+  aiApi: {
+    hasApiKey: vi.fn().mockResolvedValue(false),
+    listOllamaModels: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 // Mock the settings store
@@ -53,6 +72,7 @@ const mockSettings = {
   aiProvider: AiProvider.OpenAi,
   aiModel: null,
   aiOllamaUrl: null,
+  defaultSshKey: null,
   gravatarEnabled: false,
 };
 

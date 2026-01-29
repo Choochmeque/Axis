@@ -28,6 +28,11 @@ vi.mock('@/lib/actions', () => ({
   copyToClipboard: vi.fn(),
 }));
 
+const mockUseSignatureVerification = vi.fn();
+vi.mock('@/hooks', () => ({
+  useSignatureVerification: (...args: unknown[]) => mockUseSignatureVerification(...args),
+}));
+
 describe('CommitInfo', () => {
   const mockCommit: Commit = {
     oid: 'abc123def456789',
@@ -49,6 +54,13 @@ describe('CommitInfo', () => {
     isMerge: false,
     signature: null,
   };
+
+  beforeEach(() => {
+    mockUseSignatureVerification.mockReturnValue({
+      verification: null,
+      isVerifying: false,
+    });
+  });
 
   it('should render commit SHA', () => {
     render(<CommitInfo commit={mockCommit} />);
@@ -138,51 +150,89 @@ describe('CommitInfo', () => {
     expect(onScrollToCommit).toHaveBeenCalledWith('parent123456');
   });
 
-  it('should render signature info when present', () => {
+  it('should call useSignatureVerification with format when signature present', () => {
     const signedCommit: Commit = {
       ...mockCommit,
       signature: {
         format: SigningFormat.Gpg,
-        verified: true,
-        signer: 'Test Signer',
+      },
+    };
+
+    render(<CommitInfo commit={signedCommit} />);
+
+    expect(mockUseSignatureVerification).toHaveBeenCalledWith(signedCommit.oid, SigningFormat.Gpg);
+  });
+
+  it('should call useSignatureVerification with null when no signature', () => {
+    render(<CommitInfo commit={mockCommit} />);
+
+    expect(mockUseSignatureVerification).toHaveBeenCalledWith(mockCommit.oid, null);
+  });
+
+  it('should show skeleton while verifying signature', () => {
+    mockUseSignatureVerification.mockReturnValue({
+      verification: null,
+      isVerifying: true,
+    });
+
+    const signedCommit: Commit = {
+      ...mockCommit,
+      signature: {
+        format: SigningFormat.Gpg,
       },
     };
 
     render(<CommitInfo commit={signedCommit} />);
 
     expect(screen.getByText('history.commitInfo.signed')).toBeInTheDocument();
-    expect(screen.getByText(/GPG/)).toBeInTheDocument();
-    expect(screen.getByText('Test Signer')).toBeInTheDocument();
+    // Skeleton is rendered (no verification badge yet)
+    expect(screen.queryByText(/history.commitInfo.verified/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/history.commitInfo.unverified/)).not.toBeInTheDocument();
   });
 
   it('should show verified status for verified signature', () => {
+    mockUseSignatureVerification.mockReturnValue({
+      verification: { verified: true, signer: 'Test Signer' },
+      isVerifying: false,
+    });
+
     const signedCommit: Commit = {
       ...mockCommit,
       signature: {
         format: SigningFormat.Gpg,
-        verified: true,
-        signer: null,
       },
     };
 
     render(<CommitInfo commit={signedCommit} />);
 
+    expect(screen.getByText(/GPG/)).toBeInTheDocument();
     expect(screen.getByText(/history.commitInfo.verified/)).toBeInTheDocument();
+    expect(screen.getByText('Test Signer')).toBeInTheDocument();
   });
 
   it('should show unverified status for unverified signature', () => {
+    mockUseSignatureVerification.mockReturnValue({
+      verification: { verified: false, signer: null },
+      isVerifying: false,
+    });
+
     const signedCommit: Commit = {
       ...mockCommit,
       signature: {
         format: SigningFormat.Ssh,
-        verified: false,
-        signer: null,
       },
     };
 
     render(<CommitInfo commit={signedCommit} />);
 
+    expect(screen.getByText(/SSH/)).toBeInTheDocument();
     expect(screen.getByText(/history.commitInfo.unverified/)).toBeInTheDocument();
+  });
+
+  it('should not render signature section when no signature', () => {
+    render(<CommitInfo commit={mockCommit} />);
+
+    expect(screen.queryByText('history.commitInfo.signed')).not.toBeInTheDocument();
   });
 
   it('should render refs when present in GraphCommit', () => {

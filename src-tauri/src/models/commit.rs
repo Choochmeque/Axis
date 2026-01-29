@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::SigningFormat;
-use crate::services::SigningService;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -27,10 +26,12 @@ pub struct Commit {
 pub struct CommitSignature {
     /// The type of signature (GPG or SSH), None if unknown
     pub format: Option<SigningFormat>,
-    /// Whether the signature was verified
-    pub verified: bool,
-    /// The signer info (if verified)
-    pub signer: Option<String>,
+    /// Raw signature string (PGP/SSH armored text), not sent to frontend
+    #[serde(skip)]
+    pub signature: String,
+    /// The signed data content, not sent to frontend
+    #[serde(skip)]
+    pub signed_data: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -66,7 +67,7 @@ impl Commit {
     fn extract_signature(repo: &git2::Repository, oid: git2::Oid) -> Option<CommitSignature> {
         let (sig_buf, signed_data) = repo.extract_signature(&oid, Some("gpgsig")).ok()?;
         let sig_str = std::str::from_utf8(&sig_buf).ok()?;
-        let data_string = String::from_utf8(signed_data.to_vec()).ok();
+        let data_string = String::from_utf8(signed_data.to_vec()).ok()?;
 
         let is_gpg = sig_str.contains("-----BEGIN PGP SIGNATURE-----");
         let is_ssh = sig_str.contains("-----BEGIN SSH SIGNATURE-----");
@@ -79,19 +80,10 @@ impl Commit {
             None
         };
 
-        // TODO: verify signature on demand and cache result (not here)
-        // let signer = match (data_string.as_deref(), is_gpg, is_ssh) {
-        //     (Some(data), true, _) => SigningService::verify_gpg_signature(sig_str, data),
-        //     (Some(data), _, true) => {
-        //         SigningService::verify_ssh_signature(sig_str, data, repo.path())
-        //     }
-        //     _ => None,
-        // };
-
         Some(CommitSignature {
             format,
-            verified: false, // signer.is_some(),
-            signer: None,
+            signature: sig_str.to_string(),
+            signed_data: data_string,
         })
     }
 }
@@ -348,51 +340,67 @@ mod tests {
     fn test_commit_signature_gpg() {
         let sig = CommitSignature {
             format: Some(SigningFormat::Gpg),
-            verified: true,
-            signer: Some("user@example.com".to_string()),
+            signature: "-----BEGIN PGP SIGNATURE-----\ntest\n-----END PGP SIGNATURE-----"
+                .to_string(),
+            signed_data: "tree abc\nparent def\n".to_string(),
         };
 
         assert_eq!(sig.format, Some(SigningFormat::Gpg));
-        assert!(sig.verified);
-        assert_eq!(sig.signer, Some("user@example.com".to_string()));
+        assert!(sig.signature.contains("PGP SIGNATURE"));
+        assert!(!sig.signed_data.is_empty());
     }
 
     #[test]
     fn test_commit_signature_ssh() {
         let sig = CommitSignature {
             format: Some(SigningFormat::Ssh),
-            verified: false,
-            signer: None,
+            signature: "-----BEGIN SSH SIGNATURE-----\ntest\n-----END SSH SIGNATURE-----"
+                .to_string(),
+            signed_data: "tree abc\n".to_string(),
         };
 
         assert_eq!(sig.format, Some(SigningFormat::Ssh));
-        assert!(!sig.verified);
-        assert!(sig.signer.is_none());
+        assert!(sig.signature.contains("SSH SIGNATURE"));
     }
 
     #[test]
     fn test_commit_signature_unknown_format() {
         let sig = CommitSignature {
             format: None,
-            verified: false,
-            signer: None,
+            signature: "unknown-format".to_string(),
+            signed_data: "data".to_string(),
         };
 
         assert!(sig.format.is_none());
     }
 
     #[test]
-    fn test_commit_signature_serialization() {
+    fn test_commit_signature_serialization_skips_raw_data() {
         let sig = CommitSignature {
             format: Some(SigningFormat::Gpg),
-            verified: true,
-            signer: Some("test@example.com".to_string()),
+            signature: "raw-sig-data".to_string(),
+            signed_data: "raw-signed-data".to_string(),
         };
 
         let json = serde_json::to_string(&sig).expect("should serialize");
-        assert!(json.contains("verified"));
-        assert!(json.contains("true"));
-        assert!(json.contains("signer"));
+        assert!(json.contains("format"));
+        // Raw data should be skipped in serialization
+        assert!(!json.contains("raw-sig-data"));
+        assert!(!json.contains("raw-signed-data"));
+    }
+
+    #[test]
+    fn test_commit_signature_clone() {
+        let sig = CommitSignature {
+            format: Some(SigningFormat::Gpg),
+            signature: "sig-data".to_string(),
+            signed_data: "signed-data".to_string(),
+        };
+
+        let cloned = sig.clone();
+        assert_eq!(cloned.format, sig.format);
+        assert_eq!(cloned.signature, sig.signature);
+        assert_eq!(cloned.signed_data, sig.signed_data);
     }
 
     // ==================== Commit Tests ====================

@@ -1151,6 +1151,7 @@
       "signed": "Signed",
       "verified": "Verified",
       "unverified": "Unverified",
+      "verifying": "Verifying...",
       "refs": "Refs",
       "message": "Message"
     },

@@ -808,6 +808,9 @@ async testSigning(config: SigningConfig) : Promise<SigningTestResult> {
 async isSigningAvailable(config: SigningConfig) : Promise<boolean> {
     return await TAURI_INVOKE("is_signing_available", { config });
 },
+async verifyCommitSignature(oid: string, format: SigningFormat) : Promise<SignatureVerification> {
+    return await TAURI_INVOKE("verify_commit_signature", { oid, format });
+},
 async createArchive(options: ArchiveOptions) : Promise<ArchiveResult> {
     return await TAURI_INVOKE("create_archive", { options });
 },
@@ -1597,15 +1600,7 @@ export type CommitSignature = {
 /**
  * The type of signature (GPG or SSH), None if unknown
  */
-format: SigningFormat | null; 
-/**
- * Whether the signature was verified
- */
-verified: boolean; 
-/**
- * The signer info (if verified)
- */
-signer: string | null }
+format: SigningFormat | null }
 /**
  * Commit status with all checks
  */
@@ -3193,6 +3188,18 @@ limit: number | null }
  */
 export type SearchResult = { commits: Commit[]; totalMatches: number }
 export type Signature = { name: string; email: string; timestamp: string }
+/**
+ * Result of on-demand signature verification
+ */
+export type SignatureVerification = { 
+/**
+ * Whether the signature was successfully verified
+ */
+verified: boolean; 
+/**
+ * The signer info (e.g., name/email for GPG, principal for SSH)
+ */
+signer: string | null }
 /**
  * Configuration for commit signing (how to sign, not whether to sign)
  */

@@ -201,6 +201,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::list_ssh_keys,
             crate::commands::test_signing,
             crate::commands::is_signing_available,
+            crate::commands::verify_commit_signature,
             // Archive & Patch commands
             crate::commands::create_archive,
             crate::commands::format_patch,

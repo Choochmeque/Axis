@@ -7,4 +7,5 @@ export { useOperation } from './useOperation';
 export { useOperationProgress } from './useOperationProgress';
 export { useReferenceMention } from './useReferenceMention';
 export { useScrollToCommit } from './useScrollToCommit';
+export { useSignatureVerification } from './useSignatureVerification';
 export { useToast, toast } from './useToast';

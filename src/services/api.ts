@@ -44,6 +44,7 @@ import type {
   GrepOptions,
   AppSettings,
   SigningConfig,
+  SigningFormat,
   ArchiveOptions,
   FormatPatchOptions,
   CreatePatchOptions,
@@ -466,6 +467,9 @@ export const signingApi = {
   testSigning: (config: SigningConfig) => commands.testSigning(config),
 
   isAvailable: (config: SigningConfig) => commands.isSigningAvailable(config),
+
+  verifyCommitSignature: (oid: string, format: SigningFormat) =>
+    commands.verifyCommitSignature(oid, format),
 };
 
 export const shellApi = {

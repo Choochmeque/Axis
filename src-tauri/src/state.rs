@@ -2,7 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, RecentRepository, Repository};
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
-    ProgressRegistry,
+    ProgressRegistry, SignatureVerificationCache,
 };
 use crate::storage::Database;
 use std::collections::HashMap;
@@ -38,8 +38,7 @@ impl GitServiceHandle {
         let inner = self.inner2.clone();
         tauri::async_runtime::spawn_blocking(move || f(inner.git2()))
             .await
-            .map_err(|e| AxisError::Other(format!("git task panicked: {e}")))
-            .expect("AA")
+            .unwrap_or_else(|e| panic!("git task panicked: {e}"))
     }
 
     /// Access git CLI service directly (convenience method)
@@ -168,6 +167,7 @@ pub struct AppState {
     active_repository_path: RwLock<Option<PathBuf>>,
     repository_cache: Arc<RepositoryCache>,
     commit_cache: Arc<CommitCache>,
+    signature_verification_cache: Arc<SignatureVerificationCache>,
     database: Arc<Database>,
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
@@ -185,6 +185,7 @@ impl AppState {
             active_repository_path: RwLock::new(None),
             repository_cache: Arc::new(RepositoryCache::new()),
             commit_cache: Arc::new(CommitCache::new()),
+            signature_verification_cache: Arc::new(SignatureVerificationCache::new()),
             database,
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
@@ -225,6 +226,11 @@ impl AppState {
     /// Get the commit cache for graph data
     pub fn commit_cache(&self) -> Arc<CommitCache> {
         Arc::clone(&self.commit_cache)
+    }
+
+    /// Get the signature verification cache
+    pub fn signature_verification_cache(&self) -> Arc<SignatureVerificationCache> {
+        Arc::clone(&self.signature_verification_cache)
     }
 
     /// Get the avatar service
@@ -289,6 +295,7 @@ impl AppState {
     pub fn close_repository(&self, path: &Path) {
         self.repository_cache.remove(path);
         self.commit_cache.invalidate_repo(path);
+        self.signature_verification_cache.invalidate_repo(path);
 
         // Clear active if this was it
         let mut active = self
@@ -510,6 +517,16 @@ mod tests {
 
         // Just verify we can get the commit cache
         let _cache = state.commit_cache();
+    }
+
+    #[test]
+    fn test_app_state_signature_verification_cache() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let cache = state.signature_verification_cache();
+        // Should be empty initially
+        assert!(cache.get("anything").is_none());
     }
 
     #[test]

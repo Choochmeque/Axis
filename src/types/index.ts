@@ -136,6 +136,7 @@ export type {
   GpgKey,
   SshKey,
   SigningTestResult,
+  SignatureVerification,
 
   // Archive types
   ArchiveOptions,

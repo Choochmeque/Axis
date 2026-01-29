@@ -4,8 +4,8 @@ use crate::models::{
     CreateTagOptions, EdgeType, FileLogResult, FileStatus, GraphCommit, GraphEdge, GraphResult,
     IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType, LaneState, LogOptions,
     RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository,
-    RepositoryState, RepositoryStatus, SearchResult, SigningConfig, SortOrder, Tag, TagResult,
-    TagSignature,
+    RepositoryState, RepositoryStatus, SearchResult, SignatureVerification, SigningConfig,
+    SigningFormat, SortOrder, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -2947,6 +2947,39 @@ impl Git2Service {
         }
 
         suggestions
+    }
+
+    /// Verify a commit's cryptographic signature
+    pub fn verify_commit_signature(
+        &self,
+        oid_str: &str,
+        format: &SigningFormat,
+    ) -> Result<SignatureVerification> {
+        let oid = git2::Oid::from_str(oid_str)
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
+        let repo = self.repo()?;
+
+        let (sig_buf, signed_data) = repo
+            .extract_signature(&oid, Some("gpgsig"))
+            .map_err(|_| AxisError::Other(format!("No signature found for commit {oid_str}")))?;
+
+        let sig_str = std::str::from_utf8(&sig_buf)
+            .map_err(|e| AxisError::Other(format!("Invalid signature encoding: {e}")))?;
+
+        let data_str = std::str::from_utf8(&signed_data)
+            .map_err(|e| AxisError::Other(format!("Invalid signed data encoding: {e}")))?;
+
+        let signer = match format {
+            SigningFormat::Gpg => SigningService::verify_gpg_signature(sig_str, data_str),
+            SigningFormat::Ssh => {
+                SigningService::verify_ssh_signature(sig_str, data_str, repo.path())
+            }
+        };
+
+        Ok(SignatureVerification {
+            verified: signer.is_some(),
+            signer,
+        })
     }
 }
 

@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
-import { Avatar } from '@/components/ui';
+import { Avatar, Skeleton } from '@/components/ui';
 import { formatFullDateTime } from '@/lib/dateUtils';
 import { RefType, SigningFormat } from '@/types';
 import type { Commit, GraphCommit } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSignatureVerification } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/actions';
 
@@ -16,6 +17,10 @@ interface CommitInfoProps {
 export function CommitInfo({ commit, onScrollToCommit }: CommitInfoProps) {
   const { t } = useTranslation();
   const { selectCommit } = useRepositoryStore();
+  const { verification, isVerifying } = useSignatureVerification(
+    commit.oid,
+    commit.signature?.format ?? null
+  );
 
   const handleParentClick = (parentOid: string) => {
     selectCommit(parentOid);
@@ -110,21 +115,27 @@ export function CommitInfo({ commit, onScrollToCommit }: CommitInfoProps) {
               {t('history.commitInfo.signed')}
             </span>
             <div className={valueClass}>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium',
-                  commit.signature.verified
-                    ? 'bg-success/20 text-success'
-                    : 'bg-warning/20 text-warning'
-                )}
-              >
-                {commit.signature.format?.toUpperCase() ?? 'UNKNOWN'}
-                {commit.signature.verified
-                  ? ` (${t('history.commitInfo.verified')})`
-                  : ` (${t('history.commitInfo.unverified')})`}
-              </span>
-              {commit.signature.signer && (
-                <span className="text-sm text-(--text-secondary)">{commit.signature.signer}</span>
+              {isVerifying ? (
+                <Skeleton className="h-5 w-24" />
+              ) : (
+                <>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 py-0.5 px-2 rounded text-xs font-medium',
+                      verification?.verified
+                        ? 'bg-success/20 text-success'
+                        : 'bg-warning/20 text-warning'
+                    )}
+                  >
+                    {commit.signature.format?.toUpperCase() ?? 'UNKNOWN'}
+                    {verification?.verified
+                      ? ` (${t('history.commitInfo.verified')})`
+                      : ` (${t('history.commitInfo.unverified')})`}
+                  </span>
+                  {verification?.signer && (
+                    <span className="text-sm text-(--text-secondary)">{verification.signer}</span>
+                  )}
+                </>
               )}
             </div>
           </div>

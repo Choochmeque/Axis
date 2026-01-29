@@ -430,16 +430,6 @@ impl SigningService {
             }
         }
 
-        // Try to get key ID from ERRSIG if not verified
-        for line in status.lines() {
-            if line.contains("ERRSIG") {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 3 {
-                    return Some(format!("Key: {}", parts[2]));
-                }
-            }
-        }
-
         None
     }
 

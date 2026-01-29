@@ -10,6 +10,7 @@ mod git_service;
 mod hook_service;
 mod integrations;
 mod progress_emitter;
+mod signature_cache;
 mod signing_service;
 
 pub use avatar_service::*;
@@ -23,4 +24,5 @@ pub use git_service::*;
 pub use hook_service::*;
 pub use integrations::*;
 pub use progress_emitter::*;
+pub use signature_cache::*;
 pub use signing_service::*;

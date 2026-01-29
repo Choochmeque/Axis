@@ -128,7 +128,6 @@ vi.mock('@/components/ui', () => ({
       {children}
     </div>
   ),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   OperationProgressBar: () => <div data-testid="progress-bar" />,
 }));
 

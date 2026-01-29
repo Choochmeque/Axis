@@ -199,9 +199,9 @@ fn append_to_known_hosts(hostname: &str, known_hosts_path: &str) {
         }
     }
 
-    // Run ssh-keyscan to get the host keys
+    // Run ssh-keyscan with explicit key types to avoid KEX negotiation issues on older OpenSSH
     let output = match std::process::Command::new("ssh-keyscan")
-        .arg(hostname)
+        .args(["-t", "ed25519,rsa,ecdsa", hostname])
         .output()
     {
         Ok(output) => output,
@@ -211,12 +211,7 @@ fn append_to_known_hosts(hostname: &str, known_hosts_path: &str) {
         }
     };
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        log::warn!("ssh-keyscan failed for {hostname}: {stderr}");
-        return;
-    }
-
+    // Don't check exit status — stderr warnings don't mean no keys were returned
     let keys = String::from_utf8_lossy(&output.stdout);
     if keys.trim().is_empty() {
         log::warn!("ssh-keyscan returned no keys for {hostname}");

@@ -169,7 +169,6 @@ jobs:
           gh release create nightly \
             --prerelease \
             --title "Nightly" \
-            --target nightly \
             $NOTES_ARGS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

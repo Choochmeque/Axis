@@ -15,6 +15,7 @@ import { getErrorMessage } from '@/lib/errorUtils';
 import { settingsApi, signingApi, aiApi, lfsApi, avatarApi, sshKeysApi } from '@/services/api';
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useUpdateStore } from '@/store/updateStore';
 import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
 import { SigningFormat, Theme, AiProvider, ProviderType, SshKeyFormat } from '@/types';
 import type {
@@ -78,6 +79,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   aiOllamaUrl: null,
   defaultSshKey: null,
   gravatarEnabled: false,
+  autoUpdateEnabled: true,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -245,6 +247,26 @@ const LANGUAGES = [
 function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
   const { t } = useTranslation();
   const [isClearingCache, setIsClearingCache] = useState(false);
+  const [updateCheckResult, setUpdateCheckResult] = useState<string | null>(null);
+  const isChecking = useUpdateStore((s) => s.isChecking);
+  const checkForUpdate = useUpdateStore((s) => s.checkForUpdate);
+
+  const handleCheckForUpdate = async () => {
+    setUpdateCheckResult(null);
+    await checkForUpdate();
+    const state = useUpdateStore.getState();
+    if (state.error) {
+      toast.error(state.error);
+    } else if (state.updateAvailable) {
+      setUpdateCheckResult(
+        t('settings.appearance.autoUpdate.updateFound', {
+          version: state.updateAvailable.version,
+        })
+      );
+    } else {
+      setUpdateCheckResult(t('settings.appearance.autoUpdate.upToDate'));
+    }
+  };
 
   const handleClearAvatarCache = async () => {
     setIsClearingCache(true);
@@ -320,6 +342,27 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           checked={settings.showLineNumbers}
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
+      </div>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="auto-update-enabled"
+          label={t('settings.appearance.autoUpdate.label')}
+          description={t('settings.appearance.autoUpdate.description')}
+          checked={settings.autoUpdateEnabled}
+          onCheckedChange={(checked) => updateSetting('autoUpdateEnabled', checked === true)}
+        />
+      </div>
+
+      <div className={groupClass}>
+        <Button variant="secondary" onClick={handleCheckForUpdate} disabled={isChecking}>
+          {isChecking
+            ? t('settings.appearance.autoUpdate.checking')
+            : t('settings.appearance.autoUpdate.checkNow')}
+        </Button>
+        {updateCheckResult && (
+          <p className="mt-1.5 text-xs text-(--text-muted)">{updateCheckResult}</p>
+        )}
       </div>
 
       <h3 className={sectionTitleClass}>{t('settings.avatars.title')}</h3>

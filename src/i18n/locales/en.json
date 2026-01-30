@@ -92,6 +92,14 @@
       "showLineNumbers": {
         "label": "Show line numbers",
         "description": "Display line numbers in diff and file views"
+      },
+      "autoUpdate": {
+        "label": "Check for updates automatically",
+        "description": "Automatically check for new versions on startup",
+        "checkNow": "Check now",
+        "checking": "Checking...",
+        "upToDate": "You're on the latest version",
+        "updateFound": "Update v{{version}} is available"
       }
     },
     "avatars": {
@@ -2029,6 +2037,16 @@
     "settings": {
       "loadFailed": "Failed to load settings"
     }
+  },
+  "update": {
+    "available": "Update available: v{{version}}",
+    "downloading": "Downloading update... {{progress}}%",
+    "readyToInstall": "Update downloaded. Restart to apply.",
+    "install": "Install",
+    "restart": "Restart",
+    "dismiss": "Dismiss",
+    "checkFailed": "Failed to check for updates",
+    "downloadFailed": "Failed to download update"
   },
   "lib": {
     "actions": {

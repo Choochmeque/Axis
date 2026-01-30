@@ -290,6 +290,10 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_actions_for_context,
             crate::commands::get_all_actions,
             crate::commands::execute_custom_action,
+            // Update commands
+            crate::commands::check_for_update,
+            crate::commands::download_and_install_update,
+            crate::commands::restart_app,
         ])
         .events(collect_events![
             crate::events::MenuActionEvent,
@@ -302,7 +306,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::RemoteFetchedEvent,
             crate::events::OAuthCallbackEvent,
             crate::events::IntegrationStatusChangedEvent,
-            crate::events::GitOperationProgressEvent
+            crate::events::GitOperationProgressEvent,
+            crate::events::UpdateDownloadProgressEvent
         ])
 }
 
@@ -317,6 +322,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())

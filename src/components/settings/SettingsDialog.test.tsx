@@ -37,6 +37,15 @@ vi.mock('@/services/api', () => ({
   },
 }));
 
+// Mock toast
+const mockToastError = vi.fn();
+vi.mock('@/hooks', () => ({
+  toast: {
+    success: vi.fn(),
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
+}));
+
 // Mock the settings store
 const mockUpdateSettings = vi.fn();
 vi.mock('@/store/settingsStore', () => ({
@@ -46,6 +55,26 @@ vi.mock('@/store/settingsStore', () => ({
     };
     return selector ? selector(state) : state;
   }),
+}));
+
+// Mock the update store
+const mockCheckForUpdate = vi.fn();
+let mockUpdateStoreState = {
+  isChecking: false,
+  checkForUpdate: mockCheckForUpdate,
+  updateAvailable: null as { version: string; date: string | null; body: string | null } | null,
+  error: null as string | null,
+};
+
+vi.mock('@/store/updateStore', () => ({
+  useUpdateStore: Object.assign(
+    vi.fn((selector: (state: typeof mockUpdateStoreState) => unknown) =>
+      selector(mockUpdateStoreState)
+    ),
+    {
+      getState: () => mockUpdateStoreState,
+    }
+  ),
 }));
 
 const mockSettings = {
@@ -74,6 +103,7 @@ const mockSettings = {
   aiOllamaUrl: null,
   defaultSshKey: null,
   gravatarEnabled: false,
+  autoUpdateEnabled: true,
 };
 
 describe('SettingsDialog', () => {
@@ -82,6 +112,12 @@ describe('SettingsDialog', () => {
     vi.mocked(settingsApi.get).mockResolvedValue(mockSettings);
     vi.mocked(settingsApi.save).mockResolvedValue(null);
     mockUpdateSettings.mockResolvedValue(undefined);
+    mockUpdateStoreState = {
+      isChecking: false,
+      checkForUpdate: mockCheckForUpdate,
+      updateAvailable: null,
+      error: null,
+    };
   });
 
   it('should not render when not open', () => {
@@ -208,5 +244,105 @@ describe('SettingsDialog', () => {
     await waitFor(() => {
       expect(themeSelect).toHaveTextContent('Dark');
     });
+  });
+
+  it('should show check now button on appearance tab', async () => {
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check now' })).toBeInTheDocument();
+    });
+  });
+
+  it('should call checkForUpdate when check now is clicked', async () => {
+    mockCheckForUpdate.mockResolvedValue(undefined);
+
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check now' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }));
+
+    await waitFor(() => {
+      expect(mockCheckForUpdate).toHaveBeenCalled();
+    });
+  });
+
+  it('should show up to date message when no update available', async () => {
+    mockCheckForUpdate.mockImplementation(async () => {
+      mockUpdateStoreState.updateAvailable = null;
+      mockUpdateStoreState.error = null;
+    });
+
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check now' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }));
+
+    await waitFor(() => {
+      expect(screen.getByText("You're on the latest version")).toBeInTheDocument();
+    });
+  });
+
+  it('should show update found message when update is available', async () => {
+    mockCheckForUpdate.mockImplementation(async () => {
+      mockUpdateStoreState.updateAvailable = {
+        version: '2.0.0',
+        date: null,
+        body: null,
+      };
+      mockUpdateStoreState.error = null;
+    });
+
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check now' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Update v2.0.0 is available')).toBeInTheDocument();
+    });
+  });
+
+  it('should show checking state while check is in progress', async () => {
+    mockUpdateStoreState.isChecking = true;
+
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      const button = screen.getByRole('button', { name: 'Checking...' });
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+    });
+  });
+
+  it('should show error toast when check fails', async () => {
+    mockCheckForUpdate.mockImplementation(async () => {
+      mockUpdateStoreState.error = 'Failed to check for updates';
+      mockUpdateStoreState.updateAvailable = null;
+    });
+
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check now' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check now' }));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Failed to check for updates');
+    });
+
+    expect(screen.queryByText("You're on the latest version")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Update v/)).not.toBeInTheDocument();
   });
 });

@@ -24,6 +24,7 @@ mod ssh_keys;
 mod stash;
 mod submodule;
 mod tag;
+mod update;
 mod worktree;
 
 pub use ai::*;
@@ -52,4 +53,5 @@ pub use ssh_keys::*;
 pub use stash::*;
 pub use submodule::*;
 pub use tag::*;
+pub use update::*;
 pub use worktree::*;

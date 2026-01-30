@@ -48,6 +48,9 @@ pub struct AppSettings {
 
     // Avatars
     pub gravatar_enabled: bool,
+
+    // Updates
+    pub auto_update_enabled: bool,
 }
 
 #[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
@@ -105,6 +108,9 @@ impl Default for AppSettings {
 
             // Avatars
             gravatar_enabled: false,
+
+            // Updates
+            auto_update_enabled: true,
         }
     }
 }
@@ -226,6 +232,9 @@ mod tests {
 
         // Avatars
         assert!(!settings.gravatar_enabled);
+
+        // Updates
+        assert!(settings.auto_update_enabled);
     }
 
     #[test]
@@ -256,6 +265,7 @@ mod tests {
             default_ssh_key: Some("~/.ssh/id_work".to_string()),
             notification_history_capacity: 100,
             gravatar_enabled: true,
+            auto_update_enabled: false,
         };
 
         assert_eq!(settings.theme, Theme::Dark);

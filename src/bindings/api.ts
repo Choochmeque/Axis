@@ -1150,6 +1150,15 @@ async getAllActions() : Promise<CustomAction[]> {
  */
 async executeCustomAction(actionId: string, variables: ActionVariables) : Promise<ActionExecutionResult> {
     return await TAURI_INVOKE("execute_custom_action", { actionId, variables });
+},
+async checkForUpdate() : Promise<UpdateInfo | null> {
+    return await TAURI_INVOKE("check_for_update");
+},
+async downloadAndInstallUpdate() : Promise<null> {
+    return await TAURI_INVOKE("download_and_install_update");
+},
+async restartApp() : Promise<null> {
+    return await TAURI_INVOKE("restart_app");
 }
 }
 
@@ -1167,6 +1176,7 @@ oAuthCallbackEvent: OAuthCallbackEvent,
 refChangedEvent: RefChangedEvent,
 remoteFetchedEvent: RemoteFetchedEvent,
 repositoryDirtyEvent: RepositoryDirtyEvent,
+updateDownloadProgressEvent: UpdateDownloadProgressEvent,
 watchErrorEvent: WatchErrorEvent
 }>({
 filesChangedEvent: "files-changed-event",
@@ -1179,6 +1189,7 @@ oAuthCallbackEvent: "o-auth-callback-event",
 refChangedEvent: "ref-changed-event",
 remoteFetchedEvent: "remote-fetched-event",
 repositoryDirtyEvent: "repository-dirty-event",
+updateDownloadProgressEvent: "update-download-progress-event",
 watchErrorEvent: "watch-error-event"
 })
 
@@ -1345,7 +1356,7 @@ force: boolean;
  */
 detach: boolean }
 export type AiProvider = "OpenAi" | "Anthropic" | "Ollama"
-export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean }
+export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean }
 /**
  * Options for applying mailbox patches (git am)
  */
@@ -3652,6 +3663,8 @@ export type TagResult = { success: boolean; message: string; tag: Tag | null }
  */
 export type TagSignature = { name: string; email: string; timestamp: string }
 export type Theme = "Light" | "Dark" | "System"
+export type UpdateDownloadProgressEvent = { downloaded: number; total: number | null }
+export type UpdateInfo = { version: string; date: string | null; body: string | null }
 /**
  * Options for updating submodules
  */

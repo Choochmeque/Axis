@@ -1154,7 +1154,7 @@ impl Git2Service {
         }
     }
 
-    /// Checkout a remote branch (creates local tracking branch)
+    /// Checkout a remote branch (creates local tracking branch, or switches to existing one)
     pub fn checkout_remote_branch(
         &self,
         remote_name: &str,
@@ -1166,11 +1166,26 @@ impl Git2Service {
         let local_branch_name = local_name.unwrap_or(branch_name);
         let remote_ref = format!("{remote_name}/{branch_name}");
 
+        // If a local branch with this name already exists, just switch to it
+        if repo
+            .find_branch(local_branch_name, git2::BranchType::Local)
+            .is_ok()
+        {
+            log::info!("Local branch '{local_branch_name}' already exists, switching to it");
+            return self.checkout_branch(
+                local_branch_name,
+                &crate::models::CheckoutOptions {
+                    force,
+                    ..Default::default()
+                },
+            );
+        }
+
         // Find the remote branch
         let remote_branch = repo.find_branch(&remote_ref, git2::BranchType::Remote)?;
         let target = remote_branch.get().peel_to_commit()?;
 
-        // Create local branch
+        // Create local tracking branch
         let mut local_branch = repo.branch(local_branch_name, &target, false)?;
 
         // Set upstream

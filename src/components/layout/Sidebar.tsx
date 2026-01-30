@@ -60,9 +60,10 @@ const sidebarItemClass =
 interface RemoteTreeProps {
   branches: Branch[];
   onBranchClick?: (targetOid: string) => void;
+  onBranchCheckout?: (branchName: string) => void;
 }
 
-function RemoteTree({ branches, onBranchClick }: RemoteTreeProps) {
+function RemoteTree({ branches, onBranchClick, onBranchCheckout }: RemoteTreeProps) {
   const treeData = useMemo(
     () =>
       buildTreeFromPaths(
@@ -115,6 +116,7 @@ function RemoteTree({ branches, onBranchClick }: RemoteTreeProps) {
                 className={cn(sidebarItemClass, '[&>svg]:shrink-0 [&>svg]:opacity-70')}
                 style={{ paddingLeft }}
                 onClick={() => onBranchClick?.(node.data!.targetOid)}
+                onDoubleClick={() => onBranchCheckout?.(node.data!.name)}
               >
                 <span className="w-3 shrink-0" />
                 <GitBranch size={12} />
@@ -206,6 +208,17 @@ export function Sidebar() {
     async (branchName: string) => {
       try {
         await checkoutBranch(branchName, false);
+      } catch (err) {
+        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
+      }
+    },
+    [checkoutBranch, t]
+  );
+
+  const handleRemoteBranchCheckout = useCallback(
+    async (branchName: string) => {
+      try {
+        await checkoutBranch(branchName, true);
       } catch (err) {
         toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
@@ -482,7 +495,11 @@ export function Sidebar() {
 
             <Section title={t('sidebar.sections.remotes')} icon={<Cloud />} defaultExpanded={false}>
               {remoteBranches.length > 0 ? (
-                <RemoteTree branches={remoteBranches} onBranchClick={handleRefClick} />
+                <RemoteTree
+                  branches={remoteBranches}
+                  onBranchClick={handleRefClick}
+                  onBranchCheckout={handleRemoteBranchCheckout}
+                />
               ) : (
                 <div
                   className={cn(

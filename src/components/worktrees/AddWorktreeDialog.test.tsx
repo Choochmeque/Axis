@@ -278,7 +278,7 @@ describe('AddWorktreeDialog', () => {
     render(<AddWorktreeDialog open={true} onOpenChange={vi.fn()} />);
 
     await waitFor(() => {
-      expect(mockList).toHaveBeenCalledWith(true, false);
+      expect(mockList).toHaveBeenCalledWith({ includeLocal: true, includeRemote: false });
     });
   });
 });

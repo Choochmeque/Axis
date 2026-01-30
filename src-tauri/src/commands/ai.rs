@@ -6,10 +6,11 @@ use tauri::State;
 
 const MAX_DIFF_SIZE: usize = 100_000;
 
-fn format_diff_for_ai(state: &State<'_, AppState>) -> Result<String> {
+async fn format_diff_for_ai(state: &State<'_, AppState>) -> Result<String> {
     let diffs = state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_staged(&DiffOptions::default()))?;
+        .with_git2(|git2| git2.diff_staged(&DiffOptions::default()))
+        .await?;
 
     let mut output = String::new();
 
@@ -66,7 +67,7 @@ pub async fn generate_commit_message(
         ));
     }
 
-    let diff = format_diff_for_ai(&state)?;
+    let diff = format_diff_for_ai(&state).await?;
 
     if diff.trim().is_empty() {
         return Err(AxisError::AiServiceError(

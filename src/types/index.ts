@@ -136,6 +136,14 @@ export type {
   GpgKey,
   SshKey,
   SigningTestResult,
+  SignatureVerification,
+
+  // SSH Key Management types
+  SshKeyInfo,
+  GenerateSshKeyOptions,
+  ImportSshKeyOptions,
+  ExportSshKeyOptions,
+  RemoteSshKeyMapping,
 
   // Archive types
   ArchiveOptions,
@@ -252,6 +260,9 @@ import type {
   GitOperationType as GitOperationTypeType,
   // Hook types
   GitHookType as GitHookTypeType,
+  // SSH Key types
+  SshKeyAlgorithm as SshKeyAlgorithmType,
+  SshKeyFormat as SshKeyFormatType,
 } from '../bindings/api';
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';
@@ -628,6 +639,25 @@ export const GitOperationType: { [K in GitOperationTypeType]: K } = {
 };
 
 export type GitOperationType = GitOperationTypeType;
+
+// SSH Key enum helpers
+export const SshKeyAlgorithm: { [K in SshKeyAlgorithmType]: K } = {
+  Ed25519: 'Ed25519',
+  Rsa: 'Rsa',
+  Ecdsa: 'Ecdsa',
+};
+
+export type SshKeyAlgorithm = SshKeyAlgorithmType;
+
+export const SshKeyFormat: { [K in SshKeyFormatType]: K } = {
+  Unencrypted: 'Unencrypted',
+  EncryptedPem: 'EncryptedPem',
+  OpenSsh: 'OpenSsh',
+  EncryptedOpenSsh: 'EncryptedOpenSsh',
+  Unknown: 'Unknown',
+};
+
+export type SshKeyFormat = SshKeyFormatType;
 
 // Hook enum helpers
 export const GitHookType: { [K in GitHookTypeType]: K } = {

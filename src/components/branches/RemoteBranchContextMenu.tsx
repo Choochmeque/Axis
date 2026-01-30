@@ -6,6 +6,8 @@ import { useRepositoryStore } from '@/store/repositoryStore';
 import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 import { copyToClipboard } from '@/lib/actions';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface RemoteBranchContextMenuProps {
   branch: Branch;
@@ -15,7 +17,7 @@ interface RemoteBranchContextMenuProps {
 export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContextMenuProps) {
   const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { branches } = useRepositoryStore();
+  const { branches, checkoutBranch } = useRepositoryStore();
   const currentBranch = branches.find((b) => b.isHead);
 
   // Extract remote and branch name from full name (e.g., "origin/main" -> remote="origin", name="main")
@@ -23,10 +25,18 @@ export function RemoteBranchContextMenu({ branch, children }: RemoteBranchContex
   const remoteName = parts[0];
   const branchName = parts.slice(1).join('/');
 
+  const handleCheckout = async () => {
+    try {
+      await checkoutBranch(branch.name, true);
+    } catch (err) {
+      toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
+    }
+  };
+
   return (
     <>
       <ContextMenu trigger={children}>
-        <MenuItem icon={GitBranch} disabled>
+        <MenuItem icon={GitBranch} onSelect={handleCheckout}>
           {t('branches.remoteContextMenu.checkout')}
         </MenuItem>
         <MenuItem icon={ArrowDownToLine} disabled>

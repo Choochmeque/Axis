@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { RemoteBranchContextMenu } from './RemoteBranchContextMenu';
 
 // Mock store
@@ -8,9 +8,12 @@ const mockBranches = [
   { name: 'feature', isHead: false },
 ];
 
+const mockCheckoutBranch = vi.fn().mockResolvedValue(true);
+
 vi.mock('@/store/repositoryStore', () => ({
   useRepositoryStore: () => ({
     branches: mockBranches,
+    checkoutBranch: mockCheckoutBranch,
   }),
 }));
 
@@ -18,6 +21,15 @@ vi.mock('@/store/repositoryStore', () => ({
 const mockCopyToClipboard = vi.fn();
 vi.mock('@/lib/actions', () => ({
   copyToClipboard: (text: string) => mockCopyToClipboard(text),
+}));
+
+// Mock toast and error utils
+vi.mock('@/hooks', () => ({
+  toast: { error: vi.fn() },
+}));
+
+vi.mock('@/lib/errorUtils', () => ({
+  getErrorMessage: (err: unknown) => String(err),
 }));
 
 // Mock delete dialog
@@ -165,7 +177,7 @@ describe('RemoteBranchContextMenu', () => {
     expect(screen.getByText(/branches.remoteContextMenu.pullInto/)).toBeInTheDocument();
   });
 
-  it('should show disabled checkout item', () => {
+  it('should checkout remote branch when checkout is clicked', async () => {
     render(
       <RemoteBranchContextMenu branch={mockBranch}>
         <span>Trigger</span>
@@ -175,7 +187,35 @@ describe('RemoteBranchContextMenu', () => {
     const checkoutItem = screen
       .getAllByTestId('menu-item')
       .find((item) => item.textContent?.includes('branches.remoteContextMenu.checkout'));
-    expect(checkoutItem).toBeDisabled();
+    expect(checkoutItem).not.toBeDisabled();
+    fireEvent.click(checkoutItem!);
+
+    await waitFor(() => {
+      expect(mockCheckoutBranch).toHaveBeenCalledWith('origin/feature-branch', true);
+    });
+  });
+
+  it('should show error toast when checkout fails', async () => {
+    const { toast } = await import('@/hooks');
+    mockCheckoutBranch.mockRejectedValueOnce(new Error('checkout failed'));
+
+    render(
+      <RemoteBranchContextMenu branch={mockBranch}>
+        <span>Trigger</span>
+      </RemoteBranchContextMenu>
+    );
+
+    const checkoutItem = screen
+      .getAllByTestId('menu-item')
+      .find((item) => item.textContent?.includes('branches.remoteContextMenu.checkout'));
+    fireEvent.click(checkoutItem!);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'notifications.error.operationFailed',
+        'Error: checkout failed'
+      );
+    });
   });
 
   it('should show disabled diff item', () => {

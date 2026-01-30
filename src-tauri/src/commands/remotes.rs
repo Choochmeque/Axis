@@ -7,7 +7,7 @@ use tauri::State;
 
 /// Build the refs stdin string for the pre-push hook
 /// Format: <local ref> <local sha> <remote ref> <remote sha>\n per ref
-fn build_push_refs_stdin(
+async fn build_push_refs_stdin(
     git_service: &GitServiceHandle,
     remote_name: &str,
     refspecs: &[String],
@@ -27,30 +27,41 @@ fn build_push_refs_stdin(
 
         // Get local SHA
         let local_sha = git_service
-            .with_git2(|git2| {
-                git2.repo()
-                    .revparse_single(&local_ref)
-                    .ok()
-                    .map(|obj| obj.id().to_string())
+            .with_git2({
+                let local_ref = local_ref.clone();
+                move |git2| {
+                    git2.repo().ok().and_then(|repo| {
+                        repo.revparse_single(&local_ref)
+                            .ok()
+                            .map(|obj| obj.id().to_string())
+                    })
+                }
             })
+            .await
             .unwrap_or_else(|| "0".repeat(40));
 
         // Get remote SHA (what the remote currently has)
         let remote_sha = git_service
-            .with_git2(|git2| {
-                let remote_ref_name = format!(
-                    "refs/remotes/{remote_name}/{}",
-                    refspec
-                        .split(':')
-                        .next()
-                        .unwrap_or(refspec)
-                        .replace("refs/heads/", "")
-                );
-                git2.repo()
-                    .revparse_single(&remote_ref_name)
-                    .ok()
-                    .map(|obj| obj.id().to_string())
+            .with_git2({
+                let refspec = refspec.clone();
+                let remote_name = remote_name.to_string();
+                move |git2| {
+                    let remote_ref_name = format!(
+                        "refs/remotes/{remote_name}/{}",
+                        refspec
+                            .split(':')
+                            .next()
+                            .unwrap_or(&refspec)
+                            .replace("refs/heads/", "")
+                    );
+                    git2.repo().ok().and_then(|repo| {
+                        repo.revparse_single(&remote_ref_name)
+                            .ok()
+                            .map(|obj| obj.id().to_string())
+                    })
+                }
             })
+            .await
             .unwrap_or_else(|| "0".repeat(40));
 
         refs_lines.push(format!("{local_ref} {local_sha} {remote_ref} {remote_sha}"));
@@ -65,6 +76,7 @@ pub async fn list_remotes(state: State<'_, AppState>) -> Result<Vec<Remote>> {
     state
         .get_git_service()?
         .with_git2(|git2| git2.list_remotes())
+        .await
 }
 
 #[tauri::command]
@@ -72,7 +84,8 @@ pub async fn list_remotes(state: State<'_, AppState>) -> Result<Vec<Remote>> {
 pub async fn get_remote(state: State<'_, AppState>, name: String) -> Result<Remote> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_remote(&name))
+        .with_git2(move |git2| git2.get_remote(&name))
+        .await
 }
 
 #[tauri::command]
@@ -80,7 +93,8 @@ pub async fn get_remote(state: State<'_, AppState>, name: String) -> Result<Remo
 pub async fn add_remote(state: State<'_, AppState>, name: String, url: String) -> Result<Remote> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.add_remote(&name, &url))
+        .with_git2(move |git2| git2.add_remote(&name, &url))
+        .await
 }
 
 #[tauri::command]
@@ -88,7 +102,8 @@ pub async fn add_remote(state: State<'_, AppState>, name: String, url: String) -
 pub async fn remove_remote(state: State<'_, AppState>, name: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.remove_remote(&name))
+        .with_git2(move |git2| git2.remove_remote(&name))
+        .await
 }
 
 #[tauri::command]
@@ -100,7 +115,8 @@ pub async fn rename_remote(
 ) -> Result<Vec<String>> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.rename_remote(&old_name, &new_name))
+        .with_git2(move |git2| git2.rename_remote(&old_name, &new_name))
+        .await
 }
 
 #[tauri::command]
@@ -108,7 +124,8 @@ pub async fn rename_remote(
 pub async fn set_remote_url(state: State<'_, AppState>, name: String, url: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.set_remote_url(&name, &url))
+        .with_git2(move |git2| git2.set_remote_url(&name, &url))
+        .await
 }
 
 #[tauri::command]
@@ -120,7 +137,8 @@ pub async fn set_remote_push_url(
 ) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.set_remote_push_url(&name, &url))
+        .with_git2(move |git2| git2.set_remote_push_url(&name, &url))
+        .await
 }
 
 #[tauri::command]
@@ -131,22 +149,27 @@ pub async fn fetch_remote(
     options: FetchOptions,
 ) -> Result<FetchResult> {
     let app_handle = state.get_app_handle()?;
+    let git_service = state.get_git_service()?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
-    let result = state.get_git_service()?.with_git2(|git2| {
-        git2.fetch(
-            &remote_name,
-            &options,
-            None,
-            Some(ctx.make_receive_callback(GitOperationType::Fetch)),
-        )
-    });
+    git_service
+        .with_git2(move |git2| {
+            let result = git2.fetch(
+                &remote_name,
+                &options,
+                None,
+                Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+                ssh_creds,
+            );
 
-    ctx.handle_result(&result, GitOperationType::Fetch);
+            ctx.handle_result(&result, GitOperationType::Fetch);
 
-    result
+            result
+        })
+        .await
 }
 
 #[tauri::command]
@@ -160,6 +183,7 @@ pub async fn push_remote(
 ) -> Result<PushResult> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -168,11 +192,15 @@ pub async fn push_remote(
     if !skip_hooks {
         // Get remote URL for the hook
         let remote_url = git_service
-            .with_git2(|git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone()))
+            .with_git2({
+                let remote_name = remote_name.clone();
+                move |git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone())
+            })
+            .await
             .flatten()
             .unwrap_or_default();
 
-        let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs);
+        let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs).await;
 
         let hook_result =
             git_service.with_hook(|hook| hook.run_pre_push(&remote_name, &remote_url, &refs_stdin));
@@ -195,18 +223,21 @@ pub async fn push_remote(
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
-    let result = git_service.with_git2(|git2| {
-        git2.push(
-            &remote_name,
-            &refspecs,
-            &options,
-            Some(ctx.make_send_callback(GitOperationType::Push)),
-        )
-    });
+    git_service
+        .with_git2(move |git2| {
+            let result = git2.push(
+                &remote_name,
+                &refspecs,
+                &options,
+                Some(ctx.make_send_callback(GitOperationType::Push)),
+                ssh_creds,
+            );
 
-    ctx.handle_result(&result, GitOperationType::Push);
+            ctx.handle_result(&result, GitOperationType::Push);
 
-    result
+            result
+        })
+        .await
 }
 
 #[tauri::command]
@@ -219,6 +250,7 @@ pub async fn push_current_branch(
 ) -> Result<PushResult> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -226,22 +258,23 @@ pub async fn push_current_branch(
     // Run pre-push hook (can abort)
     if !skip_hooks {
         // Get current branch name
-        let current_branch = git_service.with_git2(|git2| {
-            git2.repo()
-                .head()
-                .ok()
-                .and_then(|h| h.shorthand().map(|s| s.to_string()))
-        });
+        let current_branch = git_service
+            .with_git2(|git2| git2.get_current_branch())
+            .await;
 
         if let Some(branch) = &current_branch {
             // Get remote URL for the hook
             let remote_url = git_service
-                .with_git2(|git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone()))
+                .with_git2({
+                    let remote_name = remote_name.clone();
+                    move |git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone())
+                })
+                .await
                 .flatten()
                 .unwrap_or_default();
 
             let refspecs = vec![branch.clone()];
-            let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs);
+            let refs_stdin = build_push_refs_stdin(&git_service, &remote_name, &refspecs).await;
 
             let hook_result = git_service
                 .with_hook(|hook| hook.run_pre_push(&remote_name, &remote_url, &refs_stdin));
@@ -265,17 +298,20 @@ pub async fn push_current_branch(
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
-    let result = git_service.with_git2(|git2| {
-        git2.push_current_branch(
-            &remote_name,
-            &options,
-            Some(ctx.make_send_callback(GitOperationType::Push)),
-        )
-    });
+    git_service
+        .with_git2(move |git2| {
+            let result = git2.push_current_branch(
+                &remote_name,
+                &options,
+                Some(ctx.make_send_callback(GitOperationType::Push)),
+                ssh_creds,
+            );
 
-    ctx.handle_result(&result, GitOperationType::Push);
+            ctx.handle_result(&result, GitOperationType::Push);
 
-    result
+            result
+        })
+        .await
 }
 
 #[tauri::command]
@@ -287,22 +323,27 @@ pub async fn pull_remote(
     options: PullOptions,
 ) -> Result<()> {
     let app_handle = state.get_app_handle()?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Pull, ProgressStage::Connecting, None);
 
-    let result = state.get_git_service()?.with_git2(|git2| {
-        git2.pull(
-            &remote_name,
-            &branch_name,
-            &options,
-            Some(ctx.make_receive_callback(GitOperationType::Pull)),
-        )
-    });
+    state
+        .get_git_service()?
+        .with_git2(move |git2| {
+            let result = git2.pull(
+                &remote_name,
+                &branch_name,
+                &options,
+                Some(ctx.make_receive_callback(GitOperationType::Pull)),
+                ssh_creds,
+            );
 
-    ctx.handle_result(&result, GitOperationType::Pull);
+            ctx.handle_result(&result, GitOperationType::Pull);
 
-    result
+            result
+        })
+        .await
 }
 
 #[tauri::command]
@@ -317,7 +358,9 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let options = FetchOptions::default();
 
     let mut results = Vec::new();
+    let mut errors = Vec::new();
     for remote in remotes {
+        let ssh_creds = state.resolve_ssh_credentials(&remote.name)?;
         let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
         ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
@@ -326,6 +369,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             &options,
             None,
             Some(ctx.make_receive_callback(GitOperationType::Fetch)),
+            ssh_creds,
         ) {
             Ok(result) => {
                 ctx.emit_complete(GitOperationType::Fetch);
@@ -334,8 +378,16 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             Err(e) => {
                 ctx.emit_failed(GitOperationType::Fetch, &e.to_string());
                 log::error!("Failed to fetch from {}: {e}", remote.name);
+                errors.push(format!("{}: {e}", remote.name));
             }
         }
+    }
+
+    if results.is_empty() && !errors.is_empty() {
+        return Err(AxisError::Other(format!(
+            "Failed to fetch:\n{}",
+            errors.join("\n")
+        )));
     }
 
     Ok(results)

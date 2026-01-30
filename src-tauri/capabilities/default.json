@@ -10,6 +10,7 @@
     "dialog:default",
     "fs:default",
     "shell:default",
-    "notifications:default"
+    "notifications:default",
+    "clipboard-manager:allow-write-text"
   ]
 }

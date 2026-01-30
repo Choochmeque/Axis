@@ -2,6 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{
     Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
+    SshCredentials,
 };
 use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
@@ -23,7 +24,7 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
 
     // Get repo info from the cached service
     let handle = state.get_git_service()?;
-    let repo_info = handle.with_git2(|git2| git2.get_repository_info())?;
+    let repo_info = handle.with_git2(|git2| git2.get_repository_info()).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -79,11 +80,22 @@ pub async fn clone_repository(
 
     ctx.emit(GitOperationType::Clone, ProgressStage::Connecting, None);
 
+    // Resolve global default SSH key for clone
+    let settings = state.get_settings()?;
+    let ssh_creds = settings.default_ssh_key.clone().map(|key_path| {
+        let passphrase = state.get_cached_ssh_passphrase(&key_path);
+        SshCredentials {
+            key_path,
+            passphrase,
+        }
+    });
+
     // Clone the repository first (this creates a new Git2Service internally)
     let result = Git2Service::clone(
         &url,
         &path,
         Some(ctx.make_receive_callback(GitOperationType::Clone)),
+        ssh_creds,
     );
 
     ctx.handle_result(&result, GitOperationType::Clone);
@@ -136,12 +148,16 @@ pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repositor
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_repository_info())
+        .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    state.get_git_service()?.with_git2(|git2| git2.status())
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.status())
+        .await
 }
 
 #[tauri::command]
@@ -150,7 +166,10 @@ pub async fn get_commit_history(
     state: State<'_, AppState>,
     options: LogOptions,
 ) -> Result<Vec<Commit>> {
-    state.get_git_service()?.with_git2(|git2| git2.log(options))
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.log(options))
+        .await
 }
 
 #[tauri::command]
@@ -159,6 +178,7 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
     state
         .get_git_service()?
         .with_git2(|git2| git2.list_branches(filter))
+        .await
 }
 
 #[tauri::command]
@@ -166,7 +186,8 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_commit(&oid))
+        .with_git2(move |git2| git2.get_commit(&oid))
+        .await
 }
 
 #[tauri::command]
@@ -259,4 +280,10 @@ pub async fn open_terminal(path: String) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn cancel_operation(state: State<'_, AppState>, operation_id: String) -> bool {
+    state.progress_registry().cancel(&operation_id)
 }

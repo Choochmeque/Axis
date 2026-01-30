@@ -66,6 +66,26 @@ impl GitCliService {
         Ok(GitCommandResult::from(output))
     }
 
+    /// Execute a git command with an optional SSH key override.
+    /// When ssh_key_path is set, GIT_SSH_COMMAND is injected to force that key.
+    fn execute_with_ssh_key(
+        &self,
+        args: &[&str],
+        ssh_key_path: Option<&str>,
+    ) -> Result<GitCommandResult> {
+        let mut cmd = Command::new("git");
+        cmd.args(args).current_dir(&self.repo_path);
+
+        if let Some(key_path) = ssh_key_path {
+            let expanded = shellexpand::tilde(key_path).to_string();
+            let ssh_command = format!("ssh -i {expanded} -o IdentitiesOnly=yes");
+            cmd.env("GIT_SSH_COMMAND", &ssh_command);
+        }
+
+        let output = cmd.output().map_err(AxisError::from)?;
+        Ok(GitCommandResult::from(output))
+    }
+
     /// Execute a git command, returning an error if it fails
     fn execute_checked(&self, args: &[&str]) -> Result<GitCommandResult> {
         let result = self.execute(args)?;

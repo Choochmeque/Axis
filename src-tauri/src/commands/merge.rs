@@ -134,12 +134,9 @@ pub async fn rebase_branch(
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
     // Get current branch name for pre-rebase hook
-    let current_branch = git_service.with_git2(|git2| {
-        git2.repo()
-            .head()
-            .ok()
-            .and_then(|h| h.shorthand().map(|s| s.to_string()))
-    });
+    let current_branch = git_service
+        .with_git2(|git2| git2.get_current_branch())
+        .await;
 
     // Run pre-rebase hook (can abort)
     if !skip_hooks {
@@ -275,7 +272,8 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
 pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_rebase_preview(&onto))
+        .with_git2(move |git2| git2.get_rebase_preview(&onto))
+        .await
 }
 
 /// Get interactive rebase preview with entries prepared for editing
@@ -285,25 +283,28 @@ pub async fn get_interactive_rebase_preview(
     state: State<'_, AppState>,
     onto: String,
 ) -> Result<InteractiveRebasePreview> {
-    state.get_git_service()?.with_git2(|git2| {
-        let preview = git2.get_rebase_preview(&onto)?;
+    state
+        .get_git_service()?
+        .with_git2(move |git2| {
+            let preview = git2.get_rebase_preview(&onto)?;
 
-        // Convert commits to interactive entries with default 'pick' action
-        let entries: Vec<InteractiveRebaseEntry> = preview
-            .commits_to_rebase
-            .iter()
-            .enumerate()
-            .map(|(i, commit)| InteractiveRebaseEntry {
-                action: RebaseAction::Pick,
-                short_oid: commit.short_oid.clone(),
-                oid: commit.oid.clone(),
-                summary: commit.summary.clone(),
-                original_index: i,
-            })
-            .collect();
+            // Convert commits to interactive entries with default 'pick' action
+            let entries: Vec<InteractiveRebaseEntry> = preview
+                .commits_to_rebase
+                .iter()
+                .enumerate()
+                .map(|(i, commit)| InteractiveRebaseEntry {
+                    action: RebaseAction::Pick,
+                    short_oid: commit.short_oid.clone(),
+                    oid: commit.oid.clone(),
+                    summary: commit.summary.clone(),
+                    original_index: i,
+                })
+                .collect();
 
-        Ok(InteractiveRebasePreview { preview, entries })
-    })
+            Ok(InteractiveRebasePreview { preview, entries })
+        })
+        .await
 }
 
 /// Start an interactive rebase with pre-configured actions
@@ -319,12 +320,9 @@ pub async fn interactive_rebase(
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
     // Get current branch for pre-rebase hook
-    let current_branch = git_service.with_git2(|git2| {
-        git2.repo()
-            .head()
-            .ok()
-            .and_then(|h| h.shorthand().map(|s| s.to_string()))
-    });
+    let current_branch = git_service
+        .with_git2(|git2| git2.get_current_branch())
+        .await;
 
     // Run pre-rebase hook
     if !skip_hooks {

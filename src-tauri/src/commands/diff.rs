@@ -36,7 +36,8 @@ pub async fn get_diff_workdir(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_workdir(&opts))
+        .with_git2(move |git2| git2.diff_workdir(&opts))
+        .await
 }
 
 /// Get diff for staged changes (index vs HEAD)
@@ -49,7 +50,8 @@ pub async fn get_diff_staged(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_staged(&opts))
+        .with_git2(move |git2| git2.diff_staged(&opts))
+        .await
 }
 
 /// Get diff for all uncommitted changes (working directory vs HEAD)
@@ -62,7 +64,8 @@ pub async fn get_diff_head(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_head(&opts))
+        .with_git2(move |git2| git2.diff_head(&opts))
+        .await
 }
 
 /// Get diff for a specific commit (commit vs its parent)
@@ -76,7 +79,8 @@ pub async fn get_diff_commit(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_commit(&oid, &opts))
+        .with_git2(move |git2| git2.diff_commit(&oid, &opts))
+        .await
 }
 
 /// Get diff between two commits
@@ -91,7 +95,8 @@ pub async fn get_diff_commits(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_commits(&from_oid, &to_oid, &opts))
+        .with_git2(move |git2| git2.diff_commits(&from_oid, &to_oid, &opts))
+        .await
 }
 
 /// Get diff for a single file (staged or unstaged)
@@ -106,7 +111,8 @@ pub async fn get_file_diff(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_file(&path, staged, &opts))
+        .with_git2(move |git2| git2.diff_file(&path, staged, &opts))
+        .await
 }
 
 /// Get blob content as raw bytes for a file at a specific commit
@@ -120,6 +126,7 @@ pub async fn get_file_blob(
 ) -> Result<Response> {
     let data = state
         .get_git_service()?
-        .with_git2(|git2| git2.get_file_blob(&path, commit_oid.as_deref()))?;
+        .with_git2(move |git2| git2.get_file_blob(&path, commit_oid.as_deref()))
+        .await?;
     Ok(Response::new(data))
 }

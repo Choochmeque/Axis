@@ -1,10 +1,11 @@
 use crate::error::{AxisError, Result};
-use crate::models::{AppSettings, RecentRepository, Repository};
+use crate::models::{AppSettings, RecentRepository, Repository, SshCredentials};
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
-    ProgressRegistry,
+    ProgressRegistry, SignatureVerificationCache, SshKeyService,
 };
 use crate::storage::Database;
+use secrecy::SecretString;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
@@ -14,12 +15,14 @@ use tauri::{AppHandle, Manager};
 #[derive(Clone)]
 pub struct GitServiceHandle {
     inner: Arc<Mutex<GitService>>,
+    inner2: Arc<GitService>,
 }
 
 impl GitServiceHandle {
-    pub fn new(service: GitService) -> Self {
+    pub fn new(service: GitService, service2: GitService) -> Self {
         Self {
             inner: Arc::new(Mutex::new(service)),
+            inner2: Arc::new(service2),
         }
     }
 
@@ -28,12 +31,15 @@ impl GitServiceHandle {
     }
 
     /// Access git2 service directly (convenience method)
-    pub fn with_git2<F, R>(&self, f: F) -> R
+    pub async fn with_git2<F, R>(&self, f: F) -> R
     where
-        F: FnOnce(&crate::services::Git2Service) -> R,
+        F: FnOnce(&crate::services::Git2Service) -> R + Send + 'static,
+        R: Send + 'static,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
-        f(guard.git2())
+        let inner = self.inner2.clone();
+        tauri::async_runtime::spawn_blocking(move || f(inner.git2()))
+            .await
+            .unwrap_or_else(|e| panic!("git task panicked: {e}"))
     }
 
     /// Access git CLI service directly (convenience method)
@@ -41,7 +47,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::GitCliService) -> R,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = self.lock();
         f(guard.git_cli())
     }
 
@@ -50,7 +56,7 @@ impl GitServiceHandle {
     where
         F: FnOnce(&crate::services::HookService) -> R,
     {
-        let guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = self.lock();
         f(guard.hook())
     }
 }
@@ -91,7 +97,11 @@ impl RepositoryCache {
 
         // Open and cache
         let service = GitService::open(path, app_handle.clone(), is_active)?;
-        let handle = GitServiceHandle::new(service);
+
+        // TODO: this is a temporary workaround until we refactor GitService to avoid double init
+        let service2 = GitService::open(path, app_handle.clone(), is_active)?;
+
+        let handle = GitServiceHandle::new(service, service2);
 
         let mut repos = self.repos.write().unwrap_or_else(|e| e.into_inner());
         repos.insert(path.to_path_buf(), handle.clone());
@@ -158,12 +168,15 @@ pub struct AppState {
     active_repository_path: RwLock<Option<PathBuf>>,
     repository_cache: Arc<RepositoryCache>,
     commit_cache: Arc<CommitCache>,
+    signature_verification_cache: Arc<SignatureVerificationCache>,
     database: Arc<Database>,
     app_handle: RwLock<Option<AppHandle>>,
     background_fetch: BackgroundFetchService,
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
     integration_service: RwLock<Option<Arc<IntegrationService>>>,
-    progress_registry: ProgressRegistry,
+    progress_registry: Arc<ProgressRegistry>,
+    /// In-memory cache for SSH key passphrases (SecretString zeroes memory on drop)
+    ssh_passphrase_cache: RwLock<HashMap<String, SecretString>>,
 }
 
 impl AppState {
@@ -175,12 +188,14 @@ impl AppState {
             active_repository_path: RwLock::new(None),
             repository_cache: Arc::new(RepositoryCache::new()),
             commit_cache: Arc::new(CommitCache::new()),
+            signature_verification_cache: Arc::new(SignatureVerificationCache::new()),
             database,
             app_handle: RwLock::new(None),
             background_fetch: BackgroundFetchService::new(),
             avatar_service: RwLock::new(None),
             integration_service: RwLock::new(Some(Arc::new(integration_service))),
-            progress_registry: ProgressRegistry::new(),
+            progress_registry: Arc::new(ProgressRegistry::new()),
+            ssh_passphrase_cache: RwLock::new(HashMap::new()),
         }
     }
 
@@ -217,6 +232,11 @@ impl AppState {
         Arc::clone(&self.commit_cache)
     }
 
+    /// Get the signature verification cache
+    pub fn signature_verification_cache(&self) -> Arc<SignatureVerificationCache> {
+        Arc::clone(&self.signature_verification_cache)
+    }
+
     /// Get the avatar service
     pub fn avatar_service(&self) -> Result<Arc<AvatarService>> {
         self.avatar_service
@@ -236,8 +256,8 @@ impl AppState {
     }
 
     /// Get the progress registry for operation cancellation
-    pub fn progress_registry(&self) -> &ProgressRegistry {
-        &self.progress_registry
+    pub fn progress_registry(&self) -> Arc<ProgressRegistry> {
+        self.progress_registry.clone()
     }
 
     /// Set/switch the active repository (adds to cache if needed)
@@ -279,6 +299,7 @@ impl AppState {
     pub fn close_repository(&self, path: &Path) {
         self.repository_cache.remove(path);
         self.commit_cache.invalidate_repo(path);
+        self.signature_verification_cache.invalidate_repo(path);
 
         // Clear active if this was it
         let mut active = self
@@ -362,6 +383,80 @@ impl AppState {
     /// Check if background fetch is running
     pub fn is_background_fetch_running(&self) -> bool {
         self.background_fetch.is_running()
+    }
+
+    /// Get a reference to the database
+    pub fn database(&self) -> &Database {
+        &self.database
+    }
+
+    /// Get the current repository path as a string
+    pub fn get_repo_path_string(&self) -> Result<String> {
+        let path = self.ensure_repository_open()?;
+        Ok(path.to_string_lossy().to_string())
+    }
+
+    /// Resolve the SSH key for a remote operation
+    pub fn resolve_ssh_key_for_remote(&self, remote_name: &str) -> Result<Option<String>> {
+        let settings = self.get_settings()?;
+        let repo_path = self.get_repo_path_string()?;
+        Ok(SshKeyService::resolve_ssh_key(
+            &self.database,
+            &repo_path,
+            remote_name,
+            &settings.default_ssh_key,
+        ))
+    }
+
+    /// Resolve SSH credentials (key path + cached passphrase) for a remote
+    pub fn resolve_ssh_credentials(&self, remote_name: &str) -> Result<Option<SshCredentials>> {
+        let ssh_key = self.resolve_ssh_key_for_remote(remote_name)?;
+        Ok(ssh_key.map(|key_path| {
+            let passphrase = self.get_cached_ssh_passphrase(&key_path);
+            SshCredentials {
+                key_path,
+                passphrase,
+            }
+        }))
+    }
+
+    // ==================== SSH Passphrase Cache ====================
+
+    /// Cache an SSH key passphrase in secure memory
+    pub fn cache_ssh_passphrase(&self, key_path: &str, passphrase: String) {
+        let secret = SecretString::from(passphrase);
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key_path.to_string(), secret);
+        log::debug!("Cached passphrase for SSH key: {key_path}");
+    }
+
+    /// Get a cached passphrase for an SSH key (returns clone)
+    pub fn get_cached_ssh_passphrase(&self, key_path: &str) -> Option<SecretString> {
+        self.ssh_passphrase_cache
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(key_path)
+            .cloned()
+    }
+
+    /// Clear a cached passphrase (SecretString zeroes memory on drop)
+    pub fn clear_cached_ssh_passphrase(&self, key_path: &str) {
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(key_path);
+        log::debug!("Cleared cached passphrase for SSH key: {key_path}");
+    }
+
+    /// Clear all cached passphrases (all SecretStrings zeroed on drop)
+    pub fn clear_all_ssh_passphrases(&self) {
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        log::debug!("Cleared all cached SSH passphrases");
     }
 }
 
@@ -500,6 +595,16 @@ mod tests {
 
         // Just verify we can get the commit cache
         let _cache = state.commit_cache();
+    }
+
+    #[test]
+    fn test_app_state_signature_verification_cache() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let cache = state.signature_verification_cache();
+        // Should be empty initially
+        assert!(cache.get("anything").is_none());
     }
 
     #[test]
@@ -643,5 +748,83 @@ mod tests {
         // No repository open
         let result = state.get_git_service();
         assert!(result.is_err());
+    }
+
+    // ==================== SSH Passphrase Cache Tests ====================
+
+    #[test]
+    fn test_ssh_passphrase_cache_empty() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/id_rsa").is_none());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_store_and_retrieve() {
+        use secrecy::ExposeSecret;
+
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/id_rsa", "my_secret".to_string());
+
+        let cached = state
+            .get_cached_ssh_passphrase("~/.ssh/id_rsa")
+            .expect("should have cached passphrase");
+        assert_eq!(cached.expose_secret(), "my_secret");
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_single() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key2", "pass2".to_string());
+
+        state.clear_cached_ssh_passphrase("~/.ssh/key1");
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key1").is_none());
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_some());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_all() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key2", "pass2".to_string());
+
+        state.clear_all_ssh_passphrases();
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key1").is_none());
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_none());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_overwrite() {
+        use secrecy::ExposeSecret;
+
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key", "old_pass".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key", "new_pass".to_string());
+
+        let cached = state
+            .get_cached_ssh_passphrase("~/.ssh/key")
+            .expect("should have cached passphrase");
+        assert_eq!(cached.expose_secret(), "new_pass");
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_nonexistent() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Should not panic
+        state.clear_cached_ssh_passphrase("~/.ssh/nonexistent");
     }
 }

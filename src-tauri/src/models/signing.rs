@@ -76,6 +76,16 @@ pub struct SigningTestResult {
     pub program_used: Option<String>,
 }
 
+/// Result of on-demand signature verification
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SignatureVerification {
+    /// Whether the signature was successfully verified
+    pub verified: bool,
+    /// The signer info (e.g., name/email for GPG, principal for SSH)
+    pub signer: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -325,5 +335,62 @@ mod tests {
         let json = serde_json::to_string(&result).expect("should serialize");
         assert!(json.contains("\"success\":true"));
         assert!(json.contains("\"programUsed\":\"gpg\""));
+    }
+
+    // ==================== SignatureVerification Tests ====================
+
+    #[test]
+    fn test_signature_verification_verified() {
+        let result = SignatureVerification {
+            verified: true,
+            signer: Some("user@example.com".to_string()),
+        };
+
+        assert!(result.verified);
+        assert_eq!(result.signer, Some("user@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_signature_verification_not_verified() {
+        let result = SignatureVerification {
+            verified: false,
+            signer: None,
+        };
+
+        assert!(!result.verified);
+        assert!(result.signer.is_none());
+    }
+
+    #[test]
+    fn test_signature_verification_serialization() {
+        let result = SignatureVerification {
+            verified: true,
+            signer: Some("Test User".to_string()),
+        };
+
+        let json = serde_json::to_string(&result).expect("should serialize");
+        assert!(json.contains("\"verified\":true"));
+        assert!(json.contains("\"signer\":\"Test User\""));
+    }
+
+    #[test]
+    fn test_signature_verification_deserialization() {
+        let json = r#"{"verified":true,"signer":"user@example.com"}"#;
+        let result: SignatureVerification = serde_json::from_str(json).expect("should deserialize");
+
+        assert!(result.verified);
+        assert_eq!(result.signer, Some("user@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_signature_verification_clone() {
+        let result = SignatureVerification {
+            verified: true,
+            signer: Some("signer".to_string()),
+        };
+
+        let cloned = result.clone();
+        assert_eq!(cloned.verified, result.verified);
+        assert_eq!(cloned.signer, result.signer);
     }
 }

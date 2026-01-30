@@ -1,13 +1,22 @@
 import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, Palette, GitBranch, FileText, Sparkles, Link2, Terminal } from 'lucide-react';
+import {
+  Settings,
+  Palette,
+  GitBranch,
+  FileText,
+  Sparkles,
+  Link2,
+  Terminal,
+  KeyRound,
+} from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi, aiApi, lfsApi, avatarApi } from '@/services/api';
+import { settingsApi, signingApi, aiApi, lfsApi, avatarApi, sshKeysApi } from '@/services/api';
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
-import { SigningFormat, Theme, AiProvider, ProviderType } from '@/types';
+import { SigningFormat, Theme, AiProvider, ProviderType, SshKeyFormat } from '@/types';
 import type {
   AppSettings,
   Theme as ThemeType,
@@ -15,6 +24,7 @@ import type {
   AiProvider as AiProviderType,
   GpgKey,
   SshKey,
+  SshKeyInfo,
 } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -32,6 +42,7 @@ import {
   Alert,
 } from '@/components/ui';
 import { GlobalActionsSettings } from './GlobalActionsSettings';
+import { SshKeysSettings } from './SshKeysSettings';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -39,7 +50,7 @@ interface SettingsDialogProps {
   onSettingsChange?: (settings: AppSettings) => void;
 }
 
-type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations' | 'actions';
+type SettingsTab = 'appearance' | 'git' | 'diff' | 'ai' | 'integrations' | 'actions' | 'ssh-keys';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.System,
@@ -65,6 +76,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   aiProvider: AiProvider.OpenAi,
   aiModel: null,
   aiOllamaUrl: null,
+  defaultSshKey: null,
   gravatarEnabled: false,
 };
 
@@ -134,6 +146,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
     { id: 'ai', label: t('settings.tabs.ai'), icon: <Sparkles size={16} /> },
     { id: 'integrations', label: t('settings.tabs.integrations'), icon: <Link2 size={16} /> },
     { id: 'actions', label: t('settings.tabs.actions'), icon: <Terminal size={16} /> },
+    { id: 'ssh-keys', label: t('settings.tabs.sshKeys'), icon: <KeyRound size={16} /> },
   ];
 
   return (
@@ -181,6 +194,7 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
                 )}
                 {activeTab === 'integrations' && <IntegrationsSettings />}
                 {activeTab === 'actions' && <GlobalActionsSettings />}
+                {activeTab === 'ssh-keys' && <SshKeysSettings />}
               </>
             )}
           </div>
@@ -357,6 +371,7 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   const { t } = useTranslation();
   const [gpgKeys, setGpgKeys] = useState<GpgKey[]>([]);
   const [sshKeys, setSshKeys] = useState<SshKey[]>([]);
+  const [sshKeyInfos, setSshKeyInfos] = useState<SshKeyInfo[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -367,7 +382,17 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   useEffect(() => {
     loadKeys();
     loadGitEnvironment();
+    loadSshKeyInfos();
   }, []);
+
+  const loadSshKeyInfos = async () => {
+    try {
+      const keys = await sshKeysApi.list();
+      setSshKeyInfos(keys);
+    } catch (err) {
+      console.error('Failed to load SSH keys:', err);
+    }
+  };
 
   const loadGitEnvironment = async () => {
     setIsLoadingEnv(true);
@@ -477,6 +502,33 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('confirmBeforeDiscard', checked === true)}
         />
       </div>
+
+      <FormField
+        label={t('settings.git.defaultSshKey.label')}
+        htmlFor="defaultSshKey"
+        hint={t('settings.git.defaultSshKey.hint')}
+      >
+        <Select
+          id="defaultSshKey"
+          value={settings.defaultSshKey || 'auto'}
+          onValueChange={(value) => updateSetting('defaultSshKey', value === 'auto' ? null : value)}
+          placeholder={t('settings.git.defaultSshKey.auto')}
+        >
+          <SelectItem value="auto">{t('settings.git.defaultSshKey.auto')}</SelectItem>
+          {sshKeyInfos
+            .filter((key) => key.format !== SshKeyFormat.OpenSsh)
+            .map((key) => (
+              <SelectItem key={key.path} value={key.path}>
+                {key.comment || key.path.split('/').pop() || key.path}
+              </SelectItem>
+            ))}
+        </Select>
+        {!settings.defaultSshKey && (
+          <p className="mt-1.5 text-xs text-(--text-muted)">
+            {t('settings.git.defaultSshKey.autoDescription')}
+          </p>
+        )}
+      </FormField>
 
       <h3 className={sectionTitleClass}>{t('settings.signing.title')}</h3>
 

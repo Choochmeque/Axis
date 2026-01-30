@@ -20,7 +20,7 @@ impl GitService {
     pub fn open(path: &Path, app_handle: AppHandle, is_active: bool) -> Result<Self> {
         let git2 = Git2Service::open(path)?;
         let git_cli = GitCliService::new(path);
-        let hook = HookService::new(git2.repo());
+        let hook = HookService::new(&git2.repo()?);
         let watcher = FileWatcher::new(path.to_path_buf(), app_handle, is_active)
             .map_err(|e| AxisError::Other(format!("Failed to create file watcher: {e}")))?;
 

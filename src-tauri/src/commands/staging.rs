@@ -29,7 +29,8 @@ fn hook_error(result: &HookResult) -> AxisError {
 pub async fn stage_file(state: State<'_, AppState>, path: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.stage_file(&path))
+        .with_git2(move |git2| git2.stage_file(&path))
+        .await
 }
 
 #[tauri::command]
@@ -37,13 +38,17 @@ pub async fn stage_file(state: State<'_, AppState>, path: String) -> Result<()> 
 pub async fn stage_files(state: State<'_, AppState>, paths: Vec<String>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.stage_files(&paths))
+        .with_git2(move |git2| git2.stage_files(&paths))
+        .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn stage_all(state: State<'_, AppState>) -> Result<()> {
-    state.get_git_service()?.with_git2(|git2| git2.stage_all())
+    state
+        .get_git_service()?
+        .with_git2(|git2| git2.stage_all())
+        .await
 }
 
 #[tauri::command]
@@ -51,7 +56,8 @@ pub async fn stage_all(state: State<'_, AppState>) -> Result<()> {
 pub async fn unstage_file(state: State<'_, AppState>, path: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.unstage_file(&path))
+        .with_git2(move |git2| git2.unstage_file(&path))
+        .await
 }
 
 #[tauri::command]
@@ -59,7 +65,8 @@ pub async fn unstage_file(state: State<'_, AppState>, path: String) -> Result<()
 pub async fn unstage_files(state: State<'_, AppState>, paths: Vec<String>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.unstage_files(&paths))
+        .with_git2(move |git2| git2.unstage_files(&paths))
+        .await
 }
 
 #[tauri::command]
@@ -68,6 +75,7 @@ pub async fn unstage_all(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
         .with_git2(|git2| git2.unstage_all())
+        .await
 }
 
 #[tauri::command]
@@ -75,7 +83,8 @@ pub async fn unstage_all(state: State<'_, AppState>) -> Result<()> {
 pub async fn discard_file(state: State<'_, AppState>, path: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.discard_file(&path))
+        .with_git2(move |git2| git2.discard_file(&path))
+        .await
 }
 
 #[tauri::command]
@@ -84,6 +93,7 @@ pub async fn discard_unstaged(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
         .with_git2(|git2| git2.discard_unstaged())
+        .await
 }
 
 #[tauri::command]
@@ -152,14 +162,16 @@ pub async fn create_commit(
     };
 
     // 4. Create the commit
-    let oid = git_service.with_git2(|git2| {
-        git2.create_commit(
-            &final_message,
-            author_name.as_deref(),
-            author_email.as_deref(),
-            signing_config.as_ref(),
-        )
-    })?;
+    let oid = git_service
+        .with_git2(move |git2| {
+            git2.create_commit(
+                &final_message,
+                author_name.as_deref(),
+                author_email.as_deref(),
+                signing_config.as_ref(),
+            )
+        })
+        .await?;
 
     // 5. Run post-commit hook (don't fail on error, just log)
     if !skip_hooks {
@@ -187,7 +199,7 @@ pub async fn amend_commit(
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
     // Get old commit OID before amend for post-rewrite hook
-    let old_oid = git_service.with_git2(|git2| git2.get_head_oid_opt());
+    let old_oid = git_service.with_git2(|git2| git2.get_head_oid_opt()).await;
 
     let mut final_message = message.clone();
 
@@ -209,7 +221,9 @@ pub async fn amend_commit(
     }
 
     // Amend the commit
-    let new_oid = git_service.with_git2(|git2| git2.amend_commit(final_message.as_deref()))?;
+    let new_oid = git_service
+        .with_git2(move |git2| git2.amend_commit(final_message.as_deref()))
+        .await?;
 
     // Run post-rewrite hook
     if !skip_hooks {
@@ -231,6 +245,7 @@ pub async fn get_user_signature(state: State<'_, AppState>) -> Result<(String, S
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_user_signature())
+        .await
 }
 
 #[tauri::command]
@@ -262,5 +277,6 @@ pub async fn discard_hunk(state: State<'_, AppState>, patch: String) -> Result<(
 pub async fn delete_file(state: State<'_, AppState>, path: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.delete_file(&path))
+        .with_git2(move |git2| git2.delete_file(&path))
+        .await
 }

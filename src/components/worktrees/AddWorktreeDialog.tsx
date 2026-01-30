@@ -43,7 +43,7 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
   useEffect(() => {
     if (open) {
       branchApi
-        .list(true, false)
+        .list({ includeLocal: true, includeRemote: false })
         .then(setBranches)
         .catch(() => setBranches([]));
     }

@@ -15,10 +15,11 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { repoSettingsApi, remoteApi, hooksApi } from '@/services/api';
+import { KeyRound } from 'lucide-react';
+import { repoSettingsApi, remoteApi, hooksApi, sshKeysApi, remoteSshKeysApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import type { RepositorySettings, Remote, HookInfo, HookTemplate } from '@/types';
-import { GitHookType } from '@/types';
+import type { RepositorySettings, Remote, HookInfo, HookTemplate, SshKeyInfo } from '@/types';
+import { GitHookType, SshKeyFormat } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -261,6 +262,47 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
   const [newRemoteUrl, setNewRemoteUrl] = useState('');
   const [editUrl, setEditUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [sshKeyInfos, setSshKeyInfos] = useState<SshKeyInfo[]>([]);
+  const [remoteSshKeyMap, setRemoteSshKeyMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadSshData = async () => {
+      try {
+        const [keys, mappings] = await Promise.all([sshKeysApi.list(), remoteSshKeysApi.list()]);
+        setSshKeyInfos(keys);
+        const map: Record<string, string> = {};
+        for (const m of mappings) {
+          map[m.remoteName] = m.sshKeyPath;
+        }
+        setRemoteSshKeyMap(map);
+      } catch (err) {
+        console.error('Failed to load SSH key data:', err);
+      }
+    };
+    loadSshData();
+  }, []);
+
+  const handleSshKeyChange = async (remoteName: string, value: string) => {
+    try {
+      if (value === 'global_default') {
+        // "Use global default" — remove the per-remote override
+        await remoteSshKeysApi.delete(remoteName);
+        setRemoteSshKeyMap((prev) => {
+          const next = { ...prev };
+          delete next[remoteName];
+          return next;
+        });
+        toast.success(t('repoSettings.remotes.sshKey.removed'));
+      } else {
+        // Set specific key or "auto" sentinel
+        await remoteSshKeysApi.set(remoteName, value);
+        setRemoteSshKeyMap((prev) => ({ ...prev, [remoteName]: value }));
+        toast.success(t('repoSettings.remotes.sshKey.saved'));
+      }
+    } catch (err) {
+      toast.error(t('repoSettings.remotes.sshKey.saveFailed'), getErrorMessage(err));
+    }
+  };
 
   const handleAddRemote = async () => {
     if (!newRemoteName.trim() || !newRemoteUrl.trim()) return;
@@ -372,6 +414,32 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                         {t('repoSettings.remotes.pushLabel')} {remote.pushUrl}
                       </div>
                     )}
+                    {sshKeyInfos.length > 0 &&
+                      (remote.url?.startsWith('git@') || remote.url?.startsWith('ssh://')) && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <KeyRound size={12} className="text-(--text-muted) shrink-0" />
+                          <Select
+                            value={remoteSshKeyMap[remote.name] || 'global_default'}
+                            onValueChange={(value) => handleSshKeyChange(remote.name, value)}
+                            className="flex-1 text-xs"
+                            placeholder={t('repoSettings.remotes.sshKey.useGlobalDefault')}
+                          >
+                            <SelectItem value="global_default">
+                              {t('repoSettings.remotes.sshKey.useGlobalDefault')}
+                            </SelectItem>
+                            <SelectItem value="auto">
+                              {t('repoSettings.remotes.sshKey.auto')}
+                            </SelectItem>
+                            {sshKeyInfos
+                              .filter((key) => key.format !== SshKeyFormat.OpenSsh)
+                              .map((key) => (
+                                <SelectItem key={key.path} value={key.path}>
+                                  {key.comment || key.path.split('/').pop() || key.path}
+                                </SelectItem>
+                              ))}
+                          </Select>
+                        </div>
+                      )}
                   </div>
                   <Button
                     variant="ghost"

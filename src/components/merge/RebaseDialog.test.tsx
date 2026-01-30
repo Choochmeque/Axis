@@ -249,7 +249,7 @@ describe('RebaseDialog', () => {
     render(<RebaseDialog {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockList).toHaveBeenCalledWith(true, true);
+      expect(mockList).toHaveBeenCalledWith({ includeLocal: true, includeRemote: true });
     });
   });
 

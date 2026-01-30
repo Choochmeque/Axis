@@ -33,6 +33,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::show_in_folder,
             crate::commands::open_url,
             crate::commands::open_terminal,
+            crate::commands::cancel_operation,
             // Staging commands
             crate::commands::stage_file,
             crate::commands::stage_files,
@@ -200,6 +201,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::list_ssh_keys,
             crate::commands::test_signing,
             crate::commands::is_signing_available,
+            crate::commands::verify_commit_signature,
             // Archive & Patch commands
             crate::commands::create_archive,
             crate::commands::format_patch,
@@ -257,6 +259,24 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::integration_mark_notification_read,
             crate::commands::integration_mark_all_notifications_read,
             crate::commands::integration_get_unread_count,
+            // SSH Key Management commands
+            crate::commands::list_ssh_keys_info,
+            crate::commands::generate_ssh_key,
+            crate::commands::get_ssh_public_key,
+            crate::commands::get_ssh_key_fingerprint,
+            crate::commands::delete_ssh_key,
+            crate::commands::import_ssh_key,
+            crate::commands::export_ssh_key,
+            // Per-Remote SSH Key commands
+            crate::commands::get_remote_ssh_key,
+            crate::commands::set_remote_ssh_key,
+            crate::commands::delete_remote_ssh_key,
+            crate::commands::list_remote_ssh_keys,
+            // SSH Key Format & Passphrase commands
+            crate::commands::check_ssh_key_format,
+            crate::commands::cache_ssh_passphrase,
+            crate::commands::clear_ssh_passphrase,
+            crate::commands::is_ssh_passphrase_cached,
             // Avatar commands
             crate::commands::get_avatar,
             crate::commands::clear_avatar_cache,
@@ -302,6 +322,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notifications::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(move |invoke| match invoke.message.command() {
             "get_file_blob" => extra_handler(invoke),
             _ => specta_handler(invoke),

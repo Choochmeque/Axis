@@ -88,6 +88,18 @@ pub enum AxisError {
 
     #[error("OAuth flow cancelled")]
     OAuthCancelled,
+
+    #[error("SSH key error: {0}")]
+    SshKeyError(String),
+
+    #[error("SSH key already exists: {0}")]
+    SshKeyAlreadyExists(String),
+
+    #[error("ssh-keygen not found")]
+    SshKeygenNotFound,
+
+    #[error("Invalid key filename: {0}")]
+    InvalidKeyFilename(String),
 }
 
 impl From<git2::Error> for AxisError {
@@ -386,6 +398,47 @@ mod tests {
         assert!(result.is_err());
         let err = result.expect_err("should be error");
         assert!(matches!(err, AxisError::NoRepositoryOpen));
+    }
+
+    // ==================== SSH Key Error Tests ====================
+
+    #[test]
+    fn test_ssh_key_error_display() {
+        let err = AxisError::SshKeyError("key generation failed".to_string());
+        assert_eq!(err.to_string(), "SSH key error: key generation failed");
+    }
+
+    #[test]
+    fn test_ssh_key_already_exists_display() {
+        let err = AxisError::SshKeyAlreadyExists("id_ed25519".to_string());
+        assert_eq!(err.to_string(), "SSH key already exists: id_ed25519");
+    }
+
+    #[test]
+    fn test_ssh_keygen_not_found_display() {
+        let err = AxisError::SshKeygenNotFound;
+        assert_eq!(err.to_string(), "ssh-keygen not found");
+    }
+
+    #[test]
+    fn test_invalid_key_filename_display() {
+        let err = AxisError::InvalidKeyFilename("../evil".to_string());
+        assert_eq!(err.to_string(), "Invalid key filename: ../evil");
+    }
+
+    #[test]
+    fn test_ssh_key_error_serialization() {
+        let err = AxisError::SshKeyError("failed".to_string());
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"SshKeyError\""));
+        assert!(json.contains("\"data\":\"failed\""));
+    }
+
+    #[test]
+    fn test_ssh_keygen_not_found_serialization() {
+        let err = AxisError::SshKeygenNotFound;
+        let json = serde_json::to_string(&err).expect("should serialize");
+        assert!(json.contains("\"type\":\"SshKeygenNotFound\""));
     }
 
     // ==================== Debug Tests ====================

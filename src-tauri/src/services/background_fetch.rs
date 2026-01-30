@@ -1,10 +1,11 @@
 use crate::events::RemoteFetchedEvent;
-use crate::models::FetchOptions;
-use crate::state::RepositoryCache;
+use crate::models::{FetchOptions, SshCredentials, SshKeyFormat};
+use crate::services::SshKeyService;
+use crate::state::{AppState, RepositoryCache};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::async_runtime::JoinHandle;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
 /// Background service for periodically fetching all cached repositories
@@ -47,6 +48,14 @@ impl BackgroundFetchService {
                         let guard = handle.lock();
                         let git2 = guard.git2();
 
+                        // Resolve SSH keys for this repo
+                        let app_state = app_handle.state::<AppState>();
+                        let repo_path_str = path.to_string_lossy().to_string();
+                        let default_ssh_key = app_state
+                            .get_settings()
+                            .map(|s| s.default_ssh_key)
+                            .unwrap_or(None);
+
                         // Get all remotes and fetch from each
                         match git2.list_remotes() {
                             Ok(remotes) => {
@@ -54,11 +63,51 @@ impl BackgroundFetchService {
                                 let mut total_updates = 0u32;
 
                                 for remote in remotes {
+                                    let ssh_key = SshKeyService::resolve_ssh_key(
+                                        app_state.database(),
+                                        &repo_path_str,
+                                        &remote.name,
+                                        &default_ssh_key,
+                                    );
+
+                                    // Skip encrypted keys when no cached passphrase is available
+                                    if let Some(key_path) = &ssh_key {
+                                        let format = SshKeyService::check_key_format_optional(
+                                            std::path::Path::new(key_path),
+                                        );
+                                        if let Some(
+                                            SshKeyFormat::EncryptedPem
+                                            | SshKeyFormat::EncryptedOpenSsh,
+                                        ) = format
+                                        {
+                                            if app_state
+                                                .get_cached_ssh_passphrase(key_path)
+                                                .is_none()
+                                            {
+                                                log::debug!(
+                                                    "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
+                                                    remote.name
+                                                );
+                                                continue;
+                                            }
+                                        }
+                                    }
+
+                                    let ssh_creds = ssh_key.map(|key_path| {
+                                        let passphrase =
+                                            app_state.get_cached_ssh_passphrase(&key_path);
+                                        SshCredentials {
+                                            key_path,
+                                            passphrase,
+                                        }
+                                    });
+
                                     match git2.fetch(
                                         &remote.name,
                                         &options,
                                         None,
                                         None::<fn(&git2::Progress<'_>) -> bool>,
+                                        ssh_creds,
                                     ) {
                                         Ok(result) => {
                                             // Count updated refs as new commits

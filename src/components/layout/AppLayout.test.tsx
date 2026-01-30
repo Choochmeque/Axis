@@ -129,6 +129,8 @@ vi.mock('../remotes', () => ({
     props.isOpen ? <div data-testid="push-dialog">Push</div> : null,
   PullDialog: (props: Record<string, unknown>) =>
     props.isOpen ? <div data-testid="pull-dialog">Pull</div> : null,
+  PassphraseDialog: (props: Record<string, unknown>) =>
+    props.isOpen ? <div data-testid="passphrase-dialog">Passphrase</div> : null,
 }));
 
 vi.mock('../stash/StashDialog', () => ({
@@ -199,6 +201,7 @@ const mockCloseStashDialog = vi.fn();
 const mockCloseDiscardConfirmDialog = vi.fn();
 const mockCloseSettingsDialog = vi.fn();
 const mockCloseRepositorySettingsDialog = vi.fn();
+const mockClosePassphraseDialog = vi.fn();
 
 let mockDialogStore = {
   tagDialog: {
@@ -293,6 +296,13 @@ let mockDialogStore = {
   closeDiscardConfirmDialog: mockCloseDiscardConfirmDialog,
   settingsDialog: { isOpen: false },
   closeSettingsDialog: mockCloseSettingsDialog,
+  passphraseDialog: {
+    isOpen: false,
+    keyPath: null as string | null,
+    onSuccess: null as (() => void) | null,
+    onCancel: null as (() => void) | null,
+  },
+  closePassphraseDialog: mockClosePassphraseDialog,
   repositorySettingsDialog: { isOpen: false },
   closeRepositorySettingsDialog: mockCloseRepositorySettingsDialog,
 };
@@ -383,6 +393,8 @@ describe('AppLayout', () => {
       closeDiscardConfirmDialog: mockCloseDiscardConfirmDialog,
       settingsDialog: { isOpen: false },
       closeSettingsDialog: mockCloseSettingsDialog,
+      passphraseDialog: { isOpen: false, keyPath: null, onSuccess: null, onCancel: null },
+      closePassphraseDialog: mockClosePassphraseDialog,
       repositorySettingsDialog: { isOpen: false },
       closeRepositorySettingsDialog: mockCloseRepositorySettingsDialog,
     };

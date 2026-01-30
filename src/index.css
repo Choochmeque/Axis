@@ -563,7 +563,7 @@ code {
 
   /* Toast notifications */
   .toast-container {
-    @apply fixed bottom-10 right-4 z-[9999] flex flex-col gap-2 max-w-sm;
+    @apply fixed bottom-10 right-4 z-[12000] flex flex-col gap-2 max-w-sm;
   }
 
   .toast {

@@ -97,12 +97,14 @@ pub async fn build_graph(
 
     let result = state
         .get_git_service()?
-        .with_git2(|git2| git2.build_graph(fetch_options))?;
+        .with_git2(|git2| git2.build_graph(fetch_options))
+        .await?;
 
     // Get HEAD OID for cache invalidation
     let head_oid = state
         .get_git_service()?
-        .with_git2(|git2| git2.get_head_oid());
+        .with_git2(|git2| git2.get_head_oid())
+        .await;
 
     // Store in cache
     cache.set(
@@ -153,7 +155,9 @@ async fn prefetch_commits(
         ..options
     };
 
-    let result = git_handle.with_git2(|git2| git2.build_graph(fetch_options))?;
+    let result = git_handle
+        .with_git2(|git2| git2.build_graph(fetch_options))
+        .await?;
 
     // Update cache with new data
     cache.update(&cache_key, |entry| {
@@ -178,6 +182,7 @@ pub async fn search_commits(
     state
         .get_git_service()?
         .with_git2(|git2| git2.search_commits(options))
+        .await
 }
 
 /// Get blame information for a file
@@ -190,7 +195,8 @@ pub async fn blame_file(
 ) -> Result<BlameResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.blame_file(&path, commit_oid.as_deref()))
+        .with_git2(move |git2| git2.blame_file(&path, commit_oid.as_deref()))
+        .await
 }
 
 /// Get total commit count for pagination
@@ -202,7 +208,8 @@ pub async fn get_commit_count(
 ) -> Result<usize> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_commit_count(from_ref.as_deref()))
+        .with_git2(move |git2| git2.get_commit_count(from_ref.as_deref()))
+        .await
 }
 
 /// Get commit history for specific files
@@ -215,6 +222,7 @@ pub async fn get_file_history(
     state
         .get_git_service()?
         .with_git2(|git2| git2.get_file_history(options))
+        .await
 }
 
 /// Get diff for a specific file in a specific commit
@@ -226,7 +234,10 @@ pub async fn get_file_diff_in_commit(
     path: String,
     options: Option<DiffOptions>,
 ) -> Result<Option<FileDiff>> {
-    state.get_git_service()?.with_git2(|git2| {
-        git2.get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
-    })
+    state
+        .get_git_service()?
+        .with_git2(move |git2| {
+            git2.get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
+        })
+        .await
 }

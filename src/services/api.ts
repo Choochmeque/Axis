@@ -44,6 +44,7 @@ import type {
   GrepOptions,
   AppSettings,
   SigningConfig,
+  SigningFormat,
   ArchiveOptions,
   FormatPatchOptions,
   CreatePatchOptions,
@@ -59,6 +60,9 @@ import type {
   GitHookType,
   CheckoutOptions,
   BranchFilter,
+  GenerateSshKeyOptions,
+  ImportSshKeyOptions,
+  ExportSshKeyOptions,
 } from '@/types';
 
 export const repositoryApi = {
@@ -466,6 +470,9 @@ export const signingApi = {
   testSigning: (config: SigningConfig) => commands.testSigning(config),
 
   isAvailable: (config: SigningConfig) => commands.isSigningAvailable(config),
+
+  verifyCommitSignature: (oid: string, format: SigningFormat) =>
+    commands.verifyCommitSignature(oid, format),
 };
 
 export const shellApi = {
@@ -474,6 +481,8 @@ export const shellApi = {
   openTerminal: (path: string) => commands.openTerminal(path),
 
   openUrl: (url: string) => commands.openUrl(url),
+
+  cancelOperation: (operationId: string) => commands.cancelOperation(operationId),
 };
 
 export const archiveApi = {
@@ -616,6 +625,41 @@ export const avatarApi = {
   get: (email: string, sha?: string) => commands.getAvatar(email, sha ?? null),
 
   clearCache: () => commands.clearAvatarCache(),
+};
+
+export const sshKeysApi = {
+  list: () => commands.listSshKeysInfo(),
+
+  generate: (options: GenerateSshKeyOptions) => commands.generateSshKey(options),
+
+  getPublicKey: (keyPath: string) => commands.getSshPublicKey(keyPath),
+
+  getFingerprint: (keyPath: string) => commands.getSshKeyFingerprint(keyPath),
+
+  delete: (keyPath: string) => commands.deleteSshKey(keyPath),
+
+  import: (options: ImportSshKeyOptions) => commands.importSshKey(options),
+
+  export: (options: ExportSshKeyOptions) => commands.exportSshKey(options),
+
+  checkFormat: (keyPath: string) => commands.checkSshKeyFormat(keyPath),
+
+  cachePassphrase: (keyPath: string, passphrase: string) =>
+    commands.cacheSshPassphrase(keyPath, passphrase),
+
+  clearPassphrase: (keyPath: string) => commands.clearSshPassphrase(keyPath),
+
+  isPassphraseCached: (keyPath: string) => commands.isSshPassphraseCached(keyPath),
+};
+
+export const remoteSshKeysApi = {
+  get: (remoteName: string) => commands.getRemoteSshKey(remoteName),
+
+  set: (remoteName: string, sshKeyPath: string) => commands.setRemoteSshKey(remoteName, sshKeyPath),
+
+  delete: (remoteName: string) => commands.deleteRemoteSshKey(remoteName),
+
+  list: () => commands.listRemoteSshKeys(),
 };
 
 export const customActionsApi = {

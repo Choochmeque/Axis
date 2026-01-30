@@ -151,6 +151,14 @@ interface MergeDialogState {
   onMergeComplete?: (result: MergeResult) => void;
 }
 
+// Passphrase dialog state
+interface PassphraseDialogState {
+  isOpen: boolean;
+  keyPath: string | null;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
 interface DialogState {
   // Tag dialog
   tagDialog: TagDialogState;
@@ -214,6 +222,9 @@ interface DialogState {
 
   // Merge dialog
   mergeDialog: MergeDialogState;
+
+  // Passphrase dialog
+  passphraseDialog: PassphraseDialogState;
 
   // Tag dialog actions
   openTagDialog: (options?: {
@@ -333,6 +344,14 @@ interface DialogState {
     onMergeComplete?: (result: MergeResult) => void;
   }) => void;
   closeMergeDialog: () => void;
+
+  // Passphrase dialog actions
+  openPassphraseDialog: (options: {
+    keyPath: string;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+  }) => void;
+  closePassphraseDialog: () => void;
 }
 
 const initialTagDialogState: TagDialogState = {
@@ -452,6 +471,13 @@ const initialMergeDialogState: MergeDialogState = {
   onMergeComplete: undefined,
 };
 
+const initialPassphraseDialogState: PassphraseDialogState = {
+  isOpen: false,
+  keyPath: null,
+  onSuccess: undefined,
+  onCancel: undefined,
+};
+
 export const useDialogStore = create<DialogState>((set) => ({
   tagDialog: initialTagDialogState,
   createBranchDialog: initialCreateBranchDialogState,
@@ -474,6 +500,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   settingsDialog: initialSettingsDialogState,
   repositorySettingsDialog: initialRepositorySettingsDialogState,
   mergeDialog: initialMergeDialogState,
+  passphraseDialog: initialPassphraseDialogState,
 
   openTagDialog: (options) => {
     set({
@@ -730,5 +757,20 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeMergeDialog: () => {
     set({ mergeDialog: initialMergeDialogState });
+  },
+
+  openPassphraseDialog: (options) => {
+    set({
+      passphraseDialog: {
+        isOpen: true,
+        keyPath: options.keyPath,
+        onSuccess: options.onSuccess,
+        onCancel: options.onCancel,
+      },
+    });
+  },
+
+  closePassphraseDialog: () => {
+    set({ passphraseDialog: initialPassphraseDialogState });
   },
 }));

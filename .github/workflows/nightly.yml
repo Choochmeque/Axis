@@ -26,10 +26,10 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: linux-artifacts
+          - os: windows-latest
+            artifact: windows-artifacts
           # - os: macos-latest
-          #   artifact: myapp-nightly-macos.dmg
-          # - os: windows-latest
-          #   artifact: myapp-nightly-windows.zip
+          #   artifact: macos-artifacts
 
     steps:
       - name: Checkout main
@@ -103,18 +103,36 @@ jobs:
           echo "version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
           echo "Nightly version: $NIGHTLY_VERSION"
 
-      - name: Build Tauri app
+      - name: Build Tauri app (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: pnpm tauri build --bundles appimage -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
         env:
           AXIS_UPDATE_CHANNEL: nightly
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_NIGHTLY }}
 
-      - name: Collect build artifacts
+      - name: Build Tauri app (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm tauri build --bundles msi -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
+        env:
+          AXIS_UPDATE_CHANNEL: nightly
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_NIGHTLY }}
+
+      - name: Collect build artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p dist
           cp src-tauri/target/release/bundle/appimage/*.AppImage dist/
           cp src-tauri/target/release/bundle/appimage/*.AppImage.sig dist/
+
+      - name: Collect build artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp src-tauri/target/release/bundle/msi/*.msi dist/
+          cp src-tauri/target/release/bundle/msi/*.msi.sig dist/
 
       # --------------------------------------------------
       # Upload artifact (short-lived)
@@ -179,31 +197,43 @@ jobs:
       - name: Generate latest.json
         run: |
           REPO="${{ github.repository }}"
+          VERSION="${{ needs.build.outputs.version }}"
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
           APPIMAGE=$(find dist -name '*.AppImage' | head -1)
           APPIMAGE_SIG=$(find dist -name '*.AppImage.sig' | head -1)
+          MSI=$(find dist -name '*.msi' | head -1)
+          MSI_SIG=$(find dist -name '*.msi.sig' | head -1)
 
-          if [ -z "$APPIMAGE" ] || [ -z "$APPIMAGE_SIG" ]; then
-            echo "ERROR: AppImage or signature file not found"
+          PLATFORMS=""
+
+          if [ -n "$APPIMAGE" ] && [ -n "$APPIMAGE_SIG" ]; then
+            APPIMAGE_NAME=$(basename "$APPIMAGE")
+            APPIMAGE_SIG_CONTENT=$(cat "$APPIMAGE_SIG")
+            PLATFORMS="\"linux-x86_64\": { \"signature\": \"$APPIMAGE_SIG_CONTENT\", \"url\": \"https://github.com/$REPO/releases/download/nightly/$APPIMAGE_NAME\" }"
+          fi
+
+          if [ -n "$MSI" ] && [ -n "$MSI_SIG" ]; then
+            MSI_NAME=$(basename "$MSI")
+            MSI_SIG_CONTENT=$(cat "$MSI_SIG")
+            if [ -n "$PLATFORMS" ]; then
+              PLATFORMS="$PLATFORMS, "
+            fi
+            PLATFORMS="${PLATFORMS}\"windows-x86_64\": { \"signature\": \"$MSI_SIG_CONTENT\", \"url\": \"https://github.com/$REPO/releases/download/nightly/$MSI_NAME\" }"
+          fi
+
+          if [ -z "$PLATFORMS" ]; then
+            echo "ERROR: No platform artifacts found"
             find dist -type f
             exit 1
           fi
-
-          APPIMAGE_NAME=$(basename "$APPIMAGE")
-          SIG_CONTENT=$(cat "$APPIMAGE_SIG")
-          VERSION="${{ needs.build.outputs.version }}"
-          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           cat > dist/latest.json <<EOF
           {
             "version": "$VERSION",
             "notes": "Nightly build from main",
             "pub_date": "$PUB_DATE",
-            "platforms": {
-              "linux-x86_64": {
-                "signature": "$SIG_CONTENT",
-                "url": "https://github.com/$REPO/releases/download/nightly/$APPIMAGE_NAME"
-              }
-            }
+            "platforms": { $PLATFORMS }
           }
           EOF
 
@@ -216,6 +246,6 @@ jobs:
       - name: Upload assets (replace)
         run: |
           gh release upload nightly dist/latest.json --clobber
-          find dist -type f \( -name '*.AppImage' -o -name '*.AppImage.sig' \) | xargs gh release upload nightly --clobber
+          find dist -type f \( -name '*.AppImage' -o -name '*.AppImage.sig' -o -name '*.msi' -o -name '*.msi.sig' \) | xargs gh release upload nightly --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

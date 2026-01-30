@@ -127,9 +127,9 @@ jobs:
       - name: Collect build artifacts (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          mkdir -p dist
-          cp src-tauri/target/release/bundle/appimage/*.AppImage dist/
-          cp src-tauri/target/release/bundle/appimage/*.AppImage.sig dist/
+          mkdir -p nightly-dist
+          cp src-tauri/target/release/bundle/appimage/*.AppImage nightly-dist/
+          cp src-tauri/target/release/bundle/appimage/*.AppImage.sig nightly-dist/
 
       - name: Build Tauri app (macOS)
         if: matrix.os == 'macos-latest'
@@ -142,17 +142,17 @@ jobs:
       - name: Collect build artifacts (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          mkdir -p dist
-          cp src-tauri/target/release/bundle/nsis/*.exe dist/
-          cp src-tauri/target/release/bundle/nsis/*.exe.sig dist/
+          mkdir -p nightly-dist
+          cp src-tauri/target/release/bundle/nsis/*.exe nightly-dist/
+          cp src-tauri/target/release/bundle/nsis/*.exe.sig nightly-dist/
 
       - name: Collect build artifacts (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          mkdir -p dist
-          cp src-tauri/target/release/bundle/dmg/*.dmg dist/
-          cp src-tauri/target/release/bundle/macos/*.app.tar.gz dist/
-          cp src-tauri/target/release/bundle/macos/*.app.tar.gz.sig dist/
+          mkdir -p nightly-dist
+          cp src-tauri/target/release/bundle/dmg/*.dmg nightly-dist/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz nightly-dist/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz.sig nightly-dist/
 
       # --------------------------------------------------
       # Upload artifact (short-lived)
@@ -161,7 +161,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/
+          path: nightly-dist/
           retention-days: 1
 
   release:
@@ -178,7 +178,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          path: nightly-dist
 
       # --------------------------------------------------
       # Move nightly tag + create version tag
@@ -220,12 +220,12 @@ jobs:
           VERSION="${{ needs.build.outputs.version }}"
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          APPIMAGE=$(find dist -name '*.AppImage' | head -1)
-          APPIMAGE_SIG=$(find dist -name '*.AppImage.sig' | head -1)
-          NSIS=$(find dist -name '*-setup.exe' | head -1)
-          NSIS_SIG=$(find dist -name '*-setup.exe.sig' | head -1)
-          MACOS=$(find dist -name '*.app.tar.gz' ! -name '*.sig' | head -1)
-          MACOS_SIG=$(find dist -name '*.app.tar.gz.sig' | head -1)
+          APPIMAGE=$(find nightly-dist -name '*.AppImage' | head -1)
+          APPIMAGE_SIG=$(find nightly-dist -name '*.AppImage.sig' | head -1)
+          NSIS=$(find nightly-dist -name '*-setup.exe' | head -1)
+          NSIS_SIG=$(find nightly-dist -name '*-setup.exe.sig' | head -1)
+          MACOS=$(find nightly-dist -name '*.app.tar.gz' ! -name '*.sig' | head -1)
+          MACOS_SIG=$(find nightly-dist -name '*.app.tar.gz.sig' | head -1)
 
           PLATFORMS=""
 
@@ -255,11 +255,11 @@ jobs:
 
           if [ -z "$PLATFORMS" ]; then
             echo "ERROR: No platform artifacts found"
-            find dist -type f
+            find nightly-dist -type f
             exit 1
           fi
 
-          cat > dist/latest.json <<EOF
+          cat > nightly-dist/latest.json <<EOF
           {
             "version": "$VERSION",
             "notes": "Nightly build from main",
@@ -269,14 +269,14 @@ jobs:
           EOF
 
           echo "Generated latest.json:"
-          cat dist/latest.json
+          cat nightly-dist/latest.json
 
       # --------------------------------------------------
       # Replace release assets
       # --------------------------------------------------
       - name: Upload assets (replace)
         run: |
-          gh release upload nightly dist/latest.json --clobber
-          find dist -type f \( -name '*.AppImage' -o -name '*.AppImage.sig' -o -name '*-setup.exe' -o -name '*-setup.exe.sig' -o -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.app.tar.gz.sig' \) | xargs gh release upload nightly --clobber
+          gh release upload nightly nightly-dist/latest.json --clobber
+          find nightly-dist -type f \( -name '*.AppImage' -o -name '*.AppImage.sig' -o -name '*-setup.exe' -o -name '*-setup.exe.sig' -o -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.app.tar.gz.sig' \) | xargs gh release upload nightly --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -89,11 +89,12 @@ jobs:
           packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
           version: '1.0'
 
-      - name: Install Perl (Windows)
+      - name: Install Strawberry Perl (Windows)
         if: matrix.os == 'windows-latest'
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: '5.38'
+          distribution: strawberry
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

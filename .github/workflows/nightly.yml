@@ -83,7 +83,7 @@ jobs:
           version: '1.0'
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Create .env file
         run: |

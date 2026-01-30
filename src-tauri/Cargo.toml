@@ -86,3 +86,9 @@ tokio-test = "0.4"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+
+# On Windows, libssh2 defaults to WinCNG crypto backend (LIBSSH2_ED25519=0).
+# This breaks Ed25519 hostkey verification (known_hosts) and Ed25519 user key auth.
+# Switch to OpenSSL backend with vendored build to guarantee Ed25519 support.
+[target.'cfg(target_os = "windows")'.dependencies]
+libssh2-sys = { version = "0.3", features = ["openssl-on-win32", "vendored-openssl"] }

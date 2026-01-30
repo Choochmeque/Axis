@@ -1037,6 +1037,7 @@
         "initFailed": "Failed to init submodule",
         "updateFailed": "Failed to update submodule",
         "removeFailed": "Failed to remove submodule",
+        "removeTitle": "Remove Submodule",
         "removeConfirm": "Remove submodule '{{path}}'? This will delete the submodule directory.",
         "initialize": "Initialize",
         "update": "Update"
@@ -1746,6 +1747,7 @@
     },
     "patterns": {
       "empty": "No tracked patterns. Click + to add one.",
+      "untrackTitle": "Untrack Pattern",
       "untrackConfirm": "Untrack pattern \"{{pattern}}\"?"
     },
     "files": {
@@ -1903,6 +1905,7 @@
       "count_plural": "{{count}} actions"
     },
     "loading": "Loading actions...",
+    "deleteTitle": "Delete Action",
     "deleteConfirm": "Delete action \"{{name}}\"?",
     "editLabel": "Edit action",
     "deleteLabel": "Delete action"

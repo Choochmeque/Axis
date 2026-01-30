@@ -77,3 +77,4 @@ export {
   type HeaderContext,
 } from './data-table';
 export { VirtualList } from './virtual-list';
+export { ConfirmDialog } from './ConfirmDialog';

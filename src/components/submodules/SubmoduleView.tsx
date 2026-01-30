@@ -26,6 +26,7 @@ import {
   Button,
   FormField,
   Input,
+  ConfirmDialog,
 } from '@/components/ui';
 
 const btnIconClass =
@@ -44,6 +45,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [removeConfirmPath, setRemoveConfirmPath] = useState<string | null>(null);
 
   // Add dialog state
   const [addUrl, setAddUrl] = useState('');
@@ -146,10 +148,6 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   };
 
   const handleRemove = async (submodulePath: string) => {
-    if (!confirm(t('sidebar.submodule.view.removeConfirm', { path: submodulePath }))) {
-      return;
-    }
-
     setIsLoading(true);
     try {
       const result = await submoduleApi.remove(submodulePath);
@@ -349,7 +347,7 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemove(submodule.path);
+                      setRemoveConfirmPath(submodule.path);
                     }}
                   >
                     <Trash2 size={12} />
@@ -416,6 +414,20 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        isOpen={removeConfirmPath !== null}
+        onClose={() => setRemoveConfirmPath(null)}
+        onConfirm={() => {
+          if (removeConfirmPath) {
+            handleRemove(removeConfirmPath);
+          }
+          setRemoveConfirmPath(null);
+        }}
+        title={t('sidebar.submodule.view.removeTitle')}
+        message={t('sidebar.submodule.view.removeConfirm', { path: removeConfirmPath ?? '' })}
+        confirmLabel={t('common.remove')}
+      />
     </div>
   );
 }

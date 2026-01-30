@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Terminal, GripVertical } from 'lucide-react';
-import { Button, Alert } from '@/components/ui';
+import { Button, Alert, ConfirmDialog } from '@/components/ui';
 import { ActionEditorDialog } from '@/components/custom-actions';
 import { useCustomActionsStore } from '@/store/customActionsStore';
 import { ActionStorageType } from '@/types';
@@ -19,6 +19,7 @@ export function RepoActionsSettings() {
 
   const [showEditor, setShowEditor] = useState(false);
   const [editingAction, setEditingAction] = useState<CustomAction | null>(null);
+  const [actionToDelete, setActionToDelete] = useState<CustomAction | null>(null);
 
   useEffect(() => {
     loadRepoActions();
@@ -34,10 +35,8 @@ export function RepoActionsSettings() {
     setShowEditor(true);
   };
 
-  const handleDelete = async (action: CustomAction) => {
-    if (confirm(t('actions.deleteConfirm', { name: action.name }))) {
-      await deleteAction(action.id, ActionStorageType.Repository);
-    }
+  const handleDelete = (action: CustomAction) => {
+    setActionToDelete(action);
   };
 
   if (isLoading) {
@@ -125,6 +124,20 @@ export function RepoActionsSettings() {
         onOpenChange={setShowEditor}
         action={editingAction}
         defaultStorage={ActionStorageType.Repository}
+      />
+
+      <ConfirmDialog
+        isOpen={actionToDelete !== null}
+        onClose={() => setActionToDelete(null)}
+        onConfirm={async () => {
+          if (actionToDelete) {
+            await deleteAction(actionToDelete.id, ActionStorageType.Repository);
+          }
+          setActionToDelete(null);
+        }}
+        title={t('actions.deleteTitle')}
+        message={t('actions.deleteConfirm', { name: actionToDelete?.name ?? '' })}
+        confirmLabel={t('common.delete')}
       />
     </div>
   );

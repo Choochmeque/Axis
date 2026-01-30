@@ -26,6 +26,7 @@ import {
   FormField,
   Input,
   VirtualList,
+  ConfirmDialog,
 } from '@/components/ui';
 import type { LfsFile } from '@/bindings/api';
 
@@ -64,6 +65,7 @@ export function LfsView() {
   const [showTrackDialog, setShowTrackDialog] = useState(false);
   const [trackPattern, setTrackPattern] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [untrackPattern, setUntrackPattern] = useState<string | null>(null);
 
   const isLoading = isLoadingStatus || isLoadingPatterns || isLoadingFiles;
 
@@ -84,11 +86,8 @@ export function LfsView() {
     }
   };
 
-  const handleUntrack = async (pattern: string) => {
-    if (!confirm(t('lfs.patterns.untrackConfirm', { pattern }))) {
-      return;
-    }
-    await untrack(pattern);
+  const handleUntrack = (pattern: string) => {
+    setUntrackPattern(pattern);
   };
 
   const formatSize = (bytes: number): string => {
@@ -369,6 +368,20 @@ export function LfsView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        isOpen={untrackPattern !== null}
+        onClose={() => setUntrackPattern(null)}
+        onConfirm={async () => {
+          if (untrackPattern) {
+            await untrack(untrackPattern);
+          }
+          setUntrackPattern(null);
+        }}
+        title={t('lfs.patterns.untrackTitle')}
+        message={t('lfs.patterns.untrackConfirm', { pattern: untrackPattern ?? '' })}
+        confirmLabel={t('common.remove')}
+      />
     </div>
   );
 }

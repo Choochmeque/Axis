@@ -82,6 +82,17 @@ vi.mock('@/components/ui', () => ({
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     placeholder?: string;
   }) => <input value={value} onChange={onChange} placeholder={placeholder} />,
+  ConfirmDialog: ({
+    isOpen,
+    title,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmLabel: string;
+  }) => (isOpen ? <div data-testid="confirm-dialog">{title}</div> : null),
   VirtualList: ({
     items,
     children,

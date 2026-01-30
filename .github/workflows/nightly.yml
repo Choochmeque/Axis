@@ -1,0 +1,229 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # every night at 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write # required for tags + releases
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-artifacts
+          # - os: macos-latest
+          #   artifact: myapp-nightly-macos.dmg
+          # - os: windows-latest
+          #   artifact: myapp-nightly-windows.zip
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # --------------------------------------------------
+      # Check if there were commits in the last 24h
+      # (only once, Linux job)
+      # --------------------------------------------------
+      - name: Check commits in last 24h
+        if: matrix.os == 'ubuntu-latest'
+        id: changes
+        run: |
+          COMMITS=$(git rev-list --count --since="24 hours ago" HEAD)
+          echo "commits=$COMMITS" >> "$GITHUB_OUTPUT"
+
+      - name: Stop if no commits
+        if: matrix.os == 'ubuntu-latest' && steps.changes.outputs.commits == '0'
+        run: |
+          echo "No commits — skipping nightly"
+          exit 0
+
+      # --------------------------------------------------
+      # Setup build tools
+      # --------------------------------------------------
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache and install APT packages
+        if: matrix.os == 'ubuntu-latest'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
+          version: '1.0'
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      # --------------------------------------------------
+      # Build
+      # --------------------------------------------------
+      - name: Generate nightly version
+        id: version
+        run: |
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          NIGHTLY_VERSION="${BASE_VERSION}-nightly.$(date +%Y%m%d)"
+          echo "version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Nightly version: $NIGHTLY_VERSION"
+
+      - name: Build Tauri app
+        run: pnpm tauri build --bundles appimage -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
+        env:
+          AXIS_UPDATE_CHANNEL: nightly
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_NIGHTLY }}
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p dist
+          cp src-tauri/target/release/bundle/appimage/*.AppImage dist/
+          cp src-tauri/target/release/bundle/appimage/*.AppImage.sig dist/
+
+      # --------------------------------------------------
+      # Upload artifact (short-lived)
+      # --------------------------------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+          retention-days: 1
+
+  release:
+    name: Publish nightly
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      # --------------------------------------------------
+      # Move nightly tag to current main HEAD
+      # TODO: also tag with full version number
+      # --------------------------------------------------
+      - name: Update nightly tag
+        run: |
+          git tag -f nightly
+          git push origin nightly --force
+
+      # --------------------------------------------------
+      # Create nightly release if missing
+      # --------------------------------------------------
+      - name: Ensure nightly release exists
+        run: |
+          gh release create nightly \
+            --prerelease \
+            --title "Nightly" \
+            --notes "Nightly build from main" \
+            --target nightly \
+            || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------
+      # Generate notes since last stable release (v*)
+      # --------------------------------------------------
+      - name: Update release notes (since last stable)
+        run: |
+          LAST_STABLE=$(git tag --merged main --list 'v*' --sort=-version:refname | head -n 1)
+
+          if [ -z "$LAST_STABLE" ]; then
+            echo "No stable release found"
+            gh release edit nightly \
+              --notes "No stable release yet."
+          else
+            echo "Generating notes since $LAST_STABLE"
+            gh release edit nightly \
+              --generate-notes \
+              --notes-start-tag "$LAST_STABLE"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------
+      # Generate latest.json for updater
+      # --------------------------------------------------
+      - name: Generate latest.json
+        run: |
+          REPO="${{ github.repository }}"
+          APPIMAGE=$(find dist -name '*.AppImage' | head -1)
+          APPIMAGE_SIG=$(find dist -name '*.AppImage.sig' | head -1)
+
+          if [ -z "$APPIMAGE" ] || [ -z "$APPIMAGE_SIG" ]; then
+            echo "ERROR: AppImage or signature file not found"
+            find dist -type f
+            exit 1
+          fi
+
+          APPIMAGE_NAME=$(basename "$APPIMAGE")
+          SIG_CONTENT=$(cat "$APPIMAGE_SIG")
+          VERSION=$(echo "$APPIMAGE_NAME" | grep -oP '\d+\.\d+\.\d+-nightly\.\d+' || echo "unknown")
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          cat > dist/latest.json <<EOF
+          {
+            "version": "$VERSION",
+            "notes": "Nightly build from main",
+            "pub_date": "$PUB_DATE",
+            "platforms": {
+              "linux-x86_64": {
+                "signature": "$SIG_CONTENT",
+                "url": "https://github.com/$REPO/releases/download/nightly/$APPIMAGE_NAME"
+              }
+            }
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat dist/latest.json
+
+      # --------------------------------------------------
+      # Replace release assets
+      # --------------------------------------------------
+      - name: Upload assets (replace)
+        run: |
+          gh release upload nightly dist/** --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

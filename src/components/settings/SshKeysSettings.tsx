@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Upload, Download, Trash2, Copy, KeyRound, AlertTriangle } from 'lucide-react';
+import { Plus, Upload, Download, Trash2, Copy, KeyRound } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { copyToClipboard } from '@/lib/actions';
 import { sshKeysApi } from '@/services/api';
-import { SshKeyAlgorithm, SshKeyFormat } from '@/types';
+import { SshKeyAlgorithm } from '@/types';
 import type { SshKeyInfo, SshKeyAlgorithm as SshKeyAlgorithmType } from '@/types';
 import {
   Dialog,
@@ -137,15 +137,6 @@ export function SshKeysSettings() {
                   <span className="text-xs px-1.5 py-0.5 rounded bg-(--bg-primary) text-(--text-muted) font-mono uppercase">
                     {key.keyType}
                   </span>
-                  {key.format === SshKeyFormat.OpenSsh && (
-                    <span
-                      className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning/15 text-warning"
-                      title={`${t('settings.sshKeys.openSshFormatHint')}\n${t('settings.sshKeys.openSshFormatCommand', { keyPath: key.path })}`}
-                    >
-                      <AlertTriangle size={11} />
-                      {t('settings.sshKeys.openSshFormat')}
-                    </span>
-                  )}
                   <span className="text-sm font-medium text-(--text-primary) truncate">
                     {keyName(key)}
                   </span>

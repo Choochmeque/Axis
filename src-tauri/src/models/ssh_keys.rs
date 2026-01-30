@@ -24,8 +24,10 @@ pub enum SshKeyFormat {
     Unencrypted,
     /// PEM format with Proc-Type: 4,ENCRYPTED
     EncryptedPem,
-    /// OpenSSH format (BEGIN OPENSSH PRIVATE KEY) — not supported by libssh2
+    /// OpenSSH format (BEGIN OPENSSH PRIVATE KEY), no passphrase
     OpenSsh,
+    /// OpenSSH format with passphrase (encrypted via bcrypt KDF)
+    EncryptedOpenSsh,
     /// Unable to determine format
     Unknown,
 }
@@ -489,9 +491,14 @@ mod tests {
         assert_eq!(SshKeyFormat::Unencrypted, SshKeyFormat::Unencrypted);
         assert_eq!(SshKeyFormat::EncryptedPem, SshKeyFormat::EncryptedPem);
         assert_eq!(SshKeyFormat::OpenSsh, SshKeyFormat::OpenSsh);
+        assert_eq!(
+            SshKeyFormat::EncryptedOpenSsh,
+            SshKeyFormat::EncryptedOpenSsh
+        );
         assert_eq!(SshKeyFormat::Unknown, SshKeyFormat::Unknown);
         assert_ne!(SshKeyFormat::Unencrypted, SshKeyFormat::EncryptedPem);
         assert_ne!(SshKeyFormat::OpenSsh, SshKeyFormat::Unknown);
+        assert_ne!(SshKeyFormat::OpenSsh, SshKeyFormat::EncryptedOpenSsh);
     }
 
     #[test]
@@ -504,6 +511,10 @@ mod tests {
 
         let json = serde_json::to_string(&SshKeyFormat::OpenSsh).expect("should serialize");
         assert_eq!(json, "\"OpenSsh\"");
+
+        let json =
+            serde_json::to_string(&SshKeyFormat::EncryptedOpenSsh).expect("should serialize");
+        assert_eq!(json, "\"EncryptedOpenSsh\"");
 
         let json = serde_json::to_string(&SshKeyFormat::Unknown).expect("should serialize");
         assert_eq!(json, "\"Unknown\"");
@@ -520,6 +531,10 @@ mod tests {
         let f: SshKeyFormat = serde_json::from_str("\"OpenSsh\"").expect("should deserialize");
         assert_eq!(f, SshKeyFormat::OpenSsh);
 
+        let f: SshKeyFormat =
+            serde_json::from_str("\"EncryptedOpenSsh\"").expect("should deserialize");
+        assert_eq!(f, SshKeyFormat::EncryptedOpenSsh);
+
         let f: SshKeyFormat = serde_json::from_str("\"Unknown\"").expect("should deserialize");
         assert_eq!(f, SshKeyFormat::Unknown);
     }
@@ -529,6 +544,10 @@ mod tests {
         assert_eq!(SshKeyFormat::Unencrypted.to_string(), "Unencrypted");
         assert_eq!(SshKeyFormat::EncryptedPem.to_string(), "EncryptedPem");
         assert_eq!(SshKeyFormat::OpenSsh.to_string(), "OpenSsh");
+        assert_eq!(
+            SshKeyFormat::EncryptedOpenSsh.to_string(),
+            "EncryptedOpenSsh"
+        );
         assert_eq!(SshKeyFormat::Unknown.to_string(), "Unknown");
     }
 
@@ -549,6 +568,10 @@ mod tests {
             SshKeyFormat::OpenSsh
         );
         assert_eq!(
+            SshKeyFormat::from_str("EncryptedOpenSsh").expect("should parse"),
+            SshKeyFormat::EncryptedOpenSsh
+        );
+        assert_eq!(
             SshKeyFormat::from_str("Unknown").expect("should parse"),
             SshKeyFormat::Unknown
         );
@@ -563,6 +586,10 @@ mod tests {
     #[test]
     fn test_ssh_key_format_clone() {
         let format = SshKeyFormat::EncryptedPem;
+        let cloned = format.clone();
+        assert_eq!(format, cloned);
+
+        let format = SshKeyFormat::EncryptedOpenSsh;
         let cloned = format.clone();
         assert_eq!(format, cloned);
     }

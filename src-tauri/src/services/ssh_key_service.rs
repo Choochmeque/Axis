@@ -4,6 +4,7 @@ use crate::models::{
     SshKeyInfo,
 };
 use crate::storage::Database;
+use base64::Engine;
 use log::{error, info};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -158,16 +159,7 @@ impl SshKeyService {
         let passphrase = options.passphrase.as_deref().unwrap_or("");
         let key_path_str = key_path.to_string_lossy().to_string();
 
-        let mut args = vec![
-            "-t",
-            &algo_str,
-            "-f",
-            &key_path_str,
-            "-N",
-            passphrase,
-            "-m",
-            "PEM",
-        ];
+        let mut args = vec!["-t", &algo_str, "-f", &key_path_str, "-N", passphrase];
 
         let comment_str;
         if let Some(ref comment) = options.comment {
@@ -216,12 +208,10 @@ impl SshKeyService {
             .and_then(|m| m.created().ok())
             .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
 
-        // Determine format: if passphrase was provided, the PEM key is encrypted
-        let format = if passphrase.is_empty() {
-            SshKeyFormat::Unencrypted
-        } else {
-            SshKeyFormat::EncryptedPem
-        };
+        // Determine format from the generated key content
+        let format = fs::read_to_string(&key_path)
+            .map(|content| Self::detect_key_format(&content))
+            .unwrap_or(SshKeyFormat::Unknown);
 
         Ok(SshKeyInfo {
             path: key_path_str,
@@ -441,6 +431,9 @@ impl SshKeyService {
     /// Detect the format of an SSH private key from its content
     fn detect_key_format(content: &str) -> SshKeyFormat {
         if content.contains("BEGIN OPENSSH PRIVATE KEY") {
+            if Self::is_openssh_key_encrypted(content) {
+                return SshKeyFormat::EncryptedOpenSsh;
+            }
             return SshKeyFormat::OpenSsh;
         }
 
@@ -458,6 +451,54 @@ impl SshKeyService {
         }
 
         SshKeyFormat::Unknown
+    }
+
+    /// Check whether an OpenSSH private key is encrypted by parsing its binary header.
+    ///
+    /// OpenSSH key format: AUTH_MAGIC ("openssh-key-v1\0") followed by:
+    /// - cipher name (u32 length + string): "none" if unencrypted, e.g. "aes256-ctr" if encrypted
+    /// - KDF name (u32 length + string): "none" if unencrypted, "bcrypt" if encrypted
+    ///
+    /// On any parse error, assumes encrypted (safer: will prompt for passphrase).
+    fn is_openssh_key_encrypted(content: &str) -> bool {
+        let b64: String = content
+            .lines()
+            .filter(|l| !l.starts_with("-----"))
+            .collect();
+
+        let decoded = match base64::engine::general_purpose::STANDARD.decode(&b64) {
+            Ok(d) => d,
+            Err(_) => return true, // assume encrypted on decode error
+        };
+
+        // AUTH_MAGIC = "openssh-key-v1\0" (15 bytes)
+        let magic = b"openssh-key-v1\0";
+        if decoded.len() < magic.len() + 4 {
+            return true;
+        }
+        if &decoded[..magic.len()] != magic {
+            return true;
+        }
+
+        let offset = magic.len();
+        // Read cipher name length (4 bytes big-endian u32)
+        let cipher_len = u32::from_be_bytes(match decoded[offset..offset + 4].try_into() {
+            Ok(b) => b,
+            Err(_) => return true,
+        }) as usize;
+
+        let cipher_start = offset + 4;
+        if decoded.len() < cipher_start + cipher_len {
+            return true;
+        }
+
+        let cipher_name =
+            match std::str::from_utf8(&decoded[cipher_start..cipher_start + cipher_len]) {
+                Ok(s) => s,
+                Err(_) => return true,
+            };
+
+        cipher_name != "none"
     }
 
     /// Check the format of an SSH key at the given path
@@ -544,6 +585,7 @@ impl SshKeyService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
     use tempfile::TempDir;
 
     // ==================== validate_filename Tests ====================
@@ -842,11 +884,55 @@ mod tests {
     // ==================== detect_key_format Tests ====================
 
     #[test]
-    fn test_detect_key_format_openssh() {
-        let content = "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXk=\n-----END OPENSSH PRIVATE KEY-----";
+    fn test_detect_key_format_openssh_unencrypted() {
+        // Real unencrypted OpenSSH key header: AUTH_MAGIC + cipher="none" + kdf="none"
+        // Build minimal binary: "openssh-key-v1\0" + len(4) + "none" + len(4) + "none"
+        let mut data = Vec::new();
+        data.extend_from_slice(b"openssh-key-v1\0");
+        data.extend_from_slice(&4u32.to_be_bytes()); // cipher name length
+        data.extend_from_slice(b"none"); // cipher name
+        data.extend_from_slice(&4u32.to_be_bytes()); // kdf name length
+        data.extend_from_slice(b"none"); // kdf name
+                                         // Pad to make valid-ish key
+        data.extend_from_slice(&[0u8; 64]);
+
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+        let content = format!(
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n{b64}\n-----END OPENSSH PRIVATE KEY-----"
+        );
+        assert_eq!(
+            SshKeyService::detect_key_format(&content),
+            SshKeyFormat::OpenSsh
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_openssh_encrypted() {
+        // Encrypted OpenSSH key: cipher="aes256-ctr", kdf="bcrypt"
+        let mut data = Vec::new();
+        data.extend_from_slice(b"openssh-key-v1\0");
+        data.extend_from_slice(&10u32.to_be_bytes()); // cipher name length
+        data.extend_from_slice(b"aes256-ctr"); // cipher name
+        data.extend_from_slice(&6u32.to_be_bytes()); // kdf name length
+        data.extend_from_slice(b"bcrypt"); // kdf name
+        data.extend_from_slice(&[0u8; 64]);
+
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+        let content = format!(
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n{b64}\n-----END OPENSSH PRIVATE KEY-----"
+        );
+        assert_eq!(
+            SshKeyService::detect_key_format(&content),
+            SshKeyFormat::EncryptedOpenSsh
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_openssh_invalid_base64_assumes_encrypted() {
+        let content = "-----BEGIN OPENSSH PRIVATE KEY-----\n!!!invalid-base64!!!\n-----END OPENSSH PRIVATE KEY-----";
         assert_eq!(
             SshKeyService::detect_key_format(content),
-            SshKeyFormat::OpenSsh
+            SshKeyFormat::EncryptedOpenSsh
         );
     }
 
@@ -950,13 +1036,23 @@ mod tests {
 
     #[test]
     fn test_check_key_format_optional_exists() {
+        // Build a valid unencrypted OpenSSH key binary for the test
+        let mut data = Vec::new();
+        data.extend_from_slice(b"openssh-key-v1\0");
+        data.extend_from_slice(&4u32.to_be_bytes());
+        data.extend_from_slice(b"none");
+        data.extend_from_slice(&4u32.to_be_bytes());
+        data.extend_from_slice(b"none");
+        data.extend_from_slice(&[0u8; 64]);
+
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+        let content = format!(
+            "-----BEGIN OPENSSH PRIVATE KEY-----\n{b64}\n-----END OPENSSH PRIVATE KEY-----"
+        );
+
         let tmp = TempDir::new().expect("should create temp dir");
         let key_path = tmp.path().join("test_key");
-        fs::write(
-            &key_path,
-            "-----BEGIN OPENSSH PRIVATE KEY-----\ndata\n-----END OPENSSH PRIVATE KEY-----",
-        )
-        .expect("should write");
+        fs::write(&key_path, content).expect("should write");
 
         let result = SshKeyService::check_key_format_optional(&key_path);
         assert_eq!(result, Some(SshKeyFormat::OpenSsh));

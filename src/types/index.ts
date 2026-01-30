@@ -653,6 +653,7 @@ export const SshKeyFormat: { [K in SshKeyFormatType]: K } = {
   Unencrypted: 'Unencrypted',
   EncryptedPem: 'EncryptedPem',
   OpenSsh: 'OpenSsh',
+  EncryptedOpenSsh: 'EncryptedOpenSsh',
   Unknown: 'Unknown',
 };
 

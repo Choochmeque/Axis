@@ -34,7 +34,7 @@ export function useSshKeyCheck() {
 
         const format = await sshKeysApi.checkFormat(keyPath);
 
-        if (format === SshKeyFormat.EncryptedPem) {
+        if (format === SshKeyFormat.EncryptedPem || format === SshKeyFormat.EncryptedOpenSsh) {
           // Check if passphrase is already cached (e.g. from a previous operation)
           const cached = await sshKeysApi.isPassphraseCached(keyPath);
           if (cached) {

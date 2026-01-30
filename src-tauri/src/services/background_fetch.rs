@@ -70,32 +70,26 @@ impl BackgroundFetchService {
                                         &default_ssh_key,
                                     );
 
-                                    // Skip keys that can't work in background
+                                    // Skip encrypted keys when no cached passphrase is available
                                     if let Some(key_path) = &ssh_key {
                                         let format = SshKeyService::check_key_format_optional(
                                             std::path::Path::new(key_path),
                                         );
-                                        match format {
-                                            Some(SshKeyFormat::OpenSsh) => {
+                                        if let Some(
+                                            SshKeyFormat::EncryptedPem
+                                            | SshKeyFormat::EncryptedOpenSsh,
+                                        ) = format
+                                        {
+                                            if app_state
+                                                .get_cached_ssh_passphrase(key_path)
+                                                .is_none()
+                                            {
                                                 log::debug!(
-                                                    "Background fetch: skipping remote {} (OpenSSH key format)",
+                                                    "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
                                                     remote.name
                                                 );
                                                 continue;
                                             }
-                                            Some(SshKeyFormat::EncryptedPem) => {
-                                                if app_state
-                                                    .get_cached_ssh_passphrase(key_path)
-                                                    .is_none()
-                                                {
-                                                    log::debug!(
-                                                        "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
-                                                        remote.name
-                                                    );
-                                                    continue;
-                                                }
-                                            }
-                                            _ => {}
                                         }
                                     }
 

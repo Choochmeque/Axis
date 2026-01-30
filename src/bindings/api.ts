@@ -3383,9 +3383,13 @@ export type SshKeyFormat =
  */
 "EncryptedPem" | 
 /**
- * OpenSSH format (BEGIN OPENSSH PRIVATE KEY) — not supported by libssh2
+ * OpenSSH format (BEGIN OPENSSH PRIVATE KEY), no passphrase
  */
 "OpenSsh" | 
+/**
+ * OpenSSH format with passphrase (encrypted via bcrypt KDF)
+ */
+"EncryptedOpenSsh" | 
 /**
  * Unable to determine format
  */

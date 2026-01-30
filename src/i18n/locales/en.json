@@ -315,9 +315,6 @@
         "confirmMessage": "Are you sure you want to delete \"{{name}}\"? This will remove both the private and public key files.",
         "warning": "This action cannot be undone."
       },
-      "openSshFormat": "OpenSSH format (not supported)",
-      "openSshFormatHint": "This key is in OpenSSH format which is not compatible with libssh2. Convert it with:",
-      "openSshFormatCommand": "ssh-keygen -p -m PEM -f {{keyPath}}",
       "notifications": {
         "generated": "SSH key generated",
         "imported": "SSH key imported",

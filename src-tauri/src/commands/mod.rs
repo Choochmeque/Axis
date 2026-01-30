@@ -24,6 +24,7 @@ mod staging;
 mod stash;
 mod submodules;
 mod tags;
+mod update;
 mod worktrees;
 
 pub use ai::*;
@@ -52,4 +53,5 @@ pub use staging::*;
 pub use stash::*;
 pub use submodules::*;
 pub use tags::*;
+pub use update::*;
 pub use worktrees::*;

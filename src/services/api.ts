@@ -686,3 +686,11 @@ export const customActionsApi = {
   execute: (actionId: string, variables: ActionVariables) =>
     commands.executeCustomAction(actionId, variables),
 };
+
+export const updateApi = {
+  check: () => commands.checkForUpdate(),
+
+  downloadAndInstall: () => commands.downloadAndInstallUpdate(),
+
+  restart: () => commands.restartApp(),
+};

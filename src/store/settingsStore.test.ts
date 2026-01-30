@@ -53,6 +53,7 @@ describe('settingsStore', () => {
     defaultSshKey: null,
     notificationHistoryCapacity: 50,
     gravatarEnabled: false,
+    autoUpdateEnabled: true,
   };
 
   beforeEach(() => {

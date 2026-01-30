@@ -12,6 +12,7 @@ import { LfsView } from './components/lfs';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { ConflictResolver } from './components/merge';
 import { TabBar } from './components/layout/TabBar';
+import { UpdateBanner } from './components/update';
 import { useMenuActions, useCustomActionShortcuts, toast } from './hooks';
 import { getErrorMessage } from './lib/errorUtils';
 import { notifyNewCommits } from './lib/actions';
@@ -21,6 +22,7 @@ import { useSettingsStore } from './store/settingsStore';
 import { useStagingStore } from './store/stagingStore';
 import { useIntegrationStore } from './store/integrationStore';
 import { useCustomActionsStore } from './store/customActionsStore';
+import { useUpdateStore } from './store/updateStore';
 import { TabType, useTabsStore, type Tab } from './store/tabsStore';
 import { events } from '@/bindings/api';
 import { lfsApi } from './services/api';
@@ -63,7 +65,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadSettings();
+    loadSettings().then(() => {
+      // Check for updates on startup (if enabled)
+      const settings = useSettingsStore.getState().settings;
+      if (settings?.autoUpdateEnabled) {
+        useUpdateStore.getState().checkForUpdate();
+      }
+    });
     loadAllActions();
   }, [loadSettings, loadAllActions]);
 
@@ -305,13 +313,19 @@ function App() {
 
   // Welcome view without AppLayout when it's the only tab
   if (isWelcomeTab && tabs.length <= 1) {
-    return <WelcomeView />;
+    return (
+      <>
+        <UpdateBanner />
+        <WelcomeView />
+      </>
+    );
   }
 
   // Welcome tab content within AppLayout (when multiple tabs)
   if (isWelcomeTab) {
     return (
       <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
+        <UpdateBanner />
         <TabBar onTabChange={handleTabChange} />
         <div className="flex-1 overflow-hidden">
           <WelcomeView />
@@ -322,6 +336,7 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-(--bg-primary) text-(--text-primary)">
+      <UpdateBanner />
       <TabBar onTabChange={handleTabChange} />
       <div className="flex-1 overflow-hidden">
         <AppLayout>{renderView()}</AppLayout>

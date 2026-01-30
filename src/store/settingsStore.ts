@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultSshKey: null,
   notificationHistoryCapacity: 50,
   gravatarEnabled: false,
+  autoUpdateEnabled: true,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

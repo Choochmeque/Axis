@@ -177,6 +177,8 @@ pub struct AppState {
     progress_registry: Arc<ProgressRegistry>,
     /// In-memory cache for SSH key passphrases (SecretString zeroes memory on drop)
     ssh_passphrase_cache: RwLock<HashMap<String, SecretString>>,
+    /// Pending update ready to download & install
+    pending_update: Mutex<Option<tauri_plugin_updater::Update>>,
 }
 
 impl AppState {
@@ -196,6 +198,7 @@ impl AppState {
             integration_service: RwLock::new(Some(Arc::new(integration_service))),
             progress_registry: Arc::new(ProgressRegistry::new()),
             ssh_passphrase_cache: RwLock::new(HashMap::new()),
+            pending_update: Mutex::new(None),
         }
     }
 
@@ -418,6 +421,24 @@ impl AppState {
                 passphrase,
             }
         }))
+    }
+
+    // ==================== Pending Update ====================
+
+    /// Store a pending update for later download & install
+    pub fn set_pending_update(&self, update: tauri_plugin_updater::Update) {
+        *self
+            .pending_update
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Some(update);
+    }
+
+    /// Take the pending update (removes it from state)
+    pub fn take_pending_update(&self) -> Option<tauri_plugin_updater::Update> {
+        self.pending_update
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
     }
 
     // ==================== SSH Passphrase Cache ====================
@@ -826,5 +847,25 @@ mod tests {
 
         // Should not panic
         state.clear_cached_ssh_passphrase("~/.ssh/nonexistent");
+    }
+
+    // ==================== Pending Update Tests ====================
+
+    #[test]
+    fn test_pending_update_initially_none() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        assert!(state.take_pending_update().is_none());
+    }
+
+    #[test]
+    fn test_take_pending_update_returns_none_when_empty() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Multiple takes should all return None
+        assert!(state.take_pending_update().is_none());
+        assert!(state.take_pending_update().is_none());
     }
 }

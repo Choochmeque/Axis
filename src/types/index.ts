@@ -213,6 +213,10 @@ export type {
   CustomAction,
   ActionVariables,
   ActionExecutionResult,
+
+  // Update types
+  UpdateInfo,
+  UpdateDownloadProgressEvent,
 } from '../bindings/api';
 
 // Import types used locally

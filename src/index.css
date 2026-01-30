@@ -838,6 +838,35 @@ code {
     @apply py-3 px-2 text-center text-(--text-tertiary) text-sm;
   }
 
+  /* Update Banner */
+  .update-banner {
+    @apply flex items-center justify-between px-3 py-1.5 bg-(--accent-color) text-white text-sm;
+  }
+
+  .update-banner-content {
+    @apply flex items-center gap-3 flex-1 min-w-0;
+  }
+
+  .update-banner-text {
+    @apply truncate;
+  }
+
+  .update-banner-action {
+    @apply flex items-center gap-1 px-2.5 py-1 bg-white/20 border-none rounded text-sm text-white cursor-pointer transition-colors hover:bg-white/30 shrink-0;
+  }
+
+  .update-banner-dismiss {
+    @apply flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-white/70 cursor-pointer transition-colors hover:text-white shrink-0;
+  }
+
+  .update-banner-progress {
+    @apply w-32 h-1.5 bg-white/20 rounded-full overflow-hidden shrink-0;
+  }
+
+  .update-banner-progress-bar {
+    @apply h-full bg-white rounded-full transition-[width] duration-150 ease-out;
+  }
+
   /* Close button */
   .btn-close {
     @apply flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary);

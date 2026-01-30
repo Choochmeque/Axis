@@ -122,10 +122,16 @@ pub async fn cache_ssh_passphrase(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn clear_ssh_passphrase(
-    state: State<'_, AppState>,
-    key_path: String,
-) -> Result<()> {
+pub async fn clear_ssh_passphrase(state: State<'_, AppState>, key_path: String) -> Result<()> {
     state.clear_cached_ssh_passphrase(&key_path);
     Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn is_ssh_passphrase_cached(
+    state: State<'_, AppState>,
+    key_path: String,
+) -> Result<bool> {
+    Ok(state.get_cached_ssh_passphrase(&key_path).is_some())
 }

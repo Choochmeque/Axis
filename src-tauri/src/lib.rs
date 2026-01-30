@@ -276,6 +276,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::check_ssh_key_format,
             crate::commands::cache_ssh_passphrase,
             crate::commands::clear_ssh_passphrase,
+            crate::commands::is_ssh_passphrase_cached,
             // Avatar commands
             crate::commands::get_avatar,
             crate::commands::clear_avatar_cache,

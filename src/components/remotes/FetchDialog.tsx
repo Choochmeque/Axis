@@ -88,8 +88,15 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
 
   const handleFetch = async () => {
     if (fetchAll) {
-      // Backend handles per-remote passphrase for fetchAll
-      doFetch();
+      // Check SSH keys for all remotes before batch fetch
+      const checkRemotesSequentially = async (index: number): Promise<void> => {
+        if (index >= remotes.length) {
+          doFetch();
+          return;
+        }
+        await checkSshKeyForRemote(remotes[index].name, () => checkRemotesSequentially(index + 1));
+      };
+      await checkRemotesSequentially(0);
     } else {
       await checkSshKeyForRemote(selectedRemote, doFetch);
     }

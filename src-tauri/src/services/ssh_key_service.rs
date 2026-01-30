@@ -159,7 +159,14 @@ impl SshKeyService {
         let key_path_str = key_path.to_string_lossy().to_string();
 
         let mut args = vec![
-            "-t", &algo_str, "-f", &key_path_str, "-N", passphrase, "-m", "PEM",
+            "-t",
+            &algo_str,
+            "-f",
+            &key_path_str,
+            "-N",
+            passphrase,
+            "-m",
+            "PEM",
         ];
 
         let comment_str;
@@ -845,7 +852,8 @@ mod tests {
 
     #[test]
     fn test_detect_key_format_unencrypted_rsa() {
-        let content = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----";
+        let content =
+            "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----";
         assert_eq!(
             SshKeyService::detect_key_format(content),
             SshKeyFormat::Unencrypted
@@ -908,10 +916,7 @@ mod tests {
 
     #[test]
     fn test_detect_key_format_empty() {
-        assert_eq!(
-            SshKeyService::detect_key_format(""),
-            SshKeyFormat::Unknown
-        );
+        assert_eq!(SshKeyService::detect_key_format(""), SshKeyFormat::Unknown);
     }
 
     // ==================== check_key_format Tests ====================

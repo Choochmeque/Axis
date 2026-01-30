@@ -1081,6 +1081,9 @@ async cacheSshPassphrase(keyPath: string, passphrase: string) : Promise<null> {
 async clearSshPassphrase(keyPath: string) : Promise<null> {
     return await TAURI_INVOKE("clear_ssh_passphrase", { keyPath });
 },
+async isSshPassphraseCached(keyPath: string) : Promise<boolean> {
+    return await TAURI_INVOKE("is_ssh_passphrase_cached", { keyPath });
+},
 /**
  * Get avatar for a commit author
  * If sha provided and integration connected, fetches avatar from provider API

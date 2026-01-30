@@ -648,6 +648,8 @@ export const sshKeysApi = {
     commands.cacheSshPassphrase(keyPath, passphrase),
 
   clearPassphrase: (keyPath: string) => commands.clearSshPassphrase(keyPath),
+
+  isPassphraseCached: (keyPath: string) => commands.isSshPassphraseCached(keyPath),
 };
 
 export const remoteSshKeysApi = {

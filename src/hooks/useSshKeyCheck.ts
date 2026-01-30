@@ -35,6 +35,13 @@ export function useSshKeyCheck() {
         const format = await sshKeysApi.checkFormat(keyPath);
 
         if (format === SshKeyFormat.EncryptedPem) {
+          // Check if passphrase is already cached (e.g. from a previous operation)
+          const cached = await sshKeysApi.isPassphraseCached(keyPath);
+          if (cached) {
+            onProceed();
+            return true;
+          }
+
           // Need passphrase — open dialog via store
           openPassphraseDialog({
             keyPath,

@@ -8,4 +8,5 @@ export { useOperationProgress } from './useOperationProgress';
 export { useReferenceMention } from './useReferenceMention';
 export { useScrollToCommit } from './useScrollToCommit';
 export { useSignatureVerification } from './useSignatureVerification';
+export { useSshKeyCheck } from './useSshKeyCheck';
 export { useToast, toast } from './useToast';

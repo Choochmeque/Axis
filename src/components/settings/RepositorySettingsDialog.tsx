@@ -19,7 +19,7 @@ import { KeyRound } from 'lucide-react';
 import { repoSettingsApi, remoteApi, hooksApi, sshKeysApi, remoteSshKeysApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import type { RepositorySettings, Remote, HookInfo, HookTemplate, SshKeyInfo } from '@/types';
-import { GitHookType } from '@/types';
+import { GitHookType, SshKeyFormat } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -414,29 +414,32 @@ function RemotesSettings({ remotes, onRemotesChange }: RemotesSettingsProps) {
                         {t('repoSettings.remotes.pushLabel')} {remote.pushUrl}
                       </div>
                     )}
-                    {sshKeyInfos.length > 0 && (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <KeyRound size={12} className="text-(--text-muted) shrink-0" />
-                        <Select
-                          value={remoteSshKeyMap[remote.name] || 'global_default'}
-                          onValueChange={(value) => handleSshKeyChange(remote.name, value)}
-                          className="flex-1 text-xs"
-                          placeholder={t('repoSettings.remotes.sshKey.useGlobalDefault')}
-                        >
-                          <SelectItem value="global_default">
-                            {t('repoSettings.remotes.sshKey.useGlobalDefault')}
-                          </SelectItem>
-                          <SelectItem value="auto">
-                            {t('repoSettings.remotes.sshKey.auto')}
-                          </SelectItem>
-                          {sshKeyInfos.map((key) => (
-                            <SelectItem key={key.path} value={key.path}>
-                              {key.comment || key.path.split('/').pop() || key.path}
+                    {sshKeyInfos.length > 0 &&
+                      (remote.url?.startsWith('git@') || remote.url?.startsWith('ssh://')) && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <KeyRound size={12} className="text-(--text-muted) shrink-0" />
+                          <Select
+                            value={remoteSshKeyMap[remote.name] || 'global_default'}
+                            onValueChange={(value) => handleSshKeyChange(remote.name, value)}
+                            className="flex-1 text-xs"
+                            placeholder={t('repoSettings.remotes.sshKey.useGlobalDefault')}
+                          >
+                            <SelectItem value="global_default">
+                              {t('repoSettings.remotes.sshKey.useGlobalDefault')}
                             </SelectItem>
-                          ))}
-                        </Select>
-                      </div>
-                    )}
+                            <SelectItem value="auto">
+                              {t('repoSettings.remotes.sshKey.auto')}
+                            </SelectItem>
+                            {sshKeyInfos
+                              .filter((key) => key.format !== SshKeyFormat.OpenSsh)
+                              .map((key) => (
+                                <SelectItem key={key.path} value={key.path}>
+                                  {key.comment || key.path.split('/').pop() || key.path}
+                                </SelectItem>
+                              ))}
+                          </Select>
+                        </div>
+                      )}
                   </div>
                   <Button
                     variant="ghost"

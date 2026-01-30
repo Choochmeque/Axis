@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowDownToLine } from 'lucide-react';
 
-import { toast, useOperationProgress } from '@/hooks';
+import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -40,6 +40,7 @@ export function PullDialog({ isOpen, onClose }: PullDialogProps) {
   const { branches, loadBranches, loadCommits, refreshRepository } = useRepositoryStore();
   const pullOperation = useOperationProgress('Pull');
   const currentBranch = branches.find((b) => b.isHead);
+  const { checkSshKeyForRemote } = useSshKeyCheck();
 
   useEffect(() => {
     if (isOpen) {
@@ -69,7 +70,7 @@ export function PullDialog({ isOpen, onClose }: PullDialogProps) {
     }
   };
 
-  const handlePull = async () => {
+  const doPull = async () => {
     if (!selectedRemote || !currentBranch) return;
 
     setIsLoading(true);
@@ -98,6 +99,11 @@ export function PullDialog({ isOpen, onClose }: PullDialogProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePull = async () => {
+    if (!selectedRemote || !currentBranch) return;
+    await checkSshKeyForRemote(selectedRemote, doPull);
   };
 
   const handleClose = () => {

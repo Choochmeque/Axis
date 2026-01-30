@@ -1,5 +1,5 @@
 use crate::events::RemoteFetchedEvent;
-use crate::models::FetchOptions;
+use crate::models::{FetchOptions, SshCredentials, SshKeyFormat};
 use crate::services::SshKeyService;
 use crate::state::{AppState, RepositoryCache};
 use std::sync::{Arc, Mutex};
@@ -70,12 +70,50 @@ impl BackgroundFetchService {
                                         &default_ssh_key,
                                     );
 
+                                    // Skip keys that can't work in background
+                                    if let Some(key_path) = &ssh_key {
+                                        let format = SshKeyService::check_key_format_optional(
+                                            std::path::Path::new(key_path),
+                                        );
+                                        match format {
+                                            Some(SshKeyFormat::OpenSsh) => {
+                                                log::debug!(
+                                                    "Background fetch: skipping remote {} (OpenSSH key format)",
+                                                    remote.name
+                                                );
+                                                continue;
+                                            }
+                                            Some(SshKeyFormat::EncryptedPem) => {
+                                                if app_state
+                                                    .get_cached_ssh_passphrase(key_path)
+                                                    .is_none()
+                                                {
+                                                    log::debug!(
+                                                        "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
+                                                        remote.name
+                                                    );
+                                                    continue;
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+
+                                    let ssh_creds = ssh_key.map(|key_path| {
+                                        let passphrase =
+                                            app_state.get_cached_ssh_passphrase(&key_path);
+                                        SshCredentials {
+                                            key_path,
+                                            passphrase,
+                                        }
+                                    });
+
                                     match git2.fetch(
                                         &remote.name,
                                         &options,
                                         None,
                                         None::<fn(&git2::Progress<'_>) -> bool>,
-                                        ssh_key,
+                                        ssh_creds,
                                     ) {
                                         Ok(result) => {
                                             // Count updated refs as new commits

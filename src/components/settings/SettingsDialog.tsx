@@ -16,7 +16,7 @@ import { settingsApi, signingApi, aiApi, lfsApi, avatarApi, sshKeysApi } from '@
 import type { GitEnvironment } from '@/bindings/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
-import { SigningFormat, Theme, AiProvider, ProviderType } from '@/types';
+import { SigningFormat, Theme, AiProvider, ProviderType, SshKeyFormat } from '@/types';
 import type {
   AppSettings,
   Theme as ThemeType,
@@ -515,11 +515,13 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           placeholder={t('settings.git.defaultSshKey.auto')}
         >
           <SelectItem value="auto">{t('settings.git.defaultSshKey.auto')}</SelectItem>
-          {sshKeyInfos.map((key) => (
-            <SelectItem key={key.path} value={key.path}>
-              {key.comment || key.path.split('/').pop() || key.path}
-            </SelectItem>
-          ))}
+          {sshKeyInfos
+            .filter((key) => key.format !== SshKeyFormat.OpenSsh)
+            .map((key) => (
+              <SelectItem key={key.path} value={key.path}>
+                {key.comment || key.path.split('/').pop() || key.path}
+              </SelectItem>
+            ))}
         </Select>
         {!settings.defaultSshKey && (
           <p className="mt-1.5 text-xs text-(--text-muted)">

@@ -1072,6 +1072,15 @@ async deleteRemoteSshKey(remoteName: string) : Promise<null> {
 async listRemoteSshKeys() : Promise<RemoteSshKeyMapping[]> {
     return await TAURI_INVOKE("list_remote_ssh_keys");
 },
+async checkSshKeyFormat(keyPath: string) : Promise<SshKeyFormat> {
+    return await TAURI_INVOKE("check_ssh_key_format", { keyPath });
+},
+async cacheSshPassphrase(keyPath: string, passphrase: string) : Promise<null> {
+    return await TAURI_INVOKE("cache_ssh_passphrase", { keyPath, passphrase });
+},
+async clearSshPassphrase(keyPath: string) : Promise<null> {
+    return await TAURI_INVOKE("clear_ssh_passphrase", { keyPath });
+},
 /**
  * Get avatar for a commit author
  * If sha provided and integration connected, fetches avatar from provider API
@@ -3359,6 +3368,26 @@ comment: string | null }
  */
 export type SshKeyAlgorithm = "Ed25519" | "Rsa" | "Ecdsa"
 /**
+ * SSH private key format / encryption status
+ */
+export type SshKeyFormat = 
+/**
+ * PEM format, no passphrase
+ */
+"Unencrypted" | 
+/**
+ * PEM format with Proc-Type: 4,ENCRYPTED
+ */
+"EncryptedPem" | 
+/**
+ * OpenSSH format (BEGIN OPENSSH PRIVATE KEY) — not supported by libssh2
+ */
+"OpenSsh" | 
+/**
+ * Unable to determine format
+ */
+"Unknown"
+/**
  * Detailed information about an SSH key
  */
 export type SshKeyInfo = { 
@@ -3374,6 +3403,10 @@ publicKeyPath: string;
  * Key algorithm type
  */
 keyType: SshKeyAlgorithm; 
+/**
+ * Private key format / encryption status
+ */
+format: SshKeyFormat; 
 /**
  * Comment from the public key (usually email)
  */

@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::models::{
     ExportSshKeyOptions, GenerateSshKeyOptions, ImportSshKeyOptions, RemoteSshKeyMapping,
-    SshKeyInfo,
+    SshKeyFormat, SshKeyInfo,
 };
 use crate::services::SshKeyService;
 use crate::state::AppState;
@@ -99,4 +99,33 @@ pub async fn list_remote_ssh_keys(state: State<'_, AppState>) -> Result<Vec<Remo
             ssh_key_path,
         })
         .collect())
+}
+
+// ==================== SSH Key Format & Passphrase ====================
+
+#[tauri::command]
+#[specta::specta]
+pub async fn check_ssh_key_format(key_path: String) -> Result<SshKeyFormat> {
+    SshKeyService::check_key_format(&key_path)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn cache_ssh_passphrase(
+    state: State<'_, AppState>,
+    key_path: String,
+    passphrase: String,
+) -> Result<()> {
+    state.cache_ssh_passphrase(&key_path, passphrase);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn clear_ssh_passphrase(
+    state: State<'_, AppState>,
+    key_path: String,
+) -> Result<()> {
+    state.clear_cached_ssh_passphrase(&key_path);
+    Ok(())
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 
-import { toast, useOperationProgress } from '@/hooks';
+import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, shellApi } from '../../services/api';
@@ -40,6 +40,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
   const fetchOperation = useOperationProgress('Fetch');
+  const { checkSshKeyForRemote } = useSshKeyCheck();
 
   useEffect(() => {
     if (isOpen) {
@@ -61,7 +62,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
     }
   };
 
-  const handleFetch = async () => {
+  const doFetch = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -82,6 +83,15 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFetch = async () => {
+    if (fetchAll) {
+      // Backend handles per-remote passphrase for fetchAll
+      doFetch();
+    } else {
+      await checkSshKeyForRemote(selectedRemote, doFetch);
     }
   };
 

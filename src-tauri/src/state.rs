@@ -1,10 +1,11 @@
 use crate::error::{AxisError, Result};
-use crate::models::{AppSettings, RecentRepository, Repository};
+use crate::models::{AppSettings, RecentRepository, Repository, SshCredentials};
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
     ProgressRegistry, SignatureVerificationCache, SshKeyService,
 };
 use crate::storage::Database;
+use secrecy::SecretString;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
@@ -174,6 +175,8 @@ pub struct AppState {
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
     integration_service: RwLock<Option<Arc<IntegrationService>>>,
     progress_registry: Arc<ProgressRegistry>,
+    /// In-memory cache for SSH key passphrases (SecretString zeroes memory on drop)
+    ssh_passphrase_cache: RwLock<HashMap<String, SecretString>>,
 }
 
 impl AppState {
@@ -192,6 +195,7 @@ impl AppState {
             avatar_service: RwLock::new(None),
             integration_service: RwLock::new(Some(Arc::new(integration_service))),
             progress_registry: Arc::new(ProgressRegistry::new()),
+            ssh_passphrase_cache: RwLock::new(HashMap::new()),
         }
     }
 
@@ -402,6 +406,57 @@ impl AppState {
             remote_name,
             &settings.default_ssh_key,
         ))
+    }
+
+    /// Resolve SSH credentials (key path + cached passphrase) for a remote
+    pub fn resolve_ssh_credentials(&self, remote_name: &str) -> Result<Option<SshCredentials>> {
+        let ssh_key = self.resolve_ssh_key_for_remote(remote_name)?;
+        Ok(ssh_key.map(|key_path| {
+            let passphrase = self.get_cached_ssh_passphrase(&key_path);
+            SshCredentials {
+                key_path,
+                passphrase,
+            }
+        }))
+    }
+
+    // ==================== SSH Passphrase Cache ====================
+
+    /// Cache an SSH key passphrase in secure memory
+    pub fn cache_ssh_passphrase(&self, key_path: &str, passphrase: String) {
+        let secret = SecretString::from(passphrase);
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key_path.to_string(), secret);
+        log::debug!("Cached passphrase for SSH key: {key_path}");
+    }
+
+    /// Get a cached passphrase for an SSH key (returns clone)
+    pub fn get_cached_ssh_passphrase(&self, key_path: &str) -> Option<SecretString> {
+        self.ssh_passphrase_cache
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(key_path)
+            .cloned()
+    }
+
+    /// Clear a cached passphrase (SecretString zeroes memory on drop)
+    pub fn clear_cached_ssh_passphrase(&self, key_path: &str) {
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(key_path);
+        log::debug!("Cleared cached passphrase for SSH key: {key_path}");
+    }
+
+    /// Clear all cached passphrases (all SecretStrings zeroed on drop)
+    pub fn clear_all_ssh_passphrases(&self) {
+        self.ssh_passphrase_cache
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        log::debug!("Cleared all cached SSH passphrases");
     }
 }
 
@@ -693,5 +748,83 @@ mod tests {
         // No repository open
         let result = state.get_git_service();
         assert!(result.is_err());
+    }
+
+    // ==================== SSH Passphrase Cache Tests ====================
+
+    #[test]
+    fn test_ssh_passphrase_cache_empty() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/id_rsa").is_none());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_store_and_retrieve() {
+        use secrecy::ExposeSecret;
+
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/id_rsa", "my_secret".to_string());
+
+        let cached = state
+            .get_cached_ssh_passphrase("~/.ssh/id_rsa")
+            .expect("should have cached passphrase");
+        assert_eq!(cached.expose_secret(), "my_secret");
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_single() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key2", "pass2".to_string());
+
+        state.clear_cached_ssh_passphrase("~/.ssh/key1");
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key1").is_none());
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_some());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_all() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key2", "pass2".to_string());
+
+        state.clear_all_ssh_passphrases();
+
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key1").is_none());
+        assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_none());
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_overwrite() {
+        use secrecy::ExposeSecret;
+
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        state.cache_ssh_passphrase("~/.ssh/key", "old_pass".to_string());
+        state.cache_ssh_passphrase("~/.ssh/key", "new_pass".to_string());
+
+        let cached = state
+            .get_cached_ssh_passphrase("~/.ssh/key")
+            .expect("should have cached passphrase");
+        assert_eq!(cached.expose_secret(), "new_pass");
+    }
+
+    #[test]
+    fn test_ssh_passphrase_cache_clear_nonexistent() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        // Should not panic
+        state.clear_cached_ssh_passphrase("~/.ssh/nonexistent");
     }
 }

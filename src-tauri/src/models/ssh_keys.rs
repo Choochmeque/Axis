@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::{Display, EnumString};
@@ -13,6 +14,22 @@ pub enum SshKeyAlgorithm {
     Ecdsa,
 }
 
+/// SSH private key format / encryption status
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display, EnumString)]
+#[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "PascalCase")]
+pub enum SshKeyFormat {
+    /// PEM format, no passphrase
+    #[default]
+    Unencrypted,
+    /// PEM format with Proc-Type: 4,ENCRYPTED
+    EncryptedPem,
+    /// OpenSSH format (BEGIN OPENSSH PRIVATE KEY) — not supported by libssh2
+    OpenSsh,
+    /// Unable to determine format
+    Unknown,
+}
+
 /// Detailed information about an SSH key
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -23,6 +40,8 @@ pub struct SshKeyInfo {
     pub public_key_path: String,
     /// Key algorithm type
     pub key_type: SshKeyAlgorithm,
+    /// Private key format / encryption status
+    pub format: SshKeyFormat,
     /// Comment from the public key (usually email)
     pub comment: Option<String>,
     /// Key fingerprint (SHA256)
@@ -69,6 +88,13 @@ pub struct ExportSshKeyOptions {
     pub target_dir: String,
     /// Export only the public key
     pub public_only: bool,
+}
+
+/// Resolved SSH credentials for a remote operation (internal only, not serializable)
+#[derive(Debug, Clone)]
+pub struct SshCredentials {
+    pub key_path: String,
+    pub passphrase: Option<SecretString>,
 }
 
 /// Mapping of a remote to an SSH key path
@@ -173,6 +199,7 @@ mod tests {
             path: "~/.ssh/id_ed25519".to_string(),
             public_key_path: "~/.ssh/id_ed25519.pub".to_string(),
             key_type: SshKeyAlgorithm::Ed25519,
+            format: SshKeyFormat::Unencrypted,
             comment: Some("user@host".to_string()),
             fingerprint: Some("SHA256:abc123".to_string()),
             bits: None,
@@ -182,6 +209,7 @@ mod tests {
         assert_eq!(info.path, "~/.ssh/id_ed25519");
         assert_eq!(info.public_key_path, "~/.ssh/id_ed25519.pub");
         assert_eq!(info.key_type, SshKeyAlgorithm::Ed25519);
+        assert_eq!(info.format, SshKeyFormat::Unencrypted);
         assert!(info.comment.is_some());
         assert!(info.fingerprint.is_some());
         assert!(info.bits.is_none());
@@ -194,6 +222,7 @@ mod tests {
             path: "~/.ssh/id_rsa".to_string(),
             public_key_path: "~/.ssh/id_rsa.pub".to_string(),
             key_type: SshKeyAlgorithm::Rsa,
+            format: SshKeyFormat::Unencrypted,
             comment: None,
             fingerprint: Some("SHA256:xyz789".to_string()),
             bits: Some(4096),
@@ -211,6 +240,7 @@ mod tests {
             path: "/home/user/.ssh/key".to_string(),
             public_key_path: "/home/user/.ssh/key.pub".to_string(),
             key_type: SshKeyAlgorithm::Ecdsa,
+            format: SshKeyFormat::Unencrypted,
             comment: Some("test".to_string()),
             fingerprint: None,
             bits: Some(256),
@@ -219,6 +249,7 @@ mod tests {
 
         let json = serde_json::to_string(&info).expect("should serialize");
         assert!(json.contains("\"keyType\":\"Ecdsa\""));
+        assert!(json.contains("\"format\":\"Unencrypted\""));
         assert!(json.contains("\"publicKeyPath\":\"/home/user/.ssh/key.pub\""));
         assert!(json.contains("\"comment\":\"test\""));
         assert!(json.contains("\"bits\":256"));
@@ -230,6 +261,7 @@ mod tests {
             "path": "~/.ssh/id_ed25519",
             "publicKeyPath": "~/.ssh/id_ed25519.pub",
             "keyType": "Ed25519",
+            "format": "Unencrypted",
             "comment": "user@host",
             "fingerprint": "SHA256:abc",
             "bits": null,
@@ -247,6 +279,7 @@ mod tests {
             path: "~/.ssh/key".to_string(),
             public_key_path: "~/.ssh/key.pub".to_string(),
             key_type: SshKeyAlgorithm::Ed25519,
+            format: SshKeyFormat::EncryptedPem,
             comment: Some("test".to_string()),
             fingerprint: None,
             bits: None,
@@ -441,5 +474,96 @@ mod tests {
         let cloned = mapping.clone();
         assert_eq!(cloned.remote_name, mapping.remote_name);
         assert_eq!(cloned.ssh_key_path, mapping.ssh_key_path);
+    }
+
+    // ==================== SshKeyFormat Tests ====================
+
+    #[test]
+    fn test_ssh_key_format_default() {
+        let format = SshKeyFormat::default();
+        assert_eq!(format, SshKeyFormat::Unencrypted);
+    }
+
+    #[test]
+    fn test_ssh_key_format_equality() {
+        assert_eq!(SshKeyFormat::Unencrypted, SshKeyFormat::Unencrypted);
+        assert_eq!(SshKeyFormat::EncryptedPem, SshKeyFormat::EncryptedPem);
+        assert_eq!(SshKeyFormat::OpenSsh, SshKeyFormat::OpenSsh);
+        assert_eq!(SshKeyFormat::Unknown, SshKeyFormat::Unknown);
+        assert_ne!(SshKeyFormat::Unencrypted, SshKeyFormat::EncryptedPem);
+        assert_ne!(SshKeyFormat::OpenSsh, SshKeyFormat::Unknown);
+    }
+
+    #[test]
+    fn test_ssh_key_format_serialization() {
+        let json = serde_json::to_string(&SshKeyFormat::Unencrypted).expect("should serialize");
+        assert_eq!(json, "\"Unencrypted\"");
+
+        let json = serde_json::to_string(&SshKeyFormat::EncryptedPem).expect("should serialize");
+        assert_eq!(json, "\"EncryptedPem\"");
+
+        let json = serde_json::to_string(&SshKeyFormat::OpenSsh).expect("should serialize");
+        assert_eq!(json, "\"OpenSsh\"");
+
+        let json = serde_json::to_string(&SshKeyFormat::Unknown).expect("should serialize");
+        assert_eq!(json, "\"Unknown\"");
+    }
+
+    #[test]
+    fn test_ssh_key_format_deserialization() {
+        let f: SshKeyFormat = serde_json::from_str("\"Unencrypted\"").expect("should deserialize");
+        assert_eq!(f, SshKeyFormat::Unencrypted);
+
+        let f: SshKeyFormat = serde_json::from_str("\"EncryptedPem\"").expect("should deserialize");
+        assert_eq!(f, SshKeyFormat::EncryptedPem);
+
+        let f: SshKeyFormat = serde_json::from_str("\"OpenSsh\"").expect("should deserialize");
+        assert_eq!(f, SshKeyFormat::OpenSsh);
+
+        let f: SshKeyFormat = serde_json::from_str("\"Unknown\"").expect("should deserialize");
+        assert_eq!(f, SshKeyFormat::Unknown);
+    }
+
+    #[test]
+    fn test_ssh_key_format_display() {
+        assert_eq!(SshKeyFormat::Unencrypted.to_string(), "Unencrypted");
+        assert_eq!(SshKeyFormat::EncryptedPem.to_string(), "EncryptedPem");
+        assert_eq!(SshKeyFormat::OpenSsh.to_string(), "OpenSsh");
+        assert_eq!(SshKeyFormat::Unknown.to_string(), "Unknown");
+    }
+
+    #[test]
+    fn test_ssh_key_format_from_str() {
+        use std::str::FromStr;
+
+        assert_eq!(
+            SshKeyFormat::from_str("Unencrypted").expect("should parse"),
+            SshKeyFormat::Unencrypted
+        );
+        assert_eq!(
+            SshKeyFormat::from_str("EncryptedPem").expect("should parse"),
+            SshKeyFormat::EncryptedPem
+        );
+        assert_eq!(
+            SshKeyFormat::from_str("OpenSsh").expect("should parse"),
+            SshKeyFormat::OpenSsh
+        );
+        assert_eq!(
+            SshKeyFormat::from_str("Unknown").expect("should parse"),
+            SshKeyFormat::Unknown
+        );
+    }
+
+    #[test]
+    fn test_ssh_key_format_from_str_invalid() {
+        use std::str::FromStr;
+        assert!(SshKeyFormat::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn test_ssh_key_format_clone() {
+        let format = SshKeyFormat::EncryptedPem;
+        let cloned = format.clone();
+        assert_eq!(format, cloned);
     }
 }

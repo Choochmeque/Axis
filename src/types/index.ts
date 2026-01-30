@@ -262,6 +262,7 @@ import type {
   GitHookType as GitHookTypeType,
   // SSH Key types
   SshKeyAlgorithm as SshKeyAlgorithmType,
+  SshKeyFormat as SshKeyFormatType,
 } from '../bindings/api';
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';
@@ -647,6 +648,15 @@ export const SshKeyAlgorithm: { [K in SshKeyAlgorithmType]: K } = {
 };
 
 export type SshKeyAlgorithm = SshKeyAlgorithmType;
+
+export const SshKeyFormat: { [K in SshKeyFormatType]: K } = {
+  Unencrypted: 'Unencrypted',
+  EncryptedPem: 'EncryptedPem',
+  OpenSsh: 'OpenSsh',
+  Unknown: 'Unknown',
+};
+
+export type SshKeyFormat = SshKeyFormatType;
 
 // Hook enum helpers
 export const GitHookType: { [K in GitHookTypeType]: K } = {

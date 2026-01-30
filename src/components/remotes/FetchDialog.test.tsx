@@ -44,6 +44,12 @@ vi.mock('@/hooks', () => ({
     error: vi.fn(),
   },
   useOperationProgress: () => mockOperationProgress,
+  useSshKeyCheck: () => ({
+    checkSshKeyForRemote: (_remote: string, onProceed: () => void) => {
+      onProceed();
+      return Promise.resolve(true);
+    },
+  }),
 }));
 
 // Mock actions

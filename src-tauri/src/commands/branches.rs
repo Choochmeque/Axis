@@ -153,11 +153,16 @@ pub async fn delete_remote_branch(
     branch_name: String,
     force: Option<bool>,
 ) -> Result<()> {
-    let ssh_key = state.resolve_ssh_key_for_remote(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
     state
         .get_git_service()?
         .with_git2(move |git2| {
-            git2.delete_remote_branch(&remote_name, &branch_name, force.unwrap_or(false), ssh_key)
+            git2.delete_remote_branch(
+                &remote_name,
+                &branch_name,
+                force.unwrap_or(false),
+                ssh_creds,
+            )
         })
         .await
 }

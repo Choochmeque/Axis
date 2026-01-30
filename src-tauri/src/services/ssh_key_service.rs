@@ -1,6 +1,7 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    ExportSshKeyOptions, GenerateSshKeyOptions, ImportSshKeyOptions, SshKeyAlgorithm, SshKeyInfo,
+    ExportSshKeyOptions, GenerateSshKeyOptions, ImportSshKeyOptions, SshKeyAlgorithm, SshKeyFormat,
+    SshKeyInfo,
 };
 use crate::storage::Database;
 use log::{error, info};
@@ -101,6 +102,7 @@ impl SshKeyService {
             if let Ok(content) = fs::read_to_string(&path) {
                 if content.contains("PRIVATE KEY") {
                     let key_type = Self::detect_algorithm(&content);
+                    let format = Self::detect_key_format(&content);
                     let pub_key_path = format!("{}.pub", path.display());
                     let comment = fs::read_to_string(&pub_key_path)
                         .ok()
@@ -118,6 +120,7 @@ impl SshKeyService {
                         path: path.to_string_lossy().to_string(),
                         public_key_path: pub_key_path,
                         key_type,
+                        format,
                         comment,
                         fingerprint,
                         bits,
@@ -155,7 +158,9 @@ impl SshKeyService {
         let passphrase = options.passphrase.as_deref().unwrap_or("");
         let key_path_str = key_path.to_string_lossy().to_string();
 
-        let mut args = vec!["-t", &algo_str, "-f", &key_path_str, "-N", passphrase];
+        let mut args = vec![
+            "-t", &algo_str, "-f", &key_path_str, "-N", passphrase, "-m", "PEM",
+        ];
 
         let comment_str;
         if let Some(ref comment) = options.comment {
@@ -204,10 +209,18 @@ impl SshKeyService {
             .and_then(|m| m.created().ok())
             .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
 
+        // Determine format: if passphrase was provided, the PEM key is encrypted
+        let format = if passphrase.is_empty() {
+            SshKeyFormat::Unencrypted
+        } else {
+            SshKeyFormat::EncryptedPem
+        };
+
         Ok(SshKeyInfo {
             path: key_path_str,
             public_key_path: pub_key_path,
             key_type: options.algorithm,
+            format,
             comment: options.comment,
             fingerprint,
             bits,
@@ -321,6 +334,7 @@ impl SshKeyService {
         // Read the imported key's info
         let content = fs::read_to_string(&target_path).unwrap_or_default();
         let key_type = Self::detect_algorithm(&content);
+        let format = Self::detect_key_format(&content);
         let comment = fs::read_to_string(&target_pub)
             .ok()
             .and_then(|pub_content| Self::extract_comment(&pub_content));
@@ -335,6 +349,7 @@ impl SshKeyService {
             path: target_path.to_string_lossy().to_string(),
             public_key_path: target_pub,
             key_type,
+            format,
             comment,
             fingerprint,
             bits,
@@ -412,6 +427,46 @@ impl SshKeyService {
 
         // 2. Check global default
         default_ssh_key.clone()
+    }
+
+    // ==================== Key format detection ====================
+
+    /// Detect the format of an SSH private key from its content
+    fn detect_key_format(content: &str) -> SshKeyFormat {
+        if content.contains("BEGIN OPENSSH PRIVATE KEY") {
+            return SshKeyFormat::OpenSsh;
+        }
+
+        let is_pem = content.contains("BEGIN RSA PRIVATE KEY")
+            || content.contains("BEGIN EC PRIVATE KEY")
+            || content.contains("BEGIN DSA PRIVATE KEY")
+            || content.contains("BEGIN PRIVATE KEY");
+
+        if is_pem {
+            // Check for PEM encryption header (Proc-Type: 4,ENCRYPTED)
+            if content.contains("Proc-Type: 4,ENCRYPTED") {
+                return SshKeyFormat::EncryptedPem;
+            }
+            return SshKeyFormat::Unencrypted;
+        }
+
+        SshKeyFormat::Unknown
+    }
+
+    /// Check the format of an SSH key at the given path
+    pub fn check_key_format(key_path: &str) -> Result<SshKeyFormat> {
+        let expanded = shellexpand::tilde(key_path).to_string();
+        let content = fs::read_to_string(&expanded).map_err(|e| {
+            AxisError::SshKeyError(format!("Failed to read key file {expanded}: {e}"))
+        })?;
+        Ok(Self::detect_key_format(&content))
+    }
+
+    /// Check the format of an SSH key, returning None on any error (for background use)
+    pub fn check_key_format_optional(key_path: &Path) -> Option<SshKeyFormat> {
+        fs::read_to_string(key_path)
+            .ok()
+            .map(|content| Self::detect_key_format(&content))
     }
 
     // ==================== Internal helpers ====================
@@ -775,6 +830,131 @@ mod tests {
 
         let result = SshKeyService::import_key(opts);
         assert!(result.is_err());
+    }
+
+    // ==================== detect_key_format Tests ====================
+
+    #[test]
+    fn test_detect_key_format_openssh() {
+        let content = "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXk=\n-----END OPENSSH PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::OpenSsh
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_unencrypted_rsa() {
+        let content = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA\n-----END RSA PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::Unencrypted
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_unencrypted_ec() {
+        let content = "-----BEGIN EC PRIVATE KEY-----\nMHQCAQEE\n-----END EC PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::Unencrypted
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_unencrypted_dsa() {
+        let content = "-----BEGIN DSA PRIVATE KEY-----\ndata\n-----END DSA PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::Unencrypted
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_unencrypted_generic() {
+        let content = "-----BEGIN PRIVATE KEY-----\ndata\n-----END PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::Unencrypted
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_encrypted_pem() {
+        let content = "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,ABC\n\ndata\n-----END RSA PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::EncryptedPem
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_encrypted_ec() {
+        let content = "-----BEGIN EC PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-256-CBC,DEF\n\ndata\n-----END EC PRIVATE KEY-----";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::EncryptedPem
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_unknown() {
+        let content = "not a key file at all";
+        assert_eq!(
+            SshKeyService::detect_key_format(content),
+            SshKeyFormat::Unknown
+        );
+    }
+
+    #[test]
+    fn test_detect_key_format_empty() {
+        assert_eq!(
+            SshKeyService::detect_key_format(""),
+            SshKeyFormat::Unknown
+        );
+    }
+
+    // ==================== check_key_format Tests ====================
+
+    #[test]
+    fn test_check_key_format_nonexistent() {
+        let result = SshKeyService::check_key_format("/nonexistent/key");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_check_key_format_with_tempfile() {
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_key");
+        fs::write(
+            &key_path,
+            "-----BEGIN RSA PRIVATE KEY-----\ndata\n-----END RSA PRIVATE KEY-----",
+        )
+        .expect("should write");
+
+        let result =
+            SshKeyService::check_key_format(&key_path.to_string_lossy()).expect("should succeed");
+        assert_eq!(result, SshKeyFormat::Unencrypted);
+    }
+
+    #[test]
+    fn test_check_key_format_optional_nonexistent() {
+        let result = SshKeyService::check_key_format_optional(Path::new("/nonexistent/key"));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_check_key_format_optional_exists() {
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_key");
+        fs::write(
+            &key_path,
+            "-----BEGIN OPENSSH PRIVATE KEY-----\ndata\n-----END OPENSSH PRIVATE KEY-----",
+        )
+        .expect("should write");
+
+        let result = SshKeyService::check_key_format_optional(&key_path);
+        assert_eq!(result, Some(SshKeyFormat::OpenSsh));
     }
 
     // ==================== Integration test with tempdir ====================

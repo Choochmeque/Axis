@@ -2,6 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{
     Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
+    SshCredentials,
 };
 use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
@@ -81,14 +82,20 @@ pub async fn clone_repository(
 
     // Resolve global default SSH key for clone
     let settings = state.get_settings()?;
-    let ssh_key = settings.default_ssh_key.clone();
+    let ssh_creds = settings.default_ssh_key.clone().map(|key_path| {
+        let passphrase = state.get_cached_ssh_passphrase(&key_path);
+        SshCredentials {
+            key_path,
+            passphrase,
+        }
+    });
 
     // Clone the repository first (this creates a new Git2Service internally)
     let result = Git2Service::clone(
         &url,
         &path,
         Some(ctx.make_receive_callback(GitOperationType::Clone)),
-        ssh_key,
+        ssh_creds,
     );
 
     ctx.handle_result(&result, GitOperationType::Clone);

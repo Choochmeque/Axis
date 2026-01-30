@@ -32,6 +32,7 @@ const mockKeys: SshKeyInfo[] = [
     fingerprint: 'SHA256:abc123def456',
     bits: null,
     createdAt: '2024-01-01T00:00:00Z',
+    format: 'Unencrypted',
   },
   {
     path: '/home/user/.ssh/id_rsa',
@@ -41,6 +42,7 @@ const mockKeys: SshKeyInfo[] = [
     fingerprint: 'SHA256:xyz789',
     bits: 4096,
     createdAt: '2024-06-01T00:00:00Z',
+    format: 'Unencrypted',
   },
 ];
 

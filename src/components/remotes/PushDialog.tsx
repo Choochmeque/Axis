@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpFromLine } from 'lucide-react';
 
-import { toast, useOperationProgress } from '@/hooks';
+import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -41,6 +41,7 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
   const pushOperation = useOperationProgress('Push');
   const currentBranch = branches.find((b) => b.isHead);
+  const { checkSshKeyForRemote } = useSshKeyCheck();
 
   useEffect(() => {
     if (isOpen) {
@@ -72,7 +73,7 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
     }
   };
 
-  const handlePush = async () => {
+  const doPush = async () => {
     if (!selectedRemote || !currentBranch) return;
 
     setIsLoading(true);
@@ -95,6 +96,11 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePush = async () => {
+    if (!selectedRemote || !currentBranch) return;
+    await checkSshKeyForRemote(selectedRemote, doPush);
   };
 
   const handleClose = () => {

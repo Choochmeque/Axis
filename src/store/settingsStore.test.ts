@@ -50,6 +50,7 @@ describe('settingsStore', () => {
     aiProvider: AiProvider.OpenAi,
     aiModel: null,
     aiOllamaUrl: null,
+    defaultSshKey: null,
     notificationHistoryCapacity: 50,
     gravatarEnabled: false,
   };

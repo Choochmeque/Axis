@@ -5,7 +5,7 @@ use crate::models::{
     IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType, LaneState, LogOptions,
     RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository,
     RepositoryState, RepositoryStatus, SearchResult, SignatureVerification, SigningConfig,
-    SigningFormat, SortOrder, Tag, TagResult, TagSignature,
+    SigningFormat, SortOrder, SshCredentials, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -13,23 +13,30 @@ use git2::{
     build::RepoBuilder, cert::Cert, CertificateCheckStatus, Cred, FetchOptions, RemoteCallbacks,
     Repository as Git2Repository, StatusOptions,
 };
+use secrecy::ExposeSecret;
 use std::path::{Path, PathBuf};
 
 pub struct Git2Service {
     path: PathBuf,
 }
 
-/// Build a credentials callback with optional SSH key override.
-/// When `ssh_key_path` is Some, the configured key is tried first before agent/default fallback.
+/// Build a credentials callback with optional SSH credentials.
+/// When credentials are provided, the configured key is tried first before agent/default fallback.
+/// When a passphrase is included, it is passed to `Cred::ssh_key()` for encrypted PEM keys.
 fn build_credentials_callback(
-    ssh_key_path: Option<String>,
+    ssh_credentials: Option<SshCredentials>,
 ) -> impl FnMut(&str, Option<&str>, git2::CredentialType) -> std::result::Result<Cred, git2::Error>
 {
     move |_url, username_from_url, allowed_types| {
         if allowed_types.contains(git2::CredentialType::SSH_KEY) {
             if let Some(username) = username_from_url {
+                let passphrase_str = ssh_credentials
+                    .as_ref()
+                    .and_then(|c| c.passphrase.as_ref())
+                    .map(|p| p.expose_secret().to_string());
+
                 // 1. Try configured SSH key first
-                if let Some(ref key_path) = ssh_key_path {
+                if let Some(ref key_path) = ssh_credentials.as_ref().map(|c| &c.key_path) {
                     let expanded = shellexpand::tilde(key_path).to_string();
                     let private_key = std::path::Path::new(&expanded);
                     if private_key.exists() {
@@ -40,7 +47,12 @@ fn build_credentials_callback(
                         } else {
                             None
                         };
-                        if let Ok(cred) = Cred::ssh_key(username, pub_key_opt, private_key, None) {
+                        if let Ok(cred) = Cred::ssh_key(
+                            username,
+                            pub_key_opt,
+                            private_key,
+                            passphrase_str.as_deref(),
+                        ) {
                             return Ok(cred);
                         }
                     }
@@ -51,7 +63,7 @@ fn build_credentials_callback(
                     return Ok(cred);
                 }
 
-                // 3. Try default SSH key locations
+                // 3. Try default SSH key locations (no passphrase for defaults — agent handles those)
                 let ssh_dir_expanded = shellexpand::tilde("~/.ssh").to_string();
                 let ssh_dir = std::path::Path::new(&ssh_dir_expanded);
 
@@ -200,14 +212,14 @@ impl Git2Service {
         url: &str,
         path: &Path,
         progress_cb: Option<F>,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<Self>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
     {
         let mut callbacks = RemoteCallbacks::new();
 
-        callbacks.credentials(build_credentials_callback(ssh_key_path));
+        callbacks.credentials(build_credentials_callback(ssh_credentials));
         callbacks.certificate_check(build_certificate_check_callback());
 
         // Set up progress callback if provided
@@ -1037,7 +1049,7 @@ impl Git2Service {
         remote_name: &str,
         branch_name: &str,
         force: bool,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<()> {
         // Use push with a delete refspec (empty source = delete)
         let refspec = format!(":refs/heads/{branch_name}");
@@ -1051,7 +1063,7 @@ impl Git2Service {
             &[refspec],
             &options,
             None::<fn(usize, usize, usize) -> bool>,
-            ssh_key_path,
+            ssh_credentials,
         )?;
         Ok(())
     }
@@ -1465,7 +1477,7 @@ impl Git2Service {
         options: &crate::models::FetchOptions,
         refspecs: Option<&[&str]>,
         progress_cb: Option<F>,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<crate::models::FetchResult>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
@@ -1478,7 +1490,7 @@ impl Git2Service {
 
         // Set up callbacks for progress and credentials
         let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.credentials(build_credentials_callback(ssh_key_path));
+        callbacks.credentials(build_credentials_callback(ssh_credentials));
         callbacks.certificate_check(build_certificate_check_callback());
 
         // Set up progress callback if provided
@@ -1531,7 +1543,7 @@ impl Git2Service {
         refspecs: &[String],
         options: &crate::models::PushOptions,
         progress_cb: Option<F>,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<crate::models::PushResult>
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
@@ -1544,7 +1556,7 @@ impl Git2Service {
 
         // Set up callbacks for credentials
         let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.credentials(build_credentials_callback(ssh_key_path));
+        callbacks.credentials(build_credentials_callback(ssh_credentials));
         callbacks.certificate_check(build_certificate_check_callback());
 
         // Set up progress callback if provided
@@ -1588,7 +1600,7 @@ impl Git2Service {
         remote_name: &str,
         options: &crate::models::PushOptions,
         progress_cb: Option<F>,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<crate::models::PushResult>
     where
         F: FnMut(usize, usize, usize) -> bool + 'static,
@@ -1600,7 +1612,13 @@ impl Git2Service {
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
-        let result = self.push(remote_name, &[refspec], options, progress_cb, ssh_key_path)?;
+        let result = self.push(
+            remote_name,
+            &[refspec],
+            options,
+            progress_cb,
+            ssh_credentials,
+        )?;
 
         // Set upstream tracking if requested
         if options.set_upstream {
@@ -1619,7 +1637,7 @@ impl Git2Service {
         branch_name: &str,
         options: &crate::models::PullOptions,
         progress_cb: Option<F>,
-        ssh_key_path: Option<String>,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<()>
     where
         F: FnMut(&git2::Progress<'_>) -> bool + 'static,
@@ -1630,7 +1648,7 @@ impl Git2Service {
             &crate::models::FetchOptions::default(),
             None,
             progress_cb,
-            ssh_key_path,
+            ssh_credentials,
         )?;
 
         let repo = self.repo()?;

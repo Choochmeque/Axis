@@ -272,6 +272,10 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::set_remote_ssh_key,
             crate::commands::delete_remote_ssh_key,
             crate::commands::list_remote_ssh_keys,
+            // SSH Key Format & Passphrase commands
+            crate::commands::check_ssh_key_format,
+            crate::commands::cache_ssh_passphrase,
+            crate::commands::clear_ssh_passphrase,
             // Avatar commands
             crate::commands::get_avatar,
             crate::commands::clear_avatar_cache,

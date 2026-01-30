@@ -641,6 +641,13 @@ export const sshKeysApi = {
   import: (options: ImportSshKeyOptions) => commands.importSshKey(options),
 
   export: (options: ExportSshKeyOptions) => commands.exportSshKey(options),
+
+  checkFormat: (keyPath: string) => commands.checkSshKeyFormat(keyPath),
+
+  cachePassphrase: (keyPath: string, passphrase: string) =>
+    commands.cacheSshPassphrase(keyPath, passphrase),
+
+  clearPassphrase: (keyPath: string) => commands.clearSshPassphrase(keyPath),
 };
 
 export const remoteSshKeysApi = {

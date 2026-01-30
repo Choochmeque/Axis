@@ -24,7 +24,7 @@ import { TagDialog } from '../tags/TagDialog';
 import { ArchiveDialog } from '../history/ArchiveDialog';
 import { PatchDialog } from '../history/PatchDialog';
 import { BisectDialog } from '../merge/BisectDialog';
-import { FetchDialog, PushDialog, PullDialog } from '../remotes';
+import { FetchDialog, PushDialog, PullDialog, PassphraseDialog } from '../remotes';
 import { StashDialog } from '../stash/StashDialog';
 import { DiscardConfirmDialog } from '../staging/DiscardConfirmDialog';
 import { SettingsDialog } from '../settings/SettingsDialog';
@@ -94,6 +94,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeRepositorySettingsDialog,
     mergeDialog,
     closeMergeDialog,
+    passphraseDialog,
+    closePassphraseDialog,
   } = useDialogStore();
   const { loadStatus, loadBranches, repository } = useRepositoryStore();
 
@@ -241,6 +243,18 @@ export function AppLayout({ children }: AppLayoutProps) {
       <FetchDialog isOpen={fetchDialog.isOpen} onClose={closeFetchDialog} />
       <PushDialog isOpen={pushDialog.isOpen} onClose={closePushDialog} />
       <PullDialog isOpen={pullDialog.isOpen} onClose={closePullDialog} />
+      <PassphraseDialog
+        isOpen={passphraseDialog.isOpen}
+        keyPath={passphraseDialog.keyPath}
+        onSuccess={() => {
+          passphraseDialog.onSuccess?.();
+          closePassphraseDialog();
+        }}
+        onCancel={() => {
+          passphraseDialog.onCancel?.();
+          closePassphraseDialog();
+        }}
+      />
       <CheckoutBranchDialog
         isOpen={checkoutBranchDialog.isOpen}
         onClose={closeCheckoutBranchDialog}

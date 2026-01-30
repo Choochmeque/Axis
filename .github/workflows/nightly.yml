@@ -17,6 +17,9 @@ jobs:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -140,45 +143,34 @@ jobs:
           path: dist
 
       # --------------------------------------------------
-      # Move nightly tag to current main HEAD
-      # TODO: also tag with full version number
+      # Move nightly tag + create version tag
       # --------------------------------------------------
-      - name: Update nightly tag
+      - name: Update tags
         run: |
           git tag -f nightly
+          git tag "v${{ needs.build.outputs.version }}"
           git push origin nightly --force
+          git push origin "v${{ needs.build.outputs.version }}"
 
       # --------------------------------------------------
-      # Create nightly release if missing
+      # Create or update nightly release
       # --------------------------------------------------
-      - name: Ensure nightly release exists
-        run: |
-          gh release create nightly \
-            --prerelease \
-            --title "Nightly" \
-            --notes "Nightly build from main" \
-            --target nightly \
-            || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # --------------------------------------------------
-      # Generate notes since last stable release (v*)
-      # --------------------------------------------------
-      - name: Update release notes (since last stable)
+      - name: Create or update nightly release
         run: |
           LAST_STABLE=$(git tag --merged main --list 'v*' --sort=-version:refname | head -n 1)
 
-          if [ -z "$LAST_STABLE" ]; then
-            echo "No stable release found"
-            gh release edit nightly \
-              --notes "No stable release yet."
-          else
-            echo "Generating notes since $LAST_STABLE"
-            gh release edit nightly \
-              --generate-notes \
-              --notes-start-tag "$LAST_STABLE"
+          NOTES_ARGS="--generate-notes"
+          if [ -n "$LAST_STABLE" ]; then
+            NOTES_ARGS="$NOTES_ARGS --notes-start-tag $LAST_STABLE"
           fi
+
+          # Delete and recreate to get fresh notes
+          gh release delete nightly --yes 2>/dev/null || true
+          gh release create nightly \
+            --prerelease \
+            --title "Nightly" \
+            --target nightly \
+            $NOTES_ARGS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -199,7 +191,7 @@ jobs:
 
           APPIMAGE_NAME=$(basename "$APPIMAGE")
           SIG_CONTENT=$(cat "$APPIMAGE_SIG")
-          VERSION=$(echo "$APPIMAGE_NAME" | grep -oP '\d+\.\d+\.\d+-nightly\.\d+' || echo "unknown")
+          VERSION="${{ needs.build.outputs.version }}"
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           cat > dist/latest.json <<EOF

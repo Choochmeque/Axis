@@ -20,7 +20,7 @@ import {
   RevertCommitDialog,
 } from '../merge';
 import { ActionConfirmDialog, ActionOutputDialog } from '../custom-actions';
-import { TagDialog } from '../tags/TagDialog';
+import { TagDialog, DeleteTagDialog } from '../tags';
 import { ArchiveDialog } from '../history/ArchiveDialog';
 import { PatchDialog } from '../history/PatchDialog';
 import { BisectDialog } from '../merge/BisectDialog';
@@ -80,6 +80,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeCheckoutBranchDialog,
     deleteBranchDialog,
     closeDeleteBranchDialog,
+    deleteTagDialog,
+    closeDeleteTagDialog,
     renameBranchDialog,
     closeRenameBranchDialog,
     branchCompareDialog,
@@ -97,7 +99,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     passphraseDialog,
     closePassphraseDialog,
   } = useDialogStore();
-  const { loadStatus, loadBranches, repository } = useRepositoryStore();
+  const { loadStatus, loadBranches, repository, remotes } = useRepositoryStore();
 
   return (
     <>
@@ -263,6 +265,12 @@ export function AppLayout({ children }: AppLayoutProps) {
         isOpen={deleteBranchDialog.isOpen}
         onClose={closeDeleteBranchDialog}
         branch={deleteBranchDialog.branch}
+      />
+      <DeleteTagDialog
+        isOpen={deleteTagDialog.isOpen}
+        onClose={closeDeleteTagDialog}
+        tag={deleteTagDialog.tag}
+        remotes={remotes}
       />
       <RenameBranchDialog
         isOpen={renameBranchDialog.isOpen}

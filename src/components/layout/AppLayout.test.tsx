@@ -94,11 +94,13 @@ vi.mock('../custom-actions', () => ({
   ActionOutputDialog: () => <div data-testid="action-output-dialog" />,
 }));
 
-vi.mock('../tags/TagDialog', () => ({
+vi.mock('../tags', () => ({
   TagDialog: (props: Record<string, unknown>) => {
     tagDialogProps = props;
     return props.isOpen ? <div data-testid="tag-dialog">TagDialog</div> : null;
   },
+  DeleteTagDialog: (props: Record<string, unknown>) =>
+    props.isOpen ? <div data-testid="delete-tag-dialog">DeleteTag</div> : null,
 }));
 
 vi.mock('../history/ArchiveDialog', () => ({
@@ -178,6 +180,7 @@ let mockRepositoryStore = {
   loadStatus: mockLoadStatus,
   loadBranches: mockLoadBranches,
   repository: { currentBranch: 'main' },
+  remotes: [],
 };
 
 const mockCloseTagDialog = vi.fn();
@@ -195,6 +198,7 @@ const mockClosePushDialog = vi.fn();
 const mockClosePullDialog = vi.fn();
 const mockCloseCheckoutBranchDialog = vi.fn();
 const mockCloseDeleteBranchDialog = vi.fn();
+const mockCloseDeleteTagDialog = vi.fn();
 const mockCloseRenameBranchDialog = vi.fn();
 const mockCloseBranchCompareDialog = vi.fn();
 const mockCloseStashDialog = vi.fn();
@@ -277,6 +281,8 @@ let mockDialogStore = {
   closeCheckoutBranchDialog: mockCloseCheckoutBranchDialog,
   deleteBranchDialog: { isOpen: false, branch: null as string | null },
   closeDeleteBranchDialog: mockCloseDeleteBranchDialog,
+  deleteTagDialog: { isOpen: false, tag: null as unknown },
+  closeDeleteTagDialog: mockCloseDeleteTagDialog,
   renameBranchDialog: { isOpen: false, branch: null as string | null },
   closeRenameBranchDialog: mockCloseRenameBranchDialog,
   branchCompareDialog: {
@@ -329,6 +335,7 @@ describe('AppLayout', () => {
       loadStatus: mockLoadStatus,
       loadBranches: mockLoadBranches,
       repository: { currentBranch: 'main' },
+      remotes: [],
     };
     mockDialogStore = {
       tagDialog: {
@@ -383,6 +390,8 @@ describe('AppLayout', () => {
       closeCheckoutBranchDialog: mockCloseCheckoutBranchDialog,
       deleteBranchDialog: { isOpen: false, branch: null },
       closeDeleteBranchDialog: mockCloseDeleteBranchDialog,
+      deleteTagDialog: { isOpen: false, tag: null },
+      closeDeleteTagDialog: mockCloseDeleteTagDialog,
       renameBranchDialog: { isOpen: false, branch: null },
       closeRenameBranchDialog: mockCloseRenameBranchDialog,
       branchCompareDialog: { isOpen: false, baseBranch: null, compareBranch: null },

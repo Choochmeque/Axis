@@ -133,7 +133,7 @@ jobs:
 
       - name: Build Tauri app (macOS)
         if: matrix.os == 'macos-latest'
-        run: pnpm tauri build --bundles dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
+        run: pnpm tauri build --bundles app,dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
         env:
           AXIS_UPDATE_CHANNEL: nightly
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}

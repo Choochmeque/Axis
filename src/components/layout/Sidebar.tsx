@@ -174,7 +174,6 @@ export function Sidebar() {
     selectStash,
     selectedStash,
     clearStashSelection,
-    loadTags,
     loadBranches,
     loadCommits,
     loadStatus,
@@ -252,21 +251,7 @@ export function Sidebar() {
     [t]
   );
 
-  const handleTagDelete = useCallback(
-    async (tagName: string) => {
-      if (!confirm(`Delete tag '${tagName}'?`)) return;
-      try {
-        await tagApi.delete(tagName);
-        await loadTags();
-        toast.success(t('notifications.success.tagDeleted', { name: tagName }));
-      } catch (err) {
-        toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
-      }
-    },
-    [loadTags, t]
-  );
-
-  const { openTagDialog, openCreateBranchDialog } = useDialogStore();
+  const { openTagDialog, openCreateBranchDialog, openDeleteTagDialog } = useDialogStore();
 
   // Listen for menu events
   useEffect(() => {
@@ -468,7 +453,7 @@ export function Sidebar() {
                       remotes={remotes}
                       onCheckout={() => handleTagCheckout(tag.name)}
                       onPush={(remote) => handleTagPush(tag.name, remote)}
-                      onDelete={() => handleTagDelete(tag.name)}
+                      onDelete={() => openDeleteTagDialog({ tag })}
                     >
                       <button
                         className={sidebarItemClass}

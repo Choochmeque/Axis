@@ -1101,6 +1101,17 @@
         "addButton": "Add",
         "tagCreated": "Tag \"{{name}}\" created"
       },
+      "delete": {
+        "title": "Delete Tag",
+        "warning": "This action cannot be undone.",
+        "tagLabel": "Tag:",
+        "targetLabel": "Target:",
+        "typeLabel": "Type:",
+        "confirmMessage": "Are you sure you want to delete the tag \"{{name}}\"?",
+        "deleteRemote": "Also delete from remote ({{remote}})",
+        "deleteRemoteSelect": "Also delete from remote",
+        "deleteButton": "Delete Tag"
+      },
       "contextMenu": {
         "copyName": "Copy Tag Name to Clipboard",
         "checkout": "Checkout {{name}}",

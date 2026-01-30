@@ -9,6 +9,7 @@ import type {
   RebaseResult,
   ResetMode,
   RevertResult,
+  Tag,
   TagResult,
 } from '@/types';
 import { ResetMode as ResetModeEnum } from '@/types';
@@ -108,6 +109,12 @@ interface DeleteBranchDialogState {
   branch?: Branch;
 }
 
+// Delete tag dialog state
+interface DeleteTagDialogState {
+  isOpen: boolean;
+  tag?: Tag;
+}
+
 // Rename branch dialog state
 interface RenameBranchDialogState {
   isOpen: boolean;
@@ -201,6 +208,9 @@ interface DialogState {
 
   // Delete branch dialog
   deleteBranchDialog: DeleteBranchDialogState;
+
+  // Delete tag dialog
+  deleteTagDialog: DeleteTagDialogState;
 
   // Rename branch dialog
   renameBranchDialog: RenameBranchDialogState;
@@ -309,6 +319,10 @@ interface DialogState {
   // Delete branch dialog actions
   openDeleteBranchDialog: (options: { branch: Branch }) => void;
   closeDeleteBranchDialog: () => void;
+
+  // Delete tag dialog actions
+  openDeleteTagDialog: (options: { tag: Tag }) => void;
+  closeDeleteTagDialog: () => void;
 
   // Rename branch dialog actions
   openRenameBranchDialog: (options: { branch: Branch }) => void;
@@ -435,6 +449,11 @@ const initialDeleteBranchDialogState: DeleteBranchDialogState = {
   branch: undefined,
 };
 
+const initialDeleteTagDialogState: DeleteTagDialogState = {
+  isOpen: false,
+  tag: undefined,
+};
+
 const initialRenameBranchDialogState: RenameBranchDialogState = {
   isOpen: false,
   branch: undefined,
@@ -493,6 +512,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   pullDialog: initialPullDialogState,
   checkoutBranchDialog: initialCheckoutBranchDialogState,
   deleteBranchDialog: initialDeleteBranchDialogState,
+  deleteTagDialog: initialDeleteTagDialogState,
   renameBranchDialog: initialRenameBranchDialogState,
   branchCompareDialog: initialBranchCompareDialogState,
   stashDialog: initialStashDialogState,
@@ -677,6 +697,19 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeDeleteBranchDialog: () => {
     set({ deleteBranchDialog: initialDeleteBranchDialogState });
+  },
+
+  openDeleteTagDialog: (options) => {
+    set({
+      deleteTagDialog: {
+        isOpen: true,
+        tag: options.tag,
+      },
+    });
+  },
+
+  closeDeleteTagDialog: () => {
+    set({ deleteTagDialog: initialDeleteTagDialogState });
   },
 
   openRenameBranchDialog: (options) => {

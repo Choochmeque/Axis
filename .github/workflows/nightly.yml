@@ -17,6 +17,10 @@ jobs:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
+    defaults:
+      run:
+        shell: bash
+
     outputs:
       version: ${{ steps.version.outputs.version }}
 
@@ -128,7 +132,6 @@ jobs:
 
       - name: Collect build artifacts (Windows)
         if: matrix.os == 'windows-latest'
-        shell: bash
         run: |
           mkdir -p dist
           cp src-tauri/target/release/bundle/msi/*.msi dist/

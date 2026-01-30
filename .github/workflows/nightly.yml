@@ -89,13 +89,6 @@ jobs:
           packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
           version: '1.0'
 
-      - name: Install Strawberry Perl (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: shogo82148/actions-setup-perl@v1
-        with:
-          perl-version: '5.40'
-          distribution: strawberry
-
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
@@ -124,7 +117,8 @@ jobs:
 
       - name: Build Tauri app (Windows)
         if: matrix.os == 'windows-latest'
-        run: pnpm tauri build --bundles msi -c "{\"version\":\"${{ steps.version.outputs.version }}\"}"
+        shell: pwsh
+        run: pnpm tauri build --bundles msi -c "{`"version`":`"${{ steps.version.outputs.version }}`"}"
         env:
           AXIS_UPDATE_CHANNEL: nightly
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}

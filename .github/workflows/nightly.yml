@@ -215,6 +215,6 @@ jobs:
       # --------------------------------------------------
       - name: Upload assets (replace)
         run: |
-          gh release upload nightly dist/** --clobber
+          find dist -type f | xargs gh release upload nightly --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

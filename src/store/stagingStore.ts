@@ -2,9 +2,11 @@ import { create } from 'zustand';
 
 import i18n from '@/i18n';
 import { operations } from '@/store/operationStore';
-import { stagingApi, repositoryApi, diffApi, commitApi } from '@/services/api';
-import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions } from '@/types';
+import { stagingApi, repositoryApi, diffApi, commitApi, lfsApi } from '@/services/api';
+import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions, LfsCheckResult } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useDialogStore } from '@/store/dialogStore';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { debounce, type DebouncedFn } from '@/lib/debounce';
 import { getEmptyCommitParts, type ConventionalCommitParts } from '@/lib/conventionalCommits';
@@ -142,6 +144,53 @@ function toDiffOptions(settings: DiffSettings): DiffOptions {
   };
 }
 
+/**
+ * Check files for large binaries before staging.
+ * Returns true if staging should proceed, false if paused (dialog shown).
+ */
+async function checkLfsBeforeStaging(
+  paths: string[],
+  onProceed: () => Promise<void>
+): Promise<boolean> {
+  const settings = useSettingsStore.getState().settings;
+  if (!settings?.largeBinaryWarningEnabled) return true;
+
+  let result: LfsCheckResult;
+  try {
+    result = await stagingApi.checkFilesForLfs(paths, settings.largeBinaryThreshold);
+  } catch (error) {
+    console.error('Failed to check files for LFS:', error);
+    // On error, allow staging to proceed
+    return true;
+  }
+
+  if (result.files.length === 0) return true;
+
+  // Open warning dialog — staging is paused
+  const { openLargeBinaryWarningDialog } = useDialogStore.getState();
+  openLargeBinaryWarningDialog({
+    files: result.files,
+    pendingPaths: paths,
+    lfsInstalled: result.lfsInstalled,
+    lfsInitialized: result.lfsInitialized,
+    onStageAnyway: async () => {
+      await onProceed();
+    },
+    onTrackWithLfs: async (patterns: string[]) => {
+      try {
+        for (const pattern of patterns) {
+          await lfsApi.track(pattern);
+        }
+        await onProceed();
+      } catch (error) {
+        console.error('Failed to track files with LFS:', error);
+      }
+    },
+  });
+
+  return false;
+}
+
 export const useStagingStore = create<StagingState>((set, get) => ({
   ...initialState,
 
@@ -207,6 +256,11 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   stageFile: async (path: string) => {
     try {
+      const proceed = await checkLfsBeforeStaging([path], async () => {
+        await stagingApi.stageFile(path);
+        await get().loadStatus();
+      });
+      if (!proceed) return;
       await stagingApi.stageFile(path);
       await get().loadStatus();
     } catch (error) {
@@ -216,6 +270,11 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   stageFiles: async (paths: string[]) => {
     try {
+      const proceed = await checkLfsBeforeStaging(paths, async () => {
+        await stagingApi.stageFiles(paths);
+        await get().loadStatus();
+      });
+      if (!proceed) return;
       await stagingApi.stageFiles(paths);
       await get().loadStatus();
     } catch (error) {
@@ -225,6 +284,17 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   stageAll: async () => {
     try {
+      // Gather all unstaged + untracked paths for the LFS check
+      const status = get().status;
+      const allPaths = [
+        ...(status?.unstaged ?? []).map((f) => f.path),
+        ...(status?.untracked ?? []).map((f) => f.path),
+      ];
+      const proceed = await checkLfsBeforeStaging(allPaths, async () => {
+        await stagingApi.stageAll();
+        await get().loadStatus();
+      });
+      if (!proceed) return;
       await stagingApi.stageAll();
       await get().loadStatus();
     } catch (error) {

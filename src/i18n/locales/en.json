@@ -351,6 +351,17 @@
         "hint": "SSH key to use for remote operations when no per-remote key is configured",
         "auto": "Auto (system default)",
         "autoDescription": "Let Git and SSH agent decide which key to use"
+      },
+      "largeFiles": {
+        "title": "Large Files",
+        "warningEnabled": {
+          "label": "Warn about large binary files",
+          "description": "Show a warning dialog when staging binary files that exceed the size threshold"
+        },
+        "threshold": {
+          "label": "Size threshold",
+          "hint": "Files larger than this will trigger a warning"
+        }
       }
     }
   },
@@ -677,6 +688,15 @@
     },
     "referenceMention": {
       "noMatches": "No matching issues or PRs"
+    },
+    "lfsWarning": {
+      "title": "Large Binary Files Detected",
+      "message": "{{count}} file(s) exceed the size threshold ({{threshold}}). Consider using Git LFS for better performance.",
+      "stageAnyway": "Stage Anyway",
+      "trackWithLfs": "Track with LFS",
+      "lfsNotInstalled": "Large binary files can slow down cloning, fetching, and increase repository size. Git LFS stores them efficiently outside the main repo.",
+      "installLfs": "Install Git LFS",
+      "suggestedPattern": "Suggested pattern: {{pattern}}"
     }
   },
   "merge": {

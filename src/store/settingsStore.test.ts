@@ -54,6 +54,8 @@ describe('settingsStore', () => {
     notificationHistoryCapacity: 50,
     gravatarEnabled: false,
     autoUpdateEnabled: true,
+    largeBinaryWarningEnabled: true,
+    largeBinaryThreshold: 10485760,
   };
 
   beforeEach(() => {

@@ -102,6 +102,9 @@ async discardHunk(patch: string) : Promise<null> {
 async deleteFile(path: string) : Promise<null> {
     return await TAURI_INVOKE("delete_file", { path });
 },
+async checkFilesForLfs(paths: string[], threshold: number) : Promise<LfsCheckResult> {
+    return await TAURI_INVOKE("check_files_for_lfs", { paths, threshold });
+},
 /**
  * Get diff based on the specified target
  */
@@ -1371,7 +1374,7 @@ force: boolean;
  */
 detach: boolean }
 export type AiProvider = "OpenAi" | "Anthropic" | "Ollama"
-export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean }
+export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean; largeBinaryWarningEnabled: boolean; largeBinaryThreshold: number }
 /**
  * Options for applying mailbox patches (git am)
  */
@@ -2527,6 +2530,46 @@ export type IssueState = "Open" | "Closed" | "All"
  * Paginated issues response
  */
 export type IssuesPage = { items: Issue[]; hasMore: boolean }
+/**
+ * Information about a large binary file detected during staging
+ */
+export type LargeBinaryFileInfo = { 
+/**
+ * File path relative to repository root
+ */
+path: string; 
+/**
+ * File size in bytes
+ */
+size: number; 
+/**
+ * Whether the file is detected as binary
+ */
+isBinary: boolean; 
+/**
+ * Whether the file is already tracked by LFS
+ */
+isLfsTracked: boolean; 
+/**
+ * Suggested LFS tracking pattern (e.g., "*.psd")
+ */
+suggestedPattern: string }
+/**
+ * Result of checking files for LFS eligibility before staging
+ */
+export type LfsCheckResult = { 
+/**
+ * Large binary files that should be tracked with LFS
+ */
+files: LargeBinaryFileInfo[]; 
+/**
+ * Whether Git LFS is installed on the system
+ */
+lfsInstalled: boolean; 
+/**
+ * Whether LFS is initialized in this repository
+ */
+lfsInitialized: boolean }
 /**
  * LFS environment information
  */

@@ -5,6 +5,7 @@ import type {
   Branch,
   Commit,
   CherryPickResult,
+  LargeBinaryFileInfo,
   MergeResult,
   RebaseResult,
   ResetMode,
@@ -158,6 +159,17 @@ interface MergeDialogState {
   onMergeComplete?: (result: MergeResult) => void;
 }
 
+// Large binary warning dialog state
+interface LargeBinaryWarningDialogState {
+  isOpen: boolean;
+  files: LargeBinaryFileInfo[];
+  pendingPaths: string[];
+  lfsInstalled: boolean;
+  lfsInitialized: boolean;
+  onStageAnyway?: () => void;
+  onTrackWithLfs?: (patterns: string[]) => void;
+}
+
 // Passphrase dialog state
 interface PassphraseDialogState {
   isOpen: boolean;
@@ -232,6 +244,9 @@ interface DialogState {
 
   // Merge dialog
   mergeDialog: MergeDialogState;
+
+  // Large binary warning dialog
+  largeBinaryWarningDialog: LargeBinaryWarningDialogState;
 
   // Passphrase dialog
   passphraseDialog: PassphraseDialogState;
@@ -358,6 +373,17 @@ interface DialogState {
     onMergeComplete?: (result: MergeResult) => void;
   }) => void;
   closeMergeDialog: () => void;
+
+  // Large binary warning dialog actions
+  openLargeBinaryWarningDialog: (options: {
+    files: LargeBinaryFileInfo[];
+    pendingPaths: string[];
+    lfsInstalled: boolean;
+    lfsInitialized: boolean;
+    onStageAnyway?: () => void;
+    onTrackWithLfs?: (patterns: string[]) => void;
+  }) => void;
+  closeLargeBinaryWarningDialog: () => void;
 
   // Passphrase dialog actions
   openPassphraseDialog: (options: {
@@ -490,6 +516,16 @@ const initialMergeDialogState: MergeDialogState = {
   onMergeComplete: undefined,
 };
 
+const initialLargeBinaryWarningDialogState: LargeBinaryWarningDialogState = {
+  isOpen: false,
+  files: [],
+  pendingPaths: [],
+  lfsInstalled: false,
+  lfsInitialized: false,
+  onStageAnyway: undefined,
+  onTrackWithLfs: undefined,
+};
+
 const initialPassphraseDialogState: PassphraseDialogState = {
   isOpen: false,
   keyPath: null,
@@ -520,6 +556,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   settingsDialog: initialSettingsDialogState,
   repositorySettingsDialog: initialRepositorySettingsDialogState,
   mergeDialog: initialMergeDialogState,
+  largeBinaryWarningDialog: initialLargeBinaryWarningDialogState,
   passphraseDialog: initialPassphraseDialogState,
 
   openTagDialog: (options) => {
@@ -790,6 +827,24 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeMergeDialog: () => {
     set({ mergeDialog: initialMergeDialogState });
+  },
+
+  openLargeBinaryWarningDialog: (options) => {
+    set({
+      largeBinaryWarningDialog: {
+        isOpen: true,
+        files: options.files,
+        pendingPaths: options.pendingPaths,
+        lfsInstalled: options.lfsInstalled,
+        lfsInitialized: options.lfsInitialized,
+        onStageAnyway: options.onStageAnyway,
+        onTrackWithLfs: options.onTrackWithLfs,
+      },
+    });
+  },
+
+  closeLargeBinaryWarningDialog: () => {
+    set({ largeBinaryWarningDialog: initialLargeBinaryWarningDialogState });
   },
 
   openPassphraseDialog: (options) => {

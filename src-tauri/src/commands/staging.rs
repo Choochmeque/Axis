@@ -1,5 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::HookResult;
+use crate::models::LfsCheckResult;
 use crate::services::SigningService;
 use crate::state::AppState;
 use std::fs;
@@ -279,4 +280,36 @@ pub async fn delete_file(state: State<'_, AppState>, path: String) -> Result<()>
         .get_git_service()?
         .with_git2(move |git2| git2.delete_file(&path))
         .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn check_files_for_lfs(
+    state: State<'_, AppState>,
+    paths: Vec<String>,
+    threshold: u64,
+) -> Result<LfsCheckResult> {
+    let git_service = state.get_git_service()?;
+
+    // Get LFS status using existing CLI service
+    let lfs_status = git_service.with_git_cli(|cli| cli.lfs_status())?;
+    let tracked_patterns = if lfs_status.is_installed {
+        git_service
+            .with_git_cli(|cli| cli.lfs_list_tracked_patterns())
+            .unwrap_or_default()
+    } else {
+        vec![]
+    };
+
+    // Check files using git2 service
+    let pattern_strings: Vec<String> = tracked_patterns.iter().map(|p| p.pattern.clone()).collect();
+    let files = git_service
+        .with_git2(move |git2| git2.check_files_for_lfs(&paths, threshold, &pattern_strings))
+        .await?;
+
+    Ok(LfsCheckResult {
+        files,
+        lfs_installed: lfs_status.is_installed,
+        lfs_initialized: lfs_status.is_initialized,
+    })
 }

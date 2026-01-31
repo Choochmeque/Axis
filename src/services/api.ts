@@ -192,6 +192,9 @@ export const stagingApi = {
   unstageHunk: (patch: string) => commands.unstageHunk(patch),
 
   discardHunk: (patch: string) => commands.discardHunk(patch),
+
+  checkFilesForLfs: (paths: string[], threshold: number) =>
+    commands.checkFilesForLfs(paths, threshold),
 };
 
 export const diffApi = {

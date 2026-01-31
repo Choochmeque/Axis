@@ -86,6 +86,15 @@ describe('dialogStore', () => {
       settingsDialog: { isOpen: false },
       repositorySettingsDialog: { isOpen: false },
       mergeDialog: { isOpen: false, sourceBranch: undefined, onMergeComplete: undefined },
+      largeBinaryWarningDialog: {
+        isOpen: false,
+        files: [],
+        pendingPaths: [],
+        lfsInstalled: false,
+        lfsInitialized: false,
+        onStageAnyway: undefined,
+        onTrackWithLfs: undefined,
+      },
     });
   });
 
@@ -524,6 +533,59 @@ describe('dialogStore', () => {
       const dialog = useDialogStore.getState().mergeDialog;
       expect(dialog.isOpen).toBe(false);
       expect(dialog.sourceBranch).toBeUndefined();
+    });
+  });
+
+  describe('largeBinaryWarningDialog', () => {
+    const mockFiles = [
+      {
+        path: 'assets/image.psd',
+        size: 15728640,
+        isBinary: true,
+        isLfsTracked: false,
+        suggestedPattern: '*.psd',
+      },
+    ];
+
+    it('should open large binary warning dialog with options', () => {
+      const onStageAnyway = vi.fn();
+      const onTrackWithLfs = vi.fn();
+      useDialogStore.getState().openLargeBinaryWarningDialog({
+        files: mockFiles,
+        pendingPaths: ['assets/image.psd'],
+        lfsInstalled: true,
+        lfsInitialized: true,
+        onStageAnyway,
+        onTrackWithLfs,
+      });
+
+      const dialog = useDialogStore.getState().largeBinaryWarningDialog;
+      expect(dialog.isOpen).toBe(true);
+      expect(dialog.files).toEqual(mockFiles);
+      expect(dialog.pendingPaths).toEqual(['assets/image.psd']);
+      expect(dialog.lfsInstalled).toBe(true);
+      expect(dialog.lfsInitialized).toBe(true);
+      expect(dialog.onStageAnyway).toBe(onStageAnyway);
+      expect(dialog.onTrackWithLfs).toBe(onTrackWithLfs);
+    });
+
+    it('should close large binary warning dialog and reset state', () => {
+      useDialogStore.getState().openLargeBinaryWarningDialog({
+        files: mockFiles,
+        pendingPaths: ['assets/image.psd'],
+        lfsInstalled: true,
+        lfsInitialized: false,
+      });
+      useDialogStore.getState().closeLargeBinaryWarningDialog();
+
+      const dialog = useDialogStore.getState().largeBinaryWarningDialog;
+      expect(dialog.isOpen).toBe(false);
+      expect(dialog.files).toEqual([]);
+      expect(dialog.pendingPaths).toEqual([]);
+      expect(dialog.lfsInstalled).toBe(false);
+      expect(dialog.lfsInitialized).toBe(false);
+      expect(dialog.onStageAnyway).toBeUndefined();
+      expect(dialog.onTrackWithLfs).toBeUndefined();
     });
   });
 });

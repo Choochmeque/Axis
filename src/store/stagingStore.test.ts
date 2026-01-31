@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useStagingStore } from './stagingStore';
-import { stagingApi, repositoryApi, diffApi, commitApi } from '../services/api';
+import { stagingApi, repositoryApi, diffApi, commitApi, lfsApi } from '../services/api';
+import { useSettingsStore } from '../store/settingsStore';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({
@@ -15,6 +16,7 @@ vi.mock('../services/api', () => ({
     unstageHunk: vi.fn(),
     discardFile: vi.fn(),
     discardUnstaged: vi.fn(),
+    checkFilesForLfs: vi.fn(),
   },
   repositoryApi: {
     getStatus: vi.fn(),
@@ -25,6 +27,26 @@ vi.mock('../services/api', () => ({
   commitApi: {
     create: vi.fn(),
     amend: vi.fn(),
+  },
+  lfsApi: {
+    track: vi.fn(),
+  },
+}));
+
+// Mock the settings store
+vi.mock('../store/settingsStore', () => ({
+  useSettingsStore: {
+    getState: vi.fn(() => ({ settings: null })),
+  },
+}));
+
+// Mock the dialog store
+const mockOpenLargeBinaryWarningDialog = vi.fn();
+vi.mock('../store/dialogStore', () => ({
+  useDialogStore: {
+    getState: vi.fn(() => ({
+      openLargeBinaryWarningDialog: mockOpenLargeBinaryWarningDialog,
+    })),
   },
 }));
 
@@ -794,6 +816,241 @@ describe('stagingStore', () => {
       await useStagingStore.getState().amendCommit(true);
 
       expect(commitApi.amend).toHaveBeenCalledWith('Amended', true);
+    });
+  });
+
+  describe('LFS check before staging', () => {
+    const mockLfsCheckResult = {
+      files: [
+        {
+          path: 'assets/image.psd',
+          size: 15728640,
+          isBinary: true,
+          isLfsTracked: false,
+          suggestedPattern: '*.psd',
+        },
+      ],
+      lfsInstalled: true,
+      lfsInitialized: true,
+    };
+
+    const enableLfsSettings = () => {
+      vi.mocked(useSettingsStore.getState).mockReturnValue({
+        settings: {
+          largeBinaryWarningEnabled: true,
+          largeBinaryThreshold: 10485760,
+        },
+      } as ReturnType<typeof useSettingsStore.getState>);
+    };
+
+    const disableLfsSettings = () => {
+      vi.mocked(useSettingsStore.getState).mockReturnValue({
+        settings: {
+          largeBinaryWarningEnabled: false,
+          largeBinaryThreshold: 10485760,
+        },
+      } as ReturnType<typeof useSettingsStore.getState>);
+    };
+
+    it('should skip LFS check when warning is disabled in settings', async () => {
+      disableLfsSettings();
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFile('test.txt');
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.checkFilesForLfs).not.toHaveBeenCalled();
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('test.txt');
+    });
+
+    it('should skip LFS check when settings are null', async () => {
+      vi.mocked(useSettingsStore.getState).mockReturnValue({
+        settings: null,
+      } as ReturnType<typeof useSettingsStore.getState>);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFile('test.txt');
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.checkFilesForLfs).not.toHaveBeenCalled();
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('test.txt');
+    });
+
+    it('should proceed with staging when no large binary files found', async () => {
+      enableLfsSettings();
+      const emptyResult = { files: [], lfsInstalled: true, lfsInitialized: true };
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(emptyResult);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFile('test.txt');
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.checkFilesForLfs).toHaveBeenCalledWith(['test.txt'], 10485760);
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('test.txt');
+    });
+
+    it('should open warning dialog and pause staging when large binary files found', async () => {
+      enableLfsSettings();
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(mockLfsCheckResult);
+
+      await useStagingStore.getState().stageFile('assets/image.psd');
+
+      expect(mockOpenLargeBinaryWarningDialog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          files: mockLfsCheckResult.files,
+          pendingPaths: ['assets/image.psd'],
+          lfsInstalled: true,
+          lfsInitialized: true,
+        })
+      );
+      // Staging should NOT have been called directly
+      expect(stagingApi.stageFile).not.toHaveBeenCalled();
+    });
+
+    it('should proceed with staging on LFS check API error', async () => {
+      enableLfsSettings();
+      vi.mocked(stagingApi.checkFilesForLfs).mockRejectedValue(new Error('API error'));
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFile('test.txt');
+      await vi.runAllTimersAsync();
+
+      // Should still stage despite the error
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('test.txt');
+    });
+
+    it('should check LFS for stageFiles with multiple paths', async () => {
+      enableLfsSettings();
+      const emptyResult = { files: [], lfsInstalled: true, lfsInitialized: true };
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(emptyResult);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFiles).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFiles(['file1.txt', 'file2.txt']);
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.checkFilesForLfs).toHaveBeenCalledWith(
+        ['file1.txt', 'file2.txt'],
+        10485760
+      );
+      expect(stagingApi.stageFiles).toHaveBeenCalledWith(['file1.txt', 'file2.txt']);
+    });
+
+    it('should pause stageFiles when large binary files found', async () => {
+      enableLfsSettings();
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(mockLfsCheckResult);
+
+      await useStagingStore.getState().stageFiles(['assets/image.psd']);
+
+      expect(mockOpenLargeBinaryWarningDialog).toHaveBeenCalled();
+      expect(stagingApi.stageFiles).not.toHaveBeenCalled();
+    });
+
+    it('should check LFS for stageAll using unstaged and untracked paths', async () => {
+      enableLfsSettings();
+      useStagingStore.setState({
+        status: {
+          staged: [],
+          unstaged: [
+            {
+              path: 'modified.txt',
+              status: 'Modified',
+              stagedStatus: null,
+              unstagedStatus: 'Modified',
+              isConflict: false,
+              oldPath: null,
+            },
+          ],
+          untracked: [
+            {
+              path: 'new.bin',
+              status: 'Untracked',
+              stagedStatus: null,
+              unstagedStatus: 'Untracked',
+              isConflict: false,
+              oldPath: null,
+            },
+          ],
+          conflicted: [],
+        },
+      });
+
+      const emptyResult = { files: [], lfsInstalled: true, lfsInitialized: true };
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(emptyResult);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageAll).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageAll();
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.checkFilesForLfs).toHaveBeenCalledWith(
+        ['modified.txt', 'new.bin'],
+        10485760
+      );
+      expect(stagingApi.stageAll).toHaveBeenCalled();
+    });
+
+    it('should execute onStageAnyway callback when dialog confirms', async () => {
+      enableLfsSettings();
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(mockLfsCheckResult);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+      await useStagingStore.getState().stageFile('assets/image.psd');
+
+      // Get the onStageAnyway callback that was passed to the dialog
+      const dialogCall = mockOpenLargeBinaryWarningDialog.mock.calls[0][0];
+      expect(dialogCall.onStageAnyway).toBeDefined();
+
+      // Simulate clicking "Stage Anyway"
+      await dialogCall.onStageAnyway();
+      await vi.runAllTimersAsync();
+
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('assets/image.psd');
+    });
+
+    it('should execute onTrackWithLfs callback with LFS tracking', async () => {
+      enableLfsSettings();
+      vi.mocked(stagingApi.checkFilesForLfs).mockResolvedValue(mockLfsCheckResult);
+
+      const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+      vi.mocked(stagingApi.stageFile).mockResolvedValue(null);
+      vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+      vi.mocked(lfsApi.track).mockResolvedValue({
+        success: true,
+        message: 'Tracking *.psd',
+        affectedFiles: [],
+      });
+
+      await useStagingStore.getState().stageFile('assets/image.psd');
+
+      // Get the onTrackWithLfs callback that was passed to the dialog
+      const dialogCall = mockOpenLargeBinaryWarningDialog.mock.calls[0][0];
+      expect(dialogCall.onTrackWithLfs).toBeDefined();
+
+      // Simulate clicking "Track with LFS"
+      await dialogCall.onTrackWithLfs(['*.psd']);
+      await vi.runAllTimersAsync();
+
+      expect(lfsApi.track).toHaveBeenCalledWith('*.psd');
+      expect(stagingApi.stageFile).toHaveBeenCalledWith('assets/image.psd');
     });
   });
 });

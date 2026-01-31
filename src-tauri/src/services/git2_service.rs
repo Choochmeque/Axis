@@ -1,4 +1,5 @@
 use crate::error::{AxisError, Result};
+use crate::models::LargeBinaryFileInfo;
 use crate::models::{
     BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchType, Commit,
     CreateTagOptions, EdgeType, FileLogResult, FileStatus, GraphCommit, GraphEdge, GraphResult,
@@ -3100,6 +3101,114 @@ impl Git2Service {
             signer,
         })
     }
+
+    // ==================== LFS Check Operations ====================
+
+    /// Suggest an LFS tracking pattern for a file based on its extension
+    fn suggest_lfs_pattern(path: &str) -> String {
+        let p = Path::new(path);
+        match p.extension().and_then(|e| e.to_str()) {
+            Some(ext) => format!("*.{ext}"),
+            None => p
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(path)
+                .to_string(),
+        }
+    }
+
+    /// Check if a file path matches any of the given LFS tracked patterns
+    fn matches_lfs_pattern(path: &str, tracked_patterns: &[String]) -> bool {
+        for pattern in tracked_patterns {
+            // Simple glob matching: "*.ext" matches any file with that extension
+            if let Some(ext_pattern) = pattern.strip_prefix("*.") {
+                if let Some(file_ext) = Path::new(path).extension().and_then(|e| e.to_str()) {
+                    if file_ext.eq_ignore_ascii_case(ext_pattern) {
+                        return true;
+                    }
+                }
+            } else if pattern == path {
+                // Exact match
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Check files for LFS eligibility before staging.
+    /// Returns files that are binary, exceed the threshold, and are not already LFS-tracked.
+    pub fn check_files_for_lfs(
+        &self,
+        paths: &[String],
+        threshold: u64,
+        tracked_patterns: &[String],
+    ) -> Result<Vec<LargeBinaryFileInfo>> {
+        let repo = self.repo()?;
+        let workdir = repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("Bare repository".to_string()))?;
+
+        let mut large_files = Vec::new();
+
+        for path in paths {
+            let abs_path = workdir.join(path);
+
+            // Skip if file doesn't exist (e.g., deleted files)
+            if !abs_path.exists() {
+                continue;
+            }
+
+            // Check file size
+            let metadata = std::fs::metadata(&abs_path).map_err(|e| {
+                AxisError::Other(format!("Failed to read metadata for {path}: {e}"))
+            })?;
+            let size = metadata.len();
+
+            if size < threshold {
+                continue;
+            }
+
+            // Check if already tracked by LFS
+            let is_lfs_tracked = Self::matches_lfs_pattern(path, tracked_patterns);
+            if is_lfs_tracked {
+                continue;
+            }
+
+            // Check if binary using git2's Blob::is_binary()
+            let is_binary = match repo.blob_path(&abs_path) {
+                Ok(oid) => match repo.find_blob(oid) {
+                    Ok(blob) => blob.is_binary(),
+                    Err(_) => false,
+                },
+                Err(_) => {
+                    // Fallback: read first 8KB and check for null bytes
+                    match std::fs::read(&abs_path) {
+                        Ok(content) => {
+                            let check_len = content.len().min(8192);
+                            content[..check_len].contains(&0)
+                        }
+                        Err(_) => false,
+                    }
+                }
+            };
+
+            if !is_binary {
+                continue;
+            }
+
+            let suggested_pattern = Self::suggest_lfs_pattern(path);
+
+            large_files.push(LargeBinaryFileInfo {
+                path: path.clone(),
+                size,
+                is_binary,
+                is_lfs_tracked: false,
+                suggested_pattern,
+            });
+        }
+
+        Ok(large_files)
+    }
 }
 
 #[cfg(test)]
@@ -4471,5 +4580,178 @@ mod tests {
         // File should be back to original
         let content = fs::read_to_string(tmp.path().join("README.md")).expect("should read");
         assert_eq!(content, "# Test Repository");
+    }
+
+    // ==================== LFS Check Tests ====================
+
+    #[test]
+    fn test_suggest_lfs_pattern_with_extension() {
+        assert_eq!(
+            Git2Service::suggest_lfs_pattern("assets/texture.psd"),
+            "*.psd"
+        );
+        assert_eq!(Git2Service::suggest_lfs_pattern("video.mp4"), "*.mp4");
+        assert_eq!(
+            Git2Service::suggest_lfs_pattern("deep/nested/file.bin"),
+            "*.bin"
+        );
+    }
+
+    #[test]
+    fn test_suggest_lfs_pattern_without_extension() {
+        assert_eq!(Git2Service::suggest_lfs_pattern("Makefile"), "Makefile");
+        assert_eq!(Git2Service::suggest_lfs_pattern("dir/LICENSE"), "LICENSE");
+    }
+
+    #[test]
+    fn test_matches_lfs_pattern_extension() {
+        let patterns = vec!["*.psd".to_string(), "*.mp4".to_string()];
+        assert!(Git2Service::matches_lfs_pattern(
+            "assets/file.psd",
+            &patterns
+        ));
+        assert!(Git2Service::matches_lfs_pattern("video.mp4", &patterns));
+        assert!(!Git2Service::matches_lfs_pattern("readme.txt", &patterns));
+    }
+
+    #[test]
+    fn test_matches_lfs_pattern_exact() {
+        let patterns = vec!["assets/large.bin".to_string()];
+        assert!(Git2Service::matches_lfs_pattern(
+            "assets/large.bin",
+            &patterns
+        ));
+        assert!(!Git2Service::matches_lfs_pattern(
+            "other/large.bin",
+            &patterns
+        ));
+    }
+
+    #[test]
+    fn test_matches_lfs_pattern_case_insensitive() {
+        let patterns = vec!["*.PSD".to_string()];
+        assert!(Git2Service::matches_lfs_pattern("file.psd", &patterns));
+        assert!(Git2Service::matches_lfs_pattern("file.PSD", &patterns));
+    }
+
+    #[test]
+    fn test_matches_lfs_pattern_empty() {
+        let patterns: Vec<String> = vec![];
+        assert!(!Git2Service::matches_lfs_pattern("file.psd", &patterns));
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_below_threshold() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a small text file (below default 10MB threshold)
+        fs::write(tmp.path().join("small.txt"), "hello").expect("should write");
+
+        let result = service
+            .check_files_for_lfs(&["small.txt".to_string()], 10_485_760, &[])
+            .expect("should check files");
+
+        assert!(result.is_empty(), "small file should not be flagged");
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_large_binary() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a large binary file (above 1KB threshold for test)
+        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        fs::write(tmp.path().join("large.bin"), &binary_content).expect("should write");
+
+        let result = service
+            .check_files_for_lfs(&["large.bin".to_string()], 1024, &[])
+            .expect("should check files");
+
+        assert_eq!(result.len(), 1, "large binary file should be flagged");
+        assert_eq!(result[0].path, "large.bin");
+        assert!(result[0].is_binary);
+        assert!(!result[0].is_lfs_tracked);
+        assert_eq!(result[0].suggested_pattern, "*.bin");
+        assert!(result[0].size >= 2048);
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_large_text_not_flagged() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a large text file (no null bytes)
+        let text_content = "a".repeat(2048);
+        fs::write(tmp.path().join("large.txt"), &text_content).expect("should write");
+
+        let result = service
+            .check_files_for_lfs(&["large.txt".to_string()], 1024, &[])
+            .expect("should check files");
+
+        assert!(result.is_empty(), "large text file should not be flagged");
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_already_tracked() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create a large binary file
+        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        fs::write(tmp.path().join("tracked.bin"), &binary_content).expect("should write");
+
+        // File matches existing LFS pattern
+        let patterns = vec!["*.bin".to_string()];
+        let result = service
+            .check_files_for_lfs(&["tracked.bin".to_string()], 1024, &patterns)
+            .expect("should check files");
+
+        assert!(
+            result.is_empty(),
+            "already LFS-tracked file should be skipped"
+        );
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_nonexistent_file() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service
+            .check_files_for_lfs(&["nonexistent.bin".to_string()], 1024, &[])
+            .expect("should check files");
+
+        assert!(result.is_empty(), "nonexistent file should be skipped");
+    }
+
+    #[test]
+    fn test_check_files_for_lfs_multiple_files() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Create multiple files
+        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        fs::write(tmp.path().join("a.bin"), &binary_content).expect("should write");
+        fs::write(tmp.path().join("b.psd"), &binary_content).expect("should write");
+        fs::write(tmp.path().join("c.txt"), "just text content".repeat(200)).expect("should write");
+        fs::write(tmp.path().join("small.bin"), &[0u8; 10]).expect("should write");
+
+        let paths = vec![
+            "a.bin".to_string(),
+            "b.psd".to_string(),
+            "c.txt".to_string(),
+            "small.bin".to_string(),
+        ];
+
+        let result = service
+            .check_files_for_lfs(&paths, 1024, &[])
+            .expect("should check files");
+
+        // Only a.bin and b.psd should be flagged (binary + above threshold)
+        assert_eq!(result.len(), 2, "only large binary files should be flagged");
+        let flagged_paths: Vec<&str> = result.iter().map(|f| f.path.as_str()).collect();
+        assert!(flagged_paths.contains(&"a.bin"));
+        assert!(flagged_paths.contains(&"b.psd"));
     }
 }

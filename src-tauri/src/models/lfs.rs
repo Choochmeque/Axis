@@ -187,6 +187,34 @@ pub struct LfsPruneResult {
     pub space_reclaimed: u64,
 }
 
+/// Information about a large binary file detected during staging
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct LargeBinaryFileInfo {
+    /// File path relative to repository root
+    pub path: String,
+    /// File size in bytes
+    pub size: u64,
+    /// Whether the file is detected as binary
+    pub is_binary: bool,
+    /// Whether the file is already tracked by LFS
+    pub is_lfs_tracked: bool,
+    /// Suggested LFS tracking pattern (e.g., "*.psd")
+    pub suggested_pattern: String,
+}
+
+/// Result of checking files for LFS eligibility before staging
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct LfsCheckResult {
+    /// Large binary files that should be tracked with LFS
+    pub files: Vec<LargeBinaryFileInfo>,
+    /// Whether Git LFS is installed on the system
+    pub lfs_installed: bool,
+    /// Whether LFS is initialized in this repository
+    pub lfs_initialized: bool,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -596,5 +624,117 @@ mod tests {
         let json = serde_json::to_string(&result).expect("should serialize");
         assert!(json.contains("\"objectsPruned\":5"));
         assert!(json.contains("\"spaceReclaimed\":1000"));
+    }
+
+    // ==================== LargeBinaryFileInfo Tests ====================
+
+    #[test]
+    fn test_large_binary_file_info() {
+        let info = LargeBinaryFileInfo {
+            path: "assets/texture.psd".to_string(),
+            size: 15_000_000,
+            is_binary: true,
+            is_lfs_tracked: false,
+            suggested_pattern: "*.psd".to_string(),
+        };
+
+        assert_eq!(info.path, "assets/texture.psd");
+        assert_eq!(info.size, 15_000_000);
+        assert!(info.is_binary);
+        assert!(!info.is_lfs_tracked);
+        assert_eq!(info.suggested_pattern, "*.psd");
+    }
+
+    #[test]
+    fn test_large_binary_file_info_serialization() {
+        let info = LargeBinaryFileInfo {
+            path: "video.mp4".to_string(),
+            size: 104_857_600,
+            is_binary: true,
+            is_lfs_tracked: false,
+            suggested_pattern: "*.mp4".to_string(),
+        };
+
+        let json = serde_json::to_string(&info).expect("should serialize");
+        assert!(json.contains("\"path\":\"video.mp4\""));
+        assert!(json.contains("\"size\":104857600"));
+        assert!(json.contains("\"isBinary\":true"));
+        assert!(json.contains("\"isLfsTracked\":false"));
+        assert!(json.contains("\"suggestedPattern\":\"*.mp4\""));
+    }
+
+    #[test]
+    fn test_large_binary_file_info_deserialization() {
+        let json = r#"{"path":"model.bin","size":50000000,"isBinary":true,"isLfsTracked":true,"suggestedPattern":"*.bin"}"#;
+        let info: LargeBinaryFileInfo = serde_json::from_str(json).expect("should deserialize");
+
+        assert_eq!(info.path, "model.bin");
+        assert_eq!(info.size, 50_000_000);
+        assert!(info.is_binary);
+        assert!(info.is_lfs_tracked);
+        assert_eq!(info.suggested_pattern, "*.bin");
+    }
+
+    // ==================== LfsCheckResult Tests ====================
+
+    #[test]
+    fn test_lfs_check_result_empty() {
+        let result = LfsCheckResult {
+            files: vec![],
+            lfs_installed: true,
+            lfs_initialized: true,
+        };
+
+        assert!(result.files.is_empty());
+        assert!(result.lfs_installed);
+        assert!(result.lfs_initialized);
+    }
+
+    #[test]
+    fn test_lfs_check_result_with_files() {
+        let result = LfsCheckResult {
+            files: vec![
+                LargeBinaryFileInfo {
+                    path: "a.psd".to_string(),
+                    size: 20_000_000,
+                    is_binary: true,
+                    is_lfs_tracked: false,
+                    suggested_pattern: "*.psd".to_string(),
+                },
+                LargeBinaryFileInfo {
+                    path: "b.mp4".to_string(),
+                    size: 100_000_000,
+                    is_binary: true,
+                    is_lfs_tracked: false,
+                    suggested_pattern: "*.mp4".to_string(),
+                },
+            ],
+            lfs_installed: false,
+            lfs_initialized: false,
+        };
+
+        assert_eq!(result.files.len(), 2);
+        assert!(!result.lfs_installed);
+        assert!(!result.lfs_initialized);
+    }
+
+    #[test]
+    fn test_lfs_check_result_serialization() {
+        let result = LfsCheckResult {
+            files: vec![LargeBinaryFileInfo {
+                path: "test.bin".to_string(),
+                size: 11_000_000,
+                is_binary: true,
+                is_lfs_tracked: false,
+                suggested_pattern: "*.bin".to_string(),
+            }],
+            lfs_installed: true,
+            lfs_initialized: false,
+        };
+
+        let json = serde_json::to_string(&result).expect("should serialize");
+        assert!(json.contains("\"lfsInstalled\":true"));
+        assert!(json.contains("\"lfsInitialized\":false"));
+        assert!(json.contains("\"test.bin\""));
     }
 }

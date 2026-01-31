@@ -201,6 +201,8 @@ export type {
   GitEnvironment,
   LfsPruneOptions,
   LfsPruneResult,
+  LargeBinaryFileInfo,
+  LfsCheckResult,
 
   // Progress types
   GitOperationProgressEvent,

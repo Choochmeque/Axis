@@ -149,6 +149,11 @@ vi.mock('../staging/DiscardConfirmDialog', () => ({
   },
 }));
 
+vi.mock('../staging/LargeBinaryWarningDialog', () => ({
+  LargeBinaryWarningDialog: (props: Record<string, unknown>) =>
+    props.isOpen ? <div data-testid="large-binary-warning-dialog">LargeBinaryWarning</div> : null,
+}));
+
 vi.mock('../settings/SettingsDialog', () => ({
   SettingsDialog: (props: Record<string, unknown>) =>
     props.isOpen ? <div data-testid="settings-dialog">Settings</div> : null,
@@ -205,6 +210,7 @@ const mockCloseRenameBranchDialog = vi.fn();
 const mockCloseBranchCompareDialog = vi.fn();
 const mockCloseStashDialog = vi.fn();
 const mockCloseDiscardConfirmDialog = vi.fn();
+const mockCloseLargeBinaryWarningDialog = vi.fn();
 const mockCloseSettingsDialog = vi.fn();
 const mockCloseRepositorySettingsDialog = vi.fn();
 const mockClosePassphraseDialog = vi.fn();
@@ -302,6 +308,16 @@ let mockDialogStore = {
     onConfirm: null as (() => void) | null,
   },
   closeDiscardConfirmDialog: mockCloseDiscardConfirmDialog,
+  largeBinaryWarningDialog: {
+    isOpen: false,
+    files: [],
+    pendingPaths: [],
+    lfsInstalled: false,
+    lfsInitialized: false,
+    onStageAnyway: null as (() => void) | null,
+    onTrackWithLfs: null as ((patterns: string[]) => void) | null,
+  },
+  closeLargeBinaryWarningDialog: mockCloseLargeBinaryWarningDialog,
   settingsDialog: { isOpen: false },
   closeSettingsDialog: mockCloseSettingsDialog,
   passphraseDialog: {
@@ -402,6 +418,16 @@ describe('AppLayout', () => {
       closeStashDialog: mockCloseStashDialog,
       discardConfirmDialog: { isOpen: false, mode: 'file', filePath: null, onConfirm: null },
       closeDiscardConfirmDialog: mockCloseDiscardConfirmDialog,
+      largeBinaryWarningDialog: {
+        isOpen: false,
+        files: [],
+        pendingPaths: [],
+        lfsInstalled: false,
+        lfsInitialized: false,
+        onStageAnyway: null,
+        onTrackWithLfs: null,
+      },
+      closeLargeBinaryWarningDialog: mockCloseLargeBinaryWarningDialog,
       settingsDialog: { isOpen: false },
       closeSettingsDialog: mockCloseSettingsDialog,
       passphraseDialog: { isOpen: false, keyPath: null, onSuccess: null, onCancel: null },

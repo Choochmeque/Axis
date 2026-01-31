@@ -104,6 +104,8 @@ const mockSettings = {
   defaultSshKey: null,
   gravatarEnabled: false,
   autoUpdateEnabled: true,
+  largeBinaryWarningEnabled: true,
+  largeBinaryThreshold: 10485760,
 };
 
 describe('SettingsDialog', () => {
@@ -344,5 +346,22 @@ describe('SettingsDialog', () => {
 
     expect(screen.queryByText("You're on the latest version")).not.toBeInTheDocument();
     expect(screen.queryByText(/Update v/)).not.toBeInTheDocument();
+  });
+
+  it('should show large files settings on Git tab', async () => {
+    render(<SettingsDialog isOpen={true} onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+    });
+
+    // Click on Git tab
+    fireEvent.click(screen.getByText('Git'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Large Files')).toBeInTheDocument();
+      expect(screen.getByText('Warn about large binary files')).toBeInTheDocument();
+      expect(screen.getByText('Size threshold')).toBeInTheDocument();
+    });
   });
 });

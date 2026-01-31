@@ -99,19 +99,19 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
         <MenuItem icon={GitBranch} disabled={isCurrentBranch} onSelect={onCheckout}>
           {t('branches.contextMenu.checkout', { name: branch.name })}
         </MenuItem>
-        <MenuItem
-          icon={GitMerge}
-          disabled={isCurrentBranch}
-          onSelect={() => openMergeDialog({ sourceBranch: branch.name })}
-        >
-          {t('branches.contextMenu.mergeInto', {
-            source: branch.name,
-            target: currentBranch?.name ?? 'current',
-          })}
-        </MenuItem>
-        <MenuItem icon={GitMerge} disabled className="[&>svg]:rotate-180">
-          {t('branches.contextMenu.rebaseOnto', { name: branch.name })}
-        </MenuItem>
+        {!isCurrentBranch && (
+          <MenuItem icon={GitMerge} onSelect={() => openMergeDialog({ sourceBranch: branch.name })}>
+            {t('branches.contextMenu.mergeInto', {
+              source: branch.name,
+              target: currentBranch?.name ?? 'current',
+            })}
+          </MenuItem>
+        )}
+        {!isCurrentBranch && (
+          <MenuItem icon={GitMerge} disabled className="[&>svg]:rotate-180">
+            {t('branches.contextMenu.rebaseOnto', { name: branch.name })}
+          </MenuItem>
+        )}
         <MenuSeparator />
 
         {hasUpstream && isCurrentBranch && (

@@ -51,6 +51,10 @@ pub struct AppSettings {
 
     // Updates
     pub auto_update_enabled: bool,
+
+    // Large files
+    pub large_binary_warning_enabled: bool,
+    pub large_binary_threshold: u64, // in bytes, default 10MB
 }
 
 #[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
@@ -111,6 +115,10 @@ impl Default for AppSettings {
 
             // Updates
             auto_update_enabled: true,
+
+            // Large files
+            large_binary_warning_enabled: true,
+            large_binary_threshold: 10_485_760, // 10MB
         }
     }
 }
@@ -235,6 +243,10 @@ mod tests {
 
         // Updates
         assert!(settings.auto_update_enabled);
+
+        // Large files
+        assert!(settings.large_binary_warning_enabled);
+        assert_eq!(settings.large_binary_threshold, 10_485_760);
     }
 
     #[test]
@@ -266,6 +278,8 @@ mod tests {
             notification_history_capacity: 100,
             gravatar_enabled: true,
             auto_update_enabled: false,
+            large_binary_warning_enabled: false,
+            large_binary_threshold: 52_428_800,
         };
 
         assert_eq!(settings.theme, Theme::Dark);
@@ -285,6 +299,8 @@ mod tests {
         assert!(settings.ai_enabled);
         assert_eq!(settings.ai_provider, AiProvider::OpenAi);
         assert!(settings.gravatar_enabled);
+        assert!(!settings.large_binary_warning_enabled);
+        assert_eq!(settings.large_binary_threshold, 52_428_800);
     }
 
     #[test]
@@ -303,6 +319,14 @@ mod tests {
         );
         assert_eq!(deserialized.diff_context_lines, settings.diff_context_lines);
         assert_eq!(deserialized.ai_enabled, settings.ai_enabled);
+        assert_eq!(
+            deserialized.large_binary_warning_enabled,
+            settings.large_binary_warning_enabled
+        );
+        assert_eq!(
+            deserialized.large_binary_threshold,
+            settings.large_binary_threshold
+        );
     }
 
     #[test]

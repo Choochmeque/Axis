@@ -80,6 +80,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultSshKey: null,
   gravatarEnabled: false,
   autoUpdateEnabled: true,
+  largeBinaryWarningEnabled: true,
+  largeBinaryThreshold: 10485760,
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
@@ -571,6 +573,39 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
             {t('settings.git.defaultSshKey.autoDescription')}
           </p>
         )}
+      </FormField>
+
+      <h3 className={sectionTitleClass}>{t('settings.git.largeFiles.title')}</h3>
+
+      <div className={groupClass}>
+        <CheckboxField
+          id="large-binary-warning"
+          label={t('settings.git.largeFiles.warningEnabled.label')}
+          description={t('settings.git.largeFiles.warningEnabled.description')}
+          checked={settings.largeBinaryWarningEnabled}
+          onCheckedChange={(checked) =>
+            updateSetting('largeBinaryWarningEnabled', checked === true)
+          }
+        />
+      </div>
+
+      <FormField
+        label={t('settings.git.largeFiles.threshold.label')}
+        htmlFor="largeBinaryThreshold"
+        hint={t('settings.git.largeFiles.threshold.hint')}
+      >
+        <Select
+          id="largeBinaryThreshold"
+          value={String(settings.largeBinaryThreshold)}
+          onValueChange={(value) => updateSetting('largeBinaryThreshold', parseInt(value))}
+        >
+          <SelectItem value="524288">512 KB</SelectItem>
+          <SelectItem value="1048576">1 MB</SelectItem>
+          <SelectItem value="5242880">5 MB</SelectItem>
+          <SelectItem value="10485760">10 MB</SelectItem>
+          <SelectItem value="52428800">50 MB</SelectItem>
+          <SelectItem value="104857600">100 MB</SelectItem>
+        </Select>
       </FormField>
 
       <h3 className={sectionTitleClass}>{t('settings.signing.title')}</h3>

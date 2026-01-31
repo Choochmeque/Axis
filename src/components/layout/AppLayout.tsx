@@ -29,6 +29,7 @@ import { BisectDialog } from '../merge/BisectDialog';
 import { FetchDialog, PushDialog, PullDialog, PassphraseDialog } from '../remotes';
 import { StashDialog } from '../stash/StashDialog';
 import { DiscardConfirmDialog } from '../staging/DiscardConfirmDialog';
+import { LargeBinaryWarningDialog } from '../staging/LargeBinaryWarningDialog';
 import { SettingsDialog } from '../settings/SettingsDialog';
 import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -92,6 +93,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeStashDialog,
     discardConfirmDialog,
     closeDiscardConfirmDialog,
+    largeBinaryWarningDialog,
+    closeLargeBinaryWarningDialog,
     settingsDialog,
     closeSettingsDialog,
     repositorySettingsDialog,
@@ -296,6 +299,21 @@ export function AppLayout({ children }: AppLayoutProps) {
         onConfirm={() => {
           discardConfirmDialog.onConfirm?.();
           closeDiscardConfirmDialog();
+        }}
+      />
+      <LargeBinaryWarningDialog
+        isOpen={largeBinaryWarningDialog.isOpen}
+        onClose={closeLargeBinaryWarningDialog}
+        files={largeBinaryWarningDialog.files}
+        lfsInstalled={largeBinaryWarningDialog.lfsInstalled}
+        lfsInitialized={largeBinaryWarningDialog.lfsInitialized}
+        onStageAnyway={() => {
+          largeBinaryWarningDialog.onStageAnyway?.();
+          closeLargeBinaryWarningDialog();
+        }}
+        onTrackWithLfs={(patterns) => {
+          largeBinaryWarningDialog.onTrackWithLfs?.(patterns);
+          closeLargeBinaryWarningDialog();
         }}
       />
       <SettingsDialog isOpen={settingsDialog.isOpen} onClose={closeSettingsDialog} />

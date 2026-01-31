@@ -44,6 +44,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationHistoryCapacity: 50,
   gravatarEnabled: false,
   autoUpdateEnabled: true,
+  largeBinaryWarningEnabled: true,
+  largeBinaryThreshold: 10485760,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

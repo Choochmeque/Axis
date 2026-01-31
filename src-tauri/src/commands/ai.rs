@@ -196,9 +196,13 @@ pub async fn generate_pr_description(
 
     info!("Generating PR description for {source_branch} -> {target_branch}");
 
+    // Use remote tracking refs so we only consider pushed commits
+    let remote_source = format!("origin/{source_branch}");
+    let remote_target = format!("origin/{target_branch}");
+
     let compare_result = state
         .get_git_service()?
-        .with_git2(move |git2| git2.compare_branches(&target_branch, &source_branch))
+        .with_git2(move |git2| git2.compare_branches(&remote_source, &remote_target))
         .await?;
 
     if compare_result.ahead_commits.is_empty() {

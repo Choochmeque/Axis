@@ -219,7 +219,32 @@ export function CreatePullRequestDialog({
             </Select>
           </FormField>
 
-          <FormField label={t('integrations.pullRequests.create.titleLabel')} htmlFor="pr-title">
+          <div className="field">
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="pr-title" className="text-base font-medium text-(--text-secondary)">
+                {t('integrations.pullRequests.create.titleLabel')}
+              </label>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex items-center justify-center h-7 w-7 p-0"
+                onClick={handleGenerateWithAi}
+                disabled={
+                  !settings?.aiEnabled ||
+                  !sourceBranch ||
+                  !targetBranch ||
+                  isGenerating ||
+                  isSubmitting
+                }
+                title={
+                  isGenerating
+                    ? t('integrations.pullRequests.create.generating')
+                    : t('integrations.pullRequests.create.generateWithAi')
+                }
+              >
+                <Sparkles size={14} className={isGenerating ? 'animate-pulse' : ''} />
+              </Button>
+            </div>
             <Input
               id="pr-title"
               value={title}
@@ -227,7 +252,7 @@ export function CreatePullRequestDialog({
               placeholder={t('integrations.pullRequests.create.titlePlaceholder')}
               autoFocus
             />
-          </FormField>
+          </div>
 
           <FormField
             label={t('integrations.pullRequests.create.descriptionLabel')}
@@ -242,31 +267,12 @@ export function CreatePullRequestDialog({
             />
           </FormField>
 
-          <div className="flex items-center justify-between">
-            <CheckboxField
-              id="pr-draft"
-              label={t('integrations.pullRequests.create.createAsDraft')}
-              checked={isDraft}
-              onCheckedChange={setIsDraft}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerateWithAi}
-              disabled={
-                !settings?.aiEnabled ||
-                !sourceBranch ||
-                !targetBranch ||
-                isGenerating ||
-                isSubmitting
-              }
-            >
-              <Sparkles size={14} />
-              {isGenerating
-                ? t('integrations.pullRequests.create.generating')
-                : t('integrations.pullRequests.create.generateWithAi')}
-            </Button>
-          </div>
+          <CheckboxField
+            id="pr-draft"
+            label={t('integrations.pullRequests.create.createAsDraft')}
+            checked={isDraft}
+            onCheckedChange={setIsDraft}
+          />
         </DialogBody>
 
         <DialogFooter>

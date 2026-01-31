@@ -72,8 +72,8 @@ vi.mock('@/components/ui', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DialogClose: ({ children }: any) => children,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>
+  Button: ({ children, onClick, disabled, title }: any) => (
+    <button onClick={onClick} disabled={disabled} title={title}>
       {children}
     </button>
   ),
@@ -284,7 +284,9 @@ describe('CreatePullRequestDialog', () => {
       <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
     );
 
-    expect(screen.getByText('integrations.pullRequests.create.generateWithAi')).toBeInTheDocument();
+    expect(
+      screen.getByTitle('integrations.pullRequests.create.generateWithAi')
+    ).toBeInTheDocument();
   });
 
   it('should disable AI button when branches are not selected', () => {
@@ -295,8 +297,8 @@ describe('CreatePullRequestDialog', () => {
     // Clear source branch to test disabled state
     fireEvent.change(screen.getByTestId('pr-source'), { target: { value: '' } });
 
-    const aiButton = screen.getByText('integrations.pullRequests.create.generateWithAi');
-    expect(aiButton.closest('button')).toBeDisabled();
+    const aiButton = screen.getByTitle('integrations.pullRequests.create.generateWithAi');
+    expect(aiButton).toBeDisabled();
   });
 
   it('should generate PR description with AI', async () => {
@@ -313,7 +315,7 @@ describe('CreatePullRequestDialog', () => {
     fireEvent.change(screen.getByTestId('pr-source'), { target: { value: 'feature-branch' } });
     fireEvent.change(screen.getByTestId('pr-target'), { target: { value: 'main' } });
 
-    fireEvent.click(screen.getByText('integrations.pullRequests.create.generateWithAi'));
+    fireEvent.click(screen.getByTitle('integrations.pullRequests.create.generateWithAi'));
 
     await waitFor(() => {
       expect(mockGeneratePrDescription).toHaveBeenCalledWith('feature-branch', 'main', true);
@@ -332,7 +334,7 @@ describe('CreatePullRequestDialog', () => {
     fireEvent.change(screen.getByTestId('pr-source'), { target: { value: 'feature-branch' } });
     fireEvent.change(screen.getByTestId('pr-target'), { target: { value: 'main' } });
 
-    fireEvent.click(screen.getByText('integrations.pullRequests.create.generateWithAi'));
+    fireEvent.click(screen.getByTitle('integrations.pullRequests.create.generateWithAi'));
 
     await waitFor(() => {
       expect(screen.getByTestId('alert')).toHaveTextContent('AI service error');
@@ -346,8 +348,8 @@ describe('CreatePullRequestDialog', () => {
       <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
     );
 
-    const aiButton = screen.getByText('integrations.pullRequests.create.generateWithAi');
-    expect(aiButton.closest('button')).toBeDisabled();
+    const aiButton = screen.getByTitle('integrations.pullRequests.create.generateWithAi');
+    expect(aiButton).toBeDisabled();
 
     // Restore
     mockSettings.aiEnabled = true;

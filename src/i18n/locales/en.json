@@ -1510,7 +1510,11 @@
         "sourceBranchRequired": "Source branch is required",
         "targetBranchRequired": "Target branch is required",
         "sourceMustBePushed": "Source branch must be pushed to the remote first",
-        "created": "Pull request created successfully"
+        "created": "Pull request created successfully",
+        "generateWithAi": "Generate with AI",
+        "generating": "Generating...",
+        "aiGenerated": "Generated with {{model}}",
+        "selectBranchesFirst": "Select source and target branches first"
       },
       "detail": {
         "created": "Created: {{date}}",

@@ -34,6 +34,22 @@ vi.mock('@/store/integrationStore', () => ({
   }),
 }));
 
+// Mock settings store
+const mockSettings = { aiEnabled: true };
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: () => ({
+    settings: mockSettings,
+  }),
+}));
+
+// Mock AI API
+const mockGeneratePrDescription = vi.fn();
+vi.mock('@/services/api', () => ({
+  aiApi: {
+    generatePrDescription: (...args: unknown[]) => mockGeneratePrDescription(...args),
+  },
+}));
+
 // Mock i18n
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -261,5 +277,79 @@ describe('CreatePullRequestDialog', () => {
         })
       );
     });
+  });
+
+  it('should render generate with AI button', () => {
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    expect(screen.getByText('integrations.pullRequests.create.generateWithAi')).toBeInTheDocument();
+  });
+
+  it('should disable AI button when branches are not selected', () => {
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    // Clear source branch to test disabled state
+    fireEvent.change(screen.getByTestId('pr-source'), { target: { value: '' } });
+
+    const aiButton = screen.getByText('integrations.pullRequests.create.generateWithAi');
+    expect(aiButton.closest('button')).toBeDisabled();
+  });
+
+  it('should generate PR description with AI', async () => {
+    mockGeneratePrDescription.mockResolvedValue({
+      title: 'Generated Title',
+      body: 'Generated body content',
+      modelUsed: 'gpt-4o-mini',
+    });
+
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    fireEvent.change(screen.getByTestId('pr-source'), { target: { value: 'feature-branch' } });
+    fireEvent.change(screen.getByTestId('pr-target'), { target: { value: 'main' } });
+
+    fireEvent.click(screen.getByText('integrations.pullRequests.create.generateWithAi'));
+
+    await waitFor(() => {
+      expect(mockGeneratePrDescription).toHaveBeenCalledWith('feature-branch', 'main', true);
+      expect(screen.getByTestId('pr-title')).toHaveValue('Generated Title');
+      expect(screen.getByTestId('pr-body')).toHaveValue('Generated body content');
+    });
+  });
+
+  it('should show error when AI generation fails', async () => {
+    mockGeneratePrDescription.mockRejectedValue(new Error('AI service error'));
+
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    fireEvent.change(screen.getByTestId('pr-source'), { target: { value: 'feature-branch' } });
+    fireEvent.change(screen.getByTestId('pr-target'), { target: { value: 'main' } });
+
+    fireEvent.click(screen.getByText('integrations.pullRequests.create.generateWithAi'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alert')).toHaveTextContent('AI service error');
+    });
+  });
+
+  it('should disable AI button when AI is not enabled', () => {
+    mockSettings.aiEnabled = false;
+
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    const aiButton = screen.getByText('integrations.pullRequests.create.generateWithAi');
+    expect(aiButton.closest('button')).toBeDisabled();
+
+    // Restore
+    mockSettings.aiEnabled = true;
   });
 });

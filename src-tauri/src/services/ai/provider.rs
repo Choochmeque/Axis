@@ -13,6 +13,15 @@ pub trait AiProviderTrait: Send + Sync {
         conventional_commits: bool,
     ) -> Result<(String, String)>;
 
+    async fn generate_pr_description(
+        &self,
+        commits: &[(String, String)],
+        diff_summary: Option<&str>,
+        api_key: Option<&str>,
+        model: Option<&str>,
+        base_url: Option<&str>,
+    ) -> Result<(String, String, String)>;
+
     fn default_model(&self) -> &'static str;
 
     fn name(&self) -> &'static str;

@@ -508,6 +508,12 @@ export const patchApi = {
 export const aiApi = {
   generateCommitMessage: () => commands.generateCommitMessage(),
 
+  generatePrDescription: (
+    sourceBranch: string,
+    targetBranch: string,
+    includeDiffSummary: boolean = true
+  ) => commands.generatePrDescription(sourceBranch, targetBranch, includeDiffSummary),
+
   setApiKey: (provider: AiProvider, apiKey: string) => commands.setAiApiKey(provider, apiKey),
 
   hasApiKey: (provider: AiProvider) => commands.hasAiApiKey(provider),

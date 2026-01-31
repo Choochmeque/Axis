@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Sparkles } from 'lucide-react';
 
 import {
   Dialog,
@@ -20,6 +20,8 @@ import {
 } from '@/components/ui';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useIntegrationStore } from '@/store/integrationStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { aiApi } from '@/services/api';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from '@/hooks';
 
@@ -37,6 +39,7 @@ export function CreatePullRequestDialog({
   const { t } = useTranslation();
   const { branches, loadBranches } = useRepositoryStore();
   const { createPullRequest } = useIntegrationStore();
+  const { settings } = useSettingsStore();
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -44,6 +47,7 @@ export function CreatePullRequestDialog({
   const [targetBranch, setTargetBranch] = useState('');
   const [isDraft, setIsDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Get local branches for selection
@@ -90,6 +94,29 @@ export function CreatePullRequestDialog({
       setTargetBranch('');
     }
   }, [sourceBranch, targetBranch]);
+
+  const handleGenerateWithAi = useCallback(async () => {
+    if (!sourceBranch || !targetBranch) {
+      setError(t('integrations.pullRequests.create.selectBranchesFirst'));
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const response = await aiApi.generatePrDescription(sourceBranch, targetBranch, true);
+      setTitle(response.title);
+      setBody(response.body);
+      toast.success(
+        t('integrations.pullRequests.create.aiGenerated', { model: response.modelUsed })
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [sourceBranch, targetBranch, t]);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
@@ -215,12 +242,31 @@ export function CreatePullRequestDialog({
             />
           </FormField>
 
-          <CheckboxField
-            id="pr-draft"
-            label={t('integrations.pullRequests.create.createAsDraft')}
-            checked={isDraft}
-            onCheckedChange={setIsDraft}
-          />
+          <div className="flex items-center justify-between">
+            <CheckboxField
+              id="pr-draft"
+              label={t('integrations.pullRequests.create.createAsDraft')}
+              checked={isDraft}
+              onCheckedChange={setIsDraft}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerateWithAi}
+              disabled={
+                !settings?.aiEnabled ||
+                !sourceBranch ||
+                !targetBranch ||
+                isGenerating ||
+                isSubmitting
+              }
+            >
+              <Sparkles size={14} />
+              {isGenerating
+                ? t('integrations.pullRequests.create.generating')
+                : t('integrations.pullRequests.create.generateWithAi')}
+            </Button>
+          </div>
         </DialogBody>
 
         <DialogFooter>

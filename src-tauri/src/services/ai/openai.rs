@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AxisError, Result};
-use crate::services::ai::prompt::build_prompt;
+use crate::services::ai::prompt::{build_pr_prompt, build_prompt, parse_pr_response};
 use crate::services::ai::provider::AiProviderTrait;
 
 pub struct OpenAiProvider;
@@ -101,6 +101,72 @@ impl AiProviderTrait for OpenAiProvider {
             .ok_or_else(|| AxisError::AiServiceError("No response from OpenAI".to_string()))?;
 
         Ok((message, model))
+    }
+
+    async fn generate_pr_description(
+        &self,
+        commits: &[(String, String)],
+        diff_summary: Option<&str>,
+        api_key: Option<&str>,
+        model: Option<&str>,
+        _base_url: Option<&str>,
+    ) -> Result<(String, String, String)> {
+        let api_key =
+            api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("OpenAI".to_string()))?;
+
+        let model = model.unwrap_or(self.default_model()).to_string();
+        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary);
+
+        let request = OpenAiRequest {
+            model: model.clone(),
+            messages: vec![
+                OpenAiMessage {
+                    role: "system".to_string(),
+                    content: system_prompt,
+                },
+                OpenAiMessage {
+                    role: "user".to_string(),
+                    content: user_prompt,
+                },
+            ],
+            max_tokens: 1000,
+            temperature: 0.3,
+        };
+
+        let client = reqwest::Client::new();
+        let response = client
+            .post("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", format!("Bearer {api_key}"))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Request failed: {e}")))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(AxisError::AiServiceError(format!(
+                "OpenAI API error ({status}): {error_text}"
+            )));
+        }
+
+        let response: OpenAiResponse = response
+            .json()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Failed to parse response: {e}")))?;
+
+        let raw = response
+            .choices
+            .first()
+            .map(|c| c.message.content.trim().to_string())
+            .ok_or_else(|| AxisError::AiServiceError("No response from OpenAI".to_string()))?;
+
+        let (title, body) = parse_pr_response(&raw);
+        Ok((title, body, model))
     }
 
     fn default_model(&self) -> &'static str {
@@ -220,6 +286,19 @@ mod tests {
         let provider = OpenAiProvider;
         let result = provider
             .generate_commit_message("diff content", None, None, None, false)
+            .await;
+
+        assert!(result.is_err());
+        let err = result.expect_err("should be error");
+        assert!(err.to_string().contains("API key not configured"));
+    }
+
+    #[tokio::test]
+    async fn test_generate_pr_description_no_api_key() {
+        let provider = OpenAiProvider;
+        let commits = vec![("abc".to_string(), "test commit".to_string())];
+        let result = provider
+            .generate_pr_description(&commits, None, None, None, None)
             .await;
 
         assert!(result.is_err());

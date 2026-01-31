@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AxisError, Result};
-use crate::services::ai::prompt::build_prompt;
+use crate::services::ai::prompt::{build_pr_prompt, build_prompt, parse_pr_response};
 use crate::services::ai::provider::AiProviderTrait;
 
 const DEFAULT_OLLAMA_URL: &str = "http://localhost:11434";
@@ -146,6 +146,64 @@ impl AiProviderTrait for OllamaProvider {
         let message = response.message.content.trim().to_string();
 
         Ok((message, model))
+    }
+
+    async fn generate_pr_description(
+        &self,
+        commits: &[(String, String)],
+        diff_summary: Option<&str>,
+        _api_key: Option<&str>,
+        model: Option<&str>,
+        base_url: Option<&str>,
+    ) -> Result<(String, String, String)> {
+        let base_url = base_url.unwrap_or(&self.base_url);
+        let model = model.unwrap_or(self.default_model()).to_string();
+        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary);
+
+        let request = OllamaRequest {
+            model: model.clone(),
+            messages: vec![
+                OllamaMessage {
+                    role: "system".to_string(),
+                    content: system_prompt,
+                },
+                OllamaMessage {
+                    role: "user".to_string(),
+                    content: user_prompt,
+                },
+            ],
+            stream: false,
+        };
+
+        let url = format!("{base_url}/api/chat");
+        let client = reqwest::Client::new();
+        let response = client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Failed to connect to Ollama: {e}")))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(AxisError::AiServiceError(format!(
+                "Ollama API error ({status}): {error_text}"
+            )));
+        }
+
+        let response: OllamaResponse = response
+            .json()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Failed to parse response: {e}")))?;
+
+        let raw = response.message.content.trim().to_string();
+        let (title, body) = parse_pr_response(&raw);
+        Ok((title, body, model))
     }
 
     fn default_model(&self) -> &'static str {

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{AxisError, Result};
-use crate::services::ai::prompt::build_prompt;
+use crate::services::ai::prompt::{build_pr_prompt, build_prompt, parse_pr_response};
 use crate::services::ai::provider::AiProviderTrait;
 
 pub struct AnthropicProvider;
@@ -91,6 +91,67 @@ impl AiProviderTrait for AnthropicProvider {
             .ok_or_else(|| AxisError::AiServiceError("No response from Anthropic".to_string()))?;
 
         Ok((message, model))
+    }
+
+    async fn generate_pr_description(
+        &self,
+        commits: &[(String, String)],
+        diff_summary: Option<&str>,
+        api_key: Option<&str>,
+        model: Option<&str>,
+        _base_url: Option<&str>,
+    ) -> Result<(String, String, String)> {
+        let api_key =
+            api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("Anthropic".to_string()))?;
+
+        let model = model.unwrap_or(self.default_model()).to_string();
+        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary);
+
+        let request = AnthropicRequest {
+            model: model.clone(),
+            max_tokens: 1000,
+            system: system_prompt,
+            messages: vec![AnthropicMessage {
+                role: "user".to_string(),
+                content: user_prompt,
+            }],
+        };
+
+        let client = reqwest::Client::new();
+        let response = client
+            .post("https://api.anthropic.com/v1/messages")
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Request failed: {e}")))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(AxisError::AiServiceError(format!(
+                "Anthropic API error ({status}): {error_text}"
+            )));
+        }
+
+        let response: AnthropicResponse = response
+            .json()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Failed to parse response: {e}")))?;
+
+        let raw = response
+            .content
+            .first()
+            .map(|c| c.text.trim().to_string())
+            .ok_or_else(|| AxisError::AiServiceError("No response from Anthropic".to_string()))?;
+
+        let (title, body) = parse_pr_response(&raw);
+        Ok((title, body, model))
     }
 
     fn default_model(&self) -> &'static str {
@@ -197,6 +258,20 @@ mod tests {
         let provider = AnthropicProvider;
         let result = provider
             .generate_commit_message("diff content", None, None, None, false)
+            .await;
+
+        assert!(result.is_err());
+        let err = result.expect_err("should be error");
+        assert!(err.to_string().contains("API key not configured"));
+        assert!(err.to_string().contains("Anthropic"));
+    }
+
+    #[tokio::test]
+    async fn test_generate_pr_description_no_api_key() {
+        let provider = AnthropicProvider;
+        let commits = vec![("abc".to_string(), "test commit".to_string())];
+        let result = provider
+            .generate_pr_description(&commits, None, None, None, None)
             .await;
 
         assert!(result.is_err());

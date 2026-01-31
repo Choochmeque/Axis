@@ -874,6 +874,9 @@ async testAiConnection(provider: AiProvider) : Promise<boolean> {
 async listOllamaModels(ollamaUrl: string | null) : Promise<string[]> {
     return await TAURI_INVOKE("list_ollama_models", { ollamaUrl });
 },
+async generatePrDescription(sourceBranch: string, targetBranch: string, includeDiffSummary: boolean) : Promise<GeneratePrDescriptionResponse> {
+    return await TAURI_INVOKE("generate_pr_description", { sourceBranch, targetBranch, includeDiffSummary });
+},
 async addToGitignore(pattern: string, gitignorePath: string) : Promise<IgnoreResult> {
     return await TAURI_INVOKE("add_to_gitignore", { pattern, gitignorePath });
 },
@@ -2036,6 +2039,7 @@ range: string;
  */
 outputDir: string }
 export type GenerateCommitMessageResponse = { message: string; modelUsed: string }
+export type GeneratePrDescriptionResponse = { title: string; body: string; modelUsed: string }
 /**
  * Options for generating a new SSH key
  */

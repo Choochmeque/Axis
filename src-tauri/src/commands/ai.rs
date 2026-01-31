@@ -1,5 +1,10 @@
+use log::info;
+
 use crate::error::{AxisError, Result};
-use crate::models::{AiProvider, DiffLineType, DiffOptions, GenerateCommitMessageResponse};
+use crate::models::{
+    AiProvider, DiffLineType, DiffOptions, FileDiff, GenerateCommitMessageResponse,
+    GeneratePrDescriptionResponse,
+};
 use crate::services::ai::{create_provider, get_secret_key, OllamaProvider};
 use crate::state::AppState;
 use tauri::State;
@@ -149,4 +154,95 @@ pub async fn list_ollama_models(
 ) -> Result<Vec<String>> {
     let url = ollama_url.or_else(|| state.get_settings().ok().and_then(|s| s.ai_ollama_url));
     OllamaProvider::list_models(url.as_deref()).await
+}
+
+const MAX_FILES_IN_SUMMARY: usize = 30;
+
+fn format_diff_summary(files: &[FileDiff]) -> String {
+    let mut summary = String::new();
+    for file in files.iter().take(MAX_FILES_IN_SUMMARY) {
+        let path = file
+            .new_path
+            .as_ref()
+            .or(file.old_path.as_ref())
+            .map(|s| s.as_str())
+            .unwrap_or("unknown");
+        summary.push_str(&format!("- {:?}: {path}\n", file.status));
+    }
+    if files.len() > MAX_FILES_IN_SUMMARY {
+        summary.push_str(&format!(
+            "... and {} more files\n",
+            files.len() - MAX_FILES_IN_SUMMARY
+        ));
+    }
+    summary
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn generate_pr_description(
+    state: State<'_, AppState>,
+    source_branch: String,
+    target_branch: String,
+    include_diff_summary: bool,
+) -> Result<GeneratePrDescriptionResponse> {
+    let settings = state.get_settings()?;
+
+    if !settings.ai_enabled {
+        return Err(AxisError::AiServiceError(
+            "AI features are disabled".to_string(),
+        ));
+    }
+
+    info!("Generating PR description for {source_branch} -> {target_branch}");
+
+    let compare_result = state
+        .get_git_service()?
+        .with_git2(move |git2| git2.compare_branches(&target_branch, &source_branch))
+        .await?;
+
+    if compare_result.ahead_commits.is_empty() {
+        return Err(AxisError::AiServiceError(
+            "No commits between branches to generate PR description from".to_string(),
+        ));
+    }
+
+    let commits: Vec<(String, String)> = compare_result
+        .ahead_commits
+        .iter()
+        .map(|c| (c.short_oid.clone(), c.summary.clone()))
+        .collect();
+
+    let diff_summary = if include_diff_summary && !compare_result.files.is_empty() {
+        Some(format_diff_summary(&compare_result.files))
+    } else {
+        None
+    };
+
+    let provider = create_provider(&settings.ai_provider);
+    let secret_key = get_secret_key(&settings.ai_provider);
+
+    let api_key = if provider.requires_api_key() {
+        state.get_secret(&secret_key)?
+    } else {
+        None
+    };
+
+    let (title, body, model_used) = provider
+        .generate_pr_description(
+            &commits,
+            diff_summary.as_deref(),
+            api_key.as_deref(),
+            settings.ai_model.as_deref(),
+            settings.ai_ollama_url.as_deref(),
+        )
+        .await?;
+
+    info!("Generated PR description with model: {model_used}");
+
+    Ok(GeneratePrDescriptionResponse {
+        title,
+        body,
+        model_used,
+    })
 }

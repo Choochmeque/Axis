@@ -18,6 +18,14 @@ pub struct GenerateCommitMessageResponse {
     pub model_used: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct GeneratePrDescriptionResponse {
+    pub title: String,
+    pub body: String,
+    pub model_used: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,6 +133,46 @@ mod tests {
             serde_json::from_str(json).expect("should deserialize");
 
         assert_eq!(response.message, "test commit");
+        assert_eq!(response.model_used, "llama3.2");
+    }
+
+    // ==================== GeneratePrDescriptionResponse Tests ====================
+
+    #[test]
+    fn test_generate_pr_description_response() {
+        let response = GeneratePrDescriptionResponse {
+            title: "Add authentication flow".to_string(),
+            body: "## Summary\nAdds OAuth2 login".to_string(),
+            model_used: "gpt-4o-mini".to_string(),
+        };
+
+        assert_eq!(response.title, "Add authentication flow");
+        assert!(response.body.contains("Summary"));
+        assert_eq!(response.model_used, "gpt-4o-mini");
+    }
+
+    #[test]
+    fn test_generate_pr_description_response_serialization() {
+        let response = GeneratePrDescriptionResponse {
+            title: "Fix login bug".to_string(),
+            body: "Resolves null pointer".to_string(),
+            model_used: "claude-3-haiku".to_string(),
+        };
+
+        let json = serde_json::to_string(&response).expect("should serialize");
+        assert!(json.contains("\"title\":\"Fix login bug\""));
+        assert!(json.contains("\"body\":\"Resolves null pointer\""));
+        assert!(json.contains("\"modelUsed\":\"claude-3-haiku\""));
+    }
+
+    #[test]
+    fn test_generate_pr_description_response_deserialization() {
+        let json = r#"{"title": "Add feature", "body": "Details here", "modelUsed": "llama3.2"}"#;
+        let response: GeneratePrDescriptionResponse =
+            serde_json::from_str(json).expect("should deserialize");
+
+        assert_eq!(response.title, "Add feature");
+        assert_eq!(response.body, "Details here");
         assert_eq!(response.model_used, "llama3.2");
     }
 }

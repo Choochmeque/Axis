@@ -7,23 +7,24 @@ use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::Event;
 use url::Url;
 
-const DEFAULT_PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlFQzBEREUyNTJGMTMxOEIKUldTTE1mRlM0dDNBbm5mMEMwZTFOazV6VmNWRitBNzU3K1NqcTZ2eDlyQnp1eXFQT2Y3UFEwK0IK";
+const NIGHTLY_CHANNEL_ENDPOINT: &str =
+    "https://github.com/Choochmeque/Axis/releases/download/nightly/latest.json";
+const STABLE_CHANNEL_ENDPOINT: &str =
+    "https://github.com/Choochmeque/Axis/releases/latest/download/latest.json";
+
+const NIGHTLY_PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlFQzBEREUyNTJGMTMxOEIKUldTTE1mRlM0dDNBbm5mMEMwZTFOazV6VmNWRitBNzU3K1NqcTZ2eDlyQnp1eXFQT2Y3UFEwK0IK";
 
 fn get_update_endpoint() -> String {
     let channel = option_env!("AXIS_UPDATE_CHANNEL").unwrap_or("nightly");
     match channel {
-        "stable" => {
-            "https://github.com/Choochmeque/Axis/releases/latest/download/latest.json".to_string()
-        }
-        _ => {
-            "https://github.com/Choochmeque/Axis/releases/download/nightly/latest.json".to_string()
-        }
+        "stable" => STABLE_CHANNEL_ENDPOINT.to_string(),
+        _ => NIGHTLY_CHANNEL_ENDPOINT.to_string(),
     }
 }
 
 fn get_update_pubkey() -> String {
     option_env!("TAURI_SIGNING_PUBLIC_KEY")
-        .unwrap_or(DEFAULT_PUBKEY)
+        .unwrap_or(NIGHTLY_PUBKEY)
         .to_string()
 }
 

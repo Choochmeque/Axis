@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { BisectBanner } from '../merge/BisectBanner';
 import { MergeBanner } from '../merge/MergeBanner';
+import { RebaseBanner } from '../merge/RebaseBanner';
 import { DataTable, type ColumnDef, type DataTableRef } from '@/components/ui/data-table';
 import { Avatar, Button } from '@/components/ui';
 import { formatShortDate } from '@/lib/dateUtils';
@@ -394,6 +395,7 @@ export function HistoryView() {
       <HistoryFilters />
       <BisectBanner onComplete={handleBisectComplete} />
       <MergeBanner onComplete={handleBisectComplete} />
+      <RebaseBanner onComplete={handleBisectComplete} />
       {isSearching && (
         <div className="flex items-center justify-between gap-2 px-4 py-2 bg-(--accent-color)/10 border-b border-(--accent-color)/30 text-sm">
           <div className="flex items-center gap-2">

@@ -68,6 +68,7 @@ export type {
   RebasePreview,
   RebaseTarget,
   RebaseAction,
+  RebaseProgress,
   InteractiveRebaseEntry,
   InteractiveRebaseOptions,
   InteractiveRebasePreview,

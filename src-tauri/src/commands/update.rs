@@ -119,13 +119,13 @@ mod tests {
     fn test_get_update_pubkey_default() {
         let pubkey = get_update_pubkey();
         assert!(!pubkey.is_empty(), "Default pubkey should not be empty");
-        assert_eq!(pubkey, DEFAULT_PUBKEY);
+        assert_eq!(pubkey, NIGHTLY_PUBKEY);
     }
 
     #[test]
     fn test_default_pubkey_is_valid_base64() {
         use base64::Engine;
-        let result = base64::engine::general_purpose::STANDARD.decode(DEFAULT_PUBKEY);
-        assert!(result.is_ok(), "DEFAULT_PUBKEY should be valid base64");
+        let result = base64::engine::general_purpose::STANDARD.decode(NIGHTLY_PUBKEY);
+        assert!(result.is_ok(), "NIGHTLY_PUBKEY should be valid base64");
     }
 }

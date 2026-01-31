@@ -10,8 +10,9 @@ use crate::models::{
     SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions, Worktree,
     WorktreeResult,
 };
-use crate::models::{InteractiveRebaseEntry, RebaseAction};
+use crate::models::{InteractiveRebaseEntry, RebaseAction, RebaseProgress};
 use chrono::{DateTime, Utc};
+use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -154,8 +155,6 @@ impl GitCliService {
         let mut args = vec!["rebase"];
 
         if interactive {
-            // For interactive rebase in a GUI app, we'd need to handle this differently
-            // TODO: For now, we'll use the non-interactive approach or prepare the todo file
             args.push("-i");
         }
 
@@ -247,6 +246,117 @@ impl GitCliService {
 
         // Keep temp file alive until command completes
         drop(todo_file);
+
+        Ok(GitCommandResult::from(output))
+    }
+
+    /// Get detailed rebase progress by parsing .git/rebase-merge or .git/rebase-apply state files
+    pub fn get_rebase_progress(&self) -> Result<Option<RebaseProgress>> {
+        let rebase_merge = self.repo_path.join(".git/rebase-merge");
+        let rebase_apply = self.repo_path.join(".git/rebase-apply");
+
+        let state_dir = if rebase_merge.exists() {
+            rebase_merge
+        } else if rebase_apply.exists() {
+            rebase_apply
+        } else {
+            return Ok(None);
+        };
+
+        // Parse current step (msgnum) and total steps (end)
+        let current_step = fs::read_to_string(state_dir.join("msgnum"))
+            .ok()
+            .and_then(|s| s.trim().parse::<usize>().ok())
+            .unwrap_or(0);
+
+        let total_steps = fs::read_to_string(state_dir.join("end"))
+            .ok()
+            .and_then(|s| s.trim().parse::<usize>().ok())
+            .unwrap_or(0);
+
+        // Parse head-name (strip refs/heads/ prefix)
+        let head_name = fs::read_to_string(state_dir.join("head-name"))
+            .ok()
+            .map(|s| {
+                let trimmed = s.trim();
+                trimmed
+                    .strip_prefix("refs/heads/")
+                    .unwrap_or(trimmed)
+                    .to_string()
+            });
+
+        // Parse onto SHA
+        let onto = fs::read_to_string(state_dir.join("onto"))
+            .ok()
+            .map(|s| s.trim().to_string());
+
+        // Parse stopped-sha
+        let stopped_sha = fs::read_to_string(state_dir.join("stopped-sha"))
+            .ok()
+            .map(|s| s.trim().to_string());
+
+        // Check amend file presence (indicates Edit action)
+        let is_amend_mode = state_dir.join("amend").exists();
+
+        // Read commit message file
+        let commit_message = fs::read_to_string(state_dir.join("message"))
+            .ok()
+            .map(|s| s.trim_end().to_string());
+
+        // Determine paused action
+        let paused_action = if stopped_sha.is_some() {
+            if is_amend_mode {
+                Some(RebaseAction::Edit)
+            } else if commit_message.is_some() {
+                Some(RebaseAction::Reword)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        log::debug!(
+            "Rebase progress: step {current_step}/{total_steps}, paused: {paused_action:?}, head: {head_name:?}"
+        );
+
+        Ok(Some(RebaseProgress {
+            current_step,
+            total_steps,
+            head_name,
+            onto,
+            paused_action,
+            stopped_sha,
+            commit_message,
+            is_amend_mode,
+        }))
+    }
+
+    /// Continue rebase with a new commit message (used for Reword action)
+    pub fn rebase_continue_with_message(&self, message: &str) -> Result<GitCommandResult> {
+        let rebase_merge = self.repo_path.join(".git/rebase-merge");
+        let rebase_apply = self.repo_path.join(".git/rebase-apply");
+
+        let state_dir = if rebase_merge.exists() {
+            rebase_merge
+        } else if rebase_apply.exists() {
+            rebase_apply
+        } else {
+            return Err(AxisError::Other("No rebase in progress".to_string()));
+        };
+
+        // Write the new message to the state directory
+        fs::write(state_dir.join("message"), message)
+            .map_err(|e| AxisError::IoError(format!("Failed to write rebase message: {e}")))?;
+
+        // Continue rebase with GIT_EDITOR=true to skip the editor
+        let output = Command::new("git")
+            .args(["rebase", "--continue"])
+            .current_dir(&self.repo_path)
+            .env("GIT_EDITOR", "true")
+            .stdin(Stdio::null())
+            .output()
+            .map_err(AxisError::from)?;
 
         Ok(GitCommandResult::from(output))
     }

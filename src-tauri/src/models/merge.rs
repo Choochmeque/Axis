@@ -144,6 +144,28 @@ pub struct InteractiveRebaseEntry {
     pub original_index: usize,
 }
 
+/// Detailed rebase progress state (parsed from .git/rebase-merge or .git/rebase-apply)
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseProgress {
+    /// Current step number (1-based)
+    pub current_step: usize,
+    /// Total number of steps
+    pub total_steps: usize,
+    /// Branch being rebased (stripped of refs/heads/ prefix)
+    pub head_name: Option<String>,
+    /// Commit/branch being rebased onto
+    pub onto: Option<String>,
+    /// Action that caused the rebase to pause (Edit or Reword)
+    pub paused_action: Option<RebaseAction>,
+    /// SHA of the commit where rebase stopped
+    pub stopped_sha: Option<String>,
+    /// Commit message (available during Reword pause)
+    pub commit_message: Option<String>,
+    /// Whether the rebase is paused in amend mode (Edit action)
+    pub is_amend_mode: bool,
+}
+
 /// Options for starting an interactive rebase
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -294,6 +316,12 @@ pub enum OperationState {
         current: Option<usize>,
         /// Total steps
         total: Option<usize>,
+        /// Action that caused the rebase to pause (Edit or Reword)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        paused_action: Option<RebaseAction>,
+        /// Branch being rebased (stripped of refs/heads/ prefix)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        head_name: Option<String>,
     },
     /// Cherry-pick in progress
     CherryPicking {
@@ -630,6 +658,8 @@ mod tests {
             onto: Some("main".to_string()),
             current: Some(3),
             total: Some(5),
+            paused_action: None,
+            head_name: None,
         };
         if let OperationState::Rebasing { current, total, .. } = state {
             assert_eq!(current, Some(3));
@@ -637,6 +667,108 @@ mod tests {
         } else {
             panic!("Expected Rebasing state");
         }
+    }
+
+    #[test]
+    fn test_operation_state_rebasing_with_pause() {
+        let state = OperationState::Rebasing {
+            onto: Some("main".to_string()),
+            current: Some(2),
+            total: Some(5),
+            paused_action: Some(RebaseAction::Edit),
+            head_name: Some("feature-branch".to_string()),
+        };
+        if let OperationState::Rebasing {
+            paused_action,
+            head_name,
+            ..
+        } = state
+        {
+            assert_eq!(paused_action, Some(RebaseAction::Edit));
+            assert_eq!(head_name, Some("feature-branch".to_string()));
+        } else {
+            panic!("Expected Rebasing state");
+        }
+    }
+
+    #[test]
+    fn test_operation_state_rebasing_serialization_without_pause() {
+        let state = OperationState::Rebasing {
+            onto: Some("main".to_string()),
+            current: Some(1),
+            total: Some(3),
+            paused_action: None,
+            head_name: None,
+        };
+        let json = serde_json::to_string(&state).expect("should serialize");
+        // paused_action and head_name should be skipped when None
+        assert!(!json.contains("pausedAction"));
+        assert!(!json.contains("headName"));
+        assert!(json.contains("Rebasing"));
+    }
+
+    #[test]
+    fn test_operation_state_rebasing_serialization_with_pause() {
+        let state = OperationState::Rebasing {
+            onto: Some("main".to_string()),
+            current: Some(2),
+            total: Some(5),
+            paused_action: Some(RebaseAction::Reword),
+            head_name: Some("feature".to_string()),
+        };
+        let json = serde_json::to_string(&state).expect("should serialize");
+        assert!(json.contains("Reword"));
+        assert!(json.contains("feature"));
+    }
+
+    // ==================== RebaseProgress Tests ====================
+
+    #[test]
+    fn test_rebase_progress_serialization() {
+        let progress = RebaseProgress {
+            current_step: 3,
+            total_steps: 10,
+            head_name: Some("feature-branch".to_string()),
+            onto: Some("abc123".to_string()),
+            paused_action: Some(RebaseAction::Edit),
+            stopped_sha: Some("def456".to_string()),
+            commit_message: None,
+            is_amend_mode: true,
+        };
+        let json = serde_json::to_string(&progress).expect("should serialize");
+        assert!(json.contains("\"currentStep\":3"));
+        assert!(json.contains("\"totalSteps\":10"));
+        assert!(json.contains("\"headName\":\"feature-branch\""));
+        assert!(json.contains("\"isAmendMode\":true"));
+    }
+
+    #[test]
+    fn test_rebase_progress_deserialization() {
+        let json = r#"{"currentStep":2,"totalSteps":5,"headName":"my-branch","onto":"abc","pausedAction":"Reword","stoppedSha":"def","commitMessage":"fix: something","isAmendMode":false}"#;
+        let progress: RebaseProgress = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(progress.current_step, 2);
+        assert_eq!(progress.total_steps, 5);
+        assert_eq!(progress.head_name, Some("my-branch".to_string()));
+        assert_eq!(progress.paused_action, Some(RebaseAction::Reword));
+        assert_eq!(progress.commit_message, Some("fix: something".to_string()));
+        assert!(!progress.is_amend_mode);
+    }
+
+    #[test]
+    fn test_rebase_progress_no_pause() {
+        let progress = RebaseProgress {
+            current_step: 1,
+            total_steps: 3,
+            head_name: None,
+            onto: None,
+            paused_action: None,
+            stopped_sha: None,
+            commit_message: None,
+            is_amend_mode: false,
+        };
+        assert!(progress.paused_action.is_none());
+        assert!(progress.stopped_sha.is_none());
+        assert!(!progress.is_amend_mode);
     }
 
     #[test]

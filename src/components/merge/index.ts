@@ -1,6 +1,9 @@
 export { MergeDialog } from './MergeDialog';
 export { RebaseDialog } from './RebaseDialog';
 export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
+export { RewordDialog } from './RewordDialog';
+export { EditPauseDialog } from './EditPauseDialog';
+export { RebaseBanner } from './RebaseBanner';
 export { CherryPickDialog } from './CherryPickDialog';
 export { ResetConfirmDialog } from './ResetConfirmDialog';
 export { RevertCommitDialog } from './RevertCommitDialog';

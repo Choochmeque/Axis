@@ -3,7 +3,7 @@ use crate::models::{
     CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictType,
     ConflictedFile, InteractiveRebaseEntry, InteractiveRebaseOptions, InteractiveRebasePreview,
     MergeOptions, MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions,
-    RebasePreview, RebaseResult, ResetOptions, RevertOptions, RevertResult,
+    RebasePreview, RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
 use crate::services::GitCliService;
 use crate::state::AppState;
@@ -387,6 +387,56 @@ pub async fn interactive_rebase(
     }
 }
 
+/// Get detailed rebase progress
+#[tauri::command]
+#[specta::specta]
+pub async fn get_rebase_progress(state: State<'_, AppState>) -> Result<Option<RebaseProgress>> {
+    state
+        .get_git_service()?
+        .with_git_cli(|cli| cli.get_rebase_progress())
+}
+
+/// Continue rebase with a new commit message (for Reword action)
+#[tauri::command]
+#[specta::specta]
+pub async fn rebase_continue_with_message(
+    state: State<'_, AppState>,
+    message: String,
+) -> Result<RebaseResult> {
+    let handle = state.get_git_service()?;
+    let guard = handle.lock();
+    let cli = guard.git_cli();
+
+    let result = cli.rebase_continue_with_message(&message)?;
+
+    if result.success {
+        Ok(RebaseResult {
+            success: true,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts: Vec::new(),
+            message: "Rebase continued successfully.".to_string(),
+        })
+    } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
+        let conflicts = get_conflicted_files_internal(cli)?;
+
+        Ok(RebaseResult {
+            success: false,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts,
+            message: "Conflicts detected. Please resolve and continue.".to_string(),
+        })
+    } else {
+        Err(AxisError::Other(format!(
+            "Rebase continue failed: {}",
+            result.stderr.trim()
+        )))
+    }
+}
+
 // ==================== Cherry-pick Commands ====================
 
 /// Cherry-pick commits
@@ -687,11 +737,23 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
     let cli = guard.git_cli();
 
     if cli.is_rebasing()? {
-        Ok(OperationState::Rebasing {
-            onto: None, // Would need to parse from rebase state files
-            current: None,
-            total: None,
-        })
+        let progress = cli.get_rebase_progress()?;
+        match progress {
+            Some(p) => Ok(OperationState::Rebasing {
+                onto: p.onto,
+                current: Some(p.current_step),
+                total: Some(p.total_steps),
+                paused_action: p.paused_action,
+                head_name: p.head_name,
+            }),
+            None => Ok(OperationState::Rebasing {
+                onto: None,
+                current: None,
+                total: None,
+                paused_action: None,
+                head_name: None,
+            }),
+        }
     } else if cli.is_merging()? {
         Ok(OperationState::Merging { branch: None })
     } else if cli.is_cherry_picking()? {

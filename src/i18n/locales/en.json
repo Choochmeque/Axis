@@ -853,6 +853,48 @@
         "hasConflicts": "Rebase has conflicts - resolve and continue"
       }
     },
+    "reword": {
+      "title": "Reword Commit",
+      "description": "Edit the commit message for {{commit}}",
+      "newMessage": "New Commit Message",
+      "placeholder": "Enter the new commit message...",
+      "continue": "Continue Rebase",
+      "submitting": "Continuing...",
+      "success": "Commit message updated",
+      "failed": "Failed to update commit message",
+      "progress": "Commit {{current}} of {{total}}",
+      "hasConflicts": "Conflicts detected. Please resolve and continue."
+    },
+    "editPause": {
+      "title": "Rebase Paused for Edit",
+      "paused": "The rebase has paused to allow you to edit this commit.",
+      "description": "You can now make changes to files, stage them, and they will be added to this commit when you continue.",
+      "instructions": "What you can do:",
+      "step1": "Modify files in your working directory",
+      "step2": "Stage changes to include them in this commit",
+      "step3": "Click Continue when ready to proceed",
+      "continue": "Continue Rebase",
+      "abortRebase": "Abort Rebase",
+      "continued": "Rebase continued",
+      "continueFailed": "Failed to continue rebase",
+      "aborted": "Rebase aborted",
+      "abortFailed": "Failed to abort rebase",
+      "progress": "Commit {{current}} of {{total}}"
+    },
+    "rebaseBanner": {
+      "inProgress": "Rebase in progress",
+      "rebasing": "Rebasing",
+      "onto": "onto",
+      "step": "{{current}}/{{total}}",
+      "pausedForEdit": "Paused for editing",
+      "pausedForReword": "Paused for rewording",
+      "abort": "Abort rebase",
+      "skip": "Skip commit",
+      "aborted": "Rebase aborted",
+      "abortFailed": "Failed to abort rebase",
+      "skipped": "Commit skipped",
+      "skipFailed": "Failed to skip commit"
+    },
     "reset": {
       "soft": {
         "title": "Soft Reset",

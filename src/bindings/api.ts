@@ -331,6 +331,18 @@ async interactiveRebase(options: InteractiveRebaseOptions, bypassHooks: boolean 
     return await TAURI_INVOKE("interactive_rebase", { options, bypassHooks });
 },
 /**
+ * Get detailed rebase progress
+ */
+async getRebaseProgress() : Promise<RebaseProgress | null> {
+    return await TAURI_INVOKE("get_rebase_progress");
+},
+/**
+ * Continue rebase with a new commit message (for Reword action)
+ */
+async rebaseContinueWithMessage(message: string) : Promise<RebaseResult> {
+    return await TAURI_INVOKE("rebase_continue_with_message", { message });
+},
+/**
  * Cherry-pick commits
  */
 async cherryPick(options: CherryPickOptions) : Promise<CherryPickResult> {
@@ -2891,7 +2903,15 @@ current: number | null;
 /**
  * Total steps
  */
-total: number | null } } | 
+total: number | null; 
+/**
+ * Action that caused the rebase to pause (Edit or Reword)
+ */
+paused_action?: RebaseAction | null; 
+/**
+ * Branch being rebased (stripped of refs/heads/ prefix)
+ */
+head_name?: string | null } } | 
 /**
  * Cherry-pick in progress
  */
@@ -3034,6 +3054,42 @@ target: RebaseTarget;
  * Number of commits on target since merge-base
  */
 targetCommitsAhead: number }
+/**
+ * Detailed rebase progress state (parsed from .git/rebase-merge or .git/rebase-apply)
+ */
+export type RebaseProgress = { 
+/**
+ * Current step number (1-based)
+ */
+currentStep: number; 
+/**
+ * Total number of steps
+ */
+totalSteps: number; 
+/**
+ * Branch being rebased (stripped of refs/heads/ prefix)
+ */
+headName: string | null; 
+/**
+ * Commit/branch being rebased onto
+ */
+onto: string | null; 
+/**
+ * Action that caused the rebase to pause (Edit or Reword)
+ */
+pausedAction: RebaseAction | null; 
+/**
+ * SHA of the commit where rebase stopped
+ */
+stoppedSha: string | null; 
+/**
+ * Commit message (available during Reword pause)
+ */
+commitMessage: string | null; 
+/**
+ * Whether the rebase is paused in amend mode (Edit action)
+ */
+isAmendMode: boolean }
 /**
  * Result of a rebase operation
  */

@@ -100,6 +100,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_rebase_preview,
             crate::commands::get_interactive_rebase_preview,
             crate::commands::interactive_rebase,
+            crate::commands::get_rebase_progress,
+            crate::commands::rebase_continue_with_message,
             // Cherry-pick commands
             crate::commands::cherry_pick,
             crate::commands::cherry_pick_abort,

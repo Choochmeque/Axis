@@ -258,6 +258,10 @@ export const rebaseApi = {
 
   interactiveRebase: (options: InteractiveRebaseOptions, bypassHooks?: boolean) =>
     commands.interactiveRebase(options, bypassHooks ?? null),
+
+  getProgress: () => commands.getRebaseProgress(),
+
+  continueWithMessage: (message: string) => commands.rebaseContinueWithMessage(message),
 };
 
 export const cherryPickApi = {

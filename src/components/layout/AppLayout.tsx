@@ -14,6 +14,8 @@ import { BranchCompareDialog } from '../branches/BranchCompareDialog';
 import {
   CherryPickDialog,
   InteractiveRebaseDialog,
+  RewordDialog,
+  EditPauseDialog,
   MergeDialog,
   RebaseDialog,
   ResetConfirmDialog,
@@ -130,6 +132,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         onDiscardAndSwitch={discardAndCheckout}
       />
       <InteractiveRebaseDialog />
+      <RewordDialog />
+      <EditPauseDialog />
       <ActionConfirmDialog />
       <ActionOutputDialog />
       <TagDialog

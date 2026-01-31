@@ -71,6 +71,8 @@ vi.mock('../merge', () => ({
     return props.isOpen ? <div data-testid="cherry-pick-dialog">CherryPick</div> : null;
   },
   InteractiveRebaseDialog: () => <div data-testid="interactive-rebase-dialog" />,
+  RewordDialog: () => <div data-testid="reword-dialog" />,
+  EditPauseDialog: () => <div data-testid="edit-pause-dialog" />,
   MergeDialog: (props: Record<string, unknown>) => {
     mergeDialogProps = props;
     return props.isOpen ? <div data-testid="merge-dialog">Merge</div> : null;

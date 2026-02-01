@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VirtualList } from './virtual-list';
+import type { SelectionKey } from '@/hooks';
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -122,5 +123,138 @@ describe('VirtualList', () => {
 
     const selectedItem = screen.getByText('Item 1').parentElement;
     expect(selectedItem?.className).toContain('virtual-list-item--selected');
+  });
+
+  // New selection API tests
+  describe('new selection API', () => {
+    it('should call onSelectionChange when item is clicked', () => {
+      const onSelectionChange = vi.fn();
+
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>()}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Item 2'));
+
+      expect(onSelectionChange).toHaveBeenCalledWith(new Set(['2']));
+    });
+
+    it('should apply selected class to items using selectedKeys', () => {
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>(['2'])}
+          onSelectionChange={vi.fn()}
+          selectedClassName="selected"
+        />
+      );
+
+      const selectedItem = screen.getByText('Item 2').parentElement;
+      expect(selectedItem?.className).toContain('selected');
+
+      const unselectedItem = screen.getByText('Item 1').parentElement;
+      expect(unselectedItem?.className).not.toContain('selected');
+    });
+
+    it('should call onSelectionChange with empty set when selected item is removed', () => {
+      const onSelectionChange = vi.fn();
+
+      const { rerender } = render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>(['2'])}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      // Re-render without item '2'
+      const newItems = [
+        { id: '1', name: 'Item 1' },
+        { id: '3', name: 'Item 3' },
+      ];
+
+      rerender(
+        <VirtualList
+          {...defaultProps}
+          items={newItems}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>(['2'])}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      expect(onSelectionChange).toHaveBeenCalledWith(new Set());
+    });
+
+    it('should deselect when clicking the already selected item in single mode', () => {
+      const onSelectionChange = vi.fn();
+
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>(['1'])}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Item 1'));
+
+      expect(onSelectionChange).toHaveBeenCalledWith(new Set());
+    });
+
+    it('should warn when both legacy and new APIs are provided', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectedItemKey="1"
+          onItemClick={vi.fn()}
+          selectedKeys={new Set<SelectionKey>(['1'])}
+          onSelectionChange={vi.fn()}
+        />
+      );
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('both legacy'));
+    });
+
+    it('should use default selected className with new API', () => {
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="single"
+          selectedKeys={new Set<SelectionKey>(['1'])}
+          onSelectionChange={vi.fn()}
+        />
+      );
+
+      const selectedItem = screen.getByText('Item 1').parentElement;
+      expect(selectedItem?.className).toContain('virtual-list-item--selected');
+    });
+
+    it('should not select in none mode', () => {
+      const onSelectionChange = vi.fn();
+
+      render(
+        <VirtualList
+          {...defaultProps}
+          selectionMode="none"
+          selectedKeys={new Set<SelectionKey>()}
+          onSelectionChange={onSelectionChange}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Item 1'));
+
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
   });
 });

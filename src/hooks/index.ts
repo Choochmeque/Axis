@@ -9,4 +9,6 @@ export { useReferenceMention } from './useReferenceMention';
 export { useScrollToCommit } from './useScrollToCommit';
 export { useSignatureVerification } from './useSignatureVerification';
 export { useSshKeyCheck } from './useSshKeyCheck';
+export { useListSelection } from './useListSelection';
+export type { SelectionKey, SelectionMode } from './useListSelection';
 export { useToast, toast } from './useToast';

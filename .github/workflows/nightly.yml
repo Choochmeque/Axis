@@ -196,13 +196,16 @@ jobs:
       # --------------------------------------------------
       - name: Create or update nightly release
         run: |
-          START_TAG=$(git tag --merged main --list 'v*' --sort=-version:refname | grep -v '-' | head -n 1)
+          # Clean up old nightly version tags so they don't pollute auto-generated notes
+          git tag -l 'v*-nightly.*' | xargs -r git push origin --delete 2>/dev/null || true
+          git tag -l 'v*-nightly.*' | xargs -r git tag -d 2>/dev/null || true
 
-          if [ -z "$START_TAG" ]; then
-            START_TAG=$(git rev-list --max-parents=0 HEAD)
+          LAST_STABLE=$(git tag --merged main --list 'v*' --sort=-version:refname | grep -v '-' | head -n 1)
+
+          NOTES_ARGS="--generate-notes"
+          if [ -n "$LAST_STABLE" ]; then
+            NOTES_ARGS="$NOTES_ARGS --notes-start-tag $LAST_STABLE"
           fi
-
-          NOTES_ARGS="--generate-notes --notes-start-tag $START_TAG"
 
           # Delete and recreate to get fresh notes
           gh release delete nightly --yes 2>/dev/null || true

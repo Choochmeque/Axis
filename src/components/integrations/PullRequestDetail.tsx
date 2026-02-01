@@ -31,7 +31,7 @@ import {
 } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
-import { cn } from '@/lib/utils';
+import { cn, getLabelColors } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { shellApi } from '@/services/api';
@@ -238,11 +238,7 @@ export function PullRequestDetail({ prDetail, onClose }: PullRequestDetailProps)
               <span
                 key={label.name}
                 className="px-2 py-0.5 text-xs rounded-full"
-                style={{
-                  backgroundColor: `#${label.color}20`,
-                  color: `#${label.color}`,
-                  border: `1px solid #${label.color}40`,
-                }}
+                style={getLabelColors(label.color)}
               >
                 {label.name}
               </span>

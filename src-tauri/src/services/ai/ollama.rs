@@ -152,13 +152,14 @@ impl AiProviderTrait for OllamaProvider {
         &self,
         commits: &[(String, String)],
         diff_summary: Option<&str>,
+        available_labels: Option<&[String]>,
         _api_key: Option<&str>,
         model: Option<&str>,
         base_url: Option<&str>,
-    ) -> Result<(String, String, String)> {
+    ) -> Result<(String, String, Vec<String>, String)> {
         let base_url = base_url.unwrap_or(&self.base_url);
         let model = model.unwrap_or(self.default_model()).to_string();
-        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary);
+        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary, available_labels);
 
         let request = OllamaRequest {
             model: model.clone(),
@@ -202,8 +203,8 @@ impl AiProviderTrait for OllamaProvider {
             .map_err(|e| AxisError::AiServiceError(format!("Failed to parse response: {e}")))?;
 
         let raw = response.message.content.trim().to_string();
-        let (title, body) = parse_pr_response(&raw);
-        Ok((title, body, model))
+        let (title, body, labels) = parse_pr_response(&raw);
+        Ok((title, body, labels, model))
     }
 
     fn default_model(&self) -> &'static str {

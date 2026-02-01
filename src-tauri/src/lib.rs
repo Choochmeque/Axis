@@ -257,6 +257,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::integration_list_issues,
             crate::commands::integration_get_issue,
             crate::commands::integration_create_issue,
+            crate::commands::integration_list_labels,
             crate::commands::integration_list_ci_runs,
             crate::commands::integration_get_commit_status,
             crate::commands::integration_list_notifications,

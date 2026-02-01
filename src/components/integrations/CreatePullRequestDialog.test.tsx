@@ -28,9 +28,17 @@ vi.mock('@/store/repositoryStore', () => ({
 
 // Mock integration store
 const mockCreatePullRequest = vi.fn();
+const mockLoadLabels = vi.fn();
+const mockAvailableLabels = [
+  { name: 'bug', color: 'd73a4a', description: 'Something is broken' },
+  { name: 'enhancement', color: 'a2eeef', description: 'New feature' },
+];
+
 vi.mock('@/store/integrationStore', () => ({
   useIntegrationStore: () => ({
     createPullRequest: mockCreatePullRequest,
+    availableLabels: mockAvailableLabels,
+    loadLabels: mockLoadLabels,
   }),
 }));
 
@@ -55,6 +63,24 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
+}));
+
+// Mock LabelSelector
+vi.mock('@/components/integrations/LabelSelector', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  LabelSelector: ({ selectedLabels, onSelectionChange, disabled }: any) => (
+    <div data-testid="label-selector" data-disabled={disabled}>
+      <span data-testid="selected-labels-count">{selectedLabels.length}</span>
+      <button
+        data-testid="select-bug-label"
+        onClick={() =>
+          onSelectionChange([{ name: 'bug', color: 'd73a4a', description: 'Something is broken' }])
+        }
+      >
+        Select bug
+      </button>
+    </div>
+  ),
 }));
 
 // Mock UI components
@@ -90,13 +116,14 @@ vi.mock('@/components/ui', () => ({
     <input id={id} data-testid={id} value={value} onChange={onChange} placeholder={placeholder} />
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Textarea: ({ id, value, onChange, placeholder }: any) => (
+  MarkdownEditor: ({ id, value, onChange, placeholder, disabled }: any) => (
     <textarea
       id={id}
       data-testid={id}
       value={value}
-      onChange={onChange}
+      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
       placeholder={placeholder}
+      disabled={disabled}
     />
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,14 +186,16 @@ describe('CreatePullRequestDialog', () => {
     expect(screen.getByTestId('pr-title')).toBeInTheDocument();
     expect(screen.getByTestId('pr-body')).toBeInTheDocument();
     expect(screen.getByTestId('pr-draft')).toBeInTheDocument();
+    expect(screen.getByTestId('label-selector')).toBeInTheDocument();
   });
 
-  it('should load branches when dialog opens', () => {
+  it('should load branches and labels when dialog opens', () => {
     render(
       <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
     );
 
     expect(mockLoadBranches).toHaveBeenCalled();
+    expect(mockLoadLabels).toHaveBeenCalled();
   });
 
   it('should disable create button when fields are empty', () => {
@@ -177,7 +206,7 @@ describe('CreatePullRequestDialog', () => {
     expect(screen.getByText('integrations.pullRequests.create.createButton')).toBeDisabled();
   });
 
-  it('should create pull request successfully', async () => {
+  it('should create pull request with labels successfully', async () => {
     mockCreatePullRequest.mockResolvedValue({ number: 1 });
 
     render(
@@ -189,6 +218,9 @@ describe('CreatePullRequestDialog', () => {
     fireEvent.change(screen.getByTestId('pr-title'), { target: { value: 'My PR Title' } });
     fireEvent.change(screen.getByTestId('pr-body'), { target: { value: 'PR description' } });
 
+    // Select a label
+    fireEvent.click(screen.getByTestId('select-bug-label'));
+
     fireEvent.click(screen.getByText('integrations.pullRequests.create.createButton'));
 
     await waitFor(() => {
@@ -198,8 +230,31 @@ describe('CreatePullRequestDialog', () => {
         sourceBranch: 'feature-branch',
         targetBranch: 'main',
         draft: false,
+        labels: ['bug'],
       });
       expect(mockOnCreated).toHaveBeenCalled();
+    });
+  });
+
+  it('should create pull request without labels', async () => {
+    mockCreatePullRequest.mockResolvedValue({ number: 1 });
+
+    render(
+      <CreatePullRequestDialog isOpen={true} onClose={mockOnClose} onCreated={mockOnCreated} />
+    );
+
+    fireEvent.change(screen.getByTestId('pr-source'), { target: { value: 'feature-branch' } });
+    fireEvent.change(screen.getByTestId('pr-target'), { target: { value: 'main' } });
+    fireEvent.change(screen.getByTestId('pr-title'), { target: { value: 'My PR Title' } });
+
+    fireEvent.click(screen.getByText('integrations.pullRequests.create.createButton'));
+
+    await waitFor(() => {
+      expect(mockCreatePullRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          labels: [],
+        })
+      );
     });
   });
 
@@ -301,10 +356,11 @@ describe('CreatePullRequestDialog', () => {
     expect(aiButton).toBeDisabled();
   });
 
-  it('should generate PR description with AI', async () => {
+  it('should generate PR description with AI and set labels', async () => {
     mockGeneratePrDescription.mockResolvedValue({
       title: 'Generated Title',
       body: 'Generated body content',
+      labels: ['bug'],
       modelUsed: 'gpt-4o-mini',
     });
 
@@ -318,9 +374,14 @@ describe('CreatePullRequestDialog', () => {
     fireEvent.click(screen.getByTitle('integrations.pullRequests.create.generateWithAi'));
 
     await waitFor(() => {
-      expect(mockGeneratePrDescription).toHaveBeenCalledWith('feature-branch', 'main', true);
+      expect(mockGeneratePrDescription).toHaveBeenCalledWith('feature-branch', 'main', true, [
+        'bug',
+        'enhancement',
+      ]);
       expect(screen.getByTestId('pr-title')).toHaveValue('Generated Title');
       expect(screen.getByTestId('pr-body')).toHaveValue('Generated body content');
+      // AI response had 'bug' label, so 1 label should be selected
+      expect(screen.getByTestId('selected-labels-count')).toHaveTextContent('1');
     });
   });
 

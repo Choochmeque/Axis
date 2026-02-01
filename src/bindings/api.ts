@@ -889,8 +889,8 @@ async testAiConnection(provider: AiProvider) : Promise<boolean> {
 async listOllamaModels(ollamaUrl: string | null) : Promise<string[]> {
     return await TAURI_INVOKE("list_ollama_models", { ollamaUrl });
 },
-async generatePrDescription(sourceBranch: string, targetBranch: string, includeDiffSummary: boolean) : Promise<GeneratePrDescriptionResponse> {
-    return await TAURI_INVOKE("generate_pr_description", { sourceBranch, targetBranch, includeDiffSummary });
+async generatePrDescription(sourceBranch: string, targetBranch: string, includeDiffSummary: boolean, availableLabels: string[]) : Promise<GeneratePrDescriptionResponse> {
+    return await TAURI_INVOKE("generate_pr_description", { sourceBranch, targetBranch, includeDiffSummary, availableLabels });
 },
 async addToGitignore(pattern: string, gitignorePath: string) : Promise<IgnoreResult> {
     return await TAURI_INVOKE("add_to_gitignore", { pattern, gitignorePath });
@@ -1038,6 +1038,9 @@ async integrationGetIssue(detected: DetectedProvider, number: number) : Promise<
 },
 async integrationCreateIssue(detected: DetectedProvider, options: CreateIssueOptions) : Promise<Issue> {
     return await TAURI_INVOKE("integration_create_issue", { detected, options });
+},
+async integrationListLabels(detected: DetectedProvider) : Promise<IntegrationLabel[]> {
+    return await TAURI_INVOKE("integration_list_labels", { detected });
 },
 async integrationListCiRuns(detected: DetectedProvider, page: number) : Promise<CiRunsPage> {
     return await TAURI_INVOKE("integration_list_ci_runs", { detected, page });
@@ -1802,7 +1805,7 @@ outputDir: string }
 /**
  * Options for creating a pull request
  */
-export type CreatePrOptions = { title: string; body: string | null; sourceBranch: string; targetBranch: string; draft: boolean }
+export type CreatePrOptions = { title: string; body: string | null; sourceBranch: string; targetBranch: string; draft: boolean; labels: string[] }
 /**
  * Options for creating a tag
  */
@@ -2054,7 +2057,7 @@ range: string;
  */
 outputDir: string }
 export type GenerateCommitMessageResponse = { message: string; modelUsed: string }
-export type GeneratePrDescriptionResponse = { title: string; body: string; modelUsed: string }
+export type GeneratePrDescriptionResponse = { title: string; body: string; labels: string[]; modelUsed: string }
 /**
  * Options for generating a new SSH key
  */

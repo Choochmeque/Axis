@@ -518,8 +518,10 @@ export const aiApi = {
   generatePrDescription: (
     sourceBranch: string,
     targetBranch: string,
-    includeDiffSummary: boolean = true
-  ) => commands.generatePrDescription(sourceBranch, targetBranch, includeDiffSummary),
+    includeDiffSummary: boolean = true,
+    availableLabels: string[] = []
+  ) =>
+    commands.generatePrDescription(sourceBranch, targetBranch, includeDiffSummary, availableLabels),
 
   setApiKey: (provider: AiProvider, apiKey: string) => commands.setAiApiKey(provider, apiKey),
 
@@ -594,6 +596,8 @@ export const integrationApi = {
 
   mergePr: (detected: DetectedProvider, number: number, options: MergePrOptions) =>
     commands.integrationMergePr(detected, number, options),
+
+  listLabels: (detected: DetectedProvider) => commands.integrationListLabels(detected),
 
   // Issues
   listIssues: (detected: DetectedProvider, state: IssueState, page: number) =>

@@ -12,18 +12,20 @@ import {
   Button,
   FormField,
   Input,
-  Textarea,
+  MarkdownEditor,
   CheckboxField,
   Select,
   SelectItem,
   Alert,
 } from '@/components/ui';
+import { LabelSelector } from '@/components/integrations/LabelSelector';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useIntegrationStore } from '@/store/integrationStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { aiApi } from '@/services/api';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from '@/hooks';
+import type { IntegrationLabel } from '@/types';
 
 interface CreatePullRequestDialogProps {
   isOpen: boolean;
@@ -38,13 +40,14 @@ export function CreatePullRequestDialog({
 }: CreatePullRequestDialogProps) {
   const { t } = useTranslation();
   const { branches, loadBranches } = useRepositoryStore();
-  const { createPullRequest } = useIntegrationStore();
+  const { createPullRequest, availableLabels, loadLabels } = useIntegrationStore();
   const { settings } = useSettingsStore();
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [sourceBranch, setSourceBranch] = useState('');
   const [targetBranch, setTargetBranch] = useState('');
+  const [selectedLabels, setSelectedLabels] = useState<IntegrationLabel[]>([]);
   const [isDraft, setIsDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -66,12 +69,13 @@ export function CreatePullRequestDialog({
   // Common target branches
   const defaultTargetBranches = useMemo(() => ['main', 'master', 'develop', 'dev'], []);
 
-  // Reload branches when dialog opens
+  // Reload branches and labels when dialog opens
   useEffect(() => {
     if (isOpen) {
       loadBranches();
+      loadLabels();
     }
-  }, [isOpen, loadBranches]);
+  }, [isOpen, loadBranches, loadLabels]);
 
   // Reset form when dialog opens (separate effect to avoid loop)
   useEffect(() => {
@@ -82,6 +86,7 @@ export function CreatePullRequestDialog({
       const defaultTarget =
         localBranches.find((b) => defaultTargetBranches.includes(b.name))?.name ?? '';
       setTargetBranch(defaultTarget);
+      setSelectedLabels([]);
       setIsDraft(false);
       setError(null);
     }
@@ -105,9 +110,24 @@ export function CreatePullRequestDialog({
     setError(null);
 
     try {
-      const response = await aiApi.generatePrDescription(sourceBranch, targetBranch, true);
+      const labelNames = availableLabels.map((l) => l.name);
+      const response = await aiApi.generatePrDescription(
+        sourceBranch,
+        targetBranch,
+        true,
+        labelNames
+      );
       setTitle(response.title);
       setBody(response.body);
+
+      // Match AI-suggested labels to available labels
+      if (response.labels.length > 0) {
+        const matched = availableLabels.filter((l) =>
+          response.labels.some((name) => name.toLowerCase() === l.name.toLowerCase())
+        );
+        setSelectedLabels(matched);
+      }
+
       toast.success(
         t('integrations.pullRequests.create.aiGenerated', { model: response.modelUsed })
       );
@@ -116,7 +136,7 @@ export function CreatePullRequestDialog({
     } finally {
       setIsGenerating(false);
     }
-  }, [sourceBranch, targetBranch, t]);
+  }, [sourceBranch, targetBranch, availableLabels, t]);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
@@ -146,6 +166,7 @@ export function CreatePullRequestDialog({
         sourceBranch,
         targetBranch,
         draft: isDraft,
+        labels: selectedLabels.map((l) => l.name),
       });
       toast.success(t('integrations.pullRequests.create.created'));
       onCreated();
@@ -160,6 +181,7 @@ export function CreatePullRequestDialog({
     sourceBranch,
     targetBranch,
     isDraft,
+    selectedLabels,
     isSourceBranchPushed,
     createPullRequest,
     onCreated,
@@ -258,14 +280,21 @@ export function CreatePullRequestDialog({
             label={t('integrations.pullRequests.create.descriptionLabel')}
             htmlFor="pr-body"
           >
-            <Textarea
+            <MarkdownEditor
               id="pr-body"
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
               placeholder={t('integrations.pullRequests.create.descriptionPlaceholder')}
               rows={6}
+              disabled={isSubmitting || isGenerating}
             />
           </FormField>
+
+          <LabelSelector
+            selectedLabels={selectedLabels}
+            onSelectionChange={setSelectedLabels}
+            disabled={isSubmitting || isGenerating}
+          />
 
           <CheckboxField
             id="pr-draft"

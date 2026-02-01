@@ -3,9 +3,9 @@ use async_trait::async_trait;
 use crate::error::Result;
 use crate::models::{
     CiRunsPage, CommitStatus, CreateIssueOptions, CreatePrOptions, IntegrationCommit,
-    IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState, IssuesPage,
-    MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest, PullRequestDetail,
-    PullRequestsPage,
+    IntegrationLabel, IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState,
+    IssuesPage, MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest,
+    PullRequestDetail, PullRequestsPage,
 };
 
 /// Trait for integration providers (GitHub, GitLab, Bitbucket, Gitea)
@@ -115,4 +115,8 @@ pub trait IntegrationProvider: Send + Sync {
 
     /// Get unread notification count
     async fn get_unread_count(&self, owner: &str, repo: &str) -> Result<u32>;
+
+    // Label operations
+    /// List repository labels
+    async fn list_labels(&self, owner: &str, repo: &str) -> Result<Vec<IntegrationLabel>>;
 }

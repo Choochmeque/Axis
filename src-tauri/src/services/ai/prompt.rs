@@ -39,14 +39,17 @@ const PR_SYSTEM_PROMPT: &str = r#"You are a helpful assistant that generates con
 
 Given a list of commits and an optional summary of changed files, generate:
 1. A short, descriptive PR title (under 72 characters, imperative mood)
-2. A PR body in markdown with:
-   - A summary of what the PR does (1-3 sentences)
-   - A bullet list of key changes
+2. A PR body in GitHub-flavored markdown with:
+   - A summary section (## Summary) explaining what the PR does (1-3 sentences)
+   - A changes section (## Changes) with a bullet list of key changes
+   - Use proper markdown: headings, bold, code spans, lists
+3. If available labels are provided, suggest the most relevant ones (0-3 labels)
 
 Format your response EXACTLY as:
 TITLE: <your title here>
 BODY:
-<your body here>
+<your markdown body here>
+LABELS: <comma-separated label names, or empty if none>
 
 Be specific but concise. Focus on the user-facing impact of changes.
 Return ONLY the formatted response, nothing else."#;
@@ -54,6 +57,7 @@ Return ONLY the formatted response, nothing else."#;
 pub fn build_pr_prompt(
     commits: &[(String, String)],
     diff_summary: Option<&str>,
+    available_labels: Option<&[String]>,
 ) -> (String, String) {
     let mut user_prompt =
         String::from("Generate a PR title and description for these commits:\n\n");
@@ -66,37 +70,74 @@ pub fn build_pr_prompt(
         user_prompt.push_str(&format!("\nChanged files:\n{summary}\n"));
     }
 
+    if let Some(labels) = available_labels {
+        if !labels.is_empty() {
+            user_prompt.push_str(&format!("\nAvailable labels: {}\n", labels.join(", ")));
+        }
+    }
+
     (PR_SYSTEM_PROMPT.to_string(), user_prompt)
 }
 
-pub fn parse_pr_response(response: &str) -> (String, String) {
+pub fn parse_pr_response(response: &str) -> (String, String, Vec<String>) {
     let response = response.trim();
 
-    // Try to parse TITLE: ... BODY: ... format
+    // Try to parse TITLE: ... BODY: ... LABELS: ... format
     if let Some(title_start) = response.find("TITLE:") {
         let after_title = &response[title_start + 6..];
         if let Some(body_marker) = after_title.find("BODY:") {
             let title = after_title[..body_marker].trim().to_string();
-            let body = after_title[body_marker + 5..].trim().to_string();
-            return (title, body);
+            let after_body = &after_title[body_marker + 5..];
+
+            // Check for LABELS: section
+            if let Some(labels_marker) = after_body.find("LABELS:") {
+                let body = after_body[..labels_marker].trim().to_string();
+                let labels_str = after_body[labels_marker + 7..].trim();
+                let labels = parse_labels(labels_str);
+                return (title, body, labels);
+            }
+
+            let body = after_body.trim().to_string();
+            return (title, body, vec![]);
         }
         // TITLE found but no BODY marker - title is first line, rest is body
         let title = after_title.lines().next().unwrap_or("").trim().to_string();
-        let body = after_title
-            .lines()
-            .skip(1)
-            .collect::<Vec<_>>()
-            .join("\n")
-            .trim()
-            .to_string();
-        return (title, body);
+        let rest = after_title.lines().skip(1).collect::<Vec<_>>().join("\n");
+
+        // Check for LABELS: in the rest
+        if let Some(labels_marker) = rest.find("LABELS:") {
+            let body = rest[..labels_marker].trim().to_string();
+            let labels_str = rest[labels_marker + 7..].trim();
+            let labels = parse_labels(labels_str);
+            return (title, body, labels);
+        }
+
+        let body = rest.trim().to_string();
+        return (title, body, vec![]);
     }
 
     // Fallback: first line is title, rest is body
     let mut lines = response.lines();
     let title = lines.next().unwrap_or("Pull Request").trim().to_string();
-    let body = lines.collect::<Vec<_>>().join("\n").trim().to_string();
-    (title, body)
+    let rest = lines.collect::<Vec<_>>().join("\n");
+
+    if let Some(labels_marker) = rest.find("LABELS:") {
+        let body = rest[..labels_marker].trim().to_string();
+        let labels_str = rest[labels_marker + 7..].trim();
+        let labels = parse_labels(labels_str);
+        return (title, body, labels);
+    }
+
+    let body = rest.trim().to_string();
+    (title, body, vec![])
+}
+
+fn parse_labels(labels_str: &str) -> Vec<String> {
+    labels_str
+        .split(',')
+        .map(|l| l.trim().to_string())
+        .filter(|l| !l.is_empty())
+        .collect()
 }
 
 pub fn build_prompt(diff: &str, conventional_commits: bool) -> (String, String) {
@@ -234,11 +275,12 @@ mod tests {
             ("abc123".to_string(), "Add login page".to_string()),
             ("def456".to_string(), "Fix validation".to_string()),
         ];
-        let (system, user) = build_pr_prompt(&commits, None);
+        let (system, user) = build_pr_prompt(&commits, None, None);
 
         assert!(system.contains("pull request"));
         assert!(system.contains("TITLE:"));
         assert!(system.contains("BODY:"));
+        assert!(system.contains("LABELS:"));
         assert!(user.contains("abc123: Add login page"));
         assert!(user.contains("def456: Fix validation"));
     }
@@ -247,7 +289,7 @@ mod tests {
     fn test_build_pr_prompt_with_diff_summary() {
         let commits = vec![("abc123".to_string(), "Update auth".to_string())];
         let summary = "- Modified: src/auth.rs\n- Added: src/login.rs";
-        let (_, user) = build_pr_prompt(&commits, Some(summary));
+        let (_, user) = build_pr_prompt(&commits, Some(summary), None);
 
         assert!(user.contains("Changed files:"));
         assert!(user.contains("src/auth.rs"));
@@ -257,7 +299,7 @@ mod tests {
     #[test]
     fn test_build_pr_prompt_empty_commits() {
         let commits: Vec<(String, String)> = vec![];
-        let (system, user) = build_pr_prompt(&commits, None);
+        let (system, user) = build_pr_prompt(&commits, None, None);
 
         assert!(!system.is_empty());
         assert!(user.contains("Generate a PR title"));
@@ -266,9 +308,47 @@ mod tests {
     #[test]
     fn test_build_pr_prompt_no_diff_summary() {
         let commits = vec![("abc".to_string(), "Test".to_string())];
-        let (_, user) = build_pr_prompt(&commits, None);
+        let (_, user) = build_pr_prompt(&commits, None, None);
 
         assert!(!user.contains("Changed files:"));
+    }
+
+    #[test]
+    fn test_build_pr_prompt_with_available_labels() {
+        let commits = vec![("abc".to_string(), "Fix bug".to_string())];
+        let labels = vec![
+            "bug".to_string(),
+            "enhancement".to_string(),
+            "docs".to_string(),
+        ];
+        let (_, user) = build_pr_prompt(&commits, None, Some(&labels));
+
+        assert!(user.contains("Available labels: bug, enhancement, docs"));
+    }
+
+    #[test]
+    fn test_build_pr_prompt_with_empty_labels() {
+        let commits = vec![("abc".to_string(), "Test".to_string())];
+        let labels: Vec<String> = vec![];
+        let (_, user) = build_pr_prompt(&commits, None, Some(&labels));
+
+        assert!(!user.contains("Available labels:"));
+    }
+
+    #[test]
+    fn test_build_pr_prompt_without_labels() {
+        let commits = vec![("abc".to_string(), "Test".to_string())];
+        let (_, user) = build_pr_prompt(&commits, None, None);
+
+        assert!(!user.contains("Available labels:"));
+    }
+
+    #[test]
+    fn test_build_pr_prompt_system_prompt_mentions_markdown() {
+        let commits = vec![("abc".to_string(), "Test".to_string())];
+        let (system, _) = build_pr_prompt(&commits, None, None);
+
+        assert!(system.contains("GitHub-flavored markdown"));
     }
 
     // ==================== parse_pr_response Tests ====================
@@ -276,57 +356,126 @@ mod tests {
     #[test]
     fn test_parse_pr_response_standard_format() {
         let response = "TITLE: Add user authentication\nBODY:\n## Summary\nAdds OAuth2 login flow";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Add user authentication");
         assert!(body.contains("Summary"));
         assert!(body.contains("OAuth2"));
+        assert!(labels.is_empty());
+    }
+
+    #[test]
+    fn test_parse_pr_response_with_labels() {
+        let response = "TITLE: Fix login bug\nBODY:\n## Summary\nFixes the login bug\nLABELS: bug, priority:high";
+        let (title, body, labels) = parse_pr_response(response);
+
+        assert_eq!(title, "Fix login bug");
+        assert!(body.contains("Summary"));
+        assert_eq!(labels, vec!["bug", "priority:high"]);
+    }
+
+    #[test]
+    fn test_parse_pr_response_with_empty_labels() {
+        let response = "TITLE: Simple fix\nBODY:\nSome changes\nLABELS:";
+        let (title, body, labels) = parse_pr_response(response);
+
+        assert_eq!(title, "Simple fix");
+        assert!(body.contains("Some changes"));
+        assert!(labels.is_empty());
     }
 
     #[test]
     fn test_parse_pr_response_multiline_body() {
         let response = "TITLE: Fix bug\nBODY:\n- Fixed null check\n- Added tests\n- Updated docs";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Fix bug");
         assert!(body.contains("Fixed null check"));
         assert!(body.contains("Added tests"));
         assert!(body.contains("Updated docs"));
+        assert!(labels.is_empty());
     }
 
     #[test]
     fn test_parse_pr_response_fallback_no_markers() {
         let response = "Add new feature\nThis is the description\nWith multiple lines";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Add new feature");
         assert!(body.contains("This is the description"));
+        assert!(labels.is_empty());
     }
 
     #[test]
     fn test_parse_pr_response_title_only() {
         let response = "TITLE: Simple change";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Simple change");
         assert!(body.is_empty());
+        assert!(labels.is_empty());
     }
 
     #[test]
     fn test_parse_pr_response_empty_input() {
         let response = "";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Pull Request");
         assert!(body.is_empty());
+        assert!(labels.is_empty());
     }
 
     #[test]
     fn test_parse_pr_response_trims_whitespace() {
         let response = "  TITLE:   Add feature  \n  BODY:  \n  Some description  ";
-        let (title, body) = parse_pr_response(response);
+        let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Add feature");
         assert_eq!(body, "Some description");
+        assert!(labels.is_empty());
+    }
+
+    #[test]
+    fn test_parse_pr_response_labels_with_whitespace() {
+        let response = "TITLE: Test\nBODY:\nBody\nLABELS:  bug ,  enhancement , docs  ";
+        let (_, _, labels) = parse_pr_response(response);
+
+        assert_eq!(labels, vec!["bug", "enhancement", "docs"]);
+    }
+
+    #[test]
+    fn test_parse_pr_response_fallback_with_labels() {
+        let response = "Add feature\nSome description\nLABELS: enhancement";
+        let (title, body, labels) = parse_pr_response(response);
+
+        assert_eq!(title, "Add feature");
+        assert!(body.contains("Some description"));
+        assert_eq!(labels, vec!["enhancement"]);
+    }
+
+    // ==================== parse_labels Tests ====================
+
+    #[test]
+    fn test_parse_labels_empty() {
+        assert!(parse_labels("").is_empty());
+    }
+
+    #[test]
+    fn test_parse_labels_single() {
+        assert_eq!(parse_labels("bug"), vec!["bug"]);
+    }
+
+    #[test]
+    fn test_parse_labels_multiple() {
+        assert_eq!(
+            parse_labels("bug, enhancement, docs"),
+            vec!["bug", "enhancement", "docs"]
+        );
+    }
+
+    #[test]
+    fn test_parse_labels_whitespace() {
+        assert_eq!(parse_labels("  bug  ,  fix  "), vec!["bug", "fix"]);
     }
 }

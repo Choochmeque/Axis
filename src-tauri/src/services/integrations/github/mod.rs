@@ -279,6 +279,7 @@ pub struct GitHubProvider {
     repo_info_cache: TtlCache<IntegrationRepoInfo>,
     commit_cache: TtlCache<IntegrationCommit>,
     commit_status_cache: TtlCache<CommitStatus>,
+    label_cache: TtlCache<Vec<IntegrationLabel>>,
 }
 
 impl GitHubProvider {
@@ -309,6 +310,7 @@ impl GitHubProvider {
             repo_info_cache: TtlCache::new(CACHE_TTL_LONG),
             commit_cache: TtlCache::new(CACHE_TTL_LONG),
             commit_status_cache: TtlCache::new(CACHE_TTL_SHORT),
+            label_cache: TtlCache::new(CACHE_TTL_LONG),
         }
     }
 
@@ -321,6 +323,7 @@ impl GitHubProvider {
         self.repo_info_cache.clear();
         self.commit_cache.clear();
         self.commit_status_cache.clear();
+        self.label_cache.clear();
     }
 
     /// Invalidate PR cache (called after create/merge)
@@ -607,6 +610,7 @@ impl IntegrationProvider for GitHubProvider {
         let title = options.title.clone();
         let source = options.source_branch.clone();
         let target = options.target_branch.clone();
+        let labels = options.labels.clone();
 
         let pulls_handler = client.pulls(owner, repo);
         let mut request = pulls_handler
@@ -618,6 +622,18 @@ impl IntegrationProvider for GitHubProvider {
         }
 
         let pr = request.send().await?;
+        let pr_number = pr.number;
+
+        // Apply labels after PR creation (GitHub PR API doesn't support labels directly)
+        if !labels.is_empty() {
+            if let Err(e) = client
+                .issues(owner, repo)
+                .add_labels(pr_number, &labels)
+                .await
+            {
+                log::warn!("PR created but failed to apply labels: {e:?}");
+            }
+        }
 
         self.invalidate_pr_cache(owner, repo);
         self.invalidate_commit_status_cache(owner, repo);
@@ -919,5 +935,28 @@ impl IntegrationProvider for GitHubProvider {
     async fn get_unread_count(&self, owner: &str, repo: &str) -> Result<u32> {
         let page = self.list_notifications(owner, repo, false, 1).await?;
         Ok(page.items.len() as u32)
+    }
+
+    async fn list_labels(&self, owner: &str, repo: &str) -> Result<Vec<IntegrationLabel>> {
+        let cache_key = format!("{owner}/{repo}/labels");
+
+        if let Some(cached) = self.label_cache.get(&cache_key) {
+            return Ok(cached);
+        }
+
+        let client = self.get_client()?;
+
+        let result = client
+            .issues(owner, repo)
+            .list_labels_for_repo()
+            .per_page(100)
+            .send()
+            .await?;
+
+        let labels: Vec<IntegrationLabel> = result.items.into_iter().map(Into::into).collect();
+
+        self.label_cache.set(cache_key, labels.clone());
+
+        Ok(labels)
     }
 }

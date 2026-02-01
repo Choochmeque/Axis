@@ -6,6 +6,7 @@ use crate::models::{
 };
 use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
+use crate::storage::RecentRepositoryRow;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
@@ -193,7 +194,58 @@ pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commi
 #[tauri::command]
 #[specta::specta]
 pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<RecentRepository>> {
-    state.get_recent_repositories()
+    let rows = state.get_recent_repositories()?;
+
+    let handles: Vec<_> = rows
+        .into_iter()
+        .map(|row| tauri::async_runtime::spawn_blocking(move || enrich_repo_row(row)))
+        .collect();
+
+    let mut repos = Vec::with_capacity(handles.len());
+    for handle in handles {
+        let repo = handle
+            .await
+            .map_err(|e| AxisError::Other(format!("enrichment task failed: {e}")))?;
+        repos.push(repo);
+    }
+
+    Ok(repos)
+}
+
+fn enrich_repo_row(row: RecentRepositoryRow) -> RecentRepository {
+    let exists = row.path.exists();
+
+    let current_branch = if exists {
+        git2::Repository::open(&row.path).ok().and_then(|repo| {
+            repo.head()
+                .ok()
+                .and_then(|head| head.shorthand().map(String::from))
+        })
+    } else {
+        None
+    };
+
+    let display_path = make_display_path(&row.path);
+
+    RecentRepository {
+        path: row.path,
+        name: row.name,
+        last_opened: row.last_opened,
+        exists,
+        current_branch,
+        is_pinned: row.is_pinned,
+        display_path,
+    }
+}
+
+fn make_display_path(path: &std::path::Path) -> String {
+    if let Some(home) = dirs::home_dir() {
+        if let Ok(stripped) = path.strip_prefix(&home) {
+            let sep = std::path::MAIN_SEPARATOR;
+            return format!("~{sep}{}", stripped.display());
+        }
+    }
+    path.display().to_string()
 }
 
 #[tauri::command]
@@ -201,6 +253,20 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 pub async fn remove_recent_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
     state.remove_recent_repository(&path)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn pin_repository(state: State<'_, AppState>, path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+    state.pin_repository(&path)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn unpin_repository(state: State<'_, AppState>, path: String) -> Result<()> {
+    let path = PathBuf::from(&path);
+    state.unpin_repository(&path)
 }
 
 #[tauri::command]

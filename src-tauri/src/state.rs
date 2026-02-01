@@ -1,10 +1,11 @@
 use crate::error::{AxisError, Result};
-use crate::models::{AppSettings, RecentRepository, Repository, SshCredentials};
+use crate::models::{AppSettings, Repository, SshCredentials};
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
     ProgressRegistry, SignatureVerificationCache, SshKeyService,
 };
 use crate::storage::Database;
+use crate::storage::RecentRepositoryRow;
 use secrecy::SecretString;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -330,12 +331,20 @@ impl AppState {
         self.database.add_recent_repository(path, name)
     }
 
-    pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepository>> {
+    pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepositoryRow>> {
         self.database.get_recent_repositories()
     }
 
     pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
         self.database.remove_recent_repository(path)
+    }
+
+    pub fn pin_repository(&self, path: &Path) -> Result<()> {
+        self.database.pin_repository(path)
+    }
+
+    pub fn unpin_repository(&self, path: &Path) -> Result<()> {
+        self.database.unpin_repository(path)
     }
 
     pub fn get_settings(&self) -> Result<AppSettings> {
@@ -735,6 +744,41 @@ mod tests {
 
         let repos = state.get_recent_repositories().expect("should get repos");
         assert!(repos.is_empty());
+    }
+
+    // ==================== Pin Repository Tests ====================
+
+    #[test]
+    fn test_app_state_pin_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let path = PathBuf::from("/test/repo");
+        state
+            .add_recent_repository(&path, "test-repo")
+            .expect("should add");
+        state.pin_repository(&path).expect("should pin");
+
+        let repos = state.get_recent_repositories().expect("should get repos");
+        assert_eq!(repos.len(), 1);
+        assert!(repos[0].is_pinned);
+    }
+
+    #[test]
+    fn test_app_state_unpin_repository() {
+        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let state = AppState::new(db);
+
+        let path = PathBuf::from("/test/repo");
+        state
+            .add_recent_repository(&path, "test-repo")
+            .expect("should add");
+        state.pin_repository(&path).expect("should pin");
+        state.unpin_repository(&path).expect("should unpin");
+
+        let repos = state.get_recent_repositories().expect("should get repos");
+        assert_eq!(repos.len(), 1);
+        assert!(!repos[0].is_pinned);
     }
 
     #[test]

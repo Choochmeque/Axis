@@ -385,7 +385,13 @@
     "cloneRepository": "Clone Repository",
     "recentRepositories": "Recent Repositories",
     "noRecentRepositories": "No recent repositories",
-    "selectRepository": "Select Repository"
+    "selectRepository": "Select Repository",
+    "searchPlaceholder": "Search repositories...",
+    "pinnedRepositories": "Pinned",
+    "noResults": "No matching repositories",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "sortLastOpened": "Last Opened"
   },
   "branches": {
     "validation": {
@@ -1806,6 +1812,7 @@
     "contextMenu": {
       "open": "Open",
       "openInNewWindow": "Open in New Window",
+      "showInFinder": "Show in Finder",
       "removeFromRecent": "Remove from Recent",
       "openWindowFailed": "Open window failed",
       "removeFailed": "Remove repository failed"

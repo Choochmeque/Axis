@@ -85,6 +85,10 @@ export const repositoryApi = {
   getRecentRepositories: () => commands.getRecentRepositories(),
 
   removeRecentRepository: (path: string) => commands.removeRecentRepository(path),
+
+  pinRepository: (path: string) => commands.pinRepository(path),
+
+  unpinRepository: (path: string) => commands.unpinRepository(path),
 };
 
 export const commitApi = {

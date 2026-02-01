@@ -328,6 +328,7 @@ dependencies = [
  "bytes",
  "bzip2",
  "chrono",
+ "dirs",
  "dotenvy_macro",
  "env_logger",
  "flate2",

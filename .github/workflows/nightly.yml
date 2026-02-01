@@ -184,26 +184,25 @@ jobs:
           path: nightly-dist
 
       # --------------------------------------------------
-      # Move nightly tag + create version tag
+      # Move nightly tag (version tag created after release)
       # --------------------------------------------------
-      - name: Update tags
+      - name: Update nightly tag
         run: |
           git tag -f nightly
-          git tag "v${{ needs.build.outputs.version }}"
           git push origin nightly --force
-          git push origin "v${{ needs.build.outputs.version }}"
 
       # --------------------------------------------------
       # Create or update nightly release
       # --------------------------------------------------
       - name: Create or update nightly release
         run: |
-          LAST_STABLE=$(git tag --merged main --list 'v*' --sort=-version:refname | head -n 1)
+          START_TAG=$(git tag --merged main --list 'v*' --sort=-version:refname | grep -v '-' | head -n 1)
 
-          NOTES_ARGS="--generate-notes"
-          if [ -n "$LAST_STABLE" ]; then
-            NOTES_ARGS="$NOTES_ARGS --notes-start-tag $LAST_STABLE"
+          if [ -z "$START_TAG" ]; then
+            START_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
+
+          NOTES_ARGS="--generate-notes --notes-start-tag $START_TAG"
 
           # Delete and recreate to get fresh notes
           gh release delete nightly --yes 2>/dev/null || true
@@ -213,6 +212,14 @@ jobs:
             $NOTES_ARGS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------
+      # Create version tag (after release to avoid polluting notes)
+      # --------------------------------------------------
+      - name: Create version tag
+        run: |
+          git tag "v${{ needs.build.outputs.version }}"
+          git push origin "v${{ needs.build.outputs.version }}"
 
       # --------------------------------------------------
       # Generate latest.json for updater

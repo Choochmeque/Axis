@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin "@tailwindcss/typography";
 
 /* Global user-select disable - must be outside @layer for highest priority */
 *:not(input):not(textarea):not([contenteditable='true']):not(pre):not(code) {

@@ -252,7 +252,10 @@ export function MarkdownEditor({
           disabled={disabled}
         />
       ) : (
-        <div className="markdown-editor-preview" style={{ minHeight: `${rows * 1.5}rem` }}>
+        <div
+          className="markdown-editor-preview"
+          style={{ minHeight: `${rows * 1.5}rem`, maxHeight: `${rows * 1.5}rem` }}
+        >
           {value.trim() ? (
             <div className="prose prose-sm dark:prose-invert max-w-none text-(--text-primary)">
               <Markdown

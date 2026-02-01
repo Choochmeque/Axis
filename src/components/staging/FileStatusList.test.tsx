@@ -47,13 +47,16 @@ vi.mock('@/components/ui', () => ({
     children,
     onSelectionChange,
     selectedKeys,
+    emptyMessage,
   }: {
     items: FileStatus[];
     children: (item: FileStatus) => React.ReactNode;
     onSelectionChange?: (keys: Set<SelectionKey>) => void;
     selectedKeys?: Set<SelectionKey>;
+    emptyMessage?: string;
   }) => (
     <div data-testid="virtual-list">
+      {items.length === 0 && emptyMessage && <div>{emptyMessage}</div>}
       {items.map((item, idx) => (
         <div
           key={idx}
@@ -96,10 +99,11 @@ describe('FileStatusList', () => {
     onSelectFile: vi.fn(),
   };
 
-  it('should return null when files array is empty', () => {
-    const { container } = render(<FileStatusList {...defaultProps} files={[]} />);
+  it('should render VirtualList with empty message when files array is empty', () => {
+    render(<FileStatusList {...defaultProps} files={[]} emptyMessage="No changes" />);
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    expect(screen.getByText('No changes')).toBeInTheDocument();
   });
 
   it('should render title when provided', () => {
@@ -211,9 +215,10 @@ describe('FluidFileList', () => {
   };
 
   it('should show empty message when no files', () => {
-    render(<FluidFileList {...defaultProps} files={[]} />);
+    render(<FluidFileList {...defaultProps} files={[]} emptyMessage="No changes" />);
 
-    expect(screen.getByText('staging.fileList.noChanges')).toBeInTheDocument();
+    expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    expect(screen.getByText('No changes')).toBeInTheDocument();
   });
 
   it('should render VirtualList in FlatSingle mode', () => {

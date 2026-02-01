@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 
 export type SelectionKey = string | number;
 export type SelectionMode = 'none' | 'single' | 'multiple';
@@ -68,6 +68,13 @@ export function useListSelection<T>({
   // Auto-deselect when items change and selected keys become stale.
   // Uses React's "setState during render" pattern instead of refs.
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  // Stable ref for onSelectionChange — written in useInsertionEffect (not during render)
+  // to satisfy react-hooks/refs, read only in useEffect.
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  useInsertionEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  });
+
   const [prevKeySet, setPrevKeySet] = useState(currentKeySet);
   const [pendingPrune, setPendingPrune] = useState<Set<SelectionKey> | null>(null);
 
@@ -95,12 +102,14 @@ export function useListSelection<T>({
     }
   }
 
-  // Notify parent of pruned selection via callback (side effects not allowed during render)
+  // Notify parent of pruned selection via callback (side effects not allowed during render).
+  // Only depends on pendingPrune — onSelectionChange is read from a stable ref to prevent
+  // infinite re-firing when the consumer passes an unstable callback reference.
   useEffect(() => {
     if (pendingPrune !== null) {
-      onSelectionChange?.(pendingPrune);
+      onSelectionChangeRef.current?.(pendingPrune);
     }
-  }, [pendingPrune, onSelectionChange]);
+  }, [pendingPrune]);
 
   const isSelected = useCallback(
     (key: SelectionKey): boolean => selectedKeys.has(key),

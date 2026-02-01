@@ -18,11 +18,19 @@ vi.mock('@/components/ui', () => ({
   VirtualList: ({
     items,
     children,
+    isLoading,
+    loadingMessage,
+    emptyMessage,
   }: {
     items: FileDiff[];
     children: (item: FileDiff) => React.ReactNode;
+    isLoading?: boolean;
+    loadingMessage?: string;
+    emptyMessage?: string;
   }) => (
     <div data-testid="virtual-list">
+      {isLoading && items.length === 0 && loadingMessage && <div>{loadingMessage}</div>}
+      {!isLoading && items.length === 0 && emptyMessage && <div>{emptyMessage}</div>}
       {items.map((item, idx) => (
         <div key={idx} data-testid={`file-item-${idx}`}>
           {children(item)}

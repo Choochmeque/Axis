@@ -18,7 +18,6 @@ interface CommitFileListProps {
 const listClass = 'flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)';
 const headerClass =
   'flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0';
-const emptyClass = 'p-6 text-center text-(--text-secondary) text-base';
 
 export function CommitFileList({
   files,
@@ -38,42 +37,27 @@ export function CommitFileList({
     [selectedFile]
   );
 
-  if (isLoading) {
-    return (
-      <div className={listClass}>
-        <div className={headerClass}>
-          <span className="flex-1">{t('history.fileList.title')}</span>
-        </div>
-        <div className={emptyClass}>{t('history.fileList.loading')}</div>
-      </div>
-    );
-  }
-
-  if (files.length === 0) {
-    return (
-      <div className={listClass}>
-        <div className={headerClass}>
-          <span className="flex-1">{t('history.fileList.title')}</span>
-        </div>
-        <div className={emptyClass}>{t('history.fileList.noChanges')}</div>
-      </div>
-    );
-  }
-
   return (
     <div className={listClass}>
       <div className={headerClass}>
         <span className="flex-1">{t('history.fileList.title')}</span>
-        <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
-        <span className="flex gap-1.5 text-sm font-medium">
-          <span className="text-success">+{totalAdditions}</span>
-          <span className="text-error">-{totalDeletions}</span>
-        </span>
+        {files.length > 0 && (
+          <>
+            <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
+            <span className="flex gap-1.5 text-sm font-medium">
+              <span className="text-success">+{totalAdditions}</span>
+              <span className="text-error">-{totalDeletions}</span>
+            </span>
+          </>
+        )}
       </div>
       <VirtualList
         items={files}
         getItemKey={getFileKey}
         itemHeight={36}
+        isLoading={isLoading}
+        loadingMessage={t('history.fileList.loading')}
+        emptyMessage={t('history.fileList.noChanges')}
         selectionMode="single"
         selectedKeys={selectedKeys}
         onSelectionChange={(keys) => {

@@ -244,6 +244,7 @@ export function StagingView() {
       {/* File list */}
       <FluidFileList
         files={fluidFiles}
+        emptyMessage={t('staging.fileList.noChanges')}
         selectedFile={selectedFile}
         onSelectFile={selectFile}
         onStage={stageFile}
@@ -301,20 +302,15 @@ export function StagingView() {
             </div>
           </div>
 
-          {hasStaged ? (
-            <FileStatusList
-              files={stagedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, true)}
-              onUnstage={unstageFile}
-              showUnstageButton
-              viewMode={viewMode}
-            />
-          ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-              {t('staging.noStagedChanges')}
-            </div>
-          )}
+          <FileStatusList
+            files={stagedFiles}
+            emptyMessage={t('staging.noStagedChanges')}
+            selectedFile={selectedFile}
+            onSelectFile={(file) => selectFile(file, true)}
+            onUnstage={unstageFile}
+            showUnstageButton
+            viewMode={viewMode}
+          />
         </div>
       </Panel>
 
@@ -371,22 +367,17 @@ export function StagingView() {
             </div>
           </div>
 
-          {hasUnstaged ? (
-            <FileStatusList
-              files={unstagedFiles}
-              selectedFile={selectedFile}
-              onSelectFile={(file) => selectFile(file, false)}
-              onStage={stageFile}
-              onDiscard={handleDiscardFile}
-              showStageButton
-              showDiscardButton
-              viewMode={viewMode}
-            />
-          ) : (
-            <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-              {t('staging.noUnstagedChanges')}
-            </div>
-          )}
+          <FileStatusList
+            files={unstagedFiles}
+            emptyMessage={t('staging.noUnstagedChanges')}
+            selectedFile={selectedFile}
+            onSelectFile={(file) => selectFile(file, false)}
+            onStage={stageFile}
+            onDiscard={handleDiscardFile}
+            showStageButton
+            showDiscardButton
+            viewMode={viewMode}
+          />
         </div>
       </Panel>
     </PanelGroup>

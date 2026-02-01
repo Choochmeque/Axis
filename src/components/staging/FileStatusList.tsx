@@ -30,6 +30,7 @@ export interface FluidFile extends FileStatus {
 interface FileStatusListProps {
   files: FileStatus[];
   title?: string;
+  emptyMessage?: string;
   selectedFile: FileStatus | null;
   onSelectFile: (file: FileStatus | null) => void;
   onStage?: (path: string) => void;
@@ -44,6 +45,7 @@ interface FileStatusListProps {
 export function FileStatusList({
   files,
   title,
+  emptyMessage,
   selectedFile,
   onSelectFile,
   onStage,
@@ -73,10 +75,6 @@ export function FileStatusList({
     }
   };
 
-  if (files.length === 0) {
-    return null;
-  }
-
   const renderContent = () => {
     switch (viewMode) {
       case StagingViewMode.FlatMulti:
@@ -95,6 +93,7 @@ export function FileStatusList({
               items={files}
               getItemKey={(file) => file.path}
               itemHeight={36}
+              emptyMessage={emptyMessage}
               selectionMode="single"
               selectedKeys={selectedKeys}
               onSelectionChange={handleSelectionChange}
@@ -133,6 +132,7 @@ export function FileStatusList({
             items={files}
             getItemKey={(file) => file.path}
             itemHeight={36}
+            emptyMessage={emptyMessage}
             selectionMode="single"
             selectedKeys={selectedKeys}
             onSelectionChange={handleSelectionChange}
@@ -441,6 +441,7 @@ function TreeView({
 // Fluid File List Component for unified staging view
 interface FluidFileListProps {
   files: FluidFile[];
+  emptyMessage?: string;
   selectedFile: FileStatus | null;
   onSelectFile: (file: FileStatus | null, isStaged: boolean) => void;
   onStage: (path: string) => void;
@@ -451,6 +452,7 @@ interface FluidFileListProps {
 
 export function FluidFileList({
   files,
+  emptyMessage,
   selectedFile,
   onSelectFile,
   onStage,
@@ -458,8 +460,6 @@ export function FluidFileList({
   onDiscard,
   viewMode = StagingViewMode.FlatSingle,
 }: FluidFileListProps) {
-  const { t } = useTranslation();
-
   const selectedKeys = useMemo(
     () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
     [selectedFile]
@@ -476,14 +476,6 @@ export function FluidFileList({
       onSelectFile(file, file.isStaged);
     }
   };
-
-  if (files.length === 0) {
-    return (
-      <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-        {t('staging.fileList.noChanges')}
-      </div>
-    );
-  }
 
   if (viewMode === StagingViewMode.Tree) {
     return (
@@ -503,6 +495,7 @@ export function FluidFileList({
       items={files}
       getItemKey={(file) => file.path}
       itemHeight={36}
+      emptyMessage={emptyMessage}
       selectionMode="single"
       selectedKeys={selectedKeys}
       onSelectionChange={handleSelectionChange}

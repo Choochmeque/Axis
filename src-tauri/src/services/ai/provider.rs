@@ -17,10 +17,11 @@ pub trait AiProviderTrait: Send + Sync {
         &self,
         commits: &[(String, String)],
         diff_summary: Option<&str>,
+        available_labels: Option<&[String]>,
         api_key: Option<&str>,
         model: Option<&str>,
         base_url: Option<&str>,
-    ) -> Result<(String, String, String)>;
+    ) -> Result<(String, String, Vec<String>, String)>;
 
     fn default_model(&self) -> &'static str;
 

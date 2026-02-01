@@ -10,6 +10,7 @@ import type {
   DetectedProvider,
   IntegrationStatus,
   IntegrationRepoInfo,
+  IntegrationLabel,
   PullRequest,
   PullRequestDetail,
   Issue,
@@ -88,6 +89,10 @@ interface IntegrationState {
   isLoadingNotifications: boolean;
   isLoadingMoreNotifications: boolean;
 
+  // Labels
+  availableLabels: IntegrationLabel[];
+  isLoadingLabels: boolean;
+
   // Per-repository cache
   repoCache: Map<string, IntegrationRepoCache>;
 
@@ -102,6 +107,7 @@ interface IntegrationState {
   disconnect: () => Promise<void>;
 
   loadRepoInfo: () => Promise<void>;
+  loadLabels: () => Promise<void>;
 
   // Soft load (keeps existing data, updates in place)
   loadPullRequests: () => Promise<void>;
@@ -181,6 +187,8 @@ const initialState = {
   notificationsHasMore: false,
   isLoadingNotifications: false,
   isLoadingMoreNotifications: false,
+  availableLabels: [] as IntegrationLabel[],
+  isLoadingLabels: false,
   repoCache: new Map<string, IntegrationRepoCache>(),
   error: null,
 };
@@ -286,6 +294,8 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
         notificationsHasMore: false,
         isLoadingMoreNotifications: false,
         unreadCount: 0,
+        availableLabels: [],
+        isLoadingLabels: false,
         error: null,
       });
     } catch (error) {
@@ -308,6 +318,22 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({
         error: i18n.t('store.integration.repoInfoFailed', { error: getErrorMessage(error) }),
       });
+    }
+  },
+
+  loadLabels: async () => {
+    const { detectedProvider, connectionStatus, availableLabels, isLoadingLabels } = get();
+    if (!detectedProvider || !connectionStatus?.connected) return;
+    if (isLoadingLabels || availableLabels.length > 0) return;
+
+    set({ isLoadingLabels: true });
+
+    try {
+      const labels = await integrationApi.listLabels(detectedProvider);
+      set({ availableLabels: labels, isLoadingLabels: false });
+    } catch (error) {
+      console.error('Failed to load labels:', error);
+      set({ isLoadingLabels: false });
     }
   },
 

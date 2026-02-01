@@ -85,6 +85,7 @@ pub struct CreatePrOptions {
     pub source_branch: String,
     pub target_branch: String,
     pub draft: bool,
+    pub labels: Vec<String>,
 }
 
 /// Options for merging a pull request
@@ -688,10 +689,12 @@ mod tests {
             source_branch: "feature/new-feature".to_string(),
             target_branch: "main".to_string(),
             draft: false,
+            labels: vec!["enhancement".to_string()],
         };
 
         assert_eq!(opts.title, "Add new feature");
         assert!(!opts.draft);
+        assert_eq!(opts.labels.len(), 1);
     }
 
     #[test]
@@ -702,10 +705,28 @@ mod tests {
             source_branch: "wip-branch".to_string(),
             target_branch: "develop".to_string(),
             draft: true,
+            labels: vec![],
         };
 
         assert!(opts.draft);
         assert!(opts.body.is_none());
+        assert!(opts.labels.is_empty());
+    }
+
+    #[test]
+    fn test_create_pr_options_with_labels() {
+        let opts = CreatePrOptions {
+            title: "Fix bug".to_string(),
+            body: Some("Fixes #123".to_string()),
+            source_branch: "fix/bug-123".to_string(),
+            target_branch: "main".to_string(),
+            draft: false,
+            labels: vec!["bug".to_string(), "priority:high".to_string()],
+        };
+
+        assert_eq!(opts.labels.len(), 2);
+        assert_eq!(opts.labels[0], "bug");
+        assert_eq!(opts.labels[1], "priority:high");
     }
 
     // ==================== MergePrOptions Tests ====================

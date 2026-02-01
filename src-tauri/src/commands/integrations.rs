@@ -3,9 +3,9 @@ use tauri::{AppHandle, State};
 use crate::error::Result;
 use crate::models::{
     CiRunsPage, CommitStatus, CreateIssueOptions, CreatePrOptions, DetectedProvider,
-    IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState, IssuesPage,
-    MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest, PullRequestDetail,
-    PullRequestsPage,
+    IntegrationLabel, IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState,
+    IssuesPage, MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest,
+    PullRequestDetail, PullRequestsPage,
 };
 use crate::services::detect_provider;
 use crate::state::AppState;
@@ -218,6 +218,21 @@ pub async fn integration_create_issue(
     provider
         .create_issue(&detected.owner, &detected.repo, options)
         .await
+}
+
+// ============================================================================
+// Label Commands
+// ============================================================================
+
+#[tauri::command]
+#[specta::specta]
+pub async fn integration_list_labels(
+    state: State<'_, AppState>,
+    detected: DetectedProvider,
+) -> Result<Vec<IntegrationLabel>> {
+    let service = state.integration_service()?;
+    let provider = service.get_provider(detected.provider).await?;
+    provider.list_labels(&detected.owner, &detected.repo).await
 }
 
 // ============================================================================

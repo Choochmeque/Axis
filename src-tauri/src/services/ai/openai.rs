@@ -107,15 +107,16 @@ impl AiProviderTrait for OpenAiProvider {
         &self,
         commits: &[(String, String)],
         diff_summary: Option<&str>,
+        available_labels: Option<&[String]>,
         api_key: Option<&str>,
         model: Option<&str>,
         _base_url: Option<&str>,
-    ) -> Result<(String, String, String)> {
+    ) -> Result<(String, String, Vec<String>, String)> {
         let api_key =
             api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("OpenAI".to_string()))?;
 
         let model = model.unwrap_or(self.default_model()).to_string();
-        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary);
+        let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary, available_labels);
 
         let request = OpenAiRequest {
             model: model.clone(),
@@ -165,8 +166,8 @@ impl AiProviderTrait for OpenAiProvider {
             .map(|c| c.message.content.trim().to_string())
             .ok_or_else(|| AxisError::AiServiceError("No response from OpenAI".to_string()))?;
 
-        let (title, body) = parse_pr_response(&raw);
-        Ok((title, body, model))
+        let (title, body, labels) = parse_pr_response(&raw);
+        Ok((title, body, labels, model))
     }
 
     fn default_model(&self) -> &'static str {
@@ -298,7 +299,7 @@ mod tests {
         let provider = OpenAiProvider;
         let commits = vec![("abc".to_string(), "test commit".to_string())];
         let result = provider
-            .generate_pr_description(&commits, None, None, None, None)
+            .generate_pr_description(&commits, None, None, None, None, None)
             .await;
 
         assert!(result.is_err());

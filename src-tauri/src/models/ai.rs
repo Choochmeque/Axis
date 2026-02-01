@@ -23,6 +23,7 @@ pub struct GenerateCommitMessageResponse {
 pub struct GeneratePrDescriptionResponse {
     pub title: String,
     pub body: String,
+    pub labels: Vec<String>,
     pub model_used: String,
 }
 
@@ -143,12 +144,26 @@ mod tests {
         let response = GeneratePrDescriptionResponse {
             title: "Add authentication flow".to_string(),
             body: "## Summary\nAdds OAuth2 login".to_string(),
+            labels: vec!["enhancement".to_string()],
             model_used: "gpt-4o-mini".to_string(),
         };
 
         assert_eq!(response.title, "Add authentication flow");
         assert!(response.body.contains("Summary"));
+        assert_eq!(response.labels, vec!["enhancement"]);
         assert_eq!(response.model_used, "gpt-4o-mini");
+    }
+
+    #[test]
+    fn test_generate_pr_description_response_with_empty_labels() {
+        let response = GeneratePrDescriptionResponse {
+            title: "Simple change".to_string(),
+            body: "Details".to_string(),
+            labels: vec![],
+            model_used: "gpt-4o-mini".to_string(),
+        };
+
+        assert!(response.labels.is_empty());
     }
 
     #[test]
@@ -156,23 +171,26 @@ mod tests {
         let response = GeneratePrDescriptionResponse {
             title: "Fix login bug".to_string(),
             body: "Resolves null pointer".to_string(),
+            labels: vec!["bug".to_string()],
             model_used: "claude-3-haiku".to_string(),
         };
 
         let json = serde_json::to_string(&response).expect("should serialize");
         assert!(json.contains("\"title\":\"Fix login bug\""));
         assert!(json.contains("\"body\":\"Resolves null pointer\""));
+        assert!(json.contains("\"labels\":[\"bug\"]"));
         assert!(json.contains("\"modelUsed\":\"claude-3-haiku\""));
     }
 
     #[test]
     fn test_generate_pr_description_response_deserialization() {
-        let json = r#"{"title": "Add feature", "body": "Details here", "modelUsed": "llama3.2"}"#;
+        let json = r#"{"title": "Add feature", "body": "Details here", "labels": ["enhancement"], "modelUsed": "llama3.2"}"#;
         let response: GeneratePrDescriptionResponse =
             serde_json::from_str(json).expect("should deserialize");
 
         assert_eq!(response.title, "Add feature");
         assert_eq!(response.body, "Details here");
+        assert_eq!(response.labels, vec!["enhancement"]);
         assert_eq!(response.model_used, "llama3.2");
     }
 }

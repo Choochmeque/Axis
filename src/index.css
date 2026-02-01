@@ -537,6 +537,72 @@ code {
     @apply text-base text-(--text-primary) cursor-pointer select-none;
   }
 
+  /* Markdown Editor classes */
+  .markdown-editor {
+    @apply border border-(--border-color) rounded overflow-hidden bg-(--bg-secondary);
+  }
+
+  .markdown-editor-tabs {
+    @apply flex border-b border-(--border-color) bg-(--bg-primary);
+  }
+
+  .markdown-editor-tab {
+    @apply px-3 py-1.5 text-xs font-medium text-(--text-muted) border-b-2 border-transparent transition-colors hover:text-(--text-primary);
+  }
+
+  .markdown-editor-tab-active {
+    @apply text-(--text-primary) border-b-(--accent-color);
+  }
+
+  .markdown-editor-toolbar {
+    @apply flex items-center gap-0.5 px-2 py-1 border-b border-(--border-color) bg-(--bg-primary);
+  }
+
+  .markdown-editor-toolbar-btn {
+    @apply flex items-center justify-center w-6 h-6 rounded text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-tertiary) transition-colors;
+  }
+
+  .markdown-editor-textarea {
+    @apply w-full px-3 py-2 text-sm bg-(--bg-secondary) text-(--text-primary) outline-none resize-y min-h-20 border-none;
+  }
+
+  .markdown-editor-preview {
+    @apply px-3 py-2 overflow-auto text-sm;
+  }
+
+  /* Label Selector classes */
+  .label-selector-trigger {
+    @apply flex items-center gap-1.5 px-2 py-1 text-xs text-(--text-muted) border border-(--border-color) rounded hover:border-(--accent-color) hover:text-(--text-primary) transition-colors cursor-pointer bg-(--bg-secondary);
+  }
+
+  .label-selector-dropdown {
+    @apply absolute z-50 mt-1 w-64 bg-(--bg-primary) border border-(--border-color) rounded-md shadow-lg overflow-hidden;
+  }
+
+  .label-selector-dropdown-up {
+    @apply mt-0 mb-1 bottom-full;
+  }
+
+  .label-selector-search {
+    @apply w-full px-3 py-2 text-xs bg-(--bg-primary) text-(--text-primary) outline-none border-b border-(--border-color) placeholder:text-(--text-muted);
+  }
+
+  .label-selector-list {
+    @apply max-h-48 overflow-auto;
+  }
+
+  .label-selector-item {
+    @apply flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-(--bg-secondary) transition-colors;
+  }
+
+  .label-selector-dot {
+    @apply w-3 h-3 rounded-full shrink-0;
+  }
+
+  .label-selector-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full;
+  }
+
   /* Alert/Message classes */
   .alert {
     @apply flex items-start gap-2 p-3 rounded-md text-base;

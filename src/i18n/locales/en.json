@@ -49,7 +49,19 @@
     "stashing": "Stashing...",
     "applying": "Applying...",
     "removing": "Removing...",
-    "adding": "Adding..."
+    "adding": "Adding...",
+    "write": "Write",
+    "preview": "Preview",
+    "previewEmpty": "Nothing to preview",
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading": "Heading",
+    "quote": "Quote",
+    "code": "Code",
+    "link": "Link",
+    "bulletList": "Bullet list",
+    "numberedList": "Numbered list",
+    "taskList": "Task list"
   },
   "errors": {
     "gitNotInstalled": {
@@ -1576,7 +1588,12 @@
         "generateWithAi": "Generate with AI",
         "generating": "Generating...",
         "aiGenerated": "Generated with {{model}}",
-        "selectBranchesFirst": "Select source and target branches first"
+        "selectBranchesFirst": "Select source and target branches first",
+        "labelsLabel": "Labels",
+        "labelsPlaceholder": "Search labels...",
+        "labelsEmpty": "No labels available",
+        "labelsLoading": "Loading labels...",
+        "labelsNoneSelected": "Select labels"
       },
       "detail": {
         "created": "Created: {{date}}",

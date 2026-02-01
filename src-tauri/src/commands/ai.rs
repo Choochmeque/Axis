@@ -185,6 +185,7 @@ pub async fn generate_pr_description(
     source_branch: String,
     target_branch: String,
     include_diff_summary: bool,
+    available_labels: Vec<String>,
 ) -> Result<GeneratePrDescriptionResponse> {
     let settings = state.get_settings()?;
 
@@ -223,6 +224,12 @@ pub async fn generate_pr_description(
         None
     };
 
+    let labels_ref = if available_labels.is_empty() {
+        None
+    } else {
+        Some(available_labels.as_slice())
+    };
+
     let provider = create_provider(&settings.ai_provider);
     let secret_key = get_secret_key(&settings.ai_provider);
 
@@ -232,10 +239,11 @@ pub async fn generate_pr_description(
         None
     };
 
-    let (title, body, model_used) = provider
+    let (title, body, labels, model_used) = provider
         .generate_pr_description(
             &commits,
             diff_summary.as_deref(),
+            labels_ref,
             api_key.as_deref(),
             settings.ai_model.as_deref(),
             settings.ai_ollama_url.as_deref(),
@@ -247,6 +255,7 @@ pub async fn generate_pr_description(
     Ok(GeneratePrDescriptionResponse {
         title,
         body,
+        labels,
         model_used,
     })
 }

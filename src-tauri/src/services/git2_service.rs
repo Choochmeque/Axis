@@ -963,9 +963,9 @@ impl Git2Service {
     pub fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
         let repo = self.repo()?;
         if let Some(oid_str) = commit_oid {
-            // Get blob from a specific commit
-            let oid = git2::Oid::from_str(oid_str)?;
-            let commit = repo.find_commit(oid)?;
+            // Resolve ref name (e.g. "HEAD") or raw OID to a commit
+            let obj = repo.revparse_single(oid_str)?;
+            let commit = obj.peel_to_commit()?;
             let tree = commit.tree()?;
             let entry = tree.get_path(std::path::Path::new(path))?;
             let blob = entry.to_object(&repo)?.peel_to_blob()?;

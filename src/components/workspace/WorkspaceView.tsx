@@ -25,8 +25,9 @@ export function WorkspaceView() {
   const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection, commits } =
     useRepositoryStore();
 
-  // Get HEAD commit OID for image diff comparison (first commit in graph is typically HEAD)
-  const headCommitOid = commits.length > 0 ? commits[0].oid : undefined;
+  // Get HEAD commit OID for image diff comparison
+  // Skip the virtual "uncommitted" entry that may be first in the graph
+  const headCommitOid = commits.find((c) => c.oid !== 'uncommitted')?.oid;
 
   const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
 

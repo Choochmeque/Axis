@@ -149,8 +149,11 @@ function BinaryImageView({
                 objectUrls.push(url);
                 setOldImageUrl(url);
               })
-              .catch(() => {
-                // Old version might not exist (e.g., renamed from non-existent)
+              .catch((err) => {
+                console.warn(
+                  `Failed to load previous image version for ${beforePath} at ${beforeCommit}:`,
+                  err
+                );
                 if (mounted) setOldImageUrl(null);
               })
           );

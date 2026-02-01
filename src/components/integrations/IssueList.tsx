@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CircleDot, CheckCircle2, Clock, User } from 'lucide-react';
 
 import { formatRelativeTime } from '@/lib/dateUtils';
+import { getLabelColors } from '@/lib/utils';
 import { VirtualList } from '@/components/ui';
 import type { Issue, IssueDetail } from '@/bindings/api';
 
@@ -78,10 +79,7 @@ export function IssueList({
                   <span
                     key={label.name}
                     className="px-1.5 py-0.5 text-xs rounded"
-                    style={{
-                      backgroundColor: `#${label.color}20`,
-                      color: `#${label.color}`,
-                    }}
+                    style={getLabelColors(label.color)}
                   >
                     {label.name}
                   </span>

@@ -19,7 +19,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import { Button } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { cn, getLabelColors } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
 import type { IssueDetail as IssueDetailType } from '@/bindings/api';
@@ -157,11 +157,7 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
                 <span
                   key={label.name}
                   className="px-2 py-0.5 text-xs rounded-full"
-                  style={{
-                    backgroundColor: `#${label.color}20`,
-                    color: `#${label.color}`,
-                    border: `1px solid #${label.color}40`,
-                  }}
+                  style={getLabelColors(label.color)}
                 >
                   {label.name}
                 </span>

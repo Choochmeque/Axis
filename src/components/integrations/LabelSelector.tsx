@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tag, Check, X } from 'lucide-react';
 
 import { useIntegrationStore } from '@/store/integrationStore';
+import { getLabelColors } from '@/lib/utils';
 import type { IntegrationLabel } from '@/types';
 
 interface LabelSelectorProps {
@@ -104,11 +105,7 @@ export function LabelSelector({
             <span
               key={label.name}
               className="label-selector-badge"
-              style={{
-                backgroundColor: `#${label.color}20`,
-                color: `#${label.color}`,
-                border: `1px solid #${label.color}40`,
-              }}
+              style={getLabelColors(label.color)}
             >
               {label.name}
               {!disabled && (

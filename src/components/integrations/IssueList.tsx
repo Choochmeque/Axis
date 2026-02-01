@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CircleDot, CheckCircle2, Clock, User } from 'lucide-react';
 
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { getLabelColors } from '@/lib/utils';
 import { VirtualList } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import type { Issue, IssueDetail } from '@/bindings/api';
 
 interface IssueListProps {
@@ -13,7 +14,7 @@ interface IssueListProps {
   isLoading: boolean;
   hasMore?: boolean;
   isLoadingMore?: boolean;
-  onSelect: (issue: Issue) => void;
+  onSelect: (issue: Issue | null) => void;
   onLoadMore?: () => void;
 }
 
@@ -27,6 +28,11 @@ export function IssueList({
   onLoadMore,
 }: IssueListProps) {
   const { t } = useTranslation();
+
+  const selectedKeys = useMemo(
+    () => (selectedIssue ? new Set<SelectionKey>([selectedIssue.number]) : new Set<SelectionKey>()),
+    [selectedIssue]
+  );
 
   const getStateIcon = useCallback((state: string) => {
     switch (state) {
@@ -51,8 +57,17 @@ export function IssueList({
       isLoadingMore={isLoadingMore}
       onLoadMore={onLoadMore}
       loadingMoreMessage={t('integrations.issues.loadingMore')}
-      selectedItemKey={selectedIssue?.number}
-      onItemClick={onSelect}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) => {
+        if (keys.size === 0) {
+          onSelect(null);
+          return;
+        }
+        const key = keys.values().next().value;
+        const issue = issues.find((i) => i.number === key);
+        if (issue) onSelect(issue);
+      }}
     >
       {(issue) => (
         <>

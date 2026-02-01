@@ -74,7 +74,15 @@ describe('VirtualList', () => {
   });
 
   it('should apply selected class to selected item', () => {
-    render(<VirtualList {...defaultProps} selectedItemKey="2" selectedClassName="selected" />);
+    render(
+      <VirtualList
+        {...defaultProps}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['2'])}
+        onSelectionChange={vi.fn()}
+        selectedClassName="selected"
+      />
+    );
 
     const selectedItem = screen.getByText('Item 2').parentElement;
     expect(selectedItem?.className).toContain('selected');
@@ -119,7 +127,14 @@ describe('VirtualList', () => {
   });
 
   it('should use default selected className when not provided', () => {
-    render(<VirtualList {...defaultProps} selectedItemKey="1" />);
+    render(
+      <VirtualList
+        {...defaultProps}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['1'])}
+        onSelectionChange={vi.fn()}
+      />
+    );
 
     const selectedItem = screen.getByText('Item 1').parentElement;
     expect(selectedItem?.className).toContain('virtual-list-item--selected');
@@ -208,22 +223,6 @@ describe('VirtualList', () => {
       fireEvent.click(screen.getByText('Item 1'));
 
       expect(onSelectionChange).toHaveBeenCalledWith(new Set());
-    });
-
-    it('should warn when both legacy and new APIs are provided', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      render(
-        <VirtualList
-          {...defaultProps}
-          selectedItemKey="1"
-          onItemClick={vi.fn()}
-          selectedKeys={new Set<SelectionKey>(['1'])}
-          onSelectionChange={vi.fn()}
-        />
-      );
-
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('both legacy'));
     });
 
     it('should use default selected className with new API', () => {

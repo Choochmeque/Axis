@@ -23,11 +23,10 @@ interface VirtualListProps<T> {
   itemClassName?: string | ((item: T, index: number) => string);
   selectedClassName?: string;
 
-  // Legacy selection API (preserved for backward compatibility)
-  selectedItemKey?: string | number | null;
+  // Click handler for non-selection use cases (e.g. notifications)
   onItemClick?: (item: T, index: number) => void;
 
-  // New selection API
+  // Selection API
   selectionMode?: SelectionMode;
   selectedKeys?: Set<SelectionKey>;
   onSelectionChange?: (keys: Set<SelectionKey>) => void;
@@ -47,7 +46,6 @@ export function VirtualList<T>({
   onLoadMore,
   loadingMoreMessage,
   loadMoreThreshold = 200,
-  selectedItemKey,
   onItemClick,
   selectionMode,
   selectedKeys: controlledSelectedKeys,
@@ -58,21 +56,12 @@ export function VirtualList<T>({
 }: VirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const isNewSelectionApi = onSelectionChange !== undefined || controlledSelectedKeys !== undefined;
-
-  // Warn if both APIs are used simultaneously
-  if (isNewSelectionApi && (selectedItemKey !== undefined || onItemClick !== undefined)) {
-    console.warn(
-      'VirtualList: both legacy (selectedItemKey/onItemClick) and new (selectedKeys/onSelectionChange) selection APIs are provided. The new API will be used.'
-    );
-  }
-
   const selection = useListSelection({
     items,
     getItemKey,
-    selectionMode: isNewSelectionApi ? (selectionMode ?? 'single') : 'none',
-    selectedKeys: isNewSelectionApi ? controlledSelectedKeys : undefined,
-    onSelectionChange: isNewSelectionApi ? onSelectionChange : undefined,
+    selectionMode: selectionMode ?? 'none',
+    selectedKeys: controlledSelectedKeys,
+    onSelectionChange,
   });
 
   const virtualizer = useVirtualizer({
@@ -126,16 +115,14 @@ export function VirtualList<T>({
           const item = items[virtualRow.index];
           const key = getItemKey(item, virtualRow.index);
 
-          const isSelected = isNewSelectionApi
-            ? selection.isSelected(key)
-            : selectedItemKey != null && key === selectedItemKey;
+          const isSelected = selection.isSelected(key);
 
           const dynamicClassName =
             typeof itemClassName === 'function'
               ? itemClassName(item, virtualRow.index)
               : itemClassName;
 
-          const handleClick = isNewSelectionApi
+          const handleClick = selectionMode
             ? (e: React.MouseEvent) => selection.handleItemClick(key, e)
             : onItemClick
               ? () => onItemClick(item, virtualRow.index)

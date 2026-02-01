@@ -39,10 +39,14 @@ export function IssuesView() {
   }, []);
 
   const handleIssueSelect = useCallback(
-    async (issue: Issue) => {
+    async (issue: Issue | null) => {
+      if (issue === null) {
+        clearSelectedIssue();
+        return;
+      }
       await getIssue(issue.number);
     },
-    [getIssue]
+    [getIssue, clearSelectedIssue]
   );
 
   const handleRefresh = useCallback(() => {

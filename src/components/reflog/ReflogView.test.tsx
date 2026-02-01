@@ -126,17 +126,19 @@ vi.mock('@/components/ui', () => ({
     children,
     isLoading,
     emptyMessage,
-    onItemClick,
+    onSelectionChange,
     hasMore,
     onLoadMore,
+    getItemKey,
   }: {
     items: unknown[];
     children: (item: unknown) => React.ReactNode;
     isLoading: boolean;
     emptyMessage: string;
-    onItemClick?: (item: unknown) => void;
+    onSelectionChange?: (keys: Set<unknown>) => void;
     hasMore?: boolean;
     onLoadMore?: () => void;
+    getItemKey?: (item: unknown) => unknown;
   }) => {
     if (isLoading) return <div data-testid="loading">Loading...</div>;
     if (items.length === 0) return <div data-testid="empty">{emptyMessage}</div>;
@@ -146,7 +148,10 @@ vi.mock('@/components/ui', () => ({
           <div
             key={i}
             data-testid="reflog-entry"
-            onClick={() => onItemClick?.(item)}
+            onClick={() => {
+              const key = getItemKey?.(item) ?? i;
+              onSelectionChange?.(new Set([key]));
+            }}
             role="button"
             tabIndex={0}
           >

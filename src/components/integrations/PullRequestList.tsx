@@ -1,9 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GitPullRequest, GitMerge, XCircle, Clock, User } from 'lucide-react';
 
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { VirtualList } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import type { PullRequest, PullRequestDetail } from '@/bindings/api';
 
 interface PullRequestListProps {
@@ -12,7 +13,7 @@ interface PullRequestListProps {
   isLoading: boolean;
   hasMore?: boolean;
   isLoadingMore?: boolean;
-  onSelect: (pr: PullRequest) => void;
+  onSelect: (pr: PullRequest | null) => void;
   onLoadMore?: () => void;
 }
 
@@ -26,6 +27,11 @@ export function PullRequestList({
   onLoadMore,
 }: PullRequestListProps) {
   const { t } = useTranslation();
+
+  const selectedKeys = useMemo(
+    () => (selectedPr ? new Set<SelectionKey>([selectedPr.number]) : new Set<SelectionKey>()),
+    [selectedPr]
+  );
 
   const getStateIcon = useCallback((state: string) => {
     switch (state) {
@@ -52,8 +58,17 @@ export function PullRequestList({
       isLoadingMore={isLoadingMore}
       onLoadMore={onLoadMore}
       loadingMoreMessage={t('integrations.pullRequests.loadingMore')}
-      selectedItemKey={selectedPr?.number}
-      onItemClick={onSelect}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) => {
+        if (keys.size === 0) {
+          onSelect(null);
+          return;
+        }
+        const key = keys.values().next().value;
+        const pr = pullRequests.find((p) => p.number === key);
+        if (pr) onSelect(pr);
+      }}
     >
       {(pr) => (
         <>

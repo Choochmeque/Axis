@@ -1,14 +1,16 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DiffStatus } from '@/types';
 import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
 import { cn } from '@/lib/utils';
 import { VirtualList } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 interface CommitFileListProps {
   files: FileDiff[];
   selectedFile: FileDiff | null;
-  onSelectFile: (file: FileDiff) => void;
+  onSelectFile: (file: FileDiff | null) => void;
   isLoading?: boolean;
   commitOid?: string;
 }
@@ -30,7 +32,11 @@ export function CommitFileList({
   const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
   const getFileKey = (file: FileDiff) => `${file.newPath ?? ''}|${file.oldPath ?? ''}`;
-  const selectedKey = selectedFile ? getFileKey(selectedFile) : null;
+  const selectedKeys = useMemo(
+    () =>
+      selectedFile ? new Set<SelectionKey>([getFileKey(selectedFile)]) : new Set<SelectionKey>(),
+    [selectedFile]
+  );
 
   if (isLoading) {
     return (
@@ -68,8 +74,17 @@ export function CommitFileList({
         items={files}
         getItemKey={getFileKey}
         itemHeight={36}
-        selectedItemKey={selectedKey}
-        onItemClick={onSelectFile}
+        selectionMode="single"
+        selectedKeys={selectedKeys}
+        onSelectionChange={(keys) => {
+          if (keys.size === 0) {
+            onSelectFile(null);
+            return;
+          }
+          const key = keys.values().next().value;
+          const file = files.find((f) => getFileKey(f) === key);
+          if (file) onSelectFile(file);
+        }}
         itemClassName="!py-1.5 !gap-2"
       >
         {(file) => (

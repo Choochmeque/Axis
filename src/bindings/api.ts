@@ -45,6 +45,12 @@ async getRecentRepositories() : Promise<RecentRepository[]> {
 async removeRecentRepository(path: string) : Promise<null> {
     return await TAURI_INVOKE("remove_recent_repository", { path });
 },
+async pinRepository(path: string) : Promise<null> {
+    return await TAURI_INVOKE("pin_repository", { path });
+},
+async unpinRepository(path: string) : Promise<null> {
+    return await TAURI_INVOKE("unpin_repository", { path });
+},
 async showInFolder(path: string) : Promise<null> {
     return await TAURI_INVOKE("show_in_folder", { path });
 },
@@ -3184,7 +3190,7 @@ shortOid: string;
  * Commit summary
  */
 summary: string }
-export type RecentRepository = { path: string; name: string; lastOpened: string }
+export type RecentRepository = { path: string; name: string; lastOpened: string; exists: boolean; currentBranch: string | null; isPinned: boolean; displayPath: string }
 /**
  * A ref (branch, tag) changed
  */

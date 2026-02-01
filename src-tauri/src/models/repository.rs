@@ -55,6 +55,10 @@ pub struct RecentRepository {
     pub path: PathBuf,
     pub name: String,
     pub last_opened: chrono::DateTime<chrono::Utc>,
+    pub exists: bool,
+    pub current_branch: Option<String>,
+    pub is_pinned: bool,
+    pub display_path: String,
 }
 
 #[cfg(test)]
@@ -270,10 +274,49 @@ mod tests {
             path: PathBuf::from("/home/user/project"),
             name: "project".to_string(),
             last_opened: chrono::Utc::now(),
+            exists: true,
+            current_branch: Some("main".to_string()),
+            is_pinned: false,
+            display_path: "~/project".to_string(),
         };
 
         assert_eq!(recent.name, "project");
         assert_eq!(recent.path, PathBuf::from("/home/user/project"));
+        assert!(recent.exists);
+        assert_eq!(recent.current_branch, Some("main".to_string()));
+        assert!(!recent.is_pinned);
+        assert_eq!(recent.display_path, "~/project");
+    }
+
+    #[test]
+    fn test_recent_repository_missing() {
+        let recent = RecentRepository {
+            path: PathBuf::from("/deleted/repo"),
+            name: "deleted".to_string(),
+            last_opened: chrono::Utc::now(),
+            exists: false,
+            current_branch: None,
+            is_pinned: false,
+            display_path: "/deleted/repo".to_string(),
+        };
+
+        assert!(!recent.exists);
+        assert!(recent.current_branch.is_none());
+    }
+
+    #[test]
+    fn test_recent_repository_pinned() {
+        let recent = RecentRepository {
+            path: PathBuf::from("/home/user/project"),
+            name: "project".to_string(),
+            last_opened: chrono::Utc::now(),
+            exists: true,
+            current_branch: Some("develop".to_string()),
+            is_pinned: true,
+            display_path: "~/project".to_string(),
+        };
+
+        assert!(recent.is_pinned);
     }
 
     #[test]
@@ -284,10 +327,18 @@ mod tests {
             last_opened: chrono::DateTime::from_timestamp(1700000000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&chrono::Utc),
+            exists: true,
+            current_branch: Some("main".to_string()),
+            is_pinned: true,
+            display_path: "~/path".to_string(),
         };
 
         let json = serde_json::to_string(&recent).expect("should serialize");
         assert!(json.contains("\"name\":\"recent-repo\""));
         assert!(json.contains("\"lastOpened\""));
+        assert!(json.contains("\"exists\":true"));
+        assert!(json.contains("\"currentBranch\":\"main\""));
+        assert!(json.contains("\"isPinned\":true"));
+        assert!(json.contains("\"displayPath\":\"~/path\""));
     }
 }

@@ -30,6 +30,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_commit,
             crate::commands::get_recent_repositories,
             crate::commands::remove_recent_repository,
+            crate::commands::pin_repository,
+            crate::commands::unpin_repository,
             crate::commands::show_in_folder,
             crate::commands::open_url,
             crate::commands::open_terminal,

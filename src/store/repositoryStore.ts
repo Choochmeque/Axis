@@ -143,6 +143,8 @@ interface RepositoryState {
   loadWorktrees: () => Promise<void>;
   loadStatus: () => Promise<void>;
   loadRecentRepositories: () => Promise<void>;
+  pinRepository: (path: string) => Promise<void>;
+  unpinRepository: (path: string) => Promise<void>;
   setCurrentView: (view: ViewType) => void;
   clearError: () => void;
 
@@ -473,6 +475,24 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       set({ recentRepositories });
     } catch (err) {
       set({ error: getErrorMessage(err) });
+    }
+  },
+
+  pinRepository: async (path: string) => {
+    try {
+      await repositoryApi.pinRepository(path);
+      await get().loadRecentRepositories();
+    } catch (err) {
+      toast.error(i18n.t('notifications.error.operationFailed'), getErrorMessage(err));
+    }
+  },
+
+  unpinRepository: async (path: string) => {
+    try {
+      await repositoryApi.unpinRepository(path);
+      await get().loadRecentRepositories();
+    } catch (err) {
+      toast.error(i18n.t('notifications.error.operationFailed'), getErrorMessage(err));
     }
   },
 

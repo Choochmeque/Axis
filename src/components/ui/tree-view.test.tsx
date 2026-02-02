@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TreeView, buildTreeFromPaths, type TreeNode } from './tree-view';
+import type { SelectionKey } from '@/hooks';
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -64,33 +65,86 @@ describe('TreeView', () => {
     expect(screen.getByText('file1.ts')).toBeInTheDocument();
   });
 
-  it('should call onSelect when clicking leaf node', () => {
-    const onSelect = vi.fn();
-    render(<TreeView data={mockData} onSelect={onSelect} />);
+  it('should call onSelectionChange when clicking leaf node', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <TreeView
+        data={mockData}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>()}
+        onSelectionChange={onSelectionChange}
+      />
+    );
 
     fireEvent.click(screen.getByText('root.ts'));
 
-    expect(onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'root-file', name: 'root.ts' })
-    );
+    expect(onSelectionChange).toHaveBeenCalledWith(new Set(['root-file']));
   });
 
-  it('should highlight selected node', () => {
-    render(<TreeView data={mockData} selectedId="root-file" />);
+  it('should highlight selected node via selectedKeys', () => {
+    render(
+      <TreeView
+        data={mockData}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['root-file'])}
+        onSelectionChange={vi.fn()}
+      />
+    );
 
     const selectedNode = screen.getByText('root.ts').parentElement;
     expect(selectedNode?.className).toContain('bg-(--bg-active)');
   });
 
-  it('should support custom renderItem', () => {
-    const renderItem = vi.fn(({ node }) => (
-      <div data-testid={`custom-${node.id}`}>{node.name}</div>
+  it('should deselect when clicking selected leaf in single mode', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <TreeView
+        data={mockData}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['root-file'])}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+
+    fireEvent.click(screen.getByText('root.ts'));
+
+    expect(onSelectionChange).toHaveBeenCalledWith(new Set());
+  });
+
+  it('should not fire onSelectionChange when selectionMode is not set', () => {
+    const onSelectionChange = vi.fn();
+    render(<TreeView data={mockData} onSelectionChange={onSelectionChange} />);
+
+    fireEvent.click(screen.getByText('root.ts'));
+
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('should support custom renderItem with select callback', () => {
+    const onSelectionChange = vi.fn();
+    const renderItem = vi.fn(({ node, select }) => (
+      <div data-testid={`custom-${node.id}`} onClick={select}>
+        {node.name}
+      </div>
     ));
 
-    render(<TreeView data={mockData} renderItem={renderItem} />);
+    render(
+      <TreeView
+        data={mockData}
+        renderItem={renderItem}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>()}
+        onSelectionChange={onSelectionChange}
+      />
+    );
 
     expect(screen.getByTestId('custom-folder1')).toBeInTheDocument();
     expect(renderItem).toHaveBeenCalled();
+
+    // Click a leaf via the select callback
+    fireEvent.click(screen.getByTestId('custom-root-file'));
+
+    expect(onSelectionChange).toHaveBeenCalledWith(new Set(['root-file']));
   });
 
   it('should support controlled expanded state', () => {

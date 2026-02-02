@@ -391,12 +391,31 @@ function TreeView({
     (f) => f.path
   );
 
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
+
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file);
+    }
+  };
+
   return (
     <UITreeView<FileStatus>
       data={treeData}
-      selectedId={selectedFile?.path ?? null}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
       defaultExpandAll
-      renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+      renderItem={({ node, depth, isExpanded, isSelected, toggleExpand, select }) => {
         // Folder node
         if (node.children && node.children.length > 0) {
           return (
@@ -421,8 +440,8 @@ function TreeView({
           return (
             <FileStatusItem
               file={node.data}
-              isSelected={selectedFile?.path === node.data.path}
-              onSelect={() => onSelectFile(node.data!)}
+              isSelected={isSelected}
+              onSelect={select}
               onStage={onStage ? () => onStage(node.data!.path) : undefined}
               onUnstage={onUnstage ? () => onUnstage(node.data!.path) : undefined}
               isTreeView
@@ -670,12 +689,31 @@ function FluidTreeView({
     (f) => f.path
   );
 
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
+
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null, false);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file, file.isStaged);
+    }
+  };
+
   return (
     <UITreeView<FluidFile>
       data={treeData}
-      selectedId={selectedFile?.path ?? null}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
       defaultExpandAll
-      renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+      renderItem={({ node, depth, isExpanded, isSelected, toggleExpand, select }) => {
         // Folder node
         if (node.children && node.children.length > 0) {
           return (
@@ -700,8 +738,8 @@ function FluidTreeView({
           return (
             <FluidFileItem
               file={node.data}
-              isSelected={selectedFile?.path === node.data.path}
-              onSelect={() => onSelectFile(node.data!, node.data!.isStaged)}
+              isSelected={isSelected}
+              onSelect={select}
               onStage={() => onStage(node.data!.path)}
               onUnstage={() => onUnstage(node.data!.path)}
               onDiscard={() => onDiscard(node.data!.path)}

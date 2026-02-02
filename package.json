@@ -48,7 +48,7 @@
     "lucide-react": "^0.400.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-hotkeys-hook": "^5.2.3",
+    "react-hotkeys-hook": "^5.2.4",
     "react-i18next": "^16.5.4",
     "react-konva": "^19.2.1",
     "react-markdown": "^10.1.0",

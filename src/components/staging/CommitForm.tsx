@@ -12,6 +12,7 @@ import { ReferenceMention } from './ReferenceMention';
 import {
   Avatar,
   Checkbox,
+  CheckboxField,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -532,22 +533,16 @@ export function CommitForm() {
         )}
 
         <div className="flex items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Checkbox
-              id="push-after-commit"
-              checked={pushAfterCommit}
-              onCheckedChange={(checked) => setPushAfterCommit(checked === true)}
-              disabled={remotes.length === 0}
-            />
-            <label
-              htmlFor="push-after-commit"
-              className="text-xs text-(--text-secondary) cursor-pointer select-none"
-            >
-              {t('staging.commitForm.pushToOrigin', {
-                branch: repository?.currentBranch || 'main',
-              })}
-            </label>
-          </div>
+          <CheckboxField
+            id="push-after-commit"
+            label={t('staging.commitForm.pushToOrigin', {
+              branch: repository?.currentBranch || 'main',
+            })}
+            checked={pushAfterCommit}
+            onCheckedChange={(checked) => setPushAfterCommit(checked)}
+            disabled={remotes.length === 0}
+            className="mb-0"
+          />
           <button
             className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-none rounded bg-(--accent-color) text-white text-xs font-medium cursor-pointer transition-colors hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCommit}

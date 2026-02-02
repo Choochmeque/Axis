@@ -65,6 +65,7 @@ interface RepoViewCache {
   branches: Branch[];
   tags: Tag[];
   stashes: StashEntry[];
+  remotes: Remote[];
   currentView: ViewType;
   branchFilter: BranchFilterTypeType;
   includeRemotes: boolean;
@@ -754,6 +755,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       branches,
       tags,
       stashes,
+      remotes,
       currentView,
       branchFilter,
       includeRemotes,
@@ -769,6 +771,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       branches,
       tags,
       stashes,
+      remotes,
       currentView,
       branchFilter,
       includeRemotes,
@@ -789,6 +792,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         branches: cached.branches,
         tags: cached.tags,
         stashes: cached.stashes,
+        remotes: cached.remotes,
         currentView: cached.currentView,
         branchFilter: cached.branchFilter,
         includeRemotes: cached.includeRemotes,
@@ -820,6 +824,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
     get().loadBranches();
     get().loadTags();
     get().loadStashes();
+    get().loadRemotes();
     get().loadStatus();
   },
 }));

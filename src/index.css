@@ -518,10 +518,15 @@ code {
   .checkbox {
     @apply flex items-center justify-center w-4 h-4 rounded border border-(--border-color) bg-(--bg-primary) shrink-0 transition-colors;
     @apply data-[state=checked]:bg-(--accent-color) data-[state=checked]:border-(--accent-color);
+    @apply data-disabled:opacity-40 data-disabled:cursor-not-allowed;
   }
 
   .checkbox-field {
     @apply flex items-center gap-2 mb-4 last:mb-0;
+  }
+
+  .checkbox-field:has(.checkbox[data-disabled]) .checkbox-label {
+    @apply text-(--text-tertiary) cursor-not-allowed;
   }
 
   .checkbox-label {

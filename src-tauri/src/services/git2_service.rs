@@ -605,7 +605,8 @@ impl Git2Service {
 
     /// Stage all changes (equivalent to git add -A)
     pub fn stage_all(&self) -> Result<()> {
-        let mut index = self.repo()?.index()?;
+        let repo = self.repo()?;
+        let mut index = repo.index()?;
         index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
         Ok(())
@@ -2396,12 +2397,12 @@ impl Git2Service {
 
     /// List all tags
     pub fn tag_list(&self, repo: Option<&Git2Repository>) -> Result<Vec<Tag>> {
-        let repo = {
-            if let Some(r) = repo {
-                r
-            } else {
-                &self.repo()?
-            }
+        let owned_repo;
+        let repo = if let Some(r) = repo {
+            r
+        } else {
+            owned_repo = self.repo()?;
+            &owned_repo
         };
         let tag_names = repo.tag_names(None)?;
         let mut tags = Vec::new();

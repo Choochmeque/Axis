@@ -123,12 +123,11 @@ export function computeGraphLayout(commits: GraphCommit[], headOid: string | nul
 
       // Check if line interacts with this row
       if (minRow <= rowIdx && maxRow >= rowIdx) {
+        // Merge preview flag comes directly from the graph layout engine
+        const isMergePreview = line.isMergePreview;
+
         // Line starts at this row (going down)
         if (line.fromRow === rowIdx) {
-          // Check if this line corresponds to a MergePreview edge
-          const isMergePreview = commit.parentEdges?.some(
-            (edge) => edge.edgeType === 'MergePreview' && edge.parentLane === line.toColumn
-          );
           outgoingLines.push({
             fromColumn: line.fromColumn,
             toColumn: line.toColumn,
@@ -141,11 +140,6 @@ export function computeGraphLayout(commits: GraphCommit[], headOid: string | nul
         }
         // Line ends at this row (coming from above)
         else if (line.toRow === rowIdx) {
-          // Check if this line corresponds to a MergePreview edge from the source commit
-          const sourceCommit = commits[line.fromRow];
-          const isMergePreview = sourceCommit?.parentEdges?.some(
-            (edge) => edge.edgeType === 'MergePreview' && edge.parentLane === line.toColumn
-          );
           incomingLines.push({
             fromColumn: line.fromColumn,
             toColumn: line.toColumn,
@@ -158,11 +152,6 @@ export function computeGraphLayout(commits: GraphCommit[], headOid: string | nul
         }
         // Line passes through this row (doesn't start or end here)
         else if (minRow < rowIdx && maxRow > rowIdx) {
-          // Check if this line corresponds to a MergePreview edge from the source commit
-          const sourceCommit = commits[line.fromRow];
-          const isMergePreview = sourceCommit?.parentEdges?.some(
-            (edge) => edge.edgeType === 'MergePreview' && edge.parentLane === line.toColumn
-          );
           // For passing lines, use the column where it passes through
           // If it's a straight vertical line, use either column
           // If it's diagonal, we need to determine where it is at this row

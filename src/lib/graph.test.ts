@@ -34,6 +34,7 @@ describe('Branch', () => {
       toRow: 1,
       isCommitted: true,
       color: 0,
+      isMergePreview: false,
     });
     expect(lines[1]).toEqual({
       fromColumn: 0,
@@ -42,6 +43,7 @@ describe('Branch', () => {
       toRow: 2,
       isCommitted: true,
       color: 0,
+      isMergePreview: false,
     });
   });
 
@@ -60,6 +62,40 @@ describe('Branch', () => {
     const lines = branch.getLines();
     expect(lines[0].fromColumn).toBe(0);
     expect(lines[0].toColumn).toBe(1);
+  });
+
+  it('should track merge preview state', () => {
+    expect(branch.isMergePreviewBranch()).toBe(false);
+    branch.setMergePreview();
+    expect(branch.isMergePreviewBranch()).toBe(true);
+  });
+
+  it('should mark all lines as merge preview when branch is merge preview', () => {
+    branch.setMergePreview();
+    branch.addLine({ x: 0, y: 0 }, { x: 0, y: 1 }, true, true);
+    branch.addLine({ x: 0, y: 1 }, { x: 0, y: 2 }, true, true);
+
+    const lines = branch.getLines();
+    expect(lines[0].isMergePreview).toBe(true);
+    expect(lines[1].isMergePreview).toBe(true);
+  });
+
+  it('should mark individual lines as merge preview via addLine parameter', () => {
+    branch.addLine({ x: 0, y: 0 }, { x: 0, y: 1 }, true, true, true);
+    branch.addLine({ x: 0, y: 1 }, { x: 0, y: 2 }, true, true, false);
+
+    const lines = branch.getLines();
+    expect(lines[0].isMergePreview).toBe(true);
+    expect(lines[1].isMergePreview).toBe(false);
+  });
+
+  it('should set isMergePreview true if branch OR line is merge preview', () => {
+    branch.addLine({ x: 0, y: 0 }, { x: 0, y: 1 }, true, true, false);
+    branch.setMergePreview();
+
+    const lines = branch.getLines();
+    // Branch-level merge preview overrides line-level
+    expect(lines[0].isMergePreview).toBe(true);
   });
 
   it('should handle multiple uncommitted lines', () => {
@@ -612,5 +648,60 @@ describe('Graph', () => {
     graph.render(null);
     // Should have replaced the group
     expect(graph.getSvg().querySelector('g')).not.toBeNull();
+  });
+
+  it('should produce merge preview lines for merge-in-progress', () => {
+    // Simulate merge in progress: uncommitted has HEAD + MERGE_HEAD as parents
+    const commits: GraphCommit[] = [
+      {
+        ...createCommit('uncommitted', ['headOid', 'mergeHeadOid'], 'Uncommitted Changes'),
+        parentEdges: [
+          { parentOid: 'headOid', parentLane: 0, edgeType: 'Straight' },
+          { parentOid: 'mergeHeadOid', parentLane: 1, edgeType: 'MergePreview' },
+        ],
+      },
+      createCommit('headOid', ['base'], 'HEAD commit'),
+      createCommit('mergeHeadOid', ['base'], 'MERGE_HEAD commit'),
+      createCommit('base', [], 'Base commit'),
+    ];
+
+    const lookup = { uncommitted: 0, headOid: 1, mergeHeadOid: 2, base: 3 };
+    graph.loadCommits(commits, 'headOid', lookup, false);
+
+    // Verify vertex 0 is marked as uncommitted
+    const data = graph.getVertexData();
+    expect(data[0].isCommitted).toBe(false);
+
+    // Verify merge preview lines exist in branch lines
+    const branchLines = graph.getBranchLines();
+    const mergePreviewLines = branchLines.filter((l) => l.isMergePreview);
+
+    // There should be at least one merge preview line connecting uncommitted to merge_head
+    expect(mergePreviewLines.length).toBeGreaterThan(0);
+
+    // The merge preview lines should originate from row 0 (uncommitted)
+    const fromUncommitted = mergePreviewLines.filter((l) => l.fromRow === 0);
+    expect(fromUncommitted.length).toBeGreaterThan(0);
+
+    // Verify the merge preview line eventually reaches the MERGE_HEAD row (row 2)
+    const reachesMergeHead = mergePreviewLines.some((l) => l.toRow === 2 || l.fromRow === 2);
+    expect(reachesMergeHead).toBe(true);
+  });
+
+  it('should not produce merge preview lines without MergePreview edges', () => {
+    // Regular merge commit without MergePreview edge type
+    const commits = [
+      createCommit('merge', ['parent1', 'parent2']),
+      createCommit('parent1', ['base']),
+      createCommit('parent2', ['base']),
+      createCommit('base', []),
+    ];
+
+    const lookup = { merge: 0, parent1: 1, parent2: 2, base: 3 };
+    graph.loadCommits(commits, 'merge', lookup, false);
+
+    const branchLines = graph.getBranchLines();
+    const mergePreviewLines = branchLines.filter((l) => l.isMergePreview);
+    expect(mergePreviewLines).toHaveLength(0);
   });
 });

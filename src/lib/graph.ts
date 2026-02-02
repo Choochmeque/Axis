@@ -58,6 +58,7 @@ interface Line {
   readonly p1: Point;
   readonly p2: Point;
   readonly lockedFirst: boolean; // TRUE => The line is locked to p1, FALSE => The line is locked to p2
+  readonly isMergePreview: boolean;
 }
 
 interface Pixel {
@@ -85,13 +86,28 @@ export class Branch {
   private end: number = 0;
   private lines: Line[] = [];
   private numUncommitted: number = 0;
+  private mergePreview: boolean = false;
 
   constructor(colour: number) {
     this.colour = colour;
   }
 
-  public addLine(p1: Point, p2: Point, isCommitted: boolean, lockedFirst: boolean) {
-    this.lines.push({ p1: p1, p2: p2, lockedFirst: lockedFirst });
+  public setMergePreview() {
+    this.mergePreview = true;
+  }
+
+  public isMergePreviewBranch() {
+    return this.mergePreview;
+  }
+
+  public addLine(
+    p1: Point,
+    p2: Point,
+    isCommitted: boolean,
+    lockedFirst: boolean,
+    isMergePreview: boolean = false
+  ) {
+    this.lines.push({ p1: p1, p2: p2, lockedFirst: lockedFirst, isMergePreview });
     if (isCommitted) {
       if (p2.x === 0 && p2.y < this.numUncommitted) this.numUncommitted = p2.y;
     } else {
@@ -125,6 +141,7 @@ export class Branch {
       toRow: line.p2.y,
       isCommitted: i >= this.numUncommitted,
       color: this.colour,
+      isMergePreview: this.mergePreview || line.isMergePreview,
     }));
   }
 
@@ -319,6 +336,7 @@ export class Vertex {
   private isCurrent: boolean = false;
   private nextX: number = 0;
   private connections: UnavailablePoint[] = [];
+  private mergePreviewParents: Set<Vertex> = new Set();
 
   constructor(id: number, isStash: boolean) {
     this.id = id;
@@ -365,6 +383,16 @@ export class Vertex {
 
   public isMerge() {
     return this.parents.length > 1;
+  }
+
+  /* Merge Preview */
+
+  public addMergePreviewParent(vertex: Vertex) {
+    this.mergePreviewParents.add(vertex);
+  }
+
+  public isMergePreviewParent(vertex: VertexOrNull): boolean {
+    return vertex !== null && this.mergePreviewParents.has(vertex);
   }
 
   /* Branch */
@@ -549,9 +577,16 @@ export class Graph {
       for (j = 0; j < commits[i].parentOids.length; j++) {
         const parentHash = commits[i].parentOids[j];
         if (typeof commitLookup[parentHash] === 'number') {
+          const parentVertex = this.vertices[commitLookup[parentHash]];
           // Parent is the <commitLookup[parentHash]>th vertex
-          this.vertices[i].addParent(this.vertices[commitLookup[parentHash]]);
-          this.vertices[commitLookup[parentHash]].addChild(this.vertices[i]);
+          this.vertices[i].addParent(parentVertex);
+          parentVertex.addChild(this.vertices[i]);
+
+          // Track merge preview parent relationships
+          const edge = commits[i].parentEdges?.find((e) => e.parentOid === parentHash);
+          if (edge?.edgeType === 'MergePreview') {
+            this.vertices[i].addMergePreviewParent(parentVertex);
+          }
         } else if (!this.onlyFollowFirstParent || j === 0) {
           // Parent is not one of the vertices of the graph, and the parent isn't being hidden by the onlyFollowFirstParent condition.
           this.vertices[i].addParent(nullVertex);
@@ -690,6 +725,7 @@ export class Graph {
       toRow: number;
       isCommitted: boolean;
       color: number;
+      isMergePreview: boolean;
     }> = [];
 
     for (const branch of this.branches) {
@@ -918,6 +954,7 @@ export class Graph {
       // Branch is a merge between two vertices already on branches
       let foundPointToParent = false;
       const parentBranch = parentVertex.getBranch()!;
+      const isMergePreviewPath = vertex.isMergePreviewParent(parentVertex);
       for (i = startAt + 1; i < this.vertices.length; i++) {
         curVertex = this.vertices[i];
         curPoint = curVertex.getPointConnectingTo(parentVertex, parentBranch); // Check if there is already a point connecting the ith vertex to the required parent
@@ -930,7 +967,8 @@ export class Graph {
           lastPoint,
           curPoint,
           vertex.getIsCommitted(),
-          !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true
+          !foundPointToParent && curVertex !== parentVertex ? lastPoint.x < curPoint.x : true,
+          isMergePreviewPath
         );
         curVertex.registerUnavailablePoint(curPoint.x, parentVertex, parentBranch);
         lastPoint = curPoint;
@@ -951,7 +989,13 @@ export class Graph {
           parentVertex === curVertex && !parentVertex.isNotOnBranch()
             ? curVertex.getPoint()
             : curVertex.getNextPoint();
-        branch.addLine(lastPoint, curPoint, vertex.getIsCommitted(), lastPoint.x < curPoint.x);
+        branch.addLine(
+          lastPoint,
+          curPoint,
+          vertex.getIsCommitted(),
+          lastPoint.x < curPoint.x,
+          vertex.isMergePreviewParent(parentVertex)
+        );
         curVertex.registerUnavailablePoint(curPoint.x, parentVertex, branch);
         lastPoint = curPoint;
 

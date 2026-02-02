@@ -1103,7 +1103,7 @@ code {
 
   .graph-line.merge-preview {
     stroke-dasharray: 5 3;
-    stroke: var(--accent-color);
+    stroke: var(--git-graph-uncommitted);
     opacity: 0.7;
   }
 

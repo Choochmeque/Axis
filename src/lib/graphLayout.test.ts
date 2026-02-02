@@ -364,5 +364,56 @@ describe('graphLayout', () => {
         expect(row.color).toBeLessThan(GRAPH_COLORS.length);
       });
     });
+
+    it('should propagate merge preview flag through layout', () => {
+      const commits: GraphCommit[] = [
+        {
+          ...createCommit('uncommitted', ['headOid', 'mergeHeadOid']),
+          parentEdges: [
+            { parentOid: 'headOid', parentLane: 0, edgeType: 'Straight' },
+            { parentOid: 'mergeHeadOid', parentLane: 1, edgeType: 'MergePreview' },
+          ],
+        },
+        createCommit('headOid', ['base']),
+        createCommit('mergeHeadOid', ['base']),
+        createCommit('base', []),
+      ];
+      const result = computeGraphLayout(commits, 'headOid');
+
+      expect(result).toHaveLength(4);
+
+      // Collect all merge preview lines across all rows
+      const allMergePreviewOutgoing = result.flatMap((r) =>
+        r.outgoingLines.filter((l) => l.isMergePreview)
+      );
+      const allMergePreviewIncoming = result.flatMap((r) =>
+        r.incomingLines.filter((l) => l.isMergePreview)
+      );
+      const allMergePreviewPassing = result.flatMap((r) =>
+        r.passingLanes.filter((l) => l.isMergePreview)
+      );
+
+      // There should be merge preview lines somewhere in the layout
+      const totalMergePreview =
+        allMergePreviewOutgoing.length +
+        allMergePreviewIncoming.length +
+        allMergePreviewPassing.length;
+      expect(totalMergePreview).toBeGreaterThan(0);
+
+      // The uncommitted row (row 0) should have a merge preview outgoing line
+      const uncommittedOutgoing = result[0].outgoingLines.filter((l) => l.isMergePreview);
+      expect(uncommittedOutgoing.length).toBeGreaterThan(0);
+    });
+
+    it('should not mark regular lines as merge preview', () => {
+      const commits = [createCommit('child', ['parent']), createCommit('parent', [])];
+      const result = computeGraphLayout(commits, 'child');
+
+      result.forEach((row) => {
+        row.outgoingLines.forEach((l) => expect(l.isMergePreview).toBeFalsy());
+        row.incomingLines.forEach((l) => expect(l.isMergePreview).toBeFalsy());
+        row.passingLanes.forEach((l) => expect(l.isMergePreview).toBeFalsy());
+      });
+    });
   });
 });

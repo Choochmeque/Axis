@@ -2023,42 +2023,65 @@ impl Git2Service {
                     // Reserve lane 0 for uncommitted
                     lane_state.get_lane_for_commit("uncommitted");
 
+                    // Build parent_oids first, then process lane state before computing edges
                     let mut parent_oids: Vec<String> = Vec::new();
-                    let mut parent_edges: Vec<GraphEdge> = Vec::new();
 
                     // Add HEAD as first parent
                     if let Some(ref parent_oid) = head_oid {
                         parent_oids.push(parent_oid.clone());
-                        parent_edges.push(GraphEdge {
-                            parent_oid: parent_oid.clone(),
-                            parent_lane: 0,
-                            edge_type: EdgeType::Straight,
-                        });
                     }
 
                     // Check for merge in progress - add MERGE_HEAD as second parent
-                    let merge_head_path = self.path().join("MERGE_HEAD");
-                    let is_merging = if merge_head_path.exists() {
-                        if let Ok(merge_head_content) = std::fs::read_to_string(&merge_head_path) {
-                            let merge_head_oid = merge_head_content.trim();
-                            if !merge_head_oid.is_empty() {
-                                parent_oids.push(merge_head_oid.to_string());
-                                let merge_parent_lane = lane_state.get_parent_lane(merge_head_oid);
-                                parent_edges.push(GraphEdge {
-                                    parent_oid: merge_head_oid.to_string(),
-                                    parent_lane: merge_parent_lane,
-                                    edge_type: EdgeType::MergePreview,
-                                });
-                                true
-                            } else {
-                                false
-                            }
-                        } else {
-                            false
-                        }
+                    // MERGE_HEAD lives inside .git/, so use repo.path() not self.path()
+                    let merge_head_path = repo.path().join("MERGE_HEAD");
+                    let merge_head_oid_str = if merge_head_path.exists() {
+                        std::fs::read_to_string(&merge_head_path)
+                            .ok()
+                            .and_then(|content| {
+                                let oid = content.trim().to_string();
+                                if oid.is_empty() {
+                                    None
+                                } else {
+                                    Some(oid)
+                                }
+                            })
                     } else {
-                        false
+                        None
                     };
+
+                    if let Some(ref merge_oid) = merge_head_oid_str {
+                        parent_oids.push(merge_oid.clone());
+                    }
+
+                    let is_merging = merge_head_oid_str.is_some();
+
+                    // Update lane state BEFORE computing edges so lanes are correct
+                    lane_state.process_commit("uncommitted", 0, &parent_oids);
+
+                    // Now build parent edges with correctly assigned lanes
+                    let mut parent_edges: Vec<GraphEdge> = Vec::new();
+
+                    if let Some(ref parent_oid) = head_oid {
+                        let head_lane = lane_state.find_lane(parent_oid).unwrap_or(0);
+                        parent_edges.push(GraphEdge {
+                            parent_oid: parent_oid.clone(),
+                            parent_lane: head_lane,
+                            edge_type: if head_lane == 0 {
+                                EdgeType::Straight
+                            } else {
+                                EdgeType::Branch
+                            },
+                        });
+                    }
+
+                    if let Some(ref merge_oid) = merge_head_oid_str {
+                        let merge_lane = lane_state.find_lane(merge_oid).unwrap_or(1);
+                        parent_edges.push(GraphEdge {
+                            parent_oid: merge_oid.clone(),
+                            parent_lane: merge_lane,
+                            edge_type: EdgeType::MergePreview,
+                        });
+                    }
 
                     let now = chrono::Utc::now();
                     graph_commits.push(GraphCommit {

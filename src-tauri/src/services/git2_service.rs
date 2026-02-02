@@ -554,12 +554,14 @@ impl Git2Service {
         }
     }
 
-    /// Get a single commit by OID
+    /// Get a single commit by OID or ref name
     pub fn get_commit(&self, oid_str: &str) -> Result<Commit> {
-        let oid = git2::Oid::from_str(oid_str)
-            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         let repo = self.repo()?;
-        let commit = repo.find_commit(oid)?;
+        let commit = repo
+            .revparse_single(oid_str)
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?
+            .peel_to_commit()
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         Ok(Commit::from_git2_commit(&commit, &repo))
     }
 
@@ -890,9 +892,11 @@ impl Git2Service {
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
         let repo = self.repo()?;
-        let oid = git2::Oid::from_str(oid_str)
+        let commit = repo
+            .revparse_single(oid_str)
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?
+            .peel_to_commit()
             .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
-        let commit = repo.find_commit(oid)?;
         let tree = commit.tree()?;
 
         let mut diff_opts = git2::DiffOptions::new();
@@ -918,13 +922,16 @@ impl Git2Service {
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
         let repo = self.repo()?;
-        let from = git2::Oid::from_str(from_oid)
+        let from_commit = repo
+            .revparse_single(from_oid)
+            .map_err(|_| AxisError::InvalidReference(from_oid.to_string()))?
+            .peel_to_commit()
             .map_err(|_| AxisError::InvalidReference(from_oid.to_string()))?;
-        let to = git2::Oid::from_str(to_oid)
+        let to_commit = repo
+            .revparse_single(to_oid)
+            .map_err(|_| AxisError::InvalidReference(to_oid.to_string()))?
+            .peel_to_commit()
             .map_err(|_| AxisError::InvalidReference(to_oid.to_string()))?;
-
-        let from_commit = repo.find_commit(from)?;
-        let to_commit = repo.find_commit(to)?;
 
         let from_tree = from_commit.tree()?;
         let to_tree = to_commit.tree()?;
@@ -2295,17 +2302,21 @@ impl Git2Service {
 
         // If a specific commit is provided, blame up to that commit
         if let Some(oid_str) = commit_oid {
-            let oid = git2::Oid::from_str(oid_str)
+            let obj = repo
+                .revparse_single(oid_str)
                 .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
-            blame_opts.newest_commit(oid);
+            blame_opts.newest_commit(obj.id());
         }
 
         let blame = repo.blame_file(Path::new(path), Some(&mut blame_opts))?;
 
         // Read file content to get line contents
         let file_content = if let Some(oid_str) = commit_oid {
-            let oid = git2::Oid::from_str(oid_str)?;
-            let commit = repo.find_commit(oid)?;
+            let commit = repo
+                .revparse_single(oid_str)
+                .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?
+                .peel_to_commit()
+                .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
             let tree = commit.tree()?;
             let entry = tree.get_path(Path::new(path))?;
             let blob = entry.to_object(&repo)?.peel_to_blob()?;
@@ -2736,9 +2747,11 @@ impl Git2Service {
         options: &crate::models::DiffOptions,
     ) -> Result<Option<crate::models::FileDiff>> {
         let repo = self.repo()?;
-        let oid = git2::Oid::from_str(commit_oid)
+        let commit = repo
+            .revparse_single(commit_oid)
+            .map_err(|_| AxisError::InvalidReference(commit_oid.to_string()))?
+            .peel_to_commit()
             .map_err(|_| AxisError::InvalidReference(commit_oid.to_string()))?;
-        let commit = repo.find_commit(oid)?;
         let tree = commit.tree()?;
 
         let parent_tree = if commit.parent_count() > 0 {
@@ -3075,9 +3088,11 @@ impl Git2Service {
         oid_str: &str,
         format: &SigningFormat,
     ) -> Result<SignatureVerification> {
-        let oid = git2::Oid::from_str(oid_str)
-            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
         let repo = self.repo()?;
+        let oid = repo
+            .revparse_single(oid_str)
+            .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?
+            .id();
 
         let (sig_buf, signed_data) = repo
             .extract_signature(&oid, Some("gpgsig"))

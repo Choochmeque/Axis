@@ -9,6 +9,8 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
+import { useListSelection } from '@/hooks';
+import type { SelectionKey, SelectionMode } from '@/hooks';
 
 export interface DataTableRef {
   scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
@@ -17,8 +19,6 @@ export interface DataTableRef {
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData, unknown>[];
-  selectedRowId?: string | null;
-  onRowClick?: (row: TData) => void;
   onRowContextMenu?: (row: TData, event: React.MouseEvent) => void;
   getRowId?: (row: TData) => string;
   resizable?: boolean;
@@ -32,14 +32,17 @@ interface DataTableProps<TData> {
   isLoading?: boolean;
   loadingMessage?: string;
   rowHeight?: number;
+
+  // Selection API
+  selectionMode?: SelectionMode;
+  selectedKeys?: Set<SelectionKey>;
+  onSelectionChange?: (keys: Set<SelectionKey>) => void;
 }
 
 function DataTableInner<TData>(
   {
     data,
     columns,
-    selectedRowId,
-    onRowClick,
     onRowContextMenu,
     getRowId,
     resizable = true,
@@ -53,10 +56,26 @@ function DataTableInner<TData>(
     isLoading = false,
     loadingMessage = 'Loading...',
     rowHeight = 36,
+    selectionMode,
+    selectedKeys: controlledSelectedKeys,
+    onSelectionChange,
   }: DataTableProps<TData>,
   ref: Ref<DataTableRef>
 ) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const getItemKey = useCallback(
+    (item: TData, index: number): SelectionKey => (getRowId ? getRowId(item) : String(index)),
+    [getRowId]
+  );
+
+  const selection = useListSelection({
+    items: data,
+    getItemKey,
+    selectionMode: selectionMode ?? 'none',
+    selectedKeys: controlledSelectedKeys,
+    onSelectionChange,
+  });
 
   const table = useReactTable({
     data,
@@ -92,15 +111,14 @@ function DataTableInner<TData>(
   );
 
   const getRowClassName = useCallback(
-    (row: Row<TData>) => {
+    (row: Row<TData>, isSelected: boolean) => {
       const baseClass =
         'flex items-center border-b border-(--border-color) cursor-pointer transition-colors hover:bg-(--bg-hover)';
-      const selectedClass =
-        getRowId && selectedRowId === getRowId(row.original) ? 'bg-(--bg-active)' : '';
+      const selectedClass = isSelected ? 'bg-(--bg-active)' : '';
       const customClass = typeof rowClassName === 'function' ? rowClassName(row) : rowClassName;
       return cn(baseClass, selectedClass, customClass);
     },
-    [selectedRowId, getRowId, rowClassName]
+    [rowClassName]
   );
 
   if (isLoading && data.length === 0) {
@@ -173,11 +191,13 @@ function DataTableInner<TData>(
         <div style={{ height: totalHeight, position: 'relative' }}>
           {virtualItems.map((virtualRow) => {
             const row = rows[virtualRow.index];
+            const key = getItemKey(row.original, virtualRow.index);
+            const isSelected = selection.isSelected(key);
             const rowContent = (
               <div
                 key={row.id}
-                className={getRowClassName(row)}
-                onClick={() => onRowClick?.(row.original)}
+                className={getRowClassName(row, isSelected)}
+                onClick={selectionMode ? (e) => selection.handleItemClick(key, e) : undefined}
                 onContextMenu={(e) => onRowContextMenu?.(row.original, e)}
                 style={{
                   position: 'absolute',

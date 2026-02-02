@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FileStatusList, FluidFileList } from './FileStatusList';
 import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
+import type { SelectionKey } from '@/hooks';
 import { StagingViewMode } from './StagingFilters';
 
 vi.mock('react-i18next', () => ({
@@ -44,16 +45,29 @@ vi.mock('@/components/ui', () => ({
   VirtualList: ({
     items,
     children,
+    onSelectionChange,
+    selectedKeys,
+    emptyMessage,
   }: {
     items: FileStatus[];
     children: (item: FileStatus) => React.ReactNode;
+    onSelectionChange?: (keys: Set<SelectionKey>) => void;
+    selectedKeys?: Set<SelectionKey>;
+    emptyMessage?: string;
   }) => (
     <div data-testid="virtual-list">
+      {items.length === 0 && emptyMessage && <div>{emptyMessage}</div>}
       {items.map((item, idx) => (
-        <div key={idx} data-testid={`file-item-${idx}`}>
+        <div
+          key={idx}
+          data-testid={`file-item-${idx}`}
+          data-selected={selectedKeys?.has(item.path) ? 'true' : 'false'}
+          onClick={() => onSelectionChange?.(new Set([item.path]))}
+        >
           {children(item)}
         </div>
       ))}
+      <button data-testid="clear-selection" onClick={() => onSelectionChange?.(new Set())} />
     </div>
   ),
   buildTreeFromPaths: vi.fn(() => []),
@@ -85,10 +99,11 @@ describe('FileStatusList', () => {
     onSelectFile: vi.fn(),
   };
 
-  it('should return null when files array is empty', () => {
-    const { container } = render(<FileStatusList {...defaultProps} files={[]} />);
+  it('should render VirtualList with empty message when files array is empty', () => {
+    render(<FileStatusList {...defaultProps} files={[]} emptyMessage="No changes" />);
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    expect(screen.getByText('No changes')).toBeInTheDocument();
   });
 
   it('should render title when provided', () => {
@@ -146,6 +161,26 @@ describe('FileStatusList', () => {
 
     expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
   });
+
+  it('should call onSelectFile with file when item is selected', () => {
+    const onSelectFile = vi.fn();
+
+    render(<FileStatusList {...defaultProps} onSelectFile={onSelectFile} />);
+
+    fireEvent.click(screen.getByTestId('file-item-0'));
+
+    expect(onSelectFile).toHaveBeenCalledWith(mockFiles[0]);
+  });
+
+  it('should call onSelectFile with null when selection is cleared', () => {
+    const onSelectFile = vi.fn();
+
+    render(<FileStatusList {...defaultProps} onSelectFile={onSelectFile} />);
+
+    fireEvent.click(screen.getByTestId('clear-selection'));
+
+    expect(onSelectFile).toHaveBeenCalledWith(null);
+  });
 });
 
 describe('FluidFileList', () => {
@@ -180,9 +215,10 @@ describe('FluidFileList', () => {
   };
 
   it('should show empty message when no files', () => {
-    render(<FluidFileList {...defaultProps} files={[]} />);
+    render(<FluidFileList {...defaultProps} files={[]} emptyMessage="No changes" />);
 
-    expect(screen.getByText('staging.fileList.noChanges')).toBeInTheDocument();
+    expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
+    expect(screen.getByText('No changes')).toBeInTheDocument();
   });
 
   it('should render VirtualList in FlatSingle mode', () => {
@@ -196,5 +232,25 @@ describe('FluidFileList', () => {
 
     expect(screen.getByTestId('file-item-0')).toBeInTheDocument();
     expect(screen.getByTestId('file-item-1')).toBeInTheDocument();
+  });
+
+  it('should call onSelectFile with file and isStaged when item is selected', () => {
+    const onSelectFile = vi.fn();
+
+    render(<FluidFileList {...defaultProps} onSelectFile={onSelectFile} />);
+
+    fireEvent.click(screen.getByTestId('file-item-0'));
+
+    expect(onSelectFile).toHaveBeenCalledWith(mockFluidFiles[0], true);
+  });
+
+  it('should call onSelectFile with null when selection is cleared', () => {
+    const onSelectFile = vi.fn();
+
+    render(<FluidFileList {...defaultProps} onSelectFile={onSelectFile} />);
+
+    fireEvent.click(screen.getByTestId('clear-selection'));
+
+    expect(onSelectFile).toHaveBeenCalledWith(null, false);
   });
 });

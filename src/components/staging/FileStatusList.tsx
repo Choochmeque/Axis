@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,6 +15,7 @@ import {
   Folder,
 } from 'lucide-react';
 import { Checkbox, TreeView as UITreeView, buildTreeFromPaths, VirtualList } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
 import { cn } from '@/lib/utils';
@@ -28,8 +30,9 @@ export interface FluidFile extends FileStatus {
 interface FileStatusListProps {
   files: FileStatus[];
   title?: string;
+  emptyMessage?: string;
   selectedFile: FileStatus | null;
-  onSelectFile: (file: FileStatus) => void;
+  onSelectFile: (file: FileStatus | null) => void;
   onStage?: (path: string) => void;
   onUnstage?: (path: string) => void;
   onDiscard?: (path: string) => void;
@@ -42,6 +45,7 @@ interface FileStatusListProps {
 export function FileStatusList({
   files,
   title,
+  emptyMessage,
   selectedFile,
   onSelectFile,
   onStage,
@@ -54,9 +58,22 @@ export function FileStatusList({
 }: FileStatusListProps) {
   const { t } = useTranslation();
 
-  if (files.length === 0) {
-    return null;
-  }
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
+
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file);
+    }
+  };
 
   const renderContent = () => {
     switch (viewMode) {
@@ -76,8 +93,10 @@ export function FileStatusList({
               items={files}
               getItemKey={(file) => file.path}
               itemHeight={36}
-              selectedItemKey={selectedFile?.path}
-              onItemClick={onSelectFile}
+              emptyMessage={emptyMessage}
+              selectionMode="single"
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
               itemClassName="!py-1.5 !gap-0 !px-3"
             >
               {(file) => (
@@ -113,8 +132,10 @@ export function FileStatusList({
             items={files}
             getItemKey={(file) => file.path}
             itemHeight={36}
-            selectedItemKey={selectedFile?.path}
-            onItemClick={onSelectFile}
+            emptyMessage={emptyMessage}
+            selectionMode="single"
+            selectedKeys={selectedKeys}
+            onSelectionChange={handleSelectionChange}
             itemClassName="!py-1.5 !gap-2"
           >
             {(file) => (
@@ -350,7 +371,7 @@ function FileStatusItem({
 interface TreeViewProps {
   files: FileStatus[];
   selectedFile: FileStatus | null;
-  onSelectFile: (file: FileStatus) => void;
+  onSelectFile: (file: FileStatus | null) => void;
   onStage?: (path: string) => void;
   onUnstage?: (path: string) => void;
   onDiscard?: (path: string) => void;
@@ -370,12 +391,31 @@ function TreeView({
     (f) => f.path
   );
 
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
+
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file);
+    }
+  };
+
   return (
     <UITreeView<FileStatus>
       data={treeData}
-      selectedId={selectedFile?.path ?? null}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
       defaultExpandAll
-      renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+      renderItem={({ node, depth, isExpanded, isSelected, toggleExpand, select }) => {
         // Folder node
         if (node.children && node.children.length > 0) {
           return (
@@ -400,8 +440,8 @@ function TreeView({
           return (
             <FileStatusItem
               file={node.data}
-              isSelected={selectedFile?.path === node.data.path}
-              onSelect={() => onSelectFile(node.data!)}
+              isSelected={isSelected}
+              onSelect={select}
               onStage={onStage ? () => onStage(node.data!.path) : undefined}
               onUnstage={onUnstage ? () => onUnstage(node.data!.path) : undefined}
               isTreeView
@@ -420,8 +460,9 @@ function TreeView({
 // Fluid File List Component for unified staging view
 interface FluidFileListProps {
   files: FluidFile[];
+  emptyMessage?: string;
   selectedFile: FileStatus | null;
-  onSelectFile: (file: FileStatus, isStaged: boolean) => void;
+  onSelectFile: (file: FileStatus | null, isStaged: boolean) => void;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onDiscard: (path: string) => void;
@@ -430,6 +471,7 @@ interface FluidFileListProps {
 
 export function FluidFileList({
   files,
+  emptyMessage,
   selectedFile,
   onSelectFile,
   onStage,
@@ -437,15 +479,22 @@ export function FluidFileList({
   onDiscard,
   viewMode = StagingViewMode.FlatSingle,
 }: FluidFileListProps) {
-  const { t } = useTranslation();
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
 
-  if (files.length === 0) {
-    return (
-      <div className="p-4 text-center text-(--text-tertiary) text-base italic">
-        {t('staging.fileList.noChanges')}
-      </div>
-    );
-  }
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null, false);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file, file.isStaged);
+    }
+  };
 
   if (viewMode === StagingViewMode.Tree) {
     return (
@@ -465,8 +514,10 @@ export function FluidFileList({
       items={files}
       getItemKey={(file) => file.path}
       itemHeight={36}
-      selectedItemKey={selectedFile?.path}
-      onItemClick={(file) => onSelectFile(file, file.isStaged)}
+      emptyMessage={emptyMessage}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
       itemClassName="!py-1.5 !gap-2"
     >
       {(file) => (
@@ -618,7 +669,7 @@ function FluidFileItem({
 interface FluidTreeViewProps {
   files: FluidFile[];
   selectedFile: FileStatus | null;
-  onSelectFile: (file: FileStatus, isStaged: boolean) => void;
+  onSelectFile: (file: FileStatus | null, isStaged: boolean) => void;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onDiscard: (path: string) => void;
@@ -638,12 +689,31 @@ function FluidTreeView({
     (f) => f.path
   );
 
+  const selectedKeys = useMemo(
+    () => (selectedFile ? new Set<SelectionKey>([selectedFile.path]) : new Set<SelectionKey>()),
+    [selectedFile]
+  );
+
+  const handleSelectionChange = (keys: Set<SelectionKey>) => {
+    if (keys.size === 0) {
+      onSelectFile(null, false);
+      return;
+    }
+    const key = keys.values().next().value;
+    const file = files.find((f) => f.path === key);
+    if (file) {
+      onSelectFile(file, file.isStaged);
+    }
+  };
+
   return (
     <UITreeView<FluidFile>
       data={treeData}
-      selectedId={selectedFile?.path ?? null}
+      selectionMode="single"
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
       defaultExpandAll
-      renderItem={({ node, depth, isExpanded, toggleExpand }) => {
+      renderItem={({ node, depth, isExpanded, isSelected, toggleExpand, select }) => {
         // Folder node
         if (node.children && node.children.length > 0) {
           return (
@@ -668,8 +738,8 @@ function FluidTreeView({
           return (
             <FluidFileItem
               file={node.data}
-              isSelected={selectedFile?.path === node.data.path}
-              onSelect={() => onSelectFile(node.data!, node.data!.isStaged)}
+              isSelected={isSelected}
+              onSelect={select}
               onStage={() => onStage(node.data!.path)}
               onUnstage={() => onUnstage(node.data!.path)}
               onDiscard={() => onDiscard(node.data!.path)}

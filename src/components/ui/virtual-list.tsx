@@ -2,6 +2,8 @@ import { useRef, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useListSelection } from '@/hooks';
+import type { SelectionKey, SelectionMode } from '@/hooks';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -17,11 +19,17 @@ interface VirtualListProps<T> {
   onLoadMore?: () => void;
   loadingMoreMessage?: string;
   loadMoreThreshold?: number;
-  selectedItemKey?: string | number | null;
-  onItemClick?: (item: T, index: number) => void;
   className?: string;
   itemClassName?: string | ((item: T, index: number) => string);
   selectedClassName?: string;
+
+  // Click handler for non-selection use cases (e.g. notifications)
+  onItemClick?: (item: T, index: number) => void;
+
+  // Selection API
+  selectionMode?: SelectionMode;
+  selectedKeys?: Set<SelectionKey>;
+  onSelectionChange?: (keys: Set<SelectionKey>) => void;
 }
 
 export function VirtualList<T>({
@@ -38,13 +46,23 @@ export function VirtualList<T>({
   onLoadMore,
   loadingMoreMessage,
   loadMoreThreshold = 200,
-  selectedItemKey,
   onItemClick,
+  selectionMode,
+  selectedKeys: controlledSelectedKeys,
+  onSelectionChange,
   className,
   itemClassName,
   selectedClassName,
 }: VirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const selection = useListSelection({
+    items,
+    getItemKey,
+    selectionMode: selectionMode ?? 'none',
+    selectedKeys: controlledSelectedKeys,
+    onSelectionChange,
+  });
 
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -96,11 +114,19 @@ export function VirtualList<T>({
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const item = items[virtualRow.index];
           const key = getItemKey(item, virtualRow.index);
-          const isSelected = selectedItemKey != null && key === selectedItemKey;
+
+          const isSelected = selection.isSelected(key);
+
           const dynamicClassName =
             typeof itemClassName === 'function'
               ? itemClassName(item, virtualRow.index)
               : itemClassName;
+
+          const handleClick = selectionMode
+            ? (e: React.MouseEvent) => selection.handleItemClick(key, e)
+            : onItemClick
+              ? () => onItemClick(item, virtualRow.index)
+              : undefined;
 
           return (
             <div
@@ -114,7 +140,7 @@ export function VirtualList<T>({
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              onClick={onItemClick ? () => onItemClick(item, virtualRow.index) : undefined}
+              onClick={handleClick}
             >
               {children(item, virtualRow.index)}
             </div>

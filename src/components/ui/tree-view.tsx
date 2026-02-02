@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useListSelection } from '@/hooks';
+import type { SelectionKey, SelectionMode } from '@/hooks';
 
 export interface TreeNode<T = unknown> {
   id: string;
@@ -15,12 +17,11 @@ interface TreeItemRenderProps<T> {
   isExpanded: boolean;
   isSelected: boolean;
   toggleExpand: () => void;
+  select: () => void;
 }
 
 interface TreeViewProps<T> {
   data: TreeNode<T>[];
-  selectedId?: string | null;
-  onSelect?: (node: TreeNode<T>) => void;
   renderItem?: (props: TreeItemRenderProps<T>) => React.ReactNode;
   expandedIds?: Set<string>;
   onExpandedChange?: (expandedIds: Set<string>) => void;
@@ -28,6 +29,11 @@ interface TreeViewProps<T> {
   defaultExpandAll?: boolean;
   className?: string;
   itemClassName?: string;
+
+  // Selection API
+  selectionMode?: SelectionMode;
+  selectedKeys?: Set<SelectionKey>;
+  onSelectionChange?: (keys: Set<SelectionKey>) => void;
 }
 
 function getAllIds<T>(nodes: TreeNode<T>[]): string[] {
@@ -37,6 +43,21 @@ function getAllIds<T>(nodes: TreeNode<T>[]): string[] {
       if (node.children && node.children.length > 0) {
         ids.push(node.id);
         traverse(node.children);
+      }
+    }
+  };
+  traverse(nodes);
+  return ids;
+}
+
+function collectLeafIds<T>(nodes: TreeNode<T>[]): string[] {
+  const ids: string[] = [];
+  const traverse = (nodeList: TreeNode<T>[]) => {
+    for (const node of nodeList) {
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      } else {
+        ids.push(node.id);
       }
     }
   };
@@ -56,8 +77,6 @@ function getInitialExpandedIds<T>(
 
 export function TreeView<T>({
   data,
-  selectedId,
-  onSelect,
   renderItem,
   expandedIds: controlledExpandedIds,
   onExpandedChange,
@@ -65,6 +84,9 @@ export function TreeView<T>({
   defaultExpandAll = true,
   className,
   itemClassName,
+  selectionMode,
+  selectedKeys: controlledSelectedKeys,
+  onSelectionChange,
 }: TreeViewProps<T>) {
   const [internalExpandedIds, setInternalExpandedIds] = useState<Set<string>>(() =>
     getInitialExpandedIds(data, defaultExpandedIds, defaultExpandAll)
@@ -88,10 +110,23 @@ export function TreeView<T>({
 
   const isExpanded = useCallback((id: string) => expandedIds.has(id), [expandedIds]);
 
+  // Flatten leaf node IDs for selection tracking
+  const leafIds = useMemo(() => collectLeafIds(data), [data]);
+  const getItemKey = useCallback((id: string) => id, []);
+
+  const selection = useListSelection({
+    items: leafIds,
+    getItemKey,
+    selectionMode: selectionMode ?? 'none',
+    selectedKeys: controlledSelectedKeys,
+    onSelectionChange,
+  });
+
   const renderNode = (node: TreeNode<T>, depth: number = 0): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
     const expanded = isExpanded(node.id);
-    const selected = selectedId === node.id;
+    const selected = selection.isSelected(node.id);
+    const selectNode = () => selection.handleItemClick(node.id);
 
     if (renderItem) {
       return (
@@ -102,6 +137,7 @@ export function TreeView<T>({
             isExpanded: expanded,
             isSelected: selected,
             toggleExpand: () => toggleExpand(node.id),
+            select: selectNode,
           })}
           {hasChildren && expanded && node.children!.map((child) => renderNode(child, depth + 1))}
         </div>
@@ -144,7 +180,7 @@ export function TreeView<T>({
           itemClassName
         )}
         style={{ paddingLeft: `${depth * 16 + 24}px` }}
-        onClick={() => onSelect?.(node)}
+        onClick={selectNode}
       >
         <span className="text-base text-(--text-primary)">{node.name}</span>
       </div>

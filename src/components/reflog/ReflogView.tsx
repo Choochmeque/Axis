@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   History,
@@ -35,6 +35,7 @@ import {
   SelectItem,
   VirtualList,
 } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { copyToClipboard } from '@/lib/actions';
@@ -127,6 +128,11 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<ReflogEntry | null>(null);
+  const selectedEntryKeys = useMemo(
+    () =>
+      selectedEntry ? new Set<SelectionKey>([selectedEntry.reflogRef]) : new Set<SelectionKey>(),
+    [selectedEntry]
+  );
   const [availableRefs, setAvailableRefs] = useState<string[]>(['HEAD']);
   const [currentRef, setCurrentRef] = useState('HEAD');
   const [isLoading, setIsLoading] = useState(false);
@@ -307,10 +313,17 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         isLoadingMore={isLoadingMore}
         onLoadMore={loadMoreEntries}
         loadingMoreMessage={t('reflog.loadingMore')}
-        selectedItemKey={selectedEntry?.reflogRef}
-        onItemClick={(entry) =>
-          setSelectedEntry(selectedEntry?.reflogRef === entry.reflogRef ? null : entry)
-        }
+        selectionMode="single"
+        selectedKeys={selectedEntryKeys}
+        onSelectionChange={(keys) => {
+          if (keys.size === 0) {
+            setSelectedEntry(null);
+            return;
+          }
+          const key = keys.values().next().value;
+          const entry = entries.find((e) => e.reflogRef === key);
+          if (entry) setSelectedEntry(entry);
+        }}
         className="flex-1"
       >
         {(entry) => {

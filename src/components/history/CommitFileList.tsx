@@ -1,14 +1,16 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DiffStatus } from '@/types';
 import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
 import { cn } from '@/lib/utils';
 import { VirtualList } from '@/components/ui';
+import type { SelectionKey } from '@/hooks';
 import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 interface CommitFileListProps {
   files: FileDiff[];
   selectedFile: FileDiff | null;
-  onSelectFile: (file: FileDiff) => void;
+  onSelectFile: (file: FileDiff | null) => void;
   isLoading?: boolean;
   commitOid?: string;
 }
@@ -16,7 +18,6 @@ interface CommitFileListProps {
 const listClass = 'flex flex-col h-full min-h-0 overflow-hidden bg-(--bg-primary)';
 const headerClass =
   'flex items-center gap-2 py-2 px-3 bg-(--bg-toolbar) border-b border-(--border-color) text-xs font-semibold uppercase text-(--text-secondary) shrink-0';
-const emptyClass = 'p-6 text-center text-(--text-secondary) text-base';
 
 export function CommitFileList({
   files,
@@ -30,46 +31,44 @@ export function CommitFileList({
   const totalDeletions = files.reduce((sum, f) => sum + Number(f.deletions), 0);
 
   const getFileKey = (file: FileDiff) => `${file.newPath ?? ''}|${file.oldPath ?? ''}`;
-  const selectedKey = selectedFile ? getFileKey(selectedFile) : null;
-
-  if (isLoading) {
-    return (
-      <div className={listClass}>
-        <div className={headerClass}>
-          <span className="flex-1">{t('history.fileList.title')}</span>
-        </div>
-        <div className={emptyClass}>{t('history.fileList.loading')}</div>
-      </div>
-    );
-  }
-
-  if (files.length === 0) {
-    return (
-      <div className={listClass}>
-        <div className={headerClass}>
-          <span className="flex-1">{t('history.fileList.title')}</span>
-        </div>
-        <div className={emptyClass}>{t('history.fileList.noChanges')}</div>
-      </div>
-    );
-  }
+  const selectedKeys = useMemo(
+    () =>
+      selectedFile ? new Set<SelectionKey>([getFileKey(selectedFile)]) : new Set<SelectionKey>(),
+    [selectedFile]
+  );
 
   return (
     <div className={listClass}>
       <div className={headerClass}>
         <span className="flex-1">{t('history.fileList.title')}</span>
-        <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
-        <span className="flex gap-1.5 text-sm font-medium">
-          <span className="text-success">+{totalAdditions}</span>
-          <span className="text-error">-{totalDeletions}</span>
-        </span>
+        {files.length > 0 && (
+          <>
+            <span className={cn('badge', 'text-sm font-normal')}>{files.length}</span>
+            <span className="flex gap-1.5 text-sm font-medium">
+              <span className="text-success">+{totalAdditions}</span>
+              <span className="text-error">-{totalDeletions}</span>
+            </span>
+          </>
+        )}
       </div>
       <VirtualList
         items={files}
         getItemKey={getFileKey}
         itemHeight={36}
-        selectedItemKey={selectedKey}
-        onItemClick={onSelectFile}
+        isLoading={isLoading}
+        loadingMessage={t('history.fileList.loading')}
+        emptyMessage={t('history.fileList.noChanges')}
+        selectionMode="single"
+        selectedKeys={selectedKeys}
+        onSelectionChange={(keys) => {
+          if (keys.size === 0) {
+            onSelectFile(null);
+            return;
+          }
+          const key = keys.values().next().value;
+          const file = files.find((f) => getFileKey(f) === key);
+          if (file) onSelectFile(file);
+        }}
         itemClassName="!py-1.5 !gap-2"
       >
         {(file) => (

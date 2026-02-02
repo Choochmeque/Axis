@@ -39,10 +39,14 @@ export function PullRequestsView() {
   }, []);
 
   const handlePrSelect = useCallback(
-    async (pr: PullRequest) => {
+    async (pr: PullRequest | null) => {
+      if (pr === null) {
+        clearSelectedPr();
+        return;
+      }
       await getPullRequest(pr.number);
     },
-    [getPullRequest]
+    [getPullRequest, clearSelectedPr]
   );
 
   const handleRefresh = useCallback(() => {

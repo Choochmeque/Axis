@@ -115,6 +115,7 @@ vi.mock('./FileStatusList', () => ({
   FileStatusList: ({
     files,
     title,
+    emptyMessage,
     onSelectFile,
     onStage,
     onUnstage,
@@ -122,6 +123,7 @@ vi.mock('./FileStatusList', () => ({
   }: {
     files: FileStatus[];
     title?: string;
+    emptyMessage?: string;
     selectedFile: string | null;
     onSelectFile: (path: string) => void;
     onStage?: (path: string) => void;
@@ -129,6 +131,7 @@ vi.mock('./FileStatusList', () => ({
     onDiscard?: (path: string) => void;
   }) => (
     <div data-testid="file-status-list" data-title={title}>
+      {files.length === 0 && emptyMessage && <div>{emptyMessage}</div>}
       {files.map((f) => (
         <div
           key={f.path}

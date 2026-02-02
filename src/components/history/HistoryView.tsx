@@ -1,5 +1,5 @@
 // Refactored to use DataTable with virtualization
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
@@ -23,6 +23,7 @@ import { BisectBanner } from '../merge/BisectBanner';
 import { MergeBanner } from '../merge/MergeBanner';
 import { RebaseBanner } from '../merge/RebaseBanner';
 import { DataTable, type ColumnDef, type DataTableRef } from '@/components/ui/data-table';
+import type { SelectionKey } from '@/hooks';
 import { Avatar, Button } from '@/components/ui';
 import { formatShortDate } from '@/lib/dateUtils';
 import { computeGraphLayout, getMaxColumns, type RowGraphData } from '@/lib/graphLayout';
@@ -295,15 +296,22 @@ export function HistoryView() {
     [t, graphDataMap, maxGraphColumns, branchColorMap]
   );
 
-  const handleCommitClick = useCallback(
-    (commit: GraphCommit) => {
-      if (selectedCommitOid === commit.oid) {
+  const selectedKeys = useMemo(
+    () =>
+      selectedCommitOid ? new Set<SelectionKey>([selectedCommitOid]) : new Set<SelectionKey>(),
+    [selectedCommitOid]
+  );
+
+  const handleSelectionChange = useCallback(
+    (keys: Set<SelectionKey>) => {
+      if (keys.size === 0) {
         clearCommitSelection();
       } else {
-        selectCommit(commit.oid);
+        const oid = keys.values().next().value as string;
+        selectCommit(oid);
       }
     },
-    [selectedCommitOid, selectCommit, clearCommitSelection]
+    [selectCommit, clearCommitSelection]
   );
 
   const handleScroll = useCallback(
@@ -417,8 +425,9 @@ export function HistoryView() {
               ref={tableRef}
               data={commits}
               columns={columns}
-              selectedRowId={selectedCommitOid}
-              onRowClick={handleCommitClick}
+              selectionMode="single"
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
               onRowContextMenu={handleRowContextMenu}
               getRowId={(commit) => commit.oid}
               onScroll={handleScroll}

@@ -199,8 +199,24 @@ describe('repositoryStore', () => {
   describe('loadRecentRepositories', () => {
     it('should load recent repositories', async () => {
       const mockRecent = [
-        { path: '/path/1', name: 'repo1', lastOpened: '2024-01-01T00:00:00Z' },
-        { path: '/path/2', name: 'repo2', lastOpened: '2024-01-02T00:00:00Z' },
+        {
+          path: '/path/1',
+          name: 'repo1',
+          lastOpened: '2024-01-01T00:00:00Z',
+          exists: true,
+          currentBranch: 'main',
+          isPinned: false,
+          displayPath: '/path/1',
+        },
+        {
+          path: '/path/2',
+          name: 'repo2',
+          lastOpened: '2024-01-02T00:00:00Z',
+          exists: true,
+          currentBranch: 'develop',
+          isPinned: false,
+          displayPath: '/path/2',
+        },
       ];
 
       vi.mocked(repositoryApi.getRecentRepositories).mockResolvedValue(mockRecent);

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DataTable, type ColumnDef } from './data-table';
+import type { SelectionKey } from '@/hooks';
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -79,21 +80,23 @@ describe('DataTable', () => {
     expect(screen.getByText('Loading data...')).toBeInTheDocument();
   });
 
-  it('should call onRowClick when row is clicked', () => {
-    const onRowClick = vi.fn();
+  it('should call onSelectionChange when row is clicked', () => {
+    const onSelectionChange = vi.fn();
 
     render(
       <DataTable
         data={mockData}
         columns={mockColumns}
-        onRowClick={onRowClick}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>()}
+        onSelectionChange={onSelectionChange}
         getRowId={(row) => row.id}
       />
     );
 
     fireEvent.click(screen.getByText('Item 1'));
 
-    expect(onRowClick).toHaveBeenCalledWith(mockData[0]);
+    expect(onSelectionChange).toHaveBeenCalledWith(new Set(['1']));
   });
 
   it('should call onRowContextMenu when row is right-clicked', () => {
@@ -118,13 +121,51 @@ describe('DataTable', () => {
       <DataTable
         data={mockData}
         columns={mockColumns}
-        selectedRowId="2"
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['2'])}
+        onSelectionChange={vi.fn()}
         getRowId={(row) => row.id}
       />
     );
 
     const selectedRow = screen.getByText('Item 2').closest('div[class*="flex items-center"]');
     expect(selectedRow?.className).toContain('bg-(--bg-active)');
+  });
+
+  it('should deselect when clicking selected row in single mode', () => {
+    const onSelectionChange = vi.fn();
+
+    render(
+      <DataTable
+        data={mockData}
+        columns={mockColumns}
+        selectionMode="single"
+        selectedKeys={new Set<SelectionKey>(['1'])}
+        onSelectionChange={onSelectionChange}
+        getRowId={(row) => row.id}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Item 1'));
+
+    expect(onSelectionChange).toHaveBeenCalledWith(new Set());
+  });
+
+  it('should not fire selection when selectionMode is not set', () => {
+    const onSelectionChange = vi.fn();
+
+    render(
+      <DataTable
+        data={mockData}
+        columns={mockColumns}
+        onSelectionChange={onSelectionChange}
+        getRowId={(row) => row.id}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Item 1'));
+
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 
   it('should apply custom className', () => {

@@ -17,7 +17,9 @@
     "typecheck": "tsc --noEmit",
     "e2e": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:mac": "wdio run e2e/wdio.mac.conf.ts",
-    "appium": "appium"
+    "e2e:win": "wdio run e2e/wdio.win.conf.ts",
+    "appium": "appium",
+    "tauri-driver": "tauri-driver"
   },
   "dependencies": {
     "@choochmeque/tauri-plugin-notifications-api": "^0.4.2",

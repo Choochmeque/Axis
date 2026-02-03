@@ -85,6 +85,7 @@
     "@wdio/spec-reporter": "^9.23.3",
     "appium": "^3.2.0",
     "appium-mac2-driver": "^3.2.15",
+    "edgedriver": "^6.3.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",

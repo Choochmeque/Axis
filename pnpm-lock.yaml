@@ -192,6 +192,9 @@ importers:
       appium-mac2-driver:
         specifier: ^3.2.15
         version: 3.2.15(appium@3.2.0)
+      edgedriver:
+        specifier: ^6.3.0
+        version: 6.3.0
       eslint:
         specifier: ^9.0.0
         version: 9.39.2(jiti@2.6.1)

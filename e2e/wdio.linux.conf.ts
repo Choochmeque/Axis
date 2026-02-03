@@ -8,15 +8,15 @@ const appPath = resolve(import.meta.dirname, '../src-tauri/target/release/axis')
 
 export const config = {
   ...baseConfig,
-  port: 4723,
+  hostname: '127.0.0.1',
+  port: 4444,
   capabilities: [
     {
-      platformName: 'Linux',
-      'appium:automationName': 'linux',
-      'appium:app': appPath,
-      'appium:arguments': [],
-      'appium:environment': {},
-      'appium:showServerLogs': true,
+      browserName: 'MiniBrowser',
+      'webkitgtk:browserOptions': {
+        binary: appPath,
+        args: [],
+      },
     },
   ],
 };

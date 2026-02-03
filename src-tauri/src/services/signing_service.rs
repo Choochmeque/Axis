@@ -2,8 +2,10 @@ use crate::error::{AxisError, Result};
 use crate::models::{GpgKey, SigningConfig, SigningFormat, SigningTestResult, SshKey};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use tempfile::NamedTempFile;
+
+use crate::services::create_command;
 
 /// Service for commit signing operations (GPG and SSH)
 pub struct SigningService {
@@ -74,7 +76,7 @@ impl SigningService {
                 return Some(path.to_path_buf());
             }
             // Try to find in PATH
-            if let Ok(output) = Command::new(candidate).arg("--version").output() {
+            if let Ok(output) = create_command(candidate).arg("--version").output() {
                 if output.status.success() {
                     return Some(PathBuf::from(candidate));
                 }
@@ -101,7 +103,7 @@ impl SigningService {
                 return Some(path.to_path_buf());
             }
             // Try to find in PATH
-            if let Ok(output) = Command::new(candidate).arg("-V").output() {
+            if let Ok(output) = create_command(candidate).arg("-V").output() {
                 // ssh-keygen -V returns non-zero but still outputs version info
                 if !output.stderr.is_empty() || !output.stdout.is_empty() {
                     return Some(PathBuf::from(candidate));
@@ -158,7 +160,7 @@ impl SigningService {
             .or_else(Self::find_gpg_program)
             .ok_or_else(|| AxisError::FileNotFound("GPG program not found".to_string()))?;
 
-        let mut child = Command::new(&gpg_program)
+        let mut child = create_command(gpg_program.as_os_str())
             .args(["--status-fd=2", "-bsau", key_id, "--armor", "--detach-sign"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -218,7 +220,7 @@ impl SigningService {
         let temp_path = temp_file.path();
 
         // ssh-keygen -Y sign -f <key> -n git <file>
-        let output = Command::new(&ssh_program)
+        let output = create_command(ssh_program.as_os_str())
             .args([
                 "-Y",
                 "sign",
@@ -271,7 +273,7 @@ impl SigningService {
         let gpg_program = Self::find_gpg_program()
             .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
 
-        let output = Command::new(&gpg_program)
+        let output = create_command(gpg_program.as_os_str())
             .args([
                 "--list-secret-keys",
                 "--keyid-format",
@@ -408,7 +410,7 @@ impl SigningService {
         sig_file.write_all(signature.as_bytes()).ok()?;
         data_file.write_all(data.as_bytes()).ok()?;
 
-        let output = Command::new(&gpg_program)
+        let output = create_command(gpg_program.as_os_str())
             .args([
                 "--status-fd=1",
                 "--verify",
@@ -454,7 +456,7 @@ impl SigningService {
         data_file.write_all(data.as_bytes()).ok()?;
 
         // ssh-keygen -Y verify -f <allowed_signers> -I <identity> -n git -s <sig> < <data>
-        let output = Command::new(&ssh_program)
+        let output = create_command(ssh_program.as_os_str())
             .args([
                 "-Y",
                 "verify",

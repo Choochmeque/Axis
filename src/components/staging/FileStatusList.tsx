@@ -18,7 +18,7 @@ import { Checkbox, TreeView as UITreeView, buildTreeFromPaths, VirtualList } fro
 import type { SelectionKey } from '@/hooks';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, testId } from '@/lib/utils';
 import { StagingViewMode } from './StagingFilters';
 import { StagingFileContextMenu } from './StagingFileContextMenu';
 
@@ -204,6 +204,7 @@ function FileStatusItemContent({
     >
       <div className="contents">
         <Checkbox
+          {...testId('e2e-staging-file-checkbox')}
           checked={isStaged}
           onCheckedChange={(checked: boolean | 'indeterminate') => {
             handleCheckboxChange(checked === true);
@@ -212,6 +213,7 @@ function FileStatusItemContent({
         />
         <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
+          {...testId(`e2e-staging-file-${getFileName(file.path)}`)}
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={file.path}
         >

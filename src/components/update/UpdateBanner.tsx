@@ -18,7 +18,7 @@ export function UpdateBanner() {
   if (!updateAvailable || dismissed) return null;
 
   return (
-    <div className="update-banner" data-testid="update-banner">
+    <div className="update-banner" aria-label="update-banner">
       <div className="update-banner-content">
         {isReadyToRestart ? (
           <>

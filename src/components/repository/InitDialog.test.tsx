@@ -14,9 +14,11 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 }));
 
 const mockLoadRecentRepositories = vi.fn();
+const mockOpenRepository = vi.fn();
 vi.mock('@/store/repositoryStore', () => ({
   useRepositoryStore: () => ({
     loadRecentRepositories: mockLoadRecentRepositories,
+    openRepository: mockOpenRepository,
   }),
 }));
 
@@ -185,6 +187,7 @@ describe('InitDialog', () => {
 
   it('should initialize repository successfully', async () => {
     mockInit.mockResolvedValueOnce({ path: '/test/repo', name: 'repo' });
+    mockOpenRepository.mockResolvedValueOnce(undefined);
     mockFindTabByPath.mockReturnValue(null);
 
     render(<InitDialog {...defaultProps} />);
@@ -202,6 +205,7 @@ describe('InitDialog', () => {
       expect(mockInit).toHaveBeenCalled();
     });
 
+    expect(mockOpenRepository).toHaveBeenCalledWith('/test/repo');
     expect(mockLoadRecentRepositories).toHaveBeenCalled();
     expect(mockAddTab).toHaveBeenCalledWith({
       type: 'repository',
@@ -213,6 +217,7 @@ describe('InitDialog', () => {
 
   it('should use existing tab when repository already open', async () => {
     mockInit.mockResolvedValueOnce({ path: '/test/repo', name: 'repo' });
+    mockOpenRepository.mockResolvedValueOnce(undefined);
     mockFindTabByPath.mockReturnValue({ id: 'existing-tab' });
 
     render(<InitDialog {...defaultProps} />);
@@ -270,6 +275,7 @@ describe('InitDialog', () => {
 
   it('should handle Enter key to submit', async () => {
     mockInit.mockResolvedValueOnce({ path: '/test/repo', name: 'repo' });
+    mockOpenRepository.mockResolvedValueOnce(undefined);
     mockFindTabByPath.mockReturnValue(null);
 
     render(<InitDialog {...defaultProps} />);
@@ -294,6 +300,7 @@ describe('InitDialog', () => {
         resolveInit = resolve;
       })
     );
+    mockOpenRepository.mockResolvedValueOnce(undefined);
     mockFindTabByPath.mockReturnValue(null);
 
     render(<InitDialog {...defaultProps} />);
@@ -327,6 +334,7 @@ describe('InitDialog', () => {
 
   it('should initialize bare repository when bare is checked', async () => {
     mockInit.mockResolvedValueOnce({ path: '/test/repo', name: 'repo' });
+    mockOpenRepository.mockResolvedValueOnce(undefined);
     mockFindTabByPath.mockReturnValue(null);
 
     render(<InitDialog {...defaultProps} />);

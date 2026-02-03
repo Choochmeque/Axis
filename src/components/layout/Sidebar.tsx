@@ -39,7 +39,7 @@ import { useStagingStore } from '../../store/stagingStore';
 import { useLfsStore } from '../../store/lfsStore';
 import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
 import { useDialogStore } from '../../store/dialogStore';
-import { cn, naturalCompare } from '../../lib/utils';
+import { cn, naturalCompare, testId } from '../../lib/utils';
 import type { Branch } from '../../types';
 import { BranchContextMenu, RemoteBranchContextMenu } from '../branches';
 import { TagContextMenu } from '../tags/TagContextMenu';
@@ -329,6 +329,7 @@ export function Sidebar() {
               defaultExpanded={true}
             >
               <button
+                {...testId('e2e-sidebar-file-status')}
                 className={cn(
                   sidebarItemClass,
                   currentView === 'file-status' && 'bg-(--bg-active) font-medium'
@@ -340,6 +341,7 @@ export function Sidebar() {
                 {changesCount > 0 && <span className="badge">{changesCount}</span>}
               </button>
               <button
+                {...testId('e2e-sidebar-history')}
                 className={cn(
                   sidebarItemClass,
                   currentView === 'history' && 'bg-(--bg-active) font-medium'

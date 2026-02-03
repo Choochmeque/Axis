@@ -13,6 +13,8 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
   naturalCompare: (a: string, b: string) => a.localeCompare(b),
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  testId: (id: string) => ({ 'aria-label': id, 'data-testid': id }),
 }));
 
 const mockRepositoryStore = {

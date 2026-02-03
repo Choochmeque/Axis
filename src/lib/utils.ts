@@ -49,6 +49,19 @@ export function naturalCompare(a: string, b: string): number {
 }
 
 /**
+ * Returns an `aria-label` for a given E2E test identifier.
+ * Spread the result onto any JSX element: `<div {...testId('e2e-my-element')}>`.
+ *
+ * All Appium drivers (mac2, windows, linux) locate elements via the
+ * accessibility name derived from `aria-label`.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export function testId(id: string): { 'aria-label': string } {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  return { 'aria-label': id };
+}
+
+/**
  * Normalize a path for consistent cache key usage.
  * Removes trailing slashes to ensure paths match regardless of source.
  */

@@ -25,9 +25,13 @@ interface TempRepoOptions {
 export function createTempGitRepo(options: TempRepoOptions = {}): string {
   const dir = mkdtempSync(join(tmpdir(), 'axis-e2e-'));
 
-  execSync('git init', { cwd: dir, stdio: 'pipe' });
-  execSync('git config user.email "test@axis-e2e.com"', { cwd: dir, stdio: 'pipe' });
-  execSync('git config user.name "Axis E2E"', { cwd: dir, stdio: 'pipe' });
+  execSync('git init', { cwd: dir, stdio: 'pipe', windowsHide: true });
+  execSync('git config user.email "test@axis-e2e.com"', {
+    cwd: dir,
+    stdio: 'pipe',
+    windowsHide: true,
+  });
+  execSync('git config user.name "Axis E2E"', { cwd: dir, stdio: 'pipe', windowsHide: true });
 
   if (options.files) {
     for (const [name, content] of Object.entries(options.files)) {
@@ -36,8 +40,8 @@ export function createTempGitRepo(options: TempRepoOptions = {}): string {
   }
 
   if (options.initialCommit) {
-    execSync('git add -A', { cwd: dir, stdio: 'pipe' });
-    execSync('git commit -m "Initial commit"', { cwd: dir, stdio: 'pipe' });
+    execSync('git add -A', { cwd: dir, stdio: 'pipe', windowsHide: true });
+    execSync('git commit -m "Initial commit"', { cwd: dir, stdio: 'pipe', windowsHide: true });
   }
 
   return dir;

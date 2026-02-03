@@ -192,6 +192,9 @@ importers:
       appium-mac2-driver:
         specifier: ^3.2.15
         version: 3.2.15(appium@3.2.0)
+      appium-windows-driver:
+        specifier: ^5.1.8
+        version: 5.1.8(appium@3.2.0)
       eslint:
         specifier: ^9.0.0
         version: 9.39.2(jiti@2.6.1)
@@ -2240,6 +2243,12 @@ packages:
     peerDependencies:
       appium: ^3.0.0-rc.2
 
+  appium-windows-driver@5.1.8:
+    resolution: {integrity: sha512-6vjo9Mz/GP6Tf/vN+36hXMCLqCK5MaVBKdmjqha7pTghpoTeK+2GKF+mj+qqiJJwwHHWTKGBxLVycXc32MnubA==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0, npm: '>=10'}
+    peerDependencies:
+      appium: ^3.0.0-rc.2
+
   appium-xcode@6.1.8:
     resolution: {integrity: sha512-nk86u0wo4ZPCxQsiF/1PR/HewpB5NxSkNxUttRLiWEbMTA8FPqDlbUfrD/xaywMYUYkYIk+W9ufz3Gg0CKMBAA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0, npm: '>=10'}
@@ -3701,6 +3710,9 @@ packages:
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
+
+  koffi@2.15.1:
+    resolution: {integrity: sha512-mnc0C0crx/xMSljb5s9QbnLrlFHprioFO1hkXyuSuO/QtbpLDa0l/uM21944UfQunMKmp3/r789DTDxVyyH6aA==}
 
   konva@10.0.12:
     resolution: {integrity: sha512-DHmkeG5FbW6tLCkbMQTi1ihWycfzljrn0V7umUUuewxx7aoINcI71ksgBX9fTPNXhlsK4/JoMgKwI/iCde+BRw==}
@@ -7662,6 +7674,21 @@ snapshots:
       - debug
       - react-native-b4a
 
+  appium-windows-driver@5.1.8(appium@3.2.0):
+    dependencies:
+      appium: 3.2.0
+      asyncbox: 6.1.0
+      axios: 1.13.4
+      bluebird: 3.7.2
+      lodash: 4.17.23
+      portscanner: 2.2.0
+      semver: 7.7.3
+      teen_process: 4.0.9
+    optionalDependencies:
+      koffi: 2.15.1
+    transitivePeerDependencies:
+      - debug
+
   appium-xcode@6.1.8:
     dependencies:
       '@appium/support': 7.0.5
@@ -9301,6 +9328,9 @@ snapshots:
   klaw@4.1.0: {}
 
   kleur@4.1.5: {}
+
+  koffi@2.15.1:
+    optional: true
 
   konva@10.0.12: {}
 

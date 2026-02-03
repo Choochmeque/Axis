@@ -18,8 +18,7 @@
     "e2e": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:mac": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:win": "wdio run e2e/wdio.win.conf.ts",
-    "appium": "appium",
-    "tauri-driver": "tauri-driver"
+    "appium": "appium"
   },
   "dependencies": {
     "@choochmeque/tauri-plugin-notifications-api": "^0.4.2",
@@ -85,6 +84,7 @@
     "@wdio/spec-reporter": "^9.23.3",
     "appium": "^3.2.0",
     "appium-mac2-driver": "^3.2.15",
+    "appium-windows-driver": "^5.1.8",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",

@@ -5,7 +5,7 @@
  * They create temporary git repositories for test scenarios.
  */
 
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { mkdtempSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -17,6 +17,20 @@ interface TempRepoOptions {
   files?: Record<string, string>;
 }
 
+/** Spawn options that prevent console windows on Windows. */
+const GIT_OPTS = { stdio: 'pipe' as const, windowsHide: true };
+
+/**
+ * Run a git command without spawning a visible console window on Windows.
+ * Uses spawnSync with an args array (no shell) to avoid cmd.exe entirely.
+ */
+function git(args: string[], cwd: string): void {
+  const result = spawnSync('git', args, { ...GIT_OPTS, cwd });
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed: ${result.stderr?.toString()}`);
+  }
+}
+
 /**
  * Create a temporary git repository.
  *
@@ -25,13 +39,9 @@ interface TempRepoOptions {
 export function createTempGitRepo(options: TempRepoOptions = {}): string {
   const dir = mkdtempSync(join(tmpdir(), 'axis-e2e-'));
 
-  execSync('git init', { cwd: dir, stdio: 'pipe', windowsHide: true });
-  execSync('git config user.email "test@axis-e2e.com"', {
-    cwd: dir,
-    stdio: 'pipe',
-    windowsHide: true,
-  });
-  execSync('git config user.name "Axis E2E"', { cwd: dir, stdio: 'pipe', windowsHide: true });
+  git(['init'], dir);
+  git(['config', 'user.email', 'test@axis-e2e.com'], dir);
+  git(['config', 'user.name', 'Axis E2E'], dir);
 
   if (options.files) {
     for (const [name, content] of Object.entries(options.files)) {
@@ -40,8 +50,8 @@ export function createTempGitRepo(options: TempRepoOptions = {}): string {
   }
 
   if (options.initialCommit) {
-    execSync('git add -A', { cwd: dir, stdio: 'pipe', windowsHide: true });
-    execSync('git commit -m "Initial commit"', { cwd: dir, stdio: 'pipe', windowsHide: true });
+    git(['add', '-A'], dir);
+    git(['commit', '-m', 'Initial commit'], dir);
   }
 
   return dir;

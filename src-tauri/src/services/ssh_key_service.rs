@@ -10,6 +10,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use crate::services::create_command;
+
 /// Service for SSH key management and resolution (system-level, no repo needed)
 pub struct SshKeyService;
 
@@ -37,7 +39,7 @@ impl SshKeyService {
             if path.is_absolute() && path.exists() {
                 return Ok(path.to_path_buf());
             }
-            if let Ok(output) = Command::new(candidate).arg("-V").output() {
+            if let Ok(output) = create_command(candidate).arg("-V").output() {
                 if !output.stderr.is_empty() || !output.stdout.is_empty() {
                     return Ok(PathBuf::from(candidate));
                 }
@@ -181,7 +183,7 @@ impl SshKeyService {
 
         info!("Generating SSH key: {key_path_str}");
 
-        let output = Command::new(&ssh_keygen)
+        let output = create_command(ssh_keygen.as_os_str())
             .args(&args)
             .output()
             .map_err(|e| AxisError::SshKeyError(format!("Failed to execute ssh-keygen: {e}")))?;
@@ -523,7 +525,7 @@ impl SshKeyService {
         let ssh_keygen = Self::find_ssh_keygen().ok()?;
         let key_path_str = key_path.to_string_lossy();
 
-        let output = Command::new(&ssh_keygen)
+        let output = create_command(ssh_keygen.as_os_str())
             .args(["-lf", &key_path_str])
             .output()
             .ok()?;
@@ -544,7 +546,7 @@ impl SshKeyService {
         let ssh_keygen = Self::find_ssh_keygen().ok()?;
         let key_path_str = key_path.to_string_lossy();
 
-        let output = Command::new(&ssh_keygen)
+        let output = create_command(ssh_keygen.as_os_str())
             .args(["-lf", &key_path_str])
             .output()
             .ok()?;

@@ -128,11 +128,14 @@ impl CustomActionsService {
     ) -> std::io::Result<std::process::Output> {
         #[cfg(windows)]
         {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             Command::new("cmd")
                 .args(["/C", command])
                 .current_dir(working_dir)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
                 .await
         }

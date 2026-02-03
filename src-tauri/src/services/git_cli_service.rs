@@ -17,6 +17,8 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
+
+use crate::services::create_command;
 use tempfile::NamedTempFile;
 
 use bzip2::write::BzEncoder;
@@ -58,7 +60,7 @@ impl GitCliService {
 
     /// Execute a git command and return the result
     fn execute(&self, args: &[&str]) -> Result<GitCommandResult> {
-        let output = Command::new("git")
+        let output = create_command("git")
             .args(args)
             .current_dir(&self.repo_path)
             .output()
@@ -74,7 +76,7 @@ impl GitCliService {
         args: &[&str],
         ssh_key_path: Option<&str>,
     ) -> Result<GitCommandResult> {
-        let mut cmd = Command::new("git");
+        let mut cmd = create_command("git");
         cmd.args(args).current_dir(&self.repo_path);
 
         if let Some(key_path) = ssh_key_path {
@@ -236,7 +238,7 @@ impl GitCliService {
         args.push(onto);
 
         // Execute with custom editor that replaces the todo file
-        let output = Command::new("git")
+        let output = create_command("git")
             .args(&args)
             .current_dir(&self.repo_path)
             .env("GIT_SEQUENCE_EDITOR", &editor_cmd)
@@ -350,7 +352,7 @@ impl GitCliService {
             .map_err(|e| AxisError::IoError(format!("Failed to write rebase message: {e}")))?;
 
         // Continue rebase with GIT_EDITOR=true to skip the editor
-        let output = Command::new("git")
+        let output = create_command("git")
             .args(["rebase", "--continue"])
             .current_dir(&self.repo_path)
             .env("GIT_EDITOR", "true")
@@ -1615,7 +1617,7 @@ impl GitCliService {
     /// Stage a specific hunk from a file using git apply
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn stage_hunk(&self, patch: &str) -> Result<()> {
-        let mut child = Command::new("git")
+        let mut child = create_command("git")
             .args(["apply", "--cached", "--unidiff-zero", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -1644,7 +1646,7 @@ impl GitCliService {
     /// Unstage a specific hunk from the index using git apply -R
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn unstage_hunk(&self, patch: &str) -> Result<()> {
-        let mut child = Command::new("git")
+        let mut child = create_command("git")
             .args(["apply", "--cached", "--unidiff-zero", "-R", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -1673,7 +1675,7 @@ impl GitCliService {
     /// Discard a specific hunk from the working directory using git apply -R
     /// The patch parameter should be a valid unified diff patch for the hunk
     pub fn discard_hunk(&self, patch: &str) -> Result<()> {
-        let mut child = Command::new("git")
+        let mut child = create_command("git")
             .args(["apply", "--unidiff-zero", "-R", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -1755,7 +1757,7 @@ impl GitCliService {
             }
             tar_args.push(reference);
 
-            let mut child = Command::new("git")
+            let mut child = create_command("git")
                 .args(&tar_args)
                 .current_dir(&self.repo_path)
                 .stdout(Stdio::piped())
@@ -2396,7 +2398,7 @@ impl GitCliService {
 
     /// Check if git-lfs is installed on the system
     pub fn lfs_check_installed() -> Result<(bool, Option<String>)> {
-        let output = Command::new("git")
+        let output = create_command("git")
             .args(["lfs", "version"])
             .output()
             .map_err(AxisError::from)?;
@@ -2440,7 +2442,7 @@ impl GitCliService {
     /// Get Git CLI version and path
     fn get_git_version_and_path() -> Result<(Option<String>, Option<String>)> {
         // Get git version
-        let version_output = Command::new("git")
+        let version_output = create_command("git")
             .args(["--version"])
             .output()
             .map_err(AxisError::from)?;
@@ -2463,7 +2465,7 @@ impl GitCliService {
             "which"
         };
 
-        let path_output = Command::new(path_cmd)
+        let path_output = create_command(path_cmd)
             .args(["git"])
             .output()
             .map_err(AxisError::from)?;

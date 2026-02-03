@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use strum::IntoEnumIterator;
 
+use crate::services::create_command;
+
 /// Service for Git hook execution and management.
 /// Created once per repository when the repo is opened.
 pub struct HookService {
@@ -145,7 +147,7 @@ impl HookService {
         #[cfg(unix)]
         {
             // On Unix, execute directly - OS handles shebang
-            let mut cmd = Command::new(hook_path);
+            let mut cmd = create_command(hook_path);
             cmd.args(args);
             cmd
         }
@@ -153,7 +155,7 @@ impl HookService {
         #[cfg(windows)]
         {
             // On Windows, execute through sh (from Git for Windows)
-            let mut cmd = Command::new("sh");
+            let mut cmd = create_command("sh");
             cmd.arg(hook_path);
             cmd.args(args);
             cmd

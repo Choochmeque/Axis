@@ -3,14 +3,12 @@ use crate::models::{
     ExportSshKeyOptions, GenerateSshKeyOptions, ImportSshKeyOptions, SshKeyAlgorithm, SshKeyFormat,
     SshKeyInfo,
 };
+use crate::services::create_command;
 use crate::storage::Database;
 use base64::Engine;
 use log::{error, info};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-
-use crate::services::create_command;
 
 /// Service for SSH key management and resolution (system-level, no repo needed)
 pub struct SshKeyService;

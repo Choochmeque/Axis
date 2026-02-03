@@ -2,7 +2,7 @@ use crate::error::{AxisError, Result};
 use crate::models::{GpgKey, SigningConfig, SigningFormat, SigningTestResult, SshKey};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use tempfile::NamedTempFile;
 
 use crate::services::create_command;

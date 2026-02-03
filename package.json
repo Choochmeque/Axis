@@ -18,6 +18,7 @@
     "e2e": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:mac": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:win": "wdio run e2e/wdio.win.conf.ts",
+    "e2e:linux": "wdio run e2e/wdio.linux.conf.ts",
     "appium": "appium"
   },
   "dependencies": {

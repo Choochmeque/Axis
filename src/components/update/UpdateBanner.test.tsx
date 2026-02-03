@@ -63,7 +63,7 @@ describe('UpdateBanner', () => {
 
     render(<UpdateBanner />);
 
-    expect(screen.getByTestId('update-banner')).toBeInTheDocument();
+    expect(screen.getByLabelText('update-banner')).toBeInTheDocument();
     expect(screen.getByText(/update\.available/)).toBeInTheDocument();
   });
 

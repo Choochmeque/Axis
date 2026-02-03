@@ -3,6 +3,7 @@ import { GitBranch } from 'lucide-react';
 
 import { OperationsIndicator } from '@/components/ui/OperationsIndicator';
 import { ToastHistoryDropdown } from '@/components/ui/toast';
+import { testId } from '@/lib/utils';
 import { useRepositoryStore } from '@/store/repositoryStore';
 
 export function StatusBar() {
@@ -13,7 +14,10 @@ export function StatusBar() {
     (status?.staged.length ?? 0) + (status?.unstaged.length ?? 0) + (status?.untracked.length ?? 0);
 
   return (
-    <div className="flex items-center justify-between px-3 py-1 bg-(--bg-statusbar) border-t border-(--border-color) text-xs text-white">
+    <div
+      {...testId('e2e-status-bar')}
+      className="flex items-center justify-between px-3 py-1 bg-(--bg-statusbar) border-t border-(--border-color) text-xs text-white"
+    >
       <div className="flex items-center gap-4">
         {repository && (
           <>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { toast, useReferenceMention } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
 import { useStagingStore } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
@@ -354,7 +355,10 @@ export function CommitForm() {
   const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);
 
   return (
-    <div className="flex flex-col h-full border-t border-(--border-color) bg-(--bg-secondary)">
+    <div
+      {...testId('e2e-commit-form')}
+      className="flex flex-col h-full border-t border-(--border-color) bg-(--bg-secondary)"
+    >
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color) shrink-0">
         <div className="flex items-center gap-2">
           {author && (
@@ -502,6 +506,7 @@ export function CommitForm() {
           <div className="relative flex-1 min-h-15 overflow-visible">
             <textarea
               ref={textareaRef}
+              {...testId('e2e-commit-message-input')}
               className="w-full h-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
               placeholder={
                 isAmending
@@ -544,6 +549,7 @@ export function CommitForm() {
             className="mb-0"
           />
           <button
+            {...testId('e2e-commit-button')}
             className="flex items-center justify-center gap-1.5 py-1.5 px-3 border-none rounded bg-(--accent-color) text-white text-xs font-medium cursor-pointer transition-colors hover:not-disabled:bg-(--accent-color-hover) disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCommit}
             disabled={!canCommit || isCommitting}

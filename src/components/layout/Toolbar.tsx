@@ -18,6 +18,7 @@ import { shellApi } from '@/services/api';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { showInFinder } from '@/lib/actions';
+import { testId } from '@/lib/utils';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =
@@ -78,7 +79,10 @@ export function Toolbar() {
   });
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 bg-(--bg-toolbar) border-b border-(--border-color)">
+    <div
+      {...testId('e2e-toolbar')}
+      className="flex items-center gap-1 px-3 py-2 bg-(--bg-toolbar) border-b border-(--border-color)"
+    >
       {repository && (
         <>
           <div className="flex items-center gap-0.5">

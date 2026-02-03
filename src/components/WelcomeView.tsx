@@ -14,6 +14,7 @@ import {
   ContextMenuPortal,
   ContextMenuContent,
 } from '@/components/ui';
+import { testId } from '@/lib/utils';
 import { CloneDialog } from './repository/CloneDialog';
 import { InitDialog } from './repository/InitDialog';
 import { RecentRepoContextMenu } from './repository/RecentRepoContextMenu';
@@ -115,12 +116,20 @@ export function WelcomeView() {
   return (
     <div className="flex flex-col items-center h-full p-12 overflow-hidden">
       <div className="text-center w-full max-w-150">
-        <h1 className="text-5xl font-bold m-0 mb-2 text-(--text-primary)">{t('welcome.title')}</h1>
-        <p className="text-lg text-(--text-secondary) m-0 mb-8">{t('welcome.subtitle')}</p>
+        <h1
+          {...testId('e2e-welcome-title')}
+          className="text-5xl font-bold m-0 mb-2 text-(--text-primary)"
+        >
+          {t('welcome.title')}
+        </h1>
+        <p {...testId('e2e-welcome-subtitle')} className="text-lg text-(--text-secondary) m-0 mb-8">
+          {t('welcome.subtitle')}
+        </p>
 
         <div className="flex justify-center gap-4 mb-8">
           <button
             className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
+            {...testId('e2e-welcome-new-repo-btn')}
             onClick={() => setShowInitDialog(true)}
           >
             <GitBranchPlus size={24} />
@@ -128,6 +137,7 @@ export function WelcomeView() {
           </button>
           <button
             className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
+            {...testId('e2e-welcome-open-repo-btn')}
             onClick={handleOpenRepository}
           >
             <FolderOpen size={24} />
@@ -135,6 +145,7 @@ export function WelcomeView() {
           </button>
           <button
             className="flex flex-col items-center gap-3 py-6 px-8 bg-(--bg-card) border border-(--border-color) rounded-lg text-(--text-primary) cursor-pointer transition-all min-w-40 hover:not-disabled:bg-(--bg-hover) hover:not-disabled:border-(--accent-color) disabled:opacity-50 disabled:cursor-not-allowed"
+            {...testId('e2e-welcome-clone-repo-btn')}
             onClick={() => setShowCloneDialog(true)}
           >
             <FolderPlus size={24} />

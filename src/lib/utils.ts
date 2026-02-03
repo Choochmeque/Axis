@@ -49,6 +49,19 @@ export function naturalCompare(a: string, b: string): number {
 }
 
 /**
+ * Returns both `aria-label` and `data-testid` for a given E2E test identifier.
+ * Spread the result onto any JSX element: `<div {...testId('e2e-my-element')}>`.
+ *
+ * On macOS (Appium mac2), `aria-label` maps to the XCUITest `label` attribute.
+ * On Linux/Windows (tauri-driver), `data-testid` is queried via CSS selector.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export function testId(id: string): { 'aria-label': string; 'data-testid': string } {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  return { 'aria-label': id, 'data-testid': id };
+}
+
+/**
  * Normalize a path for consistent cache key usage.
  * Removes trailing slashes to ensure paths match regardless of source.
  */

@@ -15,7 +15,7 @@ import {
 } from './StagingFilters';
 import { StatusType } from '@/types';
 import type { FileStatus, StatusType as StatusTypeType } from '@/types';
-import { cn, naturalCompare } from '@/lib/utils';
+import { cn, naturalCompare, testId } from '@/lib/utils';
 
 // Helper to get filename from path
 function getFilename(path: string): string {
@@ -293,7 +293,9 @@ export function StagingView() {
                   }
                 }}
               />
-              <span className={sectionTitleClass}>{t('staging.stagedFiles')}</span>
+              <span {...testId('e2e-staging-staged-header')} className={sectionTitleClass}>
+                {t('staging.stagedFiles')}
+              </span>
               {hasStaged && (
                 <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {stagedFiles.length}
@@ -358,7 +360,9 @@ export function StagingView() {
                   }
                 }}
               />
-              <span className={sectionTitleClass}>{t('staging.unstagedFiles')}</span>
+              <span {...testId('e2e-staging-unstaged-header')} className={sectionTitleClass}>
+                {t('staging.unstagedFiles')}
+              </span>
               {hasUnstaged && (
                 <span className={cn('badge', 'text-sm font-normal text-(--text-secondary)')}>
                   {unstagedFiles.length}
@@ -384,7 +388,10 @@ export function StagingView() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
+    <div
+      {...testId('e2e-staging-view')}
+      className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden"
+    >
       <StagingFilters
         sortBy={sortBy}
         showOnly={showOnly}

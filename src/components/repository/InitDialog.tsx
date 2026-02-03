@@ -19,6 +19,7 @@ import {
   CheckboxField,
   Alert,
 } from '@/components/ui';
+import { testId } from '@/lib/utils';
 
 interface InitDialogProps {
   open: boolean;
@@ -32,7 +33,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { loadRecentRepositories } = useRepositoryStore();
+  const { loadRecentRepositories, openRepository } = useRepositoryStore();
   const { addTab, findTabByPath, setActiveTab } = useTabsStore();
 
   const handleBrowse = async () => {
@@ -58,6 +59,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
     try {
       const repo = await repositoryApi.init(path.trim(), bare);
+      await openRepository(repo.path);
       await loadRecentRepositories();
 
       // Create tab for new repository
@@ -102,6 +104,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
           >
             <div className="flex gap-2">
               <Input
+                {...testId('e2e-init-path-input')}
                 id="init-path"
                 type="text"
                 value={path}
@@ -138,7 +141,12 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
               {t('common.cancel')}
             </Button>
           </DialogClose>
-          <Button variant="primary" onClick={handleInit} disabled={isLoading || !path.trim()}>
+          <Button
+            {...testId('e2e-init-create-btn')}
+            variant="primary"
+            onClick={handleInit}
+            disabled={isLoading || !path.trim()}
+          >
             {isLoading ? t('repository.init.creating') : t('repository.init.createButton')}
           </Button>
         </DialogFooter>

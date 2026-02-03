@@ -40,6 +40,7 @@ function App() {
     tabs,
     activeTabId,
     addTab,
+    removeTab,
     setActiveTab,
     updateTab,
     findTabByPath,
@@ -122,7 +123,14 @@ function App() {
     if (activeTab?.type === TabType.Repository && activeTab.path && !repository) {
       openRepository(activeTab.path)
         .then(() => useStagingStore.getState().loadStatus())
-        .catch((err) => toast.error(getErrorMessage(err)));
+        .catch((err) => {
+          console.error(
+            `Failed to restore tab for repository at ${activeTab.path}: ${getErrorMessage(err)}`
+          );
+          toast.error(getErrorMessage(err));
+          // Remove the invalid tab so the app falls back to welcome
+          removeTab(activeTab.id);
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -227,10 +235,18 @@ function App() {
 
       // Switch repository (uses backend cache for fast switching)
       try {
-        await switchRepository(tab.path);
-      } catch {
-        // Fallback to openRepository if switchRepository fails
-        await openRepository(tab.path);
+        try {
+          await switchRepository(tab.path);
+        } catch {
+          // Fallback to openRepository if switchRepository fails
+          await openRepository(tab.path);
+        }
+      } catch (err) {
+        // Both switchRepository and openRepository failed — remove invalid tab
+        console.error(`Failed to open repository at ${tab.path}: ${getErrorMessage(err)}`);
+        toast.error(getErrorMessage(err));
+        removeTab(tab.id);
+        return;
       }
 
       // Soft refresh in background - if no cache, force reload
@@ -242,7 +258,7 @@ function App() {
         clearTabDirty(tab.path);
       }
     },
-    [closeRepository, switchRepository, openRepository, clearTabDirty]
+    [closeRepository, switchRepository, openRepository, removeTab, clearTabDirty]
   );
 
   // Expose handleOpenRepository globally for other components

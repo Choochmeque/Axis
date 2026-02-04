@@ -41,7 +41,7 @@ jobs:
           version: '1.0'
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Create .env file
         run: |
@@ -51,7 +51,7 @@ jobs:
         run: cargo install tauri-driver
 
       - name: Build Tauri app
-        run: pnpm tauri build
+        run: pnpm tauri build --no-bundle
 
       - name: Run E2E tests
         run: xvfb-run pnpm e2e:linux

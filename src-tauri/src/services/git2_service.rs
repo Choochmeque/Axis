@@ -863,8 +863,12 @@ impl Git2Service {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
 
-        let head = repo.head()?.peel_to_tree()?;
-        let diff = repo.diff_tree_to_index(Some(&head), None, Some(&mut diff_opts))?;
+        let head_tree = if Self::is_head_unborn(&repo) {
+            None
+        } else {
+            Some(repo.head()?.peel_to_tree()?)
+        };
+        let diff = repo.diff_tree_to_index(head_tree.as_ref(), None, Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
@@ -881,8 +885,13 @@ impl Git2Service {
         diff_opts.show_untracked_content(true);
         diff_opts.recurse_untracked_dirs(true);
 
-        let head = repo.head()?.peel_to_tree()?;
-        let diff = repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut diff_opts))?;
+        let head_tree = if Self::is_head_unborn(&repo) {
+            None
+        } else {
+            Some(repo.head()?.peel_to_tree()?)
+        };
+        let diff =
+            repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))?;
         self.parse_diff(&diff)
     }
 
@@ -3686,6 +3695,42 @@ mod tests {
             "new_file.txt"
         );
         assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
+    }
+
+    #[test]
+    fn test_diff_staged_unborn_head() {
+        let (tmp, service) = setup_test_repo();
+        // No initial commit — HEAD is unborn
+
+        // Create and stage a file
+        fs::write(tmp.path().join("hello.txt"), "hello world").expect("should write hello.txt");
+        service
+            .stage_file("hello.txt")
+            .expect("should stage hello.txt");
+
+        let diffs = service
+            .diff_staged(&crate::models::DiffOptions::default())
+            .expect("should get staged diff on unborn HEAD");
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(
+            diffs[0].new_path.as_ref().expect("should have new_path"),
+            "hello.txt"
+        );
+        assert_eq!(diffs[0].status, crate::models::DiffStatus::Added);
+    }
+
+    #[test]
+    fn test_diff_head_unborn_head() {
+        let (tmp, service) = setup_test_repo();
+        // No initial commit — HEAD is unborn
+
+        // Create a file in the working directory
+        fs::write(tmp.path().join("hello.txt"), "hello world").expect("should write hello.txt");
+
+        let diffs = service
+            .diff_head(&crate::models::DiffOptions::default())
+            .expect("should get head diff on unborn HEAD");
+        assert!(!diffs.is_empty(), "should have at least one diff entry");
     }
 
     #[test]

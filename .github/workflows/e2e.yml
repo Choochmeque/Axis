@@ -55,3 +55,51 @@ jobs:
 
       - name: Run E2E tests
         run: xvfb-run pnpm e2e:linux
+
+  e2e-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Cache Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      - name: Install tauri-driver
+        run: cargo install --git https://github.com/Choochmeque/tauri-driver --locked
+
+      - name: Clone WebDriverAgentMac
+        run: git clone https://github.com/appium/appium-mac2-driver.git /tmp/appium-mac2-driver
+
+      - name: Build Tauri app
+        run: pnpm tauri build --bundles app
+
+      - name: Run E2E tests
+        run: |
+          tauri-driver --native-driver /tmp/appium-mac2-driver/WebDriverAgentMac &
+          sleep 2
+          pnpm e2e:mac

@@ -97,13 +97,13 @@ pub async fn build_graph(
 
     let result = state
         .get_git_service()?
-        .with_git2(|git2| git2.build_graph(fetch_options))
+        .read().await.git2(|git2| git2.build_graph(fetch_options))
         .await?;
 
     // Get HEAD OID for cache invalidation
     let head_oid = state
         .get_git_service()?
-        .with_git2(|git2| git2.get_head_oid())
+        .read().await.git2(|git2| git2.get_head_oid())
         .await;
 
     // Store in cache
@@ -156,7 +156,7 @@ async fn prefetch_commits(
     };
 
     let result = git_handle
-        .with_git2(|git2| git2.build_graph(fetch_options))
+        .read().await.git2(|git2| git2.build_graph(fetch_options))
         .await?;
 
     // Update cache with new data
@@ -181,7 +181,7 @@ pub async fn search_commits(
 ) -> Result<SearchResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.search_commits(options))
+        .read().await.git2(|git2| git2.search_commits(options))
         .await
 }
 
@@ -195,7 +195,7 @@ pub async fn blame_file(
 ) -> Result<BlameResult> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.blame_file(&path, commit_oid.as_deref()))
+        .read().await.git2(move |git2| git2.blame_file(&path, commit_oid.as_deref()))
         .await
 }
 
@@ -208,7 +208,7 @@ pub async fn get_commit_count(
 ) -> Result<usize> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_commit_count(from_ref.as_deref()))
+        .read().await.git2(move |git2| git2.get_commit_count(from_ref.as_deref()))
         .await
 }
 
@@ -221,7 +221,7 @@ pub async fn get_file_history(
 ) -> Result<FileLogResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_file_history(options))
+        .read().await.git2(|git2| git2.get_file_history(options))
         .await
 }
 
@@ -236,7 +236,7 @@ pub async fn get_file_diff_in_commit(
 ) -> Result<Option<FileDiff>> {
     state
         .get_git_service()?
-        .with_git2(move |git2| {
+        .read().await.git2(move |git2| {
             git2.get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
         })
         .await

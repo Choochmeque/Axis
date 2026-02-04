@@ -14,7 +14,9 @@ const MAX_DIFF_SIZE: usize = 100_000;
 async fn format_diff_for_ai(state: &State<'_, AppState>) -> Result<String> {
     let diffs = state
         .get_git_service()?
-        .with_git2(|git2| git2.diff_staged(&DiffOptions::default()))
+        .read()
+        .await
+        .git2(|git2| git2.diff_staged(&DiffOptions::default()))
         .await?;
 
     let mut output = String::new();
@@ -203,7 +205,9 @@ pub async fn generate_pr_description(
 
     let compare_result = state
         .get_git_service()?
-        .with_git2(move |git2| git2.compare_branches(&remote_source, &remote_target))
+        .read()
+        .await
+        .git2(move |git2| git2.compare_branches(&remote_source, &remote_target))
         .await?;
 
     if compare_result.ahead_commits.is_empty() {

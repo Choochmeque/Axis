@@ -11,7 +11,11 @@ use tauri::State;
 pub async fn stash_list(state: State<'_, AppState>) -> Result<Vec<StashEntry>> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_list())
+        .read()
+        .await
+        .git_cli()
+        .stash_list()
+        .await
 }
 
 /// Create a new stash
@@ -23,7 +27,11 @@ pub async fn stash_save(
 ) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_save(&options))
+        .write()
+        .await
+        .git_cli()
+        .stash_save(&options)
+        .await
 }
 
 /// Apply a stash (keep it in the stash list)
@@ -35,7 +43,11 @@ pub async fn stash_apply(
 ) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_apply(&options))
+        .write()
+        .await
+        .git_cli()
+        .stash_apply(&options)
+        .await
 }
 
 /// Pop a stash (apply and remove from stash list)
@@ -47,7 +59,11 @@ pub async fn stash_pop(
 ) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_pop(&options))
+        .write()
+        .await
+        .git_cli()
+        .stash_pop(&options)
+        .await
 }
 
 /// Drop a stash entry
@@ -56,7 +72,11 @@ pub async fn stash_pop(
 pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_drop(index))
+        .write()
+        .await
+        .git_cli()
+        .stash_drop(index)
+        .await
 }
 
 /// Clear all stashes
@@ -65,7 +85,11 @@ pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Res
 pub async fn stash_clear(state: State<'_, AppState>) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_clear())
+        .write()
+        .await
+        .git_cli()
+        .stash_clear()
+        .await
 }
 
 /// Show the diff of a stash
@@ -78,7 +102,11 @@ pub async fn stash_show(
 ) -> Result<String> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_show(index, stat_only))
+        .read()
+        .await
+        .git_cli()
+        .stash_show(index, stat_only)
+        .await
 }
 
 /// Create a branch from a stash
@@ -91,5 +119,9 @@ pub async fn stash_branch(
 ) -> Result<StashResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.stash_branch(&branch_name, index))
+        .write()
+        .await
+        .git_cli()
+        .stash_branch(&branch_name, index)
+        .await
 }

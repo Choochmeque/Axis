@@ -21,7 +21,7 @@ impl SshKeyService {
     }
 
     /// Find ssh-keygen program (reuses pattern from SigningService)
-    fn find_ssh_keygen() -> Result<PathBuf> {
+    async fn find_ssh_keygen() -> Result<PathBuf> {
         #[cfg(target_os = "windows")]
         let candidates = vec![
             "ssh-keygen.exe",
@@ -37,7 +37,7 @@ impl SshKeyService {
             if path.is_absolute() && path.exists() {
                 return Ok(path.to_path_buf());
             }
-            if let Ok(output) = create_command(candidate).arg("-V").output() {
+            if let Ok(output) = create_command(candidate).arg("-V").output().await {
                 if !output.stderr.is_empty() || !output.stdout.is_empty() {
                     return Ok(PathBuf::from(candidate));
                 }
@@ -73,7 +73,7 @@ impl SshKeyService {
     }
 
     /// List all SSH keys in ~/.ssh
-    pub fn list_keys() -> Result<Vec<SshKeyInfo>> {
+    pub async fn list_keys() -> Result<Vec<SshKeyInfo>> {
         let ssh_dir = Self::ssh_dir();
 
         if !ssh_dir.exists() {
@@ -109,8 +109,8 @@ impl SshKeyService {
                         .ok()
                         .and_then(|pub_content| Self::extract_comment(&pub_content));
 
-                    let fingerprint = Self::get_fingerprint_internal(&path);
-                    let bits = Self::extract_bits(&path);
+                    let fingerprint = Self::get_fingerprint_internal(&path).await;
+                    let bits = Self::extract_bits(&path).await;
 
                     let created_at = fs::metadata(&path)
                         .ok()
@@ -135,7 +135,7 @@ impl SshKeyService {
     }
 
     /// Generate a new SSH key
-    pub fn generate_key(options: GenerateSshKeyOptions) -> Result<SshKeyInfo> {
+    pub async fn generate_key(options: GenerateSshKeyOptions) -> Result<SshKeyInfo> {
         Self::validate_filename(&options.filename)?;
 
         let ssh_dir = Self::ssh_dir();
@@ -153,7 +153,7 @@ impl SshKeyService {
             return Err(AxisError::SshKeyAlreadyExists(options.filename));
         }
 
-        let ssh_keygen = Self::find_ssh_keygen()?;
+        let ssh_keygen = Self::find_ssh_keygen().await?;
 
         let algo_str = options.algorithm.to_string();
         let passphrase = options.passphrase.as_deref().unwrap_or("");
@@ -184,6 +184,7 @@ impl SshKeyService {
         let output = create_command(ssh_keygen.as_os_str())
             .args(&args)
             .output()
+            .await
             .map_err(|e| AxisError::SshKeyError(format!("Failed to execute ssh-keygen: {e}")))?;
 
         if !output.status.success() {
@@ -200,8 +201,8 @@ impl SshKeyService {
         }
 
         let pub_key_path = format!("{key_path_str}.pub");
-        let fingerprint = Self::get_fingerprint_internal(&key_path);
-        let bits = Self::extract_bits(&key_path);
+        let fingerprint = Self::get_fingerprint_internal(&key_path).await;
+        let bits = Self::extract_bits(&key_path).await;
 
         let created_at = fs::metadata(&key_path)
             .ok()
@@ -240,11 +241,11 @@ impl SshKeyService {
     }
 
     /// Get the fingerprint of a key
-    pub fn get_fingerprint(key_path: &str) -> Result<String> {
+    pub async fn get_fingerprint(key_path: &str) -> Result<String> {
         let expanded = shellexpand::tilde(key_path).to_string();
         let path = Path::new(&expanded);
 
-        Self::get_fingerprint_internal(path).ok_or_else(|| {
+        Self::get_fingerprint_internal(path).await.ok_or_else(|| {
             AxisError::SshKeyError(format!("Failed to get fingerprint for {key_path}"))
         })
     }
@@ -287,7 +288,7 @@ impl SshKeyService {
     }
 
     /// Import an SSH key into ~/.ssh/
-    pub fn import_key(options: ImportSshKeyOptions) -> Result<SshKeyInfo> {
+    pub async fn import_key(options: ImportSshKeyOptions) -> Result<SshKeyInfo> {
         Self::validate_filename(&options.target_filename)?;
 
         let ssh_dir = Self::ssh_dir();
@@ -335,8 +336,8 @@ impl SshKeyService {
         let comment = fs::read_to_string(&target_pub)
             .ok()
             .and_then(|pub_content| Self::extract_comment(&pub_content));
-        let fingerprint = Self::get_fingerprint_internal(&target_path);
-        let bits = Self::extract_bits(&target_path);
+        let fingerprint = Self::get_fingerprint_internal(&target_path).await;
+        let bits = Self::extract_bits(&target_path).await;
         let created_at = fs::metadata(&target_path)
             .ok()
             .and_then(|m| m.created().ok())
@@ -519,13 +520,14 @@ impl SshKeyService {
 
     // ==================== Internal helpers ====================
 
-    fn get_fingerprint_internal(key_path: &Path) -> Option<String> {
-        let ssh_keygen = Self::find_ssh_keygen().ok()?;
+    async fn get_fingerprint_internal(key_path: &Path) -> Option<String> {
+        let ssh_keygen = Self::find_ssh_keygen().await.ok()?;
         let key_path_str = key_path.to_string_lossy();
 
         let output = create_command(ssh_keygen.as_os_str())
             .args(["-lf", &key_path_str])
             .output()
+            .await
             .ok()?;
 
         if output.status.success() {
@@ -540,13 +542,14 @@ impl SshKeyService {
         None
     }
 
-    fn extract_bits(key_path: &Path) -> Option<u32> {
-        let ssh_keygen = Self::find_ssh_keygen().ok()?;
+    async fn extract_bits(key_path: &Path) -> Option<u32> {
+        let ssh_keygen = Self::find_ssh_keygen().await.ok()?;
         let key_path_str = key_path.to_string_lossy();
 
         let output = create_command(ssh_keygen.as_os_str())
             .args(["-lf", &key_path_str])
             .output()
+            .await
             .ok()?;
 
         if output.status.success() {
@@ -782,17 +785,17 @@ mod tests {
 
     // ==================== list_keys Tests ====================
 
-    #[test]
-    fn test_list_keys_no_ssh_dir() {
+    #[tokio::test]
+    async fn test_list_keys_no_ssh_dir() {
         // This test just verifies no panic; actual keys depend on system
-        let result = SshKeyService::list_keys();
+        let result = SshKeyService::list_keys().await;
         assert!(result.is_ok());
     }
 
     // ==================== generate_key Tests ====================
 
-    #[test]
-    fn test_generate_key_invalid_filename() {
+    #[tokio::test]
+    async fn test_generate_key_invalid_filename() {
         let opts = GenerateSshKeyOptions {
             algorithm: SshKeyAlgorithm::Ed25519,
             comment: None,
@@ -801,12 +804,12 @@ mod tests {
             bits: None,
         };
 
-        let result = SshKeyService::generate_key(opts);
+        let result = SshKeyService::generate_key(opts).await;
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_generate_key_empty_filename() {
+    #[tokio::test]
+    async fn test_generate_key_empty_filename() {
         let opts = GenerateSshKeyOptions {
             algorithm: SshKeyAlgorithm::Ed25519,
             comment: None,
@@ -815,7 +818,7 @@ mod tests {
             bits: None,
         };
 
-        let result = SshKeyService::generate_key(opts);
+        let result = SshKeyService::generate_key(opts).await;
         assert!(result.is_err());
     }
 
@@ -859,25 +862,25 @@ mod tests {
 
     // ==================== import_key Tests ====================
 
-    #[test]
-    fn test_import_key_invalid_filename() {
+    #[tokio::test]
+    async fn test_import_key_invalid_filename() {
         let opts = ImportSshKeyOptions {
             source_path: "/tmp/key".to_string(),
             target_filename: "..".to_string(),
         };
 
-        let result = SshKeyService::import_key(opts);
+        let result = SshKeyService::import_key(opts).await;
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_import_key_nonexistent_source() {
+    #[tokio::test]
+    async fn test_import_key_nonexistent_source() {
         let opts = ImportSshKeyOptions {
             source_path: "/nonexistent/key".to_string(),
             target_filename: "imported_key".to_string(),
         };
 
-        let result = SshKeyService::import_key(opts);
+        let result = SshKeyService::import_key(opts).await;
         assert!(result.is_err());
     }
 
@@ -1060,10 +1063,10 @@ mod tests {
 
     // ==================== Integration test with tempdir ====================
 
-    #[test]
-    fn test_generate_and_delete_key() {
+    #[tokio::test]
+    async fn test_generate_and_delete_key() {
         // Skip if ssh-keygen is not available
-        if SshKeyService::find_ssh_keygen().is_err() {
+        if SshKeyService::find_ssh_keygen().await.is_err() {
             return;
         }
 

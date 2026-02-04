@@ -14,7 +14,9 @@ pub async fn reflog_list(
 ) -> Result<Vec<ReflogEntry>> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_reflog(&options))
+        .read()
+        .await
+        .git2(move |git2| git2.get_reflog(&options))
         .await
 }
 
@@ -24,7 +26,9 @@ pub async fn reflog_list(
 pub async fn reflog_refs(state: State<'_, AppState>) -> Result<Vec<String>> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.list_reflogs())
+        .read()
+        .await
+        .git2(|git2| git2.list_reflogs())
         .await
 }
 
@@ -34,7 +38,9 @@ pub async fn reflog_refs(state: State<'_, AppState>) -> Result<Vec<String>> {
 pub async fn reflog_count(state: State<'_, AppState>, refname: String) -> Result<usize> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_reflog_count(&refname))
+        .read()
+        .await
+        .git2(move |git2| git2.get_reflog_count(&refname))
         .await
 }
 
@@ -44,6 +50,8 @@ pub async fn reflog_count(state: State<'_, AppState>, refname: String) -> Result
 pub async fn reflog_checkout(state: State<'_, AppState>, reflog_ref: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.checkout_reflog_entry(&reflog_ref))
+        .write()
+        .await
+        .git2(move |git2| git2.checkout_reflog_entry(&reflog_ref))
         .await
 }

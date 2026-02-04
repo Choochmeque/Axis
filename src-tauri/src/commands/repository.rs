@@ -21,11 +21,11 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
     }
 
     // Use switch_active_repository to add to cache and set as active
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Get repo info from the cached service
     let handle = state.get_git_service()?;
-    let repo_info = handle.with_git2(|git2| git2.get_repository_info()).await?;
+    let repo_info = handle.read().await.git2(|git2| git2.get_repository_info()).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -47,7 +47,7 @@ pub async fn init_repository(
     let repo_info = service.get_repository_info()?;
 
     // Now add to cache via switch_active_repository
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -105,7 +105,7 @@ pub async fn clone_repository(
     let repo_info = service.get_repository_info()?;
 
     // Now add to cache via switch_active_repository
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -132,7 +132,7 @@ pub async fn switch_active_repository(
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
     }
 
-    state.switch_active_repository(&path)
+    state.switch_active_repository(&path).await
 }
 
 #[tauri::command]
@@ -148,7 +148,9 @@ pub async fn close_repository_path(state: State<'_, AppState>, path: String) -> 
 pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repository> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_repository_info())
+        .read()
+        .await
+        .git2(|git2| git2.get_repository_info())
         .await
 }
 
@@ -157,7 +159,9 @@ pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repositor
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.status())
+        .read()
+        .await
+        .git2(|git2| git2.status())
         .await
 }
 
@@ -169,7 +173,9 @@ pub async fn get_commit_history(
 ) -> Result<Vec<Commit>> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.log(options))
+        .read()
+        .await
+        .git2(|git2| git2.log(options))
         .await
 }
 
@@ -178,7 +184,9 @@ pub async fn get_commit_history(
 pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> Result<Vec<Branch>> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.list_branches(filter))
+        .read()
+        .await
+        .git2(|git2| git2.list_branches(filter))
         .await
 }
 
@@ -187,7 +195,9 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_commit(&oid))
+        .read()
+        .await
+        .git2(move |git2| git2.get_commit(&oid))
         .await
 }
 

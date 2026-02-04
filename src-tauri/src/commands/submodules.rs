@@ -13,7 +13,11 @@ use tauri::State;
 pub async fn submodule_list(state: State<'_, AppState>) -> Result<Vec<Submodule>> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_list())
+        .read()
+        .await
+        .git_cli()
+        .submodule_list()
+        .await
 }
 
 /// Add a new submodule
@@ -25,7 +29,11 @@ pub async fn submodule_add(
 ) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_add(&options))
+        .write()
+        .await
+        .git_cli()
+        .submodule_add(&options)
+        .await
 }
 
 /// Initialize submodules
@@ -37,7 +45,11 @@ pub async fn submodule_init(
 ) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_init(&paths))
+        .write()
+        .await
+        .git_cli()
+        .submodule_init(&paths)
+        .await
 }
 
 /// Update submodules
@@ -49,7 +61,11 @@ pub async fn submodule_update(
 ) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_update(&options))
+        .write()
+        .await
+        .git_cli()
+        .submodule_update(&options)
+        .await
 }
 
 /// Sync submodule URLs from .gitmodules
@@ -61,7 +77,11 @@ pub async fn submodule_sync(
 ) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_sync(&options))
+        .write()
+        .await
+        .git_cli()
+        .submodule_sync(&options)
+        .await
 }
 
 /// Deinitialize submodules
@@ -74,7 +94,11 @@ pub async fn submodule_deinit(
 ) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_deinit(&paths, force))
+        .write()
+        .await
+        .git_cli()
+        .submodule_deinit(&paths, force)
+        .await
 }
 
 /// Remove a submodule completely
@@ -83,7 +107,11 @@ pub async fn submodule_deinit(
 pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Result<SubmoduleResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_remove(&path))
+        .write()
+        .await
+        .git_cli()
+        .submodule_remove(&path)
+        .await
 }
 
 /// Get summary of submodule changes
@@ -92,5 +120,9 @@ pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Resul
 pub async fn submodule_summary(state: State<'_, AppState>) -> Result<String> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.submodule_summary())
+        .read()
+        .await
+        .git_cli()
+        .submodule_summary()
+        .await
 }

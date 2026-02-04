@@ -776,9 +776,10 @@ impl Git2Service {
         let commit_str = std::str::from_utf8(&commit_buf)
             .map_err(|e| AxisError::Other(format!("Invalid commit buffer: {e}")))?;
 
-        // Sign the commit buffer
+        // Sign the commit buffer (block_on since we're inside spawn_blocking)
         let signing_service = SigningService::new(self.path());
-        let signature = signing_service.sign_buffer(commit_str, signing_config)?;
+        let signature = tokio::runtime::Handle::current()
+            .block_on(signing_service.sign_buffer(commit_str, signing_config))?;
 
         // Create the signed commit
         let oid = repo.commit_signed(commit_str, &signature, Some("gpgsig"))?;
@@ -3137,10 +3138,14 @@ impl Git2Service {
         let data_str = std::str::from_utf8(&signed_data)
             .map_err(|e| AxisError::Other(format!("Invalid signed data encoding: {e}")))?;
 
+        // block_on since we're inside spawn_blocking
+        let rt = tokio::runtime::Handle::current();
         let signer = match format {
-            SigningFormat::Gpg => SigningService::verify_gpg_signature(sig_str, data_str),
+            SigningFormat::Gpg => {
+                rt.block_on(SigningService::verify_gpg_signature(sig_str, data_str))
+            }
             SigningFormat::Ssh => {
-                SigningService::verify_ssh_signature(sig_str, data_str, repo.path())
+                rt.block_on(SigningService::verify_ssh_signature(sig_str, data_str, repo.path()))
             }
         };
 

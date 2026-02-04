@@ -77,7 +77,9 @@ async fn get_integration_commit_avatar(state: &State<'_, AppState>, sha: &str) -
     let remotes = state
         .get_git_service()
         .ok()?
-        .with_git2(|git2| git2.list_remotes())
+        .read()
+        .await
+        .git2(|git2| git2.list_remotes())
         .await
         .ok()?;
 

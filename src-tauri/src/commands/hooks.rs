@@ -7,7 +7,12 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn list_hooks(state: State<'_, AppState>) -> Result<Vec<HookInfo>> {
-    Ok(state.get_git_service()?.with_hook(|hook| hook.list_hooks()))
+    Ok(state
+        .get_git_service()?
+        .read()
+        .await
+        .hook()
+        .list_hooks())
 }
 
 /// Get hook details including content
@@ -16,7 +21,10 @@ pub async fn list_hooks(state: State<'_, AppState>) -> Result<Vec<HookInfo>> {
 pub async fn get_hook(state: State<'_, AppState>, hook_type: GitHookType) -> Result<HookDetails> {
     state
         .get_git_service()?
-        .with_hook(|hook| hook.get_hook_details(hook_type))
+        .read()
+        .await
+        .hook()
+        .get_hook_details(hook_type)
 }
 
 /// Create a new hook
@@ -29,7 +37,10 @@ pub async fn create_hook(
 ) -> Result<()> {
     state
         .get_git_service()?
-        .with_hook(|hook| hook.create_hook(hook_type, &content))
+        .write()
+        .await
+        .hook()
+        .create_hook(hook_type, &content)
 }
 
 /// Update an existing hook
@@ -42,7 +53,10 @@ pub async fn update_hook(
 ) -> Result<()> {
     state
         .get_git_service()?
-        .with_hook(|hook| hook.update_hook(hook_type, &content))
+        .write()
+        .await
+        .hook()
+        .update_hook(hook_type, &content)
 }
 
 /// Delete a hook
@@ -51,7 +65,10 @@ pub async fn update_hook(
 pub async fn delete_hook(state: State<'_, AppState>, hook_type: GitHookType) -> Result<()> {
     state
         .get_git_service()?
-        .with_hook(|hook| hook.delete_hook(hook_type))
+        .write()
+        .await
+        .hook()
+        .delete_hook(hook_type)
 }
 
 /// Toggle hook enabled/disabled state
@@ -61,7 +78,10 @@ pub async fn delete_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
 pub async fn toggle_hook(state: State<'_, AppState>, hook_type: GitHookType) -> Result<bool> {
     state
         .get_git_service()?
-        .with_hook(|hook| hook.toggle_hook(hook_type))
+        .write()
+        .await
+        .hook()
+        .toggle_hook(hook_type)
 }
 
 /// Get available hook templates
@@ -70,7 +90,10 @@ pub async fn toggle_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
 pub async fn get_hook_templates(state: State<'_, AppState>) -> Result<Vec<HookTemplate>> {
     Ok(state
         .get_git_service()?
-        .with_hook(|hook| hook.get_templates()))
+        .read()
+        .await
+        .hook()
+        .get_templates())
 }
 
 /// Get templates for a specific hook type
@@ -82,5 +105,8 @@ pub async fn get_hook_templates_for_type(
 ) -> Result<Vec<HookTemplate>> {
     Ok(state
         .get_git_service()?
-        .with_hook(|hook| hook.get_templates_for_type(hook_type)))
+        .read()
+        .await
+        .hook()
+        .get_templates_for_type(hook_type))
 }

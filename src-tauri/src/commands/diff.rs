@@ -13,17 +13,18 @@ pub async fn get_diff(
     options: Option<DiffOptions>,
 ) -> Result<Vec<FileDiff>> {
     let opts = options.unwrap_or_default();
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
-    let git2 = guard.git2();
-
-    match target {
-        DiffTarget::WorkdirToIndex => git2.diff_workdir(&opts),
-        DiffTarget::IndexToHead => git2.diff_staged(&opts),
-        DiffTarget::WorkdirToHead => git2.diff_head(&opts),
-        DiffTarget::Commit { oid } => git2.diff_commit(&oid, &opts),
-        DiffTarget::CommitToCommit { from, to } => git2.diff_commits(&from, &to, &opts),
-    }
+    state
+        .get_git_service()?
+        .read()
+        .await
+        .git2(move |git2| match target {
+            DiffTarget::WorkdirToIndex => git2.diff_workdir(&opts),
+            DiffTarget::IndexToHead => git2.diff_staged(&opts),
+            DiffTarget::WorkdirToHead => git2.diff_head(&opts),
+            DiffTarget::Commit { oid } => git2.diff_commit(&oid, &opts),
+            DiffTarget::CommitToCommit { from, to } => git2.diff_commits(&from, &to, &opts),
+        })
+        .await
 }
 
 /// Get diff for unstaged changes (working directory vs index)
@@ -36,7 +37,9 @@ pub async fn get_diff_workdir(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_workdir(&opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_workdir(&opts))
         .await
 }
 
@@ -50,7 +53,9 @@ pub async fn get_diff_staged(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_staged(&opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_staged(&opts))
         .await
 }
 
@@ -64,7 +69,9 @@ pub async fn get_diff_head(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_head(&opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_head(&opts))
         .await
 }
 
@@ -79,7 +86,9 @@ pub async fn get_diff_commit(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_commit(&oid, &opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_commit(&oid, &opts))
         .await
 }
 
@@ -95,7 +104,9 @@ pub async fn get_diff_commits(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_commits(&from_oid, &to_oid, &opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_commits(&from_oid, &to_oid, &opts))
         .await
 }
 
@@ -111,7 +122,9 @@ pub async fn get_file_diff(
     let opts = options.unwrap_or_default();
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.diff_file(&path, staged, &opts))
+        .read()
+        .await
+        .git2(move |git2| git2.diff_file(&path, staged, &opts))
         .await
 }
 
@@ -126,7 +139,9 @@ pub async fn get_file_blob(
 ) -> Result<Response> {
     let data = state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_file_blob(&path, commit_oid.as_deref()))
+        .read()
+        .await
+        .git2(move |git2| git2.get_file_blob(&path, commit_oid.as_deref()))
         .await?;
     Ok(Response::new(data))
 }

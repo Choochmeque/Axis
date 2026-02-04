@@ -19,7 +19,7 @@ pub async fn get_signing_config(state: State<'_, AppState>) -> Result<SigningCon
 pub async fn list_gpg_keys(state: State<'_, AppState>) -> Result<Vec<GpgKey>> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
-    service.list_gpg_keys()
+    service.list_gpg_keys().await
 }
 
 #[tauri::command]
@@ -38,7 +38,7 @@ pub async fn test_signing(
 ) -> Result<SigningTestResult> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
-    Ok(service.test_signing(&config))
+    Ok(service.test_signing(&config).await)
 }
 
 #[tauri::command]
@@ -49,7 +49,7 @@ pub async fn is_signing_available(
 ) -> Result<bool> {
     let path = state.ensure_repository_open()?;
     let service = SigningService::new(&path);
-    service.is_signing_available(&config)
+    service.is_signing_available(&config).await
 }
 
 #[tauri::command]
@@ -72,7 +72,9 @@ pub async fn verify_commit_signature(
     // Verify via git2 service (runs on blocking thread)
     let result = state
         .get_git_service()?
-        .with_git2(move |git2| git2.verify_commit_signature(&oid, &format))
+        .read()
+        .await
+        .git2(move |git2| git2.verify_commit_signature(&oid, &format))
         .await?;
 
     // Cache the result

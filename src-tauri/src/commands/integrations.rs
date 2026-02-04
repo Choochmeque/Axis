@@ -77,7 +77,9 @@ pub async fn integration_detect_provider(
 ) -> Result<Option<DetectedProvider>> {
     let remotes = state
         .get_git_service()?
-        .with_git2(|git2| git2.list_remotes())
+        .read()
+        .await
+        .git2(|git2| git2.list_remotes())
         .await?;
 
     // Try origin first, then any other remote

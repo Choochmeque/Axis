@@ -11,7 +11,11 @@ use tauri::State;
 pub async fn grep_content(state: State<'_, AppState>, options: GrepOptions) -> Result<GrepResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.grep(&options))
+        .read()
+        .await
+        .git_cli()
+        .grep(&options)
+        .await
 }
 
 /// Search for content in a specific commit
@@ -24,5 +28,9 @@ pub async fn grep_commit(
 ) -> Result<GrepResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.grep_commit(&commit_oid, &options))
+        .read()
+        .await
+        .git_cli()
+        .grep_commit(&commit_oid, &options)
+        .await
 }

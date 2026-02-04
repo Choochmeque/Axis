@@ -5,8 +5,10 @@ use crate::models::{
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use strum::IntoEnumIterator;
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
 
 use crate::services::create_command;
 
@@ -76,7 +78,7 @@ impl HookService {
     }
 
     /// Execute a hook with arguments and optional stdin
-    fn execute_hook(
+    async fn execute_hook(
         &self,
         hook_type: GitHookType,
         args: &[&str],
@@ -118,13 +120,13 @@ impl HookService {
                 // Write stdin data if provided
                 if let Some(input) = stdin_data {
                     if let Some(mut stdin_handle) = child.stdin.take() {
-                        let _ = stdin_handle.write_all(input.as_bytes());
+                        let _ = stdin_handle.write_all(input.as_bytes()).await;
                         // Drop stdin to close it so the child can finish
                         drop(stdin_handle);
                     }
                 }
 
-                match child.wait_with_output() {
+                match child.wait_with_output().await {
                     Ok(output) => HookResult {
                         hook_type,
                         success: output.status.success(),
@@ -165,12 +167,12 @@ impl HookService {
     // ==================== Hook Runners ====================
 
     /// Run pre-commit hook
-    pub fn run_pre_commit(&self) -> HookResult {
-        self.execute_hook(GitHookType::PreCommit, &[], None)
+    pub async fn run_pre_commit(&self) -> HookResult {
+        self.execute_hook(GitHookType::PreCommit, &[], None).await
     }
 
     /// Run prepare-commit-msg hook
-    pub fn run_prepare_commit_msg(
+    pub async fn run_prepare_commit_msg(
         &self,
         msg_file: &Path,
         source: Option<&str>,
@@ -185,22 +187,24 @@ impl HookService {
             args.push(s);
         }
         self.execute_hook(GitHookType::PrepareCommitMsg, &args, None)
+            .await
     }
 
     /// Run commit-msg hook
-    pub fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
+    pub async fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
         let msg_file_str = msg_file.to_string_lossy();
         self.execute_hook(GitHookType::CommitMsg, &[msg_file_str.as_ref()], None)
+            .await
     }
 
     /// Run post-commit hook
-    pub fn run_post_commit(&self) -> HookResult {
-        self.execute_hook(GitHookType::PostCommit, &[], None)
+    pub async fn run_post_commit(&self) -> HookResult {
+        self.execute_hook(GitHookType::PostCommit, &[], None).await
     }
 
     /// Run pre-push hook
     /// refs format: "<local ref> <local sha> <remote ref> <remote sha>\n" per line
-    pub fn run_pre_push(
+    pub async fn run_pre_push(
         &self,
         remote_name: &str,
         remote_url: &str,
@@ -211,25 +215,28 @@ impl HookService {
             &[remote_name, remote_url],
             Some(refs_stdin),
         )
+        .await
     }
 
     /// Run post-merge hook
-    pub fn run_post_merge(&self, is_squash: bool) -> HookResult {
+    pub async fn run_post_merge(&self, is_squash: bool) -> HookResult {
         let flag = if is_squash { "1" } else { "0" };
         self.execute_hook(GitHookType::PostMerge, &[flag], None)
+            .await
     }
 
     /// Run pre-rebase hook
-    pub fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
+    pub async fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
         let mut args = vec![upstream];
         if let Some(branch) = rebased_branch {
             args.push(branch);
         }
         self.execute_hook(GitHookType::PreRebase, &args, None)
+            .await
     }
 
     /// Run post-checkout hook
-    pub fn run_post_checkout(
+    pub async fn run_post_checkout(
         &self,
         prev_head: &str,
         new_head: &str,
@@ -241,12 +248,14 @@ impl HookService {
             &[prev_head, new_head, flag],
             None,
         )
+        .await
     }
 
     /// Run post-rewrite hook
     /// rewrites format: "<old sha> <new sha>\n" per line
-    pub fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
+    pub async fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
         self.execute_hook(GitHookType::PostRewrite, &[command], Some(rewrites_stdin))
+            .await
     }
 
     // ==================== Hook Management ====================
@@ -833,20 +842,20 @@ mod tests {
 
     // ==================== Execute Hook Tests ====================
 
-    #[test]
-    fn test_execute_hook_nonexistent() {
+    #[tokio::test]
+    async fn test_execute_hook_nonexistent() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_pre_commit();
+        let result = service.run_pre_commit().await;
 
         assert!(result.skipped);
         assert!(result.success);
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(unix)]
-    fn test_execute_hook_success() {
+    async fn test_execute_hook_success() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
@@ -856,7 +865,7 @@ mod tests {
             .create_hook(GitHookType::PreCommit, hook_content)
             .expect("should create hook");
 
-        let result = service.run_pre_commit();
+        let result = service.run_pre_commit().await;
 
         assert!(!result.skipped);
         assert!(result.success);
@@ -864,9 +873,9 @@ mod tests {
         assert!(result.stdout.contains("Success"));
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(unix)]
-    fn test_execute_hook_failure() {
+    async fn test_execute_hook_failure() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
@@ -876,7 +885,7 @@ mod tests {
             .create_hook(GitHookType::PreCommit, hook_content)
             .expect("should create hook");
 
-        let result = service.run_pre_commit();
+        let result = service.run_pre_commit().await;
 
         assert!(!result.skipped);
         assert!(!result.success);
@@ -914,51 +923,53 @@ mod tests {
 
     // ==================== Hook Runner Tests ====================
 
-    #[test]
-    fn test_run_post_merge() {
+    #[tokio::test]
+    async fn test_run_post_merge() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
         // No hook exists, should be skipped
-        let result = service.run_post_merge(false);
+        let result = service.run_post_merge(false).await;
         assert!(result.skipped);
     }
 
-    #[test]
-    fn test_run_post_checkout() {
+    #[tokio::test]
+    async fn test_run_post_checkout() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_post_checkout("abc123", "def456", true);
+        let result = service.run_post_checkout("abc123", "def456", true).await;
         assert!(result.skipped);
     }
 
-    #[test]
-    fn test_run_pre_rebase() {
+    #[tokio::test]
+    async fn test_run_pre_rebase() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_pre_rebase("upstream", Some("feature"));
+        let result = service.run_pre_rebase("upstream", Some("feature")).await;
         assert!(result.skipped);
     }
 
-    #[test]
-    fn test_run_pre_push() {
+    #[tokio::test]
+    async fn test_run_pre_push() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
         let refs = "refs/heads/main abc123 refs/heads/main def456\n";
-        let result = service.run_pre_push("origin", "https://example.com/repo.git", refs);
+        let result = service
+            .run_pre_push("origin", "https://example.com/repo.git", refs)
+            .await;
         assert!(result.skipped);
     }
 
-    #[test]
-    fn test_run_post_rewrite() {
+    #[tokio::test]
+    async fn test_run_post_rewrite() {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
         let rewrites = "abc123 def456\n";
-        let result = service.run_post_rewrite("rebase", rewrites);
+        let result = service.run_post_rewrite("rebase", rewrites).await;
         assert!(result.skipped);
     }
 }

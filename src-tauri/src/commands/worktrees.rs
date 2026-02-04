@@ -11,7 +11,11 @@ use tauri::State;
 pub async fn worktree_list(state: State<'_, AppState>) -> Result<Vec<Worktree>> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_list())
+        .read()
+        .await
+        .git_cli()
+        .worktree_list()
+        .await
 }
 
 /// Add a new worktree
@@ -23,7 +27,11 @@ pub async fn worktree_add(
 ) -> Result<WorktreeResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_add(&options))
+        .write()
+        .await
+        .git_cli()
+        .worktree_add(&options)
+        .await
 }
 
 /// Remove a worktree
@@ -35,7 +43,11 @@ pub async fn worktree_remove(
 ) -> Result<WorktreeResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_remove(&options))
+        .write()
+        .await
+        .git_cli()
+        .worktree_remove(&options)
+        .await
 }
 
 /// Lock a worktree
@@ -48,7 +60,11 @@ pub async fn worktree_lock(
 ) -> Result<WorktreeResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_lock(&path, reason.as_deref()))
+        .write()
+        .await
+        .git_cli()
+        .worktree_lock(&path, reason.as_deref())
+        .await
 }
 
 /// Unlock a worktree
@@ -57,7 +73,11 @@ pub async fn worktree_lock(
 pub async fn worktree_unlock(state: State<'_, AppState>, path: String) -> Result<WorktreeResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_unlock(&path))
+        .write()
+        .await
+        .git_cli()
+        .worktree_unlock(&path)
+        .await
 }
 
 /// Prune stale worktree references
@@ -66,5 +86,9 @@ pub async fn worktree_unlock(state: State<'_, AppState>, path: String) -> Result
 pub async fn worktree_prune(state: State<'_, AppState>, dry_run: bool) -> Result<WorktreeResult> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.worktree_prune(dry_run))
+        .write()
+        .await
+        .git_cli()
+        .worktree_prune(dry_run)
+        .await
 }

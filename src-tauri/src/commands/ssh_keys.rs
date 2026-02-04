@@ -12,13 +12,13 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn list_ssh_keys_info() -> Result<Vec<SshKeyInfo>> {
-    SshKeyService::list_keys()
+    SshKeyService::list_keys().await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn generate_ssh_key(options: GenerateSshKeyOptions) -> Result<SshKeyInfo> {
-    SshKeyService::generate_key(options)
+    SshKeyService::generate_key(options).await
 }
 
 #[tauri::command]
@@ -30,7 +30,7 @@ pub async fn get_ssh_public_key(key_path: String) -> Result<String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_ssh_key_fingerprint(key_path: String) -> Result<String> {
-    SshKeyService::get_fingerprint(&key_path)
+    SshKeyService::get_fingerprint(&key_path).await
 }
 
 #[tauri::command]
@@ -42,7 +42,7 @@ pub async fn delete_ssh_key(key_path: String) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn import_ssh_key(options: ImportSshKeyOptions) -> Result<SshKeyInfo> {
-    SshKeyService::import_key(options)
+    SshKeyService::import_key(options).await
 }
 
 #[tauri::command]

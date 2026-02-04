@@ -21,63 +21,61 @@ pub async fn merge_branch(
 ) -> Result<MergeResult> {
     let settings = state.get_settings()?;
     let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
 
-    let merge_result = {
-        let guard = git_service.lock();
-        let cli = guard.git_cli();
-
-        let result = cli.merge(
+    let cli = guard.git_cli();
+    let result = cli
+        .merge(
             &options.branch,
             options.message.as_deref(),
             options.no_ff,
             options.squash,
             options.ff_only,
             options.no_commit,
-        )?;
+        )
+        .await?;
 
-        if result.success {
-            // Determine merge type from output
-            let merge_type = if result.stdout.contains("Already up to date") {
-                MergeType::UpToDate
-            } else if result.stdout.contains("Fast-forward") {
-                MergeType::FastForward
-            } else {
-                MergeType::Normal
-            };
-
-            Ok(MergeResult {
-                success: true,
-                merge_type,
-                commit_oid: None, // TODO: Could parse from output
-                conflicts: Vec::new(),
-                message: result.stdout.trim().to_string(),
-            })
-        } else if result.stdout.contains("CONFLICT")
-            || result.stderr.contains("Automatic merge failed")
-        {
-            // Merge has conflicts
-            let conflicts = get_conflicted_files_internal(cli)?;
-
-            Ok(MergeResult {
-                success: false,
-                merge_type: MergeType::Conflicted,
-                commit_oid: None,
-                conflicts,
-                message: "Merge conflicts detected. Please resolve conflicts and commit."
-                    .to_string(),
-            })
+    let merge_result = if result.success {
+        // Determine merge type from output
+        let merge_type = if result.stdout.contains("Already up to date") {
+            MergeType::UpToDate
+        } else if result.stdout.contains("Fast-forward") {
+            MergeType::FastForward
         } else {
-            Err(AxisError::Other(format!(
-                "Merge failed: {}",
-                result.stderr.trim()
-            )))
+            MergeType::Normal
+        };
+
+        MergeResult {
+            success: true,
+            merge_type,
+            commit_oid: None,
+            conflicts: Vec::new(),
+            message: result.stdout.trim().to_string(),
         }
-    }?;
+    } else if result.stdout.contains("CONFLICT")
+        || result.stderr.contains("Automatic merge failed")
+    {
+        // Merge has conflicts
+        let conflicts = get_conflicted_files_internal(cli).await?;
+
+        MergeResult {
+            success: false,
+            merge_type: MergeType::Conflicted,
+            commit_oid: None,
+            conflicts,
+            message: "Merge conflicts detected. Please resolve conflicts and commit.".to_string(),
+        }
+    } else {
+        return Err(AxisError::Other(format!(
+            "Merge failed: {}",
+            result.stderr.trim()
+        )));
+    };
 
     // Run post-merge hook if merge was successful (informational, don't fail)
     if merge_result.success && !settings.bypass_hooks {
         let is_squash = options.squash;
-        let hook_result = git_service.with_hook(|hook| hook.run_post_merge(is_squash));
+        let hook_result = guard.hook().run_post_merge(is_squash).await;
         if !hook_result.skipped && !hook_result.success {
             log::warn!("post-merge hook failed: {}", hook_result.stderr);
         }
@@ -92,7 +90,11 @@ pub async fn merge_branch(
 pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.merge_abort())?;
+        .write()
+        .await
+        .git_cli()
+        .merge_abort()
+        .await?;
     Ok(())
 }
 
@@ -102,7 +104,11 @@ pub async fn merge_abort(state: State<'_, AppState>) -> Result<()> {
 pub async fn merge_continue(state: State<'_, AppState>) -> Result<MergeResult> {
     let result = state
         .get_git_service()?
-        .with_git_cli(|cli| cli.merge_continue())?;
+        .write()
+        .await
+        .git_cli()
+        .merge_continue()
+        .await?;
 
     Ok(MergeResult {
         success: result.success,
@@ -133,15 +139,17 @@ pub async fn rebase_branch(
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
+    let guard = git_service.write().await;
+
     // Get current branch name for pre-rebase hook
-    let current_branch = git_service
-        .with_git2(|git2| git2.get_current_branch())
-        .await;
+    let current_branch = guard.git2(|git2| git2.get_current_branch()).await;
 
     // Run pre-rebase hook (can abort)
     if !skip_hooks {
-        let hook_result = git_service
-            .with_hook(|hook| hook.run_pre_rebase(&options.onto, current_branch.as_deref()));
+        let hook_result = guard
+            .hook()
+            .run_pre_rebase(&options.onto, current_branch.as_deref())
+            .await;
         if !hook_result.skipped && !hook_result.success {
             let output = if !hook_result.stderr.is_empty() {
                 &hook_result.stderr
@@ -155,45 +163,36 @@ pub async fn rebase_branch(
         }
     }
 
-    let rebase_result = {
-        let guard = git_service.lock();
-        let cli = guard.git_cli();
+    let cli = guard.git_cli();
+    let result = cli.rebase(&options.onto, options.interactive).await?;
 
-        let result = cli.rebase(&options.onto, options.interactive)?;
+    if result.success {
+        Ok(RebaseResult {
+            success: true,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts: Vec::new(),
+            message: result.stdout.trim().to_string(),
+        })
+    } else if result.stdout.contains("CONFLICT") {
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
-        if result.success {
-            Ok(RebaseResult {
-                success: true,
-                commits_rebased: 0, // TODO: Would need to parse from output
-                current_commit: None,
-                total_commits: None,
-                conflicts: Vec::new(),
-                message: result.stdout.trim().to_string(),
-            })
-        } else if result.stdout.contains("CONFLICT") {
-            let conflicts = get_conflicted_files_internal(cli)?;
-
-            Ok(RebaseResult {
-                success: false,
-                commits_rebased: 0,
-                current_commit: None,
-                total_commits: None,
-                conflicts,
-                message: "Rebase conflicts detected. Please resolve conflicts and continue."
-                    .to_string(),
-            })
-        } else {
-            Err(AxisError::Other(format!(
-                "Rebase failed: {}",
-                result.stderr.trim()
-            )))
-        }
-    }?;
-
-    // Note: post-rewrite hook should be run when rebase completes (in rebase_continue)
-    // since we don't have the old->new SHA mappings readily available here
-
-    Ok(rebase_result)
+        Ok(RebaseResult {
+            success: false,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts,
+            message: "Rebase conflicts detected. Please resolve conflicts and continue."
+                .to_string(),
+        })
+    } else {
+        Err(AxisError::Other(format!(
+            "Rebase failed: {}",
+            result.stderr.trim()
+        )))
+    }
 }
 
 /// Abort an in-progress rebase
@@ -202,7 +201,11 @@ pub async fn rebase_branch(
 pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.rebase_abort())?;
+        .write()
+        .await
+        .git_cli()
+        .rebase_abort()
+        .await?;
     Ok(())
 }
 
@@ -210,11 +213,11 @@ pub async fn rebase_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
-    let result = cli.rebase_continue()?;
+    let result = cli.rebase_continue().await?;
 
     if result.success {
         Ok(RebaseResult {
@@ -226,7 +229,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
             message: "Rebase continued successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(cli)?;
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
         Ok(RebaseResult {
             success: false,
@@ -250,7 +253,11 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
 pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
     let result = state
         .get_git_service()?
-        .with_git_cli(|cli| cli.rebase_skip())?;
+        .write()
+        .await
+        .git_cli()
+        .rebase_skip()
+        .await?;
 
     Ok(RebaseResult {
         success: result.success,
@@ -272,7 +279,9 @@ pub async fn rebase_skip(state: State<'_, AppState>) -> Result<RebaseResult> {
 pub async fn get_rebase_preview(state: State<'_, AppState>, onto: String) -> Result<RebasePreview> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_rebase_preview(&onto))
+        .read()
+        .await
+        .git2(move |git2| git2.get_rebase_preview(&onto))
         .await
 }
 
@@ -285,7 +294,9 @@ pub async fn get_interactive_rebase_preview(
 ) -> Result<InteractiveRebasePreview> {
     state
         .get_git_service()?
-        .with_git2(move |git2| {
+        .read()
+        .await
+        .git2(move |git2| {
             let preview = git2.get_rebase_preview(&onto)?;
 
             // Convert commits to interactive entries with default 'pick' action
@@ -319,15 +330,17 @@ pub async fn interactive_rebase(
     let git_service = state.get_git_service()?;
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
+    let guard = git_service.write().await;
+
     // Get current branch for pre-rebase hook
-    let current_branch = git_service
-        .with_git2(|git2| git2.get_current_branch())
-        .await;
+    let current_branch = guard.git2(|git2| git2.get_current_branch()).await;
 
     // Run pre-rebase hook
     if !skip_hooks {
-        let hook_result = git_service
-            .with_hook(|hook| hook.run_pre_rebase(&options.onto, current_branch.as_deref()));
+        let hook_result = guard
+            .hook()
+            .run_pre_rebase(&options.onto, current_branch.as_deref())
+            .await;
         if !hook_result.skipped && !hook_result.success {
             let output = if !hook_result.stderr.is_empty() {
                 &hook_result.stderr
@@ -349,11 +362,10 @@ pub async fn interactive_rebase(
         .count();
 
     // Execute interactive rebase
-    let result = {
-        let guard = git_service.lock();
-        let cli = guard.git_cli();
-        cli.interactive_rebase(&options.onto, &options.entries, options.autosquash)?
-    };
+    let cli = guard.git_cli();
+    let result = cli
+        .interactive_rebase(&options.onto, &options.entries, options.autosquash)
+        .await?;
 
     if result.success {
         Ok(RebaseResult {
@@ -365,10 +377,7 @@ pub async fn interactive_rebase(
             message: result.stdout.trim().to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = {
-            let guard = git_service.lock();
-            get_conflicted_files_internal(guard.git_cli())?
-        };
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
         Ok(RebaseResult {
             success: false,
@@ -393,7 +402,10 @@ pub async fn interactive_rebase(
 pub async fn get_rebase_progress(state: State<'_, AppState>) -> Result<Option<RebaseProgress>> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.get_rebase_progress())
+        .read()
+        .await
+        .git_cli()
+        .get_rebase_progress()
 }
 
 /// Continue rebase with a new commit message (for Reword action)
@@ -403,11 +415,11 @@ pub async fn rebase_continue_with_message(
     state: State<'_, AppState>,
     message: String,
 ) -> Result<RebaseResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
-    let result = cli.rebase_continue_with_message(&message)?;
+    let result = cli.rebase_continue_with_message(&message).await?;
 
     if result.success {
         Ok(RebaseResult {
@@ -419,7 +431,7 @@ pub async fn rebase_continue_with_message(
             message: "Rebase continued successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(cli)?;
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
         Ok(RebaseResult {
             success: false,
@@ -446,8 +458,8 @@ pub async fn cherry_pick(
     state: State<'_, AppState>,
     options: CherryPickOptions,
 ) -> Result<CherryPickResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
     let mut all_success = true;
@@ -455,12 +467,12 @@ pub async fn cherry_pick(
     let commit_oids = Vec::new();
 
     for commit in &options.commits {
-        let result = cli.cherry_pick(commit, options.no_commit)?;
+        let result = cli.cherry_pick(commit, options.no_commit).await?;
 
         if !result.success {
             all_success = false;
             if result.stdout.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(cli)?);
+                all_conflicts.extend(get_conflicted_files_internal(cli).await?);
                 break; // Stop on first conflict
             } else {
                 return Err(AxisError::Other(format!(
@@ -492,7 +504,11 @@ pub async fn cherry_pick(
 pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.cherry_pick_abort())?;
+        .write()
+        .await
+        .git_cli()
+        .cherry_pick_abort()
+        .await?;
     Ok(())
 }
 
@@ -500,11 +516,11 @@ pub async fn cherry_pick_abort(state: State<'_, AppState>) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPickResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
-    let result = cli.cherry_pick_continue()?;
+    let result = cli.cherry_pick_continue().await?;
 
     if result.success {
         Ok(CherryPickResult {
@@ -514,7 +530,7 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
             message: "Cherry-pick completed successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(cli)?;
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
         Ok(CherryPickResult {
             success: false,
@@ -534,11 +550,11 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
 #[tauri::command]
 #[specta::specta]
 pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
-    let result = cli.cherry_pick_skip()?;
+    let result = cli.cherry_pick_skip().await?;
 
     if result.success {
         Ok(CherryPickResult {
@@ -548,7 +564,7 @@ pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickRe
             message: "Commit skipped.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(cli)?;
+        let conflicts = get_conflicted_files_internal(cli).await?;
 
         Ok(CherryPickResult {
             success: false,
@@ -573,20 +589,20 @@ pub async fn revert_commits(
     state: State<'_, AppState>,
     options: RevertOptions,
 ) -> Result<RevertResult> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
     let mut all_success = true;
     let mut all_conflicts = Vec::new();
 
     for commit in &options.commits {
-        let result = cli.revert(commit, options.no_commit)?;
+        let result = cli.revert(commit, options.no_commit).await?;
 
         if !result.success {
             all_success = false;
             if result.stdout.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(cli)?);
+                all_conflicts.extend(get_conflicted_files_internal(cli).await?);
                 break;
             } else {
                 return Err(AxisError::Other(format!(
@@ -615,7 +631,11 @@ pub async fn revert_commits(
 pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.revert_abort())?;
+        .write()
+        .await
+        .git_cli()
+        .revert_abort()
+        .await?;
     Ok(())
 }
 
@@ -625,7 +645,11 @@ pub async fn revert_abort(state: State<'_, AppState>) -> Result<()> {
 pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult> {
     let result = state
         .get_git_service()?
-        .with_git_cli(|cli| cli.revert_continue())?;
+        .write()
+        .await
+        .git_cli()
+        .revert_continue()
+        .await?;
 
     Ok(RevertResult {
         success: result.success,
@@ -645,10 +669,10 @@ pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult>
 #[tauri::command]
 #[specta::specta]
 pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<ConflictedFile>> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.read().await;
     let cli = guard.git_cli();
-    get_conflicted_files_internal(cli)
+    get_conflicted_files_internal(cli).await
 }
 
 /// Get three-way content for a conflicted file
@@ -659,13 +683,13 @@ pub async fn get_conflict_content(
     path: String,
 ) -> Result<ConflictContent> {
     let repo_path = state.ensure_repository_open()?;
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.read().await;
     let cli = guard.git_cli();
 
-    let base = cli.get_conflict_base(&path).ok();
-    let ours = cli.get_conflict_ours(&path).ok();
-    let theirs = cli.get_conflict_theirs(&path).ok();
+    let base = cli.get_conflict_base(&path).await.ok();
+    let ours = cli.get_conflict_ours(&path).await.ok();
+    let theirs = cli.get_conflict_theirs(&path).await.ok();
 
     // Read current working tree content
     let merged = fs::read_to_string(repo_path.join(&path))?;
@@ -689,22 +713,24 @@ pub async fn resolve_conflict(
     custom_content: Option<String>,
 ) -> Result<()> {
     let repo_path = state.ensure_repository_open()?;
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.write().await;
     let cli = guard.git_cli();
 
     match resolution {
         ConflictResolution::Ours => {
-            cli.resolve_with_version(&path, crate::services::ConflictVersion::Ours)?;
+            cli.resolve_with_version(&path, crate::services::ConflictVersion::Ours)
+                .await?;
         }
         ConflictResolution::Theirs => {
-            cli.resolve_with_version(&path, crate::services::ConflictVersion::Theirs)?;
+            cli.resolve_with_version(&path, crate::services::ConflictVersion::Theirs)
+                .await?;
         }
         ConflictResolution::Merged => {
             // Write the custom content
             if let Some(content) = custom_content {
                 fs::write(repo_path.join(&path), content)?;
-                cli.mark_resolved(&path)?;
+                cli.mark_resolved(&path).await?;
             } else {
                 return Err(AxisError::Other(
                     "Custom content required for merged resolution".to_string(),
@@ -722,7 +748,11 @@ pub async fn resolve_conflict(
 pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.mark_resolved(&path))?;
+        .write()
+        .await
+        .git_cli()
+        .mark_resolved(&path)
+        .await?;
     Ok(())
 }
 
@@ -732,8 +762,8 @@ pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) ->
 #[tauri::command]
 #[specta::specta]
 pub async fn get_operation_state(state: State<'_, AppState>) -> Result<OperationState> {
-    let handle = state.get_git_service()?;
-    let guard = handle.lock();
+    let git_service = state.get_git_service()?;
+    let guard = git_service.read().await;
     let cli = guard.git_cli();
 
     if cli.is_rebasing()? {
@@ -761,7 +791,7 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
     } else if cli.is_reverting()? {
         Ok(OperationState::Reverting { commit: None })
     } else if cli.is_bisecting()? {
-        let bisect_state = cli.get_bisect_state()?;
+        let bisect_state = cli.get_bisect_state().await?;
         Ok(OperationState::Bisecting {
             current_commit: bisect_state.current_commit,
             steps_remaining: bisect_state.steps_remaining,
@@ -779,20 +809,24 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
 pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) -> Result<()> {
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.reset(&options.target, options.mode))?;
+        .write()
+        .await
+        .git_cli()
+        .reset(&options.target, options.mode)
+        .await?;
     Ok(())
 }
 
 // ==================== Helper Functions ====================
 
-fn get_conflicted_files_internal(cli: &GitCliService) -> Result<Vec<ConflictedFile>> {
-    let files = cli.get_conflicted_files()?;
+async fn get_conflicted_files_internal(cli: &GitCliService) -> Result<Vec<ConflictedFile>> {
+    let files = cli.get_conflicted_files().await?;
 
     Ok(files
         .into_iter()
         .map(|path| ConflictedFile {
             path,
-            conflict_type: ConflictType::Content, // TODO: Default, would need more parsing
+            conflict_type: ConflictType::Content,
             is_resolved: false,
         })
         .collect())

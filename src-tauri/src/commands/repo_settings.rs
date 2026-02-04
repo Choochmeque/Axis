@@ -34,8 +34,6 @@ pub async fn save_repository_user_config(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| {
-            git2.set_repo_user_config(user_name.as_deref(), user_email.as_deref())
-        })
+        .git2(move |git2| git2.set_repo_user_config(user_name.as_deref(), user_email.as_deref()))
         .await
 }

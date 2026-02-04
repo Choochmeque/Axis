@@ -52,8 +52,7 @@ pub async fn merge_branch(
             conflicts: Vec::new(),
             message: result.stdout.trim().to_string(),
         }
-    } else if result.stdout.contains("CONFLICT")
-        || result.stderr.contains("Automatic merge failed")
+    } else if result.stdout.contains("CONFLICT") || result.stderr.contains("Automatic merge failed")
     {
         // Merge has conflicts
         let conflicts = get_conflicted_files_internal(cli).await?;

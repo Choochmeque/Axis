@@ -25,7 +25,11 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
 
     // Get repo info from the cached service
     let handle = state.get_git_service()?;
-    let repo_info = handle.read().await.git2(|git2| git2.get_repository_info()).await?;
+    let repo_info = handle
+        .read()
+        .await
+        .git2(|git2| git2.get_repository_info())
+        .await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;

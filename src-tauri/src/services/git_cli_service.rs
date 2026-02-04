@@ -505,7 +505,8 @@ impl GitCliService {
         };
 
         // Checkout the specified version
-        self.execute_checked(&["checkout", version_arg, "--", path]).await?;
+        self.execute_checked(&["checkout", version_arg, "--", path])
+            .await?;
         // Mark as resolved
         self.execute_checked(&["add", path]).await
     }
@@ -556,7 +557,9 @@ impl GitCliService {
 
     /// Get list of conflicted files
     pub async fn get_conflicted_files(&self) -> Result<Vec<String>> {
-        let result = self.execute(&["diff", "--name-only", "--diff-filter=U"]).await?;
+        let result = self
+            .execute(&["diff", "--name-only", "--diff-filter=U"])
+            .await?;
         if result.success {
             Ok(result.stdout.lines().map(|s| s.to_string()).collect())
         } else {
@@ -581,12 +584,14 @@ impl GitCliService {
 
     /// List all stash entries
     pub async fn stash_list(&self) -> Result<Vec<StashEntry>> {
-        let result = self.execute(&[
-            "stash",
-            "list",
-            "--format=%gd|%H|%s|%an|%ad",
-            "--date=iso-strict",
-        ]).await?;
+        let result = self
+            .execute(&[
+                "stash",
+                "list",
+                "--format=%gd|%H|%s|%an|%ad",
+                "--date=iso-strict",
+            ])
+            .await?;
 
         if !result.success || result.stdout.trim().is_empty() {
             return Ok(Vec::new());
@@ -780,9 +785,15 @@ impl GitCliService {
     }
 
     /// Create a branch from a stash
-    pub async fn stash_branch(&self, branch_name: &str, index: Option<usize>) -> Result<StashResult> {
+    pub async fn stash_branch(
+        &self,
+        branch_name: &str,
+        index: Option<usize>,
+    ) -> Result<StashResult> {
         let stash_ref = format!("stash@{{{}}}", index.unwrap_or(0));
-        let result = self.execute(&["stash", "branch", branch_name, &stash_ref]).await?;
+        let result = self
+            .execute(&["stash", "branch", branch_name, &stash_ref])
+            .await?;
 
         if result.success {
             Ok(StashResult {
@@ -800,7 +811,9 @@ impl GitCliService {
 
     /// Push a tag to remote
     pub async fn tag_push(&self, name: &str, remote: &str) -> Result<TagResult> {
-        let result = self.execute(&["push", remote, &format!("refs/tags/{}", name)]).await?;
+        let result = self
+            .execute(&["push", remote, &format!("refs/tags/{}", name)])
+            .await?;
 
         Ok(TagResult {
             success: result.success,
@@ -830,7 +843,9 @@ impl GitCliService {
 
     /// Delete a remote tag
     pub async fn tag_delete_remote(&self, name: &str, remote: &str) -> Result<TagResult> {
-        let result = self.execute(&["push", remote, "--delete", &format!("refs/tags/{}", name)]).await?;
+        let result = self
+            .execute(&["push", remote, "--delete", &format!("refs/tags/{}", name)])
+            .await?;
 
         Ok(TagResult {
             success: result.success,
@@ -848,7 +863,9 @@ impl GitCliService {
     /// List all submodules
     pub async fn submodule_list(&self) -> Result<Vec<Submodule>> {
         // Use git submodule status for detailed info
-        let result = self.execute(&["submodule", "status", "--recursive"]).await?;
+        let result = self
+            .execute(&["submodule", "status", "--recursive"])
+            .await?;
 
         if !result.success {
             // If error contains "not a git repository", there might be no submodules
@@ -861,7 +878,9 @@ impl GitCliService {
         let mut submodules = Vec::new();
 
         // Also get submodule config for URLs
-        let config_result = self.execute(&["config", "--file", ".gitmodules", "--list"]).await;
+        let config_result = self
+            .execute(&["config", "--file", ".gitmodules", "--list"])
+            .await;
         let configs: std::collections::HashMap<String, String> = config_result
             .map(|r| {
                 r.stdout
@@ -1012,7 +1031,10 @@ impl GitCliService {
     }
 
     /// Update submodules
-    pub async fn submodule_update(&self, options: &UpdateSubmoduleOptions) -> Result<SubmoduleResult> {
+    pub async fn submodule_update(
+        &self,
+        options: &UpdateSubmoduleOptions,
+    ) -> Result<SubmoduleResult> {
         let mut args = vec!["submodule", "update"];
 
         if options.init {
@@ -1159,7 +1181,9 @@ impl GitCliService {
 
     /// Check if git-flow is initialized
     pub async fn gitflow_is_initialized(&self) -> Result<bool> {
-        let result = self.execute(&["config", "--get", "gitflow.branch.master"]).await?;
+        let result = self
+            .execute(&["config", "--get", "gitflow.branch.master"])
+            .await?;
         Ok(result.success && !result.stdout.trim().is_empty())
     }
 
@@ -1169,13 +1193,27 @@ impl GitCliService {
             return Ok(None);
         }
 
-        let master = self.execute(&["config", "--get", "gitflow.branch.master"]).await?;
-        let develop = self.execute(&["config", "--get", "gitflow.branch.develop"]).await?;
-        let feature = self.execute(&["config", "--get", "gitflow.prefix.feature"]).await?;
-        let release = self.execute(&["config", "--get", "gitflow.prefix.release"]).await?;
-        let hotfix = self.execute(&["config", "--get", "gitflow.prefix.hotfix"]).await?;
-        let support = self.execute(&["config", "--get", "gitflow.prefix.support"]).await?;
-        let versiontag = self.execute(&["config", "--get", "gitflow.prefix.versiontag"]).await?;
+        let master = self
+            .execute(&["config", "--get", "gitflow.branch.master"])
+            .await?;
+        let develop = self
+            .execute(&["config", "--get", "gitflow.branch.develop"])
+            .await?;
+        let feature = self
+            .execute(&["config", "--get", "gitflow.prefix.feature"])
+            .await?;
+        let release = self
+            .execute(&["config", "--get", "gitflow.prefix.release"])
+            .await?;
+        let hotfix = self
+            .execute(&["config", "--get", "gitflow.prefix.hotfix"])
+            .await?;
+        let support = self
+            .execute(&["config", "--get", "gitflow.prefix.support"])
+            .await?;
+        let versiontag = self
+            .execute(&["config", "--get", "gitflow.prefix.versiontag"])
+            .await?;
 
         Ok(Some(GitFlowConfig {
             master: master.stdout.trim().to_string(),
@@ -1216,23 +1254,34 @@ impl GitCliService {
         };
 
         // Set git-flow config values
-        self.execute_checked(&["config", "gitflow.branch.master", &config.master]).await?;
-        self.execute_checked(&["config", "gitflow.branch.develop", &config.develop]).await?;
-        self.execute_checked(&["config", "gitflow.prefix.feature", &config.feature_prefix]).await?;
-        self.execute_checked(&["config", "gitflow.prefix.release", &config.release_prefix]).await?;
-        self.execute_checked(&["config", "gitflow.prefix.hotfix", &config.hotfix_prefix]).await?;
-        self.execute_checked(&["config", "gitflow.prefix.support", &config.support_prefix]).await?;
+        self.execute_checked(&["config", "gitflow.branch.master", &config.master])
+            .await?;
+        self.execute_checked(&["config", "gitflow.branch.develop", &config.develop])
+            .await?;
+        self.execute_checked(&["config", "gitflow.prefix.feature", &config.feature_prefix])
+            .await?;
+        self.execute_checked(&["config", "gitflow.prefix.release", &config.release_prefix])
+            .await?;
+        self.execute_checked(&["config", "gitflow.prefix.hotfix", &config.hotfix_prefix])
+            .await?;
+        self.execute_checked(&["config", "gitflow.prefix.support", &config.support_prefix])
+            .await?;
         self.execute_checked(&[
             "config",
             "gitflow.prefix.versiontag",
             &config.version_tag_prefix,
-        ]).await?;
+        ])
+        .await?;
 
         // Check if develop branch exists, create it if not
-        let branch_exists = self.execute(&["rev-parse", "--verify", &config.develop]).await?;
+        let branch_exists = self
+            .execute(&["rev-parse", "--verify", &config.develop])
+            .await?;
         if !branch_exists.success {
             // Create develop branch from master
-            let result = self.execute(&["branch", &config.develop, &config.master]).await?;
+            let result = self
+                .execute(&["branch", &config.develop, &config.master])
+                .await?;
             if !result.success {
                 return Ok(GitFlowResult {
                     success: false,
@@ -1279,7 +1328,9 @@ impl GitCliService {
             });
 
         // Create and checkout the new branch
-        let result = self.execute(&["checkout", "-b", &branch_name, &base_branch]).await?;
+        let result = self
+            .execute(&["checkout", "-b", &branch_name, &base_branch])
+            .await?;
         if !result.success {
             return Ok(GitFlowResult {
                 success: false,
@@ -1432,7 +1483,9 @@ impl GitCliService {
 
         let branch_name = format!("{}{}", prefix, name);
 
-        let result = self.execute(&["push", "-u", "origin", &branch_name]).await?;
+        let result = self
+            .execute(&["push", "-u", "origin", &branch_name])
+            .await?;
         if !result.success {
             return Ok(GitFlowResult {
                 success: false,
@@ -1462,7 +1515,9 @@ impl GitCliService {
             GitFlowBranchType::Support => &config.support_prefix,
         };
 
-        let result = self.execute(&["branch", "--list", &format!("{prefix}*")]).await?;
+        let result = self
+            .execute(&["branch", "--list", &format!("{prefix}*")])
+            .await?;
         if !result.success {
             return Ok(Vec::new());
         }
@@ -1794,13 +1849,11 @@ impl GitCliService {
             let file = File::create(output_path).map_err(AxisError::from)?;
             if actual_format == "tar.gz" {
                 let mut encoder = GzEncoder::new(file, Compression::default());
-                std::io::Write::write_all(&mut encoder, &output.stdout)
-                    .map_err(AxisError::from)?;
+                std::io::Write::write_all(&mut encoder, &output.stdout).map_err(AxisError::from)?;
                 encoder.finish().map_err(AxisError::from)?;
             } else {
                 let mut encoder = BzEncoder::new(file, bzip2::Compression::default());
-                std::io::Write::write_all(&mut encoder, &output.stdout)
-                    .map_err(AxisError::from)?;
+                std::io::Write::write_all(&mut encoder, &output.stdout).map_err(AxisError::from)?;
                 encoder.finish().map_err(AxisError::from)?;
             }
         } else {
@@ -2620,7 +2673,9 @@ impl GitCliService {
     /// List all LFS files in the repository
     pub async fn lfs_list_files(&self) -> Result<Vec<LfsFile>> {
         // Use --long format to get OID and size
-        let result = self.execute(&["lfs", "ls-files", "--long", "--size"]).await?;
+        let result = self
+            .execute(&["lfs", "ls-files", "--long", "--size"])
+            .await?;
 
         if !result.success {
             return Ok(Vec::new());
@@ -2881,7 +2936,9 @@ impl GitCliService {
 
     /// Check if a file is an LFS pointer
     pub async fn lfs_is_pointer(&self, path: &str) -> Result<bool> {
-        let result = self.execute(&["lfs", "pointer", "--check", "--file", path]).await?;
+        let result = self
+            .execute(&["lfs", "pointer", "--check", "--file", path])
+            .await?;
         Ok(result.success)
     }
 
@@ -3213,14 +3270,15 @@ mod tests {
         assert!(tmp.path().join("file.txt").exists());
     }
 
-    #[test]
-    fn test_reset_hard() {
+    #[tokio::test]
+    async fn test_reset_hard() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Second commit");
 
         let result = service
             .reset("HEAD~1", ResetMode::Hard)
+            .await
             .expect("should reset hard");
 
         assert!(result.success);
@@ -3228,8 +3286,8 @@ mod tests {
         assert!(!tmp.path().join("file.txt").exists());
     }
 
-    #[test]
-    fn test_revert() {
+    #[tokio::test]
+    async fn test_revert() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "file.txt", "content", "Add file");
@@ -3244,6 +3302,7 @@ mod tests {
 
         let result = service
             .revert(&commit_hash, false)
+            .await
             .expect("should revert commit");
 
         assert!(result.success);
@@ -3253,17 +3312,17 @@ mod tests {
 
     // ==================== Stash Tests ====================
 
-    #[test]
-    fn test_stash_list_empty() {
+    #[tokio::test]
+    async fn test_stash_list_empty() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let stashes = service.stash_list().expect("should list stashes");
+        let stashes = service.stash_list().await.expect("should list stashes");
         assert!(stashes.is_empty());
     }
 
-    #[test]
-    fn test_stash_save_and_list() {
+    #[tokio::test]
+    async fn test_stash_save_and_list() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3282,16 +3341,17 @@ mod tests {
                 message: Some("Test stash".to_string()),
                 ..Default::default()
             })
+            .await
             .expect("should save stash");
 
         // Verify stash exists
-        let stashes = service.stash_list().expect("should list stashes");
+        let stashes = service.stash_list().await.expect("should list stashes");
         assert_eq!(stashes.len(), 1);
         assert!(stashes[0].message.contains("Test stash"));
     }
 
-    #[test]
-    fn test_stash_pop() {
+    #[tokio::test]
+    async fn test_stash_pop() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3306,6 +3366,7 @@ mod tests {
 
         service
             .stash_save(&StashSaveOptions::default())
+            .await
             .expect("should save stash");
 
         // Verify file is gone
@@ -3314,18 +3375,22 @@ mod tests {
         // Pop the stash
         let _ = service
             .stash_pop(&StashApplyOptions::default())
+            .await
             .expect("should pop stash");
 
         // Verify file is back
         assert!(tmp.path().join("stash_test.txt").exists());
 
         // Verify stash is gone
-        let stashes = service.stash_list().expect("should list stashes after pop");
+        let stashes = service
+            .stash_list()
+            .await
+            .expect("should list stashes after pop");
         assert!(stashes.is_empty());
     }
 
-    #[test]
-    fn test_stash_apply() {
+    #[tokio::test]
+    async fn test_stash_apply() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3340,11 +3405,13 @@ mod tests {
 
         service
             .stash_save(&StashSaveOptions::default())
+            .await
             .expect("should save stash");
 
         // Apply the stash
         let _ = service
             .stash_apply(&StashApplyOptions::default())
+            .await
             .expect("should apply stash");
 
         // Verify file is back
@@ -3353,12 +3420,13 @@ mod tests {
         // Verify stash is still there (apply doesn't drop)
         let stashes = service
             .stash_list()
+            .await
             .expect("should list stashes after apply");
         assert_eq!(stashes.len(), 1);
     }
 
-    #[test]
-    fn test_stash_drop() {
+    #[tokio::test]
+    async fn test_stash_drop() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3373,21 +3441,30 @@ mod tests {
 
         service
             .stash_save(&StashSaveOptions::default())
+            .await
             .expect("should save stash");
-        assert_eq!(service.stash_list().expect("should list stashes").len(), 1);
+        assert_eq!(
+            service
+                .stash_list()
+                .await
+                .expect("should list stashes")
+                .len(),
+            1
+        );
 
         // Drop the stash
-        let _ = service.stash_drop(None).expect("should drop stash");
+        let _ = service.stash_drop(None).await.expect("should drop stash");
 
         // Verify stash is gone
         assert!(service
             .stash_list()
+            .await
             .expect("should list stashes after drop")
             .is_empty());
     }
 
-    #[test]
-    fn test_stash_clear() {
+    #[tokio::test]
+    async fn test_stash_clear() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3402,38 +3479,56 @@ mod tests {
                 .expect("should add files to staging");
             service
                 .stash_save(&StashSaveOptions::default())
+                .await
                 .expect("should save stash");
         }
 
-        assert_eq!(service.stash_list().expect("should list stashes").len(), 3);
+        assert_eq!(
+            service
+                .stash_list()
+                .await
+                .expect("should list stashes")
+                .len(),
+            3
+        );
 
         // Clear all stashes
-        let _ = service.stash_clear().expect("should clear all stashes");
+        let _ = service
+            .stash_clear()
+            .await
+            .expect("should clear all stashes");
 
         assert!(service
             .stash_list()
+            .await
             .expect("should list stashes after clear")
             .is_empty());
     }
 
     // ==================== Submodule Tests ====================
 
-    #[test]
-    fn test_submodule_list_empty() {
+    #[tokio::test]
+    async fn test_submodule_list_empty() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let submodules = service.submodule_list().expect("should list submodules");
+        let submodules = service
+            .submodule_list()
+            .await
+            .expect("should list submodules");
         assert!(submodules.is_empty());
     }
 
-    #[test]
-    fn test_submodule_init_update() {
+    #[tokio::test]
+    async fn test_submodule_init_update() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Initialize submodules (should succeed even with no submodules)
-        let result = service.submodule_init(&[]).expect("should init submodules");
+        let result = service
+            .submodule_init(&[])
+            .await
+            .expect("should init submodules");
         assert!(result.success);
 
         // Update submodules (should succeed even with no submodules)
@@ -3443,40 +3538,46 @@ mod tests {
                 recursive: true,
                 ..Default::default()
             })
+            .await
             .expect("should update submodules");
         assert!(result.success);
     }
 
-    #[test]
-    fn test_submodule_summary_empty() {
+    #[tokio::test]
+    async fn test_submodule_summary_empty() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Should return empty string for repo with no submodules
         let summary = service
             .submodule_summary()
+            .await
             .expect("should get submodule summary");
         assert!(summary.is_empty());
     }
 
     // ==================== Git-flow Tests ====================
 
-    #[test]
-    fn test_gitflow_not_initialized() {
+    #[tokio::test]
+    async fn test_gitflow_not_initialized() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         let is_initialized = service
             .gitflow_is_initialized()
+            .await
             .expect("should check gitflow initialized");
         assert!(!is_initialized);
 
-        let config = service.gitflow_config().expect("should get gitflow config");
+        let config = service
+            .gitflow_config()
+            .await
+            .expect("should get gitflow config");
         assert!(config.is_none());
     }
 
-    #[test]
-    fn test_gitflow_init() {
+    #[tokio::test]
+    async fn test_gitflow_init() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3488,24 +3589,29 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
+            .await
             .expect("should init gitflow");
 
         assert!(result.success, "gitflow init failed: {}", result.message);
 
         let is_initialized = service
             .gitflow_is_initialized()
+            .await
             .expect("should check gitflow initialized");
         assert!(is_initialized);
 
-        let config = service.gitflow_config().expect("should get gitflow config");
+        let config = service
+            .gitflow_config()
+            .await
+            .expect("should get gitflow config");
         assert!(config.is_some());
         let config = config.expect("config should be present");
         assert_eq!(config.master, default_branch);
         assert_eq!(config.develop, "develop");
     }
 
-    #[test]
-    fn test_gitflow_feature_start() {
+    #[tokio::test]
+    async fn test_gitflow_feature_start() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3518,6 +3624,7 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
+            .await
             .expect("should init gitflow");
 
         // Checkout develop branch
@@ -3526,6 +3633,7 @@ mod tests {
         // Start a feature
         let result = service
             .gitflow_start(GitFlowBranchType::Feature, "test-feature", None)
+            .await
             .expect("should start feature");
 
         assert!(result.success, "feature start failed: {}", result.message);
@@ -3534,12 +3642,13 @@ mod tests {
         // Verify the feature is in the list
         let features = service
             .gitflow_list(GitFlowBranchType::Feature)
+            .await
             .expect("should list features");
         assert!(features.contains(&"test-feature".to_string()));
     }
 
-    #[test]
-    fn test_gitflow_feature_list_empty() {
+    #[tokio::test]
+    async fn test_gitflow_feature_list_empty() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3552,18 +3661,20 @@ mod tests {
                 develop: Some("develop".to_string()),
                 ..Default::default()
             })
+            .await
             .expect("should init gitflow");
 
         let features = service
             .gitflow_list(GitFlowBranchType::Feature)
+            .await
             .expect("should list features");
         assert!(features.is_empty());
     }
 
     // ==================== Grep Tests ====================
 
-    #[test]
-    fn test_grep_basic() {
+    #[tokio::test]
+    async fn test_grep_basic() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3590,6 +3701,7 @@ mod tests {
                 show_line_numbers: true,
                 ..Default::default()
             })
+            .await
             .expect("should grep for pattern");
 
         assert_eq!(result.total_matches, 2);
@@ -3603,8 +3715,8 @@ mod tests {
             .any(|m| m.content.contains("hello again")));
     }
 
-    #[test]
-    fn test_grep_case_insensitive() {
+    #[tokio::test]
+    async fn test_grep_case_insensitive() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3631,13 +3743,14 @@ mod tests {
                 show_line_numbers: true,
                 ..Default::default()
             })
+            .await
             .expect("should grep case insensitive");
 
         assert_eq!(result.total_matches, 3);
     }
 
-    #[test]
-    fn test_grep_no_matches() {
+    #[tokio::test]
+    async fn test_grep_no_matches() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3646,14 +3759,15 @@ mod tests {
                 pattern: "nonexistent_pattern_xyz".to_string(),
                 ..Default::default()
             })
+            .await
             .expect("should grep for nonexistent pattern");
 
         assert_eq!(result.total_matches, 0);
         assert!(result.matches.is_empty());
     }
 
-    #[test]
-    fn test_stage_hunk() {
+    #[tokio::test]
+    async fn test_stage_hunk() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3683,7 +3797,7 @@ mod tests {
         let patch = String::from_utf8_lossy(&diff_output.stdout);
 
         // Stage the hunk using the real patch
-        let result = service.stage_hunk(&patch);
+        let result = service.stage_hunk(&patch).await;
         assert!(result.is_ok(), "Failed to stage hunk: {:?}", result);
 
         // Verify the file is staged
@@ -3696,8 +3810,8 @@ mod tests {
         assert!(staged_files.contains("test.txt"));
     }
 
-    #[test]
-    fn test_unstage_hunk() {
+    #[tokio::test]
+    async fn test_unstage_hunk() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3740,7 +3854,7 @@ mod tests {
         let patch = String::from_utf8_lossy(&diff_output.stdout);
 
         // Unstage the hunk using the real patch
-        let result = service.unstage_hunk(&patch);
+        let result = service.unstage_hunk(&patch).await;
         assert!(result.is_ok(), "Failed to unstage hunk: {:?}", result);
 
         // Verify the file is no longer staged
@@ -3753,22 +3867,22 @@ mod tests {
         assert!(!staged_files.contains("test.txt") || staged_files.trim().is_empty());
     }
 
-    #[test]
-    fn test_stage_hunk_invalid_patch() {
+    #[tokio::test]
+    async fn test_stage_hunk_invalid_patch() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Try to stage an invalid patch
         let invalid_patch = "this is not a valid patch";
-        let result = service.stage_hunk(invalid_patch);
+        let result = service.stage_hunk(invalid_patch).await;
 
         assert!(result.is_err());
     }
 
     // ==================== Discard Hunk Tests ====================
 
-    #[test]
-    fn test_discard_hunk() {
+    #[tokio::test]
+    async fn test_discard_hunk() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3797,7 +3911,7 @@ mod tests {
         let patch = String::from_utf8_lossy(&diff_output.stdout);
 
         // Discard the changes
-        let result = service.discard_hunk(&patch);
+        let result = service.discard_hunk(&patch).await;
         assert!(result.is_ok(), "Failed to discard hunk: {:?}", result);
 
         // Verify the file is back to original
@@ -3807,19 +3921,22 @@ mod tests {
 
     // ==================== Worktree Tests ====================
 
-    #[test]
-    fn test_worktree_list_initial() {
+    #[tokio::test]
+    async fn test_worktree_list_initial() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
-        let worktrees = service.worktree_list().expect("should list worktrees");
+        let worktrees = service
+            .worktree_list()
+            .await
+            .expect("should list worktrees");
         // Main worktree is always present
         assert!(!worktrees.is_empty());
         assert!(!worktrees[0].path.is_empty());
     }
 
-    #[test]
-    fn test_worktree_add() {
+    #[tokio::test]
+    async fn test_worktree_add() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         create_branch(&tmp, "feature-worktree");
@@ -3833,22 +3950,27 @@ mod tests {
                 create_branch: false,
                 ..Default::default()
             })
+            .await
             .expect("should add worktree");
 
         assert!(result.success, "worktree add failed: {}", result.message);
 
         // Verify worktree exists
-        let worktrees = service.worktree_list().expect("should list worktrees");
+        let worktrees = service
+            .worktree_list()
+            .await
+            .expect("should list worktrees");
         assert_eq!(worktrees.len(), 2);
     }
 
-    #[test]
-    fn test_worktree_prune_dry_run() {
+    #[tokio::test]
+    async fn test_worktree_prune_dry_run() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         let result = service
             .worktree_prune(true)
+            .await
             .expect("should prune worktrees");
         assert!(result.success);
     }
@@ -3863,8 +3985,8 @@ mod tests {
         assert!(!service.is_bisecting().expect("should check bisect state"));
     }
 
-    #[test]
-    fn test_bisect_start_and_reset() {
+    #[tokio::test]
+    async fn test_bisect_start_and_reset() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3890,35 +4012,42 @@ mod tests {
         // Start bisect
         let result = service
             .bisect_start(Some(&bad), &good)
+            .await
             .expect("should start bisect");
         assert!(result.success, "bisect start failed: {}", result.stderr);
 
         assert!(service.is_bisecting().expect("should be bisecting"));
 
         // Get bisect state
-        let state = service.get_bisect_state().expect("should get bisect state");
+        let state = service
+            .get_bisect_state()
+            .await
+            .expect("should get bisect state");
         assert!(state.is_active);
 
         // Reset bisect
-        let result = service.bisect_reset(None).expect("should reset bisect");
+        let result = service
+            .bisect_reset(None)
+            .await
+            .expect("should reset bisect");
         assert!(result.success);
 
         assert!(!service.is_bisecting().expect("should not be bisecting"));
     }
 
-    #[test]
-    fn test_bisect_log_empty() {
+    #[tokio::test]
+    async fn test_bisect_log_empty() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // When not bisecting, log returns an error or empty
-        let _ = service.bisect_log();
+        let _ = service.bisect_log().await;
     }
 
     // ==================== Tag Remote Tests ====================
 
-    #[test]
-    fn test_tag_push_no_remote() {
+    #[tokio::test]
+    async fn test_tag_push_no_remote() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3930,15 +4059,15 @@ mod tests {
             .expect("should create tag");
 
         // Try to push without remote (should fail)
-        let result = service.tag_push("v1.0.0", "origin");
+        let result = service.tag_push("v1.0.0", "origin").await;
         // Expect error since no remote exists
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
     // ==================== Archive Tests ====================
 
-    #[test]
-    fn test_archive_zip() {
+    #[tokio::test]
+    async fn test_archive_zip() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "archive.txt", "archive content", "Add file");
@@ -3947,14 +4076,15 @@ mod tests {
 
         let result = service
             .archive("HEAD", "zip", &output_path, None)
+            .await
             .expect("should create archive");
 
         assert!(!result.message.is_empty());
         assert!(output_path.exists());
     }
 
-    #[test]
-    fn test_archive_tar() {
+    #[tokio::test]
+    async fn test_archive_tar() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "archive.txt", "archive content", "Add file");
@@ -3963,14 +4093,15 @@ mod tests {
 
         let result = service
             .archive("HEAD", "tar", &output_path, None)
+            .await
             .expect("should create tar archive");
 
         assert!(!result.message.is_empty());
         assert!(output_path.exists());
     }
 
-    #[test]
-    fn test_archive_tar_gz() {
+    #[tokio::test]
+    async fn test_archive_tar_gz() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "archive.txt", "archive content", "Add file");
@@ -3979,14 +4110,15 @@ mod tests {
 
         let result = service
             .archive("HEAD", "tar.gz", &output_path, None)
+            .await
             .expect("should create tar.gz archive");
 
         assert!(!result.message.is_empty());
         assert!(output_path.exists());
     }
 
-    #[test]
-    fn test_archive_with_prefix() {
+    #[tokio::test]
+    async fn test_archive_with_prefix() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -3994,6 +4126,7 @@ mod tests {
 
         let result = service
             .archive("HEAD", "zip", &output_path, Some("myproject/"))
+            .await
             .expect("should create archive with prefix");
 
         assert!(!result.message.is_empty());
@@ -4001,8 +4134,8 @@ mod tests {
 
     // ==================== Format Patch Tests ====================
 
-    #[test]
-    fn test_format_patch() {
+    #[tokio::test]
+    async fn test_format_patch() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "patch1.txt", "content1", "Patch commit 1");
@@ -4013,6 +4146,7 @@ mod tests {
 
         let result = service
             .format_patch("HEAD~2..HEAD", &output_dir)
+            .await
             .expect("should format patches");
 
         assert!(!result.message.is_empty());
@@ -4021,13 +4155,13 @@ mod tests {
 
     // ==================== Cherry-pick Abort/Continue Tests ====================
 
-    #[test]
-    fn test_cherry_pick_abort_no_op() {
+    #[tokio::test]
+    async fn test_cherry_pick_abort_no_op() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Abort when not cherry-picking should fail
-        let result = service.cherry_pick_abort();
+        let result = service.cherry_pick_abort().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
@@ -4051,27 +4185,29 @@ mod tests {
 
     // ==================== Conflict Resolution Tests ====================
 
-    #[test]
-    fn test_get_conflicted_files_none() {
+    #[tokio::test]
+    async fn test_get_conflicted_files_none() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         let conflicts = service
             .get_conflicted_files()
+            .await
             .expect("should get conflicted files");
         assert!(conflicts.is_empty());
     }
 
     // ==================== Reset Mode Tests ====================
 
-    #[test]
-    fn test_reset_mixed() {
+    #[tokio::test]
+    async fn test_reset_mixed() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
         add_commit(&tmp, "mixed.txt", "content", "Add mixed");
 
         let result = service
             .reset("HEAD~1", ResetMode::Mixed)
+            .await
             .expect("should reset mixed");
 
         assert!(result.success);
@@ -4081,62 +4217,62 @@ mod tests {
 
     // ==================== Merge Abort/Continue Tests ====================
 
-    #[test]
-    fn test_merge_abort_no_merge() {
+    #[tokio::test]
+    async fn test_merge_abort_no_merge() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Abort when not merging should fail
-        let result = service.merge_abort();
+        let result = service.merge_abort().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
-    #[test]
-    fn test_merge_continue_no_merge() {
+    #[tokio::test]
+    async fn test_merge_continue_no_merge() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Continue when not merging should fail
-        let result = service.merge_continue();
+        let result = service.merge_continue().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
     // ==================== Rebase Abort/Continue Tests ====================
 
-    #[test]
-    fn test_rebase_abort_no_rebase() {
+    #[tokio::test]
+    async fn test_rebase_abort_no_rebase() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Abort when not rebasing should fail
-        let result = service.rebase_abort();
+        let result = service.rebase_abort().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
-    #[test]
-    fn test_rebase_continue_no_rebase() {
+    #[tokio::test]
+    async fn test_rebase_continue_no_rebase() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Continue when not rebasing should fail
-        let result = service.rebase_continue();
+        let result = service.rebase_continue().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
-    #[test]
-    fn test_rebase_skip_no_rebase() {
+    #[tokio::test]
+    async fn test_rebase_skip_no_rebase() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
         // Skip when not rebasing should fail
-        let result = service.rebase_skip();
+        let result = service.rebase_skip().await;
         assert!(result.is_err() || !result.expect("should get result").success);
     }
 
     // ==================== Cherry-pick Range Tests ====================
 
-    #[test]
-    fn test_cherry_pick_range() {
+    #[tokio::test]
+    async fn test_cherry_pick_range() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -4168,6 +4304,7 @@ mod tests {
 
         let result = service
             .cherry_pick_range(&start, &end, false)
+            .await
             .expect("should cherry-pick range");
         assert!(
             result.success,
@@ -4178,8 +4315,8 @@ mod tests {
 
     // ==================== Stash Show Tests ====================
 
-    #[test]
-    fn test_stash_show() {
+    #[tokio::test]
+    async fn test_stash_show() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -4194,15 +4331,19 @@ mod tests {
 
         service
             .stash_save(&StashSaveOptions::default())
+            .await
             .expect("should save stash");
 
         // Show the stash
-        let show = service.stash_show(None, false).expect("should show stash");
+        let show = service
+            .stash_show(None, false)
+            .await
+            .expect("should show stash");
         assert!(!show.is_empty());
     }
 
-    #[test]
-    fn test_stash_show_stat_only() {
+    #[tokio::test]
+    async fn test_stash_show_stat_only() {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&tmp);
 
@@ -4216,26 +4357,32 @@ mod tests {
 
         service
             .stash_save(&StashSaveOptions::default())
+            .await
             .expect("should save stash");
 
         let show = service
             .stash_show(None, true)
+            .await
             .expect("should show stash stat");
         assert!(!show.is_empty());
     }
 
     // ==================== Git Environment Tests ====================
 
-    #[test]
-    fn test_get_git_environment() {
-        let env = GitCliService::get_git_environment().expect("should get git environment");
+    #[tokio::test]
+    async fn test_get_git_environment() {
+        let env = GitCliService::get_git_environment()
+            .await
+            .expect("should get git environment");
         assert!(env.git_version.is_some());
         assert!(!env.git_version.expect("should have git version").is_empty());
     }
 
-    #[test]
-    fn test_lfs_check_installed() {
-        let (installed, version) = GitCliService::lfs_check_installed().expect("should check LFS");
+    #[tokio::test]
+    async fn test_lfs_check_installed() {
+        let (installed, version) = GitCliService::lfs_check_installed()
+            .await
+            .expect("should check LFS");
         // LFS might or might not be installed - just verify the function works
         if installed {
             assert!(version.is_some());

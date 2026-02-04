@@ -276,7 +276,8 @@ impl SigningService {
 
     /// List available GPG secret keys
     pub async fn list_gpg_keys(&self) -> Result<Vec<GpgKey>> {
-        let gpg_program = Self::find_gpg_program().await
+        let gpg_program = Self::find_gpg_program()
+            .await
             .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
 
         let output = create_command(gpg_program.as_os_str())
@@ -444,7 +445,11 @@ impl SigningService {
     }
 
     /// Verify an SSH signature and extract signer info
-    pub async fn verify_ssh_signature(signature: &str, data: &str, repo_path: &Path) -> Option<String> {
+    pub async fn verify_ssh_signature(
+        signature: &str,
+        data: &str,
+        repo_path: &Path,
+    ) -> Option<String> {
         let ssh_program = Self::find_ssh_program().await?;
 
         // Get allowed signers file from git config

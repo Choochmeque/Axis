@@ -3144,9 +3144,11 @@ impl Git2Service {
             SigningFormat::Gpg => {
                 rt.block_on(SigningService::verify_gpg_signature(sig_str, data_str))
             }
-            SigningFormat::Ssh => {
-                rt.block_on(SigningService::verify_ssh_signature(sig_str, data_str, repo.path()))
-            }
+            SigningFormat::Ssh => rt.block_on(SigningService::verify_ssh_signature(
+                sig_str,
+                data_str,
+                repo.path(),
+            )),
         };
 
         Ok(SignatureVerification {

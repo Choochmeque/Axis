@@ -251,10 +251,7 @@ pub async fn amend_commit(
     if !skip_hooks {
         if let Some(old) = old_oid {
             let rewrites = format!("{old} {new_oid}\n");
-            let result = guard
-                .hook()
-                .run_post_rewrite("amend", &rewrites)
-                .await;
+            let result = guard.hook().run_post_rewrite("amend", &rewrites).await;
             if !result.skipped && !result.success {
                 log::warn!("post-rewrite hook failed: {}", result.stderr);
             }

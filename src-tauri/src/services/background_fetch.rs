@@ -53,21 +53,17 @@ impl BackgroundFetchService {
                             .unwrap_or(None);
 
                         // List remotes (read lock)
-                        let remotes = match handle
-                            .read()
-                            .await
-                            .git2(|git2| git2.list_remotes())
-                            .await
-                        {
-                            Ok(remotes) => remotes,
-                            Err(e) => {
-                                log::warn!(
-                                    "Background fetch: failed to list remotes for {}: {e}",
-                                    path.display()
-                                );
-                                continue;
-                            }
-                        };
+                        let remotes =
+                            match handle.read().await.git2(|git2| git2.list_remotes()).await {
+                                Ok(remotes) => remotes,
+                                Err(e) => {
+                                    log::warn!(
+                                        "Background fetch: failed to list remotes for {}: {e}",
+                                        path.display()
+                                    );
+                                    continue;
+                                }
+                            };
 
                         let options = FetchOptions::default();
                         let mut total_updates = 0u32;
@@ -89,10 +85,7 @@ impl BackgroundFetchService {
                                     SshKeyFormat::EncryptedPem | SshKeyFormat::EncryptedOpenSsh,
                                 ) = format
                                 {
-                                    if app_state
-                                        .get_cached_ssh_passphrase(key_path)
-                                        .is_none()
-                                    {
+                                    if app_state.get_cached_ssh_passphrase(key_path).is_none() {
                                         log::debug!(
                                             "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
                                             remote.name
@@ -103,8 +96,7 @@ impl BackgroundFetchService {
                             }
 
                             let ssh_creds = ssh_key.map(|key_path| {
-                                let passphrase =
-                                    app_state.get_cached_ssh_passphrase(&key_path);
+                                let passphrase = app_state.get_cached_ssh_passphrase(&key_path);
                                 SshCredentials {
                                     key_path,
                                     passphrase,

@@ -231,8 +231,7 @@ impl HookService {
         if let Some(branch) = rebased_branch {
             args.push(branch);
         }
-        self.execute_hook(GitHookType::PreRebase, &args, None)
-            .await
+        self.execute_hook(GitHookType::PreRebase, &args, None).await
     }
 
     /// Run post-checkout hook

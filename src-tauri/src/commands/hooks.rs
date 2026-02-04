@@ -7,12 +7,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn list_hooks(state: State<'_, AppState>) -> Result<Vec<HookInfo>> {
-    Ok(state
-        .get_git_service()?
-        .read()
-        .await
-        .hook()
-        .list_hooks())
+    Ok(state.get_git_service()?.read().await.hook().list_hooks())
 }
 
 /// Get hook details including content
@@ -88,12 +83,7 @@ pub async fn toggle_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_hook_templates(state: State<'_, AppState>) -> Result<Vec<HookTemplate>> {
-    Ok(state
-        .get_git_service()?
-        .read()
-        .await
-        .hook()
-        .get_templates())
+    Ok(state.get_git_service()?.read().await.hook().get_templates())
 }
 
 /// Get templates for a specific hook type

@@ -13,7 +13,7 @@ export const baseConfig = {
   logLevel: isCI ? 'warn' : 'info',
   waitforTimeout: 10_000,
   connectionRetryTimeout: 120_000,
-  connectionRetryCount: 3,
+  connectionRetryCount: isCI ? 15 : 3,
   services: [],
   tsConfigPath: './tsconfig.json',
 };

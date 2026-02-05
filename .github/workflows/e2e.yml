@@ -37,8 +37,11 @@ jobs:
       - name: Cache and install APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake webkit2gtk-driver xvfb gsettings-desktop-schemas
-          version: '1.1'
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake webkit2gtk-driver xvfb
+          version: '1.0'
+
+      - name: Install GSettings schemas
+        run: sudo apt-get install -y gsettings-desktop-schemas
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

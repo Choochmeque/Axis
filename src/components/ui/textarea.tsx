@@ -8,6 +8,10 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, resizable = true, ...props }, ref) => (
     <textarea
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
       className={cn('input', resizable ? 'resize-y min-h-15' : 'resize-none', className)}
       ref={ref}
       {...props}

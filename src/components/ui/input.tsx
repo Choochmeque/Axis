@@ -5,7 +5,16 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = 'text', ...props }, ref) => (
-    <input type={type} className={cn('input', className)} ref={ref} {...props} />
+    <input
+      type={type}
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
+      className={cn('input', className)}
+      ref={ref}
+      {...props}
+    />
   )
 );
 Input.displayName = 'Input';

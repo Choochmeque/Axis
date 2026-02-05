@@ -17,6 +17,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+import { Textarea } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { shellApi } from '@/services/api';
 
@@ -240,8 +241,9 @@ export function MarkdownEditor({
 
       {/* Content area */}
       {activeTab === 'write' ? (
-        <textarea
+        <Textarea
           ref={textareaRef}
+          resizable={false}
           id={id}
           className="markdown-editor-textarea"
           value={value}

@@ -48,7 +48,8 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
 }));
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Bold: ({ size }: { size: number }) => <span data-testid="icon-bold" data-size={size} />,
   Italic: ({ size }: { size: number }) => <span data-testid="icon-italic" data-size={size} />,
   Heading2: ({ size }: { size: number }) => <span data-testid="icon-heading" data-size={size} />,

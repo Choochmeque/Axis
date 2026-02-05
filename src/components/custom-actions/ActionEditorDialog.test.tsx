@@ -107,6 +107,34 @@ vi.mock('@/components/ui', () => ({
       {label}
     </label>
   ),
+  Textarea: ({
+    value,
+    onChange,
+    placeholder,
+    id,
+    rows,
+    disabled,
+    className,
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    id?: string;
+    rows?: number;
+    disabled?: boolean;
+    className?: string;
+  }) => (
+    <textarea
+      id={id}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      data-testid={id || 'textarea'}
+      rows={rows}
+      disabled={disabled}
+      className={className}
+    />
+  ),
   Alert: ({ children }: { children: React.ReactNode }) => <div data-testid="alert">{children}</div>,
 }));
 

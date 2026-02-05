@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogClose,
   Button,
+  Textarea,
 } from '@/components/ui';
 
 export function RewordDialog() {
@@ -89,8 +90,8 @@ export function RewordDialog() {
           )}
 
           <label className="block text-sm font-medium mb-2">{t('merge.reword.newMessage')}</label>
-          <textarea
-            className="w-full h-32 px-3 py-2 text-sm font-mono bg-(--bg-secondary) border border-(--border-color) rounded-md resize-y focus:outline-none focus:ring-1 focus:ring-(--accent-color)"
+          <Textarea
+            className="h-32 px-3 py-2 text-sm font-mono"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={t('merge.reword.placeholder')}

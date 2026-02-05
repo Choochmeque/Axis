@@ -80,11 +80,12 @@ pub async fn gitflow_feature_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
+    let ssh_creds = state.resolve_ssh_credentials("origin")?;
     state
         .get_git_service()?
         .write()
         .await
-        .gitflow_publish(GitFlowBranchType::Feature, &name)
+        .gitflow_publish(GitFlowBranchType::Feature, &name, ssh_creds)
         .await
 }
 
@@ -139,11 +140,12 @@ pub async fn gitflow_release_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
+    let ssh_creds = state.resolve_ssh_credentials("origin")?;
     state
         .get_git_service()?
         .write()
         .await
-        .gitflow_publish(GitFlowBranchType::Release, &name)
+        .gitflow_publish(GitFlowBranchType::Release, &name, ssh_creds)
         .await
 }
 
@@ -198,11 +200,12 @@ pub async fn gitflow_hotfix_publish(
     state: State<'_, AppState>,
     name: String,
 ) -> Result<GitFlowResult> {
+    let ssh_creds = state.resolve_ssh_credentials("origin")?;
     state
         .get_git_service()?
         .write()
         .await
-        .gitflow_publish(GitFlowBranchType::Hotfix, &name)
+        .gitflow_publish(GitFlowBranchType::Hotfix, &name, ssh_creds)
         .await
 }
 

@@ -1,5 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::ResetMode;
+use crate::models::SshCredentials;
 use crate::models::{
     AddSubmoduleOptions, AddWorktreeOptions, ArchiveResult, BisectState, GitEnvironment,
     GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult,
@@ -12,6 +13,7 @@ use crate::models::{
 };
 use crate::models::{InteractiveRebaseEntry, RebaseAction, RebaseProgress};
 use chrono::{DateTime, Utc};
+use secrecy::ExposeSecret;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -71,21 +73,72 @@ impl GitCliService {
         Ok(GitCommandResult::from(output))
     }
 
-    /// Execute a git command with an optional SSH key override.
-    /// When ssh_key_path is set, GIT_SSH_COMMAND is injected to force that key.
-    async fn execute_with_ssh_key(
+    /// Create a temporary askpass script that echoes the given passphrase.
+    /// The returned `NamedTempFile` must be kept alive until the command finishes.
+    fn create_askpass_script(passphrase: &str) -> Result<NamedTempFile> {
+        let escaped = passphrase.replace('\'', "'\\''");
+
+        #[cfg(unix)]
+        let (suffix, content) = (".sh", format!("#!/bin/sh\necho '{escaped}'\n"));
+
+        #[cfg(windows)]
+        let (suffix, content) = (".bat", format!("@echo off\r\necho {escaped}\r\n"));
+
+        let mut file = tempfile::Builder::new()
+            .suffix(suffix)
+            .tempfile()
+            .map_err(|e| AxisError::Other(format!("Failed to create askpass script: {e}")))?;
+        file.write_all(content.as_bytes())
+            .map_err(|e| AxisError::Other(format!("Failed to write askpass script: {e}")))?;
+        file.flush()
+            .map_err(|e| AxisError::Other(format!("Failed to flush askpass script: {e}")))?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let perms = std::fs::Permissions::from_mode(0o700);
+            std::fs::set_permissions(file.path(), perms)
+                .map_err(|e| AxisError::Other(format!("Failed to chmod askpass script: {e}")))?;
+        }
+
+        Ok(file)
+    }
+
+    /// Execute a git command with optional SSH credentials.
+    /// - `None` → uses SSH agent / system default (same as `execute`)
+    /// - Key only → `GIT_SSH_COMMAND="ssh -i <key> -o IdentitiesOnly=yes"`
+    /// - Key + passphrase → above + `SSH_ASKPASS` temp script + `SSH_ASKPASS_REQUIRE=force`
+    async fn execute_with_ssh_credentials(
         &self,
         args: &[&str],
-        ssh_key_path: Option<&str>,
+        ssh_credentials: Option<&SshCredentials>,
     ) -> Result<GitCommandResult> {
-        let mut cmd = create_command("git");
-        cmd.args(args).current_dir(&self.repo_path);
+        let Some(creds) = ssh_credentials else {
+            return self.execute(args).await;
+        };
 
-        if let Some(key_path) = ssh_key_path {
-            let expanded = shellexpand::tilde(key_path).to_string();
-            let ssh_command = format!("ssh -i {expanded} -o IdentitiesOnly=yes");
-            cmd.env("GIT_SSH_COMMAND", &ssh_command);
-        }
+        let expanded = shellexpand::tilde(&creds.key_path).to_string();
+        let ssh_command = format!("ssh -i {expanded} -o IdentitiesOnly=yes");
+
+        let mut cmd = create_command("git");
+        cmd.args(args)
+            .current_dir(&self.repo_path)
+            .env("GIT_SSH_COMMAND", &ssh_command);
+
+        // Hold the temp file in scope so it lives until the command completes
+        let _askpass_file = if let Some(passphrase) = &creds.passphrase {
+            let askpass = Self::create_askpass_script(passphrase.expose_secret())?;
+            let askpass_path = askpass.path().to_string_lossy().to_string();
+
+            cmd.env("SSH_ASKPASS", &askpass_path)
+                .env("SSH_ASKPASS_REQUIRE", "force")
+                .env("DISPLAY", ":0")
+                .stdin(Stdio::null());
+
+            Some(askpass)
+        } else {
+            None
+        };
 
         let output = cmd.output().await.map_err(AxisError::from)?;
         Ok(GitCommandResult::from(output))
@@ -810,9 +863,17 @@ impl GitCliService {
     // Local tag operations (list, create, delete) are handled by Git2Service
 
     /// Push a tag to remote
-    pub async fn tag_push(&self, name: &str, remote: &str) -> Result<TagResult> {
+    pub async fn tag_push(
+        &self,
+        name: &str,
+        remote: &str,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<TagResult> {
         let result = self
-            .execute(&["push", remote, &format!("refs/tags/{}", name)])
+            .execute_with_ssh_credentials(
+                &["push", remote, &format!("refs/tags/{}", name)],
+                ssh_credentials,
+            )
             .await?;
 
         Ok(TagResult {
@@ -827,8 +888,14 @@ impl GitCliService {
     }
 
     /// Push all tags to remote
-    pub async fn tag_push_all(&self, remote: &str) -> Result<TagResult> {
-        let result = self.execute(&["push", remote, "--tags"]).await?;
+    pub async fn tag_push_all(
+        &self,
+        remote: &str,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<TagResult> {
+        let result = self
+            .execute_with_ssh_credentials(&["push", remote, "--tags"], ssh_credentials)
+            .await?;
 
         Ok(TagResult {
             success: result.success,
@@ -842,9 +909,17 @@ impl GitCliService {
     }
 
     /// Delete a remote tag
-    pub async fn tag_delete_remote(&self, name: &str, remote: &str) -> Result<TagResult> {
+    pub async fn tag_delete_remote(
+        &self,
+        name: &str,
+        remote: &str,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<TagResult> {
         let result = self
-            .execute(&["push", remote, "--delete", &format!("refs/tags/{}", name)])
+            .execute_with_ssh_credentials(
+                &["push", remote, "--delete", &format!("refs/tags/{}", name)],
+                ssh_credentials,
+            )
             .await?;
 
         Ok(TagResult {
@@ -969,7 +1044,11 @@ impl GitCliService {
     }
 
     /// Add a new submodule
-    pub async fn submodule_add(&self, options: &AddSubmoduleOptions) -> Result<SubmoduleResult> {
+    pub async fn submodule_add(
+        &self,
+        options: &AddSubmoduleOptions,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<SubmoduleResult> {
         let mut args = vec!["submodule", "add"];
 
         if let Some(ref branch) = options.branch {
@@ -992,7 +1071,9 @@ impl GitCliService {
         args.push(&options.url);
         args.push(&options.path);
 
-        let result = self.execute(&args).await?;
+        let result = self
+            .execute_with_ssh_credentials(&args, ssh_credentials)
+            .await?;
 
         Ok(SubmoduleResult {
             success: result.success,
@@ -1034,6 +1115,7 @@ impl GitCliService {
     pub async fn submodule_update(
         &self,
         options: &UpdateSubmoduleOptions,
+        ssh_credentials: Option<&SshCredentials>,
     ) -> Result<SubmoduleResult> {
         let mut args = vec!["submodule", "update"];
 
@@ -1063,7 +1145,9 @@ impl GitCliService {
             args.push(path);
         }
 
-        let result = self.execute(&args).await?;
+        let result = self
+            .execute_with_ssh_credentials(&args, ssh_credentials)
+            .await?;
 
         Ok(SubmoduleResult {
             success: result.success,
@@ -1468,6 +1552,7 @@ impl GitCliService {
         &self,
         branch_type: GitFlowBranchType,
         name: &str,
+        ssh_credentials: Option<&SshCredentials>,
     ) -> Result<GitFlowResult> {
         let config = self
             .gitflow_config()
@@ -1484,7 +1569,7 @@ impl GitCliService {
         let branch_name = format!("{}{}", prefix, name);
 
         let result = self
-            .execute(&["push", "-u", "origin", &branch_name])
+            .execute_with_ssh_credentials(&["push", "-u", "origin", &branch_name], ssh_credentials)
             .await?;
         if !result.success {
             return Ok(GitFlowResult {
@@ -2750,7 +2835,11 @@ impl GitCliService {
     }
 
     /// Fetch LFS objects from remote
-    pub async fn lfs_fetch(&self, options: &LfsFetchOptions) -> Result<LfsResult> {
+    pub async fn lfs_fetch(
+        &self,
+        options: &LfsFetchOptions,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<LfsResult> {
         let mut args = vec!["lfs", "fetch"];
 
         if options.all {
@@ -2767,7 +2856,9 @@ impl GitCliService {
             args.push(&remote_owned);
         }
 
-        let result = self.execute(&args).await?;
+        let result = self
+            .execute_with_ssh_credentials(&args, ssh_credentials)
+            .await?;
 
         Ok(LfsResult {
             success: result.success,
@@ -2781,7 +2872,11 @@ impl GitCliService {
     }
 
     /// Pull LFS objects (fetch + checkout)
-    pub async fn lfs_pull(&self, options: &LfsPullOptions) -> Result<LfsResult> {
+    pub async fn lfs_pull(
+        &self,
+        options: &LfsPullOptions,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<LfsResult> {
         let mut args = vec!["lfs", "pull"];
 
         let remote_owned: String;
@@ -2790,7 +2885,9 @@ impl GitCliService {
             args.push(&remote_owned);
         }
 
-        let result = self.execute(&args).await?;
+        let result = self
+            .execute_with_ssh_credentials(&args, ssh_credentials)
+            .await?;
 
         Ok(LfsResult {
             success: result.success,
@@ -2804,7 +2901,11 @@ impl GitCliService {
     }
 
     /// Push LFS objects to remote
-    pub async fn lfs_push(&self, options: &LfsPushOptions) -> Result<LfsResult> {
+    pub async fn lfs_push(
+        &self,
+        options: &LfsPushOptions,
+        ssh_credentials: Option<&SshCredentials>,
+    ) -> Result<LfsResult> {
         let mut args = vec!["lfs", "push"];
 
         if options.all {
@@ -2826,7 +2927,9 @@ impl GitCliService {
         // Need to specify the branch
         args.push("HEAD");
 
-        let result = self.execute(&args).await?;
+        let result = self
+            .execute_with_ssh_credentials(&args, ssh_credentials)
+            .await?;
 
         Ok(LfsResult {
             success: result.success,
@@ -3534,11 +3637,14 @@ mod tests {
 
         // Update submodules (should succeed even with no submodules)
         let result = service
-            .submodule_update(&UpdateSubmoduleOptions {
-                init: true,
-                recursive: true,
-                ..Default::default()
-            })
+            .submodule_update(
+                &UpdateSubmoduleOptions {
+                    init: true,
+                    recursive: true,
+                    ..Default::default()
+                },
+                None,
+            )
             .await
             .expect("should update submodules");
         assert!(result.success);
@@ -4060,7 +4166,7 @@ mod tests {
             .expect("should create tag");
 
         // Try to push without remote (should fail)
-        let result = service.tag_push("v1.0.0", "origin").await;
+        let result = service.tag_push("v1.0.0", "origin", None).await;
         // Expect error since no remote exists
         assert!(result.is_err() || !result.expect("should get result").success);
     }
@@ -4428,5 +4534,114 @@ mod tests {
         assert!(result.success);
         assert_eq!(result.stdout, "success output");
         assert!(result.stderr.is_empty());
+    }
+
+    // ==================== create_askpass_script Tests ====================
+
+    #[test]
+    fn test_create_askpass_script_basic() {
+        let file = GitCliService::create_askpass_script("my_passphrase")
+            .expect("should create askpass script");
+        let contents = fs::read_to_string(file.path()).expect("should read file");
+
+        #[cfg(unix)]
+        assert!(contents.contains("#!/bin/sh"));
+        assert!(contents.contains("my_passphrase"));
+    }
+
+    #[test]
+    fn test_create_askpass_script_single_quote_escaping() {
+        let file = GitCliService::create_askpass_script("pass'word")
+            .expect("should create askpass script");
+        let contents = fs::read_to_string(file.path()).expect("should read file");
+
+        // Single quotes should be escaped: ' → '\''
+        assert!(contents.contains(r"pass'\''word"));
+    }
+
+    #[test]
+    fn test_create_askpass_script_empty_passphrase() {
+        let file = GitCliService::create_askpass_script("").expect("should create askpass script");
+        let contents = fs::read_to_string(file.path()).expect("should read file");
+
+        #[cfg(unix)]
+        assert_eq!(contents, "#!/bin/sh\necho ''\n");
+
+        #[cfg(windows)]
+        assert_eq!(contents, "@echo off\r\necho \r\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_create_askpass_script_unix_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let file =
+            GitCliService::create_askpass_script("secret").expect("should create askpass script");
+        let metadata = fs::metadata(file.path()).expect("should read metadata");
+        let mode = metadata.permissions().mode() & 0o777;
+
+        assert_eq!(mode, 0o700, "askpass script should have 700 permissions");
+    }
+
+    #[test]
+    fn test_create_askpass_script_cleanup_on_drop() {
+        let path = {
+            let file = GitCliService::create_askpass_script("secret")
+                .expect("should create askpass script");
+            let p = file.path().to_path_buf();
+            assert!(p.exists(), "file should exist while handle is alive");
+            p
+        };
+
+        assert!(
+            !path.exists(),
+            "file should be deleted after NamedTempFile is dropped"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_create_askpass_script_executable() {
+        let file = GitCliService::create_askpass_script("test_pass")
+            .expect("should create askpass script");
+
+        let output = Command::new("sh")
+            .arg(file.path())
+            .output()
+            .expect("should execute script");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert_eq!(stdout.trim(), "test_pass");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_create_askpass_script_special_chars() {
+        let file = GitCliService::create_askpass_script("p@ss$w0rd!#&*")
+            .expect("should create askpass script");
+
+        let output = Command::new("sh")
+            .arg(file.path())
+            .output()
+            .expect("should execute script");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert_eq!(stdout.trim(), "p@ss$w0rd!#&*");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_create_askpass_script_quotes_in_passphrase() {
+        let file = GitCliService::create_askpass_script("it's a \"test\"")
+            .expect("should create askpass script");
+
+        let output = Command::new("sh")
+            .arg(file.path())
+            .output()
+            .expect("should execute script");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert_eq!(stdout.trim(), "it's a \"test\"");
     }
 }

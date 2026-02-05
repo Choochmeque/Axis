@@ -2,6 +2,7 @@ use crate::error::Result;
 use crate::models::{
     GitEnvironment, LfsEnvironment, LfsFetchOptions, LfsFile, LfsMigrateOptions, LfsPruneOptions,
     LfsPruneResult, LfsPullOptions, LfsPushOptions, LfsResult, LfsStatus, LfsTrackedPattern,
+    SshCredentials,
 };
 use crate::services::GitCliService;
 
@@ -41,16 +42,37 @@ impl RepoOperations {
         self.service.git_cli().lfs_list_files().await
     }
 
-    pub async fn lfs_fetch(&self, options: &LfsFetchOptions) -> Result<LfsResult> {
-        self.service.git_cli().lfs_fetch(options).await
+    pub async fn lfs_fetch(
+        &self,
+        options: &LfsFetchOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<LfsResult> {
+        self.service
+            .git_cli()
+            .lfs_fetch(options, ssh_credentials.as_ref())
+            .await
     }
 
-    pub async fn lfs_pull(&self, options: &LfsPullOptions) -> Result<LfsResult> {
-        self.service.git_cli().lfs_pull(options).await
+    pub async fn lfs_pull(
+        &self,
+        options: &LfsPullOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<LfsResult> {
+        self.service
+            .git_cli()
+            .lfs_pull(options, ssh_credentials.as_ref())
+            .await
     }
 
-    pub async fn lfs_push(&self, options: &LfsPushOptions) -> Result<LfsResult> {
-        self.service.git_cli().lfs_push(options).await
+    pub async fn lfs_push(
+        &self,
+        options: &LfsPushOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<LfsResult> {
+        self.service
+            .git_cli()
+            .lfs_push(options, ssh_credentials.as_ref())
+            .await
     }
 
     pub async fn lfs_migrate(&self, options: &LfsMigrateOptions) -> Result<LfsResult> {

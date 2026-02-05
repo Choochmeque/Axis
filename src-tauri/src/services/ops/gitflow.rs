@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::models::{
     GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult,
+    SshCredentials,
 };
 
 use super::RepoOperations;
@@ -47,10 +48,11 @@ impl RepoOperations {
         &self,
         branch_type: GitFlowBranchType,
         name: &str,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<GitFlowResult> {
         self.service
             .git_cli()
-            .gitflow_publish(branch_type, name)
+            .gitflow_publish(branch_type, name, ssh_credentials.as_ref())
             .await
     }
 

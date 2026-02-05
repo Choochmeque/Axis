@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::models::{
-    AddSubmoduleOptions, Submodule, SubmoduleResult, SyncSubmoduleOptions, UpdateSubmoduleOptions,
+    AddSubmoduleOptions, SshCredentials, Submodule, SubmoduleResult, SyncSubmoduleOptions,
+    UpdateSubmoduleOptions,
 };
 
 use super::RepoOperations;
@@ -11,8 +12,15 @@ impl RepoOperations {
         self.service.git_cli().submodule_list().await
     }
 
-    pub async fn submodule_add(&self, options: &AddSubmoduleOptions) -> Result<SubmoduleResult> {
-        self.service.git_cli().submodule_add(options).await
+    pub async fn submodule_add(
+        &self,
+        options: &AddSubmoduleOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<SubmoduleResult> {
+        self.service
+            .git_cli()
+            .submodule_add(options, ssh_credentials.as_ref())
+            .await
     }
 
     pub async fn submodule_init(&self, paths: &[String]) -> Result<SubmoduleResult> {
@@ -22,8 +30,12 @@ impl RepoOperations {
     pub async fn submodule_update(
         &self,
         options: &UpdateSubmoduleOptions,
+        ssh_credentials: Option<SshCredentials>,
     ) -> Result<SubmoduleResult> {
-        self.service.git_cli().submodule_update(options).await
+        self.service
+            .git_cli()
+            .submodule_update(options, ssh_credentials.as_ref())
+            .await
     }
 
     pub async fn submodule_sync(&self, options: &SyncSubmoduleOptions) -> Result<SubmoduleResult> {

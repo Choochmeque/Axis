@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MarkdownEditor } from './MarkdownEditor';
+import { MarkdownEditor } from './markdown-editor';
 
 // Mock i18n
 vi.mock('react-i18next', () => ({

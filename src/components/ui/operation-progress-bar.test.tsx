@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { OperationProgressBar } from './OperationProgressBar';
+import { OperationProgressBar } from './operation-progress-bar';
 import { ProgressStage } from '@/types';
 import type { OperationProgress } from '@/store/operationStore';
 

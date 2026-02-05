@@ -19,7 +19,7 @@ vi.mock('@/store/operationStore', () => ({
     selector({ operations: mockOperations }),
 }));
 
-import { OperationsIndicator } from './OperationsIndicator';
+import { OperationsIndicator } from './operations-indicator';
 
 describe('OperationsIndicator', () => {
   beforeEach(() => {

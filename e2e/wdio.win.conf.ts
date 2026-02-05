@@ -8,15 +8,14 @@ const appPath = resolve(import.meta.dirname, '../src-tauri/target/release/Axis.e
 
 export const config = {
   ...baseConfig,
-  port: 4723,
+  hostname: '127.0.0.1',
+  port: 4444,
   capabilities: [
     {
-      platformName: 'Windows',
-      'appium:automationName': 'windows',
-      'appium:app': appPath,
-      'appium:arguments': [],
-      'appium:environment': {},
-      'appium:showServerLogs': true,
+      maxInstances: 1,
+      'tauri:options': {
+        application: appPath,
+      },
     },
   ],
 };

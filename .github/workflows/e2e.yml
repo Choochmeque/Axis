@@ -156,15 +156,6 @@ jobs:
       - name: Install tauri-driver
         run: cargo install tauri-driver
 
-      - name: Install Edge Driver
-        shell: pwsh
-        run: |
-          $edgeVersion = (Get-Item "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe").VersionInfo.FileVersion
-          $url = "https://msedgedriver.azureedge.net/$edgeVersion/edgedriver_win64.zip"
-          Invoke-WebRequest -Uri $url -OutFile edgedriver.zip
-          Expand-Archive -Path edgedriver.zip -DestinationPath "$env:USERPROFILE\.edge-driver"
-          echo "$env:USERPROFILE\.edge-driver" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
-
       - name: Build Tauri app
         run: pnpm tauri build --no-bundle
 

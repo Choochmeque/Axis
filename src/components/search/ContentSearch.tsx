@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
-import { Checkbox } from '@/components/ui';
+import { Checkbox, Input } from '@/components/ui';
 import { grepApi } from '@/services/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { GrepMatch, GrepResult } from '@/types';
@@ -101,13 +101,12 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
       <div className="flex gap-2 py-2 px-3 border-b border-(--border-color)">
         <div className="flex-1 relative flex items-center">
           <Search size={14} className="absolute left-2 text-(--text-muted)" />
-          <input
-            type="text"
+          <Input
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t('search.placeholder')}
-            className="w-full py-1.5 px-7 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) text-base outline-none focus:border-(--accent-color)"
+            className="w-full py-1.5 px-7 bg-(--bg-primary) text-base"
           />
           {pattern && (
             <button

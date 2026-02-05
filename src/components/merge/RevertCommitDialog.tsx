@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Undo2 } from 'lucide-react';
 
@@ -38,6 +38,15 @@ export function RevertCommitDialog({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RevertResult | null>(null);
   const { trackOperation } = useOperation();
+
+  useEffect(() => {
+    if (isOpen) {
+      setNoCommit(false);
+      setIsLoading(false);
+      setError(null);
+      setResult(null);
+    }
+  }, [isOpen]);
 
   const handleRevert = async () => {
     if (commits.length === 0) {

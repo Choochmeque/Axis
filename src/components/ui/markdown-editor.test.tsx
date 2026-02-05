@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MarkdownEditor } from './MarkdownEditor';
+import { MarkdownEditor } from './markdown-editor';
 
 // Mock i18n
 vi.mock('react-i18next', () => ({
@@ -48,7 +48,8 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
 }));
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Bold: ({ size }: { size: number }) => <span data-testid="icon-bold" data-size={size} />,
   Italic: ({ size }: { size: number }) => <span data-testid="icon-italic" data-size={size} />,
   Heading2: ({ size }: { size: number }) => <span data-testid="icon-heading" data-size={size} />,

@@ -23,6 +23,7 @@ import {
   Input,
   Select,
   SelectItem,
+  Textarea,
 } from '@/components/ui';
 import { remoteApi, commitApi, signingApi, aiApi, hooksApi } from '@/services/api';
 import type { SigningConfig } from '@/types';
@@ -493,8 +494,9 @@ export function CommitForm() {
               </span>
               /72
             </div>
-            <textarea
-              className="w-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-sm resize-none cc-body focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+            <Textarea
+              resizable={false}
+              className="p-2 bg-(--bg-primary) text-sm cc-body placeholder:text-(--text-tertiary)"
               placeholder={t('staging.commitForm.bodyOptional')}
               value={commitParts.body}
               onChange={(e) => handleCommitPartChange('body', e.target.value)}
@@ -504,10 +506,11 @@ export function CommitForm() {
           </div>
         ) : (
           <div className="relative flex-1 min-h-15 overflow-visible">
-            <textarea
+            <Textarea
               ref={textareaRef}
+              resizable={false}
               {...testId('e2e-commit-message-input')}
-              className="w-full h-full p-2 border border-(--border-color) rounded bg-(--bg-primary) text-(--text-primary) font-sans text-base resize-none focus:outline-none focus:border-(--accent-color) placeholder:text-(--text-tertiary)"
+              className="h-full p-2 bg-(--bg-primary) text-base placeholder:text-(--text-tertiary)"
               placeholder={
                 isAmending
                   ? t('staging.commitForm.amendPlaceholder')

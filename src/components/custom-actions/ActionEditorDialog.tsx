@@ -14,6 +14,7 @@ import {
   Select,
   SelectItem,
   CheckboxField,
+  Textarea,
   Alert,
 } from '@/components/ui';
 import { useCustomActionsStore } from '@/store/customActionsStore';
@@ -201,17 +202,14 @@ export function ActionEditorDialog({
 
           <FormField label={t('customActions.editor.commandLabel')} htmlFor="action-command">
             <div className="relative">
-              <textarea
+              <Textarea
                 id="action-command"
+                resizable={false}
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder={t('customActions.editor.commandPlaceholder')}
                 rows={3}
-                className="w-full rounded-md border border-(--border-color) bg-(--bg-tertiary) p-2 pr-8 font-mono text-sm text-(--text-primary) resize-none outline-none focus:border-(--accent-color)"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
+                className="rounded-md bg-(--bg-tertiary) p-2 pr-8 font-mono text-sm"
               />
               <button
                 type="button"

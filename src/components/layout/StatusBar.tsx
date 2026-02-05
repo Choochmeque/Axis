@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
 
-import { OperationsIndicator } from '@/components/ui/OperationsIndicator';
+import { OperationsIndicator } from '@/components/ui/operations-indicator';
 import { ToastHistoryDropdown } from '@/components/ui/toast';
 import { testId } from '@/lib/utils';
 import { useRepositoryStore } from '@/store/repositoryStore';

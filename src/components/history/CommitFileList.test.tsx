@@ -170,7 +170,7 @@ describe('CommitFileList', () => {
     expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
   });
 
-  it('should render renamed files with old name', () => {
+  it('should render renamed files as OldName → NewName', () => {
     const renamedFile: FileDiff = {
       oldPath: 'src/oldName.ts',
       newPath: 'src/newName.ts',
@@ -185,7 +185,32 @@ describe('CommitFileList', () => {
 
     render(<CommitFileList {...defaultProps} files={[renamedFile]} />);
 
-    expect(screen.getByText('newName.ts')).toBeInTheDocument();
-    expect(screen.getByText('(oldName.ts)')).toBeInTheDocument();
+    expect(screen.getByText('oldName.ts → newName.ts')).toBeInTheDocument();
+  });
+
+  it('should show full path tooltip for renamed files', () => {
+    const renamedFile: FileDiff = {
+      oldPath: 'src/old/oldName.ts',
+      newPath: 'src/new/newName.ts',
+      oldOid: 'abc',
+      newOid: 'def',
+      status: DiffStatus.Renamed,
+      binary: false,
+      hunks: [],
+      additions: 0,
+      deletions: 0,
+    };
+
+    render(<CommitFileList {...defaultProps} files={[renamedFile]} />);
+
+    const fileSpan = screen.getByText('oldName.ts → newName.ts');
+    expect(fileSpan).toHaveAttribute('title', 'src/old/oldName.ts → src/new/newName.ts');
+  });
+
+  it('should render non-renamed files with just the filename', () => {
+    render(<CommitFileList {...defaultProps} />);
+
+    expect(screen.getByText('Test.tsx')).toBeInTheDocument();
+    expect(screen.getByText('helper.ts')).toBeInTheDocument();
   });
 });

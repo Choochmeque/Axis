@@ -36,7 +36,7 @@ export {
 export { Checkbox, CheckboxField } from './checkbox';
 export { Input } from './input';
 export { Textarea } from './textarea';
-export { MarkdownEditor } from './MarkdownEditor';
+export { MarkdownEditor } from './markdown-editor';
 export { Select, SelectItem, SelectGroup, SelectLabel, SelectSeparator } from './select';
 export { Label } from './label';
 export { FormField } from './form-field';
@@ -63,8 +63,8 @@ export {
 } from './dropdown-menu';
 
 // Progress Components
-export { OperationProgressBar } from './OperationProgressBar';
-export { OperationsIndicator } from './OperationsIndicator';
+export { OperationProgressBar } from './operation-progress-bar';
+export { OperationsIndicator } from './operations-indicator';
 
 // Data Display Components
 export { TreeView, buildTreeFromPaths, type TreeNode } from './tree-view';
@@ -78,4 +78,4 @@ export {
   type HeaderContext,
 } from './data-table';
 export { VirtualList } from './virtual-list';
-export { ConfirmDialog } from './ConfirmDialog';
+export { ConfirmDialog } from './confirm-dialog';

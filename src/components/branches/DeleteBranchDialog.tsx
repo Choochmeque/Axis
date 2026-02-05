@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/hooks';
@@ -30,6 +30,14 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
   const [deleteRemote, setDeleteRemote] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setForce(false);
+      setDeleteRemote(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
   const { branches, loadBranches, refreshRepository } = useRepositoryStore();
 

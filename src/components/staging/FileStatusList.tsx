@@ -215,9 +215,9 @@ function FileStatusItemContent({
         <span
           {...testId(`e2e-staging-file-${getFileName(file.path)}`)}
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
-          {getFileName(file.path)}
+          {getDisplayFileName(file, status)}
         </span>
       </div>
     </StagingFileContextMenu>
@@ -277,13 +277,13 @@ function MultiColumnFileItemContent({
         </div>
         <div className="flex-1 min-w-0 px-2">
           <span className="text-base text-(--text-primary) whitespace-nowrap overflow-hidden text-ellipsis block">
-            {getFileName(file.path)}
+            {getDisplayFileName(file, status)}
           </span>
         </div>
         <div className="flex-1 min-w-0 px-2">
           <span
             className="text-base text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis block"
-            title={file.path}
+            title={getDisplayTooltip(file, status)}
           >
             {getDirectory(file.path) || '.'}
           </span>
@@ -360,9 +360,9 @@ function FileStatusItem({
         <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
-          {getFileName(file.path)}
+          {getDisplayFileName(file, status)}
         </span>
       </div>
     </StagingFileContextMenu>
@@ -576,13 +576,13 @@ function FluidFileItemContent({ file, onStage, onUnstage, onDiscard }: FluidFile
         <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
-          {getFileName(file.path)}
+          {getDisplayFileName(file, status)}
         </span>
         <span
           className="text-sm text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis max-w-40"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
           {getDirectory(file.path)}
         </span>
@@ -652,13 +652,13 @@ function FluidFileItem({
         <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
-          {getFileName(file.path)}
+          {getDisplayFileName(file, status)}
         </span>
         <span
           className="text-sm text-(--text-tertiary) whitespace-nowrap overflow-hidden text-ellipsis max-w-40"
-          title={file.path}
+          title={getDisplayTooltip(file, status)}
         >
           {getDirectory(file.path)}
         </span>
@@ -813,4 +813,18 @@ function getDirectory(path: string): string {
   if (parts.length <= 1) return '';
   parts.pop();
   return parts.join('/') + '/';
+}
+
+function getDisplayFileName(file: FileStatus, status: StatusTypeType): string {
+  if (status === StatusType.Renamed && file.oldPath) {
+    return `${getFileName(file.oldPath)} → ${getFileName(file.path)}`;
+  }
+  return getFileName(file.path);
+}
+
+function getDisplayTooltip(file: FileStatus, status: StatusTypeType): string {
+  if (status === StatusType.Renamed && file.oldPath) {
+    return `${file.oldPath} → ${file.path}`;
+  }
+  return file.path;
 }

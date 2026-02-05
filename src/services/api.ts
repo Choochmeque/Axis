@@ -211,9 +211,11 @@ export const diffApi = {
   getHead: (options?: DiffOptions) => commands.getDiff('WorkdirToHead', options ?? null),
 
   getCommit: (oid: string, options?: DiffOptions) =>
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Rust enum variant
     commands.getDiff({ Commit: { oid } }, options ?? null),
 
   getCommits: (fromOid: string, toOid: string, options?: DiffOptions) =>
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Rust enum variant
     commands.getDiff({ CommitToCommit: { from: fromOid, to: toOid } }, options ?? null),
 
   getFile: (path: string, staged: boolean, options?: DiffOptions) =>

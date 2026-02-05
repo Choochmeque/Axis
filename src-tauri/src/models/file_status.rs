@@ -58,14 +58,14 @@ impl FileStatus {
     }
 
     fn get_staged_status(status: git2::Status) -> Option<StatusType> {
-        if status.is_index_new() {
+        if status.is_index_renamed() {
+            Some(StatusType::Renamed)
+        } else if status.is_index_new() {
             Some(StatusType::Added)
         } else if status.is_index_modified() {
             Some(StatusType::Modified)
         } else if status.is_index_deleted() {
             Some(StatusType::Deleted)
-        } else if status.is_index_renamed() {
-            Some(StatusType::Renamed)
         } else if status.is_index_typechange() {
             Some(StatusType::TypeChanged)
         } else {
@@ -74,14 +74,14 @@ impl FileStatus {
     }
 
     fn get_unstaged_status(status: git2::Status) -> Option<StatusType> {
-        if status.is_wt_new() {
+        if status.is_wt_renamed() {
+            Some(StatusType::Renamed)
+        } else if status.is_wt_new() {
             Some(StatusType::Untracked)
         } else if status.is_wt_modified() {
             Some(StatusType::Modified)
         } else if status.is_wt_deleted() {
             Some(StatusType::Deleted)
-        } else if status.is_wt_renamed() {
-            Some(StatusType::Renamed)
         } else if status.is_wt_typechange() {
             Some(StatusType::TypeChanged)
         } else {

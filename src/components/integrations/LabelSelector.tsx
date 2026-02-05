@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Check, X } from 'lucide-react';
 
+import { Input } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
 import { getLabelColors } from '@/lib/utils';
 import type { IntegrationLabel } from '@/types';
@@ -140,9 +141,8 @@ export function LabelSelector({
           <div
             className={`label-selector-dropdown ${openUpward ? 'label-selector-dropdown-up' : ''}`}
           >
-            <input
+            <Input
               ref={searchRef}
-              type="text"
               className="label-selector-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

@@ -115,3 +115,61 @@ jobs:
           tauri-driver --native-driver /tmp/appium-mac2-driver/WebDriverAgentMac &
           for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
           pnpm e2e:mac
+
+  e2e-windows:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Cache Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver
+
+      - name: Install Edge Driver
+        shell: pwsh
+        run: |
+          $edgeVersion = (Get-Item "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe").VersionInfo.FileVersion
+          $url = "https://msedgedriver.azureedge.net/$edgeVersion/edgedriver_win64.zip"
+          Invoke-WebRequest -Uri $url -OutFile edgedriver.zip
+          Expand-Archive -Path edgedriver.zip -DestinationPath "$env:USERPROFILE\.edge-driver"
+          echo "$env:USERPROFILE\.edge-driver" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Build Tauri app
+        run: pnpm tauri build --no-bundle
+
+      - name: Run E2E tests
+        run: |
+          tauri-driver &
+          for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
+          pnpm e2e:win

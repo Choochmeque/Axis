@@ -5,6 +5,7 @@ import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
 import { conflictApi, operationApi } from '@/services/api';
 import { ConflictResolution } from '@/types';
 import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
+import { Textarea } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errorUtils';
 
@@ -304,11 +305,11 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                       {t('merge.conflictResolver.markResolved')}
                     </button>
                   </div>
-                  <textarea
-                    className="flex-1 m-0 p-3 font-mono text-xs leading-relaxed bg-(--bg-input) text-(--text-primary) border-none resize-none outline-none focus:bg-(--bg-primary)"
+                  <Textarea
+                    resizable={false}
+                    className="flex-1 m-0 p-3 font-mono text-xs leading-relaxed bg-(--bg-input) border-none outline-none focus:bg-(--bg-primary)"
                     value={mergedContent}
                     onChange={(e) => setMergedContent(e.target.value)}
-                    spellCheck={false}
                   />
                 </div>
               </Panel>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Cherry } from 'lucide-react';
 
@@ -38,6 +38,14 @@ export function CherryPickDialog({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CherryPickResult | null>(null);
   const { trackOperation } = useOperation();
+
+  useEffect(() => {
+    if (isOpen) {
+      setNoCommit(false);
+      setError(null);
+      setResult(null);
+    }
+  }, [isOpen]);
 
   const handleCherryPick = async () => {
     if (commits.length === 0) {

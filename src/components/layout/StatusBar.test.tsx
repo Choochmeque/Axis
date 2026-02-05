@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/OperationsIndicator', () => ({
+vi.mock('@/components/ui/operations-indicator', () => ({
   OperationsIndicator: () => <div data-testid="operations-indicator">Operations</div>,
 }));
 

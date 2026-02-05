@@ -11,7 +11,8 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock lucide-react icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Tag: ({ size }: any) => <span data-testid="icon-tag" data-size={size} />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

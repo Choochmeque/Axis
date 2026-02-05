@@ -75,7 +75,8 @@ export function modifyFile(dir: string, filename: string, content: string): void
 
 /**
  * Remove a temporary directory and all its contents.
+ * Uses maxRetries to handle Windows file locking (EBUSY).
  */
 export function cleanupTempDir(dir: string): void {
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 1000 });
 }

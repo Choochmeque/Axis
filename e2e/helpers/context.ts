@@ -18,6 +18,7 @@ export function getPlatform(): Platform {
  */
 export async function waitForAppReady(): Promise<void> {
   await browser.pause(5000);
+  await browser.maximizeWindow();
 }
 
 /**

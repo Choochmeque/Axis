@@ -45,10 +45,6 @@ impl BackgroundFetchService {
                 for path in paths {
                     // Get the service handle from cache
                     if let Some(handle) = cache.get(&path) {
-                        let guard = handle.lock();
-                        let git2 = guard.git2();
-
-                        // Resolve SSH keys for this repo
                         let app_state = app_handle.state::<AppState>();
                         let repo_path_str = path.to_string_lossy().to_string();
                         let default_ssh_key = app_state
@@ -56,94 +52,96 @@ impl BackgroundFetchService {
                             .map(|s| s.default_ssh_key)
                             .unwrap_or(None);
 
-                        // Get all remotes and fetch from each
-                        match git2.list_remotes() {
-                            Ok(remotes) => {
-                                let options = FetchOptions::default();
-                                let mut total_updates = 0u32;
-
-                                for remote in remotes {
-                                    let ssh_key = SshKeyService::resolve_ssh_key(
-                                        app_state.database(),
-                                        &repo_path_str,
-                                        &remote.name,
-                                        &default_ssh_key,
-                                    );
-
-                                    // Skip encrypted keys when no cached passphrase is available
-                                    if let Some(key_path) = &ssh_key {
-                                        let format = SshKeyService::check_key_format_optional(
-                                            std::path::Path::new(key_path),
-                                        );
-                                        if let Some(
-                                            SshKeyFormat::EncryptedPem
-                                            | SshKeyFormat::EncryptedOpenSsh,
-                                        ) = format
-                                        {
-                                            if app_state
-                                                .get_cached_ssh_passphrase(key_path)
-                                                .is_none()
-                                            {
-                                                log::debug!(
-                                                    "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
-                                                    remote.name
-                                                );
-                                                continue;
-                                            }
-                                        }
-                                    }
-
-                                    let ssh_creds = ssh_key.map(|key_path| {
-                                        let passphrase =
-                                            app_state.get_cached_ssh_passphrase(&key_path);
-                                        SshCredentials {
-                                            key_path,
-                                            passphrase,
-                                        }
-                                    });
-
-                                    match git2.fetch(
-                                        &remote.name,
-                                        &options,
-                                        None,
-                                        None::<fn(&git2::Progress<'_>) -> bool>,
-                                        ssh_creds,
-                                    ) {
-                                        Ok(result) => {
-                                            // Count updated refs as new commits
-                                            total_updates += result.updated_refs.len() as u32;
-                                        }
-                                        Err(e) => {
-                                            log::warn!(
-                                                "Background fetch failed for {} remote {}: {e}",
-                                                path.display(),
-                                                remote.name
-                                            );
-                                        }
-                                    }
-                                }
-
-                                if total_updates > 0 {
-                                    log::info!(
-                                        "Background fetch: {total_updates} updates in {}",
-                                        path.display()
-                                    );
-
-                                    // Emit event for this repo
-                                    let event = RemoteFetchedEvent {
-                                        path: path.to_string_lossy().to_string(),
-                                        new_commits: total_updates,
-                                    };
-                                    if let Err(e) = event.emit(&app_handle) {
-                                        log::error!("Failed to emit RemoteFetchedEvent: {e}");
-                                    }
-                                }
-                            }
+                        // List remotes (read lock)
+                        let remotes = match handle.read().await.list_remotes().await {
+                            Ok(remotes) => remotes,
                             Err(e) => {
                                 log::warn!(
                                     "Background fetch: failed to list remotes for {}: {e}",
                                     path.display()
                                 );
+                                continue;
+                            }
+                        };
+
+                        let options = FetchOptions::default();
+                        let mut total_updates = 0u32;
+
+                        for remote in remotes {
+                            let ssh_key = SshKeyService::resolve_ssh_key(
+                                app_state.database(),
+                                &repo_path_str,
+                                &remote.name,
+                                &default_ssh_key,
+                            );
+
+                            // Skip encrypted keys when no cached passphrase is available
+                            if let Some(key_path) = &ssh_key {
+                                let format = SshKeyService::check_key_format_optional(
+                                    std::path::Path::new(key_path),
+                                );
+                                if let Some(
+                                    SshKeyFormat::EncryptedPem | SshKeyFormat::EncryptedOpenSsh,
+                                ) = format
+                                {
+                                    if app_state.get_cached_ssh_passphrase(key_path).is_none() {
+                                        log::debug!(
+                                            "Background fetch: skipping remote {} (encrypted key, no cached passphrase)",
+                                            remote.name
+                                        );
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            let ssh_creds = ssh_key.map(|key_path| {
+                                let passphrase = app_state.get_cached_ssh_passphrase(&key_path);
+                                SshCredentials {
+                                    key_path,
+                                    passphrase,
+                                }
+                            });
+
+                            // Fetch (write lock, per remote)
+                            match handle
+                                .write()
+                                .await
+                                .fetch(
+                                    &remote.name,
+                                    &options,
+                                    None,
+                                    None::<fn(&git2::Progress<'_>) -> bool>,
+                                    ssh_creds,
+                                )
+                                .await
+                            {
+                                Ok(result) => {
+                                    // Count updated refs as new commits
+                                    total_updates += result.updated_refs.len() as u32;
+                                }
+                                Err(e) => {
+                                    log::warn!(
+                                        "Background fetch failed for {} remote {}: {e}",
+                                        path.display(),
+                                        remote.name
+                                    );
+                                }
+                            }
+                        }
+
+                        if total_updates > 0 {
+                            log::info!(
+                                "Background fetch: {total_updates} updates in {}",
+                                path.display()
+                            );
+
+                            // Emit event for this repo
+                            let event = RemoteFetchedEvent {
+                                path: path.to_string_lossy().to_string(),
+                                new_commits: total_updates,
+                            };
+                            if let Err(e) = event.emit(&app_handle) {
+                                log::error!("Failed to emit RemoteFetchedEvent: {e}");
                             }
                         }
                     }

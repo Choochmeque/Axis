@@ -9,10 +9,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.tag_list(None))
-        .await
+    state.get_git_service()?.read().await.tag_list().await
 }
 
 /// Create a new tag
@@ -25,7 +22,9 @@ pub async fn tag_create(
 ) -> Result<TagResult> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.tag_create(&name, &options))
+        .write()
+        .await
+        .tag_create(&name, &options)
         .await
 }
 
@@ -35,7 +34,9 @@ pub async fn tag_create(
 pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagResult> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.tag_delete(&name))
+        .write()
+        .await
+        .tag_delete(&name)
         .await
 }
 
@@ -47,18 +48,26 @@ pub async fn tag_push(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
+    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.tag_push(&name, &remote))
+        .write()
+        .await
+        .tag_push(&name, &remote, ssh_creds)
+        .await
 }
 
 /// Push all tags to a remote
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<TagResult> {
+    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.tag_push_all(&remote))
+        .write()
+        .await
+        .tag_push_all(&remote, ssh_creds)
+        .await
 }
 
 /// Delete a remote tag
@@ -69,7 +78,11 @@ pub async fn tag_delete_remote(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
+    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.tag_delete_remote(&name, &remote))
+        .write()
+        .await
+        .tag_delete_remote(&name, &remote, ssh_creds)
+        .await
 }

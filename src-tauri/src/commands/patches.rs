@@ -16,14 +16,17 @@ pub async fn create_archive(
     options: ArchiveOptions,
 ) -> Result<ArchiveResult> {
     let output_path = PathBuf::from(&options.output_path);
-    state.get_git_service()?.with_git_cli(|cli| {
-        cli.archive(
+    state
+        .get_git_service()?
+        .read()
+        .await
+        .archive(
             &options.reference,
             &options.format,
             &output_path,
             options.prefix.as_deref(),
         )
-    })
+        .await
 }
 
 // ==================== Patch Commands ====================
@@ -38,7 +41,10 @@ pub async fn format_patch(
     let output_dir = PathBuf::from(&options.output_dir);
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.format_patch(&options.range, &output_dir))
+        .read()
+        .await
+        .format_patch(&options.range, &output_dir)
+        .await
 }
 
 /// Create a patch from a specific commit or staged changes
@@ -60,7 +66,10 @@ pub async fn create_patch(
     let output_path = output_dir.join(filename);
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.create_patch_from_diff(options.commit_oid.as_deref(), &output_path))
+        .read()
+        .await
+        .create_patch_from_diff(options.commit_oid.as_deref(), &output_path)
+        .await
 }
 
 /// Apply a patch file (git apply)
@@ -73,7 +82,10 @@ pub async fn apply_patch(
     let patch_path = PathBuf::from(&options.patch_path);
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.apply_patch(&patch_path, options.check_only, options.three_way))
+        .write()
+        .await
+        .apply_patch(&patch_path, options.check_only, options.three_way)
+        .await
 }
 
 /// Apply patches using git am (creates commits)
@@ -86,28 +98,29 @@ pub async fn apply_mailbox(
     let patch_paths: Vec<PathBuf> = options.patch_paths.iter().map(PathBuf::from).collect();
     state
         .get_git_service()?
-        .with_git_cli(|cli| cli.apply_mailbox(&patch_paths, options.three_way))
+        .write()
+        .await
+        .apply_mailbox(&patch_paths, options.three_way)
+        .await
 }
 
 /// Abort an in-progress git am session
 #[tauri::command]
 #[specta::specta]
 pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
-    state.get_git_service()?.with_git_cli(|cli| cli.am_abort())
+    state.get_git_service()?.write().await.am_abort().await
 }
 
 /// Continue git am after resolving conflicts
 #[tauri::command]
 #[specta::specta]
 pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
-    state
-        .get_git_service()?
-        .with_git_cli(|cli| cli.am_continue())
+    state.get_git_service()?.write().await.am_continue().await
 }
 
 /// Skip the current patch in git am
 #[tauri::command]
 #[specta::specta]
 pub async fn am_skip(state: State<'_, AppState>) -> Result<PatchResult> {
-    state.get_git_service()?.with_git_cli(|cli| cli.am_skip())
+    state.get_git_service()?.write().await.am_skip().await
 }

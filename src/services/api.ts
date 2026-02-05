@@ -204,16 +204,17 @@ export const stagingApi = {
 export const diffApi = {
   getDiff: (target: DiffTarget, options?: DiffOptions) => commands.getDiff(target, options ?? null),
 
-  getWorkdir: (options?: DiffOptions) => commands.getDiffWorkdir(options ?? null),
+  getWorkdir: (options?: DiffOptions) => commands.getDiff('WorkdirToIndex', options ?? null),
 
-  getStaged: (options?: DiffOptions) => commands.getDiffStaged(options ?? null),
+  getStaged: (options?: DiffOptions) => commands.getDiff('IndexToHead', options ?? null),
 
-  getHead: (options?: DiffOptions) => commands.getDiffHead(options ?? null),
+  getHead: (options?: DiffOptions) => commands.getDiff('WorkdirToHead', options ?? null),
 
-  getCommit: (oid: string, options?: DiffOptions) => commands.getDiffCommit(oid, options ?? null),
+  getCommit: (oid: string, options?: DiffOptions) =>
+    commands.getDiff({ Commit: { oid } }, options ?? null),
 
   getCommits: (fromOid: string, toOid: string, options?: DiffOptions) =>
-    commands.getDiffCommits(fromOid, toOid, options ?? null),
+    commands.getDiff({ CommitToCommit: { from: fromOid, to: toOid } }, options ?? null),
 
   getFile: (path: string, staged: boolean, options?: DiffOptions) =>
     commands.getFileDiff(path, staged, options ?? null),

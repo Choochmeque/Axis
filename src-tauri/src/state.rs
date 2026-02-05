@@ -1,5 +1,6 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, Repository, SshCredentials};
+use crate::services::ops::RepoOperations;
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
     ProgressRegistry, SignatureVerificationCache, SshKeyService,
@@ -8,57 +9,91 @@ use crate::storage::Database;
 use crate::storage::RecentRepositoryRow;
 use secrecy::SecretString;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use tauri::{AppHandle, Manager};
 
-/// Wrapper that holds an Arc<Mutex<GitService>> and provides access
+/// Wrapper that holds an Arc<GitService> and a shared RwLock for read/write coordination.
+///
+/// Read operations acquire a shared lock (concurrent readers allowed).
+/// Write operations acquire an exclusive lock (blocks all other access).
+/// The RwLock coordinates across both git2 and git CLI operations.
 #[derive(Clone)]
 pub struct GitServiceHandle {
-    inner: Arc<Mutex<GitService>>,
-    inner2: Arc<GitService>,
+    service: Arc<GitService>,
+    rw_lock: Arc<tokio::sync::RwLock<()>>,
+}
+
+/// Guard for shared read access to a repository.
+/// Multiple readers can hold this simultaneously.
+/// Derefs to `RepoOperations` for unified async domain methods.
+pub struct RepoReadGuard<'a> {
+    _guard: tokio::sync::RwLockReadGuard<'a, ()>,
+    ops: RepoOperations,
+}
+
+/// Guard for exclusive write access to a repository.
+/// Only one writer at a time; blocks all readers.
+/// Derefs to `RepoOperations` for unified async domain methods.
+pub struct RepoWriteGuard<'a> {
+    _guard: tokio::sync::RwLockWriteGuard<'a, ()>,
+    ops: RepoOperations,
+}
+
+impl<'a> Deref for RepoReadGuard<'a> {
+    type Target = RepoOperations;
+    fn deref(&self) -> &RepoOperations {
+        &self.ops
+    }
+}
+
+impl<'a> Deref for RepoWriteGuard<'a> {
+    type Target = RepoOperations;
+    fn deref(&self) -> &RepoOperations {
+        &self.ops
+    }
 }
 
 impl GitServiceHandle {
-    pub fn new(service: GitService, service2: GitService) -> Self {
+    pub fn new(service: GitService) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(service)),
-            inner2: Arc::new(service2),
+            service: Arc::new(service),
+            rw_lock: Arc::new(tokio::sync::RwLock::new(())),
         }
     }
 
-    pub fn lock(&self) -> MutexGuard<'_, GitService> {
-        self.inner.lock().unwrap_or_else(|e| e.into_inner())
+    /// Acquire shared read access (concurrent readers allowed)
+    pub async fn read(&self) -> RepoReadGuard<'_> {
+        let guard = self.rw_lock.read().await;
+        RepoReadGuard {
+            _guard: guard,
+            ops: RepoOperations::new(self.service.clone()),
+        }
     }
 
-    /// Access git2 service directly (convenience method)
-    pub async fn with_git2<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&crate::services::Git2Service) -> R + Send + 'static,
-        R: Send + 'static,
-    {
-        let inner = self.inner2.clone();
-        tauri::async_runtime::spawn_blocking(move || f(inner.git2()))
-            .await
-            .unwrap_or_else(|e| panic!("git task panicked: {e}"))
+    /// Acquire exclusive write access (blocks all other access)
+    pub async fn write(&self) -> RepoWriteGuard<'_> {
+        let guard = self.rw_lock.write().await;
+        RepoWriteGuard {
+            _guard: guard,
+            ops: RepoOperations::new(self.service.clone()),
+        }
     }
 
-    /// Access git CLI service directly (convenience method)
-    pub fn with_git_cli<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&crate::services::GitCliService) -> R,
-    {
-        let guard = self.lock();
-        f(guard.git_cli())
+    /// Set active state (lock-free, delegates to FileWatcher's AtomicBool)
+    pub fn set_active(&self, active: bool) {
+        self.service.set_active(active);
     }
 
-    /// Access hook service directly (convenience method)
-    pub fn with_hook<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&crate::services::HookService) -> R,
-    {
-        let guard = self.lock();
-        f(guard.hook())
+    /// Check if this repository is active
+    pub fn is_active(&self) -> bool {
+        self.service.is_active()
+    }
+
+    /// Stop the file watcher
+    pub fn stop_watcher(&self) {
+        self.service.stop_watcher();
     }
 }
 
@@ -98,11 +133,7 @@ impl RepositoryCache {
 
         // Open and cache
         let service = GitService::open(path, app_handle.clone(), is_active)?;
-
-        // TODO: this is a temporary workaround until we refactor GitService to avoid double init
-        let service2 = GitService::open(path, app_handle.clone(), is_active)?;
-
-        let handle = GitServiceHandle::new(service, service2);
+        let handle = GitServiceHandle::new(service);
 
         let mut repos = self.repos.write().unwrap_or_else(|e| e.into_inner());
         repos.insert(path.to_path_buf(), handle.clone());
@@ -114,8 +145,7 @@ impl RepositoryCache {
     pub fn set_active(&self, active_path: &Path) {
         let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
         for (path, handle) in repos.iter() {
-            let service = handle.lock();
-            service.set_active(path == active_path);
+            handle.set_active(path == active_path);
         }
     }
 
@@ -265,7 +295,7 @@ impl AppState {
     }
 
     /// Set/switch the active repository (adds to cache if needed)
-    pub fn switch_active_repository(&self, path: &Path) -> Result<Repository> {
+    pub async fn switch_active_repository(&self, path: &Path) -> Result<Repository> {
         let app_handle = self.get_app_handle()?;
 
         // Ensure the repo is cached
@@ -280,8 +310,8 @@ impl AppState {
             .unwrap_or_else(|e| e.into_inner()) = Some(path.to_path_buf());
 
         // Return repo info
-        let guard = handle.lock();
-        guard.git2().get_repository_info()
+        let result = handle.read().await.get_repository_info().await;
+        result
     }
 
     pub fn get_current_repository_path(&self) -> Option<PathBuf> {
@@ -487,6 +517,36 @@ impl AppState {
             .unwrap_or_else(|e| e.into_inner())
             .clear();
         log::debug!("Cleared all cached SSH passphrases");
+    }
+
+    /// Fetch a commit author's avatar URL from the integration provider.
+    pub async fn get_integration_commit_avatar(&self, sha: &str) -> Option<String> {
+        let remotes = self
+            .get_git_service()
+            .ok()?
+            .read()
+            .await
+            .list_remotes()
+            .await
+            .ok()?;
+
+        let remote_url = remotes
+            .iter()
+            .find(|r| r.name == "origin")
+            .and_then(|r| r.url.clone())
+            .or_else(|| remotes.first().and_then(|r| r.url.clone()))?;
+
+        let detected = crate::services::detect_provider(&remote_url)?;
+
+        let service = self.integration_service().ok()?;
+        let provider = service.get_provider(detected.provider).await.ok()?;
+
+        let commit = provider
+            .get_commit(&detected.owner, &detected.repo, sha)
+            .await
+            .ok()?;
+
+        commit.author_avatar_url
     }
 }
 

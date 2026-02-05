@@ -4,7 +4,7 @@ use crate::models::{
     LaneState, SearchOptions, SearchResult,
 };
 use crate::services::{CommitCache, CommitCacheEntry, PREFETCH_BUFFER, PREFETCH_THRESHOLD};
-use crate::state::{AppState, GitServiceHandle};
+use crate::state::AppState;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tauri::State;
@@ -54,14 +54,9 @@ pub async fn build_graph(
                 let prefetch_options = options.clone();
 
                 tokio::spawn(async move {
-                    let _ = prefetch_commits(
-                        git_handle,
-                        prefetch_cache,
-                        prefetch_key,
-                        prefetch_options,
-                        total_fetched,
-                    )
-                    .await;
+                    let _ = prefetch_cache
+                        .prefetch(&git_handle, &prefetch_key, prefetch_options, total_fetched)
+                        .await;
                 });
             }
 
@@ -97,14 +92,13 @@ pub async fn build_graph(
 
     let result = state
         .get_git_service()?
-        .with_git2(|git2| git2.build_graph(fetch_options))
+        .read()
+        .await
+        .build_graph(fetch_options)
         .await?;
 
     // Get HEAD OID for cache invalidation
-    let head_oid = state
-        .get_git_service()?
-        .with_git2(|git2| git2.get_head_oid())
-        .await;
+    let head_oid = state.get_git_service()?.read().await.get_head_oid().await;
 
     // Store in cache
     cache.set(
@@ -136,42 +130,6 @@ pub async fn build_graph(
     })
 }
 
-/// Background prefetch more commits
-async fn prefetch_commits(
-    git_handle: GitServiceHandle,
-    cache: Arc<CommitCache>,
-    cache_key: String,
-    options: GraphOptions,
-    current_count: usize,
-) -> Result<()> {
-    // Mark as prefetching
-    cache.set_prefetching(&cache_key, true);
-
-    // Fetch more commits
-    let fetch_limit = current_count + PREFETCH_BUFFER;
-    let fetch_options = GraphOptions {
-        limit: Some(fetch_limit),
-        skip: Some(0), // Fetch from start for correct lanes
-        ..options
-    };
-
-    let result = git_handle
-        .with_git2(|git2| git2.build_graph(fetch_options))
-        .await?;
-
-    // Update cache with new data
-    cache.update(&cache_key, |entry| {
-        entry.commits = result.commits;
-        entry.max_lane = result.max_lane;
-        entry.has_more = result.has_more;
-        entry
-            .is_prefetching
-            .store(false, std::sync::atomic::Ordering::Relaxed);
-    });
-
-    Ok(())
-}
-
 /// Search commits by message, author, or hash
 #[tauri::command]
 #[specta::specta]
@@ -181,7 +139,9 @@ pub async fn search_commits(
 ) -> Result<SearchResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.search_commits(options))
+        .read()
+        .await
+        .search_commits(options)
         .await
 }
 
@@ -195,7 +155,9 @@ pub async fn blame_file(
 ) -> Result<BlameResult> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.blame_file(&path, commit_oid.as_deref()))
+        .read()
+        .await
+        .blame_file(&path, commit_oid.as_deref())
         .await
 }
 
@@ -208,7 +170,9 @@ pub async fn get_commit_count(
 ) -> Result<usize> {
     state
         .get_git_service()?
-        .with_git2(move |git2| git2.get_commit_count(from_ref.as_deref()))
+        .read()
+        .await
+        .get_commit_count(from_ref.as_deref())
         .await
 }
 
@@ -221,7 +185,9 @@ pub async fn get_file_history(
 ) -> Result<FileLogResult> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_file_history(options))
+        .read()
+        .await
+        .get_file_history(options)
         .await
 }
 
@@ -236,8 +202,8 @@ pub async fn get_file_diff_in_commit(
 ) -> Result<Option<FileDiff>> {
     state
         .get_git_service()?
-        .with_git2(move |git2| {
-            git2.get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
-        })
+        .read()
+        .await
+        .get_file_diff_in_commit(&commit_oid, &path, &options.unwrap_or_default())
         .await
 }

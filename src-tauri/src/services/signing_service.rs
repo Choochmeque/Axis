@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use tempfile::NamedTempFile;
+use tokio::io::AsyncWriteExt;
 
 use crate::services::create_command;
 
@@ -49,7 +50,7 @@ impl SigningService {
     }
 
     /// Find GPG program on the system (cross-platform)
-    pub fn find_gpg_program() -> Option<PathBuf> {
+    pub async fn find_gpg_program() -> Option<PathBuf> {
         #[cfg(target_os = "windows")]
         let candidates = vec![
             "gpg.exe",
@@ -76,7 +77,7 @@ impl SigningService {
                 return Some(path.to_path_buf());
             }
             // Try to find in PATH
-            if let Ok(output) = create_command(candidate).arg("--version").output() {
+            if let Ok(output) = create_command(candidate).arg("--version").output().await {
                 if output.status.success() {
                     return Some(PathBuf::from(candidate));
                 }
@@ -86,7 +87,7 @@ impl SigningService {
     }
 
     /// Find SSH signing program (ssh-keygen)
-    pub fn find_ssh_program() -> Option<PathBuf> {
+    pub async fn find_ssh_program() -> Option<PathBuf> {
         #[cfg(target_os = "windows")]
         let candidates = vec![
             "ssh-keygen.exe",
@@ -103,7 +104,7 @@ impl SigningService {
                 return Some(path.to_path_buf());
             }
             // Try to find in PATH
-            if let Ok(output) = create_command(candidate).arg("-V").output() {
+            if let Ok(output) = create_command(candidate).arg("-V").output().await {
                 // ssh-keygen -V returns non-zero but still outputs version info
                 if !output.stderr.is_empty() || !output.stdout.is_empty() {
                     return Some(PathBuf::from(candidate));
@@ -114,26 +115,24 @@ impl SigningService {
     }
 
     /// Check if signing is available with the given configuration
-    pub fn is_signing_available(&self, config: &SigningConfig) -> Result<bool> {
+    pub async fn is_signing_available(&self, config: &SigningConfig) -> Result<bool> {
         if config.signing_key.is_none() {
             return Ok(false);
         }
 
         match config.format {
             SigningFormat::Gpg => {
-                let program = config
-                    .gpg_program
-                    .as_ref()
-                    .map(PathBuf::from)
-                    .or_else(Self::find_gpg_program);
+                let program = match config.gpg_program.as_ref() {
+                    Some(p) => Some(PathBuf::from(p)),
+                    None => Self::find_gpg_program().await,
+                };
                 Ok(program.is_some())
             }
             SigningFormat::Ssh => {
-                let program = config
-                    .ssh_program
-                    .as_ref()
-                    .map(PathBuf::from)
-                    .or_else(Self::find_ssh_program);
+                let program = match config.ssh_program.as_ref() {
+                    Some(p) => Some(PathBuf::from(p)),
+                    None => Self::find_ssh_program().await,
+                };
 
                 // Also check that the SSH key file exists
                 if let Some(key_path) = &config.signing_key {
@@ -149,16 +148,17 @@ impl SigningService {
     }
 
     /// Sign a commit buffer using GPG
-    pub fn sign_with_gpg(
+    pub async fn sign_with_gpg(
         &self,
         buffer: &str,
         key_id: &str,
         program: Option<&Path>,
     ) -> Result<String> {
-        let gpg_program = program
-            .map(|p| p.to_path_buf())
-            .or_else(Self::find_gpg_program)
-            .ok_or_else(|| AxisError::FileNotFound("GPG program not found".to_string()))?;
+        let gpg_program = match program {
+            Some(p) => Some(p.to_path_buf()),
+            None => Self::find_gpg_program().await,
+        }
+        .ok_or_else(|| AxisError::FileNotFound("GPG program not found".to_string()))?;
 
         let mut child = create_command(gpg_program.as_os_str())
             .args(["--status-fd=2", "-bsau", key_id, "--armor", "--detach-sign"])
@@ -166,40 +166,43 @@ impl SigningService {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| AxisError::Other(format!("Failed to spawn GPG: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Failed to spawn GPG: {e}")))?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
                 .write_all(buffer.as_bytes())
-                .map_err(|e| AxisError::Other(format!("Failed to write to GPG stdin: {}", e)))?;
+                .await
+                .map_err(|e| AxisError::Other(format!("Failed to write to GPG stdin: {e}")))?;
         }
 
         let output = child
             .wait_with_output()
-            .map_err(|e| AxisError::Other(format!("Failed to wait for GPG: {}", e)))?;
+            .await
+            .map_err(|e| AxisError::Other(format!("Failed to wait for GPG: {e}")))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AxisError::Other(format!("GPG signing failed: {}", stderr)));
+            return Err(AxisError::Other(format!("GPG signing failed: {stderr}")));
         }
 
         let signature = String::from_utf8(output.stdout)
-            .map_err(|e| AxisError::Other(format!("Invalid GPG signature output: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Invalid GPG signature output: {e}")))?;
 
         Ok(signature)
     }
 
     /// Sign a commit buffer using SSH
-    pub fn sign_with_ssh(
+    pub async fn sign_with_ssh(
         &self,
         buffer: &str,
         key_path: &str,
         program: Option<&Path>,
     ) -> Result<String> {
-        let ssh_program = program
-            .map(|p| p.to_path_buf())
-            .or_else(Self::find_ssh_program)
-            .ok_or_else(|| AxisError::FileNotFound("SSH signing program not found".to_string()))?;
+        let ssh_program = match program {
+            Some(p) => Some(p.to_path_buf()),
+            None => Self::find_ssh_program().await,
+        }
+        .ok_or_else(|| AxisError::FileNotFound("SSH signing program not found".to_string()))?;
 
         let expanded_key_path = expand_path(key_path);
 
@@ -211,11 +214,11 @@ impl SigningService {
 
         // Create a temporary file for the buffer (ssh-keygen requires a file)
         let mut temp_file = NamedTempFile::new()
-            .map_err(|e| AxisError::Other(format!("Failed to create temp file: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Failed to create temp file: {e}")))?;
 
         temp_file
             .write_all(buffer.as_bytes())
-            .map_err(|e| AxisError::Other(format!("Failed to write temp file: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Failed to write temp file: {e}")))?;
 
         let temp_path = temp_file.path();
 
@@ -233,17 +236,18 @@ impl SigningService {
                     .ok_or_else(|| AxisError::Other("Invalid temp file path".to_string()))?,
             ])
             .output()
-            .map_err(|e| AxisError::Other(format!("Failed to execute ssh-keygen: {}", e)))?;
+            .await
+            .map_err(|e| AxisError::Other(format!("Failed to execute ssh-keygen: {e}")))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AxisError::Other(format!("SSH signing failed: {}", stderr)));
+            return Err(AxisError::Other(format!("SSH signing failed: {stderr}")));
         }
 
         // Read the signature file (ssh-keygen creates <file>.sig)
         let sig_file = format!("{}.sig", temp_path.display());
         let signature = std::fs::read_to_string(&sig_file)
-            .map_err(|e| AxisError::Other(format!("Failed to read SSH signature: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Failed to read SSH signature: {e}")))?;
 
         // Clean up signature file (temp_file auto-cleans on drop)
         let _ = std::fs::remove_file(&sig_file);
@@ -252,7 +256,7 @@ impl SigningService {
     }
 
     /// Sign a buffer based on the configuration
-    pub fn sign_buffer(&self, buffer: &str, config: &SigningConfig) -> Result<String> {
+    pub async fn sign_buffer(&self, buffer: &str, config: &SigningConfig) -> Result<String> {
         let key = config
             .signing_key
             .as_ref()
@@ -261,16 +265,19 @@ impl SigningService {
         match config.format {
             SigningFormat::Gpg => {
                 self.sign_with_gpg(buffer, key, config.gpg_program.as_ref().map(Path::new))
+                    .await
             }
             SigningFormat::Ssh => {
                 self.sign_with_ssh(buffer, key, config.ssh_program.as_ref().map(Path::new))
+                    .await
             }
         }
     }
 
     /// List available GPG secret keys
-    pub fn list_gpg_keys(&self) -> Result<Vec<GpgKey>> {
+    pub async fn list_gpg_keys(&self) -> Result<Vec<GpgKey>> {
         let gpg_program = Self::find_gpg_program()
+            .await
             .ok_or_else(|| AxisError::Other("GPG program not found".to_string()))?;
 
         let output = create_command(gpg_program.as_os_str())
@@ -281,6 +288,7 @@ impl SigningService {
                 "--with-colons",
             ])
             .output()
+            .await
             .map_err(|e| AxisError::Other(format!("Failed to list GPG keys: {}", e)))?;
 
         if !output.status.success() {
@@ -401,8 +409,8 @@ impl SigningService {
     }
 
     /// Verify a GPG signature and extract signer info
-    pub fn verify_gpg_signature(signature: &str, data: &str) -> Option<String> {
-        let gpg_program = Self::find_gpg_program()?;
+    pub async fn verify_gpg_signature(signature: &str, data: &str) -> Option<String> {
+        let gpg_program = Self::find_gpg_program().await?;
 
         let mut sig_file = NamedTempFile::new().ok()?;
         let mut data_file = NamedTempFile::new().ok()?;
@@ -418,6 +426,7 @@ impl SigningService {
                 data_file.path().to_str()?,
             ])
             .output()
+            .await
             .ok()?;
 
         let status = String::from_utf8_lossy(&output.stdout);
@@ -436,8 +445,12 @@ impl SigningService {
     }
 
     /// Verify an SSH signature and extract signer info
-    pub fn verify_ssh_signature(signature: &str, data: &str, repo_path: &Path) -> Option<String> {
-        let ssh_program = Self::find_ssh_program()?;
+    pub async fn verify_ssh_signature(
+        signature: &str,
+        data: &str,
+        repo_path: &Path,
+    ) -> Option<String> {
+        let ssh_program = Self::find_ssh_program().await?;
 
         // Get allowed signers file from git config
         let repo = git2::Repository::open(repo_path).ok()?;
@@ -471,6 +484,7 @@ impl SigningService {
             ])
             .stdin(std::fs::File::open(data_file.path()).ok()?)
             .output()
+            .await
             .ok()?;
 
         if output.status.success() {
@@ -488,18 +502,24 @@ impl SigningService {
     }
 
     /// Test signing with the given configuration
-    pub fn test_signing(&self, config: &SigningConfig) -> SigningTestResult {
+    pub async fn test_signing(&self, config: &SigningConfig) -> SigningTestResult {
         let test_content = "test signing content";
 
-        let (success, error, program_used) = match self.sign_buffer(test_content, config) {
+        let (success, error, program_used) = match self.sign_buffer(test_content, config).await {
             Ok(_) => {
                 let program = match config.format {
-                    SigningFormat::Gpg => config.gpg_program.clone().or_else(|| {
-                        Self::find_gpg_program().map(|p| p.to_string_lossy().to_string())
-                    }),
-                    SigningFormat::Ssh => config.ssh_program.clone().or_else(|| {
-                        Self::find_ssh_program().map(|p| p.to_string_lossy().to_string())
-                    }),
+                    SigningFormat::Gpg => match config.gpg_program.clone() {
+                        Some(p) => Some(p),
+                        None => Self::find_gpg_program()
+                            .await
+                            .map(|p| p.to_string_lossy().to_string()),
+                    },
+                    SigningFormat::Ssh => match config.ssh_program.clone() {
+                        Some(p) => Some(p),
+                        None => Self::find_ssh_program()
+                            .await
+                            .map(|p| p.to_string_lossy().to_string()),
+                    },
                 };
                 (true, None, program)
             }
@@ -689,28 +709,28 @@ mod tests {
         assert_eq!(service.repo_path, tmp.path());
     }
 
-    #[test]
-    fn test_find_gpg_program() {
+    #[tokio::test]
+    async fn test_find_gpg_program() {
         // This may or may not find GPG depending on the system
-        let result = SigningService::find_gpg_program();
+        let result = SigningService::find_gpg_program().await;
         // Just test that it doesn't panic
         if let Some(path) = result {
             assert!(!path.to_string_lossy().is_empty());
         }
     }
 
-    #[test]
-    fn test_find_ssh_program() {
+    #[tokio::test]
+    async fn test_find_ssh_program() {
         // This may or may not find ssh-keygen depending on the system
-        let result = SigningService::find_ssh_program();
+        let result = SigningService::find_ssh_program().await;
         // Just test that it doesn't panic
         if let Some(path) = result {
             assert!(!path.to_string_lossy().is_empty());
         }
     }
 
-    #[test]
-    fn test_is_signing_available_no_key() {
+    #[tokio::test]
+    async fn test_is_signing_available_no_key() {
         let tmp = TempDir::new().expect("should create temp dir");
 
         // Initialize a git repo
@@ -726,12 +746,13 @@ mod tests {
 
         let available = service
             .is_signing_available(&config)
+            .await
             .expect("should check availability");
         assert!(!available);
     }
 
-    #[test]
-    fn test_is_signing_available_ssh_key_not_exists() {
+    #[tokio::test]
+    async fn test_is_signing_available_ssh_key_not_exists() {
         let tmp = TempDir::new().expect("should create temp dir");
 
         // Initialize a git repo
@@ -747,6 +768,7 @@ mod tests {
 
         let available = service
             .is_signing_available(&config)
+            .await
             .expect("should check availability");
         assert!(!available);
     }
@@ -766,8 +788,8 @@ mod tests {
         assert!(config.format == SigningFormat::Gpg || config.format == SigningFormat::Ssh);
     }
 
-    #[test]
-    fn test_sign_buffer_no_key() {
+    #[tokio::test]
+    async fn test_sign_buffer_no_key() {
         let tmp = TempDir::new().expect("should create temp dir");
 
         // Initialize a git repo
@@ -776,12 +798,12 @@ mod tests {
         let service = SigningService::new(tmp.path());
         let config = SigningConfig::default();
 
-        let result = service.sign_buffer("test content", &config);
+        let result = service.sign_buffer("test content", &config).await;
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_test_signing_no_key() {
+    #[tokio::test]
+    async fn test_test_signing_no_key() {
         let tmp = TempDir::new().expect("should create temp dir");
 
         // Initialize a git repo
@@ -790,7 +812,7 @@ mod tests {
         let service = SigningService::new(tmp.path());
         let config = SigningConfig::default();
 
-        let result = service.test_signing(&config);
+        let result = service.test_signing(&config).await;
         assert!(!result.success);
         assert!(result.error.is_some());
     }

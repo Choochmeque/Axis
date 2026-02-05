@@ -127,6 +127,25 @@ impl HookResult {
             skipped: false,
         }
     }
+
+    /// Convert a failed hook result into an AxisError
+    pub fn to_error(&self) -> crate::error::AxisError {
+        let output = if !self.stderr.is_empty() {
+            self.stderr.clone()
+        } else if !self.stdout.is_empty() {
+            self.stdout.clone()
+        } else {
+            format!(
+                "Hook {} failed with exit code {}",
+                self.hook_type, self.exit_code
+            )
+        };
+        crate::error::AxisError::Other(format!(
+            "Hook '{}' failed:\n{}",
+            self.hook_type,
+            output.trim()
+        ))
+    }
 }
 
 /// Hook info for management UI

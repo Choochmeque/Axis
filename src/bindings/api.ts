@@ -118,37 +118,7 @@ async getDiff(target: DiffTarget, options: DiffOptions | null) : Promise<FileDif
     return await TAURI_INVOKE("get_diff", { target, options });
 },
 /**
- * Get diff for unstaged changes (working directory vs index)
- */
-async getDiffWorkdir(options: DiffOptions | null) : Promise<FileDiff[]> {
-    return await TAURI_INVOKE("get_diff_workdir", { options });
-},
-/**
- * Get diff for staged changes (index vs HEAD)
- */
-async getDiffStaged(options: DiffOptions | null) : Promise<FileDiff[]> {
-    return await TAURI_INVOKE("get_diff_staged", { options });
-},
-/**
- * Get diff for all uncommitted changes (working directory vs HEAD)
- */
-async getDiffHead(options: DiffOptions | null) : Promise<FileDiff[]> {
-    return await TAURI_INVOKE("get_diff_head", { options });
-},
-/**
- * Get diff for a specific commit (commit vs its parent)
- */
-async getDiffCommit(oid: string, options: DiffOptions | null) : Promise<FileDiff[]> {
-    return await TAURI_INVOKE("get_diff_commit", { oid, options });
-},
-/**
- * Get diff between two commits
- */
-async getDiffCommits(fromOid: string, toOid: string, options: DiffOptions | null) : Promise<FileDiff[]> {
-    return await TAURI_INVOKE("get_diff_commits", { fromOid, toOid, options });
-},
-/**
- * Get diff for a single file (staged or unstaged)
+ * Get diff for a single file
  */
 async getFileDiff(path: string, staged: boolean, options: DiffOptions | null) : Promise<FileDiff | null> {
     return await TAURI_INVOKE("get_file_diff", { path, staged, options });

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use crate::storage::RecentRepositoryRow;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -59,6 +61,46 @@ pub struct RecentRepository {
     pub current_branch: Option<String>,
     pub is_pinned: bool,
     pub display_path: String,
+}
+
+impl RecentRepository {
+    /// Build a `RecentRepository` from a database row, enriching with live data.
+    pub fn from_row(row: RecentRepositoryRow) -> Self {
+        let exists = row.path.exists();
+
+        let current_branch = if exists {
+            git2::Repository::open(&row.path).ok().and_then(|repo| {
+                repo.head()
+                    .ok()
+                    .and_then(|head| head.shorthand().map(String::from))
+            })
+        } else {
+            None
+        };
+
+        let display_path = make_display_path(&row.path);
+
+        Self {
+            path: row.path,
+            name: row.name,
+            last_opened: row.last_opened,
+            exists,
+            current_branch,
+            is_pinned: row.is_pinned,
+            display_path,
+        }
+    }
+}
+
+/// Format a path for display, replacing the home directory with `~`.
+pub fn make_display_path(path: &Path) -> String {
+    if let Some(home) = dirs::home_dir() {
+        if let Ok(stripped) = path.strip_prefix(&home) {
+            let sep = std::path::MAIN_SEPARATOR;
+            return format!("~{sep}{}", stripped.display());
+        }
+    }
+    path.display().to_string()
 }
 
 #[cfg(test)]

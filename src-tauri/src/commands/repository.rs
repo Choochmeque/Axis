@@ -6,7 +6,6 @@ use crate::models::{
 };
 use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
-use crate::storage::RecentRepositoryRow;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
@@ -21,11 +20,15 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
     }
 
     // Use switch_active_repository to add to cache and set as active
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Get repo info from the cached service
-    let handle = state.get_git_service()?;
-    let repo_info = handle.with_git2(|git2| git2.get_repository_info()).await?;
+    let repo_info = state
+        .get_git_service()?
+        .read()
+        .await
+        .get_repository_info()
+        .await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -47,7 +50,7 @@ pub async fn init_repository(
     let repo_info = service.get_repository_info()?;
 
     // Now add to cache via switch_active_repository
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -105,7 +108,7 @@ pub async fn clone_repository(
     let repo_info = service.get_repository_info()?;
 
     // Now add to cache via switch_active_repository
-    state.switch_active_repository(&path)?;
+    state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
     state.add_recent_repository(&path, &repo_info.name)?;
@@ -132,7 +135,7 @@ pub async fn switch_active_repository(
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
     }
 
-    state.switch_active_repository(&path)
+    state.switch_active_repository(&path).await
 }
 
 #[tauri::command]
@@ -148,17 +151,16 @@ pub async fn close_repository_path(state: State<'_, AppState>, path: String) -> 
 pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repository> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.get_repository_info())
+        .read()
+        .await
+        .get_repository_info()
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.status())
-        .await
+    state.get_git_service()?.read().await.status().await
 }
 
 #[tauri::command]
@@ -167,10 +169,7 @@ pub async fn get_commit_history(
     state: State<'_, AppState>,
     options: LogOptions,
 ) -> Result<Vec<Commit>> {
-    state
-        .get_git_service()?
-        .with_git2(|git2| git2.log(options))
-        .await
+    state.get_git_service()?.read().await.log(options).await
 }
 
 #[tauri::command]
@@ -178,17 +177,16 @@ pub async fn get_commit_history(
 pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> Result<Vec<Branch>> {
     state
         .get_git_service()?
-        .with_git2(|git2| git2.list_branches(filter))
+        .read()
+        .await
+        .list_branches(filter)
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
-    state
-        .get_git_service()?
-        .with_git2(move |git2| git2.get_commit(&oid))
-        .await
+    state.get_git_service()?.read().await.get_commit(&oid).await
 }
 
 #[tauri::command]
@@ -198,7 +196,7 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 
     let handles: Vec<_> = rows
         .into_iter()
-        .map(|row| tauri::async_runtime::spawn_blocking(move || enrich_repo_row(row)))
+        .map(|row| tauri::async_runtime::spawn_blocking(move || RecentRepository::from_row(row)))
         .collect();
 
     let mut repos = Vec::with_capacity(handles.len());
@@ -210,42 +208,6 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
     }
 
     Ok(repos)
-}
-
-fn enrich_repo_row(row: RecentRepositoryRow) -> RecentRepository {
-    let exists = row.path.exists();
-
-    let current_branch = if exists {
-        git2::Repository::open(&row.path).ok().and_then(|repo| {
-            repo.head()
-                .ok()
-                .and_then(|head| head.shorthand().map(String::from))
-        })
-    } else {
-        None
-    };
-
-    let display_path = make_display_path(&row.path);
-
-    RecentRepository {
-        path: row.path,
-        name: row.name,
-        last_opened: row.last_opened,
-        exists,
-        current_branch,
-        is_pinned: row.is_pinned,
-        display_path,
-    }
-}
-
-fn make_display_path(path: &std::path::Path) -> String {
-    if let Some(home) = dirs::home_dir() {
-        if let Ok(stripped) = path.strip_prefix(&home) {
-            let sep = std::path::MAIN_SEPARATOR;
-            return format!("~{sep}{}", stripped.display());
-        }
-    }
-    path.display().to_string()
 }
 
 #[tauri::command]

@@ -1,0 +1,118 @@
+use crate::error::Result;
+use crate::models::{GitHookType, HookDetails, HookInfo, HookResult, HookTemplate};
+use std::path::Path;
+
+use super::RepoOperations;
+
+/// Hook execution and management operations.
+impl RepoOperations {
+    // ---- Execution (async) ----
+
+    pub async fn run_pre_commit(&self) -> HookResult {
+        self.service.hook().run_pre_commit().await
+    }
+
+    pub async fn run_prepare_commit_msg(
+        &self,
+        msg_file: &Path,
+        source: Option<&str>,
+        sha: Option<&str>,
+    ) -> HookResult {
+        self.service
+            .hook()
+            .run_prepare_commit_msg(msg_file, source, sha)
+            .await
+    }
+
+    pub async fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
+        self.service.hook().run_commit_msg(msg_file).await
+    }
+
+    pub async fn run_post_commit(&self) -> HookResult {
+        self.service.hook().run_post_commit().await
+    }
+
+    pub async fn run_pre_push(
+        &self,
+        remote_name: &str,
+        remote_url: &str,
+        refs_stdin: &str,
+    ) -> HookResult {
+        self.service
+            .hook()
+            .run_pre_push(remote_name, remote_url, refs_stdin)
+            .await
+    }
+
+    pub async fn run_post_merge(&self, is_squash: bool) -> HookResult {
+        self.service.hook().run_post_merge(is_squash).await
+    }
+
+    pub async fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
+        self.service
+            .hook()
+            .run_pre_rebase(upstream, rebased_branch)
+            .await
+    }
+
+    pub async fn run_post_checkout(
+        &self,
+        prev_head: &str,
+        new_head: &str,
+        is_branch: bool,
+    ) -> HookResult {
+        self.service
+            .hook()
+            .run_post_checkout(prev_head, new_head, is_branch)
+            .await
+    }
+
+    pub async fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
+        self.service
+            .hook()
+            .run_post_rewrite(command, rewrites_stdin)
+            .await
+    }
+
+    // ---- Management (sync) ----
+
+    pub fn hooks_path(&self) -> &Path {
+        self.service.hook().hooks_path()
+    }
+
+    pub fn list_hooks(&self) -> Vec<HookInfo> {
+        self.service.hook().list_hooks()
+    }
+
+    pub fn get_hook_info(&self, hook_type: GitHookType) -> HookInfo {
+        self.service.hook().get_hook_info(hook_type)
+    }
+
+    pub fn get_hook_details(&self, hook_type: GitHookType) -> Result<HookDetails> {
+        self.service.hook().get_hook_details(hook_type)
+    }
+
+    pub fn create_hook(&self, hook_type: GitHookType, content: &str) -> Result<()> {
+        self.service.hook().create_hook(hook_type, content)
+    }
+
+    pub fn update_hook(&self, hook_type: GitHookType, content: &str) -> Result<()> {
+        self.service.hook().update_hook(hook_type, content)
+    }
+
+    pub fn delete_hook(&self, hook_type: GitHookType) -> Result<()> {
+        self.service.hook().delete_hook(hook_type)
+    }
+
+    pub fn toggle_hook(&self, hook_type: GitHookType) -> Result<bool> {
+        self.service.hook().toggle_hook(hook_type)
+    }
+
+    pub fn get_templates(&self) -> Vec<HookTemplate> {
+        self.service.hook().get_templates()
+    }
+
+    pub fn get_templates_for_type(&self, hook_type: GitHookType) -> Vec<HookTemplate> {
+        self.service.hook().get_templates_for_type(hook_type)
+    }
+}

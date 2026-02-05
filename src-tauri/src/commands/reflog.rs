@@ -16,7 +16,7 @@ pub async fn reflog_list(
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.get_reflog(&options))
+        .get_reflog(&options)
         .await
 }
 
@@ -24,12 +24,7 @@ pub async fn reflog_list(
 #[tauri::command]
 #[specta::specta]
 pub async fn reflog_refs(state: State<'_, AppState>) -> Result<Vec<String>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(|git2| git2.list_reflogs())
-        .await
+    state.get_git_service()?.read().await.list_reflogs().await
 }
 
 /// Get total count of reflog entries for a reference
@@ -40,7 +35,7 @@ pub async fn reflog_count(state: State<'_, AppState>, refname: String) -> Result
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.get_reflog_count(&refname))
+        .get_reflog_count(&refname)
         .await
 }
 
@@ -52,6 +47,6 @@ pub async fn reflog_checkout(state: State<'_, AppState>, reflog_ref: String) -> 
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.checkout_reflog_entry(&reflog_ref))
+        .checkout_reflog_entry(&reflog_ref)
         .await
 }

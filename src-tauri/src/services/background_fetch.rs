@@ -53,17 +53,16 @@ impl BackgroundFetchService {
                             .unwrap_or(None);
 
                         // List remotes (read lock)
-                        let remotes =
-                            match handle.read().await.git2(|git2| git2.list_remotes()).await {
-                                Ok(remotes) => remotes,
-                                Err(e) => {
-                                    log::warn!(
-                                        "Background fetch: failed to list remotes for {}: {e}",
-                                        path.display()
-                                    );
-                                    continue;
-                                }
-                            };
+                        let remotes = match handle.read().await.list_remotes().await {
+                            Ok(remotes) => remotes,
+                            Err(e) => {
+                                log::warn!(
+                                    "Background fetch: failed to list remotes for {}: {e}",
+                                    path.display()
+                                );
+                                continue;
+                            }
+                        };
 
                         let options = FetchOptions::default();
                         let mut total_updates = 0u32;
@@ -104,20 +103,16 @@ impl BackgroundFetchService {
                             });
 
                             // Fetch (write lock, per remote)
-                            let remote_name = remote.name.clone();
-                            let options = options.clone();
                             match handle
                                 .write()
                                 .await
-                                .git2(move |git2| {
-                                    git2.fetch(
-                                        &remote_name,
-                                        &options,
-                                        None,
-                                        None::<fn(&git2::Progress<'_>) -> bool>,
-                                        ssh_creds,
-                                    )
-                                })
+                                .fetch(
+                                    &remote.name,
+                                    &options,
+                                    None,
+                                    None::<fn(&git2::Progress<'_>) -> bool>,
+                                    ssh_creds,
+                                )
                                 .await
                             {
                                 Ok(result) => {

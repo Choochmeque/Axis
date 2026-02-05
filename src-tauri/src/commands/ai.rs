@@ -16,7 +16,7 @@ async fn format_diff_for_ai(state: &State<'_, AppState>) -> Result<String> {
         .get_git_service()?
         .read()
         .await
-        .git2(|git2| git2.diff_staged(&DiffOptions::default()))
+        .diff_staged(&DiffOptions::default())
         .await?;
 
     let mut output = String::new();
@@ -207,7 +207,7 @@ pub async fn generate_pr_description(
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.compare_branches(&remote_source, &remote_target))
+        .compare_branches(&remote_source, &remote_target)
         .await?;
 
     if compare_result.ahead_commits.is_empty() {

@@ -9,13 +9,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn worktree_list(state: State<'_, AppState>) -> Result<Vec<Worktree>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git_cli()
-        .worktree_list()
-        .await
+    state.get_git_service()?.read().await.worktree_list().await
 }
 
 /// Add a new worktree
@@ -29,7 +23,6 @@ pub async fn worktree_add(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .worktree_add(&options)
         .await
 }
@@ -45,7 +38,6 @@ pub async fn worktree_remove(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .worktree_remove(&options)
         .await
 }
@@ -62,7 +54,6 @@ pub async fn worktree_lock(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .worktree_lock(&path, reason.as_deref())
         .await
 }
@@ -75,7 +66,6 @@ pub async fn worktree_unlock(state: State<'_, AppState>, path: String) -> Result
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .worktree_unlock(&path)
         .await
 }
@@ -88,7 +78,6 @@ pub async fn worktree_prune(state: State<'_, AppState>, dry_run: bool) -> Result
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .worktree_prune(dry_run)
         .await
 }

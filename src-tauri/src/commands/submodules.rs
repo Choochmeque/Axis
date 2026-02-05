@@ -11,13 +11,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn submodule_list(state: State<'_, AppState>) -> Result<Vec<Submodule>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git_cli()
-        .submodule_list()
-        .await
+    state.get_git_service()?.read().await.submodule_list().await
 }
 
 /// Add a new submodule
@@ -31,7 +25,6 @@ pub async fn submodule_add(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_add(&options)
         .await
 }
@@ -47,7 +40,6 @@ pub async fn submodule_init(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_init(&paths)
         .await
 }
@@ -63,7 +55,6 @@ pub async fn submodule_update(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_update(&options)
         .await
 }
@@ -79,7 +70,6 @@ pub async fn submodule_sync(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_sync(&options)
         .await
 }
@@ -96,7 +86,6 @@ pub async fn submodule_deinit(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_deinit(&paths, force)
         .await
 }
@@ -109,7 +98,6 @@ pub async fn submodule_remove(state: State<'_, AppState>, path: String) -> Resul
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .submodule_remove(&path)
         .await
 }
@@ -122,7 +110,6 @@ pub async fn submodule_summary(state: State<'_, AppState>) -> Result<String> {
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .submodule_summary()
         .await
 }

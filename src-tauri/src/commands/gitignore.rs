@@ -14,7 +14,7 @@ pub async fn add_to_gitignore(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.add_to_gitignore(&pattern, &gitignore_path))
+        .add_to_gitignore(&pattern, &gitignore_path)
         .await
 }
 
@@ -28,7 +28,7 @@ pub async fn add_to_global_gitignore(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.add_to_global_gitignore(&pattern))
+        .add_to_global_gitignore(&pattern)
         .await
 }
 
@@ -42,6 +42,6 @@ pub async fn get_ignore_options(
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.get_ignore_options(&file_path))
+        .get_ignore_options(&file_path)
         .await
 }

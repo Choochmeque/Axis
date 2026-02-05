@@ -1829,6 +1829,7 @@ impl GitCliService {
             }
             tar_args.push(reference);
 
+            // TODO: streaming implementation to avoid loading entire archive into memory
             let child = create_command("git")
                 .args(&tar_args)
                 .current_dir(&self.repo_path)

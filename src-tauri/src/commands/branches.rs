@@ -17,7 +17,7 @@ pub async fn create_branch(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.create_branch(&name, &options))
+        .create_branch(&name, &options)
         .await
 }
 
@@ -33,7 +33,7 @@ pub async fn delete_branch(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.delete_branch(&name, force.unwrap_or(false)))
+        .delete_branch(&name, force.unwrap_or(false))
         .await
 }
 
@@ -50,7 +50,7 @@ pub async fn rename_branch(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.rename_branch(&old_name, &new_name, force.unwrap_or(false)))
+        .rename_branch(&old_name, &new_name, force.unwrap_or(false))
         .await
 }
 
@@ -67,20 +67,15 @@ pub async fn checkout_branch(
     let guard = git_service.write().await;
 
     // Get HEAD before checkout for post-checkout hook
-    let prev_head = guard.git2(|git2| git2.get_head_oid()).await;
+    let prev_head = guard.get_head_oid().await;
 
     // Perform checkout
-    guard
-        .git2(move |git2| git2.checkout_branch(&name, &options))
-        .await?;
+    guard.checkout_branch(&name, &options).await?;
 
     // Run post-checkout hook (informational, don't fail on error)
     if !settings.bypass_hooks {
-        let new_head = guard.git2(|git2| git2.get_head_oid()).await;
-        let result = guard
-            .hook()
-            .run_post_checkout(&prev_head, &new_head, true)
-            .await;
+        let new_head = guard.get_head_oid().await;
+        let result = guard.run_post_checkout(&prev_head, &new_head, true).await;
         if !result.skipped && !result.success {
             log::warn!("post-checkout hook failed: {}", result.stderr);
         }
@@ -104,22 +99,17 @@ pub async fn checkout_remote_branch(
     let guard = git_service.write().await;
 
     // Get HEAD before checkout for post-checkout hook
-    let prev_head = guard.git2(|git2| git2.get_head_oid()).await;
+    let prev_head = guard.get_head_oid().await;
 
     // Perform checkout
     guard
-        .git2(move |git2| {
-            git2.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
-        })
+        .checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
         .await?;
 
     // Run post-checkout hook (informational, don't fail on error)
     if !settings.bypass_hooks {
-        let new_head = guard.git2(|git2| git2.get_head_oid()).await;
-        let result = guard
-            .hook()
-            .run_post_checkout(&prev_head, &new_head, true)
-            .await;
+        let new_head = guard.get_head_oid().await;
+        let result = guard.run_post_checkout(&prev_head, &new_head, true).await;
         if !result.skipped && !result.success {
             log::warn!("post-checkout hook failed: {}", result.stderr);
         }
@@ -140,7 +130,7 @@ pub async fn get_branch(
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.get_branch(&name, branch_type))
+        .get_branch(&name, branch_type)
         .await
 }
 
@@ -156,7 +146,7 @@ pub async fn set_branch_upstream(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.set_branch_upstream(&branch_name, upstream.as_deref()))
+        .set_branch_upstream(&branch_name, upstream.as_deref())
         .await
 }
 
@@ -174,14 +164,12 @@ pub async fn delete_remote_branch(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| {
-            git2.delete_remote_branch(
-                &remote_name,
-                &branch_name,
-                force.unwrap_or(false),
-                ssh_creds,
-            )
-        })
+        .delete_remote_branch(
+            &remote_name,
+            &branch_name,
+            force.unwrap_or(false),
+            ssh_creds,
+        )
         .await
 }
 
@@ -197,6 +185,6 @@ pub async fn compare_branches(
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.compare_branches(&base_ref, &compare_ref))
+        .compare_branches(&base_ref, &compare_ref)
         .await
 }

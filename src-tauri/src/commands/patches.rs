@@ -20,7 +20,6 @@ pub async fn create_archive(
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .archive(
             &options.reference,
             &options.format,
@@ -44,7 +43,6 @@ pub async fn format_patch(
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .format_patch(&options.range, &output_dir)
         .await
 }
@@ -70,7 +68,6 @@ pub async fn create_patch(
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .create_patch_from_diff(options.commit_oid.as_deref(), &output_path)
         .await
 }
@@ -87,7 +84,6 @@ pub async fn apply_patch(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .apply_patch(&patch_path, options.check_only, options.three_way)
         .await
 }
@@ -104,7 +100,6 @@ pub async fn apply_mailbox(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .apply_mailbox(&patch_paths, options.three_way)
         .await
 }
@@ -113,37 +108,19 @@ pub async fn apply_mailbox(
 #[tauri::command]
 #[specta::specta]
 pub async fn am_abort(state: State<'_, AppState>) -> Result<PatchResult> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git_cli()
-        .am_abort()
-        .await
+    state.get_git_service()?.write().await.am_abort().await
 }
 
 /// Continue git am after resolving conflicts
 #[tauri::command]
 #[specta::specta]
 pub async fn am_continue(state: State<'_, AppState>) -> Result<PatchResult> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git_cli()
-        .am_continue()
-        .await
+    state.get_git_service()?.write().await.am_continue().await
 }
 
 /// Skip the current patch in git am
 #[tauri::command]
 #[specta::specta]
 pub async fn am_skip(state: State<'_, AppState>) -> Result<PatchResult> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git_cli()
-        .am_skip()
-        .await
+    state.get_git_service()?.write().await.am_skip().await
 }

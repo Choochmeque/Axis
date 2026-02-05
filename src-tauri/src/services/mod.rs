@@ -9,6 +9,7 @@ mod git_cli_service;
 mod git_service;
 mod hook_service;
 mod integrations;
+pub(crate) mod ops;
 mod process_utils;
 mod progress_emitter;
 mod signature_cache;

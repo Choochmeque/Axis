@@ -55,11 +55,6 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::check_files_for_lfs,
             // Diff commands
             crate::commands::get_diff,
-            crate::commands::get_diff_workdir,
-            crate::commands::get_diff_staged,
-            crate::commands::get_diff_head,
-            crate::commands::get_diff_commit,
-            crate::commands::get_diff_commits,
             crate::commands::get_file_diff,
             // Branch commands
             crate::commands::create_branch,

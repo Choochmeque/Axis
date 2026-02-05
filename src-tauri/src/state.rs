@@ -1,13 +1,15 @@
 use crate::error::{AxisError, Result};
 use crate::models::{AppSettings, Repository, SshCredentials};
+use crate::services::ops::RepoOperations;
 use crate::services::{
-    AvatarService, BackgroundFetchService, CommitCache, Git2Service, GitCliService, GitService,
-    HookService, IntegrationService, ProgressRegistry, SignatureVerificationCache, SshKeyService,
+    AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
+    ProgressRegistry, SignatureVerificationCache, SshKeyService,
 };
 use crate::storage::Database;
 use crate::storage::RecentRepositoryRow;
 use secrecy::SecretString;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{AppHandle, Manager};
@@ -25,48 +27,33 @@ pub struct GitServiceHandle {
 
 /// Guard for shared read access to a repository.
 /// Multiple readers can hold this simultaneously.
+/// Derefs to `RepoOperations` for unified async domain methods.
 pub struct RepoReadGuard<'a> {
     _guard: tokio::sync::RwLockReadGuard<'a, ()>,
-    service: Arc<GitService>,
+    ops: RepoOperations,
 }
 
 /// Guard for exclusive write access to a repository.
 /// Only one writer at a time; blocks all readers.
+/// Derefs to `RepoOperations` for unified async domain methods.
 pub struct RepoWriteGuard<'a> {
     _guard: tokio::sync::RwLockWriteGuard<'a, ()>,
-    service: Arc<GitService>,
+    ops: RepoOperations,
 }
 
-macro_rules! impl_repo_guard {
-    ($guard_type:ident) => {
-        impl<'a> $guard_type<'a> {
-            /// Access the Git CLI service (methods are async, use tokio::process::Command)
-            pub fn git_cli(&self) -> &GitCliService {
-                self.service.git_cli()
-            }
-
-            /// Access the Hook service (methods are async, use tokio::process::Command)
-            pub fn hook(&self) -> &HookService {
-                self.service.hook()
-            }
-
-            /// Run a git2 operation on a blocking thread (lock held for duration)
-            pub async fn git2<F, R>(&self, f: F) -> R
-            where
-                F: FnOnce(&Git2Service) -> R + Send + 'static,
-                R: Send + 'static,
-            {
-                let service = self.service.clone();
-                tauri::async_runtime::spawn_blocking(move || f(service.git2()))
-                    .await
-                    .unwrap_or_else(|e| panic!("git2 task panicked: {e}"))
-            }
-        }
-    };
+impl<'a> Deref for RepoReadGuard<'a> {
+    type Target = RepoOperations;
+    fn deref(&self) -> &RepoOperations {
+        &self.ops
+    }
 }
 
-impl_repo_guard!(RepoReadGuard);
-impl_repo_guard!(RepoWriteGuard);
+impl<'a> Deref for RepoWriteGuard<'a> {
+    type Target = RepoOperations;
+    fn deref(&self) -> &RepoOperations {
+        &self.ops
+    }
+}
 
 impl GitServiceHandle {
     pub fn new(service: GitService) -> Self {
@@ -81,7 +68,7 @@ impl GitServiceHandle {
         let guard = self.rw_lock.read().await;
         RepoReadGuard {
             _guard: guard,
-            service: self.service.clone(),
+            ops: RepoOperations::new(self.service.clone()),
         }
     }
 
@@ -90,7 +77,7 @@ impl GitServiceHandle {
         let guard = self.rw_lock.write().await;
         RepoWriteGuard {
             _guard: guard,
-            service: self.service.clone(),
+            ops: RepoOperations::new(self.service.clone()),
         }
     }
 
@@ -323,7 +310,7 @@ impl AppState {
             .unwrap_or_else(|e| e.into_inner()) = Some(path.to_path_buf());
 
         // Return repo info
-        let result = handle.read().await.git2(|g| g.get_repository_info()).await;
+        let result = handle.read().await.get_repository_info().await;
         result
     }
 

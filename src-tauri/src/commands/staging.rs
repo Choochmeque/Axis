@@ -32,7 +32,7 @@ pub async fn stage_file(state: State<'_, AppState>, path: String) -> Result<()> 
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.stage_file(&path))
+        .stage_file(&path)
         .await
 }
 
@@ -43,19 +43,14 @@ pub async fn stage_files(state: State<'_, AppState>, paths: Vec<String>) -> Resu
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.stage_files(&paths))
+        .stage_files(&paths)
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn stage_all(state: State<'_, AppState>) -> Result<()> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git2(|git2| git2.stage_all())
-        .await
+    state.get_git_service()?.write().await.stage_all().await
 }
 
 #[tauri::command]
@@ -65,7 +60,7 @@ pub async fn unstage_file(state: State<'_, AppState>, path: String) -> Result<()
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.unstage_file(&path))
+        .unstage_file(&path)
         .await
 }
 
@@ -76,19 +71,14 @@ pub async fn unstage_files(state: State<'_, AppState>, paths: Vec<String>) -> Re
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.unstage_files(&paths))
+        .unstage_files(&paths)
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn unstage_all(state: State<'_, AppState>) -> Result<()> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git2(|git2| git2.unstage_all())
-        .await
+    state.get_git_service()?.write().await.unstage_all().await
 }
 
 #[tauri::command]
@@ -98,7 +88,7 @@ pub async fn discard_file(state: State<'_, AppState>, path: String) -> Result<()
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.discard_file(&path))
+        .discard_file(&path)
         .await
 }
 
@@ -109,7 +99,7 @@ pub async fn discard_unstaged(state: State<'_, AppState>) -> Result<()> {
         .get_git_service()?
         .write()
         .await
-        .git2(|git2| git2.discard_unstaged())
+        .discard_unstaged()
         .await
 }
 
@@ -135,7 +125,7 @@ pub async fn create_commit(
 
     if !skip_hooks {
         // 1. Run pre-commit hook
-        let result = guard.hook().run_pre_commit().await;
+        let result = guard.run_pre_commit().await;
         if !result.skipped && !result.success {
             return Err(hook_error(&result));
         }
@@ -146,7 +136,6 @@ pub async fn create_commit(
 
         let msg_file_clone = msg_file.clone();
         let result = guard
-            .hook()
             .run_prepare_commit_msg(&msg_file_clone, None, None)
             .await;
         if !result.skipped && !result.success {
@@ -160,7 +149,7 @@ pub async fn create_commit(
 
         // 3. Run commit-msg hook
         let msg_file_clone = msg_file.clone();
-        let result = guard.hook().run_commit_msg(&msg_file_clone).await;
+        let result = guard.run_commit_msg(&msg_file_clone).await;
         if !result.skipped && !result.success {
             return Err(hook_error(&result));
         }
@@ -183,19 +172,17 @@ pub async fn create_commit(
 
     // 4. Create the commit
     let oid = guard
-        .git2(move |git2| {
-            git2.create_commit(
-                &final_message,
-                author_name.as_deref(),
-                author_email.as_deref(),
-                signing_config.as_ref(),
-            )
-        })
+        .create_commit(
+            &final_message,
+            author_name.as_deref(),
+            author_email.as_deref(),
+            signing_config.as_ref(),
+        )
         .await?;
 
     // 5. Run post-commit hook (don't fail on error, just log)
     if !skip_hooks {
-        let result = guard.hook().run_post_commit().await;
+        let result = guard.run_post_commit().await;
         if !result.skipped && !result.success {
             log::warn!("post-commit hook failed: {}", result.stderr);
         }
@@ -221,7 +208,7 @@ pub async fn amend_commit(
     let guard = git_service.write().await;
 
     // Get old commit OID before amend for post-rewrite hook
-    let old_oid = guard.git2(|git2| git2.get_head_oid_opt()).await;
+    let old_oid = guard.get_head_oid_opt().await;
 
     let mut final_message = message.clone();
 
@@ -231,7 +218,7 @@ pub async fn amend_commit(
         fs::write(&msg_file, msg)?;
 
         let msg_file_clone = msg_file.clone();
-        let result = guard.hook().run_commit_msg(&msg_file_clone).await;
+        let result = guard.run_commit_msg(&msg_file_clone).await;
         if !result.skipped && !result.success {
             return Err(hook_error(&result));
         }
@@ -243,15 +230,13 @@ pub async fn amend_commit(
     }
 
     // Amend the commit
-    let new_oid = guard
-        .git2(move |git2| git2.amend_commit(final_message.as_deref()))
-        .await?;
+    let new_oid = guard.amend_commit(final_message.as_deref()).await?;
 
     // Run post-rewrite hook
     if !skip_hooks {
         if let Some(old) = old_oid {
             let rewrites = format!("{old} {new_oid}\n");
-            let result = guard.hook().run_post_rewrite("amend", &rewrites).await;
+            let result = guard.run_post_rewrite("amend", &rewrites).await;
             if !result.skipped && !result.success {
                 log::warn!("post-rewrite hook failed: {}", result.stderr);
             }
@@ -268,7 +253,7 @@ pub async fn get_user_signature(state: State<'_, AppState>) -> Result<(String, S
         .get_git_service()?
         .read()
         .await
-        .git2(|git2| git2.get_user_signature())
+        .get_user_signature()
         .await
 }
 
@@ -279,7 +264,6 @@ pub async fn stage_hunk(state: State<'_, AppState>, patch: String) -> Result<()>
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stage_hunk(&patch)
         .await
 }
@@ -291,7 +275,6 @@ pub async fn unstage_hunk(state: State<'_, AppState>, patch: String) -> Result<(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .unstage_hunk(&patch)
         .await
 }
@@ -303,7 +286,6 @@ pub async fn discard_hunk(state: State<'_, AppState>, patch: String) -> Result<(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .discard_hunk(&patch)
         .await
 }
@@ -315,7 +297,7 @@ pub async fn delete_file(state: State<'_, AppState>, path: String) -> Result<()>
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.delete_file(&path))
+        .delete_file(&path)
         .await
 }
 
@@ -330,13 +312,9 @@ pub async fn check_files_for_lfs(
     let guard = git_service.read().await;
 
     // Get LFS status using existing CLI service
-    let lfs_status = guard.git_cli().lfs_status().await?;
+    let lfs_status = guard.lfs_status().await?;
     let tracked_patterns = if lfs_status.is_installed {
-        guard
-            .git_cli()
-            .lfs_list_tracked_patterns()
-            .await
-            .unwrap_or_default()
+        guard.lfs_list_tracked_patterns().await.unwrap_or_default()
     } else {
         vec![]
     };
@@ -344,7 +322,7 @@ pub async fn check_files_for_lfs(
     // Check files using git2 service
     let pattern_strings: Vec<String> = tracked_patterns.iter().map(|p| p.pattern.clone()).collect();
     let files = guard
-        .git2(move |git2| git2.check_files_for_lfs(&paths, threshold, &pattern_strings))
+        .check_files_for_lfs(&paths, threshold, &pattern_strings)
         .await?;
 
     Ok(LfsCheckResult {

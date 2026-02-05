@@ -9,13 +9,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn stash_list(state: State<'_, AppState>) -> Result<Vec<StashEntry>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git_cli()
-        .stash_list()
-        .await
+    state.get_git_service()?.read().await.stash_list().await
 }
 
 /// Create a new stash
@@ -29,7 +23,6 @@ pub async fn stash_save(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stash_save(&options)
         .await
 }
@@ -45,7 +38,6 @@ pub async fn stash_apply(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stash_apply(&options)
         .await
 }
@@ -61,7 +53,6 @@ pub async fn stash_pop(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stash_pop(&options)
         .await
 }
@@ -74,7 +65,6 @@ pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Res
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stash_drop(index)
         .await
 }
@@ -83,13 +73,7 @@ pub async fn stash_drop(state: State<'_, AppState>, index: Option<usize>) -> Res
 #[tauri::command]
 #[specta::specta]
 pub async fn stash_clear(state: State<'_, AppState>) -> Result<StashResult> {
-    state
-        .get_git_service()?
-        .write()
-        .await
-        .git_cli()
-        .stash_clear()
-        .await
+    state.get_git_service()?.write().await.stash_clear().await
 }
 
 /// Show the diff of a stash
@@ -104,7 +88,6 @@ pub async fn stash_show(
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .stash_show(index, stat_only)
         .await
 }
@@ -121,7 +104,6 @@ pub async fn stash_branch(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .stash_branch(&branch_name, index)
         .await
 }

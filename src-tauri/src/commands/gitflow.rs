@@ -15,7 +15,6 @@ pub async fn gitflow_is_initialized(state: State<'_, AppState>) -> Result<bool> 
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .gitflow_is_initialized()
         .await
 }
@@ -24,13 +23,7 @@ pub async fn gitflow_is_initialized(state: State<'_, AppState>) -> Result<bool> 
 #[tauri::command]
 #[specta::specta]
 pub async fn gitflow_config(state: State<'_, AppState>) -> Result<Option<GitFlowConfig>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git_cli()
-        .gitflow_config()
-        .await
+    state.get_git_service()?.read().await.gitflow_config().await
 }
 
 /// Initialize git-flow
@@ -44,7 +37,6 @@ pub async fn gitflow_init(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_init(&options)
         .await
 }
@@ -61,7 +53,6 @@ pub async fn gitflow_feature_start(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_start(GitFlowBranchType::Feature, &name, base.as_deref())
         .await
 }
@@ -78,7 +69,6 @@ pub async fn gitflow_feature_finish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_finish(GitFlowBranchType::Feature, &name, &options)
         .await
 }
@@ -94,7 +84,6 @@ pub async fn gitflow_feature_publish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_publish(GitFlowBranchType::Feature, &name)
         .await
 }
@@ -107,7 +96,6 @@ pub async fn gitflow_feature_list(state: State<'_, AppState>) -> Result<Vec<Stri
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .gitflow_list(GitFlowBranchType::Feature)
         .await
 }
@@ -124,7 +112,6 @@ pub async fn gitflow_release_start(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_start(GitFlowBranchType::Release, &name, base.as_deref())
         .await
 }
@@ -141,7 +128,6 @@ pub async fn gitflow_release_finish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_finish(GitFlowBranchType::Release, &name, &options)
         .await
 }
@@ -157,7 +143,6 @@ pub async fn gitflow_release_publish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_publish(GitFlowBranchType::Release, &name)
         .await
 }
@@ -170,7 +155,6 @@ pub async fn gitflow_release_list(state: State<'_, AppState>) -> Result<Vec<Stri
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .gitflow_list(GitFlowBranchType::Release)
         .await
 }
@@ -187,7 +171,6 @@ pub async fn gitflow_hotfix_start(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_start(GitFlowBranchType::Hotfix, &name, base.as_deref())
         .await
 }
@@ -204,7 +187,6 @@ pub async fn gitflow_hotfix_finish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_finish(GitFlowBranchType::Hotfix, &name, &options)
         .await
 }
@@ -220,7 +202,6 @@ pub async fn gitflow_hotfix_publish(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .gitflow_publish(GitFlowBranchType::Hotfix, &name)
         .await
 }
@@ -233,7 +214,6 @@ pub async fn gitflow_hotfix_list(state: State<'_, AppState>) -> Result<Vec<Strin
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .gitflow_list(GitFlowBranchType::Hotfix)
         .await
 }

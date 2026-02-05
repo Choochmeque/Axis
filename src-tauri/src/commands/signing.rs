@@ -69,12 +69,12 @@ pub async fn verify_commit_signature(
         return Ok(cached);
     }
 
-    // Verify via git2 service (runs on blocking thread)
+    // Verify via unified API (runs on blocking thread internally)
     let result = state
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.verify_commit_signature(&oid, &format))
+        .verify_commit_signature(&oid, &format)
         .await?;
 
     // Cache the result

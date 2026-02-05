@@ -29,42 +29,23 @@ async fn build_push_refs_stdin(
         let local_sha = git_service
             .read()
             .await
-            .git2({
-                let local_ref = local_ref.clone();
-                move |git2| {
-                    git2.repo().ok().and_then(|repo| {
-                        repo.revparse_single(&local_ref)
-                            .ok()
-                            .map(|obj| obj.id().to_string())
-                    })
-                }
-            })
+            .resolve_ref(&local_ref)
             .await
             .unwrap_or_else(|| "0".repeat(40));
 
         // Get remote SHA (what the remote currently has)
+        let remote_ref_name = format!(
+            "refs/remotes/{remote_name}/{}",
+            refspec
+                .split(':')
+                .next()
+                .unwrap_or(refspec)
+                .replace("refs/heads/", "")
+        );
         let remote_sha = git_service
             .read()
             .await
-            .git2({
-                let refspec = refspec.clone();
-                let remote_name = remote_name.to_string();
-                move |git2| {
-                    let remote_ref_name = format!(
-                        "refs/remotes/{remote_name}/{}",
-                        refspec
-                            .split(':')
-                            .next()
-                            .unwrap_or(&refspec)
-                            .replace("refs/heads/", "")
-                    );
-                    git2.repo().ok().and_then(|repo| {
-                        repo.revparse_single(&remote_ref_name)
-                            .ok()
-                            .map(|obj| obj.id().to_string())
-                    })
-                }
-            })
+            .resolve_ref(&remote_ref_name)
             .await
             .unwrap_or_else(|| "0".repeat(40));
 
@@ -77,12 +58,7 @@ async fn build_push_refs_stdin(
 #[tauri::command]
 #[specta::specta]
 pub async fn list_remotes(state: State<'_, AppState>) -> Result<Vec<Remote>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(|git2| git2.list_remotes())
-        .await
+    state.get_git_service()?.read().await.list_remotes().await
 }
 
 #[tauri::command]
@@ -92,7 +68,7 @@ pub async fn get_remote(state: State<'_, AppState>, name: String) -> Result<Remo
         .get_git_service()?
         .read()
         .await
-        .git2(move |git2| git2.get_remote(&name))
+        .get_remote(&name)
         .await
 }
 
@@ -103,7 +79,7 @@ pub async fn add_remote(state: State<'_, AppState>, name: String, url: String) -
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.add_remote(&name, &url))
+        .add_remote(&name, &url)
         .await
 }
 
@@ -114,7 +90,7 @@ pub async fn remove_remote(state: State<'_, AppState>, name: String) -> Result<(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.remove_remote(&name))
+        .remove_remote(&name)
         .await
 }
 
@@ -129,7 +105,7 @@ pub async fn rename_remote(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.rename_remote(&old_name, &new_name))
+        .rename_remote(&old_name, &new_name)
         .await
 }
 
@@ -140,7 +116,7 @@ pub async fn set_remote_url(state: State<'_, AppState>, name: String, url: Strin
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.set_remote_url(&name, &url))
+        .set_remote_url(&name, &url)
         .await
 }
 
@@ -155,7 +131,7 @@ pub async fn set_remote_push_url(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.set_remote_push_url(&name, &url))
+        .set_remote_push_url(&name, &url)
         .await
 }
 
@@ -172,24 +148,17 @@ pub async fn fetch_remote(
 
     ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
-    state
+    let cb = ctx.make_receive_callback(GitOperationType::Fetch);
+    let result = state
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| {
-            let result = git2.fetch(
-                &remote_name,
-                &options,
-                None,
-                Some(ctx.make_receive_callback(GitOperationType::Fetch)),
-                ssh_creds,
-            );
+        .fetch(&remote_name, &options, None, Some(cb), ssh_creds)
+        .await;
 
-            ctx.handle_result(&result, GitOperationType::Fetch);
+    ctx.handle_result(&result, GitOperationType::Fetch);
 
-            result
-        })
-        .await
+    result
 }
 
 #[tauri::command]
@@ -214,11 +183,10 @@ pub async fn push_remote(
         let remote_url = git_service
             .read()
             .await
-            .git2({
-                let remote_name = remote_name.clone();
-                move |git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone())
-            })
+            .get_remote(&remote_name)
             .await
+            .ok()
+            .map(|r| r.url.clone())
             .flatten()
             .unwrap_or_default();
 
@@ -227,7 +195,6 @@ pub async fn push_remote(
         let hook_result = git_service
             .write()
             .await
-            .hook()
             .run_pre_push(&remote_name, &remote_url, &refs_stdin)
             .await;
 
@@ -249,23 +216,15 @@ pub async fn push_remote(
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
+    let cb = ctx.make_send_callback(GitOperationType::Push);
     let result = git_service
         .write()
         .await
-        .git2(move |git2| {
-            let result = git2.push(
-                &remote_name,
-                &refspecs,
-                &options,
-                Some(ctx.make_send_callback(GitOperationType::Push)),
-                ssh_creds,
-            );
-
-            ctx.handle_result(&result, GitOperationType::Push);
-
-            result
-        })
+        .push(&remote_name, &refspecs, &options, Some(cb), ssh_creds)
         .await;
+
+    ctx.handle_result(&result, GitOperationType::Push);
+
     result
 }
 
@@ -287,22 +246,17 @@ pub async fn push_current_branch(
     // Run pre-push hook (can abort)
     if !skip_hooks {
         // Get current branch name
-        let current_branch = git_service
-            .read()
-            .await
-            .git2(|git2| git2.get_current_branch())
-            .await;
+        let current_branch = git_service.read().await.get_current_branch().await;
 
         if let Some(branch) = &current_branch {
             // Get remote URL for the hook
             let remote_url = git_service
                 .read()
                 .await
-                .git2({
-                    let remote_name = remote_name.clone();
-                    move |git2| git2.get_remote(&remote_name).ok().map(|r| r.url.clone())
-                })
+                .get_remote(&remote_name)
                 .await
+                .ok()
+                .map(|r| r.url.clone())
                 .flatten()
                 .unwrap_or_default();
 
@@ -312,7 +266,6 @@ pub async fn push_current_branch(
             let hook_result = git_service
                 .write()
                 .await
-                .hook()
                 .run_pre_push(&remote_name, &remote_url, &refs_stdin)
                 .await;
 
@@ -335,22 +288,15 @@ pub async fn push_current_branch(
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
 
+    let cb = ctx.make_send_callback(GitOperationType::Push);
     let result = git_service
         .write()
         .await
-        .git2(move |git2| {
-            let result = git2.push_current_branch(
-                &remote_name,
-                &options,
-                Some(ctx.make_send_callback(GitOperationType::Push)),
-                ssh_creds,
-            );
-
-            ctx.handle_result(&result, GitOperationType::Push);
-
-            result
-        })
+        .push_current_branch(&remote_name, &options, Some(cb), ssh_creds)
         .await;
+
+    ctx.handle_result(&result, GitOperationType::Push);
+
     result
 }
 
@@ -368,24 +314,17 @@ pub async fn pull_remote(
 
     ctx.emit(GitOperationType::Pull, ProgressStage::Connecting, None);
 
-    state
+    let cb = ctx.make_receive_callback(GitOperationType::Pull);
+    let result = state
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| {
-            let result = git2.pull(
-                &remote_name,
-                &branch_name,
-                &options,
-                Some(ctx.make_receive_callback(GitOperationType::Pull)),
-                ssh_creds,
-            );
+        .pull(&remote_name, &branch_name, &options, Some(cb), ssh_creds)
+        .await;
 
-            ctx.handle_result(&result, GitOperationType::Pull);
+    ctx.handle_result(&result, GitOperationType::Pull);
 
-            result
-        })
-        .await
+    result
 }
 
 #[tauri::command]
@@ -395,7 +334,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
-    let remotes = guard.git2(|git2| git2.list_remotes()).await?;
+    let remotes = guard.list_remotes().await?;
     let options = FetchOptions::default();
 
     let mut results = Vec::new();
@@ -405,18 +344,9 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
         let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
         ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
-        let remote_name = remote.name.clone();
-        let options = options.clone();
+        let cb = ctx.make_receive_callback(GitOperationType::Fetch);
         let result = guard
-            .git2(move |git2| {
-                git2.fetch(
-                    &remote_name,
-                    &options,
-                    None,
-                    Some(ctx.make_receive_callback(GitOperationType::Fetch)),
-                    ssh_creds,
-                )
-            })
+            .fetch(&remote.name, &options, None, Some(cb), ssh_creds)
             .await;
 
         match result {

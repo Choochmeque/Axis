@@ -12,14 +12,13 @@ pub async fn bisect_start(
 ) -> Result<BisectResult> {
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
-    let cli = guard.git_cli();
 
-    let result = cli
+    let result = guard
         .bisect_start(options.bad_commit.as_deref(), &options.good_commit)
         .await?;
 
     if result.success {
-        let bisect_state = cli.get_bisect_state().await?;
+        let bisect_state = guard.get_bisect_state().await?;
         Ok(BisectResult {
             success: true,
             state: bisect_state,
@@ -44,12 +43,11 @@ pub async fn bisect_mark(
 ) -> Result<BisectResult> {
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
-    let cli = guard.git_cli();
 
     let result = match mark {
-        BisectMarkType::Good => cli.bisect_good(commit.as_deref()).await?,
-        BisectMarkType::Bad => cli.bisect_bad(commit.as_deref()).await?,
-        BisectMarkType::Skip => cli.bisect_skip(commit.as_deref()).await?,
+        BisectMarkType::Good => guard.bisect_good(commit.as_deref()).await?,
+        BisectMarkType::Bad => guard.bisect_bad(commit.as_deref()).await?,
+        BisectMarkType::Skip => guard.bisect_skip(commit.as_deref()).await?,
     };
 
     // Check if bisect is complete (found the first bad commit)
@@ -65,7 +63,7 @@ pub async fn bisect_mark(
         None
     };
 
-    let mut bisect_state = cli.get_bisect_state().await?;
+    let mut bisect_state = guard.get_bisect_state().await?;
     bisect_state.first_bad_commit = first_bad;
 
     Ok(BisectResult {
@@ -86,7 +84,6 @@ pub async fn bisect_reset(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .bisect_reset(commit.as_deref())
         .await?;
 
@@ -109,7 +106,6 @@ pub async fn bisect_state(state: State<'_, AppState>) -> Result<BisectState> {
         .get_git_service()?
         .read()
         .await
-        .git_cli()
         .get_bisect_state()
         .await
 }
@@ -118,12 +114,6 @@ pub async fn bisect_state(state: State<'_, AppState>) -> Result<BisectState> {
 #[tauri::command]
 #[specta::specta]
 pub async fn bisect_log(state: State<'_, AppState>) -> Result<String> {
-    let result = state
-        .get_git_service()?
-        .read()
-        .await
-        .git_cli()
-        .bisect_log()
-        .await?;
+    let result = state.get_git_service()?.read().await.bisect_log().await?;
     Ok(result.stdout)
 }

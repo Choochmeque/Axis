@@ -9,12 +9,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(|git2| git2.tag_list(None))
-        .await
+    state.get_git_service()?.read().await.tag_list().await
 }
 
 /// Create a new tag
@@ -29,7 +24,7 @@ pub async fn tag_create(
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.tag_create(&name, &options))
+        .tag_create(&name, &options)
         .await
 }
 
@@ -41,7 +36,7 @@ pub async fn tag_delete(state: State<'_, AppState>, name: String) -> Result<TagR
         .get_git_service()?
         .write()
         .await
-        .git2(move |git2| git2.tag_delete(&name))
+        .tag_delete(&name)
         .await
 }
 
@@ -57,7 +52,6 @@ pub async fn tag_push(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .tag_push(&name, &remote)
         .await
 }
@@ -70,7 +64,6 @@ pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .tag_push_all(&remote)
         .await
 }
@@ -87,7 +80,6 @@ pub async fn tag_delete_remote(
         .get_git_service()?
         .write()
         .await
-        .git_cli()
         .tag_delete_remote(&name, &remote)
         .await
 }

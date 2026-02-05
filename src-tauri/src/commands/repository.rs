@@ -24,11 +24,11 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
     state.switch_active_repository(&path).await?;
 
     // Get repo info from the cached service
-    let handle = state.get_git_service()?;
-    let repo_info = handle
+    let repo_info = state
+        .get_git_service()?
         .read()
         .await
-        .git2(|git2| git2.get_repository_info())
+        .get_repository_info()
         .await?;
 
     // Add to recent repositories
@@ -154,19 +154,14 @@ pub async fn get_repository_info(state: State<'_, AppState>) -> Result<Repositor
         .get_git_service()?
         .read()
         .await
-        .git2(|git2| git2.get_repository_info())
+        .get_repository_info()
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_repository_status(state: State<'_, AppState>) -> Result<RepositoryStatus> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(|git2| git2.status())
-        .await
+    state.get_git_service()?.read().await.status().await
 }
 
 #[tauri::command]
@@ -175,12 +170,7 @@ pub async fn get_commit_history(
     state: State<'_, AppState>,
     options: LogOptions,
 ) -> Result<Vec<Commit>> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(|git2| git2.log(options))
-        .await
+    state.get_git_service()?.read().await.log(options).await
 }
 
 #[tauri::command]
@@ -190,19 +180,14 @@ pub async fn get_branches(state: State<'_, AppState>, filter: BranchFilter) -> R
         .get_git_service()?
         .read()
         .await
-        .git2(|git2| git2.list_branches(filter))
+        .list_branches(filter)
         .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commit> {
-    state
-        .get_git_service()?
-        .read()
-        .await
-        .git2(move |git2| git2.get_commit(&oid))
-        .await
+    state.get_git_service()?.read().await.get_commit(&oid).await
 }
 
 #[tauri::command]

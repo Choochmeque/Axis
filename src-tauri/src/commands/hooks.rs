@@ -7,7 +7,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn list_hooks(state: State<'_, AppState>) -> Result<Vec<HookInfo>> {
-    Ok(state.get_git_service()?.read().await.hook().list_hooks())
+    Ok(state.get_git_service()?.read().await.list_hooks())
 }
 
 /// Get hook details including content
@@ -18,7 +18,6 @@ pub async fn get_hook(state: State<'_, AppState>, hook_type: GitHookType) -> Res
         .get_git_service()?
         .read()
         .await
-        .hook()
         .get_hook_details(hook_type)
 }
 
@@ -34,7 +33,6 @@ pub async fn create_hook(
         .get_git_service()?
         .write()
         .await
-        .hook()
         .create_hook(hook_type, &content)
 }
 
@@ -50,7 +48,6 @@ pub async fn update_hook(
         .get_git_service()?
         .write()
         .await
-        .hook()
         .update_hook(hook_type, &content)
 }
 
@@ -62,7 +59,6 @@ pub async fn delete_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
         .get_git_service()?
         .write()
         .await
-        .hook()
         .delete_hook(hook_type)
 }
 
@@ -75,7 +71,6 @@ pub async fn toggle_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
         .get_git_service()?
         .write()
         .await
-        .hook()
         .toggle_hook(hook_type)
 }
 
@@ -83,7 +78,7 @@ pub async fn toggle_hook(state: State<'_, AppState>, hook_type: GitHookType) -> 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_hook_templates(state: State<'_, AppState>) -> Result<Vec<HookTemplate>> {
-    Ok(state.get_git_service()?.read().await.hook().get_templates())
+    Ok(state.get_git_service()?.read().await.get_templates())
 }
 
 /// Get templates for a specific hook type
@@ -97,6 +92,5 @@ pub async fn get_hook_templates_for_type(
         .get_git_service()?
         .read()
         .await
-        .hook()
         .get_templates_for_type(hook_type))
 }

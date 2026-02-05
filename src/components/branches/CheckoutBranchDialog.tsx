@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -30,6 +30,13 @@ export function CheckoutBranchDialog({ isOpen, onClose }: CheckoutBranchDialogPr
   const [selectedBranch, setSelectedBranch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedBranch('');
+      setError(null);
+    }
+  }, [isOpen]);
 
   const { branches, checkoutBranch } = useRepositoryStore();
   const localBranches = branches.filter((b) => b.branchType === BranchType.Local);

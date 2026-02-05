@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { branchApi } from '../../services/api';
@@ -32,6 +32,13 @@ export function DeleteRemoteBranchDialog({
   const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setForce(false);
+      setError(null);
+    }
+  }, [open]);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
 

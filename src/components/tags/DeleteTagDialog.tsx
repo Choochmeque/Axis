@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/hooks';
@@ -33,6 +33,14 @@ export function DeleteTagDialog({ isOpen, onClose, tag, remotes }: DeleteTagDial
   const [error, setError] = useState<string | null>(null);
 
   const { loadTags, refreshRepository } = useRepositoryStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      setDeleteRemote(false);
+      setSelectedRemote('origin');
+      setError(null);
+    }
+  }, [isOpen]);
 
   const hasRemotes = remotes.length > 0;
 

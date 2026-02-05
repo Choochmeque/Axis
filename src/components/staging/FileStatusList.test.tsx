@@ -183,6 +183,62 @@ describe('FileStatusList', () => {
 
     expect(onSelectFile).toHaveBeenCalledWith(null);
   });
+
+  it('should display renamed files as OldName → NewName', () => {
+    const renamedFiles: FileStatus[] = [
+      {
+        path: 'src/components/new-name.tsx',
+        status: StatusType.Renamed,
+        stagedStatus: StatusType.Renamed,
+        unstagedStatus: null,
+        isConflict: false,
+        oldPath: 'src/components/OldName.tsx',
+      },
+    ];
+
+    render(
+      <FileStatusList
+        {...defaultProps}
+        files={renamedFiles}
+        showUnstageButton
+        onUnstage={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('OldName.tsx → new-name.tsx')).toBeInTheDocument();
+  });
+
+  it('should display non-renamed files with just the filename', () => {
+    render(<FileStatusList {...defaultProps} showStageButton onStage={vi.fn()} />);
+
+    expect(screen.getByText('file1.ts')).toBeInTheDocument();
+    expect(screen.getByText('file2.ts')).toBeInTheDocument();
+  });
+
+  it('should show full path tooltip for renamed files', () => {
+    const renamedFiles: FileStatus[] = [
+      {
+        path: 'src/ui/new-name.tsx',
+        status: StatusType.Renamed,
+        stagedStatus: StatusType.Renamed,
+        unstagedStatus: null,
+        isConflict: false,
+        oldPath: 'src/ui/OldName.tsx',
+      },
+    ];
+
+    render(
+      <FileStatusList
+        {...defaultProps}
+        files={renamedFiles}
+        showUnstageButton
+        onUnstage={vi.fn()}
+      />
+    );
+
+    const fileSpan = screen.getByText('OldName.tsx → new-name.tsx');
+    expect(fileSpan).toHaveAttribute('title', 'src/ui/OldName.tsx → src/ui/new-name.tsx');
+  });
 });
 
 describe('FluidFileList', () => {
@@ -254,5 +310,30 @@ describe('FluidFileList', () => {
     fireEvent.click(screen.getByTestId('clear-selection'));
 
     expect(onSelectFile).toHaveBeenCalledWith(null, false);
+  });
+
+  it('should display renamed files as OldName → NewName in fluid view', () => {
+    const renamedFluidFiles = [
+      {
+        path: 'src/components/new-name.tsx',
+        status: StatusType.Renamed,
+        stagedStatus: StatusType.Renamed,
+        unstagedStatus: null,
+        isStaged: true,
+        isConflict: false,
+        oldPath: 'src/components/OldName.tsx',
+      },
+    ];
+
+    render(<FluidFileList {...defaultProps} files={renamedFluidFiles} />);
+
+    expect(screen.getByText('OldName.tsx → new-name.tsx')).toBeInTheDocument();
+  });
+
+  it('should display non-renamed files with just the filename in fluid view', () => {
+    render(<FluidFileList {...defaultProps} />);
+
+    expect(screen.getByText('file1.ts')).toBeInTheDocument();
+    expect(screen.getByText('file2.ts')).toBeInTheDocument();
   });
 });

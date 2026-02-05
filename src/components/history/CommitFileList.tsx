@@ -87,6 +87,11 @@ interface CommitFileItemContentProps {
 
 function CommitFileItemContent({ file }: CommitFileItemContentProps) {
   const path = file.newPath || file.oldPath || '';
+  const isRenamed = file.oldPath && file.newPath && file.oldPath !== file.newPath;
+  const displayName = isRenamed
+    ? `${getFileName(file.oldPath!)} → ${getFileName(file.newPath!)}`
+    : getFileName(path);
+  const displayTooltip = isRenamed ? `${file.oldPath} → ${file.newPath}` : path;
   const statusColors = getStatusColors(file.status);
   const statusChar = getStatusChar(file.status);
 
@@ -104,16 +109,13 @@ function CommitFileItemContent({ file }: CommitFileItemContentProps) {
       </span>
       <span
         className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
-        title={path}
+        title={displayTooltip}
       >
-        {getFileName(path)}
-        {file.oldPath && file.newPath && file.oldPath !== file.newPath && (
-          <span className="text-(--text-secondary) text-xs"> ({getFileName(file.oldPath)})</span>
-        )}
+        {displayName}
       </span>
       <span
         className="text-(--text-tertiary) text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-37.5"
-        title={path}
+        title={displayTooltip}
       >
         {getDirectory(path)}
       </span>

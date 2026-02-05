@@ -924,8 +924,9 @@ impl Git2Service {
             None
         };
 
-        let diff =
+        let mut diff =
             repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
+        diff.find_similar(None)?;
 
         self.parse_diff(&diff)
     }
@@ -955,8 +956,9 @@ impl Git2Service {
         let mut diff_opts = git2::DiffOptions::new();
         self.apply_diff_options(&mut diff_opts, options);
 
-        let diff =
+        let mut diff =
             repo.diff_tree_to_tree(Some(&from_tree), Some(&to_tree), Some(&mut diff_opts))?;
+        diff.find_similar(None)?;
 
         self.parse_diff(&diff)
     }

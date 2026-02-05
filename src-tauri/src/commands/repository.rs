@@ -6,7 +6,6 @@ use crate::models::{
 };
 use crate::services::{Git2Service, ProgressContext};
 use crate::state::AppState;
-use crate::storage::RecentRepositoryRow;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
@@ -197,7 +196,7 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 
     let handles: Vec<_> = rows
         .into_iter()
-        .map(|row| tauri::async_runtime::spawn_blocking(move || enrich_repo_row(row)))
+        .map(|row| tauri::async_runtime::spawn_blocking(move || RecentRepository::from_row(row)))
         .collect();
 
     let mut repos = Vec::with_capacity(handles.len());
@@ -209,42 +208,6 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
     }
 
     Ok(repos)
-}
-
-fn enrich_repo_row(row: RecentRepositoryRow) -> RecentRepository {
-    let exists = row.path.exists();
-
-    let current_branch = if exists {
-        git2::Repository::open(&row.path).ok().and_then(|repo| {
-            repo.head()
-                .ok()
-                .and_then(|head| head.shorthand().map(String::from))
-        })
-    } else {
-        None
-    };
-
-    let display_path = make_display_path(&row.path);
-
-    RecentRepository {
-        path: row.path,
-        name: row.name,
-        last_opened: row.last_opened,
-        exists,
-        current_branch,
-        is_pinned: row.is_pinned,
-        display_path,
-    }
-}
-
-fn make_display_path(path: &std::path::Path) -> String {
-    if let Some(home) = dirs::home_dir() {
-        if let Ok(stripped) = path.strip_prefix(&home) {
-            let sep = std::path::MAIN_SEPARATOR;
-            return format!("~{sep}{}", stripped.display());
-        }
-    }
-    path.display().to_string()
 }
 
 #[tauri::command]

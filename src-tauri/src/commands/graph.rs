@@ -4,7 +4,7 @@ use crate::models::{
     LaneState, SearchOptions, SearchResult,
 };
 use crate::services::{CommitCache, CommitCacheEntry, PREFETCH_BUFFER, PREFETCH_THRESHOLD};
-use crate::state::{AppState, GitServiceHandle};
+use crate::state::AppState;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tauri::State;
@@ -54,14 +54,9 @@ pub async fn build_graph(
                 let prefetch_options = options.clone();
 
                 tokio::spawn(async move {
-                    let _ = prefetch_commits(
-                        git_handle,
-                        prefetch_cache,
-                        prefetch_key,
-                        prefetch_options,
-                        total_fetched,
-                    )
-                    .await;
+                    let _ = prefetch_cache
+                        .prefetch(&git_handle, &prefetch_key, prefetch_options, total_fetched)
+                        .await;
                 });
             }
 
@@ -133,40 +128,6 @@ pub async fn build_graph(
         max_lane: result.max_lane,
         has_more: end < result.commits.len() || result.has_more,
     })
-}
-
-/// Background prefetch more commits
-async fn prefetch_commits(
-    git_handle: GitServiceHandle,
-    cache: Arc<CommitCache>,
-    cache_key: String,
-    options: GraphOptions,
-    current_count: usize,
-) -> Result<()> {
-    // Mark as prefetching
-    cache.set_prefetching(&cache_key, true);
-
-    // Fetch more commits
-    let fetch_limit = current_count + PREFETCH_BUFFER;
-    let fetch_options = GraphOptions {
-        limit: Some(fetch_limit),
-        skip: Some(0), // Fetch from start for correct lanes
-        ..options
-    };
-
-    let result = git_handle.read().await.build_graph(fetch_options).await?;
-
-    // Update cache with new data
-    cache.update(&cache_key, |entry| {
-        entry.commits = result.commits;
-        entry.max_lane = result.max_lane;
-        entry.has_more = result.has_more;
-        entry
-            .is_prefetching
-            .store(false, std::sync::atomic::Ordering::Relaxed);
-    });
-
-    Ok(())
 }
 
 /// Search commits by message, author, or hash

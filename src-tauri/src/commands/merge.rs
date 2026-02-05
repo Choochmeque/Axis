@@ -1,11 +1,10 @@
 use crate::error::{AxisError, Result};
 use crate::models::{
-    CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictType,
-    ConflictedFile, InteractiveRebaseEntry, InteractiveRebaseOptions, InteractiveRebasePreview,
-    MergeOptions, MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions,
-    RebasePreview, RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
+    CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictedFile,
+    InteractiveRebaseEntry, InteractiveRebaseOptions, InteractiveRebasePreview, MergeOptions,
+    MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions, RebasePreview,
+    RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
-use crate::services::ops::RepoOperations;
 use crate::state::AppState;
 use std::fs;
 use tauri::State;
@@ -54,7 +53,7 @@ pub async fn merge_branch(
     } else if result.stdout.contains("CONFLICT") || result.stderr.contains("Automatic merge failed")
     {
         // Merge has conflicts
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         MergeResult {
             success: false,
@@ -165,7 +164,7 @@ pub async fn rebase_branch(
             message: result.stdout.trim().to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(RebaseResult {
             success: false,
@@ -216,7 +215,7 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
             message: "Rebase continued successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(RebaseResult {
             success: false,
@@ -351,7 +350,7 @@ pub async fn interactive_rebase(
             message: result.stdout.trim().to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(RebaseResult {
             success: false,
@@ -399,7 +398,7 @@ pub async fn rebase_continue_with_message(
             message: "Rebase continued successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(RebaseResult {
             success: false,
@@ -439,7 +438,7 @@ pub async fn cherry_pick(
         if !result.success {
             all_success = false;
             if result.stdout.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(&guard).await?);
+                all_conflicts.extend(guard.get_conflicted_files_enriched().await?);
                 break; // Stop on first conflict
             } else {
                 return Err(AxisError::Other(format!(
@@ -495,7 +494,7 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
             message: "Cherry-pick completed successfully.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(CherryPickResult {
             success: false,
@@ -528,7 +527,7 @@ pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickRe
             message: "Commit skipped.".to_string(),
         })
     } else if result.stdout.contains("CONFLICT") {
-        let conflicts = get_conflicted_files_internal(&guard).await?;
+        let conflicts = guard.get_conflicted_files_enriched().await?;
 
         Ok(CherryPickResult {
             success: false,
@@ -565,7 +564,7 @@ pub async fn revert_commits(
         if !result.success {
             all_success = false;
             if result.stdout.contains("CONFLICT") {
-                all_conflicts.extend(get_conflicted_files_internal(&guard).await?);
+                all_conflicts.extend(guard.get_conflicted_files_enriched().await?);
                 break;
             } else {
                 return Err(AxisError::Other(format!(
@@ -632,7 +631,7 @@ pub async fn revert_continue(state: State<'_, AppState>) -> Result<RevertResult>
 pub async fn get_conflicted_files(state: State<'_, AppState>) -> Result<Vec<ConflictedFile>> {
     let git_service = state.get_git_service()?;
     let guard = git_service.read().await;
-    get_conflicted_files_internal(&guard).await
+    guard.get_conflicted_files_enriched().await
 }
 
 /// Get three-way content for a conflicted file
@@ -772,19 +771,4 @@ pub async fn reset_to_commit(state: State<'_, AppState>, options: ResetOptions) 
         .reset(&options.target, options.mode)
         .await?;
     Ok(())
-}
-
-// ==================== Helper Functions ====================
-
-async fn get_conflicted_files_internal(ops: &RepoOperations) -> Result<Vec<ConflictedFile>> {
-    let files = ops.get_conflicted_files().await?;
-
-    Ok(files
-        .into_iter()
-        .map(|path| ConflictedFile {
-            path,
-            conflict_type: ConflictType::Content,
-            is_resolved: false,
-        })
-        .collect())
 }

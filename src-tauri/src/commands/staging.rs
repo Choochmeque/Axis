@@ -1,29 +1,9 @@
-use crate::error::{AxisError, Result};
-use crate::models::HookResult;
+use crate::error::Result;
 use crate::models::LfsCheckResult;
 use crate::services::SigningService;
 use crate::state::AppState;
 use std::fs;
 use tauri::State;
-
-/// Create an error from a failed hook result
-fn hook_error(result: &HookResult) -> AxisError {
-    let output = if !result.stderr.is_empty() {
-        result.stderr.clone()
-    } else if !result.stdout.is_empty() {
-        result.stdout.clone()
-    } else {
-        format!(
-            "Hook {} failed with exit code {}",
-            result.hook_type, result.exit_code
-        )
-    };
-    AxisError::Other(format!(
-        "Hook '{}' failed:\n{}",
-        result.hook_type,
-        output.trim()
-    ))
-}
 
 #[tauri::command]
 #[specta::specta]
@@ -127,7 +107,7 @@ pub async fn create_commit(
         // 1. Run pre-commit hook
         let result = guard.run_pre_commit().await;
         if !result.skipped && !result.success {
-            return Err(hook_error(&result));
+            return Err(result.to_error());
         }
 
         // 2. Run prepare-commit-msg hook
@@ -139,7 +119,7 @@ pub async fn create_commit(
             .run_prepare_commit_msg(&msg_file_clone, None, None)
             .await;
         if !result.skipped && !result.success {
-            return Err(hook_error(&result));
+            return Err(result.to_error());
         }
 
         // Read potentially modified message
@@ -151,7 +131,7 @@ pub async fn create_commit(
         let msg_file_clone = msg_file.clone();
         let result = guard.run_commit_msg(&msg_file_clone).await;
         if !result.skipped && !result.success {
-            return Err(hook_error(&result));
+            return Err(result.to_error());
         }
 
         // Read potentially modified message again
@@ -220,7 +200,7 @@ pub async fn amend_commit(
         let msg_file_clone = msg_file.clone();
         let result = guard.run_commit_msg(&msg_file_clone).await;
         if !result.skipped && !result.success {
-            return Err(hook_error(&result));
+            return Err(result.to_error());
         }
 
         // Read potentially modified message

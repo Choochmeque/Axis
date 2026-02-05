@@ -518,6 +518,36 @@ impl AppState {
             .clear();
         log::debug!("Cleared all cached SSH passphrases");
     }
+
+    /// Fetch a commit author's avatar URL from the integration provider.
+    pub async fn get_integration_commit_avatar(&self, sha: &str) -> Option<String> {
+        let remotes = self
+            .get_git_service()
+            .ok()?
+            .read()
+            .await
+            .list_remotes()
+            .await
+            .ok()?;
+
+        let remote_url = remotes
+            .iter()
+            .find(|r| r.name == "origin")
+            .and_then(|r| r.url.clone())
+            .or_else(|| remotes.first().and_then(|r| r.url.clone()))?;
+
+        let detected = crate::services::detect_provider(&remote_url)?;
+
+        let service = self.integration_service().ok()?;
+        let provider = service.get_provider(detected.provider).await.ok()?;
+
+        let commit = provider
+            .get_commit(&detected.owner, &detected.repo, sha)
+            .await
+            .ok()?;
+
+        commit.author_avatar_url
+    }
 }
 
 #[cfg(test)]

@@ -100,7 +100,6 @@ export function NotificationsView() {
             title={t('integrations.notifications.markAllRead')}
           >
             <CheckCheck size={14} />
-            <span>{t('integrations.notifications.markAllRead')}</span>
           </Button>
         )}
 

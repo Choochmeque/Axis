@@ -2,7 +2,6 @@ use tauri::State;
 
 use crate::error::Result;
 use crate::models::{AvatarResponse, AvatarSource};
-use crate::services::detect_provider;
 use crate::services::AvatarService;
 use crate::state::AppState;
 
@@ -37,7 +36,7 @@ pub async fn get_avatar(
 
     // 3. Try integration API if sha provided
     if let Some(sha) = sha {
-        if let Some(url) = get_integration_commit_avatar(&state, &sha).await {
+        if let Some(url) = state.get_integration_commit_avatar(&sha).await {
             if let Ok(path) = avatar_service
                 .fetch_and_cache(&AvatarSource::Integration, &url, &cache_key)
                 .await
@@ -69,40 +68,6 @@ pub async fn get_avatar(
         source: AvatarSource::Default,
         path: None,
     })
-}
-
-/// Fetch commit from integration API to get author's avatar_url
-async fn get_integration_commit_avatar(state: &State<'_, AppState>, sha: &str) -> Option<String> {
-    // 1. Get remote URL from current repo
-    let remotes = state
-        .get_git_service()
-        .ok()?
-        .read()
-        .await
-        .list_remotes()
-        .await
-        .ok()?;
-
-    let remote_url = remotes
-        .iter()
-        .find(|r| r.name == "origin")
-        .and_then(|r| r.url.clone())
-        .or_else(|| remotes.first().and_then(|r| r.url.clone()))?;
-
-    // 2. Detect provider from URL
-    let detected = detect_provider(&remote_url)?;
-
-    // 3. Get integration service and provider
-    let service = state.integration_service().ok()?;
-    let provider = service.get_provider(detected.provider).await.ok()?;
-
-    // 4. Fetch commit from provider API
-    let commit = provider
-        .get_commit(&detected.owner, &detected.repo, sha)
-        .await
-        .ok()?;
-
-    commit.author_avatar_url
 }
 
 /// Clear the avatar cache

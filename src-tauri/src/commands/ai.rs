@@ -2,64 +2,13 @@ use log::info;
 
 use crate::error::{AxisError, Result};
 use crate::models::{
-    AiProvider, DiffLineType, DiffOptions, FileDiff, GenerateCommitMessageResponse,
-    GeneratePrDescriptionResponse,
+    AiProvider, DiffOptions, GenerateCommitMessageResponse, GeneratePrDescriptionResponse,
 };
-use crate::services::ai::{create_provider, get_secret_key, OllamaProvider};
+use crate::services::ai::{
+    create_provider, format_diff_for_ai, format_diff_summary, get_secret_key, OllamaProvider,
+};
 use crate::state::AppState;
 use tauri::State;
-
-const MAX_DIFF_SIZE: usize = 100_000;
-
-async fn format_diff_for_ai(state: &State<'_, AppState>) -> Result<String> {
-    let diffs = state
-        .get_git_service()?
-        .read()
-        .await
-        .diff_staged(&DiffOptions::default())
-        .await?;
-
-    let mut output = String::new();
-
-    for file_diff in diffs {
-        let path = file_diff
-            .new_path
-            .as_ref()
-            .or(file_diff.old_path.as_ref())
-            .map(|s| s.as_str())
-            .unwrap_or("unknown");
-
-        output.push_str(&format!("--- a/{}\n+++ b/{}\n", path, path));
-
-        for hunk in &file_diff.hunks {
-            output.push_str(&hunk.header);
-            if !hunk.header.ends_with('\n') {
-                output.push('\n');
-            }
-
-            for line in &hunk.lines {
-                let prefix = match line.line_type {
-                    DiffLineType::Addition => "+",
-                    DiffLineType::Deletion => "-",
-                    DiffLineType::Context => " ",
-                    DiffLineType::Header | DiffLineType::Binary => "",
-                };
-                output.push_str(prefix);
-                output.push_str(&line.content);
-                if !line.content.ends_with('\n') {
-                    output.push('\n');
-                }
-            }
-        }
-        output.push('\n');
-    }
-
-    if output.len() > MAX_DIFF_SIZE {
-        return Err(AxisError::DiffTooLarge(output.len()));
-    }
-
-    Ok(output)
-}
 
 #[tauri::command]
 #[specta::specta]
@@ -74,7 +23,14 @@ pub async fn generate_commit_message(
         ));
     }
 
-    let diff = format_diff_for_ai(&state).await?;
+    let diffs = state
+        .get_git_service()?
+        .read()
+        .await
+        .diff_staged(&DiffOptions::default())
+        .await?;
+
+    let diff = format_diff_for_ai(&diffs)?;
 
     if diff.trim().is_empty() {
         return Err(AxisError::AiServiceError(
@@ -156,28 +112,6 @@ pub async fn list_ollama_models(
 ) -> Result<Vec<String>> {
     let url = ollama_url.or_else(|| state.get_settings().ok().and_then(|s| s.ai_ollama_url));
     OllamaProvider::list_models(url.as_deref()).await
-}
-
-const MAX_FILES_IN_SUMMARY: usize = 30;
-
-fn format_diff_summary(files: &[FileDiff]) -> String {
-    let mut summary = String::new();
-    for file in files.iter().take(MAX_FILES_IN_SUMMARY) {
-        let path = file
-            .new_path
-            .as_ref()
-            .or(file.old_path.as_ref())
-            .map(|s| s.as_str())
-            .unwrap_or("unknown");
-        summary.push_str(&format!("- {:?}: {path}\n", file.status));
-    }
-    if files.len() > MAX_FILES_IN_SUMMARY {
-        summary.push_str(&format!(
-            "... and {} more files\n",
-            files.len() - MAX_FILES_IN_SUMMARY
-        ));
-    }
-    summary
 }
 
 #[tauri::command]

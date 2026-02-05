@@ -1,5 +1,7 @@
 use crate::error::Result;
-use crate::models::{InteractiveRebaseEntry, RebasePreview, RebaseProgress};
+use crate::models::{
+    ConflictType, ConflictedFile, InteractiveRebaseEntry, RebasePreview, RebaseProgress,
+};
 use crate::services::{ConflictVersion, GitCommandResult, OperationType};
 
 use super::RepoOperations;
@@ -168,6 +170,19 @@ impl RepoOperations {
 
     pub async fn get_conflicted_files(&self) -> Result<Vec<String>> {
         self.service.git_cli().get_conflicted_files().await
+    }
+
+    /// Get conflicted files enriched with conflict metadata.
+    pub async fn get_conflicted_files_enriched(&self) -> Result<Vec<ConflictedFile>> {
+        let files = self.get_conflicted_files().await?;
+        Ok(files
+            .into_iter()
+            .map(|path| ConflictedFile {
+                path,
+                conflict_type: ConflictType::Content,
+                is_resolved: false,
+            })
+            .collect())
     }
 
     // ---- Operation state (sync, file-system checks) ----

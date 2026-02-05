@@ -151,4 +151,45 @@ impl RepoOperations {
         })
         .await
     }
+
+    /// Build the refs stdin string for the pre-push hook.
+    /// Format: `<local ref> <local sha> <remote ref> <remote sha>\n` per ref.
+    pub async fn build_push_refs_stdin(&self, remote_name: &str, refspecs: &[String]) -> String {
+        let mut refs_lines = Vec::new();
+
+        for refspec in refspecs {
+            // Parse refspec (e.g., "refs/heads/main:refs/heads/main" or just "main")
+            let (local_ref, remote_ref) = if refspec.contains(':') {
+                let parts: Vec<&str> = refspec.split(':').collect();
+                (parts[0].to_string(), parts[1].to_string())
+            } else {
+                let full_ref = format!("refs/heads/{refspec}");
+                (full_ref.clone(), full_ref)
+            };
+
+            // Get local SHA
+            let local_sha = self
+                .resolve_ref(&local_ref)
+                .await
+                .unwrap_or_else(|| "0".repeat(40));
+
+            // Get remote SHA (what the remote currently has)
+            let remote_ref_name = format!(
+                "refs/remotes/{remote_name}/{}",
+                refspec
+                    .split(':')
+                    .next()
+                    .unwrap_or(refspec)
+                    .replace("refs/heads/", "")
+            );
+            let remote_sha = self
+                .resolve_ref(&remote_ref_name)
+                .await
+                .unwrap_or_else(|| "0".repeat(40));
+
+            refs_lines.push(format!("{local_ref} {local_sha} {remote_ref} {remote_sha}"));
+        }
+
+        refs_lines.join("\n") + "\n"
+    }
 }

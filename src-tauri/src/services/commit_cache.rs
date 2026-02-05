@@ -1,4 +1,6 @@
+use crate::error::Result;
 use crate::models::{GraphCommit, GraphOptions, LaneState};
+use crate::state::GitServiceHandle;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -124,6 +126,35 @@ impl CommitCache {
     pub fn build_key(repo_path: &Path, options: &GraphOptions) -> String {
         let filter_hash = compute_options_hash(options);
         format!("{}:{}", repo_path.display(), filter_hash)
+    }
+
+    /// Prefetch more commits in the background and update the cache.
+    pub async fn prefetch(
+        &self,
+        git_handle: &GitServiceHandle,
+        cache_key: &str,
+        options: GraphOptions,
+        current_count: usize,
+    ) -> Result<()> {
+        self.set_prefetching(cache_key, true);
+
+        let fetch_limit = current_count + PREFETCH_BUFFER;
+        let fetch_options = GraphOptions {
+            limit: Some(fetch_limit),
+            skip: Some(0),
+            ..options
+        };
+
+        let result = git_handle.read().await.build_graph(fetch_options).await?;
+
+        self.update(cache_key, |entry| {
+            entry.commits = result.commits;
+            entry.max_lane = result.max_lane;
+            entry.has_more = result.has_more;
+            entry.is_prefetching.store(false, Ordering::Relaxed);
+        });
+
+        Ok(())
     }
 }
 

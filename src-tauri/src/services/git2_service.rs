@@ -341,7 +341,9 @@ impl Git2Service {
         opts.include_untracked(true)
             .recurse_untracked_dirs(true)
             .include_ignored(false)
-            .include_unmodified(false);
+            .include_unmodified(false)
+            .renames_head_to_index(true)
+            .renames_index_to_workdir(true);
 
         let repo = self.repo()?;
         let statuses = repo.statuses(Some(&mut opts))?;
@@ -851,7 +853,8 @@ impl Git2Service {
         diff_opts.recurse_untracked_dirs(true);
 
         let repo = self.repo()?;
-        let diff = repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
+        let mut diff = repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
+        diff.find_similar(None)?;
         self.parse_diff(&diff)
     }
 
@@ -869,7 +872,8 @@ impl Git2Service {
         } else {
             Some(repo.head()?.peel_to_tree()?)
         };
-        let diff = repo.diff_tree_to_index(head_tree.as_ref(), None, Some(&mut diff_opts))?;
+        let mut diff = repo.diff_tree_to_index(head_tree.as_ref(), None, Some(&mut diff_opts))?;
+        diff.find_similar(None)?;
         self.parse_diff(&diff)
     }
 
@@ -891,8 +895,9 @@ impl Git2Service {
         } else {
             Some(repo.head()?.peel_to_tree()?)
         };
-        let diff =
+        let mut diff =
             repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))?;
+        diff.find_similar(None)?;
         self.parse_diff(&diff)
     }
 

@@ -15,10 +15,6 @@ impl RepoOperations {
         self.git2(|g| g.get_current_branch()).await
     }
 
-    pub async fn get_current_branch_name(&self) -> Option<String> {
-        self.git2(|g| g.get_current_branch_name()).await
-    }
-
     pub async fn get_head_oid(&self) -> String {
         self.git2(|g| g.get_head_oid()).await
     }

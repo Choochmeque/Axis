@@ -108,6 +108,7 @@ jobs:
         run: |
           tauri-driver --native-driver /tmp/appium-mac2-driver/WebDriverAgentMac &
           for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
+          for i in $(seq 1 60); do nc -z 127.0.0.1 4445 2>/dev/null && break; sleep 1; done
           pnpm e2e:mac
 
   e2e-windows:

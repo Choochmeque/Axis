@@ -11,7 +11,11 @@ describe('Init Repository', () => {
   });
 
   after(async () => {
-    cleanupTempDir(tempDir);
+    try {
+      cleanupTempDir(tempDir);
+    } catch (e) {
+      console.warn('Failed to cleanup temp dir:', e);
+    }
   });
 
   it('should open init dialog when clicking New Repository', async () => {

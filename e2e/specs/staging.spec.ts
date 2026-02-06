@@ -19,7 +19,6 @@ describe('Staging Workflow', () => {
   });
 
   after(async () => {
-    await browser.deleteSession();
     try {
       cleanupTempDir(tempDir);
     } catch (e) {

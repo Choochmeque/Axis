@@ -20,7 +20,11 @@ describe('Staging Workflow', () => {
 
   after(async () => {
     await browser.deleteSession();
-    cleanupTempDir(tempDir);
+    try {
+      cleanupTempDir(tempDir);
+    } catch (e) {
+      console.warn('Failed to cleanup temp dir:', e);
+    }
   });
 
   it('should open the repository via init dialog', async () => {

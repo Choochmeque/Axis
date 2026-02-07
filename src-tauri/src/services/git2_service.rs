@@ -1902,7 +1902,9 @@ impl Git2Service {
                     _ => DiffLineType::Context,
                 };
 
-                let content = String::from_utf8_lossy(line.content()).to_string();
+                let content = String::from_utf8_lossy(line.content())
+                    .trim_end_matches(['\r', '\n'])
+                    .to_string();
 
                 current_lines.borrow_mut().push(DiffLine {
                     line_type,

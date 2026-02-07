@@ -122,6 +122,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 - **Virtualize long lists** - use virtualization for performance
 - **Cache aggressively** - invalidate on file system changes
 - **Follow existing patterns** - consistency is critical
+- **LLM usage is welcome** - but no AI slop. Review and understand generated code before submitting
 
 ## Generating TypeScript Bindings
 
@@ -133,7 +134,7 @@ cargo test export_typescript_bindings --manifest-path src-tauri/Cargo.toml
 
 ## Commit Guidelines
 
-Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+We recommend [Conventional Commits](https://www.conventionalcommits.org/) format (optional):
 
 ```
 type(scope): description
@@ -181,7 +182,6 @@ Axis supports Linux, macOS, and Windows. When contributing:
 - Test on multiple platforms when possible
 - Use platform-agnostic paths (`std::path::PathBuf`)
 - Handle platform-specific behavior in dedicated modules
-- Consider SSH backend differences (WinCNG on Windows)
 
 ## Questions?
 

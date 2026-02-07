@@ -49,7 +49,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>GitHub Integration</strong></summary>
 
-> Screenshot needed: PR list or issue panel with CI status and PR details. Demonstrates platform integrations.
+![Axis - GitHub Integration](docs/public/screenshot-github.png)
 
 </details>
 

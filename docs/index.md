@@ -8,10 +8,10 @@ hero:
   actions:
     - theme: brand
       text: Download
-      link: https://github.com/choochmeque/Axis/releases
+      link: https://github.com/Choochmeque/Axis/releases
     - theme: alt
       text: View on GitHub
-      link: https://github.com/choochmeque/Axis
+      link: https://github.com/Choochmeque/Axis
 
 features:
   - icon: 🚀
@@ -62,10 +62,10 @@ Axis combines the power of a full-featured Git client with a modern, intuitive i
   <h2>Get Started</h2>
   <p>Download Axis for your platform and start using Git the way it should be.</p>
   <div class="download-buttons">
-    <a href="https://github.com/choochmeque/Axis/releases" class="download-btn primary">
+    <a href="https://github.com/Choochmeque/Axis/releases" class="download-btn primary">
       Download Latest Release
     </a>
-    <a href="https://github.com/choochmeque/Axis" class="download-btn secondary">
+    <a href="https://github.com/Choochmeque/Axis" class="download-btn secondary">
       View Source Code
     </a>
   </div>

@@ -2,12 +2,12 @@
 
 A modern, cross-platform Git GUI built with Tauri.
 
-[![Unit Tests](https://github.com/choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/tests.yml)
-[![E2E Tests](https://github.com/choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/e2e.yml)
-[![Checks](https://github.com/choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/checks.yml)
-[![Coverage](https://codecov.io/gh/choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/choochmeque/Axis)
+[![Unit Tests](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml)
+[![E2E Tests](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml)
+[![Checks](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml)
+[![Coverage](https://codecov.io/gh/Choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/Choochmeque/Axis)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/choochmeque/Axis/releases)
+[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/Choochmeque/Axis/releases)
 
 ---
 
@@ -98,7 +98,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ### Download
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/choochmeque/Axis/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/Choochmeque/Axis/releases):
 
 | Platform | Download |
 |----------|----------|
@@ -108,7 +108,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ### Nightly Builds
 
-Nightly builds are available with the latest features and fixes. Check the [Releases](https://github.com/choochmeque/Axis/releases) page for builds tagged with `-nightly`.
+Nightly builds are available with the latest features and fixes. Check the [Releases](https://github.com/Choochmeque/Axis/releases) page for builds tagged with `-nightly`.
 
 ---
 
@@ -125,7 +125,7 @@ Nightly builds are available with the latest features and fixes. Check the [Rele
 
 ```bash
 # Clone the repository
-git clone https://github.com/choochmeque/Axis.git
+git clone https://github.com/Choochmeque/Axis.git
 cd Axis
 
 # Install dependencies
@@ -176,10 +176,10 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
 Contributions are welcome! Here's how you can help:
 
-- **Fix Bugs / Add Features** - Check [open issues](https://github.com/choochmeque/Axis/issues) or propose new ideas
+- **Fix Bugs / Add Features** - Check [open issues](https://github.com/Choochmeque/Axis/issues) or propose new ideas
 - **Write Tests** - Help us maintain 97%+ coverage
 - **Test the App** - Try it on different platforms and report bugs
-- **Sponsor** - Support development via [GitHub Sponsors](https://github.com/sponsors/choochmeque)
+- **Sponsor** - Support development via [GitHub Sponsors](https://github.com/sponsors/Choochmeque)
 
 Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
 

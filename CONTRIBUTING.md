@@ -30,7 +30,7 @@ xcode-select --install
 
 ```bash
 # Clone the repository
-git clone https://github.com/choochmeque/Axis.git
+git clone https://github.com/Choochmeque/Axis.git
 cd Axis
 
 # Install dependencies

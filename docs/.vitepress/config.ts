@@ -23,9 +23,9 @@ export default defineConfig({
   themeConfig: {
     logo: '/logo.svg',
 
-    nav: [{ text: 'GitHub', link: 'https://github.com/choochmeque/Axis' }],
+    nav: [{ text: 'GitHub', link: 'https://github.com/Choochmeque/Axis' }],
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/choochmeque/Axis' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/Choochmeque/Axis' }],
 
     footer: {
       message: 'Released under the MIT License.',

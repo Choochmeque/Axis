@@ -1,0 +1,89 @@
+name: Checks
+# This workflow runs linting, formatting, and audit checks.
+
+on:
+  pull_request:
+
+jobs:
+  check-pnpm:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    if: |
+      github.actor != 'dependabot[bot]' ||
+      contains(github.event.pull_request.labels.*.name, 'javascript')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Cache Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Run pnpm audit
+        run: pnpm audit || true # don't fail on audit issues, just warn
+
+      - name: Run format check
+        run: pnpm format:check
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+      - name: Run lint
+        run: pnpm lint
+
+  check-cargo:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    if: |
+      github.actor != 'dependabot[bot]' ||
+      contains(github.event.pull_request.labels.*.name, 'rust')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - uses: taiki-e/install-action@cargo-deny
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache and install APT packages
+        if: runner.os == 'Linux'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
+          version: '1.0'
+
+      - name: Check formatting
+        run: cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
+
+      - name: Create .env file
+        shell: bash
+        run: echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings -D clippy::unwrap_used
+
+      - name: Run audit
+        working-directory: src-tauri
+        run: cargo deny check advisories || true # don't fail if advisories found, just warn

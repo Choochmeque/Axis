@@ -54,19 +54,21 @@
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
-/* Screenshot placeholder styling */
-.screenshot-placeholder {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-  border-radius: 12px;
-  padding: 3rem;
-  text-align: center;
-  color: #a5b4fc;
-  margin: 2rem 0;
+/* Screenshot styling */
+.screenshot-container {
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
 }
 
-.screenshot-placeholder p {
-  margin: 0;
-  font-size: 1.1rem;
+.screenshot {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dark .screenshot {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* Download section */

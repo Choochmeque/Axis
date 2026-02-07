@@ -34,8 +34,8 @@ features:
     details: Built with Tauri and Rust for native performance. No Electron bloat.
 ---
 
-<div class="screenshot-placeholder">
-  <p>📸 Screenshot coming soon</p>
+<div class="screenshot-container">
+  <img src="/Axis/screenshot-main.png" alt="Axis - Main Window" class="screenshot" />
 </div>
 
 ## Why Axis?

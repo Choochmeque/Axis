@@ -16,14 +16,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ## Screenshots
 
-<!-- TODO: Replace placeholders with actual screenshots -->
-
-<details>
-<summary><strong>Main Window / History View</strong></summary>
-
-> Screenshot needed: Commit graph visualization with branches, sidebar with branches list, commit history, and file changes panel. Demonstrates the overall UI layout and design.
-
-</details>
+![Axis - Main Window](docs/public/screenshot-main.png)
 
 <details>
 <summary><strong>Staging Area</strong></summary>

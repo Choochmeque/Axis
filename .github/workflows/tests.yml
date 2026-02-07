@@ -1,0 +1,109 @@
+name: Tests + Coverage
+# This workflow runs tests and coverage analysis for the Tauri application.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-pnpm:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    if: |
+      github.actor != 'dependabot[bot]' ||
+      contains(github.event.pull_request.labels.*.name, 'javascript')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Cache Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Run UI tests with coverage
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        run: pnpm test:coverage
+
+      - name: Run UI tests without coverage (for dependabot)
+        if: ${{ github.actor == 'dependabot[bot]' }}
+        run: pnpm test:run
+
+      - name: Codecov
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          verbose: false
+          fail_ci_if_error: true
+          files: lcov.info
+          flags: pnpm
+
+  test-cargo:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    if: |
+      github.actor != 'dependabot[bot]' ||
+      contains(github.event.pull_request.labels.*.name, 'rust')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache and install APT packages
+        if: runner.os == 'Linux'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
+          version: '1.0'
+
+      - name: Create .env file
+        shell: bash
+        run: echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      - name: Run rust tests with coverage
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        run: cargo llvm-cov --workspace --all-targets --manifest-path src-tauri/Cargo.toml --lcov --output-path coverage.lcov
+
+      - name: Run rust tests without coverage (for dependabot)
+        if: ${{ github.actor == 'dependabot[bot]' }}
+        run: cargo test --workspace --all-targets --manifest-path src-tauri/Cargo.toml
+
+      - name: Codecov
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          verbose: false
+          fail_ci_if_error: true
+          files: coverage.lcov
+          flags: cargo

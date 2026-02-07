@@ -1,0 +1,246 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Triggers on tags like v1.0.0
+      - '!v*.*.*-*' # Exclude pre-release tags (e.g. v0.2.0-nightly.20260130)
+  workflow_dispatch:
+
+permissions:
+  contents: write # required for releases
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-artifacts
+          - os: windows-latest
+            artifact: windows-artifacts
+          - os: macos-latest
+            artifact: macos-artifacts
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # --------------------------------------------------
+      # Setup build tools
+      # --------------------------------------------------
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache and install APT packages
+        if: matrix.os == 'ubuntu-latest'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libfuse2
+          version: '1.0'
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      # --------------------------------------------------
+      # Build
+      # --------------------------------------------------
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
+      - name: Build Tauri app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm tauri build --bundles appimage -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        env:
+          AXIS_UPDATE_CHANNEL: stable
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+
+      - name: Build Tauri app (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: pnpm tauri build --bundles nsis -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        env:
+          AXIS_UPDATE_CHANNEL: stable
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+
+      - name: Build Tauri app (macOS)
+        if: matrix.os == 'macos-latest'
+        run: pnpm tauri build --bundles app,dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        env:
+          AXIS_UPDATE_CHANNEL: stable
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+
+      # --------------------------------------------------
+      # Collect artifacts
+      # --------------------------------------------------
+      - name: Collect build artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p release-dist
+          cp src-tauri/target/release/bundle/appimage/*.AppImage release-dist/
+          cp src-tauri/target/release/bundle/appimage/*.AppImage.sig release-dist/
+
+      - name: Collect build artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p release-dist
+          cp src-tauri/target/release/bundle/nsis/*.exe release-dist/
+          cp src-tauri/target/release/bundle/nsis/*.exe.sig release-dist/
+
+      - name: Collect build artifacts (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p release-dist
+          cp src-tauri/target/release/bundle/dmg/*.dmg release-dist/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz release-dist/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz.sig release-dist/
+
+      # --------------------------------------------------
+      # Upload artifact
+      # --------------------------------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact }}
+          path: release-dist/
+          retention-days: 7
+
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: release-dist
+
+      # --------------------------------------------------
+      # Generate latest.json for updater
+      # --------------------------------------------------
+      - name: Generate latest.json
+        run: |
+          REPO="${{ github.repository }}"
+          VERSION="${{ needs.build.outputs.version }}"
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          TAG="${{ github.ref_name }}"
+
+          APPIMAGE=$(find release-dist -name '*.AppImage' | head -1)
+          APPIMAGE_SIG=$(find release-dist -name '*.AppImage.sig' | head -1)
+          NSIS=$(find release-dist -name '*-setup.exe' | head -1)
+          NSIS_SIG=$(find release-dist -name '*-setup.exe.sig' | head -1)
+          MACOS=$(find release-dist -name '*.app.tar.gz' ! -name '*.sig' | head -1)
+          MACOS_SIG=$(find release-dist -name '*.app.tar.gz.sig' | head -1)
+
+          PLATFORMS=""
+
+          if [ -n "$APPIMAGE" ] && [ -n "$APPIMAGE_SIG" ]; then
+            APPIMAGE_NAME=$(basename "$APPIMAGE")
+            APPIMAGE_SIG_CONTENT=$(cat "$APPIMAGE_SIG")
+            PLATFORMS="\"linux-x86_64\": { \"signature\": \"$APPIMAGE_SIG_CONTENT\", \"url\": \"https://github.com/$REPO/releases/download/$TAG/$APPIMAGE_NAME\" }"
+          fi
+
+          if [ -n "$NSIS" ] && [ -n "$NSIS_SIG" ]; then
+            NSIS_NAME=$(basename "$NSIS")
+            NSIS_SIG_CONTENT=$(cat "$NSIS_SIG")
+            if [ -n "$PLATFORMS" ]; then
+              PLATFORMS="$PLATFORMS, "
+            fi
+            PLATFORMS="${PLATFORMS}\"windows-x86_64\": { \"signature\": \"$NSIS_SIG_CONTENT\", \"url\": \"https://github.com/$REPO/releases/download/$TAG/$NSIS_NAME\" }"
+          fi
+
+          if [ -n "$MACOS" ] && [ -n "$MACOS_SIG" ]; then
+            MACOS_NAME=$(basename "$MACOS")
+            MACOS_SIG_CONTENT=$(cat "$MACOS_SIG")
+            if [ -n "$PLATFORMS" ]; then
+              PLATFORMS="$PLATFORMS, "
+            fi
+            PLATFORMS="${PLATFORMS}\"darwin-aarch64\": { \"signature\": \"$MACOS_SIG_CONTENT\", \"url\": \"https://github.com/$REPO/releases/download/$TAG/$MACOS_NAME\" }"
+          fi
+
+          if [ -z "$PLATFORMS" ]; then
+            echo "ERROR: No platform artifacts found"
+            find release-dist -type f
+            exit 1
+          fi
+
+          cat > release-dist/latest.json <<EOF
+          {
+            "version": "$VERSION",
+            "notes": "Release $TAG",
+            "pub_date": "$PUB_DATE",
+            "platforms": { $PLATFORMS }
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat release-dist/latest.json
+
+      # --------------------------------------------------
+      # Create GitHub release
+      # --------------------------------------------------
+      - name: Create release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload assets
+        run: |
+          gh release upload "${{ github.ref_name }}" release-dist/latest.json --clobber
+          find release-dist -type f \( -name '*.AppImage' -o -name '*.AppImage.sig' -o -name '*-setup.exe' -o -name '*-setup.exe.sig' -o -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.app.tar.gz.sig' \) | xargs gh release upload "${{ github.ref_name }}" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

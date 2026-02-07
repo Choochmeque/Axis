@@ -174,7 +174,14 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+Contributions are welcome! Here's how you can help:
+
+- **Fix Bugs / Add Features** - Check [open issues](https://github.com/choochmeque/Axis/issues) or propose new ideas
+- **Write Tests** - Help us maintain 97%+ coverage
+- **Test the App** - Try it on different platforms and report bugs
+- **Sponsor** - Support development via [GitHub Sponsors](https://github.com/sponsors/choochmeque)
+
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
 
 ---
 

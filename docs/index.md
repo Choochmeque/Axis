@@ -25,7 +25,7 @@ features:
     details: Manage pull requests, issues, and CI status directly from the app. Stay connected to your workflow.
   - icon: 🤖
     title: AI-Assisted Commits
-    details: Generate meaningful commit messages with AI. Supports Claude and Ollama.
+    details: Generate meaningful commit messages with AI. Supports Claude, OpenAI, and Ollama.
   - icon: 💻
     title: Cross-Platform
     details: Works seamlessly on macOS, Windows, and Linux. One app, all platforms.

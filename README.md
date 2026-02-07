@@ -71,8 +71,8 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ### Advanced Features
 
-- **GitHub/GitLab Integration** - Pull requests, issues, CI status, notifications
-- **AI-Assisted Commits** - Generate commit messages using Claude or Ollama
+- **GitHub Integration** - Pull requests, issues, CI status, notifications
+- **AI-Assisted Commits** - Generate commit messages using Claude, OpenAI, or Ollama
 - **Git LFS** - Large File Storage support
 - **Worktrees** - Create and manage multiple working trees
 - **Submodules** - Add and manage submodules

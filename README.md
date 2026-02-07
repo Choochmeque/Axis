@@ -35,7 +35,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Branch Management</strong></summary>
 
-> Screenshot needed: Branch list with context menu showing local/remote branches and create/merge options. Demonstrates branch operations.
+![Axis - Branch Management](docs/public/screenshot-branches.png)
 
 </details>
 

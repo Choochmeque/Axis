@@ -2,9 +2,10 @@
 
 A modern, cross-platform Git GUI built with Tauri.
 
-[![Tests + Coverage](https://github.com/choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/tests.yml)
+[![Unit Tests](https://github.com/choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/tests.yml)
+[![E2E Tests](https://github.com/choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/e2e.yml)
 [![Checks](https://github.com/choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/checks.yml)
-[![codecov](https://codecov.io/gh/choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/choochmeque/Axis)
+[![Coverage](https://codecov.io/gh/choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/choochmeque/Axis)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/choochmeque/Axis/releases)
 

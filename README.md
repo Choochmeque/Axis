@@ -28,7 +28,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Diff View</strong></summary>
 
-> Screenshot needed: Side-by-side or unified diff with syntax highlighting, line numbers, and hunk staging. Demonstrates code review capabilities.
+![Axis - Diff View](docs/public/screenshot-diff.png)
 
 </details>
 

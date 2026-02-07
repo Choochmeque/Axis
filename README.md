@@ -42,7 +42,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Merge Conflict Resolution</strong></summary>
 
-> Screenshot needed: Conflict resolver UI with theirs/ours/merged panels. Demonstrates conflict handling.
+![Axis - Merge Conflict Resolution](docs/public/screenshot-merge.png)
 
 </details>
 

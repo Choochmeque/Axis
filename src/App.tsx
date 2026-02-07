@@ -9,6 +9,7 @@ import { WelcomeView } from './components/WelcomeView';
 import { ContentSearch } from './components/search/ContentSearch';
 import { ReflogView } from './components/reflog';
 import { LfsView } from './components/lfs';
+import { GitFlowView } from './components/gitflow';
 import { PullRequestsView, IssuesView, CIView, NotificationsView } from './components/integrations';
 import { ConflictResolver } from './components/merge';
 import { TabBar } from './components/layout/TabBar';
@@ -282,6 +283,8 @@ function App() {
         return <ReflogView key="reflog" />;
       case 'lfs':
         return <LfsView key="lfs" />;
+      case 'gitflow':
+        return <GitFlowView key="gitflow" />;
       case 'pull-requests':
         return <PullRequestsView key="pull-requests" />;
       case 'issues':

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   GitBranch,
   GitFork,
+  GitMerge,
   Tag,
   Cloud,
   Archive,
@@ -370,6 +371,16 @@ export function Sidebar() {
               >
                 <RotateCcw size={12} />
                 <span>{t('sidebar.views.reflog')}</span>
+              </button>
+              <button
+                className={cn(
+                  sidebarItemClass,
+                  currentView === 'gitflow' && 'bg-(--bg-active) font-medium'
+                )}
+                onClick={() => handleViewClick('gitflow')}
+              >
+                <GitMerge size={12} />
+                <span>{t('sidebar.views.gitFlow')}</span>
               </button>
               <button
                 className={cn(

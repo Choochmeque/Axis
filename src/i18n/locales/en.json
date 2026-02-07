@@ -391,7 +391,8 @@
     "noResults": "No matching repositories",
     "pin": "Pin",
     "unpin": "Unpin",
-    "sortLastOpened": "Last Opened"
+    "sortLastOpened": "Last Opened",
+    "repositoryMissing": "Missing"
   },
   "branches": {
     "validation": {

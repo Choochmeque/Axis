@@ -87,7 +87,7 @@ describe('RepoCard', () => {
     );
 
     const badge = screen.getByTestId('badge-error');
-    expect(badge).toHaveTextContent('submodules.status.missing');
+    expect(badge).toHaveTextContent('welcome.repositoryMissing');
   });
 
   it('should not render missing badge when repo exists', () => {

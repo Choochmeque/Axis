@@ -36,7 +36,7 @@ export function RepoCard({ repo, onClick, className, ...rest }: RepoCardProps) {
           )}
           {!repo.exists && (
             <Badge variant="error" size="sm">
-              {t('submodules.status.missing')}
+              {t('welcome.repositoryMissing')}
             </Badge>
           )}
         </div>

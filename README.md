@@ -21,7 +21,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Staging Area</strong></summary>
 
-> Screenshot needed: Files staged for commit with diff view, syntax highlighting, and stage/unstage buttons. Demonstrates the staging workflow.
+![Axis - Staging Area](docs/public/screenshot-staging.png)
 
 </details>
 

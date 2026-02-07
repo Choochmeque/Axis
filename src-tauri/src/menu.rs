@@ -386,7 +386,7 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, id: &MenuId) {
     }
     .emit(app))
     {
-        log::error!("[Menu] Failed to emit menu action event: {:?}", e);
+        log::error!("[Menu] Failed to emit menu action event: {e:?}");
     }
 
     match MenuAction::from_str(id_str) {

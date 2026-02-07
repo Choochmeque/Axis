@@ -509,7 +509,7 @@ impl GitCliService {
 
     /// Get the base version of a conflicted file
     pub async fn get_conflict_base(&self, path: &str) -> Result<String> {
-        let result = self.execute(&["show", &format!(":1:{}", path)]).await?;
+        let result = self.execute(&["show", &format!(":1:{path}")]).await?;
         if result.success {
             Ok(result.stdout)
         } else {
@@ -522,7 +522,7 @@ impl GitCliService {
 
     /// Get the ours (current) version of a conflicted file
     pub async fn get_conflict_ours(&self, path: &str) -> Result<String> {
-        let result = self.execute(&["show", &format!(":2:{}", path)]).await?;
+        let result = self.execute(&["show", &format!(":2:{path}")]).await?;
         if result.success {
             Ok(result.stdout)
         } else {
@@ -535,7 +535,7 @@ impl GitCliService {
 
     /// Get the theirs (incoming) version of a conflicted file
     pub async fn get_conflict_theirs(&self, path: &str) -> Result<String> {
-        let result = self.execute(&["show", &format!(":3:{}", path)]).await?;
+        let result = self.execute(&["show", &format!(":3:{path}")]).await?;
         if result.success {
             Ok(result.stdout)
         } else {
@@ -871,7 +871,7 @@ impl GitCliService {
     ) -> Result<TagResult> {
         let result = self
             .execute_with_ssh_credentials(
-                &["push", remote, &format!("refs/tags/{}", name)],
+                &["push", remote, &format!("refs/tags/{name}")],
                 ssh_credentials,
             )
             .await?;
@@ -917,7 +917,7 @@ impl GitCliService {
     ) -> Result<TagResult> {
         let result = self
             .execute_with_ssh_credentials(
-                &["push", remote, "--delete", &format!("refs/tags/{}", name)],
+                &["push", remote, "--delete", &format!("refs/tags/{name}")],
                 ssh_credentials,
             )
             .await?;
@@ -1228,7 +1228,7 @@ impl GitCliService {
             if let Err(e) = std::fs::remove_dir_all(&git_modules_path) {
                 return Ok(SubmoduleResult {
                     success: false,
-                    message: format!("Failed to remove .git/modules/{}: {}", path, e),
+                    message: format!("Failed to remove .git/modules/{path}: {e}"),
                     submodules: Vec::new(),
                 });
             }
@@ -1401,7 +1401,7 @@ impl GitCliService {
             GitFlowBranchType::Support => &config.support_prefix,
         };
 
-        let branch_name = format!("{}{}", prefix, name);
+        let branch_name = format!("{prefix}{name}");
         let base_branch = base
             .map(|s| s.to_string())
             .unwrap_or_else(|| match branch_type {
@@ -1449,7 +1449,7 @@ impl GitCliService {
             GitFlowBranchType::Support => &config.support_prefix,
         };
 
-        let branch_name = format!("{}{}", prefix, name);
+        let branch_name = format!("{prefix}{name}");
         let target_branch = match branch_type {
             GitFlowBranchType::Feature => config.develop.clone(),
             GitFlowBranchType::Release | GitFlowBranchType::Hotfix => config.master.clone(),
@@ -1504,7 +1504,7 @@ impl GitCliService {
             let tag_msg = options
                 .tag_message
                 .clone()
-                .unwrap_or_else(|| format!("Release {}", name));
+                .unwrap_or_else(|| format!("Release {name}"));
             tag_args.push("-m");
             tag_args.push(&tag_msg);
 
@@ -1566,7 +1566,7 @@ impl GitCliService {
             GitFlowBranchType::Support => &config.support_prefix,
         };
 
-        let branch_name = format!("{}{}", prefix, name);
+        let branch_name = format!("{prefix}{name}");
 
         let result = self
             .execute_with_ssh_credentials(&["push", "-u", "origin", &branch_name], ssh_credentials)

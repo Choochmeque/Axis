@@ -4153,7 +4153,7 @@ mod tests {
                 .stage_file(&format!("file{}.txt", i))
                 .expect("should stage file");
             service
-                .create_commit(&format!("Commit {}", i), None, None, None)
+                .create_commit(&format!("Commit {i}"), None, None, None)
                 .expect("should create commit");
         }
 
@@ -4306,7 +4306,7 @@ mod tests {
                 .stage_file(&format!("file{}.txt", i))
                 .expect("should stage file");
             service
-                .create_commit(&format!("Commit {}", i), None, None, None)
+                .create_commit(&format!("Commit {i}"), None, None, None)
                 .expect("should create commit");
         }
 

@@ -289,7 +289,7 @@ impl SigningService {
             ])
             .output()
             .await
-            .map_err(|e| AxisError::Other(format!("Failed to list GPG keys: {}", e)))?;
+            .map_err(|e| AxisError::Other(format!("Failed to list GPG keys: {e}")))?;
 
         if !output.status.success() {
             // No keys is not an error

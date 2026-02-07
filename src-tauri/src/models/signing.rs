@@ -19,7 +19,7 @@ impl std::str::FromStr for SigningFormat {
         match s.to_lowercase().as_str() {
             "gpg" | "openpgp" => Ok(SigningFormat::Gpg),
             "ssh" => Ok(SigningFormat::Ssh),
-            _ => Err(format!("Unknown signing format: {}", s)),
+            _ => Err(format!("Unknown signing format: {s}")),
         }
     }
 }

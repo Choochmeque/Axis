@@ -172,6 +172,22 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
 ---
 
+## Roadmap
+
+**Short-term**
+- Performance optimizations
+- Bug fixes
+- More language translations
+
+**Medium-term**
+- Advanced search & filtering
+- GitLab, Bitbucket, and other platform integrations
+
+**Long-term**
+- Full native Git implementation (eliminate CLI dependency)
+
+---
+
 ## Contributing
 
 Contributions are welcome! Here's how you can help:
@@ -182,6 +198,38 @@ Contributions are welcome! Here's how you can help:
 - **Sponsor** - Support development via [GitHub Sponsors](https://github.com/sponsors/Choochmeque)
 
 Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+
+---
+
+## FAQ
+
+<details>
+<summary><strong>Is Axis free?</strong></summary>
+
+Yes, Axis is free and open source under the MIT license.
+
+</details>
+
+<details>
+<summary><strong>Does Axis require Git to be installed?</strong></summary>
+
+Currently yes, but we're working toward a fully native implementation using git2-rs.
+
+</details>
+
+<details>
+<summary><strong>Why Axis over other Git clients?</strong></summary>
+
+Axis is built with modern tech (Tauri + Rust) for native performance without Electron overhead. It's open source, cross-platform and free.
+
+</details>
+
+<details>
+<summary><strong>How do I report a bug?</strong></summary>
+
+Open an issue on [GitHub Issues](https://github.com/Choochmeque/Axis/issues) with steps to reproduce.
+
+</details>
 
 ---
 

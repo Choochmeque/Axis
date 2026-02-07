@@ -1,4 +1,4 @@
-name: Tests + Coverage
+name: Unit Tests
 # This workflow runs tests and coverage analysis for the Tauri application.
 
 on:

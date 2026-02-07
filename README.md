@@ -1,6 +1,10 @@
-# Axis
+<p align="center">
+  <img src="app-icon.png" alt="Axis" width="128" height="128">
+</p>
 
-A modern, cross-platform Git GUI built with Tauri.
+<h1 align="center">Axis</h1>
+
+<p align="center">A modern, cross-platform Git GUI built with Tauri.</p>
 
 [![Unit Tests](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml)
 [![E2E Tests](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml)

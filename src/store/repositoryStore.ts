@@ -51,6 +51,7 @@ export type ViewType =
   | 'search'
   | 'reflog'
   | 'lfs'
+  | 'gitflow'
   | 'pull-requests'
   | 'issues'
   | 'ci'

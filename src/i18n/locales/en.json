@@ -1078,7 +1078,8 @@
       "history": "History",
       "search": "Search",
       "reflog": "Reflog",
-      "gitLfs": "Git LFS"
+      "gitLfs": "Git LFS",
+      "gitFlow": "Git Flow"
     },
     "empty": {
       "noBranches": "No branches",

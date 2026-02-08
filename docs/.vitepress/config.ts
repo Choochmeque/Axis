@@ -15,6 +15,7 @@ const guideSidebar = [
       { text: 'Staging & Commits', link: '/guide/staging-commits' },
       { text: 'Branches', link: '/guide/branches' },
       { text: 'Merging & Rebasing', link: '/guide/merging-rebasing' },
+      { text: 'Cherry Pick', link: '/guide/cherry-pick' },
       { text: 'Stashing', link: '/guide/stashing' },
       { text: 'History & Blame', link: '/guide/history-blame' },
     ],

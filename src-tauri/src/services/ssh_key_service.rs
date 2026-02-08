@@ -563,16 +563,46 @@ impl SshKeyService {
     }
 
     fn detect_algorithm(content: &str) -> SshKeyAlgorithm {
+        // Check old-style PEM headers first
         if content.contains("ED25519") {
-            SshKeyAlgorithm::Ed25519
-        } else if content.contains("RSA") {
-            SshKeyAlgorithm::Rsa
-        } else if content.contains("ECDSA") || content.contains("EC PRIVATE") {
-            SshKeyAlgorithm::Ecdsa
-        } else {
-            // Default to Ed25519 for unknown types
-            SshKeyAlgorithm::Ed25519
+            return SshKeyAlgorithm::Ed25519;
         }
+        if content.contains("BEGIN RSA PRIVATE KEY") {
+            return SshKeyAlgorithm::Rsa;
+        }
+        if content.contains("BEGIN EC PRIVATE KEY") || content.contains("BEGIN ECDSA") {
+            return SshKeyAlgorithm::Ecdsa;
+        }
+
+        // For modern OpenSSH format, decode the base64 and check the algorithm string
+        if content.contains("BEGIN OPENSSH PRIVATE KEY") {
+            let b64: String = content
+                .lines()
+                .filter(|l| !l.starts_with("-----"))
+                .collect();
+
+            if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&b64) {
+                // The decoded content contains the algorithm identifier as ASCII
+                let decoded_str = String::from_utf8_lossy(&decoded);
+
+                if decoded_str.contains("ssh-ed25519") {
+                    return SshKeyAlgorithm::Ed25519;
+                }
+                if decoded_str.contains("ssh-rsa") {
+                    return SshKeyAlgorithm::Rsa;
+                }
+                if decoded_str.contains("ecdsa-sha2") {
+                    return SshKeyAlgorithm::Ecdsa;
+                }
+            }
+        }
+
+        // Default to Ed25519 for unknown types
+        log::warn!(
+            "Could not detect SSH key algorithm, defaulting to Ed25519. Content preview: {}",
+            &content[..content.len().min(100)]
+        );
+        SshKeyAlgorithm::Ed25519
     }
 
     fn extract_comment(pub_content: &str) -> Option<String> {
@@ -1064,18 +1094,251 @@ mod tests {
     // ==================== Integration test with tempdir ====================
 
     #[tokio::test]
-    async fn test_generate_and_delete_key() {
+    async fn test_generate_key_and_operations() {
         // Skip if ssh-keygen is not available
-        if SshKeyService::find_ssh_keygen().await.is_err() {
-            return;
-        }
+        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
+            Ok(path) => path,
+            Err(_) => return,
+        };
 
         let tmp = TempDir::new().expect("should create temp dir");
-        let filename = format!("test_key_{}", std::process::id());
-        let key_path = tmp.path().join(&filename);
+        let key_path = tmp.path().join("test_ed25519_key");
+        let key_path_str = key_path.to_string_lossy().to_string();
 
-        // We can't easily test generate_key since it writes to ~/.ssh
-        // Instead, test the components individually
-        assert!(SshKeyService::validate_filename(&filename).is_ok());
+        // Generate key directly using ssh-keygen (bypasses ~/.ssh requirement)
+        let output = crate::services::create_command(ssh_keygen.as_os_str())
+            .args([
+                "-t",
+                "ed25519",
+                "-f",
+                &key_path_str,
+                "-N",
+                "", // no passphrase
+                "-C",
+                "test@example.com",
+            ])
+            .output()
+            .await
+            .expect("should run ssh-keygen");
+
+        assert!(
+            output.status.success(),
+            "ssh-keygen failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        // Verify both files were created
+        assert!(key_path.exists(), "private key should exist");
+        assert!(
+            tmp.path().join("test_ed25519_key.pub").exists(),
+            "public key should exist"
+        );
+
+        // Test check_key_format
+        let format =
+            SshKeyService::check_key_format(&key_path_str).expect("should check key format");
+        assert_eq!(format, SshKeyFormat::OpenSsh, "should be OpenSSH format");
+
+        // Test check_key_format_optional
+        let format_opt = SshKeyService::check_key_format_optional(&key_path);
+        assert_eq!(
+            format_opt,
+            Some(SshKeyFormat::OpenSsh),
+            "optional check should return OpenSsh"
+        );
+
+        // Test get_public_key_content
+        let pub_content = SshKeyService::get_public_key_content(&key_path_str)
+            .expect("should get public key content");
+        assert!(
+            pub_content.starts_with("ssh-ed25519"),
+            "public key should start with algorithm"
+        );
+        assert!(
+            pub_content.contains("test@example.com"),
+            "public key should contain comment"
+        );
+
+        // Test get_fingerprint
+        let fingerprint = SshKeyService::get_fingerprint(&key_path_str)
+            .await
+            .expect("should get fingerprint");
+        assert!(
+            fingerprint.starts_with("SHA256:"),
+            "fingerprint should start with SHA256:"
+        );
+
+        // Test detect_algorithm on the key content
+        let key_content = fs::read_to_string(&key_path).expect("should read key");
+        let algo = SshKeyService::detect_algorithm(&key_content);
+        assert_eq!(algo, SshKeyAlgorithm::Ed25519);
+
+        // Test extract_comment on the public key
+        let comment = SshKeyService::extract_comment(&pub_content);
+        assert_eq!(comment, Some("test@example.com".to_string()));
+
+        // Test export_key (export to another temp location)
+        let export_dir = tmp.path().join("export");
+        fs::create_dir(&export_dir).expect("should create export dir");
+
+        let export_opts = ExportSshKeyOptions {
+            key_path: key_path_str.clone(),
+            target_dir: export_dir.to_string_lossy().to_string(),
+            public_only: false,
+        };
+        SshKeyService::export_key(export_opts).expect("should export key");
+
+        assert!(
+            export_dir.join("test_ed25519_key").exists(),
+            "exported private key should exist"
+        );
+        assert!(
+            export_dir.join("test_ed25519_key.pub").exists(),
+            "exported public key should exist"
+        );
+
+        // Test export_key with public_only
+        let export_dir2 = tmp.path().join("export2");
+        fs::create_dir(&export_dir2).expect("should create export dir 2");
+
+        let export_opts_pub = ExportSshKeyOptions {
+            key_path: key_path_str.clone(),
+            target_dir: export_dir2.to_string_lossy().to_string(),
+            public_only: true,
+        };
+        SshKeyService::export_key(export_opts_pub).expect("should export public key only");
+
+        assert!(
+            !export_dir2.join("test_ed25519_key").exists(),
+            "private key should NOT be exported"
+        );
+        assert!(
+            export_dir2.join("test_ed25519_key.pub").exists(),
+            "public key should be exported"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_generate_rsa_key() {
+        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
+            Ok(path) => path,
+            Err(_) => return,
+        };
+
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_rsa_key");
+        let key_path_str = key_path.to_string_lossy().to_string();
+
+        // Generate RSA key with specific bit size
+        let output = crate::services::create_command(ssh_keygen.as_os_str())
+            .args(["-t", "rsa", "-b", "2048", "-f", &key_path_str, "-N", ""])
+            .output()
+            .await
+            .expect("should run ssh-keygen");
+
+        assert!(output.status.success(), "ssh-keygen should succeed");
+
+        let key_content = fs::read_to_string(&key_path).expect("should read key");
+        let algo = SshKeyService::detect_algorithm(&key_content);
+        assert_eq!(algo, SshKeyAlgorithm::Rsa);
+    }
+
+    #[tokio::test]
+    async fn test_generate_ecdsa_key() {
+        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
+            Ok(path) => path,
+            Err(_) => return,
+        };
+
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_ecdsa_key");
+        let key_path_str = key_path.to_string_lossy().to_string();
+
+        // Generate ECDSA key
+        let output = crate::services::create_command(ssh_keygen.as_os_str())
+            .args(["-t", "ecdsa", "-b", "256", "-f", &key_path_str, "-N", ""])
+            .output()
+            .await
+            .expect("should run ssh-keygen");
+
+        assert!(output.status.success(), "ssh-keygen should succeed");
+
+        let key_content = fs::read_to_string(&key_path).expect("should read key");
+        let algo = SshKeyService::detect_algorithm(&key_content);
+        assert_eq!(algo, SshKeyAlgorithm::Ecdsa);
+    }
+
+    #[tokio::test]
+    async fn test_encrypted_key_detection() {
+        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
+            Ok(path) => path,
+            Err(_) => return,
+        };
+
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_encrypted_key");
+        let key_path_str = key_path.to_string_lossy().to_string();
+
+        // Generate encrypted key with passphrase
+        let output = crate::services::create_command(ssh_keygen.as_os_str())
+            .args([
+                "-t",
+                "ed25519",
+                "-f",
+                &key_path_str,
+                "-N",
+                "testpassword123",
+            ])
+            .output()
+            .await
+            .expect("should run ssh-keygen");
+
+        assert!(output.status.success(), "ssh-keygen should succeed");
+
+        let format =
+            SshKeyService::check_key_format(&key_path_str).expect("should check key format");
+        assert_eq!(
+            format,
+            SshKeyFormat::EncryptedOpenSsh,
+            "encrypted key should be detected"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_fingerprint_nonexistent() {
+        let result = SshKeyService::get_fingerprint("/nonexistent/key/path").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_extract_bits() {
+        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
+            Ok(path) => path,
+            Err(_) => return,
+        };
+
+        let tmp = TempDir::new().expect("should create temp dir");
+        let key_path = tmp.path().join("test_bits_key");
+        let key_path_str = key_path.to_string_lossy().to_string();
+
+        // Generate RSA key with known bit size
+        let output = crate::services::create_command(ssh_keygen.as_os_str())
+            .args(["-t", "rsa", "-b", "4096", "-f", &key_path_str, "-N", ""])
+            .output()
+            .await
+            .expect("should run ssh-keygen");
+
+        assert!(output.status.success());
+
+        let bits = SshKeyService::extract_bits(&key_path).await;
+        assert_eq!(bits, Some(4096), "should detect 4096-bit RSA key");
+    }
+
+    #[tokio::test]
+    async fn test_find_ssh_keygen() {
+        // This test verifies find_ssh_keygen works on systems with ssh-keygen
+        SshKeyService::find_ssh_keygen()
+            .await
+            .expect("ssh-keygen should be found");
     }
 }

@@ -143,3 +143,8 @@
   font-size: 0.9rem;
   opacity: 0.8;
 }
+
+/* Hide search on home page */
+body.is-home-page .VPNavBarSearch {
+  display: none !important;
+}

@@ -1,146 +1,165 @@
 # SSH Keys
 
-SSH keys provide secure authentication to remote Git repositories without entering passwords. Axis helps you manage SSH keys and handles passphrase prompts.
+SSH keys provide secure authentication to remote Git repositories without entering passwords. Axis includes full SSH key management - no terminal required.
 
 ## SSH Key Basics
 
 SSH uses key pairs for authentication:
 
-- **Private key**: Kept secret on your machine
-  - macOS/Linux: `~/.ssh/id_ed25519`
-  - Windows: `C:\Users\<username>\.ssh\id_ed25519`
+- **Private key**: Kept secret on your machine (`~/.ssh/id_ed25519`)
 - **Public key**: Shared with services like GitHub (same path with `.pub` extension)
 
-## Setting Up SSH Keys
+## Managing SSH Keys
+
+### View Your Keys
+
+Go to **Settings > SSH Keys** to see all SSH keys in your `~/.ssh` directory. Each key shows:
+
+- Key type (Ed25519, RSA, ECDSA)
+- Comment/name
+- Fingerprint
 
 ### Generate a New Key
 
-1. Open Terminal
-2. Generate an Ed25519 key (recommended):
+:::tabs
+== Axis
+1. Go to **Settings > SSH Keys**
+2. Click the **+** button
+3. Choose algorithm (Ed25519 recommended)
+4. Enter a filename (e.g., `github_key`)
+5. Optionally add a comment and passphrase
+6. Click **Generate**
 
+== CLI
 ```bash
 ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
+:::
 
-3. When prompted, choose a location (default is fine)
-4. Enter a passphrase for additional security
+### Import an Existing Key
 
-### Add Key to SSH Agent
+:::tabs
+== Axis
+1. Go to **Settings > SSH Keys**
+2. Click the **Import** button
+3. Browse to select your private key file
+4. Enter a filename for the imported key
+5. Click **Import**
+
+== CLI
+```bash
+cp /path/to/key ~/.ssh/
+chmod 600 ~/.ssh/keyname
+```
+:::
+
+### Copy Public Key
+
+:::tabs
+== Axis
+1. Go to **Settings > SSH Keys**
+2. Click the **Copy** button next to a key
+3. The public key is copied to your clipboard
+
+== CLI
+```bash
+# macOS
+pbcopy < ~/.ssh/id_ed25519.pub
+
+# Linux
+xclip -selection clipboard < ~/.ssh/id_ed25519.pub
+
+# Windows
+Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | Set-Clipboard
+```
+:::
+
+### Export a Key
+
+:::tabs
+== Axis
+1. Go to **Settings > SSH Keys**
+2. Click the **Export** button next to a key
+3. Choose a destination folder
+4. Select whether to export public key only or both keys
+5. Click **Export**
+
+== CLI
+```bash
+cp ~/.ssh/id_ed25519 /path/to/destination/
+cp ~/.ssh/id_ed25519.pub /path/to/destination/
+```
+:::
+
+### Delete a Key
+
+:::tabs
+== Axis
+1. Go to **Settings > SSH Keys**
+2. Click the **Delete** button next to a key
+3. Confirm deletion
+
+== CLI
+```bash
+rm ~/.ssh/id_ed25519
+rm ~/.ssh/id_ed25519.pub
+```
+:::
+
+::: warning
+Deleting a key removes it from your system. You'll lose access to any service configured with this key.
+:::
+
+## Adding Key to GitHub/GitLab
+
+1. Copy your public key (see above)
+2. Go to GitHub > Settings > SSH and GPG keys
+3. Click **New SSH key**
+4. Paste your public key and save
+
+## Per-Remote Key Assignment
+
+Axis can assign specific SSH keys to specific remotes, useful when you have multiple keys for different services.
+
+1. Go to **Repository > Remotes**
+2. Select a remote
+3. Choose which SSH key to use for this remote
+
+This avoids the need to configure `~/.ssh/config` manually.
+
+## Passphrase Handling
+
+When you perform Git operations with a passphrase-protected key:
+
+1. Axis prompts for the passphrase
+2. The passphrase is cached in memory for the session
+3. Future operations use the cached passphrase
+
+## SSH Agent Integration
+
+For persistent passphrase caching, add your key to the SSH agent:
 
 :::tabs
 == macOS
 ```bash
-# Start the SSH agent
 eval "$(ssh-agent -s)"
-
-# Add your key (with keychain)
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 ```
 
 == Linux
 ```bash
-# Start the SSH agent
 eval "$(ssh-agent -s)"
-
-# Add your key
 ssh-add ~/.ssh/id_ed25519
 ```
 
 == Windows
 ```powershell
-# Start the SSH agent service (run as Administrator)
+# Run as Administrator
 Get-Service ssh-agent | Set-Service -StartupType Automatic
 Start-Service ssh-agent
-
-# Add your key
 ssh-add $env:USERPROFILE\.ssh\id_ed25519
 ```
 :::
-
-### Add Key to GitHub
-
-1. Copy your public key:
-
-:::tabs
-== macOS
-```bash
-pbcopy < ~/.ssh/id_ed25519.pub
-```
-
-== Linux
-```bash
-xclip -selection clipboard < ~/.ssh/id_ed25519.pub
-# or
-cat ~/.ssh/id_ed25519.pub  # then copy manually
-```
-
-== Windows
-```powershell
-Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | Set-Clipboard
-```
-:::
-
-2. Go to GitHub > Settings > SSH and GPG keys
-3. Click **New SSH key**
-4. Paste your public key and save
-
-## Using SSH in Axis
-
-### Passphrase Handling
-
-When you perform Git operations with an SSH key that has a passphrase:
-
-1. Axis prompts for the passphrase
-2. Optionally save it to the system keychain
-3. Future operations use the saved passphrase
-
-### SSH Key Selection
-
-Axis uses your system's SSH configuration. To specify which key to use for different hosts, edit your SSH config:
-
-- macOS/Linux: `~/.ssh/config`
-- Windows: `C:\Users\<username>\.ssh\config`
-
-::: tip
-On Windows, you can use either forward slashes or `~` in the config file. Git for Windows and OpenSSH understand both formats.
-:::
-
-```
-# GitHub
-Host github.com
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/github_key
-
-# GitLab
-Host gitlab.com
-  HostName gitlab.com
-  User git
-  IdentityFile ~/.ssh/gitlab_key
-
-# Work server
-Host work
-  HostName git.company.com
-  User git
-  IdentityFile ~/.ssh/work_key
-```
-
-## Managing Keys in Axis
-
-### View SSH Keys
-
-1. Open **Settings** > **SSH Keys**
-2. View your configured SSH keys
-3. See which keys are loaded in the SSH agent
-
-### Troubleshooting
-
-If SSH authentication fails:
-
-1. Verify the key is added to GitHub/GitLab
-2. Check the key is loaded: `ssh-add -l`
-3. Test the connection: `ssh -T git@github.com`
-4. Ensure the remote URL uses SSH format: `git@github.com:user/repo.git`
 
 ## Key Types
 
@@ -150,26 +169,15 @@ If SSH authentication fails:
 - Shorter keys with equivalent security
 - Widely supported
 
-```bash
-ssh-keygen -t ed25519 -C "email@example.com"
-```
-
 ### RSA
 
 - Older but universally compatible
 - Use 4096 bits for security
 
-```bash
-ssh-keygen -t rsa -b 4096 -C "email@example.com"
-```
+### ECDSA
 
-## Security Best Practices
-
-1. **Always use a passphrase** - Protects your key if your machine is compromised
-2. **Use unique keys** - Different keys for different services
-3. **Rotate keys periodically** - Replace old keys annually
-4. **Never share private keys** - Only share `.pub` files
-5. **Use SSH agent** - Avoid entering passphrases repeatedly
+- Elliptic curve cryptography
+- Good balance of security and performance
 
 ## Converting HTTPS to SSH
 
@@ -185,10 +193,33 @@ If your repository uses HTTPS and you want to switch to SSH:
 
 == CLI
 ```bash
-# View current remote
-git remote -v
-
-# Change to SSH
 git remote set-url origin git@github.com:username/repo.git
 ```
 :::
+
+## Troubleshooting
+
+### Authentication Failed
+
+1. Verify the key is added to GitHub/GitLab
+2. Check the key is loaded: `ssh-add -l`
+3. Test the connection: `ssh -T git@github.com`
+4. Ensure the remote URL uses SSH format
+
+### Wrong Key Used
+
+Use per-remote key assignment in Axis, or configure `~/.ssh/config`:
+
+```
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/github_key
+```
+
+## Security Best Practices
+
+1. **Always use a passphrase** - Protects your key if your machine is compromised
+2. **Use unique keys** - Different keys for different services
+3. **Rotate keys periodically** - Replace old keys annually
+4. **Never share private keys** - Only share `.pub` files

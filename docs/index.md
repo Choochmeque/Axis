@@ -38,7 +38,8 @@ features:
 ---
 
 <div class="screenshot-container">
-  <img src="/Axis/screenshot-main.png" alt="Axis - Main Window" class="screenshot" />
+  <img src="/Axis/screenshot-light.png" alt="Axis - Main Window" class="screenshot light-only" />
+  <img src="/Axis/screenshot-dark.png" alt="Axis - Main Window" class="screenshot dark-only" />
 </div>
 
 ## Why Axis?

@@ -71,6 +71,23 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* Theme-based image visibility */
+.light-only {
+  display: block;
+}
+
+.dark-only {
+  display: none;
+}
+
+.dark .light-only {
+  display: none;
+}
+
+.dark .dark-only {
+  display: block;
+}
+
 /* Download section */
 .download-section {
   text-align: center;

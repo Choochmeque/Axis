@@ -23,10 +23,7 @@ export default defineConfig({
   themeConfig: {
     logo: '/logo.png',
 
-    nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'GitHub', link: 'https://github.com/Choochmeque/Axis' },
-    ],
+    nav: [{ text: 'Guide', link: '/guide/' }],
 
     sidebar: {
       '/guide/': [

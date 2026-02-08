@@ -21,18 +21,27 @@ SSH signing (Git 2.34+) uses your existing SSH keys, avoiding the need for separ
 
 ## Setup in Axis
 
-1. Go to **Settings** > **Signing**
+:::tabs
+== Axis
+1. Go to **Settings > Signing**
 2. Enable **Sign commits**
 3. Choose your signing method (GPG or SSH)
 4. Configure your signing key
+
+== CLI
+```bash
+# Enable signing for all commits
+git config --global commit.gpgsign true
+```
+:::
 
 ## GPG Setup
 
 ### Generate a GPG Key
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 # Install GPG
 brew install gnupg
 
@@ -41,7 +50,8 @@ gpg --full-generate-key
 # Choose: RSA and RSA, 4096 bits, key does not expire
 ```
 
-```bash [Linux]
+== Linux
+```bash
 # Install GPG (usually pre-installed)
 sudo apt install gnupg
 
@@ -49,12 +59,12 @@ sudo apt install gnupg
 gpg --full-generate-key
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 # Install Gpg4win from https://gpg4win.org
 # Then in Git Bash or PowerShell:
 gpg --full-generate-key
 ```
-
 :::
 
 ### List Your Keys
@@ -128,17 +138,33 @@ When enabled in settings, all commits are automatically signed.
 
 ### Per-Commit Signing
 
+:::tabs
+== Axis
 1. Stage your changes
 2. Check the **Sign commit** checkbox in the commit dialog
 3. Commit as usual
 
+== CLI
+```bash
+git commit -S -m "Your commit message"
+```
+:::
+
 ### Verifying Signatures
 
+:::tabs
+== Axis
 Signed commits show a verification badge in the commit history:
-
 - **Verified** - Signature is valid and matches a known key
 - **Unverified** - Signature exists but can't be verified
 - **No signature** - Commit is not signed
+
+== CLI
+```bash
+git log --show-signature
+git verify-commit abc123
+```
+:::
 
 ## Troubleshooting
 
@@ -158,25 +184,26 @@ gpg --list-secret-keys
 
 If GPG prompts for passphrase in terminal:
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 # Use pinentry-mac for GUI prompts
 brew install pinentry-mac
 echo "pinentry-program $(which pinentry-mac)" >> ~/.gnupg/gpg-agent.conf
 gpgconf --kill gpg-agent
 ```
 
-```bash [Linux]
+== Linux
+```bash
 # Install pinentry for GUI
 sudo apt install pinentry-gtk2
 # or pinentry-qt for KDE
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 # Gpg4win includes GUI pinentry by default
 ```
-
 :::
 
 ### SSH Signing Fails

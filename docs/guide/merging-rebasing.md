@@ -91,15 +91,36 @@ Don't rebase commits that others have based work on. This rewrites history and c
 
 ### Basic Merge
 
+:::tabs
+== Axis
 1. Checkout the target branch (e.g., `main`)
 2. Right-click the branch to merge (e.g., `feature`)
 3. Select **Merge into current branch**
 
+== CLI
+```bash
+git checkout main
+git merge feature
+```
+:::
+
 ### Merge Options
 
+:::tabs
+== Axis
+Select option in the **Merge** dialog:
 - **Create merge commit** - Always create a merge commit
 - **Fast-forward if possible** - Skip merge commit when possible
 - **Squash** - Combine all commits into one
+
+== CLI
+```bash
+git merge feature                    # Default
+git merge --no-ff feature            # Force merge commit
+git merge --ff-only feature          # Fast-forward only
+git merge --squash feature           # Squash commits
+```
+:::
 
 ## Handling Merge Conflicts
 
@@ -121,12 +142,23 @@ When conflicts occur:
 
 To update your branch with latest changes from main:
 
+:::tabs
+== Axis
 1. Checkout your feature branch
 2. Right-click `main` (or target branch)
 3. Select **Rebase onto this branch**
 
+== CLI
+```bash
+git checkout feature
+git rebase main
+```
+:::
+
 ### Interactive Rebase
 
+:::tabs
+== Axis
 1. Right-click on a commit in history
 2. Select **Interactive Rebase**
 3. For each commit, choose an action:
@@ -138,20 +170,49 @@ To update your branch with latest changes from main:
 4. Reorder commits by dragging if needed
 5. Click **Start Rebase**
 
+== CLI
+```bash
+git rebase -i HEAD~5              # Last 5 commits
+git rebase -i abc123              # From specific commit
+# Editor opens with:
+# pick abc123 First commit
+# squash def456 Second commit
+# reword ghi789 Third commit
+```
+:::
+
 ### Handling Rebase Conflicts
 
 During rebase, conflicts may occur at each commit:
 
-1. Resolve conflicts as with merge
+:::tabs
+== Axis
+1. Resolve conflicts in the conflict resolver
 2. Click **Continue Rebase** to proceed
 3. Repeat for each conflicting commit
+
+== CLI
+```bash
+# After resolving conflicts:
+git add .
+git rebase --continue
+```
+:::
 
 ### Abort Rebase
 
 If something goes wrong:
 
-- Click **Abort Rebase** to return to the original state
-- All changes will be undone, branch restored
+:::tabs
+== Axis
+Click **Abort Rebase** to return to the original state
+All changes will be undone, branch restored
+
+== CLI
+```bash
+git rebase --abort
+```
+:::
 
 ## Best Practices
 

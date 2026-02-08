@@ -27,9 +27,9 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 
 ### Add Key to SSH Agent
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 # Start the SSH agent
 eval "$(ssh-agent -s)"
 
@@ -37,7 +37,8 @@ eval "$(ssh-agent -s)"
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 ```
 
-```bash [Linux]
+== Linux
+```bash
 # Start the SSH agent
 eval "$(ssh-agent -s)"
 
@@ -45,7 +46,8 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 # Start the SSH agent service (run as Administrator)
 Get-Service ssh-agent | Set-Service -StartupType Automatic
 Start-Service ssh-agent
@@ -53,29 +55,29 @@ Start-Service ssh-agent
 # Add your key
 ssh-add $env:USERPROFILE\.ssh\id_ed25519
 ```
-
 :::
 
 ### Add Key to GitHub
 
 1. Copy your public key:
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 pbcopy < ~/.ssh/id_ed25519.pub
 ```
 
-```bash [Linux]
+== Linux
+```bash
 xclip -selection clipboard < ~/.ssh/id_ed25519.pub
 # or
 cat ~/.ssh/id_ed25519.pub  # then copy manually
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | Set-Clipboard
 ```
-
 :::
 
 2. Go to GitHub > Settings > SSH and GPG keys
@@ -173,6 +175,15 @@ ssh-keygen -t rsa -b 4096 -C "email@example.com"
 
 If your repository uses HTTPS and you want to switch to SSH:
 
+:::tabs
+== Axis
+1. Go to **Repository > Remotes**
+2. Click the remote to edit
+3. Change URL from HTTPS to SSH format
+   (e.g., `git@github.com:username/repo.git`)
+4. Click **Save**
+
+== CLI
 ```bash
 # View current remote
 git remote -v
@@ -180,9 +191,4 @@ git remote -v
 # Change to SSH
 git remote set-url origin git@github.com:username/repo.git
 ```
-
-Or in Axis:
-
-1. Go to **Repository** > **Remotes**
-2. Edit the remote URL
-3. Change to SSH format
+:::

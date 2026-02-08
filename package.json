@@ -96,6 +96,7 @@
     "typescript-eslint": "^8.54.0",
     "vite": "^7.0.4",
     "vitepress": "^1.6.4",
+    "vitepress-plugin-tabs": "^0.7.3",
     "vitest": "^4.0.16",
     "webdriverio": "^9.23.3"
   },

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress';
+import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 
 const guideSidebar = [
   {
@@ -50,6 +51,12 @@ export default defineConfig({
   title: 'Axis',
   description: 'A modern, cross-platform Git GUI built with Tauri',
   base: '/Axis/',
+
+  markdown: {
+    config(md) {
+      md.use(tabsMarkdownPlugin);
+    },
+  },
 
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/Axis/favicon.png' }],

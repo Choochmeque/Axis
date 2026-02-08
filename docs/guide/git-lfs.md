@@ -49,14 +49,15 @@ Large files stored separately on LFS server
 
 ### Install Git LFS
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 brew install git-lfs
 git lfs install
 ```
 
-```bash [Linux]
+== Linux
+```bash
 # Ubuntu/Debian
 sudo apt install git-lfs
 git lfs install
@@ -64,13 +65,13 @@ git lfs install
 # Or download from https://git-lfs.github.io
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 # With Git for Windows (often included)
 git lfs install
 
 # Or download installer from https://git-lfs.github.io
 ```
-
 :::
 
 ### Server Support
@@ -87,19 +88,37 @@ Check your host's LFS storage limits and pricing.
 
 ### Initialize LFS
 
+:::tabs
+== Axis
 1. Open your repository
 2. Go to **Repository** menu
 3. Select **LFS**
 4. Click **Initialize LFS** (if not already set up)
 
+== CLI
+```bash
+git lfs install
+```
+:::
+
 This creates the `.gitattributes` file for tracking patterns.
 
 ### Track File Types
 
-1. Open the LFS panel
+:::tabs
+== Axis
+1. Open the **LFS** panel
 2. Click **Add Pattern**
 3. Enter a pattern (e.g., `*.psd`)
 4. Click **Add**
+
+== CLI
+```bash
+git lfs track "*.psd"
+git lfs track "*.mp4"
+git add .gitattributes
+```
+:::
 
 Common patterns:
 ```
@@ -115,9 +134,18 @@ Common patterns:
 
 ### Track Specific Files
 
+:::tabs
+== Axis
 1. Right-click a large file in staging
 2. Select **Track with LFS**
 3. File is added to `.gitattributes`
+
+== CLI
+```bash
+git lfs track "path/to/large-file.bin"
+git add .gitattributes path/to/large-file.bin
+```
+:::
 
 ## Understanding .gitattributes
 
@@ -138,19 +166,38 @@ assets/large/** filter=lfs diff=lfs merge=lfs -text
 
 ### Viewing LFS Files
 
-The LFS panel shows:
-
+:::tabs
+== Axis
+The **LFS** panel shows:
 - **Tracked patterns** - What file types use LFS
 - **LFS files** - Files managed by LFS in your repo
 - **Download status** - Which files are downloaded locally
+
+== CLI
+```bash
+git lfs ls-files                  # List tracked files
+git lfs status                    # Show status
+git lfs track                     # List tracked patterns
+```
+:::
 
 ### Fetching LFS Files
 
 LFS files are downloaded on demand:
 
+:::tabs
+== Axis
 - **Automatic** - Files download when checked out
 - **Manual fetch** - Click **Fetch LFS** to download all
 - **Individual** - Right-click a file to download it
+
+== CLI
+```bash
+git lfs pull                      # Download all LFS files
+git lfs pull --include="*.psd"    # Download specific pattern
+git lfs fetch                     # Fetch without checkout
+```
+:::
 
 ### Checking File Status
 

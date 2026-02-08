@@ -21,6 +21,22 @@ Changes saved in stash stack
 - Works like a stack (last in, first out)
 - Changes can be restored later
 
+## Quick Reference
+
+:::tabs
+== Axis
+**Stashes** panel in sidebar shows all stashes
+
+== CLI
+```bash
+git stash list                  # List stashes
+git stash push -m "message"     # Create stash
+git stash pop                   # Apply and remove
+git stash apply                 # Apply and keep
+git stash drop stash@{0}        # Delete stash
+```
+:::
+
 ## When to Use Stash
 
 ### Quick Context Switch
@@ -73,9 +89,17 @@ Started work on the wrong branch:
 
 ### Basic Stash
 
+:::tabs
+== Axis
 1. Click **Stash** in the toolbar (or use keyboard shortcut)
 2. Enter an optional message to identify the stash
 3. Click **Create Stash**
+
+== CLI
+```bash
+git stash push -m "WIP: feature description"
+```
+:::
 
 ::: tip
 Always add a descriptive message. "WIP" doesn't help when you have multiple stashes.
@@ -89,17 +113,47 @@ Always add a descriptive message. "WIP" doesn't help when you have multiple stas
 | **Keep staged changes** | Only stash unstaged changes, leave staged alone |
 | **Include ignored files** | Also stash files matching .gitignore |
 
+:::tabs
+== Axis
+Select options in the **Stash** dialog before creating
+
+== CLI
+```bash
+git stash push -u -m "message"        # Include untracked
+git stash push --keep-index           # Keep staged changes
+git stash push -a -m "message"        # Include ignored files
+```
+:::
+
 ### Stash Specific Files
 
-To stash only certain files:
-
+:::tabs
+== Axis
 1. Stage only the files you want to stash
 2. Create stash with **Keep staged changes** disabled
-3. Or use the context menu on specific files
+3. Or right-click specific files and select **Stash**
+
+== CLI
+```bash
+git stash push -m "message" -- path/to/file.txt
+git stash push -m "message" -- file1.txt file2.txt
+```
+:::
 
 ## Viewing Stashes
 
-Click **Stashes** in the sidebar to see all stashes.
+:::tabs
+== Axis
+Click **Stashes** in the sidebar to see all stashes
+Click a stash to preview its contents before applying
+
+== CLI
+```bash
+git stash list                    # List all stashes
+git stash show stash@{0}          # Show files changed
+git stash show -p stash@{0}       # Show full diff
+```
+:::
 
 Each stash shows:
 
@@ -108,17 +162,23 @@ Each stash shows:
 - **Date** - When it was stashed
 - **Changes** - Files modified
 
-Click a stash to preview its contents before applying.
-
 ## Applying Stashes
 
 ### Apply
 
 Restores the stashed changes but **keeps the stash** for future use.
 
-1. Select the stash
+:::tabs
+== Axis
+1. Select the stash in the **Stashes** panel
 2. Click **Apply**
 3. Changes are restored to working directory
+
+== CLI
+```bash
+git stash apply stash@{0}
+```
+:::
 
 Use when you might need the same changes again.
 
@@ -126,9 +186,19 @@ Use when you might need the same changes again.
 
 Restores the stashed changes and **deletes the stash**.
 
+:::tabs
+== Axis
 1. Select the stash
 2. Click **Pop**
 3. Changes restored, stash removed
+
+== CLI
+```bash
+git stash pop stash@{0}
+# Or pop the most recent:
+git stash pop
+```
+:::
 
 Use when you're done with the stash.
 
@@ -136,9 +206,18 @@ Use when you're done with the stash.
 
 Stashes aren't tied to branches:
 
+:::tabs
+== Axis
 1. Checkout any branch
-2. Apply or pop the stash
+2. **Apply** or **Pop** the stash
 3. Changes appear in current branch
+
+== CLI
+```bash
+git checkout other-branch
+git stash pop
+```
+:::
 
 ::: warning Conflicts
 If stashed changes conflict with current state, you'll need to resolve conflicts manually.
@@ -148,24 +227,49 @@ If stashed changes conflict with current state, you'll need to resolve conflicts
 
 ### Renaming
 
-Right-click a stash and select **Rename** to update its message.
+:::tabs
+== Axis
+Right-click a stash and select **Rename** to update its message
+
+== CLI
+```bash
+# Git doesn't support renaming directly
+# Drop and recreate with new message
+```
+:::
 
 ### Creating Branch from Stash
 
 If stashed changes are significant:
 
+:::tabs
+== Axis
 1. Right-click the stash
 2. Select **Create Branch**
 3. Enter branch name
 4. Stash is applied to new branch
 
+== CLI
+```bash
+git stash branch new-branch-name stash@{0}
+```
+:::
+
 ### Dropping a Stash
 
 To delete a stash without applying:
 
+:::tabs
+== Axis
 1. Right-click the stash
 2. Select **Drop**
 3. Confirm deletion
+
+== CLI
+```bash
+git stash drop stash@{0}
+```
+:::
 
 ::: danger Cannot Undo
 Dropped stashes cannot be easily recovered. The changes are lost unless you can find them in reflog.
@@ -173,11 +277,17 @@ Dropped stashes cannot be easily recovered. The changes are lost unless you can 
 
 ### Clear All Stashes
 
-To remove all stashes:
-
+:::tabs
+== Axis
 1. Click the menu in stash panel
 2. Select **Clear All**
 3. Confirm deletion
+
+== CLI
+```bash
+git stash clear
+```
+:::
 
 ## Stash Conflicts
 

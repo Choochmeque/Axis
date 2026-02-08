@@ -17,7 +17,16 @@ Even when commits seem "lost" (e.g., after a hard reset), they remain in the ref
 
 ## Accessing Reflog
 
-Click **Reflog** in the sidebar to open the reflog view.
+:::tabs
+== Axis
+Click **Reflog** in the sidebar to open the reflog view
+
+== CLI
+```bash
+git reflog                    # HEAD reflog
+git reflog show branch-name   # Specific branch
+```
+:::
 
 ## Understanding Entries
 
@@ -46,26 +55,57 @@ Each reflog entry shows:
 
 If you ran `git reset --hard` and lost commits:
 
-1. Open Reflog
+:::tabs
+== Axis
+1. Open **Reflog** in the sidebar
 2. Find the entry before the reset
 3. Right-click the commit
 4. Select **Create branch here** or **Reset to this commit**
+
+== CLI
+```bash
+git reflog                        # Find the commit
+git reset --hard HEAD@{2}         # Reset to reflog entry
+# Or create a branch:
+git branch recovery-branch HEAD@{2}
+```
+:::
 
 ### After Failed Rebase
 
 If a rebase went wrong:
 
-1. Open Reflog
+:::tabs
+== Axis
+1. Open **Reflog**
 2. Find the entry labeled "rebase (start)" or the commit before rebase
 3. Reset to that commit to restore the original state
+
+== CLI
+```bash
+git reflog                        # Find pre-rebase state
+git reset --hard HEAD@{5}         # Restore to that point
+```
+:::
 
 ### After Dropped Stash
 
 Stash entries also appear in reflog:
 
-1. Find the stash entry in reflog
+:::tabs
+== Axis
+1. Find the stash entry in **Reflog**
 2. Note the commit hash
 3. Use **Cherry-pick** to recover the changes
+
+== CLI
+```bash
+git reflog stash                  # Find stash entries
+git stash apply abc123            # Apply by hash
+# Or cherry-pick:
+git cherry-pick -n abc123
+```
+:::
 
 ## Actions Available
 

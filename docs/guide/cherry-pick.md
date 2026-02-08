@@ -70,6 +70,8 @@ A feature on `main` should also go to `release-1.0`:
 
 ### Single Commit
 
+:::tabs
+== Axis
 1. Navigate to **History** view
 2. Find the commit you want to cherry-pick
 3. Right-click the commit
@@ -77,12 +79,28 @@ A feature on `main` should also go to `release-1.0`:
 5. Choose options (see below)
 6. Click **Cherry Pick**
 
+== CLI
+```bash
+git cherry-pick abc123
+```
+:::
+
 ### Multiple Commits
 
-1. Select multiple commits in history (Ctrl/Cmd + click)
+:::tabs
+== Axis
+1. Select multiple commits in history (`Ctrl/Cmd + click`)
 2. Right-click the selection
 3. Select **Cherry Pick**
 4. Commits are applied in chronological order
+
+== CLI
+```bash
+git cherry-pick abc123 def456 ghi789
+# Or a range:
+git cherry-pick abc123..ghi789
+```
+:::
 
 ::: tip Order Matters
 When cherry-picking multiple commits, they're applied in order. If commits depend on each other, select them in the correct sequence.
@@ -102,6 +120,20 @@ Use this when you want to:
 - Combine multiple cherry-picks into one commit
 - Modify the changes before committing
 - Add additional changes with the cherry-picked content
+
+:::tabs
+== Axis
+1. Start **Cherry Pick**
+2. Select **Stage changes only** option
+3. Changes are staged but not committed
+
+== CLI
+```bash
+git cherry-pick --no-commit abc123
+# Or multiple:
+git cherry-pick --no-commit abc123 def456
+```
+:::
 
 ## Handling Conflicts
 
@@ -130,16 +162,48 @@ When cherry-picking multiple commits:
 
 If cherry-pick goes wrong:
 
-- Click **Abort** to cancel
-- Working directory returns to previous state
-- No commits are created
+:::tabs
+== Axis
+Click **Abort** to cancel
+Working directory returns to previous state
+No commits are created
+
+== CLI
+```bash
+git cherry-pick --abort
+```
+:::
 
 ### Skip a Commit
 
 During multi-commit cherry-pick, if one commit can't be applied:
 
-- Click **Skip** to skip that commit
-- Continue with remaining commits
+:::tabs
+== Axis
+Click **Skip** to skip that commit
+Continue with remaining commits
+
+== CLI
+```bash
+git cherry-pick --skip
+```
+:::
+
+### Continue Cherry Pick
+
+After resolving conflicts:
+
+:::tabs
+== Axis
+1. Resolve conflicts in the staging area
+2. Click **Continue** to proceed
+
+== CLI
+```bash
+git add .                        # Stage resolved files
+git cherry-pick --continue
+```
+:::
 
 ## Best Practices
 

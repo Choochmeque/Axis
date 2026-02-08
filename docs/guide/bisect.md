@@ -17,18 +17,36 @@ With binary search, finding a bug among 1000 commits takes only ~10 tests.
 
 ### From Commit History
 
+:::tabs
+== Axis
 1. Find a commit you know was working (good)
 2. Right-click the commit
 3. Select **Bisect from here (good)...**
 4. Enter the bad commit (or leave empty for HEAD)
 5. Click **Start Bisect**
 
+== CLI
+```bash
+git bisect start
+git bisect bad HEAD               # Current is broken
+git bisect good abc123            # This commit was working
+```
+:::
+
 ### From the Dialog
 
-1. Open the bisect dialog from the menu
+:::tabs
+== Axis
+1. Open the bisect dialog from **Repository** menu
 2. Enter the good (old) commit hash
 3. Enter the bad (new) commit hash (optional, defaults to HEAD)
 4. Click **Start Bisect**
+
+== CLI
+```bash
+git bisect start HEAD abc123      # bad good in one command
+```
+:::
 
 ## Testing Commits
 
@@ -39,11 +57,22 @@ Once bisect starts, Axis shows a banner indicating:
 
 For each commit:
 
+:::tabs
+== Axis
 1. Test if the bug exists
 2. Click one of:
    - **Mark as good** - Bug not present
    - **Mark as bad** - Bug is present
    - **Skip commit** - Can't test this commit (e.g., won't build)
+
+== CLI
+```bash
+# After testing the current commit:
+git bisect good                   # Bug not present
+git bisect bad                    # Bug is present
+git bisect skip                   # Can't test this commit
+```
+:::
 
 ## Finding the Result
 
@@ -58,7 +87,16 @@ The result includes:
 
 ## Ending Bisect
 
-Click **End Bisect** to stop the bisect session and return to your original branch.
+:::tabs
+== Axis
+Click **End Bisect** to stop the bisect session
+Returns to your original branch
+
+== CLI
+```bash
+git bisect reset
+```
+:::
 
 ::: tip
 Always end bisect when done. Leaving a bisect session active can cause confusion.

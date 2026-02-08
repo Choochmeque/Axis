@@ -70,24 +70,25 @@ pre-commit install
 
 [Lefthook](https://github.com/evilmartians/lefthook) is a fast and powerful Git hooks manager.
 
-::: code-group
-
-```bash [macOS]
+:::tabs
+== macOS
+```bash
 brew install lefthook
 lefthook install
 ```
 
-```bash [Linux]
+== Linux
+```bash
 curl -1sLf 'https://dl.cloudsmith.io/public/evilmartians/lefthook/setup.deb.sh' | sudo -E bash
 sudo apt install lefthook
 lefthook install
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 winget install evilmartians.lefthook
 lefthook install
 ```
-
 :::
 
 ## Troubleshooting
@@ -111,16 +112,16 @@ Long-running hooks may appear to hang. Check:
 
 Axis displays hook output in the commit dialog. For detailed debugging, run the hook manually:
 
-::: code-group
-
-```bash [macOS/Linux]
+:::tabs
+== macOS/Linux
+```bash
 .git/hooks/pre-commit
 ```
 
-```powershell [Windows]
+== Windows
+```powershell
 bash .git/hooks/pre-commit
 # or if using a Node.js hook:
 node .git/hooks/pre-commit
 ```
-
 :::

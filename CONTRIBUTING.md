@@ -36,6 +36,11 @@ cd Axis
 # Install dependencies
 pnpm install
 
+# Set up environment variables
+cp src-tauri/.env.example src-tauri/.env
+# Edit src-tauri/.env with your GitHub OAuth App credentials
+# Create an OAuth App at: https://github.com/settings/developers
+
 # Start development server
 pnpm tauri dev
 ```

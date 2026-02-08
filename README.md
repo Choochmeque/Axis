@@ -21,7 +21,11 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ## Screenshots
 
-![Axis - Main Window](docs/public/screenshot-main.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-light.png">
+  <img alt="Axis - Main Window" src="docs/public/screenshot-light.png">
+</picture>
 
 <details>
 <summary><strong>Staging Area</strong></summary>

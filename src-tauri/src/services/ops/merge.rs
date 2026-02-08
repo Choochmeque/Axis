@@ -51,18 +51,6 @@ impl RepoOperations {
         self.service.git_cli().rebase_skip().await
     }
 
-    pub async fn rebase_onto(
-        &self,
-        new_base: &str,
-        old_base: &str,
-        branch: Option<&str>,
-    ) -> Result<GitCommandResult> {
-        self.service
-            .git_cli()
-            .rebase_onto(new_base, old_base, branch)
-            .await
-    }
-
     pub async fn interactive_rebase(
         &self,
         onto: &str,
@@ -97,18 +85,6 @@ impl RepoOperations {
         self.service.git_cli().cherry_pick(commit, no_commit).await
     }
 
-    pub async fn cherry_pick_range(
-        &self,
-        from: &str,
-        to: &str,
-        no_commit: bool,
-    ) -> Result<GitCommandResult> {
-        self.service
-            .git_cli()
-            .cherry_pick_range(from, to, no_commit)
-            .await
-    }
-
     pub async fn cherry_pick_abort(&self) -> Result<GitCommandResult> {
         self.service.git_cli().cherry_pick_abort().await
     }
@@ -139,10 +115,6 @@ impl RepoOperations {
 
     pub async fn mark_resolved(&self, path: &str) -> Result<GitCommandResult> {
         self.service.git_cli().mark_resolved(path).await
-    }
-
-    pub async fn mark_unresolved(&self, path: &str) -> Result<GitCommandResult> {
-        self.service.git_cli().mark_unresolved(path).await
     }
 
     pub async fn get_conflict_base(&self, path: &str) -> Result<String> {

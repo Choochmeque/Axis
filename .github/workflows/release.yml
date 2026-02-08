@@ -89,31 +89,31 @@ jobs:
 
       - name: Build Tauri app (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: pnpm tauri build --bundles appimage -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        run: pnpm tauri build --bundles appimage -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}\"}}}"
         env:
           AXIS_UPDATE_CHANNEL: stable
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_STABLE }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_STABLE }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}
 
       - name: Build Tauri app (Windows)
         if: matrix.os == 'windows-latest'
         shell: cmd
-        run: pnpm tauri build --bundles nsis -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        run: pnpm tauri build --bundles nsis -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}\"}}}"
         env:
           AXIS_UPDATE_CHANNEL: stable
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_STABLE }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_STABLE }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}
 
       - name: Build Tauri app (macOS)
         if: matrix.os == 'macos-latest'
-        run: pnpm tauri build --bundles app,dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}\"}}}"
+        run: pnpm tauri build --bundles app,dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}\"}}}"
         env:
           AXIS_UPDATE_CHANNEL: stable
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_STABLE }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_STABLE }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY_STABLE }}
 
       # --------------------------------------------------
       # Collect artifacts

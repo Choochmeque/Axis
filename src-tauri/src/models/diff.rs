@@ -91,6 +91,7 @@ pub enum DiffTarget {
     Commit { oid: String },
 }
 
+// TODO: Use this for staging/unstaging specific hunks or lines in the UI instead of just file-level operations
 /// Request for staging/unstaging hunks or lines
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

@@ -105,6 +105,7 @@ pub struct CreateBranchOptions {
     pub track: Option<String>,
 }
 
+// TODO: Use DeleteBranchOptions in the UI when deleting branches to allow force deletion and optionally deleting remote tracking branches
 /// Options for branch deletion
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]

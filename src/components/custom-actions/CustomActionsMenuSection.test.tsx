@@ -42,12 +42,7 @@ vi.mock('@/components/ui', () => ({
     shortcut?: string;
     icon?: React.ComponentType<{ className?: string }>;
   }) => (
-    <button
-      data-testid="menu-item"
-      onClick={onSelect}
-      disabled={disabled}
-      data-shortcut={shortcut}
-    >
+    <button data-testid="menu-item" onClick={onSelect} disabled={disabled} data-shortcut={shortcut}>
       {Icon && <Icon className="icon" />}
       {children}
     </button>
@@ -89,9 +84,7 @@ describe('CustomActionsMenuSection', () => {
   it('should return null when no actions available', () => {
     mockGetActionsForContext.mockReturnValue([]);
 
-    const { container } = render(
-      <CustomActionsMenuSection context="commit" />
-    );
+    const { container } = render(<CustomActionsMenuSection context="commit" />);
 
     expect(container.firstChild).toBeNull();
   });
@@ -147,27 +140,22 @@ describe('CustomActionsMenuSection', () => {
       stashRef: 'stash@{0}',
     };
 
-    render(
-      <CustomActionsMenuSection context="commit" variables={variables} />
-    );
+    render(<CustomActionsMenuSection context="commit" variables={variables} />);
 
     fireEvent.click(screen.getByText('Run Tests'));
 
-    expect(mockConfirmAndExecute).toHaveBeenCalledWith(
-      mockActions[0],
-      {
-        repoPath: '/path/to/repo',
-        branch: 'main',
-        file: 'src/test.ts',
-        selectedFiles: ['src/a.ts', 'src/b.ts'],
-        commitHash: 'abc123',
-        commitShort: 'abc',
-        commitMessage: 'Test commit',
-        remoteUrl: 'https://github.com/user/repo',
-        tag: 'v1.0.0',
-        stashRef: 'stash@{0}',
-      }
-    );
+    expect(mockConfirmAndExecute).toHaveBeenCalledWith(mockActions[0], {
+      repoPath: '/path/to/repo',
+      branch: 'main',
+      file: 'src/test.ts',
+      selectedFiles: ['src/a.ts', 'src/b.ts'],
+      commitHash: 'abc123',
+      commitShort: 'abc',
+      commitMessage: 'Test commit',
+      remoteUrl: 'https://github.com/user/repo',
+      tag: 'v1.0.0',
+      stashRef: 'stash@{0}',
+    });
   });
 
   it('should use null for missing variables', () => {
@@ -177,21 +165,18 @@ describe('CustomActionsMenuSection', () => {
 
     fireEvent.click(screen.getByText('Run Tests'));
 
-    expect(mockConfirmAndExecute).toHaveBeenCalledWith(
-      mockActions[0],
-      {
-        repoPath: '/path/to/repo',
-        branch: 'main',
-        file: null,
-        selectedFiles: null,
-        commitHash: null,
-        commitShort: null,
-        commitMessage: null,
-        remoteUrl: null,
-        tag: null,
-        stashRef: null,
-      }
-    );
+    expect(mockConfirmAndExecute).toHaveBeenCalledWith(mockActions[0], {
+      repoPath: '/path/to/repo',
+      branch: 'main',
+      file: null,
+      selectedFiles: null,
+      commitHash: null,
+      commitShort: null,
+      commitMessage: null,
+      remoteUrl: null,
+      tag: null,
+      stashRef: null,
+    });
   });
 
   it('should handle missing repository', () => {

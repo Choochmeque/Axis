@@ -25,15 +25,6 @@ pub struct FetchProgress {
     pub received_bytes: usize,
 }
 
-/// Progress information for push operations
-#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct PushProgress {
-    pub current: usize,
-    pub total: usize,
-    pub bytes: usize,
-}
-
 /// Result of a fetch operation
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -114,6 +105,7 @@ pub struct CreateBranchOptions {
     pub track: Option<String>,
 }
 
+// TODO: Use DeleteBranchOptions in the UI when deleting branches to allow force deletion and optionally deleting remote tracking branches
 /// Options for branch deletion
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
@@ -239,29 +231,6 @@ mod tests {
         assert_eq!(progress.total_objects, 100);
         assert_eq!(progress.received_objects, 75);
         assert_eq!(progress.received_bytes, 1024);
-    }
-
-    // ==================== PushProgress Tests ====================
-
-    #[test]
-    fn test_push_progress_default() {
-        let progress = PushProgress::default();
-        assert_eq!(progress.current, 0);
-        assert_eq!(progress.total, 0);
-        assert_eq!(progress.bytes, 0);
-    }
-
-    #[test]
-    fn test_push_progress_in_progress() {
-        let progress = PushProgress {
-            current: 5,
-            total: 10,
-            bytes: 2048,
-        };
-
-        assert_eq!(progress.current, 5);
-        assert_eq!(progress.total, 10);
-        assert_eq!(progress.bytes, 2048);
     }
 
     // ==================== RefUpdateStatus Tests ====================

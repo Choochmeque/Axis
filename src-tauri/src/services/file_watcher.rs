@@ -16,7 +16,6 @@ use tauri_specta::Event as _;
 /// Per-repository file watcher that emits events based on active status.
 /// Active repos get detailed events; inactive repos get a single RepositoryDirtyEvent.
 pub struct FileWatcher {
-    repo_path: PathBuf,
     is_active: Arc<AtomicBool>,
     watcher: Arc<Mutex<Option<RecommendedWatcher>>>,
     receiver_handle: Arc<Mutex<Option<thread::JoinHandle<()>>>>,
@@ -39,16 +38,11 @@ impl FileWatcher {
         let watcher_arc = Arc::new(Mutex::new(Some(watcher)));
 
         // Spawn thread to handle events
-        let handle = Self::spawn_event_handler(
-            rx,
-            repo_path.clone(),
-            app_handle,
-            Arc::clone(&is_active_flag),
-        );
+        let handle =
+            Self::spawn_event_handler(rx, repo_path, app_handle, Arc::clone(&is_active_flag));
         let handle_arc = Arc::new(Mutex::new(Some(handle)));
 
         Ok(Self {
-            repo_path,
             is_active: is_active_flag,
             watcher: watcher_arc,
             receiver_handle: handle_arc,
@@ -58,16 +52,6 @@ impl FileWatcher {
     /// Set whether this repo is the active one (affects event emission mode)
     pub fn set_active(&self, active: bool) {
         self.is_active.store(active, Ordering::SeqCst);
-    }
-
-    /// Check if this watcher is for the active repository
-    pub fn is_active(&self) -> bool {
-        self.is_active.load(Ordering::SeqCst)
-    }
-
-    /// Get the repository path
-    pub fn repo_path(&self) -> &PathBuf {
-        &self.repo_path
     }
 
     /// Stop watching and clean up resources

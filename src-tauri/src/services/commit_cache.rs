@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::models::{GraphCommit, GraphOptions, LaneState};
+use crate::models::{GraphCommit, GraphOptions};
 use crate::state::GitServiceHandle;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -23,16 +23,10 @@ pub struct CommitCache {
 pub struct CommitCacheEntry {
     /// The built graph commits with lane assignments
     pub commits: Vec<GraphCommit>,
-    /// Lane state at the end of processing (for continuing prefetch)
-    pub lane_state: LaneState,
     /// Maximum lane used
     pub max_lane: usize,
     /// Whether there are more commits in the repo
     pub has_more: bool,
-    /// HEAD OID when cache was built (for invalidation)
-    pub head_oid: String,
-    /// Hash of the filter options
-    pub filter_hash: u64,
     /// Whether a prefetch is currently in progress
     pub is_prefetching: AtomicBool,
 }
@@ -108,24 +102,10 @@ impl CommitCache {
         }
     }
 
-    /// Invalidate a specific cache entry
-    pub fn invalidate(&self, cache_key: &str) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.remove(cache_key);
-        }
-    }
-
-    /// Clear all entries
-    pub fn clear(&self) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.clear();
-        }
-    }
-
     /// Build a cache key from repo path and options
     pub fn build_key(repo_path: &Path, options: &GraphOptions) -> String {
         let filter_hash = compute_options_hash(options);
-        format!("{}:{}", repo_path.display(), filter_hash)
+        format!("{}:{filter_hash}", repo_path.display())
     }
 
     /// Prefetch more commits in the background and update the cache.
@@ -301,11 +281,8 @@ mod tests {
             key1.clone(),
             CommitCacheEntry {
                 commits: vec![],
-                lane_state: LaneState::new(),
                 max_lane: 0,
                 has_more: false,
-                head_oid: String::new(),
-                filter_hash: 123,
                 is_prefetching: AtomicBool::new(false),
             },
         );
@@ -313,11 +290,8 @@ mod tests {
             key2.clone(),
             CommitCacheEntry {
                 commits: vec![],
-                lane_state: LaneState::new(),
                 max_lane: 0,
                 has_more: false,
-                head_oid: String::new(),
-                filter_hash: 456,
                 is_prefetching: AtomicBool::new(false),
             },
         );
@@ -325,11 +299,8 @@ mod tests {
             key3.clone(),
             CommitCacheEntry {
                 commits: vec![],
-                lane_state: LaneState::new(),
                 max_lane: 0,
                 has_more: false,
-                head_oid: String::new(),
-                filter_hash: 789,
                 is_prefetching: AtomicBool::new(false),
             },
         );

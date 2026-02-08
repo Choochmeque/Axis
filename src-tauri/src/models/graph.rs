@@ -296,7 +296,7 @@ impl LaneState {
     }
 
     /// Update lanes after processing a commit
-    pub fn process_commit(&mut self, oid: &str, lane: usize, parent_oids: &[String]) {
+    pub fn process_commit(&mut self, lane: usize, parent_oids: &[String]) {
         // Clear this commit from its lane
         if lane < self.active_lanes.len() {
             self.active_lanes[lane] = None;
@@ -361,6 +361,7 @@ impl LaneState {
         lane
     }
 
+    #[cfg(test)]
     /// Get the maximum lane currently in use
     pub fn max_lane(&self) -> usize {
         self.active_lanes.len().saturating_sub(1)
@@ -494,7 +495,7 @@ mod tests {
         let mut state = LaneState::new();
         state.active_lanes = vec![Some("commit1".to_string()), Some("commit2".to_string())];
 
-        state.process_commit("commit1", 0, &[]);
+        state.process_commit(0, &[]);
 
         assert_eq!(state.active_lanes[0], None);
         assert_eq!(state.active_lanes[1], Some("commit2".to_string()));
@@ -506,7 +507,7 @@ mod tests {
         state.active_lanes = vec![Some("child".to_string())];
 
         let parents = vec!["parent1".to_string()];
-        state.process_commit("child", 0, &parents);
+        state.process_commit(0, &parents);
 
         assert_eq!(state.active_lanes[0], Some("parent1".to_string()));
     }
@@ -516,7 +517,7 @@ mod tests {
         let mut state = LaneState::new();
         state.active_lanes = vec![Some("root".to_string())];
 
-        state.process_commit("root", 0, &[]);
+        state.process_commit(0, &[]);
 
         assert_eq!(state.active_lanes[0], None);
     }
@@ -527,7 +528,7 @@ mod tests {
         state.active_lanes = vec![Some("merge".to_string())];
 
         let parents = vec!["parent1".to_string(), "parent2".to_string()];
-        state.process_commit("merge", 0, &parents);
+        state.process_commit(0, &parents);
 
         assert_eq!(state.active_lanes[0], Some("parent1".to_string()));
         assert!(state.active_lanes.len() >= 2);
@@ -540,7 +541,7 @@ mod tests {
         state.active_lanes = vec![Some("child".to_string()), Some("parent1".to_string())];
 
         let parents = vec!["parent1".to_string()];
-        state.process_commit("child", 0, &parents);
+        state.process_commit(0, &parents);
 
         // Parent already tracked on lane 1, so lane 0 should be cleared
         assert_eq!(state.active_lanes[0], None);
@@ -551,7 +552,7 @@ mod tests {
     fn test_process_commit_expands_lanes_if_needed() {
         let mut state = LaneState::new();
         // Empty active_lanes but process at lane 2
-        state.process_commit("commit", 2, &["parent".to_string()]);
+        state.process_commit(2, &["parent".to_string()]);
 
         assert!(state.active_lanes.len() > 2);
         assert_eq!(state.active_lanes[2], Some("parent".to_string()));
@@ -787,19 +788,19 @@ mod tests {
         // Simulate processing commits in linear order: C3 -> C2 -> C1 -> C0
         let (lane, _) = state.get_lane_for_commit("C3");
         assert_eq!(lane, 0);
-        state.process_commit("C3", 0, &["C2".to_string()]);
+        state.process_commit(0, &["C2".to_string()]);
 
         let (lane, _) = state.get_lane_for_commit("C2");
         assert_eq!(lane, 0); // Should reuse same lane
-        state.process_commit("C2", 0, &["C1".to_string()]);
+        state.process_commit(0, &["C1".to_string()]);
 
         let (lane, _) = state.get_lane_for_commit("C1");
         assert_eq!(lane, 0);
-        state.process_commit("C1", 0, &["C0".to_string()]);
+        state.process_commit(0, &["C0".to_string()]);
 
         let (lane, _) = state.get_lane_for_commit("C0");
         assert_eq!(lane, 0);
-        state.process_commit("C0", 0, &[]);
+        state.process_commit(0, &[]);
 
         // In linear history, max lane should stay at 0
         assert_eq!(state.max_lane(), 0);
@@ -812,7 +813,7 @@ mod tests {
         // Merge commit M with parents P1 and P2
         let (lane, _) = state.get_lane_for_commit("M");
         assert_eq!(lane, 0);
-        state.process_commit("M", 0, &["P1".to_string(), "P2".to_string()]);
+        state.process_commit(0, &["P1".to_string(), "P2".to_string()]);
 
         // P1 should be on lane 0, P2 on lane 1
         assert_eq!(state.find_lane("P1"), Some(0));

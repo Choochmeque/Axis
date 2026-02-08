@@ -283,7 +283,7 @@ impl GitCliService {
         #[cfg(windows)]
         let editor_cmd = format!("cmd /c copy /y \"{}\" ", todo_path.replace('/', "\\"));
         #[cfg(not(windows))]
-        let editor_cmd = format!("cp \"{}\" ", todo_path);
+        let editor_cmd = format!("cp \"{todo_path}\" ");
 
         // Build rebase args
         let mut args = vec!["rebase", "-i"];
@@ -473,7 +473,7 @@ impl GitCliService {
 
     /// Revert a commit
     pub async fn revert(&self, commit: &str, no_commit: bool) -> Result<GitCommandResult> {
-        let mut args = vec!["revert"];
+        let mut args = vec!["revert", "--no-edit"];
 
         if no_commit {
             args.push("-n");
@@ -591,6 +591,7 @@ impl GitCliService {
         Ok(revert_head.exists())
     }
 
+    #[cfg(test)]
     /// Get the current operation in progress
     pub fn get_operation_in_progress(&self) -> Result<Option<OperationType>> {
         if self.is_rebasing()? {
@@ -850,7 +851,7 @@ impl GitCliService {
 
         if result.success {
             Ok(StashResult {
-                message: format!("Created branch '{}' from stash", branch_name),
+                message: format!("Created branch '{branch_name}' from stash"),
                 files_affected: 0, // TODO: parse from output if needed
                 conflicts: Vec::new(),
             })
@@ -879,7 +880,7 @@ impl GitCliService {
         Ok(TagResult {
             success: result.success,
             message: if result.success {
-                format!("Tag '{}' pushed to '{}'", name, remote)
+                format!("Tag '{name}' pushed to '{remote}'")
             } else {
                 result.stderr.trim().to_string()
             },
@@ -900,7 +901,7 @@ impl GitCliService {
         Ok(TagResult {
             success: result.success,
             message: if result.success {
-                format!("All tags pushed to '{}'", remote)
+                format!("All tags pushed to '{remote}'")
             } else {
                 result.stderr.trim().to_string()
             },
@@ -925,7 +926,7 @@ impl GitCliService {
         Ok(TagResult {
             success: result.success,
             message: if result.success {
-                format!("Remote tag '{}' deleted from '{}'", name, remote)
+                format!("Remote tag '{name}' deleted from '{remote}'")
             } else {
                 result.stderr.trim().to_string()
             },
@@ -1008,7 +1009,7 @@ impl GitCliService {
                 };
 
                 // Get URL from config
-                let url_key = format!("submodule.{}.url", path);
+                let url_key = format!("submodule.{path}.url");
                 let url = configs.get(&url_key).cloned();
 
                 let status = match status_char {
@@ -1246,7 +1247,7 @@ impl GitCliService {
 
         Ok(SubmoduleResult {
             success: true,
-            message: format!("Submodule '{}' removed", path),
+            message: format!("Submodule '{path}' removed"),
             submodules: vec![path.to_string()],
         })
     }
@@ -1425,7 +1426,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Started {} '{}'", branch_type.as_str(), name),
+            message: format!("Started {} '{name}'", branch_type.as_str()),
             branch: Some(branch_name),
         })
     }
@@ -1462,8 +1463,7 @@ impl GitCliService {
             return Ok(GitFlowResult {
                 success: false,
                 message: format!(
-                    "Failed to checkout {}: {}",
-                    target_branch,
+                    "Failed to checkout {target_branch}: {}",
                     checkout.stderr.trim()
                 ),
                 branch: None,
@@ -1499,7 +1499,7 @@ impl GitCliService {
             GitFlowBranchType::Release | GitFlowBranchType::Hotfix
         ) {
             // Create tag
-            let tag_name = format!("{}{}", config.version_tag_prefix, name);
+            let tag_name = format!("{}{name}", config.version_tag_prefix);
             let mut tag_args = vec!["tag", "-a", &tag_name];
             let tag_msg = options
                 .tag_message
@@ -1879,8 +1879,7 @@ impl GitCliService {
             "tar.bz2" | "tbz2" => "tar.bz2",
             _ => {
                 return Err(AxisError::Other(format!(
-                    "Unsupported archive format: {}",
-                    format
+                    "Unsupported archive format: {format}"
                 )))
             }
         };
@@ -3080,15 +3079,9 @@ impl GitCliService {
         Ok(LfsPruneResult {
             success: result.success,
             message: if options.dry_run {
-                format!(
-                    "Would prune {objects_pruned} objects, reclaiming {} bytes",
-                    space_reclaimed
-                )
+                format!("Would prune {objects_pruned} objects, reclaiming {space_reclaimed} bytes")
             } else if result.success {
-                format!(
-                    "Pruned {objects_pruned} objects, reclaimed {} bytes",
-                    space_reclaimed
-                )
+                format!("Pruned {objects_pruned} objects, reclaimed {space_reclaimed} bytes")
             } else {
                 format!("LFS prune failed: {}", result.stderr.trim())
             },
@@ -3574,7 +3567,7 @@ mod tests {
 
         // Create multiple stashes
         for i in 0..3 {
-            fs::write(tmp.path().join(format!("clear_test_{}.txt", i)), "content")
+            fs::write(tmp.path().join(format!("clear_test_{i}.txt")), "content")
                 .expect("should write file");
             Command::new("git")
                 .args(["add", "."])

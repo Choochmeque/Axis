@@ -179,6 +179,7 @@ impl BackgroundFetchService {
         self.start(cache, app_handle, interval_minutes);
     }
 
+    #[cfg(test)]
     /// Check if the background fetch service is running
     pub fn is_running(&self) -> bool {
         if let Ok(guard) = self.interval_handle.lock() {

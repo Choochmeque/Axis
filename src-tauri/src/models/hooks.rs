@@ -56,21 +56,6 @@ impl GitHookType {
             GitHookType::PostRewrite => "post-rewrite",
         }
     }
-
-    /// Get human-readable description
-    pub fn description(&self) -> &'static str {
-        match self {
-            GitHookType::PreCommit => "Runs before commit starts",
-            GitHookType::PrepareCommitMsg => "Can modify commit message",
-            GitHookType::CommitMsg => "Validates commit message",
-            GitHookType::PostCommit => "Runs after commit completes",
-            GitHookType::PrePush => "Runs before push to remote",
-            GitHookType::PostMerge => "Runs after merge completes",
-            GitHookType::PreRebase => "Runs before rebase starts",
-            GitHookType::PostCheckout => "Runs after checkout completes",
-            GitHookType::PostRewrite => "Runs after amend or rebase",
-        }
-    }
 }
 
 /// Result of running a git hook
@@ -404,18 +389,6 @@ mod tests {
         assert_eq!(GitHookType::PreRebase.filename(), "pre-rebase");
         assert_eq!(GitHookType::PostCheckout.filename(), "post-checkout");
         assert_eq!(GitHookType::PostRewrite.filename(), "post-rewrite");
-    }
-
-    #[test]
-    fn test_git_hook_type_description() {
-        assert!(GitHookType::PreCommit
-            .description()
-            .contains("before commit"));
-        assert!(GitHookType::CommitMsg
-            .description()
-            .contains("commit message"));
-        assert!(GitHookType::PrePush.description().contains("push"));
-        assert!(GitHookType::PostMerge.description().contains("merge"));
     }
 
     #[test]

@@ -251,6 +251,20 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
     }
   };
 
+  const getTypePrefix = (type: GitFlowBranchType): string => {
+    if (!config) return '';
+    switch (type) {
+      case 'Feature':
+        return config.featurePrefix;
+      case 'Release':
+        return config.releasePrefix;
+      case 'Hotfix':
+        return config.hotfixPrefix;
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-(--bg-secondary) rounded">
       <div className="flex items-center justify-between py-2 px-3 border-b border-(--border-color)">
@@ -519,7 +533,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
             <FormField
               label={`${getTypeLabel(startType)} name`}
               htmlFor="branch-name"
-              hint={`Branch will be created as: ${config?.[`${startType}_prefix` as keyof GitFlowConfig]}${branchName || '...'}`}
+              hint={`Branch will be created as: ${getTypePrefix(startType)}${branchName || '...'}`}
             >
               <Input
                 id="branch-name"

@@ -19,7 +19,9 @@
     "e2e:mac": "wdio run e2e/wdio.mac.conf.ts",
     "e2e:win": "wdio run e2e/wdio.win.conf.ts",
     "e2e:linux": "wdio run e2e/wdio.linux.conf.ts",
-    "appium": "appium"
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@choochmeque/tauri-plugin-notifications-api": "^0.4.2",
@@ -93,6 +95,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.54.0",
     "vite": "^7.0.4",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-tabs": "^0.7.3",
     "vitest": "^4.0.16",
     "webdriverio": "^9.23.3"
   },

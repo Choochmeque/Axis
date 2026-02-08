@@ -131,7 +131,7 @@ fn build_certificate_check_callback(
         }
 
         // Parse known_hosts and check
-        let known_hosts_content = match std::fs::read_to_string(&known_hosts_path) {
+        let known_hosts_content = match std::fs::read_to_string(known_hosts_path) {
             Ok(content) => content,
             Err(e) => {
                 log::warn!("Failed to read known_hosts: {e}, accepting host key for {hostname}");
@@ -787,7 +787,7 @@ impl Git2Service {
         let oid = repo.commit_signed(commit_str, &signature, Some("gpgsig"))?;
 
         // Update HEAD to point to the new commit
-        Self::update_head_to_commit(&repo, oid, "commit (signed)")?;
+        Self::update_head_to_commit(repo, oid, "commit (signed)")?;
 
         Ok(oid.to_string())
     }
@@ -798,7 +798,7 @@ impl Git2Service {
         oid: git2::Oid,
         reflog_msg: &str,
     ) -> Result<()> {
-        if Self::is_head_unborn(&repo) {
+        if Self::is_head_unborn(repo) {
             // For unborn HEAD, we need to create the branch reference
             // HEAD is a symbolic ref pointing to a branch that doesn't exist yet
             let head_ref = repo.find_reference("HEAD")?;
@@ -1348,7 +1348,7 @@ impl Git2Service {
         for oid_result in revwalk {
             let oid = oid_result?;
             let commit = repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit, &repo));
+            commits.push(Commit::from_git2_commit(&commit, repo));
         }
 
         Ok(commits)
@@ -2075,7 +2075,7 @@ impl Git2Service {
                     let is_merging = merge_head_oid_str.is_some();
 
                     // Update lane state BEFORE computing edges so lanes are correct
-                    lane_state.process_commit("uncommitted", 0, &parent_oids);
+                    lane_state.process_commit(0, &parent_oids);
 
                     // Now build parent edges with correctly assigned lanes
                     let mut parent_edges: Vec<GraphEdge> = Vec::new();
@@ -2184,7 +2184,7 @@ impl Git2Service {
             }
 
             // Update lane state
-            lane_state.process_commit(&oid_str, lane, &parent_oids);
+            lane_state.process_commit(lane, &parent_oids);
 
             // Get refs for this commit
             let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();
@@ -2592,8 +2592,7 @@ impl Git2Service {
             .merge_base(head_commit.id(), target_commit.id())
             .map_err(|_| {
                 AxisError::Other(format!(
-                    "No common ancestor found between HEAD and '{}'",
-                    onto
+                    "No common ancestor found between HEAD and '{onto}'"
                 ))
             })?;
         let merge_base_commit = repo.find_commit(merge_base_oid)?;
@@ -4147,10 +4146,10 @@ mod tests {
 
         // Add more commits
         for i in 2..=5 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content")
+            fs::write(tmp.path().join(format!("file{i}.txt")), "content")
                 .expect("should write file");
             service
-                .stage_file(&format!("file{}.txt", i))
+                .stage_file(&format!("file{i}.txt"))
                 .expect("should stage file");
             service
                 .create_commit(&format!("Commit {i}"), None, None, None)
@@ -4300,10 +4299,10 @@ mod tests {
 
         // Add more commits
         for i in 2..=3 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content")
+            fs::write(tmp.path().join(format!("file{i}.txt")), "content")
                 .expect("should write file");
             service
-                .stage_file(&format!("file{}.txt", i))
+                .stage_file(&format!("file{i}.txt"))
                 .expect("should stage file");
             service
                 .create_commit(&format!("Commit {i}"), None, None, None)

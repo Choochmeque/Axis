@@ -136,8 +136,7 @@ pub async fn push_remote(
             .get_remote(&remote_name)
             .await
             .ok()
-            .map(|r| r.url.clone())
-            .flatten()
+            .and_then(|r| r.url.clone())
             .unwrap_or_default();
 
         let refs_stdin = git_service
@@ -210,8 +209,7 @@ pub async fn push_current_branch(
                 .get_remote(&remote_name)
                 .await
                 .ok()
-                .map(|r| r.url.clone())
-                .flatten()
+                .and_then(|r| r.url.clone())
                 .unwrap_or_default();
 
             let refspecs = vec![branch.clone()];

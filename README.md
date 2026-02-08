@@ -1,12 +1,17 @@
-# Axis
+<p align="center">
+  <img src="app-icon.png" alt="Axis" width="128" height="128">
+</p>
 
-A modern, cross-platform Git GUI built with Tauri.
+<h1 align="center">Axis</h1>
 
-[![Tests + Coverage](https://github.com/choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/tests.yml)
-[![Checks](https://github.com/choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/choochmeque/Axis/actions/workflows/checks.yml)
-[![codecov](https://codecov.io/gh/choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/choochmeque/Axis)
+<p align="center">A modern, cross-platform Git GUI built with Tauri.</p>
+
+[![Unit Tests](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml)
+[![E2E Tests](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml)
+[![Checks](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml)
+[![Coverage](https://codecov.io/gh/Choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/Choochmeque/Axis)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/choochmeque/Axis/releases)
+[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/Choochmeque/Axis/releases)
 
 ---
 
@@ -16,47 +21,64 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ## Screenshots
 
-<!-- TODO: Replace placeholders with actual screenshots -->
-
-<details>
-<summary><strong>Main Window / History View</strong></summary>
-
-> Screenshot needed: Commit graph visualization with branches, sidebar with branches list, commit history, and file changes panel. Demonstrates the overall UI layout and design.
-
-</details>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-light.png">
+  <img alt="Axis - Main Window" src="docs/public/screenshot-light.png">
+</picture>
 
 <details>
 <summary><strong>Staging Area</strong></summary>
 
-> Screenshot needed: Files staged for commit with diff view, syntax highlighting, and stage/unstage buttons. Demonstrates the staging workflow.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-staging-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-staging-light.png">
+  <img alt="Axis - Staging Area" src="docs/public/screenshot-staging-light.png">
+</picture>
 
 </details>
 
 <details>
 <summary><strong>Diff View</strong></summary>
 
-> Screenshot needed: Side-by-side or unified diff with syntax highlighting, line numbers, and hunk staging. Demonstrates code review capabilities.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-diff-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-diff-light.png">
+  <img alt="Axis - Diff View" src="docs/public/screenshot-diff-light.png">
+</picture>
 
 </details>
 
 <details>
 <summary><strong>Branch Management</strong></summary>
 
-> Screenshot needed: Branch list with context menu showing local/remote branches and create/merge options. Demonstrates branch operations.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-branches-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-branches-light.png">
+  <img alt="Axis - Branch Management" src="docs/public/screenshot-branches-light.png">
+</picture>
 
 </details>
 
 <details>
 <summary><strong>Merge Conflict Resolution</strong></summary>
 
-> Screenshot needed: Conflict resolver UI with theirs/ours/merged panels. Demonstrates conflict handling.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-merge-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-merge-light.png">
+  <img alt="Axis - Merge Conflict Resolution" src="docs/public/screenshot-merge-light.png">
+</picture>
 
 </details>
 
 <details>
 <summary><strong>GitHub Integration</strong></summary>
 
-> Screenshot needed: PR list or issue panel with CI status and PR details. Demonstrates platform integrations.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-github-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-github-light.png">
+  <img alt="Axis - GitHub Integration" src="docs/public/screenshot-github-light.png">
+</picture>
 
 </details>
 
@@ -78,8 +100,8 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ### Advanced Features
 
-- **GitHub/GitLab Integration** - Pull requests, issues, CI status, notifications
-- **AI-Assisted Commits** - Generate commit messages using Claude or Ollama
+- **GitHub Integration** - Pull requests, issues, CI status, notifications
+- **AI-Assisted Commits** - Generate commit messages using Claude, OpenAI, or Ollama
 - **Git LFS** - Large File Storage support
 - **Worktrees** - Create and manage multiple working trees
 - **Submodules** - Add and manage submodules
@@ -104,7 +126,7 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 
 ### Download
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/choochmeque/Axis/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/Choochmeque/Axis/releases):
 
 | Platform | Download |
 |----------|----------|
@@ -114,7 +136,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ### Nightly Builds
 
-Nightly builds are available with the latest features and fixes. Check the [Releases](https://github.com/choochmeque/Axis/releases) page for builds tagged with `-nightly`.
+Nightly builds are available with the latest features and fixes. Check the [Releases](https://github.com/Choochmeque/Axis/releases) page for builds tagged with `-nightly`.
 
 ---
 
@@ -131,7 +153,7 @@ Nightly builds are available with the latest features and fixes. Check the [Rele
 
 ```bash
 # Clone the repository
-git clone https://github.com/choochmeque/Axis.git
+git clone https://github.com/Choochmeque/Axis.git
 cd Axis
 
 # Install dependencies
@@ -149,9 +171,6 @@ pnpm test:coverage
 
 # Rust tests with coverage
 cargo llvm-cov --workspace --manifest-path src-tauri/Cargo.toml
-
-# Generate TypeScript bindings
-cargo test export_typescript_bindings --manifest-path src-tauri/Cargo.toml
 ```
 
 ---
@@ -178,9 +197,79 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
 ---
 
+## Roadmap
+
+**Short-term**
+- Performance optimizations
+- Bug fixes
+- UI/UX improvements
+- More language translations
+
+**Medium-term**
+- Advanced search & filtering
+- GitLab, Bitbucket, and other platform integrations
+
+**Long-term**
+- Full native Git implementation (eliminate CLI dependency)
+
+---
+
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+Contributions are welcome! Here's how you can help:
+
+- **Fix Bugs / Add Features** - Check [open issues](https://github.com/Choochmeque/Axis/issues) or propose new ideas
+- **Write Tests** - Help us maintain 97%+ coverage
+- **Test the App** - Try it on different platforms and report bugs
+- **Sponsor** - Support development via [GitHub Sponsors](https://github.com/sponsors/Choochmeque)
+
+Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+
+---
+
+## FAQ
+
+<details>
+<summary><strong>Is Axis free?</strong></summary>
+
+Yes, Axis is free and open source under the MIT license.
+
+</details>
+
+<details>
+<summary><strong>Does Axis require Git to be installed?</strong></summary>
+
+Currently yes, but we're working toward a fully native implementation using git2-rs.
+
+</details>
+
+<details>
+<summary><strong>Why Axis over other Git clients?</strong></summary>
+
+Axis is built with modern tech (Tauri + Rust) for native performance without Electron overhead. It's open source, cross-platform and free.
+
+</details>
+
+<details>
+<summary><strong>What Git version is required?</strong></summary>
+
+Git 2.25 or later is recommended for full feature support.
+
+</details>
+
+<details>
+<summary><strong>Does it work with private repositories?</strong></summary>
+
+Yes, Axis works with any Git repository - public or private. Authentication is handled via SSH keys or HTTPS credentials.
+
+</details>
+
+<details>
+<summary><strong>Can I use it without GitHub integration?</strong></summary>
+
+Absolutely. GitHub integration is optional. Axis works with any Git remote including GitLab, Bitbucket, or self-hosted servers.
+
+</details>
 
 ---
 

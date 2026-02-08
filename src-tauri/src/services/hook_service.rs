@@ -48,6 +48,7 @@ impl HookService {
         repo.path().join("hooks")
     }
 
+    #[cfg(test)]
     /// Get the hooks directory path
     pub fn hooks_path(&self) -> &Path {
         &self.hooks_path
@@ -55,6 +56,7 @@ impl HookService {
 
     // ==================== Hook Execution ====================
 
+    #[cfg(test)]
     /// Check if a hook exists and is executable
     fn hook_exists(&self, hook_type: GitHookType) -> bool {
         let hook_path = self.hooks_path.join(hook_type.filename());

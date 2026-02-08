@@ -51,14 +51,4 @@ impl GitService {
     pub fn set_active(&self, active: bool) {
         self.watcher.set_active(active);
     }
-
-    /// Check if this repository is currently active
-    pub fn is_active(&self) -> bool {
-        self.watcher.is_active()
-    }
-
-    /// Stop the file watcher
-    pub fn stop_watcher(&self) {
-        self.watcher.stop();
-    }
 }

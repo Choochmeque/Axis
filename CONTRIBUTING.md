@@ -30,11 +30,16 @@ xcode-select --install
 
 ```bash
 # Clone the repository
-git clone https://github.com/choochmeque/Axis.git
+git clone https://github.com/Choochmeque/Axis.git
 cd Axis
 
 # Install dependencies
 pnpm install
+
+# Set up environment variables
+cp src-tauri/.env.example src-tauri/.env
+# Edit src-tauri/.env with your GitHub OAuth App credentials
+# Create an OAuth App at: https://github.com/settings/developers
 
 # Start development server
 pnpm tauri dev
@@ -122,6 +127,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 - **Virtualize long lists** - use virtualization for performance
 - **Cache aggressively** - invalidate on file system changes
 - **Follow existing patterns** - consistency is critical
+- **LLM usage is welcome** - but no AI slop. Review and understand generated code before submitting
 
 ## Generating TypeScript Bindings
 
@@ -133,7 +139,9 @@ cargo test export_typescript_bindings --manifest-path src-tauri/Cargo.toml
 
 ## Commit Guidelines
 
-Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+**All commits must be signed** (GPG or SSH). See [GitHub's guide on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+
+We recommend [Conventional Commits](https://www.conventionalcommits.org/) format (optional):
 
 ```
 type(scope): description
@@ -181,7 +189,6 @@ Axis supports Linux, macOS, and Windows. When contributing:
 - Test on multiple platforms when possible
 - Use platform-agnostic paths (`std::path::PathBuf`)
 - Handle platform-specific behavior in dedicated modules
-- Consider SSH backend differences (WinCNG on Windows)
 
 ## Questions?
 

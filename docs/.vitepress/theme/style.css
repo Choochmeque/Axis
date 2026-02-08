@@ -1,0 +1,150 @@
+:root {
+  --vp-c-brand-1: #0078d4;
+  --vp-c-brand-2: #1084d8;
+  --vp-c-brand-3: #3a9eea;
+  --vp-c-brand-soft: rgba(0, 120, 212, 0.14);
+
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #fff;
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #fff;
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: #fff;
+  --vp-button-brand-active-bg: var(--vp-c-brand-1);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #0078d4 0%, #00a4ef 100%);
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(0, 120, 212, 0.3) 0%,
+    rgba(0, 164, 239, 0.3) 100%
+  );
+  --vp-home-hero-image-filter: blur(44px);
+}
+
+.dark {
+  --vp-c-brand-1: #3a9eea;
+  --vp-c-brand-2: #5ab0f0;
+  --vp-c-brand-3: #7ac2f5;
+}
+
+.VPHero .name {
+  font-size: 4rem !important;
+}
+
+.VPHero .tagline {
+  font-size: 1.5rem !important;
+  max-width: 500px;
+}
+
+.VPFeature {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.VPFeature:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dark .VPFeature:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Screenshot styling */
+.screenshot-container {
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.screenshot {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dark .screenshot {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Theme-based image visibility */
+.light-only {
+  display: block;
+}
+
+.dark-only {
+  display: none;
+}
+
+.dark .light-only {
+  display: none;
+}
+
+.dark .dark-only {
+  display: block;
+}
+
+/* Download section */
+.download-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, transparent 0%, var(--vp-c-bg-soft) 100%);
+  border-radius: 16px;
+  margin: 2rem 0;
+}
+
+.download-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.download-btn.primary {
+  background: var(--vp-c-brand-1);
+  color: white;
+}
+
+.download-btn.primary:hover {
+  background: var(--vp-c-brand-2);
+  transform: translateY(-2px);
+  color: white;
+}
+
+.download-btn.secondary {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  border: 1px solid var(--vp-c-divider);
+}
+
+.download-btn.secondary:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+
+.download-note {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Hide search on home page */
+body.is-home-page .VPNavBarSearch {
+  display: none !important;
+}

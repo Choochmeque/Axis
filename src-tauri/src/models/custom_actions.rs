@@ -65,6 +65,7 @@ pub struct CustomAction {
     pub storage: Option<ActionStorageType>,
 }
 
+#[cfg(test)]
 impl CustomAction {
     /// Create a new custom action with default values
     pub fn new(name: String, command: String, contexts: Vec<ActionContext>) -> Self {
@@ -155,11 +156,6 @@ impl ActionExecutionResult {
             stderr: message,
             duration_ms: 0,
         }
-    }
-
-    /// Check if execution was successful
-    pub fn is_success(&self) -> bool {
-        self.exit_code == 0
     }
 }
 

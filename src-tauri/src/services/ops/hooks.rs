@@ -76,16 +76,8 @@ impl RepoOperations {
 
     // ---- Management (sync) ----
 
-    pub fn hooks_path(&self) -> &Path {
-        self.service.hook().hooks_path()
-    }
-
     pub fn list_hooks(&self) -> Vec<HookInfo> {
         self.service.hook().list_hooks()
-    }
-
-    pub fn get_hook_info(&self, hook_type: GitHookType) -> HookInfo {
-        self.service.hook().get_hook_info(hook_type)
     }
 
     pub fn get_hook_details(&self, hook_type: GitHookType) -> Result<HookDetails> {

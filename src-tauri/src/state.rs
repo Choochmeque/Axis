@@ -85,16 +85,6 @@ impl GitServiceHandle {
     pub fn set_active(&self, active: bool) {
         self.service.set_active(active);
     }
-
-    /// Check if this repository is active
-    pub fn is_active(&self) -> bool {
-        self.service.is_active()
-    }
-
-    /// Stop the file watcher
-    pub fn stop_watcher(&self) {
-        self.service.stop_watcher();
-    }
 }
 
 /// Cache for open repository services.
@@ -167,6 +157,7 @@ impl RepositoryCache {
             .collect()
     }
 
+    #[cfg(test)]
     /// Check if a repository is cached
     pub fn contains(&self, path: &Path) -> bool {
         self.repos
@@ -175,11 +166,13 @@ impl RepositoryCache {
             .contains_key(path)
     }
 
+    #[cfg(test)]
     /// Get the number of cached repositories
     pub fn len(&self) -> usize {
         self.repos.read().unwrap_or_else(|e| e.into_inner()).len()
     }
 
+    #[cfg(test)]
     /// Check if cache is empty
     pub fn is_empty(&self) -> bool {
         self.repos
@@ -409,6 +402,7 @@ impl AppState {
         Ok(())
     }
 
+    #[cfg(test)]
     /// Stop the background fetch service
     pub fn stop_background_fetch(&self) {
         self.background_fetch.stop();
@@ -422,6 +416,7 @@ impl AppState {
         Ok(())
     }
 
+    #[cfg(test)]
     /// Check if background fetch is running
     pub fn is_background_fetch_running(&self) -> bool {
         self.background_fetch.is_running()
@@ -510,6 +505,7 @@ impl AppState {
         log::debug!("Cleared cached passphrase for SSH key: {key_path}");
     }
 
+    #[cfg(test)]
     /// Clear all cached passphrases (all SecretStrings zeroed on drop)
     pub fn clear_all_ssh_passphrases(&self) {
         self.ssh_passphrase_cache

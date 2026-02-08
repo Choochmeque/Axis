@@ -156,11 +156,6 @@ impl ActionExecutionResult {
             duration_ms: 0,
         }
     }
-
-    /// Check if execution was successful
-    pub fn is_success(&self) -> bool {
-        self.exit_code == 0
-    }
 }
 
 /// Per-repository actions file format

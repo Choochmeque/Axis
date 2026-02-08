@@ -48,6 +48,7 @@ impl SignatureVerificationCache {
             .retain(|key, _| !key.starts_with(&prefix));
     }
 
+    #[cfg(test)]
     /// Clear all entries
     pub fn clear(&self) {
         self.entries

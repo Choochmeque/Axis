@@ -473,7 +473,7 @@ impl GitCliService {
 
     /// Revert a commit
     pub async fn revert(&self, commit: &str, no_commit: bool) -> Result<GitCommandResult> {
-        let mut args = vec!["revert"];
+        let mut args = vec!["revert", "--no-edit"];
 
         if no_commit {
             args.push("-n");

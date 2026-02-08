@@ -52,6 +52,7 @@ impl<T: Clone> TtlCache<T> {
         }
     }
 
+    #[cfg(test)]
     /// Remove a value from the cache
     pub fn remove(&self, key: &str) {
         if let Ok(mut entries) = self.entries.write() {

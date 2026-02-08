@@ -34,10 +34,6 @@ impl RepoOperations {
         self.service.git_cli().bisect_log().await
     }
 
-    pub async fn bisect_visualize(&self) -> Result<GitCommandResult> {
-        self.service.git_cli().bisect_visualize().await
-    }
-
     pub async fn get_bisect_state(&self) -> Result<BisectState> {
         self.service.git_cli().get_bisect_state().await
     }

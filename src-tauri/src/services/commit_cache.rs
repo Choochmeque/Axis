@@ -108,24 +108,10 @@ impl CommitCache {
         }
     }
 
-    /// Invalidate a specific cache entry
-    pub fn invalidate(&self, cache_key: &str) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.remove(cache_key);
-        }
-    }
-
-    /// Clear all entries
-    pub fn clear(&self) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.clear();
-        }
-    }
-
     /// Build a cache key from repo path and options
     pub fn build_key(repo_path: &Path, options: &GraphOptions) -> String {
         let filter_hash = compute_options_hash(options);
-        format!("{}:{}", repo_path.display(), filter_hash)
+        format!("{}:{filter_hash}", repo_path.display())
     }
 
     /// Prefetch more commits in the background and update the cache.

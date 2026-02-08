@@ -2075,7 +2075,7 @@ impl Git2Service {
                     let is_merging = merge_head_oid_str.is_some();
 
                     // Update lane state BEFORE computing edges so lanes are correct
-                    lane_state.process_commit("uncommitted", 0, &parent_oids);
+                    lane_state.process_commit(0, &parent_oids);
 
                     // Now build parent edges with correctly assigned lanes
                     let mut parent_edges: Vec<GraphEdge> = Vec::new();
@@ -2184,7 +2184,7 @@ impl Git2Service {
             }
 
             // Update lane state
-            lane_state.process_commit(&oid_str, lane, &parent_oids);
+            lane_state.process_commit(lane, &parent_oids);
 
             // Get refs for this commit
             let refs = commit_refs.get(&oid_str).cloned().unwrap_or_default();

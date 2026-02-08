@@ -65,6 +65,7 @@ pub struct CustomAction {
     pub storage: Option<ActionStorageType>,
 }
 
+#[cfg(test)]
 impl CustomAction {
     /// Create a new custom action with default values
     pub fn new(name: String, command: String, contexts: Vec<ActionContext>) -> Self {

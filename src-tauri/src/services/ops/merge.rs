@@ -2,7 +2,7 @@ use crate::error::Result;
 use crate::models::{
     ConflictType, ConflictedFile, InteractiveRebaseEntry, RebasePreview, RebaseProgress,
 };
-use crate::services::{ConflictVersion, GitCommandResult, OperationType};
+use crate::services::{ConflictVersion, GitCommandResult};
 
 use super::RepoOperations;
 
@@ -201,9 +201,5 @@ impl RepoOperations {
 
     pub fn is_reverting(&self) -> Result<bool> {
         self.service.git_cli().is_reverting()
-    }
-
-    pub fn get_operation_in_progress(&self) -> Result<Option<OperationType>> {
-        self.service.git_cli().get_operation_in_progress()
     }
 }

@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::models::{
     BlameResult, DiffOptions, FileDiff, FileLogOptions, FileLogResult, GraphOptions, GraphResult,
-    LaneState, SearchOptions, SearchResult,
+    SearchOptions, SearchResult,
 };
 use crate::services::{CommitCache, CommitCacheEntry, PREFETCH_BUFFER, PREFETCH_THRESHOLD};
 use crate::state::AppState;
@@ -97,19 +97,13 @@ pub async fn build_graph(
         .build_graph(fetch_options)
         .await?;
 
-    // Get HEAD OID for cache invalidation
-    let head_oid = state.get_git_service()?.read().await.get_head_oid().await;
-
     // Store in cache
     cache.set(
         cache_key,
         CommitCacheEntry {
             commits: result.commits.clone(),
-            lane_state: LaneState::new(), // Lane state not needed since we always fetch from start
             max_lane: result.max_lane,
             has_more: result.has_more,
-            head_oid,
-            filter_hash: 0, // Not used for lookups, key handles this
             is_prefetching: AtomicBool::new(false),
         },
     );

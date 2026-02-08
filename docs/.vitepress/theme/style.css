@@ -1,8 +1,8 @@
 :root {
-  --vp-c-brand-1: #4f46e5;
-  --vp-c-brand-2: #6366f1;
-  --vp-c-brand-3: #818cf8;
-  --vp-c-brand-soft: rgba(99, 102, 241, 0.14);
+  --vp-c-brand-1: #0078d4;
+  --vp-c-brand-2: #1084d8;
+  --vp-c-brand-3: #3a9eea;
+  --vp-c-brand-soft: rgba(0, 120, 212, 0.14);
 
   --vp-button-brand-border: transparent;
   --vp-button-brand-text: #fff;
@@ -15,19 +15,19 @@
   --vp-button-brand-active-bg: var(--vp-c-brand-1);
 
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+  --vp-home-hero-name-background: linear-gradient(135deg, #0078d4 0%, #00a4ef 100%);
   --vp-home-hero-image-background-image: linear-gradient(
     135deg,
-    rgba(79, 70, 229, 0.3) 0%,
-    rgba(6, 182, 212, 0.3) 100%
+    rgba(0, 120, 212, 0.3) 0%,
+    rgba(0, 164, 239, 0.3) 100%
   );
   --vp-home-hero-image-filter: blur(44px);
 }
 
 .dark {
-  --vp-c-brand-1: #818cf8;
-  --vp-c-brand-2: #a5b4fc;
-  --vp-c-brand-3: #c7d2fe;
+  --vp-c-brand-1: #3a9eea;
+  --vp-c-brand-2: #5ab0f0;
+  --vp-c-brand-3: #7ac2f5;
 }
 
 .VPHero .name {
@@ -124,7 +124,7 @@
 .download-btn.primary:hover {
   background: var(--vp-c-brand-2);
   transform: translateY(-2px);
-  color: #1a1a1a;
+  color: white;
 }
 
 .download-btn.secondary {

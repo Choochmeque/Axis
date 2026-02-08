@@ -30,7 +30,11 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Staging Area</strong></summary>
 
-![Axis - Staging Area](docs/public/screenshot-staging.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-staging-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-staging-light.png">
+  <img alt="Axis - Staging Area" src="docs/public/screenshot-staging-light.png">
+</picture>
 
 </details>
 

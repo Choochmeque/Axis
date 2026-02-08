@@ -25,6 +25,8 @@ const guideSidebar = [
       { text: 'GitHub Integration', link: '/guide/github-integration' },
       { text: 'AI-Assisted Commits', link: '/guide/ai-commits' },
       { text: 'Git Hooks', link: '/guide/git-hooks' },
+      { text: 'Reflog', link: '/guide/reflog' },
+      { text: 'Bisect', link: '/guide/bisect' },
       { text: 'Worktrees', link: '/guide/worktrees' },
       { text: 'Submodules', link: '/guide/submodules' },
       { text: 'Git LFS', link: '/guide/git-lfs' },

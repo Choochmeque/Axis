@@ -49,6 +49,7 @@ const guideSidebar = [
 
 export default defineConfig({
   title: 'Axis',
+  titleTemplate: ':title | Modern Git GUI',
   description: 'A modern, cross-platform Git GUI built with Tauri',
   base: '/Axis/',
 
@@ -60,7 +61,7 @@ export default defineConfig({
 
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/Axis/favicon.png' }],
-    ['meta', { name: 'theme-color', content: '#4f46e5' }],
+    ['meta', { name: 'theme-color', content: '#0078d4' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Axis - Modern Git GUI' }],
     [

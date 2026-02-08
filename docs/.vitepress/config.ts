@@ -24,6 +24,7 @@ const guideSidebar = [
     items: [
       { text: 'GitHub Integration', link: '/guide/github-integration' },
       { text: 'AI-Assisted Commits', link: '/guide/ai-commits' },
+      { text: 'Git Hooks', link: '/guide/git-hooks' },
       { text: 'Worktrees', link: '/guide/worktrees' },
       { text: 'Submodules', link: '/guide/submodules' },
       { text: 'Git LFS', link: '/guide/git-lfs' },
@@ -33,7 +34,9 @@ const guideSidebar = [
   {
     text: 'Customization',
     items: [
+      { text: 'Custom Actions', link: '/guide/custom-actions' },
       { text: 'Keyboard Shortcuts', link: '/guide/keyboard-shortcuts' },
+      { text: 'SSH Keys', link: '/guide/ssh-keys' },
       { text: 'Settings', link: '/guide/settings' },
     ],
   },

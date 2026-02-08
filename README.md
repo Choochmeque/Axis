@@ -254,9 +254,23 @@ Axis is built with modern tech (Tauri + Rust) for native performance without Ele
 </details>
 
 <details>
-<summary><strong>How do I report a bug?</strong></summary>
+<summary><strong>What Git version is required?</strong></summary>
 
-Open an issue on [GitHub Issues](https://github.com/Choochmeque/Axis/issues) with steps to reproduce.
+Git 2.25 or later is recommended for full feature support.
+
+</details>
+
+<details>
+<summary><strong>Does it work with private repositories?</strong></summary>
+
+Yes, Axis works with any Git repository - public or private. Authentication is handled via SSH keys or HTTPS credentials.
+
+</details>
+
+<details>
+<summary><strong>Can I use it without GitHub integration?</strong></summary>
+
+Absolutely. GitHub integration is optional. Axis works with any Git remote including GitLab, Bitbucket, or self-hosted servers.
 
 </details>
 

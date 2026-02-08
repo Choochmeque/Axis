@@ -44,7 +44,11 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Branch Management</strong></summary>
 
-![Axis - Branch Management](docs/public/screenshot-branches.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-branches-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-branches-light.png">
+  <img alt="Axis - Branch Management" src="docs/public/screenshot-branches-light.png">
+</picture>
 
 </details>
 

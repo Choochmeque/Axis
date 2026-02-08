@@ -134,6 +134,8 @@ cargo test export_typescript_bindings --manifest-path src-tauri/Cargo.toml
 
 ## Commit Guidelines
 
+**All commits must be signed** (GPG or SSH). See [GitHub's guide on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+
 We recommend [Conventional Commits](https://www.conventionalcommits.org/) format (optional):
 
 ```

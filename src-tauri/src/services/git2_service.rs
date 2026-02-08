@@ -131,7 +131,7 @@ fn build_certificate_check_callback(
         }
 
         // Parse known_hosts and check
-        let known_hosts_content = match std::fs::read_to_string(&known_hosts_path) {
+        let known_hosts_content = match std::fs::read_to_string(known_hosts_path) {
             Ok(content) => content,
             Err(e) => {
                 log::warn!("Failed to read known_hosts: {e}, accepting host key for {hostname}");
@@ -787,7 +787,7 @@ impl Git2Service {
         let oid = repo.commit_signed(commit_str, &signature, Some("gpgsig"))?;
 
         // Update HEAD to point to the new commit
-        Self::update_head_to_commit(&repo, oid, "commit (signed)")?;
+        Self::update_head_to_commit(repo, oid, "commit (signed)")?;
 
         Ok(oid.to_string())
     }
@@ -798,7 +798,7 @@ impl Git2Service {
         oid: git2::Oid,
         reflog_msg: &str,
     ) -> Result<()> {
-        if Self::is_head_unborn(&repo) {
+        if Self::is_head_unborn(repo) {
             // For unborn HEAD, we need to create the branch reference
             // HEAD is a symbolic ref pointing to a branch that doesn't exist yet
             let head_ref = repo.find_reference("HEAD")?;
@@ -1348,7 +1348,7 @@ impl Git2Service {
         for oid_result in revwalk {
             let oid = oid_result?;
             let commit = repo.find_commit(oid)?;
-            commits.push(Commit::from_git2_commit(&commit, &repo));
+            commits.push(Commit::from_git2_commit(&commit, repo));
         }
 
         Ok(commits)

@@ -41,7 +41,11 @@ Axis is a powerful Git client designed to make version control intuitive and eff
 <details>
 <summary><strong>Diff View</strong></summary>
 
-![Axis - Diff View](docs/public/screenshot-diff.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/screenshot-diff-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/public/screenshot-diff-light.png">
+  <img alt="Axis - Diff View" src="docs/public/screenshot-diff-light.png">
+</picture>
 
 </details>
 

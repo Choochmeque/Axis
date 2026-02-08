@@ -124,6 +124,7 @@
 .download-btn.primary:hover {
   background: var(--vp-c-brand-2);
   transform: translateY(-2px);
+  color: #1a1a1a;
 }
 
 .download-btn.secondary {
@@ -135,4 +136,10 @@
 .download-btn.secondary:hover {
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-brand-1);
+}
+
+.download-note {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }

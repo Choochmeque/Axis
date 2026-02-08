@@ -181,6 +181,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 **Short-term**
 - Performance optimizations
 - Bug fixes
+- UI/UX improvements
 - More language translations
 
 **Medium-term**

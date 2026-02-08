@@ -171,9 +171,6 @@ pnpm test:coverage
 
 # Rust tests with coverage
 cargo llvm-cov --workspace --manifest-path src-tauri/Cargo.toml
-
-# Generate TypeScript bindings
-cargo test export_typescript_bindings --manifest-path src-tauri/Cargo.toml
 ```
 
 ---

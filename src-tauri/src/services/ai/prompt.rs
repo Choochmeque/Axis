@@ -147,10 +147,8 @@ pub fn build_prompt(diff: &str, conventional_commits: bool) -> (String, String) 
         SYSTEM_PROMPT
     };
 
-    let user_prompt = format!(
-        "Generate a commit message for the following changes:\n\n```diff\n{}\n```",
-        diff
-    );
+    let user_prompt =
+        format!("Generate a commit message for the following changes:\n\n```diff\n{diff}\n```");
     (system.to_string(), user_prompt)
 }
 

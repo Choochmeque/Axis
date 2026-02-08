@@ -25,20 +25,13 @@ pub async fn build_graph(
     let limit = options.limit.unwrap_or(200);
     let requested_end = skip + limit;
 
-    log::debug!(
-        "[CommitCache] Request: skip={}, limit={}, key={}",
-        skip,
-        limit,
-        cache_key
-    );
+    log::debug!("[CommitCache] Request: skip={skip}, limit={limit}, key={cache_key}");
 
     // Check cache first
     if let Some(entry_ref) = cache.get(&cache_key) {
         let total_fetched = entry_ref.total_fetched();
         log::debug!(
-            "[CommitCache] Found entry: total_fetched={}, requested_end={}",
-            total_fetched,
-            requested_end
+            "[CommitCache] Found entry: total_fetched={total_fetched}, requested_end={requested_end}"
         );
 
         // Can we serve from cache?

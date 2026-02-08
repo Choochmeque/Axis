@@ -2592,8 +2592,7 @@ impl Git2Service {
             .merge_base(head_commit.id(), target_commit.id())
             .map_err(|_| {
                 AxisError::Other(format!(
-                    "No common ancestor found between HEAD and '{}'",
-                    onto
+                    "No common ancestor found between HEAD and '{onto}'"
                 ))
             })?;
         let merge_base_commit = repo.find_commit(merge_base_oid)?;
@@ -4147,10 +4146,10 @@ mod tests {
 
         // Add more commits
         for i in 2..=5 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content")
+            fs::write(tmp.path().join(format!("file{i}.txt")), "content")
                 .expect("should write file");
             service
-                .stage_file(&format!("file{}.txt", i))
+                .stage_file(&format!("file{i}.txt"))
                 .expect("should stage file");
             service
                 .create_commit(&format!("Commit {i}"), None, None, None)
@@ -4300,10 +4299,10 @@ mod tests {
 
         // Add more commits
         for i in 2..=3 {
-            fs::write(tmp.path().join(format!("file{}.txt", i)), "content")
+            fs::write(tmp.path().join(format!("file{i}.txt")), "content")
                 .expect("should write file");
             service
-                .stage_file(&format!("file{}.txt", i))
+                .stage_file(&format!("file{i}.txt"))
                 .expect("should stage file");
             service
                 .create_commit(&format!("Commit {i}"), None, None, None)

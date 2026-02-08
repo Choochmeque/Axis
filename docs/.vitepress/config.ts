@@ -37,6 +37,7 @@ const guideSidebar = [
       { text: 'Custom Actions', link: '/guide/custom-actions' },
       { text: 'Keyboard Shortcuts', link: '/guide/keyboard-shortcuts' },
       { text: 'SSH Keys', link: '/guide/ssh-keys' },
+      { text: 'Commit Signing', link: '/guide/commit-signing' },
       { text: 'Settings', link: '/guide/settings' },
     ],
   },

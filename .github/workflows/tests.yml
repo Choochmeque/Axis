@@ -89,6 +89,11 @@ jobs:
         shell: bash
         run: echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
 
+      - name: Configure git
+        run: |
+          git config --global user.email "ci@test.com"
+          git config --global user.name "CI Test"
+
       - name: Run rust tests with coverage
         if: ${{ github.actor != 'dependabot[bot]' }}
         run: cargo llvm-cov --workspace --all-targets --manifest-path src-tauri/Cargo.toml --lcov --output-path coverage.lcov

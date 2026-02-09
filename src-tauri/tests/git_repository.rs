@@ -114,7 +114,10 @@ async fn test_get_head_oid_verified_by_cli() {
     let ops_oid = ops.get_head_oid().await;
 
     // Verify: matches CLI
-    assert_eq!(ops_oid, cli_oid, "RepoOperations should return same OID as CLI");
+    assert_eq!(
+        ops_oid, cli_oid,
+        "RepoOperations should return same OID as CLI"
+    );
 }
 
 #[tokio::test]
@@ -159,7 +162,10 @@ async fn test_get_repository_info_path_verified_by_cli() {
     let cli_root = git_repo_root(tmp.path());
 
     // Action: RepoOperations gets repo info
-    let info = ops.get_repository_info().await.expect("should get repo info");
+    let info = ops
+        .get_repository_info()
+        .await
+        .expect("should get repo info");
 
     // Verify: path matches CLI
     assert_eq!(
@@ -174,14 +180,20 @@ async fn test_get_repository_info_has_branch() {
     let (_tmp, ops) = setup_test_repo();
 
     // Action: RepoOperations gets repo info
-    let info = ops.get_repository_info().await.expect("should get repo info");
+    let info = ops
+        .get_repository_info()
+        .await
+        .expect("should get repo info");
 
     // Verify: has current branch (we have initial commit)
     assert!(
         info.current_branch.is_some(),
         "Repo should have current branch after initial commit"
     );
-    assert!(!info.is_unborn, "Repo should not be unborn after initial commit");
+    assert!(
+        !info.is_unborn,
+        "Repo should not be unborn after initial commit"
+    );
 }
 
 // ==================== status Tests ====================
@@ -200,7 +212,10 @@ async fn test_status_clean_verified_by_cli() {
     // Verify: no changes
     assert!(status.staged.is_empty(), "Should have no staged files");
     assert!(status.unstaged.is_empty(), "Should have no unstaged files");
-    assert!(status.untracked.is_empty(), "Should have no untracked files");
+    assert!(
+        status.untracked.is_empty(),
+        "Should have no untracked files"
+    );
 }
 
 #[tokio::test]
@@ -290,8 +305,11 @@ async fn test_log_count_verified_by_cli() {
 
     // Setup: create commits via CLI
     for i in 1..=3 {
-        std::fs::write(tmp.path().join(format!("file{i}.txt")), format!("content {i}"))
-            .expect("should write");
+        std::fs::write(
+            tmp.path().join(format!("file{i}.txt")),
+            format!("content {i}"),
+        )
+        .expect("should write");
         git_cmd(tmp.path(), &["add", "."]);
         git_cmd(tmp.path(), &["commit", "-m", &format!("Commit {i}")]);
     }
@@ -331,8 +349,11 @@ async fn test_log_with_limit() {
 
     // Setup: create multiple commits
     for i in 1..=5 {
-        std::fs::write(tmp.path().join(format!("file{i}.txt")), format!("content {i}"))
-            .expect("should write");
+        std::fs::write(
+            tmp.path().join(format!("file{i}.txt")),
+            format!("content {i}"),
+        )
+        .expect("should write");
         git_cmd(tmp.path(), &["add", "."]);
         git_cmd(tmp.path(), &["commit", "-m", &format!("Commit {i}")]);
     }
@@ -369,7 +390,10 @@ async fn test_cli_commit_appears_in_ops_log() {
     let found = log.iter().find(|c| c.oid == cli_head);
     assert!(found.is_some(), "CLI commit should appear in log");
     assert!(
-        found.expect("commit exists").message.contains("CLI created commit"),
+        found
+            .expect("commit exists")
+            .message
+            .contains("CLI created commit"),
         "Commit message should match"
     );
 }
@@ -385,10 +409,7 @@ async fn test_get_repo_user_config_verified_by_cli() {
     let cli_email = git_config_user_email(tmp.path());
 
     // Action: RepoOperations gets config
-    let (ops_name, ops_email) = ops
-        .get_repo_user_config()
-        .await
-        .expect("should get config");
+    let (ops_name, ops_email) = ops.get_repo_user_config().await.expect("should get config");
 
     // Verify: matches CLI
     assert_eq!(ops_name, cli_name);
@@ -421,10 +442,7 @@ async fn test_cli_config_read_by_ops() {
     git_cmd(tmp.path(), &["config", "user.email", "cli@example.com"]);
 
     // Action: RepoOperations reads config
-    let (name, email) = ops
-        .get_repo_user_config()
-        .await
-        .expect("should get config");
+    let (name, email) = ops.get_repo_user_config().await.expect("should get config");
 
     // Verify: sees CLI config
     assert_eq!(name, Some("CLI User".to_string()));

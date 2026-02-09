@@ -7,6 +7,7 @@
 <p align="center">A modern, cross-platform Git GUI built with Tauri.</p>
 
 [![Unit Tests](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/tests.yml)
+[![Integration Tests](https://github.com/Choochmeque/Axis/actions/workflows/integration.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/integration.yml)
 [![E2E Tests](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/e2e.yml)
 [![Checks](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml/badge.svg)](https://github.com/Choochmeque/Axis/actions/workflows/checks.yml)
 [![Coverage](https://codecov.io/gh/Choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/Choochmeque/Axis)

@@ -16,6 +16,21 @@ pub struct GitService {
 }
 
 impl GitService {
+    /// Create GitService for testing (no FileWatcher/AppHandle required)
+    #[cfg(feature = "integration")]
+    pub fn new_for_test(path: &Path) -> Result<Self> {
+        let git2 = Git2Service::open(path)?;
+        let git_cli = GitCliService::new(path);
+        let hook = HookService::new(&git2.repo()?);
+
+        Ok(Self {
+            git2,
+            git_cli,
+            hook,
+            watcher: FileWatcher::dummy(),
+        })
+    }
+
     /// Open a repository and create all associated services
     pub fn open(path: &Path, app_handle: AppHandle, is_active: bool) -> Result<Self> {
         let git2 = Git2Service::open(path)?;

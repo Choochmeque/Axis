@@ -9,6 +9,9 @@ mod git_cli_service;
 mod git_service;
 mod hook_service;
 mod integrations;
+#[cfg(feature = "integration")]
+pub mod ops;
+#[cfg(not(feature = "integration"))]
 pub(crate) mod ops;
 mod process_utils;
 mod progress_emitter;

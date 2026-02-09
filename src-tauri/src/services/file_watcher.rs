@@ -22,6 +22,16 @@ pub struct FileWatcher {
 }
 
 impl FileWatcher {
+    /// Create a dummy file watcher for testing (no actual watching)
+    #[cfg(feature = "integration")]
+    pub fn dummy() -> Self {
+        Self {
+            is_active: Arc::new(AtomicBool::new(false)),
+            watcher: Arc::new(Mutex::new(None)),
+            receiver_handle: Arc::new(Mutex::new(None)),
+        }
+    }
+
     /// Create a new file watcher for a repository
     pub fn new(repo_path: PathBuf, app_handle: AppHandle, is_active: bool) -> notify::Result<Self> {
         let is_active_flag = Arc::new(AtomicBool::new(is_active));

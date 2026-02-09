@@ -53,6 +53,10 @@ export default defineConfig({
   description: 'A modern, cross-platform Git GUI built with Tauri',
   base: '/',
 
+  sitemap: {
+    hostname: 'https://axis-git.app',
+  },
+
   markdown: {
     config(md) {
       md.use(tabsMarkdownPlugin);

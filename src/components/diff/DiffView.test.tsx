@@ -15,6 +15,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+  testId: (id: string) => ({ 'aria-label': id }),
 }));
 
 vi.mock('@/lib/errorUtils', () => ({

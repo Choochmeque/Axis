@@ -8,6 +8,11 @@ use axis_lib::models::ResetMode;
 
 // ==================== Helpers ====================
 
+/// Get HEAD OID via CLI
+fn git_head_oid(path: &std::path::Path) -> String {
+    git_cmd(path, &["rev-parse", "HEAD"])
+}
+
 /// Get list of staged files via CLI
 fn git_staged_files(path: &std::path::Path) -> Vec<String> {
     let output = git_cmd(path, &["diff", "--cached", "--name-only"]);
@@ -33,11 +38,6 @@ fn git_untracked_files(path: &std::path::Path) -> Vec<String> {
         return Vec::new();
     }
     output.lines().map(|s| s.to_string()).collect()
-}
-
-/// Get current HEAD OID via CLI
-fn git_head_oid(path: &std::path::Path) -> String {
-    git_cmd(path, &["rev-parse", "HEAD"])
 }
 
 /// Get commit message via CLI

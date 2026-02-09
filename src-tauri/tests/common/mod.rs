@@ -41,22 +41,3 @@ pub fn git_cmd(path: &Path, args: &[&str]) -> String {
 
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
-
-/// Get current branch via CLI
-pub fn git_current_branch(path: &Path) -> String {
-    git_cmd(path, &["rev-parse", "--abbrev-ref", "HEAD"])
-}
-
-/// List branches via CLI
-pub fn git_branch_list(path: &Path) -> Vec<String> {
-    let output = git_cmd(path, &["branch", "--list", "--format=%(refname:short)"]);
-    if output.is_empty() {
-        return Vec::new();
-    }
-    output.lines().map(|s| s.to_string()).collect()
-}
-
-/// Check if branch exists via CLI
-pub fn git_branch_exists(path: &Path, branch_name: &str) -> bool {
-    git_branch_list(path).contains(&branch_name.to_string())
-}

@@ -8,6 +8,11 @@ use axis_lib::models::ReflogOptions;
 
 // ==================== Helpers ====================
 
+/// Get HEAD OID via CLI
+fn git_head_oid(path: &std::path::Path) -> String {
+    git_cmd(path, &["rev-parse", "HEAD"])
+}
+
 /// Get reflog via CLI
 fn git_reflog_list(path: &std::path::Path, refname: &str) -> Vec<String> {
     let output = git_cmd(path, &["reflog", "show", refname, "--format=%H"]);
@@ -20,11 +25,6 @@ fn git_reflog_list(path: &std::path::Path, refname: &str) -> Vec<String> {
 /// Get reflog count via CLI
 fn git_reflog_count(path: &std::path::Path, refname: &str) -> usize {
     git_reflog_list(path, refname).len()
-}
-
-/// Get current HEAD commit via CLI
-fn git_head_oid(path: &std::path::Path) -> String {
-    git_cmd(path, &["rev-parse", "HEAD"])
 }
 
 // ==================== Happy Path Tests ====================

@@ -2,9 +2,30 @@
 
 mod common;
 
-use common::{git_branch_exists, git_branch_list, git_cmd, git_current_branch, setup_test_repo};
+use common::{git_cmd, setup_test_repo};
 
 use axis_lib::models::{BranchFilter, BranchType, CheckoutOptions, CreateBranchOptions};
+
+// ==================== Helpers ====================
+
+/// Get current branch via CLI
+fn git_current_branch(path: &std::path::Path) -> String {
+    git_cmd(path, &["rev-parse", "--abbrev-ref", "HEAD"])
+}
+
+/// List branches via CLI
+fn git_branch_list(path: &std::path::Path) -> Vec<String> {
+    let output = git_cmd(path, &["branch", "--list", "--format=%(refname:short)"]);
+    if output.is_empty() {
+        return Vec::new();
+    }
+    output.lines().map(|s| s.to_string()).collect()
+}
+
+/// Check if branch exists via CLI
+fn git_branch_exists(path: &std::path::Path, name: &str) -> bool {
+    git_branch_list(path).contains(&name.to_string())
+}
 
 // ==================== Happy Path Tests ====================
 

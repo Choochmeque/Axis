@@ -90,8 +90,8 @@ importers:
         specifier: ^10.0.0
         version: 10.2.0
       konva:
-        specifier: ^10.0.12
-        version: 10.0.12
+        specifier: ^10.2.0
+        version: 10.2.0
       lucide-react:
         specifier: ^0.400.0
         version: 0.400.0(react@19.2.4)
@@ -109,7 +109,7 @@ importers:
         version: 16.5.4(i18next@25.8.0(typescript@5.9.3))(react-dom@19.2.3(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react-konva:
         specifier: ^19.2.1
-        version: 19.2.1(@types/react@19.2.13)(konva@10.0.12)(react-dom@19.2.3(react@19.2.4))(react@19.2.4)
+        version: 19.2.1(@types/react@19.2.13)(konva@10.2.0)(react-dom@19.2.3(react@19.2.4))(react@19.2.4)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.13)(react@19.2.4)
@@ -3575,8 +3575,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  konva@10.0.12:
-    resolution: {integrity: sha512-DHmkeG5FbW6tLCkbMQTi1ihWycfzljrn0V7umUUuewxx7aoINcI71ksgBX9fTPNXhlsK4/JoMgKwI/iCde+BRw==}
+  konva@10.2.0:
+    resolution: {integrity: sha512-JBoz0Xjbf49UPxCZegZ4WseqOzJ+C4AUDOtJ9eBve5RS5Fcq/u8TdBD5fDl/uPFInpC3a9uycm0sRyZpF4hheg==}
 
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
@@ -8701,7 +8701,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  konva@10.0.12: {}
+  konva@10.2.0: {}
 
   lazystream@1.0.1:
     dependencies:
@@ -9515,11 +9515,11 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-konva@19.2.1(@types/react@19.2.13)(konva@10.0.12)(react-dom@19.2.3(react@19.2.4))(react@19.2.4):
+  react-konva@19.2.1(@types/react@19.2.13)(konva@10.2.0)(react-dom@19.2.3(react@19.2.4))(react@19.2.4):
     dependencies:
       '@types/react-reconciler': 0.32.3(@types/react@19.2.13)
       its-fine: 2.0.0(@types/react@19.2.13)(react@19.2.4)
-      konva: 10.0.12
+      konva: 10.2.0
       react: 19.2.4
       react-dom: 19.2.3(react@19.2.4)
       react-reconciler: 0.33.0(react@19.2.4)

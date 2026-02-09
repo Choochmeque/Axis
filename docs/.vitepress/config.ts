@@ -72,6 +72,9 @@ export default defineConfig({
       },
     ],
     ['meta', { property: 'og:url', content: 'https://axis-git.app/' }],
+    // Simple Analytics - privacy-friendly analytics
+    ['script', { async: '', defer: '', src: 'https://scripts.simpleanalyticscdn.com/latest.js' }],
+    ['noscript', {}, '<img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" />'],
   ],
 
   locales: {

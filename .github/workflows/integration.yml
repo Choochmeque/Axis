@@ -1,0 +1,44 @@
+name: Integration Tests
+# Black-box integration tests for git operations.
+# RepoOperations performs actions, git CLI verifies (source of truth).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cache and install APT packages
+        if: runner.os == 'Linux'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake
+          version: '1.0'
+
+      - name: Create .env file
+        shell: bash
+        run: echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
+
+      - name: Configure git
+        run: |
+          git config --global user.email "ci@test.com"
+          git config --global user.name "CI Test"
+
+      - name: Run integration tests
+        run: cargo test --features integration --manifest-path src-tauri/Cargo.toml --test '*' -- --test-threads=1

@@ -2,7 +2,13 @@ mod commands;
 mod error;
 mod events;
 mod menu;
+#[cfg(feature = "integration")]
+pub mod models;
+#[cfg(not(feature = "integration"))]
 mod models;
+#[cfg(feature = "integration")]
+pub mod services;
+#[cfg(not(feature = "integration"))]
 mod services;
 mod state;
 mod storage;

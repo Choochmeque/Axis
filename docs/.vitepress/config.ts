@@ -51,7 +51,7 @@ export default defineConfig({
   title: 'Axis',
   titleTemplate: ':title | Modern Git GUI',
   description: 'A modern, cross-platform Git GUI built with Tauri',
-  base: '/Axis/',
+  base: '/',
 
   markdown: {
     config(md) {
@@ -60,7 +60,7 @@ export default defineConfig({
   },
 
   head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/Axis/favicon.png' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
     ['meta', { name: 'theme-color', content: '#0078d4' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Axis - Modern Git GUI' }],
@@ -71,7 +71,7 @@ export default defineConfig({
         content: 'A modern, cross-platform Git GUI built with Tauri',
       },
     ],
-    ['meta', { property: 'og:url', content: 'https://choochmeque.github.io/Axis/' }],
+    ['meta', { property: 'og:url', content: 'https://axis-git.app/' }],
   ],
 
   locales: {

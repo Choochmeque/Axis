@@ -73,6 +73,22 @@ export const SELECTORS = {
     return byTestId('e2e-commit-button');
   },
 
+  // Branch Operations
+  get TOOLBAR_BRANCH_BTN() {
+    return byTestId('e2e-toolbar-branch-btn');
+  },
+  get BRANCH_NAME_INPUT() {
+    return byTestId('e2e-branch-name-input');
+  },
+  get CREATE_BRANCH_BTN() {
+    return byTestId('e2e-create-branch-btn');
+  },
+
+  // Diff View
+  get DIFF_VIEW() {
+    return byTestId('e2e-diff-view');
+  },
+
   // Dynamic selectors
   stagingFile: (filename: string) => byTestId(`e2e-staging-file-${filename}`),
   repoCard: (name: string) => byTestId(`e2e-repo-card-${name}`),

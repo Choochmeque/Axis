@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import { DiffLineType, DiffStatus } from '@/types';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, testId } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { diffApi } from '@/services/api';
 import { useStagingStore, DiffCompareMode, WhitespaceMode } from '@/store/stagingStore';
@@ -428,7 +428,7 @@ export function DiffView({
   }
 
   return (
-    <div className={diffViewClass}>
+    <div className={diffViewClass} {...testId('e2e-diff-view')}>
       <DiffHeader
         diff={diff}
         viewMode={viewMode}

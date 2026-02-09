@@ -4,6 +4,7 @@ import { GitBranch } from 'lucide-react';
 import { toast } from '@/hooks';
 import { validateBranchName } from '@/lib/branchValidation';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import {
@@ -113,6 +114,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
               onKeyDown={handleKeyDown}
               placeholder={t('branches.create.namePlaceholder')}
               autoFocus
+              {...testId('e2e-branch-name-input')}
             />
           </FormField>
 
@@ -159,6 +161,7 @@ export function CreateBranchDialog({ open, onOpenChange, startPoint }: CreateBra
             variant="primary"
             onClick={handleCreate}
             disabled={isLoading || !branchName.trim() || !!validationError}
+            {...testId('e2e-create-branch-btn')}
           >
             {isLoading ? t('common.creating') : t('branches.create.createButton')}
           </Button>

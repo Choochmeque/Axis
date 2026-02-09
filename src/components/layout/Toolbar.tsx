@@ -151,6 +151,7 @@ export function Toolbar() {
               title={t('toolbar.branch')}
               disabled={repository.isUnborn}
               onClick={() => openCreateBranchDialog()}
+              {...testId('e2e-toolbar-branch-btn')}
             >
               <GitBranch size={18} />
               <span>{t('toolbar.branch')}</span>

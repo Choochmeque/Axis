@@ -51,7 +51,7 @@
     "i18next": "^25.8.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "immer": "^10.0.0",
-    "konva": "^10.0.12",
+    "konva": "^10.2.0",
     "lucide-react": "^0.400.0",
     "react": "^19.2.4",
     "react-dom": "^19.1.0",

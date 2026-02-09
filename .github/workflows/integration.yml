@@ -3,6 +3,8 @@ name: Integration Tests
 # RepoOperations performs actions, git CLI verifies (source of truth).
 
 on:
+  schedule:
+    - cron: '0 5 * * 3' # Every Wednesday at 5 AM UTC
   workflow_dispatch:
 
 jobs:

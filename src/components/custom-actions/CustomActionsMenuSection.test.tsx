@@ -55,22 +55,30 @@ describe('CustomActionsMenuSection', () => {
     {
       id: 'action-1',
       name: 'Run Tests',
+      description: null,
       command: 'npm test',
-      context: ['commit'] as ActionContext[],
+      workingDir: null,
+      contexts: ['Commit'] as ActionContext[],
       shortcut: 'Ctrl+T',
       confirm: false,
+      confirmMessage: null,
       showOutput: true,
       enabled: true,
+      order: 0,
     },
     {
       id: 'action-2',
       name: 'Deploy',
+      description: null,
       command: 'npm run deploy',
-      context: ['commit'] as ActionContext[],
-      shortcut: undefined,
+      workingDir: null,
+      contexts: ['Commit'] as ActionContext[],
+      shortcut: null,
       confirm: true,
+      confirmMessage: null,
       showOutput: false,
       enabled: true,
+      order: 1,
     },
   ];
 
@@ -84,7 +92,7 @@ describe('CustomActionsMenuSection', () => {
   it('should return null when no actions available', () => {
     mockGetActionsForContext.mockReturnValue([]);
 
-    const { container } = render(<CustomActionsMenuSection context="commit" />);
+    const { container } = render(<CustomActionsMenuSection context="Commit" />);
 
     expect(container.firstChild).toBeNull();
   });
@@ -92,7 +100,7 @@ describe('CustomActionsMenuSection', () => {
   it('should render separator and actions when available', () => {
     mockGetActionsForContext.mockReturnValue(mockActions);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     expect(screen.getByTestId('menu-separator')).toBeInTheDocument();
     expect(screen.getAllByTestId('menu-item')).toHaveLength(2);
@@ -103,7 +111,7 @@ describe('CustomActionsMenuSection', () => {
   it('should display shortcut when provided', () => {
     mockGetActionsForContext.mockReturnValue(mockActions);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     const items = screen.getAllByTestId('menu-item');
     expect(items[0]).toHaveAttribute('data-shortcut', 'Ctrl+T');
@@ -113,7 +121,7 @@ describe('CustomActionsMenuSection', () => {
   it('should call confirmAndExecute when action selected', () => {
     mockGetActionsForContext.mockReturnValue(mockActions);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     fireEvent.click(screen.getByText('Run Tests'));
 
@@ -131,7 +139,7 @@ describe('CustomActionsMenuSection', () => {
 
     const variables = {
       file: 'src/test.ts',
-      selectedFiles: ['src/a.ts', 'src/b.ts'],
+      selectedFiles: 'src/a.ts src/b.ts',
       commitHash: 'abc123',
       commitShort: 'abc',
       commitMessage: 'Test commit',
@@ -140,7 +148,7 @@ describe('CustomActionsMenuSection', () => {
       stashRef: 'stash@{0}',
     };
 
-    render(<CustomActionsMenuSection context="commit" variables={variables} />);
+    render(<CustomActionsMenuSection context="Commit" variables={variables} />);
 
     fireEvent.click(screen.getByText('Run Tests'));
 
@@ -148,7 +156,7 @@ describe('CustomActionsMenuSection', () => {
       repoPath: '/path/to/repo',
       branch: 'main',
       file: 'src/test.ts',
-      selectedFiles: ['src/a.ts', 'src/b.ts'],
+      selectedFiles: 'src/a.ts src/b.ts',
       commitHash: 'abc123',
       commitShort: 'abc',
       commitMessage: 'Test commit',
@@ -161,7 +169,7 @@ describe('CustomActionsMenuSection', () => {
   it('should use null for missing variables', () => {
     mockGetActionsForContext.mockReturnValue([mockActions[0]]);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     fireEvent.click(screen.getByText('Run Tests'));
 
@@ -183,7 +191,7 @@ describe('CustomActionsMenuSection', () => {
     mockRepository = null;
     mockGetActionsForContext.mockReturnValue([mockActions[0]]);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     fireEvent.click(screen.getByText('Run Tests'));
 
@@ -200,7 +208,7 @@ describe('CustomActionsMenuSection', () => {
     mockExecutingActionId = 'action-1';
     mockGetActionsForContext.mockReturnValue(mockActions);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     const items = screen.getAllByTestId('menu-item');
     expect(items[0]).toBeDisabled();
@@ -211,7 +219,7 @@ describe('CustomActionsMenuSection', () => {
     mockExecutingActionId = 'action-1';
     mockGetActionsForContext.mockReturnValue(mockActions);
 
-    render(<CustomActionsMenuSection context="commit" />);
+    render(<CustomActionsMenuSection context="Commit" />);
 
     // Both items should have icons, but we can't easily distinguish between them
     // in this mock setup. The main test is that disabled state works.
@@ -222,9 +230,9 @@ describe('CustomActionsMenuSection', () => {
   it('should call getActionsForContext with correct context', () => {
     mockGetActionsForContext.mockReturnValue([]);
 
-    render(<CustomActionsMenuSection context="branch" />);
+    render(<CustomActionsMenuSection context="Branch" />);
 
-    expect(mockGetActionsForContext).toHaveBeenCalledWith('branch');
+    expect(mockGetActionsForContext).toHaveBeenCalledWith('Branch');
   });
 
   it('should render actions for different contexts', () => {
@@ -232,16 +240,21 @@ describe('CustomActionsMenuSection', () => {
       {
         id: 'branch-action',
         name: 'Merge Branch',
+        description: null,
         command: 'git merge',
-        context: ['branch'] as ActionContext[],
+        workingDir: null,
+        contexts: ['Branch'] as ActionContext[],
+        shortcut: null,
         confirm: false,
+        confirmMessage: null,
         showOutput: true,
         enabled: true,
+        order: 0,
       },
     ];
     mockGetActionsForContext.mockReturnValue(branchActions);
 
-    render(<CustomActionsMenuSection context="branch" />);
+    render(<CustomActionsMenuSection context="Branch" />);
 
     expect(screen.getByText('Merge Branch')).toBeInTheDocument();
   });

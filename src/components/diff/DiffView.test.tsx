@@ -15,6 +15,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- aria-label is a DOM attribute
   testId: (id: string) => ({ 'aria-label': id }),
 }));
 

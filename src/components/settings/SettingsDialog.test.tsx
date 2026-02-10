@@ -184,12 +184,8 @@ describe('SettingsDialog', () => {
     const onClose = vi.fn();
     render(<SettingsDialog isOpen={true} onClose={onClose} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Settings')).toBeInTheDocument();
-    });
-
-    // Change a setting to enable save button
-    const themeSelect = screen.getByLabelText('Theme');
+    // Wait for the Theme select to be available (ensures dialog content is fully rendered)
+    const themeSelect = await screen.findByLabelText('Theme');
     fireEvent.click(themeSelect);
     fireEvent.click(await screen.findByRole('option', { name: 'Light' }));
 
@@ -206,12 +202,8 @@ describe('SettingsDialog', () => {
 
     render(<SettingsDialog isOpen={true} onClose={() => {}} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Settings')).toBeInTheDocument();
-    });
-
-    // Change a setting
-    const themeSelect = screen.getByLabelText('Theme');
+    // Wait for the Theme select to be available (ensures dialog content is fully rendered)
+    const themeSelect = await screen.findByLabelText('Theme');
     fireEvent.click(themeSelect);
     fireEvent.click(await screen.findByRole('option', { name: 'Light' }));
 
@@ -226,12 +218,8 @@ describe('SettingsDialog', () => {
   it('should reset changes when reset is clicked', async () => {
     render(<SettingsDialog isOpen={true} onClose={() => {}} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Settings')).toBeInTheDocument();
-    });
-
-    // Get the theme select
-    const themeSelect = screen.getByLabelText('Theme');
+    // Wait for the Theme select to be available (ensures dialog content is fully rendered)
+    const themeSelect = await screen.findByLabelText('Theme');
     expect(themeSelect).toHaveTextContent('Dark');
 
     // Change it

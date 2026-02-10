@@ -49,7 +49,7 @@ const guideSidebar = [
 
 export default defineConfig({
   title: 'Axis',
-  titleTemplate: ':title | Axis - Modern Git Client for Windows, macOS & Linux',
+  titleTemplate: ':title | Modern Git Client for Windows, macOS & Linux',
   description:
     'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.',
   base: '/',

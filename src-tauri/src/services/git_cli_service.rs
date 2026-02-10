@@ -156,6 +156,26 @@ impl GitCliService {
         Ok(result)
     }
 
+    /// Execute a git command with GIT_EDITOR disabled (for non-interactive operations)
+    async fn execute_no_editor(&self, args: &[&str]) -> Result<GitCommandResult> {
+        let output = create_command("git")
+            .args(args)
+            .current_dir(&self.repo_path)
+            .env("GIT_EDITOR", "true")
+            .output()
+            .await
+            .map_err(AxisError::from)?;
+
+        let result = GitCommandResult::from(output);
+        if !result.success {
+            return Err(AxisError::GitError(format!(
+                "Git command failed: {}",
+                result.stderr.trim()
+            )));
+        }
+        Ok(result)
+    }
+
     // ==================== Merge Operations ====================
 
     /// Merge a branch into the current branch
@@ -202,7 +222,7 @@ impl GitCliService {
 
     /// Continue a merge after resolving conflicts
     pub async fn merge_continue(&self) -> Result<GitCommandResult> {
-        self.execute_checked(&["merge", "--continue"]).await
+        self.execute_no_editor(&["merge", "--continue"]).await
     }
 
     // ==================== Rebase Operations ====================

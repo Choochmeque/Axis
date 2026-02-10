@@ -89,7 +89,7 @@ export default defineConfig({
     [
       'noscript',
       {},
-      '<img src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true" alt="" referrerpolicy="no-referrer-when-downgrade" />',
+      '<img src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true" alt="Analytics" referrerpolicy="no-referrer-when-downgrade" />',
     ],
   ],
 

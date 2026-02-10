@@ -50,7 +50,8 @@ const guideSidebar = [
 export default defineConfig({
   title: 'Axis',
   titleTemplate: ':title | Modern Git GUI',
-  description: 'A modern, cross-platform Git GUI built with Tauri',
+  description:
+    'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.',
   base: '/',
 
   sitemap: {
@@ -73,7 +74,8 @@ export default defineConfig({
       'meta',
       {
         property: 'og:description',
-        content: 'A modern, cross-platform Git GUI built with Tauri',
+        content:
+          'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.',
       },
     ],
     ['meta', { property: 'og:url', content: 'https://axis-git.app/' }],

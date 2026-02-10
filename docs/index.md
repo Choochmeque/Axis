@@ -42,9 +42,9 @@ features:
   <img src="/screenshot-dark.png" alt="Axis - Main Window" class="screenshot dark-only" />
 </div>
 
-## Why Axis?
+## Why Choose Axis?
 
-Axis combines the power of a full-featured Git client with a modern, intuitive interface. Whether you're managing complex branching strategies or just committing your daily work, Axis makes Git accessible without sacrificing power.
+Axis is a modern Git GUI that combines the power of a full-featured Git client with an intuitive interface. Whether you're managing complex branching strategies or just committing your daily work, Axis makes Git accessible without sacrificing power — all with native performance thanks to Rust.
 
 ### Built for Developers
 

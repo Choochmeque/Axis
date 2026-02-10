@@ -5,9 +5,6 @@
 /// a helper that sets the `CREATE_NO_WINDOW` creation flag to suppress that.
 use tokio::process::Command;
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
 /// Windows flag to prevent spawning a visible console window.
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;

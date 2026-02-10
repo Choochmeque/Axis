@@ -757,7 +757,12 @@ async fn test_resolve_with_ours_verified_by_cli() {
 
     // Verify: content is "ours"
     let content = std::fs::read_to_string(tmp.path().join("conflict.txt")).expect("should read");
-    assert_eq!(content, "ours content\n", "Content should be ours version");
+    // Normalize line endings for cross-platform compatibility
+    assert_eq!(
+        content.replace("\r\n", "\n"),
+        "ours content\n",
+        "Content should be ours version"
+    );
 }
 
 #[tokio::test]
@@ -792,8 +797,10 @@ async fn test_resolve_with_theirs_verified_by_cli() {
 
     // Verify: content is "theirs"
     let content = std::fs::read_to_string(tmp.path().join("conflict.txt")).expect("should read");
+    // Normalize line endings for cross-platform compatibility
     assert_eq!(
-        content, "theirs content\n",
+        content.replace("\r\n", "\n"),
+        "theirs content\n",
         "Content should be theirs version"
     );
 }

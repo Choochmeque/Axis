@@ -80,8 +80,8 @@ describe('Commit Workflow', () => {
   });
 
   it('should show empty staging area after commit', async () => {
-    // After successful commit, staged header should not exist
-    const stagedHeader = await $(SELECTORS.STAGING_STAGED_HEADER);
-    await stagedHeader.waitForExist({ reverse: true, timeout: 5_000 });
+    // After successful commit, no file checkboxes should exist (lists are empty)
+    const checkbox = await $(SELECTORS.STAGING_FILE_CHECKBOX);
+    await checkbox.waitForExist({ reverse: true, timeout: 5_000 });
   });
 });

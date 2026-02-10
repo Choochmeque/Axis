@@ -244,10 +244,13 @@ describe('ReflogView', () => {
   it('should change ref when selector changes', async () => {
     render(<ReflogView />);
 
+    // Wait for initial render to complete
     await waitFor(() => {
-      const select = screen.getByRole('combobox');
-      expect(select).toBeInTheDocument();
+      expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
     });
+
+    // Clear mock calls from initial render
+    mockList.mockClear();
 
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'refs/heads/main' },

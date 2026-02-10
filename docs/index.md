@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: Axis
-  text: Modern Git GUI
+  text: Modern Cross-Platform Git GUI
   tagline: A powerful, cross-platform Git client built with Tauri, React, and Rust
   image:
     src: /logo.png

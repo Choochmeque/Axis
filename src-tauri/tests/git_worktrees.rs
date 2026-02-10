@@ -8,13 +8,17 @@ use axis_lib::models::{AddWorktreeOptions, RemoveWorktreeOptions};
 
 // ==================== Helpers ====================
 
-/// Normalize path for cross-platform comparison
-fn normalize_path(p: &str) -> String {
-    // Replace backslashes with forward slashes and lowercase for Windows
-    p.replace('\\', "/").to_lowercase()
+/// Extract the basename (last component) of a path
+fn path_basename(p: &str) -> String {
+    let normalized = p.replace('\\', "/");
+    normalized
+        .rsplit('/')
+        .next()
+        .unwrap_or(&normalized)
+        .to_lowercase()
 }
 
-/// List worktrees via CLI
+/// List worktrees via CLI (returns basenames for easier comparison)
 fn git_worktree_list(path: &std::path::Path) -> Vec<String> {
     let output = git_cmd(path, &["worktree", "list", "--porcelain"]);
     output
@@ -24,27 +28,23 @@ fn git_worktree_list(path: &std::path::Path) -> Vec<String> {
         .collect()
 }
 
-/// Check if worktree exists via CLI
+/// Check if worktree exists via CLI (compares basenames to handle Windows path variations)
 fn git_worktree_exists(path: &std::path::Path, worktree_path: &str) -> bool {
-    let normalized_target = normalize_path(worktree_path);
-    git_worktree_list(path).iter().any(|p| {
-        let normalized_p = normalize_path(p);
-        normalized_p == normalized_target || normalized_p.ends_with(&normalized_target)
-    })
+    let target_basename = path_basename(worktree_path);
+    git_worktree_list(path)
+        .iter()
+        .any(|p| path_basename(p) == target_basename)
 }
 
 /// Check if worktree is locked via CLI
 fn git_worktree_is_locked(path: &std::path::Path, worktree_path: &str) -> bool {
     let output = git_cmd(path, &["worktree", "list", "--porcelain"]);
-    let normalized_target = normalize_path(worktree_path);
+    let target_basename = path_basename(worktree_path);
     let mut in_worktree = false;
     for line in output.lines() {
         if line.starts_with("worktree ") {
             let wt_path = line.strip_prefix("worktree ").unwrap_or(line);
-            let normalized_wt = normalize_path(wt_path);
-            if normalized_wt.contains(&normalized_target)
-                || normalized_target.contains(&normalized_wt)
-            {
+            if path_basename(wt_path) == target_basename {
                 in_worktree = true;
             } else if in_worktree {
                 // Moved to next worktree without finding "locked"

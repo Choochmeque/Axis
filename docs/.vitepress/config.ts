@@ -104,7 +104,7 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/logo.png',
+    logo: { src: '/logo.png', alt: 'Axis' },
 
     search: {
       provider: 'local',

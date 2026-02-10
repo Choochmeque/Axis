@@ -58,6 +58,13 @@ export default defineConfig({
     hostname: 'https://axis-git.app',
   },
 
+  transformHead({ pageData }) {
+    const canonicalUrl = `https://axis-git.app/${pageData.relativePath}`
+      .replace(/index\.md$/, '')
+      .replace(/\.md$/, '.html');
+    return [['link', { rel: 'canonical', href: canonicalUrl }]];
+  },
+
   markdown: {
     config(md) {
       md.use(tabsMarkdownPlugin);

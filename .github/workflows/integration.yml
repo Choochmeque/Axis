@@ -25,13 +25,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: rust-${{ runner.os }}-debug
 
       - name: Cache and install APT packages
         if: runner.os == 'Linux'
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libwayland-dev
-          version: '1.1'
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libwayland-dev libfuse2
+          version: '1.2'
 
       - name: Create .env file
         shell: bash

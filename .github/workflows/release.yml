@@ -62,13 +62,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: rust-${{ runner.os }}-release
 
       - name: Cache and install APT packages
         if: matrix.os == 'ubuntu-latest'
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libfuse2
-          version: '1.0'
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libwayland-dev libfuse2
+          version: '1.2'
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

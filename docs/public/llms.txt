@@ -1,0 +1,63 @@
+# Axis
+
+> A modern, cross-platform Git GUI built with Tauri, React, and Rust.
+
+Axis is a desktop application for managing Git repositories with a visual interface. It runs on Windows, macOS, and Linux.
+
+## Key Features
+
+- **Staging & Commits**: Stage files, chunks, or individual lines. AI-assisted commit messages.
+- **Branches**: Create, rename, delete, compare branches. Visual branch graph.
+- **Merging & Rebasing**: Merge, rebase, interactive rebase with conflict resolution.
+- **Cherry Pick**: Apply commits from other branches.
+- **Stashing**: Save and restore work in progress.
+- **History & Blame**: Browse commit history, view file blame, search commits.
+- **GitHub Integration**: View PRs, issues, CI status, notifications.
+- **SSH Keys**: Generate, import, export SSH keys without terminal.
+- **Commit Signing**: GPG and SSH signature support.
+- **Git Hooks**: Manage and edit repository hooks.
+- **Reflog**: Browse and recover from reference log.
+- **Bisect**: Binary search for bugs.
+- **Worktrees**: Manage multiple working directories.
+- **Submodules**: Add, update, remove submodules.
+- **Git LFS**: Large file storage support.
+- **GitFlow**: GitFlow workflow support.
+- **Custom Actions**: User-defined shell commands with keyboard shortcuts.
+
+## Technology Stack
+
+- **Frontend**: React, TypeScript, Zustand, TailwindCSS
+- **Backend**: Rust, Tauri, git2-rs
+- **Build**: Vite, pnpm
+
+## Links
+
+- Website: https://axis-git.app
+- Documentation: https://axis-git.app/guide/
+- GitHub: https://github.com/Choochmeque/Axis
+- License: MIT
+
+## Documentation Structure
+
+- /guide/ - Getting started and overview
+- /guide/installation - Installation instructions
+- /guide/staging-commits - Staging and committing changes
+- /guide/branches - Branch management
+- /guide/merging-rebasing - Merging and rebasing
+- /guide/cherry-pick - Cherry picking commits
+- /guide/stashing - Stash management
+- /guide/history-blame - History browsing and blame
+- /guide/github-integration - GitHub features
+- /guide/ai-commits - AI-assisted commit messages
+- /guide/git-hooks - Git hooks management
+- /guide/reflog - Reference log
+- /guide/bisect - Git bisect
+- /guide/worktrees - Worktrees
+- /guide/submodules - Submodules
+- /guide/git-lfs - Large file storage
+- /guide/gitflow - GitFlow workflow
+- /guide/custom-actions - Custom shell actions
+- /guide/keyboard-shortcuts - Keyboard shortcuts
+- /guide/ssh-keys - SSH key management
+- /guide/commit-signing - Commit signing
+- /guide/settings - Application settings

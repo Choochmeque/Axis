@@ -8,8 +8,8 @@ fn main() {
         // This allows the manifest to apply to ALL targets including tests
         // Fixes STATUS_ENTRYPOINT_NOT_FOUND error on Windows
         // See: https://github.com/tauri-apps/tauri/issues/13419#issuecomment-3398457618
-        attributes =
-            attributes.windows_attributes(tauri_build::WindowsAttributes::new_without_app_manifest());
+        attributes = attributes
+            .windows_attributes(tauri_build::WindowsAttributes::new_without_app_manifest());
         add_manifest();
     }
 

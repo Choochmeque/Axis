@@ -4016,7 +4016,8 @@ mod tests {
 
         // Verify the file is back to original
         let content = fs::read_to_string(tmp.path().join("discard.txt")).expect("should read file");
-        assert_eq!(content, "original\n");
+        // Normalize line endings for cross-platform compatibility
+        assert_eq!(content.replace("\r\n", "\n"), "original\n");
     }
 
     // ==================== Worktree Tests ====================

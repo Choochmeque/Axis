@@ -2,6 +2,7 @@
 import DefaultTheme from 'vitepress/theme';
 import { useData } from 'vitepress';
 import { watchEffect } from 'vue';
+import SponsorMenu from './SponsorMenu.vue';
 
 const { Layout } = DefaultTheme;
 const { frontmatter } = useData();
@@ -18,5 +19,9 @@ watchEffect(() => {
 </script>
 
 <template>
-  <Layout />
+  <Layout>
+    <template #nav-bar-content-after>
+      <SponsorMenu />
+    </template>
+  </Layout>
 </template>

@@ -22,6 +22,8 @@ jobs:
         with:
           toolchain: stable
 
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -43,5 +45,5 @@ jobs:
           git config --global user.email "ci@test.com"
           git config --global user.name "CI Test"
 
-      - name: Run integration tests
-        run: cargo test --features integration --manifest-path src-tauri/Cargo.toml --test '*' -- --test-threads=1
+      - name: Run integration tests with coverage
+        run: cargo llvm-cov --features integration --manifest-path src-tauri/Cargo.toml --test '*' --lcov --output-path integration-coverage.lcov -- --test-threads=1

@@ -8,6 +8,12 @@ use axis_lib::models::{AddWorktreeOptions, RemoveWorktreeOptions};
 
 // ==================== Helpers ====================
 
+/// Normalize path for cross-platform comparison
+fn normalize_path(p: &str) -> String {
+    // Replace backslashes with forward slashes and lowercase for Windows
+    p.replace('\\', "/").to_lowercase()
+}
+
 /// List worktrees via CLI
 fn git_worktree_list(path: &std::path::Path) -> Vec<String> {
     let output = git_cmd(path, &["worktree", "list", "--porcelain"]);
@@ -20,21 +26,30 @@ fn git_worktree_list(path: &std::path::Path) -> Vec<String> {
 
 /// Check if worktree exists via CLI
 fn git_worktree_exists(path: &std::path::Path, worktree_path: &str) -> bool {
-    git_worktree_list(path)
-        .iter()
-        .any(|p| p == worktree_path || p.ends_with(worktree_path))
+    let normalized_target = normalize_path(worktree_path);
+    git_worktree_list(path).iter().any(|p| {
+        let normalized_p = normalize_path(p);
+        normalized_p == normalized_target || normalized_p.ends_with(&normalized_target)
+    })
 }
 
 /// Check if worktree is locked via CLI
 fn git_worktree_is_locked(path: &std::path::Path, worktree_path: &str) -> bool {
     let output = git_cmd(path, &["worktree", "list", "--porcelain"]);
+    let normalized_target = normalize_path(worktree_path);
     let mut in_worktree = false;
     for line in output.lines() {
-        if line.starts_with("worktree ") && line.contains(worktree_path) {
-            in_worktree = true;
-        } else if in_worktree && line.starts_with("worktree ") {
-            // Moved to next worktree without finding "locked"
-            return false;
+        if line.starts_with("worktree ") {
+            let wt_path = line.strip_prefix("worktree ").unwrap_or(line);
+            let normalized_wt = normalize_path(wt_path);
+            if normalized_wt.contains(&normalized_target)
+                || normalized_target.contains(&normalized_wt)
+            {
+                in_worktree = true;
+            } else if in_worktree {
+                // Moved to next worktree without finding "locked"
+                return false;
+            }
         } else if in_worktree && (line == "locked" || line.starts_with("locked ")) {
             return true;
         }

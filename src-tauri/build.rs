@@ -30,6 +30,4 @@ fn add_manifest() {
         "cargo:rustc-link-arg=/MANIFESTINPUT:{}",
         manifest.to_str().expect("manifest path is not valid UTF-8")
     );
-    // Turn linker warnings into errors
-    println!("cargo:rustc-link-arg=/WX");
 }

@@ -1,9 +1,10 @@
 [package]
-name = "axis"
+name = "Axis"
 version = "0.1.0"
-description = "A Tauri App"
+description = "A modern, cross-platform Git GUI"
 authors = ["you"]
 edition = "2021"
+rust-version = "1.90"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,6 +1,8 @@
 import { resolve } from 'path';
 import { baseConfig } from './wdio.conf.js';
 
+process.env.E2E_PLATFORM = 'mac';
+
 const appPath = resolve(
   import.meta.dirname,
   '../src-tauri/target/release/bundle/macos/Axis.app/Contents/MacOS/Axis'

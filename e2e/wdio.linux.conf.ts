@@ -7,7 +7,7 @@ import { baseConfig } from './wdio.conf.js';
 
 process.env.E2E_PLATFORM = 'linux';
 
-const appPath = resolve(import.meta.dirname, '../src-tauri/target/release/axis');
+const appPath = resolve(import.meta.dirname, '../src-tauri/target/release/Axis');
 
 let tauriDriver: ChildProcess;
 

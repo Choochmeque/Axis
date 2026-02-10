@@ -33,6 +33,10 @@ Note: Use `cargo check` or `cargo clippy` instead of `cargo build`.
 - TypeScript: 97%+ coverage required
 - Rust: 97%+ coverage required
 
+## Rust Version
+
+Rust 1.90+ is required.
+
 ## Coding Standards
 
 ### Rust

@@ -1,4 +1,5 @@
 fn main() {
+    #[allow(unused_mut)]
     let mut attributes = tauri_build::Attributes::new();
 
     #[cfg(windows)]

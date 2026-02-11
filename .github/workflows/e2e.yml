@@ -55,10 +55,10 @@ jobs:
           echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
 
       - name: Install tauri-driver
-        run: cargo install tauri-driver
+        run: cargo install --git https://github.com/Choochmeque/tauri-driver --locked
 
       - name: Build Tauri app
-        run: pnpm tauri build --no-bundle
+        run: pnpm tauri build --features e2e --no-bundle
 
       - name: Run E2E tests
         run: xvfb-run pnpm e2e:linux

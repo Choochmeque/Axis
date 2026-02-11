@@ -67,12 +67,9 @@ describe('Commit Workflow', () => {
     await messageInput.click();
     await messageInput.addValue('Test commit message');
 
-    // Tab to move focus to commit button (scrolls into view on all platforms)
-    await browser.keys('Tab');
-    await browser.pause(500);
-
     const commitButton = await $(SELECTORS.COMMIT_BUTTON);
     await commitButton.waitForExist({ timeout: 5_000 });
+    await commitButton.scrollIntoView();
     await commitButton.click();
 
     // Wait for commit to complete - staged header should disappear

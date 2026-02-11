@@ -1,4 +1,8 @@
+import os from 'os';
+import path from 'path';
 import { resolve } from 'path';
+import { type ChildProcess, spawn } from 'child_process';
+
 import { baseConfig } from './wdio.conf.js';
 
 process.env.E2E_PLATFORM = 'mac';
@@ -7,6 +11,8 @@ const appPath = resolve(
   import.meta.dirname,
   '../src-tauri/target/release/bundle/macos/Axis.app/Contents/MacOS/Axis'
 );
+
+let tauriDriver: ChildProcess;
 
 export const config = {
   ...baseConfig,
@@ -20,4 +26,19 @@ export const config = {
       },
     },
   ],
+  beforeSession() {
+    tauriDriver = spawn(path.resolve(os.homedir(), '.cargo', 'bin', 'tauri-driver'), [], {
+      stdio: [null, process.stdout, process.stderr],
+    });
+
+    tauriDriver.on('error', (error) => {
+      console.error('tauri-driver error:', error);
+      process.exit(1);
+    });
+  },
+  afterSession() {
+    if (tauriDriver) {
+      tauriDriver.kill();
+    }
+  },
 };

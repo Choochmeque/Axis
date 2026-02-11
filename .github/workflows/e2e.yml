@@ -107,8 +107,6 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          tauri-driver &
-          for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
           pnpm e2e:mac
 
   e2e-windows:
@@ -149,11 +147,9 @@ jobs:
         run: cargo install tauri-driver
 
       - name: Build Tauri app
-        run: pnpm tauri build --no-bundle
+        run: pnpm tauri build --features e2e --no-bundle
 
       - name: Run E2E tests
         shell: bash
         run: |
-          tauri-driver &
-          for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
           pnpm e2e:win

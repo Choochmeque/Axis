@@ -19,6 +19,7 @@ import {
   CheckboxField,
   Alert,
 } from '@/components/ui';
+import { testId } from '@/lib/utils';
 
 interface StashDialogProps {
   isOpen: boolean;
@@ -88,6 +89,7 @@ export function StashDialog({ isOpen, onClose }: StashDialogProps) {
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('stash.dialog.messagePlaceholder')}
               autoFocus
+              {...testId('e2e-stash-message-input')}
             />
           </FormField>
 
@@ -109,7 +111,12 @@ export function StashDialog({ isOpen, onClose }: StashDialogProps) {
           <DialogClose asChild>
             <Button variant="secondary">{t('common.cancel')}</Button>
           </DialogClose>
-          <Button variant="primary" onClick={handleStash} disabled={isLoading}>
+          <Button
+            variant="primary"
+            onClick={handleStash}
+            disabled={isLoading}
+            {...testId('e2e-stash-save-btn')}
+          >
             {isLoading ? t('common.stashing') : t('stash.dialog.stashButton')}
           </Button>
         </DialogFooter>

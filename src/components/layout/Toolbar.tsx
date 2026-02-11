@@ -170,6 +170,7 @@ export function Toolbar() {
               title={t('toolbar.stash')}
               disabled={repository.isUnborn}
               onClick={openStashDialog}
+              {...testId('e2e-toolbar-stash-btn')}
             >
               <Archive size={18} />
               <span>{t('toolbar.stash')}</span>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui';
+import { testId } from '@/lib/utils';
 
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useScrollToCommit } from '@/hooks/useScrollToCommit';
@@ -456,11 +457,15 @@ export function HistoryView() {
   const viewClass = 'flex flex-col flex-1 h-full min-h-0 overflow-hidden';
 
   if (!selectedCommit) {
-    return <div className={viewClass}>{commitListContent}</div>;
+    return (
+      <div className={viewClass} {...testId('e2e-history-view')}>
+        {commitListContent}
+      </div>
+    );
   }
 
   return (
-    <div className={viewClass}>
+    <div className={viewClass} {...testId('e2e-history-view')}>
       <PanelGroup direction="vertical" autoSaveId="history-layout">
         <Panel defaultSize={50} minSize={20}>
           {commitListContent}

@@ -9,7 +9,7 @@ process.env.E2E_PLATFORM = 'windows';
 
 const appPath = resolve(import.meta.dirname, '../src-tauri/target/release/Axis.exe');
 
-let tauriDriver: ChildProcess;
+let tauriWebDriver: ChildProcess;
 
 export const config = {
   ...baseConfig,
@@ -24,18 +24,18 @@ export const config = {
     },
   ],
   beforeSession() {
-    tauriDriver = spawn(path.resolve(os.homedir(), '.cargo', 'bin', 'tauri-driver'), [], {
+    tauriWebDriver = spawn(path.resolve(os.homedir(), '.cargo', 'bin', 'tauri-webdriver'), [], {
       stdio: [null, process.stdout, process.stderr],
     });
 
-    tauriDriver.on('error', (error) => {
-      console.error('tauri-driver error:', error);
+    tauriWebDriver.on('error', (error) => {
+      console.error('tauri-webdriver error:', error);
       process.exit(1);
     });
   },
   afterSession() {
-    if (tauriDriver) {
-      tauriDriver.kill();
+    if (tauriWebDriver) {
+      tauriWebDriver.kill();
     }
   },
 };

@@ -89,7 +89,27 @@ export const SELECTORS = {
     return byTestId('e2e-diff-view');
   },
 
+  // History View
+  get HISTORY_VIEW() {
+    return byTestId('e2e-history-view');
+  },
+
+  // Stash Operations
+  get TOOLBAR_STASH_BTN() {
+    return byTestId('e2e-toolbar-stash-btn');
+  },
+  get STASH_MESSAGE_INPUT() {
+    return byTestId('e2e-stash-message-input');
+  },
+  get STASH_SAVE_BTN() {
+    return byTestId('e2e-stash-save-btn');
+  },
+  get SIDEBAR_STASHES_SECTION() {
+    return byTestId('e2e-sidebar-stashes-section');
+  },
+
   // Dynamic selectors
   stagingFile: (filename: string) => byTestId(`e2e-staging-file-${filename}`),
   repoCard: (name: string) => byTestId(`e2e-repo-card-${name}`),
+  sidebarStash: (index: number) => byTestId(`e2e-sidebar-stash-${index}`),
 };

@@ -140,14 +140,19 @@ interface SectionProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  sectionTestId?: string;
 }
 
-function Section({ title, icon, children, defaultExpanded = true }: SectionProps) {
+function Section({ title, icon, children, defaultExpanded = true, sectionTestId }: SectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
     <div>
-      <button className="sidebar-section-header" onClick={() => setExpanded(!expanded)}>
+      <button
+        className="sidebar-section-header"
+        onClick={() => setExpanded(!expanded)}
+        {...(sectionTestId ? testId(sectionTestId) : {})}
+      >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         {icon}
         <span className="flex-1 text-left">{title}</span>
@@ -514,6 +519,7 @@ export function Sidebar() {
               title={t('sidebar.sections.stashes')}
               icon={<Archive />}
               defaultExpanded={false}
+              sectionTestId="e2e-sidebar-stashes-section"
             >
               {stashes.length > 0 ? (
                 stashes.map((stash) => (
@@ -524,6 +530,7 @@ export function Sidebar() {
                         selectedStash?.stashRef === stash.stashRef && 'bg-(--bg-active) font-medium'
                       )}
                       onClick={() => handleStashClick(stash)}
+                      {...testId(`e2e-sidebar-stash-${stash.index}`)}
                     >
                       <Archive size={12} />
                       <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">

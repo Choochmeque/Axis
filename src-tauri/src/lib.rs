@@ -328,7 +328,12 @@ pub fn run() {
     let extra_handler: Box<tauri::ipc::InvokeHandler<tauri::Wry>> =
         Box::new(tauri::generate_handler![crate::commands::get_file_blob]);
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    #[cfg(feature = "e2e")]
+    let builder = builder.plugin(tauri_plugin_webdriver::init());
+
+    builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())

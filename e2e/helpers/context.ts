@@ -24,17 +24,11 @@ export async function waitForAppReady(): Promise<void> {
  * Cross-platform element selector.
  *
  * HTML elements carry `aria-label` for accessibility-based selectors.
- *   - macOS   (WebDriverAgentMac): `-ios predicate string:label == "id"`
+ *   - macOS   (tauri-plugin-webdriver): CSS `[aria-label="id"]`
  *   - Windows (Edge Driver):       CSS `[aria-label="id"]`
  *   - Linux   (WebKitWebDriver):   CSS `[aria-label="id"]`
  */
 export function byTestId(id: string): string {
-  const platform = getPlatform();
-
-  if (platform === 'mac') {
-    return `-ios predicate string:label == "${id}"`;
-  }
-
-  // Windows & Linux — CSS selector on aria-label
+  // Mac, Windows & Linux — CSS selector on aria-label
   return `[aria-label="${id}"]`;
 }

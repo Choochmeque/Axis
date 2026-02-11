@@ -102,24 +102,13 @@ jobs:
       - name: Install tauri-driver
         run: cargo install --git https://github.com/Choochmeque/tauri-driver --locked
 
-      - name: Clone WebDriverAgentMac
-        run: git clone https://github.com/appium/appium-mac2-driver.git /tmp/appium-mac2-driver
-
-      - name: Pre-build WebDriverAgentMac
-        run: |
-          xcodebuild build-for-testing \
-            -project /tmp/appium-mac2-driver/WebDriverAgentMac/WebDriverAgentMac.xcodeproj \
-            -scheme WebDriverAgentRunner \
-            COMPILER_INDEX_STORE_ENABLE=NO
-
       - name: Build Tauri app
-        run: pnpm tauri build --bundles app
+        run: pnpm tauri build --features e2e --bundles app
 
       - name: Run E2E tests
         run: |
-          tauri-driver --native-driver /tmp/appium-mac2-driver/WebDriverAgentMac &
+          tauri-driver --plugin &
           for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
-          for i in $(seq 1 60); do nc -z 127.0.0.1 4445 2>/dev/null && break; sleep 1; done
           pnpm e2e:mac
 
   e2e-windows:

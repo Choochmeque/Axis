@@ -107,7 +107,7 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          tauri-driver --plugin &
+          tauri-driver &
           for i in $(seq 1 60); do nc -z 127.0.0.1 4444 2>/dev/null && break; sleep 1; done
           pnpm e2e:mac
 

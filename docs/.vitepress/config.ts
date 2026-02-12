@@ -53,6 +53,7 @@ export default defineConfig({
   description:
     'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.',
   base: '/',
+  cleanUrls: true,
 
   sitemap: {
     hostname: 'https://axis-git.app',
@@ -61,7 +62,7 @@ export default defineConfig({
   transformHead({ pageData }) {
     const canonicalUrl = `https://axis-git.app/${pageData.relativePath}`
       .replace(/index\.md$/, '')
-      .replace(/\.md$/, '.html');
+      .replace(/\.md$/, '');
     return [['link', { rel: 'canonical', href: canonicalUrl }]];
   },
 

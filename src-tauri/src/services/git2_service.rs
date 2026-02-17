@@ -1724,9 +1724,9 @@ impl Git2Service {
                 &format!("pull: fast-forward {branch_name} from {remote_ref}"),
             )?;
 
-            // Update working directory
+            // Update working directory (safe mode preserves local changes)
             let mut checkout_opts = git2::build::CheckoutBuilder::new();
-            checkout_opts.force();
+            checkout_opts.safe();
             repo.checkout_head(Some(&mut checkout_opts))?;
 
             return Ok(());
@@ -1757,7 +1757,7 @@ impl Git2Service {
                 .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
             repo.reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
-            repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
+            repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().safe()))?;
             return Ok(());
         }
 

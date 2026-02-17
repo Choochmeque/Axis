@@ -78,7 +78,7 @@
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.1.6",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@vitejs/plugin-react": "^5.1.2",
+    "@vitejs/plugin-react": "^5.1.4",
     "@vitest/coverage-v8": "^4.0.16",
     "@wdio/cli": "^9.24.0",
     "@wdio/globals": "^9.23.0",

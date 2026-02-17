@@ -42,7 +42,7 @@ jobs:
 
       - name: Run UI tests without coverage (for dependabot)
         if: ${{ github.actor == 'dependabot[bot]' }}
-        run: pnpm test:run
+        run: pnpm test
 
       - name: Codecov
         if: ${{ github.actor != 'dependabot[bot]' }}

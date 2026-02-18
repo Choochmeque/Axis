@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress';
+import { defineConfig, HeadConfig } from 'vitepress';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 
 const SITE_URL = 'https://axis-git.app';
@@ -77,7 +77,7 @@ export default defineConfig({
       pageData.description ||
       'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.';
 
-    return [
+    const head: HeadConfig[] = [
       ['link', { rel: 'canonical', href: canonicalUrl }],
       ['meta', { property: 'og:url', content: canonicalUrl }],
       ['meta', { property: 'og:title', content: title }],
@@ -87,6 +87,54 @@ export default defineConfig({
       ['meta', { name: 'twitter:title', content: title }],
       ['meta', { name: 'twitter:description', content: description }],
     ];
+
+    // WebSite schema (all pages)
+    const webSiteSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Axis',
+      url: SITE_URL,
+    };
+    head.push(['script', { type: 'application/ld+json' }, JSON.stringify(webSiteSchema)]);
+
+    // SoftwareApplication schema (homepage only)
+    if (pageData.relativePath === 'index.md') {
+      const appSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Axis',
+        description: 'A modern Git GUI for Windows, macOS, and Linux',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Windows, macOS, Linux',
+        url: SITE_URL,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        author: {
+          '@type': 'Person',
+          name: 'Vladimir Pankratov',
+        },
+      };
+      head.push(['script', { type: 'application/ld+json' }, JSON.stringify(appSchema)]);
+    }
+
+    // BreadcrumbList schema (guide pages only, not guide index)
+    if (pageData.relativePath.startsWith('guide/') && pageData.relativePath !== 'guide/index.md') {
+      const breadcrumbSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Guide', item: `${SITE_URL}/guide` },
+          { '@type': 'ListItem', position: 3, name: title },
+        ],
+      };
+      head.push(['script', { type: 'application/ld+json' }, JSON.stringify(breadcrumbSchema)]);
+    }
+
+    return head;
   },
 
   markdown: {

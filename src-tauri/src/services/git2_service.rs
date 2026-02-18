@@ -34,7 +34,7 @@ fn build_credentials_callback(
                 let passphrase_str = ssh_credentials
                     .as_ref()
                     .and_then(|c| c.passphrase.as_ref())
-                    .map(|p| p.expose_secret().to_string());
+                    .map(|p| p.expose_secret().as_ref());
 
                 // 1. Try configured SSH key first
                 if let Some(ref key_path) = ssh_credentials.as_ref().map(|c| &c.key_path) {
@@ -48,12 +48,9 @@ fn build_credentials_callback(
                         } else {
                             None
                         };
-                        if let Ok(cred) = Cred::ssh_key(
-                            username,
-                            pub_key_opt,
-                            private_key,
-                            passphrase_str.as_deref(),
-                        ) {
+                        if let Ok(cred) =
+                            Cred::ssh_key(username, pub_key_opt, private_key, passphrase_str)
+                        {
                             return Ok(cred);
                         }
                     }

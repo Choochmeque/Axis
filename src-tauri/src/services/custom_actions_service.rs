@@ -97,7 +97,7 @@ impl CustomActionsService {
         // Execute command based on platform
         let output = Self::run_shell_command(&command, &working_dir).await;
 
-        let duration_ms = start.elapsed().as_millis() as u64;
+        let duration_ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
 
         match output {
             Ok(output) => {

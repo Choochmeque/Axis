@@ -152,10 +152,10 @@ pub async fn push_remote(
             .await;
 
         if !hook_result.skipped && !hook_result.success {
-            let output = if !hook_result.stderr.is_empty() {
-                &hook_result.stderr
-            } else {
+            let output = if hook_result.stderr.is_empty() {
                 &hook_result.stdout
+            } else {
+                &hook_result.stderr
             };
             return Err(AxisError::Other(format!(
                 "Hook 'pre-push' failed:\n{}",
@@ -226,10 +226,10 @@ pub async fn push_current_branch(
                 .await;
 
             if !hook_result.skipped && !hook_result.success {
-                let output = if !hook_result.stderr.is_empty() {
-                    &hook_result.stderr
-                } else {
+                let output = if hook_result.stderr.is_empty() {
                     &hook_result.stdout
+                } else {
+                    &hook_result.stderr
                 };
                 return Err(AxisError::Other(format!(
                     "Hook 'pre-push' failed:\n{}",

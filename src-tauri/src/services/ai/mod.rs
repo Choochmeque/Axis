@@ -9,6 +9,8 @@ pub use ollama::OllamaProvider;
 pub use openai::OpenAiProvider;
 pub use provider::AiProviderTrait;
 
+use std::fmt::Write;
+
 use crate::error::AxisError;
 use crate::models::{AiProvider, DiffLineType, FileDiff};
 
@@ -42,7 +44,7 @@ pub fn format_diff_for_ai(diffs: &[FileDiff]) -> crate::error::Result<String> {
             .or(file_diff.old_path.as_ref())
             .map_or("unknown", std::string::String::as_str);
 
-        output.push_str(&format!("--- a/{path}\n+++ b/{path}\n"));
+        let _ = writeln!(output, "--- a/{path}\n+++ b/{path}");
 
         for hunk in &file_diff.hunks {
             output.push_str(&hunk.header);
@@ -83,13 +85,14 @@ pub fn format_diff_summary(files: &[FileDiff]) -> String {
             .as_ref()
             .or(file.old_path.as_ref())
             .map_or("unknown", std::string::String::as_str);
-        summary.push_str(&format!("- {:?}: {path}\n", file.status));
+        let _ = writeln!(summary, "- {:?}: {path}", file.status);
     }
     if files.len() > MAX_FILES_IN_SUMMARY {
-        summary.push_str(&format!(
-            "... and {} more files\n",
+        let _ = writeln!(
+            summary,
+            "... and {} more files",
             files.len() - MAX_FILES_IN_SUMMARY
-        ));
+        );
     }
     summary
 }

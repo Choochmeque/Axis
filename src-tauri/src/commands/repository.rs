@@ -312,6 +312,7 @@ pub async fn open_terminal(path: String) -> Result<()> {
 
 #[tauri::command]
 #[specta::specta]
+#[allow(clippy::needless_pass_by_value)] // Tauri State extractor requires owned type
 pub fn cancel_operation(state: State<'_, AppState>, operation_id: String) -> bool {
     state.progress_registry().cancel(&operation_id)
 }

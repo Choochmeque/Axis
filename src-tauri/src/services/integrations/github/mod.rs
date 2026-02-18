@@ -84,10 +84,9 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
     fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
         PullRequest {
             provider: ProviderType::GitHub,
-            number: pr.number as u32,
+            number: u32::try_from(pr.number).unwrap_or(u32::MAX),
             title: pr.title.clone().unwrap_or_default(),
             state: match pr.state.as_ref() {
-                Some(OctocrabIssueState::Open) => PrState::Open,
                 Some(OctocrabIssueState::Closed) => {
                     if pr.merged_at.is_some() {
                         PrState::Merged
@@ -95,7 +94,7 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
                         PrState::Closed
                     }
                 }
-                _ => PrState::Open,
+                _ => PrState::Open, // Open or None defaults to Open
             },
             author: pr.user.map(|a| (*a).into()).unwrap_or_default(),
             source_branch: pr.head.ref_field.clone(),
@@ -116,12 +115,11 @@ impl From<octocrab::models::issues::Issue> for Issue {
     fn from(issue: octocrab::models::issues::Issue) -> Self {
         Issue {
             provider: ProviderType::GitHub,
-            number: issue.number as u32,
+            number: u32::try_from(issue.number).unwrap_or(u32::MAX),
             title: issue.title.clone(),
             state: match issue.state {
-                OctocrabIssueState::Open => IssueState::Open,
                 OctocrabIssueState::Closed => IssueState::Closed,
-                _ => IssueState::Open,
+                _ => IssueState::Open, // Open and other states default to Open
             },
             author: issue.user.into(),
             labels: issue.labels.into_iter().map(Into::into).collect(),
@@ -149,13 +147,11 @@ impl From<octocrab::models::activity::Notification> for Notification {
                 "review_requested" => NotificationReason::ReviewRequested,
                 "security_alert" => NotificationReason::SecurityAlert,
                 "state_change" => NotificationReason::StateChange,
-                "subscribed" => NotificationReason::Subscribed,
                 "team_mention" => NotificationReason::TeamMention,
                 "ci_activity" => NotificationReason::CiActivity,
-                _ => NotificationReason::Subscribed,
+                _ => NotificationReason::Subscribed, // "subscribed" and unknown reasons
             },
             subject_type: match notification.subject.r#type.as_str() {
-                "Issue" => NotificationSubjectType::Issue,
                 "PullRequest" => NotificationSubjectType::PullRequest,
                 "Release" => NotificationSubjectType::Release,
                 "Discussion" => NotificationSubjectType::Discussion,
@@ -164,7 +160,7 @@ impl From<octocrab::models::activity::Notification> for Notification {
                     NotificationSubjectType::RepositoryVulnerabilityAlert
                 }
                 "CheckSuite" => NotificationSubjectType::CheckSuite,
-                _ => NotificationSubjectType::Issue,
+                _ => NotificationSubjectType::Issue, // "Issue" and unknown types
             },
             subject_title: notification.subject.title,
             subject_url: notification.subject.url.map(|u| u.to_string()),
@@ -182,10 +178,9 @@ impl From<octocrab::models::workflows::Run> for CIRun {
             id: run.id.to_string(),
             name: run.name,
             status: match run.status.as_str() {
-                "queued" => CIRunStatus::Queued,
                 "in_progress" => CIRunStatus::InProgress,
                 "completed" => CIRunStatus::Completed,
-                _ => CIRunStatus::Queued,
+                _ => CIRunStatus::Queued, // "queued" and unknown statuses
             },
             conclusion: match run.conclusion.as_deref() {
                 Some("success") => Some(CIConclusion::Success),
@@ -370,7 +365,7 @@ impl GitHubProvider {
             .build()
             .map_err(|e| AxisError::IntegrationError(format!("Failed to create client: {e:?}")))?;
 
-        self.set_client(Arc::new(client))?;
+        self.set_client(Arc::new(client));
         Ok(())
     }
 
@@ -381,14 +376,12 @@ impl GitHubProvider {
             .ok_or_else(|| AxisError::IntegrationNotConnected("GitHub".to_string()))
     }
 
-    fn set_client(&self, client: Arc<Octocrab>) -> Result<()> {
+    fn set_client(&self, client: Arc<Octocrab>) {
         *self.client.write() = Some(client);
-        Ok(())
     }
 
-    fn clear_client(&self) -> Result<()> {
+    fn clear_client(&self) {
         *self.client.write() = None;
-        Ok(())
     }
 
     /// Parse JSON from octocrab response body
@@ -418,9 +411,8 @@ impl IntegrationProvider for GitHubProvider {
     }
 
     async fn is_connected(&self) -> bool {
-        let client = match self.get_client() {
-            Ok(c) => c,
-            Err(_) => return false,
+        let Ok(client) = self.get_client() else {
+            return false;
         };
 
         // Verify token is still valid by making a simple API call
@@ -428,16 +420,13 @@ impl IntegrationProvider for GitHubProvider {
     }
 
     async fn get_status(&self) -> Result<IntegrationStatus> {
-        let client = match self.get_client() {
-            Ok(c) => c,
-            Err(_) => {
-                return Ok(IntegrationStatus {
-                    provider: ProviderType::GitHub,
-                    connected: false,
-                    username: None,
-                    avatar_url: None,
-                });
-            }
+        let Ok(client) = self.get_client() else {
+            return Ok(IntegrationStatus {
+                provider: ProviderType::GitHub,
+                connected: false,
+                username: None,
+                avatar_url: None,
+            });
         };
 
         match client.current().user().await {
@@ -458,7 +447,7 @@ impl IntegrationProvider for GitHubProvider {
 
     async fn disconnect(&self) -> Result<()> {
         (self.delete_secret)(GITHUB_TOKEN_KEY)?;
-        self.clear_client()?;
+        self.clear_client();
         self.clear_caches();
         Ok(())
     }
@@ -563,18 +552,18 @@ impl IntegrationProvider for GitHubProvider {
     ) -> Result<PullRequestDetail> {
         let client = self.get_client()?;
 
-        let pr = client.pulls(owner, repo).get(number as u64).await?;
+        let pr = client.pulls(owner, repo).get(u64::from(number)).await?;
 
         let base: PullRequest = pr.clone().into();
 
         Ok(PullRequestDetail {
             base,
             body: pr.body,
-            additions: pr.additions.unwrap_or(0) as u32,
-            deletions: pr.deletions.unwrap_or(0) as u32,
-            changed_files: pr.changed_files.unwrap_or(0) as u32,
-            commits_count: pr.commits.unwrap_or(0) as u32,
-            comments_count: pr.comments.unwrap_or(0) as u32,
+            additions: u32::try_from(pr.additions.unwrap_or(0)).unwrap_or(u32::MAX),
+            deletions: u32::try_from(pr.deletions.unwrap_or(0)).unwrap_or(u32::MAX),
+            changed_files: u32::try_from(pr.changed_files.unwrap_or(0)).unwrap_or(u32::MAX),
+            commits_count: u32::try_from(pr.commits.unwrap_or(0)).unwrap_or(u32::MAX),
+            comments_count: u32::try_from(pr.comments.unwrap_or(0)).unwrap_or(u32::MAX),
             mergeable: pr.mergeable,
             labels: pr
                 .labels
@@ -650,7 +639,7 @@ impl IntegrationProvider for GitHubProvider {
 
         let pulls_handler = client.pulls(owner, repo);
         let mut request = pulls_handler
-            .merge(number as u64)
+            .merge(u64::from(number))
             .method(options.merge_method);
 
         if let Some(title) = options.commit_title {
@@ -702,7 +691,7 @@ impl IntegrationProvider for GitHubProvider {
     async fn get_issue(&self, owner: &str, repo: &str, number: u32) -> Result<IssueDetail> {
         let client = self.get_client()?;
 
-        let issue = client.issues(owner, repo).get(number as u64).await?;
+        let issue = client.issues(owner, repo).get(u64::from(number)).await?;
 
         let base: Issue = issue.clone().into();
 
@@ -790,11 +779,10 @@ impl IntegrationProvider for GitHubProvider {
         let response: serde_json::Value = Self::parse_response(http_response).await?;
 
         let state = match response["state"].as_str() {
-            Some("pending") => CommitStatusState::Pending,
             Some("success") => CommitStatusState::Success,
             Some("failure") => CommitStatusState::Failure,
             Some("error") => CommitStatusState::Error,
-            _ => CommitStatusState::Pending,
+            _ => CommitStatusState::Pending, // "pending" and unknown states
         };
 
         // Get check runs (separate from commit statuses)
@@ -826,10 +814,9 @@ impl IntegrationProvider for GitHubProvider {
                     "failure" => CIConclusion::Failure,
                     "cancelled" => CIConclusion::Cancelled,
                     "skipped" => CIConclusion::Skipped,
-                    "neutral" => CIConclusion::Neutral,
                     "timed_out" => CIConclusion::TimedOut,
                     "action_required" => CIConclusion::ActionRequired,
-                    _ => CIConclusion::Neutral,
+                    _ => CIConclusion::Neutral, // "neutral" and unknown conclusions
                 });
 
                 CIRun {
@@ -857,7 +844,8 @@ impl IntegrationProvider for GitHubProvider {
         let result = CommitStatus {
             state,
             checks,
-            total_count: response["total_count"].as_u64().unwrap_or(0) as u32,
+            total_count: u32::try_from(response["total_count"].as_u64().unwrap_or(0))
+                .unwrap_or(u32::MAX),
         };
 
         self.commit_status_cache.set(cache_key, result.clone());
@@ -930,7 +918,7 @@ impl IntegrationProvider for GitHubProvider {
 
     async fn get_unread_count(&self, owner: &str, repo: &str) -> Result<u32> {
         let page = self.list_notifications(owner, repo, false, 1).await?;
-        Ok(page.items.len() as u32)
+        Ok(u32::try_from(page.items.len()).unwrap_or(u32::MAX))
     }
 
     async fn list_labels(&self, owner: &str, repo: &str) -> Result<Vec<IntegrationLabel>> {

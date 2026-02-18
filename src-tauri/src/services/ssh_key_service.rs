@@ -91,7 +91,9 @@ impl SshKeyService {
             }
 
             let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if filename.ends_with(".pub")
+            if path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("pub"))
                 || filename == "known_hosts"
                 || filename == "known_hosts.old"
                 || filename == "authorized_keys"
@@ -228,7 +230,10 @@ impl SshKeyService {
 
     /// Get the content of a public key file
     pub fn get_public_key_content(key_path: &str) -> Result<String> {
-        let pub_path = if key_path.ends_with(".pub") {
+        let pub_path = if std::path::Path::new(key_path)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("pub"))
+        {
             key_path.to_string()
         } else {
             format!("{key_path}.pub")
@@ -356,7 +361,7 @@ impl SshKeyService {
     }
 
     /// Export an SSH key to a target directory
-    pub fn export_key(options: ExportSshKeyOptions) -> Result<()> {
+    pub fn export_key(options: &ExportSshKeyOptions) -> Result<()> {
         let expanded = shellexpand::tilde(&options.key_path).to_string();
         let source = Path::new(&expanded);
         let target_dir = Path::new(&options.target_dir);
@@ -467,9 +472,8 @@ impl SshKeyService {
             .filter(|l| !l.starts_with("-----"))
             .collect();
 
-        let decoded = match base64::engine::general_purpose::STANDARD.decode(&b64) {
-            Ok(d) => d,
-            Err(_) => return true, // assume encrypted on decode error
+        let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&b64) else {
+            return true; // assume encrypted on decode error
         };
 
         // AUTH_MAGIC = "openssh-key-v1\0" (15 bytes)
@@ -493,11 +497,11 @@ impl SshKeyService {
             return true;
         }
 
-        let cipher_name =
-            match std::str::from_utf8(&decoded[cipher_start..cipher_start + cipher_len]) {
-                Ok(s) => s,
-                Err(_) => return true,
-            };
+        let Ok(cipher_name) =
+            std::str::from_utf8(&decoded[cipher_start..cipher_start + cipher_len])
+        else {
+            return true;
+        };
 
         cipher_name != "none"
     }
@@ -886,7 +890,7 @@ mod tests {
             public_only: true,
         };
 
-        let result = SshKeyService::export_key(opts);
+        let result = SshKeyService::export_key(&opts);
         assert!(result.is_err());
     }
 
@@ -1096,9 +1100,8 @@ mod tests {
     #[tokio::test]
     async fn test_generate_key_and_operations() {
         // Skip if ssh-keygen is not available
-        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
-            Ok(path) => path,
-            Err(_) => return,
+        let Ok(ssh_keygen) = SshKeyService::find_ssh_keygen().await else {
+            return;
         };
 
         let tmp = TempDir::new().expect("should create temp dir");
@@ -1186,7 +1189,7 @@ mod tests {
             target_dir: export_dir.to_string_lossy().to_string(),
             public_only: false,
         };
-        SshKeyService::export_key(export_opts).expect("should export key");
+        SshKeyService::export_key(&export_opts).expect("should export key");
 
         assert!(
             export_dir.join("test_ed25519_key").exists(),
@@ -1206,7 +1209,7 @@ mod tests {
             target_dir: export_dir2.to_string_lossy().to_string(),
             public_only: true,
         };
-        SshKeyService::export_key(export_opts_pub).expect("should export public key only");
+        SshKeyService::export_key(&export_opts_pub).expect("should export public key only");
 
         assert!(
             !export_dir2.join("test_ed25519_key").exists(),
@@ -1220,9 +1223,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_rsa_key() {
-        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
-            Ok(path) => path,
-            Err(_) => return,
+        let Ok(ssh_keygen) = SshKeyService::find_ssh_keygen().await else {
+            return;
         };
 
         let tmp = TempDir::new().expect("should create temp dir");
@@ -1245,9 +1247,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_ecdsa_key() {
-        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
-            Ok(path) => path,
-            Err(_) => return,
+        let Ok(ssh_keygen) = SshKeyService::find_ssh_keygen().await else {
+            return;
         };
 
         let tmp = TempDir::new().expect("should create temp dir");
@@ -1270,9 +1271,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_encrypted_key_detection() {
-        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
-            Ok(path) => path,
-            Err(_) => return,
+        let Ok(ssh_keygen) = SshKeyService::find_ssh_keygen().await else {
+            return;
         };
 
         let tmp = TempDir::new().expect("should create temp dir");
@@ -1312,9 +1312,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_extract_bits() {
-        let ssh_keygen = match SshKeyService::find_ssh_keygen().await {
-            Ok(path) => path,
-            Err(_) => return,
+        let Ok(ssh_keygen) = SshKeyService::find_ssh_keygen().await else {
+            return;
         };
 
         let tmp = TempDir::new().expect("should create temp dir");

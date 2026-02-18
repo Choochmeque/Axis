@@ -37,7 +37,7 @@ impl ProgressEmitter {
 
     /// Emit a progress event with throttling
     /// Returns false if the operation should be cancelled
-    pub fn emit_progress(&self, event: GitOperationProgressEvent, force: bool) -> bool {
+    pub fn emit_progress(&self, event: &GitOperationProgressEvent, force: bool) -> bool {
         // Always emit Complete/Failed/Cancelled immediately
         let should_force = force
             || matches!(
@@ -50,7 +50,7 @@ impl ProgressEmitter {
             let mut last_emit = self.last_emit.lock();
             let last = last_emit.get(&event.operation_id).copied();
 
-            if should_force || last.map_or(true, |l| now.duration_since(l) >= THROTTLE_INTERVAL) {
+            if should_force || last.is_none_or(|l| now.duration_since(l) >= THROTTLE_INTERVAL) {
                 last_emit.insert(event.operation_id.clone(), now);
                 true
             } else {
@@ -86,7 +86,7 @@ impl ProgressEmitter {
             event.total_deltas = Some(stats.total_deltas());
             event.indexed_deltas = Some(stats.indexed_deltas());
         }
-        self.emit_progress(event, false)
+        self.emit_progress(&event, false)
     }
 
     /// Emit progress event with simple counts (for push operations)
@@ -104,7 +104,7 @@ impl ProgressEmitter {
         event.total_objects = Some(total);
         event.received_objects = Some(current);
         event.received_bytes = bytes;
-        self.emit_progress(event, false)
+        self.emit_progress(&event, false)
     }
 
     /// Emit completion event
@@ -114,7 +114,7 @@ impl ProgressEmitter {
             operation_type,
             ProgressStage::Complete,
         );
-        self.emit_progress(event, true);
+        self.emit_progress(&event, true);
     }
 
     /// Emit failure event
@@ -125,7 +125,7 @@ impl ProgressEmitter {
             ProgressStage::Failed,
         );
         event.message = Some(message.to_string());
-        self.emit_progress(event, true);
+        self.emit_progress(&event, true);
     }
 
     /// Emit cancelled event
@@ -135,7 +135,7 @@ impl ProgressEmitter {
             operation_type,
             ProgressStage::Cancelled,
         );
-        self.emit_progress(event, true);
+        self.emit_progress(&event, true);
     }
 }
 

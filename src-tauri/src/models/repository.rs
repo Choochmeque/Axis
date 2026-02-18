@@ -35,9 +35,10 @@ impl From<git2::RepositoryState> for RepositoryState {
         match state {
             git2::RepositoryState::Clean => RepositoryState::Clean,
             git2::RepositoryState::Merge => RepositoryState::Merging,
-            git2::RepositoryState::Rebase => RepositoryState::Rebasing,
+            git2::RepositoryState::Rebase | git2::RepositoryState::RebaseMerge => {
+                RepositoryState::Rebasing
+            }
             git2::RepositoryState::RebaseInteractive => RepositoryState::RebasingInteractive,
-            git2::RepositoryState::RebaseMerge => RepositoryState::Rebasing,
             git2::RepositoryState::CherryPick | git2::RepositoryState::CherryPickSequence => {
                 RepositoryState::CherryPicking
             }

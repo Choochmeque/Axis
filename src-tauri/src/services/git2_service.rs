@@ -28,7 +28,7 @@ fn build_credentials_callback(
     ssh_credentials: Option<SshCredentials>,
 ) -> impl FnMut(&str, Option<&str>, git2::CredentialType) -> std::result::Result<Cred, git2::Error>
 {
-    move |_url, username_from_url, allowed_types| {
+    move |url, username_from_url, allowed_types| {
         if allowed_types.contains(git2::CredentialType::SSH_KEY) {
             if let Some(username) = username_from_url {
                 let passphrase_str = ssh_credentials
@@ -93,7 +93,7 @@ fn build_credentials_callback(
             if let Ok(cred) = Cred::credential_helper(
                 &git2::Config::open_default()
                     .unwrap_or_else(|_| git2::Config::new().expect("should create empty config")),
-                _url,
+                url,
                 username_from_url,
             ) {
                 return Ok(cred);
@@ -125,7 +125,10 @@ fn build_certificate_check_callback(
         let known_hosts_path = std::path::Path::new(&known_hosts_expanded);
 
         if !known_hosts_path.exists() {
-            log::debug!("No known_hosts file found at {known_hosts_path:?}, accepting host key for {hostname}");
+            log::debug!(
+                "No known_hosts file found at {}, accepting host key for {hostname}",
+                known_hosts_path.display()
+            );
             // TODO: In the future, prompt the user before accepting unknown hosts
             return Ok(CertificateCheckStatus::CertificateOk);
         }
@@ -424,7 +427,7 @@ impl Git2Service {
     }
 
     /// Get commit history
-    pub fn log(&self, options: LogOptions) -> Result<Vec<Commit>> {
+    pub fn log(&self, options: &LogOptions) -> Result<Vec<Commit>> {
         let repo = self.repo()?;
 
         // Return empty list for unborn HEAD (no commits yet)
@@ -476,20 +479,17 @@ impl Git2Service {
                 }
                 BranchFilterType::All => {
                     // Push all local branches
-                    for branch_result in repo.branches(Some(git2::BranchType::Local))? {
-                        if let Ok((branch, _)) = branch_result {
-                            if let Some(oid) = branch.get().target() {
-                                let _ = revwalk.push(oid);
-                            }
+                    for (branch, _) in repo.branches(Some(git2::BranchType::Local))?.flatten() {
+                        if let Some(oid) = branch.get().target() {
+                            let _ = revwalk.push(oid);
                         }
                     }
                     // Push remote branches if included
                     if options.include_remotes {
-                        for branch_result in repo.branches(Some(git2::BranchType::Remote))? {
-                            if let Ok((branch, _)) = branch_result {
-                                if let Some(oid) = branch.get().target() {
-                                    let _ = revwalk.push(oid);
-                                }
+                        for (branch, _) in repo.branches(Some(git2::BranchType::Remote))?.flatten()
+                        {
+                            if let Some(oid) = branch.get().target() {
+                                let _ = revwalk.push(oid);
                             }
                         }
                     }
@@ -518,7 +518,7 @@ impl Git2Service {
     }
 
     /// List branches
-    pub fn list_branches(&self, filter: BranchFilter) -> Result<Vec<Branch>> {
+    pub fn list_branches(&self, filter: &BranchFilter) -> Result<Vec<Branch>> {
         let mut branches = Vec::new();
 
         let branch_type = match (filter.include_local, filter.include_remote) {
@@ -591,9 +591,8 @@ impl Git2Service {
         repo: &Git2Repository,
         branch: &git2::Branch,
     ) -> Result<(Option<usize>, Option<usize>)> {
-        let upstream = match branch.upstream() {
-            Ok(u) => u,
-            Err(_) => return Ok((None, None)),
+        let Ok(upstream) = branch.upstream() else {
+            return Ok((None, None));
         };
 
         let local_oid = branch.get().target();
@@ -684,10 +683,10 @@ impl Git2Service {
                     mtime: git2::IndexTime::new(0, 0),
                     dev: 0,
                     ino: 0,
-                    mode: entry.filemode() as u32,
+                    mode: entry.filemode().cast_unsigned(),
                     uid: 0,
                     gid: 0,
-                    file_size: blob.size() as u32,
+                    file_size: u32::try_from(blob.size()).unwrap_or(u32::MAX),
                     id: entry.id(),
                     flags: 0,
                     flags_extended: 0,
@@ -1214,7 +1213,7 @@ impl Git2Service {
         );
 
         match repo.checkout_tree(&obj, Some(&mut checkout_builder)) {
-            Ok(_) => {
+            Ok(()) => {
                 repo.set_head(refname)?;
                 Ok(())
             }
@@ -1280,7 +1279,7 @@ impl Git2Service {
     }
 
     /// Get branch details
-    pub fn get_branch(&self, name: &str, branch_type: BranchType) -> Result<Branch> {
+    pub fn get_branch(&self, name: &str, branch_type: &BranchType) -> Result<Branch> {
         let git_branch_type = match branch_type {
             BranchType::Local => git2::BranchType::Local,
             BranchType::Remote => git2::BranchType::Remote,
@@ -1608,7 +1607,7 @@ impl Git2Service {
         }
 
         if let Some(depth) = options.depth {
-            fetch_opts.depth(depth as i32);
+            fetch_opts.depth(depth.cast_signed());
         }
 
         // Perform fetch
@@ -1895,11 +1894,11 @@ impl Git2Service {
                     let lines = current_lines.borrow_mut();
 
                     if let Some(last_hunk) = hunks.last_mut() {
-                        last_hunk.lines = lines.clone();
+                        last_hunk.lines.clone_from(&lines);
                     }
 
                     if let Some(last_file) = files.last_mut() {
-                        last_file.hunks = hunks.clone();
+                        last_file.hunks.clone_from(&hunks);
                     }
 
                     hunks.clear();
@@ -1909,13 +1908,12 @@ impl Git2Service {
                 let status = match delta.status() {
                     git2::Delta::Added => DiffStatus::Added,
                     git2::Delta::Deleted => DiffStatus::Deleted,
-                    git2::Delta::Modified => DiffStatus::Modified,
                     git2::Delta::Renamed => DiffStatus::Renamed,
                     git2::Delta::Copied => DiffStatus::Copied,
                     git2::Delta::Typechange => DiffStatus::TypeChanged,
                     git2::Delta::Untracked => DiffStatus::Untracked,
                     git2::Delta::Conflicted => DiffStatus::Conflicted,
-                    _ => DiffStatus::Modified,
+                    _ => DiffStatus::Modified, // Modified, Unmodified, Ignored, etc.
                 };
 
                 let old_file = delta.old_file();
@@ -1951,7 +1949,7 @@ impl Git2Service {
                     let lines = current_lines.borrow_mut();
 
                     if let Some(last_hunk) = hunks.last_mut() {
-                        last_hunk.lines = lines.clone();
+                        last_hunk.lines.clone_from(&lines);
                     }
                 }
                 current_lines.borrow_mut().clear();
@@ -1973,10 +1971,9 @@ impl Git2Service {
                 let line_type = match line.origin() {
                     '+' => DiffLineType::Addition,
                     '-' => DiffLineType::Deletion,
-                    ' ' => DiffLineType::Context,
                     '=' | '>' | '<' => DiffLineType::Header,
                     'B' => DiffLineType::Binary,
-                    _ => DiffLineType::Context,
+                    _ => DiffLineType::Context, // ' ' and other origins
                 };
 
                 let content = String::from_utf8_lossy(line.content())
@@ -2011,11 +2008,11 @@ impl Git2Service {
             let lines = current_lines.borrow();
 
             if let Some(last_hunk) = hunks.last_mut() {
-                last_hunk.lines = lines.clone();
+                last_hunk.lines.clone_from(&lines);
             }
 
             if let Some(last_file) = files.last_mut() {
-                last_file.hunks = hunks.clone();
+                last_file.hunks.clone_from(&hunks);
             }
         }
 
@@ -2027,7 +2024,7 @@ impl Git2Service {
     /// Build a commit graph with lane assignments for visualization
     pub fn build_graph(
         &self,
-        options: crate::models::GraphOptions,
+        options: &crate::models::GraphOptions,
     ) -> Result<crate::models::GraphResult> {
         let repo = self.repo()?;
         let mut revwalk = repo.revwalk()?;
@@ -2345,7 +2342,7 @@ impl Git2Service {
     // ==================== Search Operations ====================
 
     /// Search commits by message, author, or hash
-    pub fn search_commits(&self, options: crate::models::SearchOptions) -> Result<SearchResult> {
+    pub fn search_commits(&self, options: &crate::models::SearchOptions) -> Result<SearchResult> {
         let repo = self.repo()?;
 
         let query = options.query.to_lowercase();
@@ -2738,7 +2735,7 @@ impl Git2Service {
     /// Get commit history for specific files
     pub fn get_file_history(
         &self,
-        options: crate::models::FileLogOptions,
+        options: &crate::models::FileLogOptions,
     ) -> Result<FileLogResult> {
         let repo = self.repo()?;
 
@@ -2956,14 +2953,12 @@ impl Git2Service {
 
         // Add local branches
         let branches = repo.branches(Some(git2::BranchType::Local))?;
-        for branch_result in branches {
-            if let Ok((branch, _)) = branch_result {
-                if let Ok(Some(name)) = branch.name() {
-                    let refname = format!("refs/heads/{name}");
-                    // Check if reflog exists by trying to open it
-                    if repo.reflog(&refname).is_ok() {
-                        reflogs.push(refname);
-                    }
+        for (branch, _) in branches.flatten() {
+            if let Ok(Some(name)) = branch.name() {
+                let refname = format!("refs/heads/{name}");
+                // Check if reflog exists by trying to open it
+                if repo.reflog(&refname).is_ok() {
+                    reflogs.push(refname);
                 }
             }
         }
@@ -3455,7 +3450,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].summary, "Initial commit");
@@ -3467,7 +3462,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let branches = service
-            .list_branches(BranchFilter {
+            .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
             })
@@ -3499,7 +3494,7 @@ mod tests {
 
         // Both branches now point to the same commit
         let branches = service
-            .list_branches(BranchFilter {
+            .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
             })
@@ -3724,7 +3719,7 @@ mod tests {
 
         // Verify commit is in history
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         assert_eq!(commits.len(), 2);
         assert_eq!(commits[0].summary, "Add new file");
@@ -3743,7 +3738,7 @@ mod tests {
 
         // Verify commit message was updated
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].summary, "Amended initial commit");
@@ -3836,7 +3831,7 @@ mod tests {
 
         // Get the commit OID
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         let oid = &commits[0].oid;
 
@@ -3896,7 +3891,7 @@ mod tests {
 
         // Get the initial commit OID
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         let initial_oid = &commits[0].oid;
 
@@ -3975,7 +3970,7 @@ mod tests {
 
         // Verify old name doesn't exist
         let branches = service
-            .list_branches(BranchFilter {
+            .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
             })
@@ -3997,7 +3992,7 @@ mod tests {
 
         // Verify it exists
         let branches = service
-            .list_branches(BranchFilter {
+            .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
             })
@@ -4011,7 +4006,7 @@ mod tests {
 
         // Verify it's gone
         let branches = service
-            .list_branches(BranchFilter {
+            .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
             })
@@ -4032,7 +4027,7 @@ mod tests {
 
         // Get it by name
         let branch = service
-            .get_branch("test-get", BranchType::Local)
+            .get_branch("test-get", &BranchType::Local)
             .expect("should get branch by name");
         assert_eq!(branch.name, "test-get");
         assert_eq!(branch.branch_type, BranchType::Local);
@@ -4171,7 +4166,7 @@ mod tests {
             .expect("should create second commit");
 
         let options = crate::models::GraphOptions::default();
-        let result = service.build_graph(options).expect("should build graph");
+        let result = service.build_graph(&options).expect("should build graph");
 
         assert_eq!(result.commits.len(), 2);
         assert_eq!(result.total_count, 2);
@@ -4208,7 +4203,7 @@ mod tests {
             ..Default::default()
         };
         let result = service
-            .build_graph(options)
+            .build_graph(&options)
             .expect("should build graph with all branches");
 
         assert_eq!(result.commits.len(), 2);
@@ -4243,7 +4238,7 @@ mod tests {
             ..Default::default()
         };
         let result = service
-            .build_graph(options)
+            .build_graph(&options)
             .expect("should build first page of graph");
 
         assert_eq!(result.commits.len(), 2);
@@ -4257,7 +4252,7 @@ mod tests {
             ..Default::default()
         };
         let result = service
-            .build_graph(options)
+            .build_graph(&options)
             .expect("should build second page of graph");
 
         assert_eq!(result.commits.len(), 2);
@@ -4292,7 +4287,7 @@ mod tests {
             limit: Some(10),
         };
         let result = service
-            .search_commits(options)
+            .search_commits(&options)
             .expect("should search commits by message");
 
         assert_eq!(result.total_matches, 1);
@@ -4305,7 +4300,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let commits = service
-            .log(LogOptions::default())
+            .log(&LogOptions::default())
             .expect("should get commit log");
         let first_commit_oid = &commits[0].oid;
         let short_oid = &first_commit_oid[..7];
@@ -4318,7 +4313,7 @@ mod tests {
             limit: Some(10),
         };
         let result = service
-            .search_commits(options)
+            .search_commits(&options)
             .expect("should search commits by hash");
 
         assert_eq!(result.total_matches, 1);
@@ -4357,7 +4352,7 @@ mod tests {
 
         // Get the first commit OID
         let commits = service
-            .log(LogOptions {
+            .log(&LogOptions {
                 limit: Some(10),
                 ..Default::default()
             })
@@ -4841,7 +4836,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create a large binary file (above 1KB threshold for test)
-        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        let binary_content: Vec<u8> = (0u8..=255).cycle().take(2048).collect();
         fs::write(tmp.path().join("large.bin"), &binary_content).expect("should write");
 
         let result = service
@@ -4878,7 +4873,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create a large binary file
-        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        let binary_content: Vec<u8> = (0u8..=255).cycle().take(2048).collect();
         fs::write(tmp.path().join("tracked.bin"), &binary_content).expect("should write");
 
         // File matches existing LFS pattern
@@ -4911,11 +4906,11 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         // Create multiple files
-        let binary_content: Vec<u8> = (0..2048).map(|i| (i % 256) as u8).collect();
+        let binary_content: Vec<u8> = (0u8..=255).cycle().take(2048).collect();
         fs::write(tmp.path().join("a.bin"), &binary_content).expect("should write");
         fs::write(tmp.path().join("b.psd"), &binary_content).expect("should write");
         fs::write(tmp.path().join("c.txt"), "just text content".repeat(200)).expect("should write");
-        fs::write(tmp.path().join("small.bin"), &[0u8; 10]).expect("should write");
+        fs::write(tmp.path().join("small.bin"), [0u8; 10]).expect("should write");
 
         let paths = vec![
             "a.bin".to_string(),

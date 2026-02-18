@@ -389,15 +389,14 @@ mod tests {
     fn test_result_ok() {
         let result: Result<i32> = Ok(42);
         assert!(result.is_ok());
-        assert_eq!(result.expect("should be ok"), 42);
+        assert!(matches!(result, Ok(42)));
     }
 
     #[test]
     fn test_result_err() {
         let result: Result<i32> = Err(AxisError::NoRepositoryOpen);
         assert!(result.is_err());
-        let err = result.expect_err("should be error");
-        assert!(matches!(err, AxisError::NoRepositoryOpen));
+        assert!(matches!(result, Err(AxisError::NoRepositoryOpen)));
     }
 
     // ==================== SSH Key Error Tests ====================

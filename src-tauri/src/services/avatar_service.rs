@@ -54,10 +54,9 @@ impl AvatarService {
 
                 if self.is_cache_valid(&path) {
                     return Some(path.to_string_lossy().to_string());
-                } else {
-                    let _ = fs::remove_file(&path);
-                    return None;
                 }
+                let _ = fs::remove_file(&path);
+                return None;
             }
         }
 

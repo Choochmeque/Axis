@@ -33,7 +33,7 @@ impl RepoOperations {
     }
 
     pub async fn log(&self, options: LogOptions) -> Result<Vec<crate::models::Commit>> {
-        self.git2(move |g| g.log(options)).await
+        self.git2(move |g| g.log(&options)).await
     }
 
     pub async fn get_user_signature(&self) -> Result<(String, String)> {

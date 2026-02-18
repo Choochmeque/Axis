@@ -373,7 +373,9 @@ impl SigningService {
 
             // Skip public keys and known_hosts
             let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if filename.ends_with(".pub")
+            if path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("pub"))
                 || filename == "known_hosts"
                 || filename == "authorized_keys"
                 || filename == "config"

@@ -33,7 +33,7 @@ impl BackgroundFetchService {
 
         let handle = tauri::async_runtime::spawn(async move {
             let mut interval =
-                tokio::time::interval(Duration::from_secs(interval_minutes as u64 * 60));
+                tokio::time::interval(Duration::from_secs(u64::from(interval_minutes) * 60));
 
             loop {
                 interval.tick().await;
@@ -118,7 +118,8 @@ impl BackgroundFetchService {
                             {
                                 Ok(result) => {
                                     // Count updated refs as new commits
-                                    total_updates += result.updated_refs.len() as u32;
+                                    total_updates += u32::try_from(result.updated_refs.len())
+                                        .unwrap_or(u32::MAX);
                                 }
                                 Err(e) => {
                                     log::warn!(

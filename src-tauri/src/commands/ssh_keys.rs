@@ -48,7 +48,7 @@ pub async fn import_ssh_key(options: ImportSshKeyOptions) -> Result<SshKeyInfo> 
 #[tauri::command]
 #[specta::specta]
 pub async fn export_ssh_key(options: ExportSshKeyOptions) -> Result<()> {
-    SshKeyService::export_key(options)
+    SshKeyService::export_key(&options)
 }
 
 // ==================== Per-Remote SSH Key Mapping ====================

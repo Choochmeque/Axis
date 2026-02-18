@@ -892,6 +892,8 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn test_hook_not_executable_info() {
+        use std::os::unix::fs::PermissionsExt;
+
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
@@ -901,7 +903,6 @@ mod tests {
         fs::write(&hook_path, "#!/bin/sh\nexit 0").expect("should write hook");
 
         // Explicitly remove execute permission
-        use std::os::unix::fs::PermissionsExt;
         let mut perms = fs::metadata(&hook_path)
             .expect("should get metadata")
             .permissions();

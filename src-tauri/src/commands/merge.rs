@@ -140,10 +140,10 @@ pub async fn rebase_branch(
             .run_pre_rebase(&options.onto, current_branch.as_deref())
             .await;
         if !hook_result.skipped && !hook_result.success {
-            let output = if !hook_result.stderr.is_empty() {
-                &hook_result.stderr
-            } else {
+            let output = if hook_result.stderr.is_empty() {
                 &hook_result.stdout
+            } else {
+                &hook_result.stderr
             };
             return Err(AxisError::Other(format!(
                 "Hook 'pre-rebase' failed:\n{}",
@@ -316,10 +316,10 @@ pub async fn interactive_rebase(
             .run_pre_rebase(&options.onto, current_branch.as_deref())
             .await;
         if !hook_result.skipped && !hook_result.success {
-            let output = if !hook_result.stderr.is_empty() {
-                &hook_result.stderr
-            } else {
+            let output = if hook_result.stderr.is_empty() {
                 &hook_result.stdout
+            } else {
+                &hook_result.stderr
             };
             return Err(AxisError::Other(format!(
                 "Hook 'pre-rebase' failed:\n{}",
@@ -440,12 +440,11 @@ pub async fn cherry_pick(
             if result.stdout.contains("CONFLICT") {
                 all_conflicts.extend(guard.get_conflicted_files_enriched().await?);
                 break; // Stop on first conflict
-            } else {
-                return Err(AxisError::Other(format!(
-                    "Cherry-pick failed: {}",
-                    result.stderr.trim()
-                )));
             }
+            return Err(AxisError::Other(format!(
+                "Cherry-pick failed: {}",
+                result.stderr.trim()
+            )));
         }
     }
 
@@ -566,12 +565,11 @@ pub async fn revert_commits(
             if result.stdout.contains("CONFLICT") {
                 all_conflicts.extend(guard.get_conflicted_files_enriched().await?);
                 break;
-            } else {
-                return Err(AxisError::Other(format!(
-                    "Revert failed: {}",
-                    result.stderr.trim()
-                )));
             }
+            return Err(AxisError::Other(format!(
+                "Revert failed: {}",
+                result.stderr.trim()
+            )));
         }
     }
 

@@ -1428,10 +1428,8 @@ impl GitCliService {
         let branch_name = format!("{prefix}{name}");
         let base_branch = base.map_or_else(
             || match branch_type {
-                GitFlowBranchType::Feature => config.develop.clone(),
-                GitFlowBranchType::Release => config.develop.clone(),
-                GitFlowBranchType::Hotfix => config.master.clone(),
-                GitFlowBranchType::Support => config.master.clone(),
+                GitFlowBranchType::Feature | GitFlowBranchType::Release => config.develop.clone(),
+                GitFlowBranchType::Hotfix | GitFlowBranchType::Support => config.master.clone(),
             },
             std::string::ToString::to_string,
         );
@@ -1477,8 +1475,9 @@ impl GitCliService {
         let branch_name = format!("{prefix}{name}");
         let target_branch = match branch_type {
             GitFlowBranchType::Feature => config.develop.clone(),
-            GitFlowBranchType::Release | GitFlowBranchType::Hotfix => config.master.clone(),
-            GitFlowBranchType::Support => config.master.clone(),
+            GitFlowBranchType::Release | GitFlowBranchType::Hotfix | GitFlowBranchType::Support => {
+                config.master.clone()
+            }
         };
 
         // Checkout target branch
@@ -1709,7 +1708,7 @@ impl GitCliService {
                         content: parts[2].to_string(),
                     });
                 }
-                _ => continue,
+                _ => {}
             }
         }
 
@@ -2306,7 +2305,9 @@ impl GitCliService {
         let (steps_remaining, total_commits) = if viz_result.success {
             let count = viz_result.stdout.lines().count();
             let steps = if count > 0 {
-                Some((count as f64).log2().ceil() as usize)
+                // ceil(log2(count)) using integer math to avoid float precision issues
+                // Result is always in [0, 64] so cast to usize is safe
+                Some((usize::BITS - (count - 1).leading_zeros()) as usize)
             } else {
                 Some(0)
             };
@@ -2758,7 +2759,7 @@ impl GitCliService {
             }
 
             // Source file lines like "    (default): .gitattributes"
-            if line.contains(".gitattributes") || line.contains("(") {
+            if line.contains(".gitattributes") || line.contains('(') {
                 current_source = if line.contains(".gitattributes") {
                     ".gitattributes".to_string()
                 } else {
@@ -2800,7 +2801,7 @@ impl GitCliService {
                 continue;
             }
 
-            let parts: Vec<&str> = line.splitn(3, |c| c == '-' || c == '*').collect();
+            let parts: Vec<&str> = line.splitn(3, ['-', '*']).collect();
             if parts.len() >= 2 {
                 let oid = parts[0].trim().to_string();
                 let is_downloaded = line.contains(" * ");
@@ -2844,17 +2845,37 @@ impl GitCliService {
             return 0;
         }
 
-        let value: f64 = parts[0].parse().unwrap_or(0.0);
         let multiplier: u64 = match parts[1].to_uppercase().as_str() {
-            "B" => 1,
             "KB" => 1024,
             "MB" => 1024 * 1024,
             "GB" => 1024 * 1024 * 1024,
             "TB" => 1024_u64 * 1024 * 1024 * 1024,
-            _ => 1,
+            _ => 1, // "B" and other/unknown units default to bytes
         };
 
-        (value * multiplier as f64) as u64
+        // Parse the number using integer arithmetic to avoid f64->u64 cast warnings
+        let num_str = parts[0];
+        if let Some(dot_pos) = num_str.find('.') {
+            // Has decimal point - split into whole and fractional parts
+            let whole_str = &num_str[..dot_pos];
+            let frac_str = &num_str[dot_pos + 1..];
+
+            let whole: u64 = whole_str.parse().unwrap_or(0);
+            let frac_digits = frac_str.len();
+            let frac: u64 = frac_str.parse().unwrap_or(0);
+
+            // whole_bytes = whole * multiplier
+            // frac_bytes = (frac * multiplier) / 10^frac_digits
+            let whole_bytes = whole.saturating_mul(multiplier);
+            let divisor = 10u64.saturating_pow(u32::try_from(frac_digits).unwrap_or(u32::MAX));
+            let frac_bytes = frac.saturating_mul(multiplier) / divisor;
+
+            whole_bytes.saturating_add(frac_bytes)
+        } else {
+            // No decimal point - just a whole number
+            let whole: u64 = num_str.parse().unwrap_or(0);
+            whole.saturating_mul(multiplier)
+        }
     }
 
     /// Fetch LFS objects from remote

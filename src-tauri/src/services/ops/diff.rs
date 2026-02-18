@@ -52,7 +52,7 @@ impl RepoOperations {
     }
 
     pub async fn get_file_history(&self, options: FileLogOptions) -> Result<FileLogResult> {
-        self.git2(move |g| g.get_file_history(options)).await
+        self.git2(move |g| g.get_file_history(&options)).await
     }
 
     pub async fn get_file_diff_in_commit(

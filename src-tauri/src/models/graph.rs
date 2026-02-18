@@ -315,15 +315,13 @@ impl LaneState {
                 if lane < self.active_lanes.len() {
                     self.active_lanes[lane] = None;
                 }
+            } else if lane < self.active_lanes.len() {
+                self.active_lanes[lane] = Some(first_parent.clone());
             } else {
-                if lane < self.active_lanes.len() {
-                    self.active_lanes[lane] = Some(first_parent.clone());
-                } else {
-                    while self.active_lanes.len() <= lane {
-                        self.active_lanes.push(None);
-                    }
-                    self.active_lanes[lane] = Some(first_parent.clone());
+                while self.active_lanes.len() <= lane {
+                    self.active_lanes.push(None);
                 }
+                self.active_lanes[lane] = Some(first_parent.clone());
             }
         }
 

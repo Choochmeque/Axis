@@ -1,4 +1,6 @@
-const SYSTEM_PROMPT: &str = r#"You are a helpful assistant that generates concise git commit messages.
+use std::fmt::Write;
+
+const SYSTEM_PROMPT: &str = r"You are a helpful assistant that generates concise git commit messages.
 
 Given the following diff of staged changes, generate a commit message following these guidelines:
 1. Start with a verb in imperative mood (Add, Fix, Update, Remove, Refactor, etc.)
@@ -6,7 +8,7 @@ Given the following diff of staged changes, generate a commit message following 
 3. Focus on WHAT changed and WHY, not HOW
 4. Be specific but concise
 
-Return ONLY the commit message, nothing else."#;
+Return ONLY the commit message, nothing else.";
 
 const SYSTEM_PROMPT_CONVENTIONAL: &str = r#"You are a helpful assistant that generates git commit messages following the Conventional Commits specification.
 
@@ -35,7 +37,7 @@ Rules:
 
 Return ONLY the commit message, nothing else."#;
 
-const PR_SYSTEM_PROMPT: &str = r#"You are a helpful assistant that generates concise pull request titles and descriptions.
+const PR_SYSTEM_PROMPT: &str = r"You are a helpful assistant that generates concise pull request titles and descriptions.
 
 Given a list of commits and an optional summary of changed files, generate:
 1. A short, descriptive PR title (under 72 characters, imperative mood)
@@ -52,7 +54,7 @@ BODY:
 LABELS: <comma-separated label names, or empty if none>
 
 Be specific but concise. Focus on the user-facing impact of changes.
-Return ONLY the formatted response, nothing else."#;
+Return ONLY the formatted response, nothing else.";
 
 pub fn build_pr_prompt(
     commits: &[(String, String)],
@@ -63,16 +65,16 @@ pub fn build_pr_prompt(
         String::from("Generate a PR title and description for these commits:\n\n");
 
     for (short_oid, summary) in commits {
-        user_prompt.push_str(&format!("- {short_oid}: {summary}\n"));
+        let _ = writeln!(user_prompt, "- {short_oid}: {summary}");
     }
 
     if let Some(summary) = diff_summary {
-        user_prompt.push_str(&format!("\nChanged files:\n{summary}\n"));
+        let _ = writeln!(user_prompt, "\nChanged files:\n{summary}");
     }
 
     if let Some(labels) = available_labels {
         if !labels.is_empty() {
-            user_prompt.push_str(&format!("\nAvailable labels: {}\n", labels.join(", ")));
+            let _ = writeln!(user_prompt, "\nAvailable labels: {}", labels.join(", "));
         }
     }
 
@@ -240,7 +242,7 @@ mod tests {
         let (system, _) = build_prompt("test", true);
 
         assert!(system.contains("breaking change"));
-        assert!(system.contains("!"));
+        assert!(system.contains('!'));
     }
 
     #[test]

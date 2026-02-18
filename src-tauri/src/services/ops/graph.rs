@@ -6,11 +6,11 @@ use super::RepoOperations;
 /// Graph, search, blame operations.
 impl RepoOperations {
     pub async fn build_graph(&self, options: GraphOptions) -> Result<GraphResult> {
-        self.git2(move |g| g.build_graph(options)).await
+        self.git2(move |g| g.build_graph(&options)).await
     }
 
     pub async fn search_commits(&self, options: SearchOptions) -> Result<SearchResult> {
-        self.git2(move |g| g.search_commits(options)).await
+        self.git2(move |g| g.search_commits(&options)).await
     }
 
     pub async fn blame_file(&self, path: &str, commit_oid: Option<&str>) -> Result<BlameResult> {

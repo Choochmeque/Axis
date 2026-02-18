@@ -42,14 +42,14 @@ pub struct RepoWriteGuard<'a> {
     ops: RepoOperations,
 }
 
-impl<'a> Deref for RepoReadGuard<'a> {
+impl Deref for RepoReadGuard<'_> {
     type Target = RepoOperations;
     fn deref(&self) -> &RepoOperations {
         &self.ops
     }
 }
 
-impl<'a> Deref for RepoWriteGuard<'a> {
+impl Deref for RepoWriteGuard<'_> {
     type Target = RepoOperations;
     fn deref(&self) -> &RepoOperations {
         &self.ops

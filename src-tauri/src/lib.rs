@@ -1,5 +1,6 @@
 // Pedantic lints that are too noisy for internal applications
 #![allow(clippy::missing_errors_doc)]
+#![allow(clippy::must_use_candidate)]
 
 mod commands;
 mod error;

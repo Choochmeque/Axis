@@ -9,7 +9,7 @@ use super::RepoOperations;
 /// Branch operations.
 impl RepoOperations {
     pub async fn list_branches(&self, filter: BranchFilter) -> Result<Vec<Branch>> {
-        self.git2(move |g| g.list_branches(filter)).await
+        self.git2(move |g| g.list_branches(&filter)).await
     }
 
     pub async fn create_branch(&self, name: &str, options: &CreateBranchOptions) -> Result<Branch> {
@@ -74,7 +74,7 @@ impl RepoOperations {
 
     pub async fn get_branch(&self, name: &str, branch_type: BranchType) -> Result<Branch> {
         let name = name.to_string();
-        self.git2(move |g| g.get_branch(&name, branch_type)).await
+        self.git2(move |g| g.get_branch(&name, &branch_type)).await
     }
 
     pub async fn compare_branches(

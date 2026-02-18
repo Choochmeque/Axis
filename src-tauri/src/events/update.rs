@@ -58,7 +58,7 @@ mod tests {
 
         let debug_str = format!("{event:?}");
         assert!(debug_str.contains("UpdateDownloadProgressEvent"));
-        assert!(debug_str.contains("0"));
+        assert!(debug_str.contains('0'));
     }
 
     #[test]
@@ -73,6 +73,6 @@ mod tests {
         assert!(json.contains("\"downloaded\":"));
         assert!(json.contains("\"total\":"));
         // Verify no snake_case
-        assert!(!json.contains("_"));
+        assert!(!json.contains('_'));
     }
 }

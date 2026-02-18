@@ -130,7 +130,7 @@ mod tests {
         let sig = TagSignature {
             name: "Tagger".to_string(),
             email: "tagger@example.com".to_string(),
-            timestamp: DateTime::from_timestamp(1700000000, 0)
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
         };

@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn test_error_debug() {
         let err = AxisError::BranchNotFound("feature".to_string());
-        let debug_str = format!("{:?}", err);
+        let debug_str = format!("{err:?}");
         assert!(debug_str.contains("BranchNotFound"));
         assert!(debug_str.contains("feature"));
     }

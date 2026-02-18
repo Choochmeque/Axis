@@ -109,8 +109,8 @@ fn build_credentials_callback(
     }
 }
 
-/// Build a certificate check callback that verifies SSH host keys against known_hosts.
-/// If the host is unknown (not in known_hosts), the key is accepted automatically.
+/// Build a certificate check callback that verifies SSH host keys against `known_hosts`.
+/// If the host is unknown (not in `known_hosts`), the key is accepted automatically.
 /// If the host key has changed (potential MITM), the connection is rejected.
 fn build_certificate_check_callback(
 ) -> impl FnMut(&Cert<'_>, &str) -> std::result::Result<CertificateCheckStatus, git2::Error> {
@@ -307,7 +307,7 @@ impl Git2Service {
         self.repo().ok().and_then(|repo| {
             repo.head()
                 .ok()
-                .and_then(|h| h.shorthand().map(|s| s.to_string()))
+                .and_then(|h| h.shorthand().map(std::string::ToString::to_string))
         })
     }
 
@@ -344,10 +344,10 @@ impl Git2Service {
             .or_else(|| self.path().parent())
             .ok_or_else(|| AxisError::InvalidRepositoryPath("Unknown path".to_string()))?;
 
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "Unknown".to_string());
+        let name = path.file_name().map_or_else(
+            || "Unknown".to_string(),
+            |n| n.to_string_lossy().to_string(),
+        );
 
         let current_branch = self.get_current_branch_name();
         let state = RepositoryState::from(repo.state());
@@ -376,7 +376,7 @@ impl Git2Service {
         self.repo().ok().and_then(|repo| {
             repo.head().ok().and_then(|head| {
                 if head.is_branch() {
-                    head.shorthand().map(|s| s.to_string())
+                    head.shorthand().map(std::string::ToString::to_string)
                 } else {
                     // Detached HEAD - return short commit hash
                     head.target().map(|oid| oid.to_string()[..7].to_string())
@@ -544,10 +544,12 @@ impl Git2Service {
 
                     let (ahead, behind) = Self::get_ahead_behind(&repo, &branch)?;
 
-                    let upstream = branch
-                        .upstream()
-                        .ok()
-                        .and_then(|u| u.name().ok().flatten().map(|s| s.to_string()));
+                    let upstream = branch.upstream().ok().and_then(|u| {
+                        u.name()
+                            .ok()
+                            .flatten()
+                            .map(std::string::ToString::to_string)
+                    });
 
                     branches.push(Branch {
                         name: name.to_string(),
@@ -1027,14 +1029,14 @@ impl Git2Service {
         };
 
         Ok(diffs.into_iter().find(|d| {
-            d.new_path.as_ref().map(|p| p == path).unwrap_or(false)
-                || d.old_path.as_ref().map(|p| p == path).unwrap_or(false)
+            d.new_path.as_ref().is_some_and(|p| p == path)
+                || d.old_path.as_ref().is_some_and(|p| p == path)
         }))
     }
 
     /// Get blob content as raw bytes
-    /// If commit_oid is Some, gets the file from that commit's tree
-    /// If commit_oid is None, reads the file from the working directory
+    /// If `commit_oid` is Some, gets the file from that commit's tree
+    /// If `commit_oid` is None, reads the file from the working directory
     pub fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
         let repo = self.repo()?;
         if let Some(oid_str) = commit_oid {
@@ -1055,7 +1057,7 @@ impl Git2Service {
         }
     }
 
-    /// Apply diff options to git2 DiffOptions
+    /// Apply diff options to git2 `DiffOptions`
     fn apply_diff_options(
         &self,
         opts: &mut git2::DiffOptions,
@@ -1305,10 +1307,12 @@ impl Git2Service {
         let is_head = branch.is_head();
 
         let (ahead, behind) = Self::get_ahead_behind(repo, branch)?;
-        let upstream = branch
-            .upstream()
-            .ok()
-            .and_then(|u| u.name().ok().flatten().map(|s| s.to_string()));
+        let upstream = branch.upstream().ok().and_then(|u| {
+            u.name()
+                .ok()
+                .flatten()
+                .map(std::string::ToString::to_string)
+        });
 
         Ok(Branch {
             name: name.clone(),
@@ -1379,7 +1383,7 @@ impl Git2Service {
         })
     }
 
-    /// Get commits between two points (from merge_base to target)
+    /// Get commits between two points (from `merge_base` to target)
     fn commits_between(
         repo: &Git2Repository,
         from_oid: Option<git2::Oid>,
@@ -1416,19 +1420,19 @@ impl Git2Service {
             if let Ok(remote) = repo.find_remote(name) {
                 remotes.push(crate::models::Remote {
                     name: name.to_string(),
-                    url: remote.url().map(|s| s.to_string()),
-                    push_url: remote.pushurl().map(|s| s.to_string()),
+                    url: remote.url().map(std::string::ToString::to_string),
+                    push_url: remote.pushurl().map(std::string::ToString::to_string),
                     fetch_refspecs: remote
                         .fetch_refspecs()?
                         .iter()
                         .flatten()
-                        .map(|s| s.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect(),
                     push_refspecs: remote
                         .push_refspecs()?
                         .iter()
                         .flatten()
-                        .map(|s| s.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect(),
                 });
             }
@@ -1443,19 +1447,19 @@ impl Git2Service {
         let remote = repo.find_remote(name)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
-            url: remote.url().map(|s| s.to_string()),
-            push_url: remote.pushurl().map(|s| s.to_string()),
+            url: remote.url().map(std::string::ToString::to_string),
+            push_url: remote.pushurl().map(std::string::ToString::to_string),
             fetch_refspecs: remote
                 .fetch_refspecs()?
                 .iter()
                 .flatten()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
             push_refspecs: remote
                 .push_refspecs()?
                 .iter()
                 .flatten()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
         })
     }
@@ -1466,19 +1470,19 @@ impl Git2Service {
         let remote = repo.remote(name, url)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
-            url: remote.url().map(|s| s.to_string()),
-            push_url: remote.pushurl().map(|s| s.to_string()),
+            url: remote.url().map(std::string::ToString::to_string),
+            push_url: remote.pushurl().map(std::string::ToString::to_string),
             fetch_refspecs: remote
                 .fetch_refspecs()?
                 .iter()
                 .flatten()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
             push_refspecs: remote
                 .push_refspecs()?
                 .iter()
                 .flatten()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
         })
     }
@@ -1492,7 +1496,11 @@ impl Git2Service {
     /// Rename a remote
     pub fn rename_remote(&self, old_name: &str, new_name: &str) -> Result<Vec<String>> {
         let problems = self.repo()?.remote_rename(old_name, new_name)?;
-        Ok(problems.iter().flatten().map(|s| s.to_string()).collect())
+        Ok(problems
+            .iter()
+            .flatten()
+            .map(std::string::ToString::to_string)
+            .collect())
     }
 
     /// Set the URL for a remote
@@ -1515,13 +1523,13 @@ impl Git2Service {
             .get_entry("user.name")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().map(|s| s.to_string()));
+            .and_then(|e| e.value().map(std::string::ToString::to_string));
 
         let user_email = config
             .get_entry("user.email")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().map(|s| s.to_string()));
+            .and_then(|e| e.value().map(std::string::ToString::to_string));
 
         Ok((user_name, user_email))
     }
@@ -1675,7 +1683,7 @@ impl Git2Service {
             refspecs.to_vec()
         };
 
-        let refspec_strs: Vec<&str> = refspecs.iter().map(|s| s.as_str()).collect();
+        let refspec_strs: Vec<&str> = refspecs.iter().map(std::string::String::as_str).collect();
 
         remote.push(&refspec_strs, Some(&mut push_opts))?;
 
@@ -1869,7 +1877,7 @@ impl Git2Service {
         Ok(())
     }
 
-    /// Parse a git2 Diff into our FileDiff model
+    /// Parse a git2 Diff into our `FileDiff` model
     fn parse_diff(&self, diff: &git2::Diff) -> Result<Vec<crate::models::FileDiff>> {
         use crate::models::{DiffHunk, DiffLine, DiffLineType, DiffStatus, FileDiff};
         use std::cell::RefCell;
@@ -2175,7 +2183,7 @@ impl Git2Service {
                     graph_commits.push(GraphCommit {
                         commit: Commit {
                             oid: "uncommitted".to_string(),
-                            short_oid: "".to_string(),
+                            short_oid: String::new(),
                             parent_oids,
                             message: "Uncommitted Changes".to_string(),
                             summary: "Uncommitted Changes".to_string(),
@@ -2297,7 +2305,7 @@ impl Git2Service {
                     git2::BranchType::Local => RefType::LocalBranch,
                     git2::BranchType::Remote => RefType::RemoteBranch,
                 };
-                let is_head = head_oid.map(|h| h == oid).unwrap_or(false) && branch.is_head();
+                let is_head = head_oid.is_some_and(|h| h == oid) && branch.is_head();
 
                 commit_refs.entry(oid_str).or_default().push(CommitRef {
                     name: name.to_string(),
@@ -2541,7 +2549,11 @@ impl Git2Service {
                             timestamp,
                         }
                     });
-                    (true, tag.message().map(|m| m.to_string()), tagger_sig)
+                    (
+                        true,
+                        tag.message().map(std::string::ToString::to_string),
+                        tagger_sig,
+                    )
                 } else {
                     (false, None, None)
                 }
@@ -2551,7 +2563,7 @@ impl Git2Service {
 
             // Get target commit info
             let (target_summary, target_time) = if let Ok(commit) = target_obj.peel_to_commit() {
-                let summary = commit.summary().map(|s| s.to_string());
+                let summary = commit.summary().map(std::string::ToString::to_string);
                 let time = DateTime::from_timestamp(commit.time().seconds(), 0)
                     .map(|dt| dt.with_timezone(&Utc));
                 (summary, time)
@@ -3063,10 +3075,10 @@ impl Git2Service {
     pub fn add_to_global_gitignore(&self, pattern: &str) -> Result<IgnoreResult> {
         // Try to get global gitignore path from git config
         let config = self.repo()?.config()?;
-        let global_path = config
-            .get_string("core.excludesfile")
-            .map(|p| shellexpand::tilde(&p).to_string())
-            .unwrap_or_else(|_| shellexpand::tilde("~/.gitignore_global").to_string());
+        let global_path = config.get_string("core.excludesfile").map_or_else(
+            |_| shellexpand::tilde("~/.gitignore_global").to_string(),
+            |p| shellexpand::tilde(&p).to_string(),
+        );
 
         let gitignore_path = std::path::Path::new(&global_path);
 

@@ -23,7 +23,7 @@ impl Default for GitFlowConfig {
             release_prefix: "release/".to_string(),
             hotfix_prefix: "hotfix/".to_string(),
             support_prefix: "support/".to_string(),
-            version_tag_prefix: "".to_string(),
+            version_tag_prefix: String::new(),
         }
     }
 }

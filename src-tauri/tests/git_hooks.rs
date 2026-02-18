@@ -2,8 +2,8 @@
 
 //! Integration tests for git hooks operations.
 //!
-//! Pattern: RepoOperations performs actions → filesystem/git verifies (source of truth)
-//!          Filesystem/git sets up state → RepoOperations reads/verifies
+//! Pattern: `RepoOperations` performs actions → filesystem/git verifies (source of truth)
+//!          Filesystem/git sets up state → `RepoOperations` reads/verifies
 
 mod common;
 

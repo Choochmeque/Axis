@@ -56,7 +56,7 @@ mod tests {
             total: None,
         };
 
-        let debug_str = format!("{:?}", event);
+        let debug_str = format!("{event:?}");
         assert!(debug_str.contains("UpdateDownloadProgressEvent"));
         assert!(debug_str.contains("0"));
     }

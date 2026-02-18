@@ -343,11 +343,7 @@ impl SigningService {
             if let Some(default_key) = config.signing_key {
                 for key in &mut keys {
                     key.is_default = key.key_id.ends_with(&default_key)
-                        || key
-                            .email
-                            .as_ref()
-                            .map(|e| e == &default_key)
-                            .unwrap_or(false);
+                        || key.email.as_ref().is_some_and(|e| e == &default_key);
                 }
             }
         }
@@ -629,7 +625,7 @@ mod tests {
     fn test_extract_email_empty_brackets() {
         let user_id = "User <>";
         let email = extract_email(user_id);
-        assert_eq!(email, Some("".to_string()));
+        assert_eq!(email, Some(String::new()));
     }
 
     #[test]

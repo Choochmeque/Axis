@@ -51,7 +51,7 @@ pub struct BranchCompareResult {
     pub ahead_commits: Vec<Commit>,
     /// Commits in base branch but not in compare (behind)
     pub behind_commits: Vec<Commit>,
-    /// Aggregate file changes from merge_base to compare branch
+    /// Aggregate file changes from `merge_base` to compare branch
     pub files: Vec<FileDiff>,
 }
 
@@ -165,7 +165,7 @@ mod tests {
             behind: None,
             target_oid: "abc123".to_string(),
             last_commit_summary: "Add feature".to_string(),
-            last_commit_time: DateTime::from_timestamp(1700000000, 0)
+            last_commit_time: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
         };

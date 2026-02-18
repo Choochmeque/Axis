@@ -106,7 +106,7 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
             url: pr
                 .html_url
                 .as_ref()
-                .map(|u| u.to_string())
+                .map(std::string::ToString::to_string)
                 .unwrap_or_default(),
         }
     }
@@ -208,7 +208,11 @@ impl From<octocrab::models::workflows::Run> for CIRun {
 
 impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequestsPage {
     fn from(page: octocrab::Page<octocrab::models::pulls::PullRequest>) -> Self {
-        let items = page.items.into_iter().map(|pr| pr.into()).collect();
+        let items = page
+            .items
+            .into_iter()
+            .map(std::convert::Into::into)
+            .collect();
 
         PullRequestsPage {
             items,
@@ -224,7 +228,7 @@ impl From<octocrab::Page<octocrab::models::issues::Issue>> for IssuesPage {
             .items
             .into_iter()
             .filter(|issue| issue.pull_request.is_none())
-            .map(|issue| issue.into())
+            .map(std::convert::Into::into)
             .collect();
 
         IssuesPage {
@@ -239,7 +243,7 @@ impl From<octocrab::Page<octocrab::models::activity::Notification>> for Notifica
         let items = page
             .items
             .into_iter()
-            .map(|notification| notification.into())
+            .map(std::convert::Into::into)
             .collect();
 
         NotificationsPage {
@@ -251,7 +255,11 @@ impl From<octocrab::Page<octocrab::models::activity::Notification>> for Notifica
 
 impl From<octocrab::Page<octocrab::models::workflows::Run>> for CiRunsPage {
     fn from(page: octocrab::Page<octocrab::models::workflows::Run>) -> Self {
-        let items = page.items.into_iter().map(|run| run.into()).collect();
+        let items = page
+            .items
+            .into_iter()
+            .map(std::convert::Into::into)
+            .collect();
 
         CiRunsPage {
             runs: items,
@@ -836,13 +844,11 @@ impl IntegrationProvider for GitHubProvider {
                     created_at: check["started_at"]
                         .as_str()
                         .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
+                        .map_or_else(Utc::now, |dt| dt.with_timezone(&Utc)),
                     updated_at: check["completed_at"]
                         .as_str()
                         .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(Utc::now),
+                        .map_or_else(Utc::now, |dt| dt.with_timezone(&Utc)),
                     url: check["html_url"].as_str().unwrap_or("").to_string(),
                 }
             })

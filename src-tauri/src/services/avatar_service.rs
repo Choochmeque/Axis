@@ -151,7 +151,7 @@ impl AvatarService {
         let mut hasher = Md5::new();
         hasher.update(input.as_bytes());
         let result = hasher.finalize();
-        format!("{:x}", result)
+        format!("{result:x}")
     }
 
     /// Clear all cached avatars

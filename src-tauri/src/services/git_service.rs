@@ -4,10 +4,10 @@ use std::path::Path;
 use tauri::AppHandle;
 
 /// Unified service for Git operations, combining:
-/// - Git2Service (libgit2 operations)
-/// - GitCliService (CLI operations for merge/rebase/etc)
-/// - HookService (git hook execution and management)
-/// - FileWatcher (per-repo file watching)
+/// - `Git2Service` (libgit2 operations)
+/// - `GitCliService` (CLI operations for merge/rebase/etc)
+/// - `HookService` (git hook execution and management)
+/// - `FileWatcher` (per-repo file watching)
 pub struct GitService {
     git2: Git2Service,
     git_cli: GitCliService,
@@ -16,7 +16,7 @@ pub struct GitService {
 }
 
 impl GitService {
-    /// Create GitService for testing (no FileWatcher/AppHandle required)
+    /// Create `GitService` for testing (no `FileWatcher`/`AppHandle` required)
     #[cfg(feature = "integration")]
     pub fn new_for_test(path: &Path) -> Result<Self> {
         let git2 = Git2Service::open(path)?;

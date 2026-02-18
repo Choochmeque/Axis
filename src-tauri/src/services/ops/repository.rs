@@ -8,23 +8,28 @@ use super::RepoOperations;
 /// Repository info, status, config, and signing operations.
 impl RepoOperations {
     pub async fn get_repository_info(&self) -> Result<Repository> {
-        self.git2(|g| g.get_repository_info()).await
+        self.git2(super::super::git2_service::Git2Service::get_repository_info)
+            .await
     }
 
     pub async fn get_current_branch(&self) -> Option<String> {
-        self.git2(|g| g.get_current_branch()).await
+        self.git2(super::super::git2_service::Git2Service::get_current_branch)
+            .await
     }
 
     pub async fn get_head_oid(&self) -> String {
-        self.git2(|g| g.get_head_oid()).await
+        self.git2(super::super::git2_service::Git2Service::get_head_oid)
+            .await
     }
 
     pub async fn get_head_oid_opt(&self) -> Option<String> {
-        self.git2(|g| g.get_head_oid_opt()).await
+        self.git2(super::super::git2_service::Git2Service::get_head_oid_opt)
+            .await
     }
 
     pub async fn status(&self) -> Result<RepositoryStatus> {
-        self.git2(|g| g.status()).await
+        self.git2(super::super::git2_service::Git2Service::status)
+            .await
     }
 
     pub async fn log(&self, options: LogOptions) -> Result<Vec<crate::models::Commit>> {
@@ -32,15 +37,18 @@ impl RepoOperations {
     }
 
     pub async fn get_user_signature(&self) -> Result<(String, String)> {
-        self.git2(|g| g.get_user_signature()).await
+        self.git2(super::super::git2_service::Git2Service::get_user_signature)
+            .await
     }
 
     pub async fn get_repo_user_config(&self) -> Result<(Option<String>, Option<String>)> {
-        self.git2(|g| g.get_repo_user_config()).await
+        self.git2(super::super::git2_service::Git2Service::get_repo_user_config)
+            .await
     }
 
     pub async fn get_global_user_config(&self) -> Result<(Option<String>, Option<String>)> {
-        self.git2(|g| g.get_global_user_config()).await
+        self.git2(super::super::git2_service::Git2Service::get_global_user_config)
+            .await
     }
 
     pub async fn set_repo_user_config(
@@ -48,8 +56,8 @@ impl RepoOperations {
         name: Option<&str>,
         email: Option<&str>,
     ) -> Result<()> {
-        let name = name.map(|s| s.to_string());
-        let email = email.map(|s| s.to_string());
+        let name = name.map(std::string::ToString::to_string);
+        let email = email.map(std::string::ToString::to_string);
         self.git2(move |g| g.set_repo_user_config(name.as_deref(), email.as_deref()))
             .await
     }

@@ -77,7 +77,7 @@ mod tests {
             body: None,
         };
 
-        let debug_str = format!("{:?}", info);
+        let debug_str = format!("{info:?}");
         assert!(debug_str.contains("UpdateInfo"));
         assert!(debug_str.contains("1.0.0"));
     }

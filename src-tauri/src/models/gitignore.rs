@@ -41,7 +41,7 @@ pub struct IgnoreResult {
     pub already_existed: bool,
 }
 
-/// Options for ignoring a file, returned by get_ignore_options
+/// Options for ignoring a file, returned by `get_ignore_options`
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IgnoreOptions {

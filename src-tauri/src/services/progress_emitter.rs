@@ -50,11 +50,7 @@ impl ProgressEmitter {
             let mut last_emit = self.last_emit.lock();
             let last = last_emit.get(&event.operation_id).copied();
 
-            if should_force
-                || last
-                    .map(|l| now.duration_since(l) >= THROTTLE_INTERVAL)
-                    .unwrap_or(true)
-            {
+            if should_force || last.map_or(true, |l| now.duration_since(l) >= THROTTLE_INTERVAL) {
                 last_emit.insert(event.operation_id.clone(), now);
                 true
             } else {

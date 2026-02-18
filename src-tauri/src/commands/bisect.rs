@@ -58,7 +58,7 @@ pub async fn bisect_mark(
             .lines()
             .find(|l| l.ends_with("is the first bad commit"))
             .and_then(|l| l.split_whitespace().next())
-            .map(|s| s.to_string())
+            .map(std::string::ToString::to_string)
     } else {
         None
     };

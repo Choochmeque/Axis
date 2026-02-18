@@ -40,8 +40,7 @@ pub fn format_diff_for_ai(diffs: &[FileDiff]) -> crate::error::Result<String> {
             .new_path
             .as_ref()
             .or(file_diff.old_path.as_ref())
-            .map(|s| s.as_str())
-            .unwrap_or("unknown");
+            .map_or("unknown", std::string::String::as_str);
 
         output.push_str(&format!("--- a/{path}\n+++ b/{path}\n"));
 
@@ -83,8 +82,7 @@ pub fn format_diff_summary(files: &[FileDiff]) -> String {
             .new_path
             .as_ref()
             .or(file.old_path.as_ref())
-            .map(|s| s.as_str())
-            .unwrap_or("unknown");
+            .map_or("unknown", std::string::String::as_str);
         summary.push_str(&format!("- {:?}: {path}\n", file.status));
     }
     if files.len() > MAX_FILES_IN_SUMMARY {

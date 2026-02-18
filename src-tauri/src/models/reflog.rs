@@ -12,11 +12,11 @@ pub struct ReflogEntry {
     pub reflog_ref: String,
     /// The commit OID after this action
     pub new_oid: String,
-    /// Short form of new_oid
+    /// Short form of `new_oid`
     pub short_new_oid: String,
     /// The commit OID before this action (can be all zeros for initial commit)
     pub old_oid: String,
-    /// Short form of old_oid
+    /// Short form of `old_oid`
     pub short_old_oid: String,
     /// Action type parsed from message
     pub action: ReflogAction,
@@ -102,7 +102,7 @@ mod tests {
             message: "checkout: moving to main".to_string(),
             committer_name: "Jane".to_string(),
             committer_email: "jane@example.com".to_string(),
-            timestamp: DateTime::from_timestamp(1700000000, 0)
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
         };

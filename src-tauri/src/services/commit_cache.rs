@@ -203,7 +203,7 @@ pub struct CacheSlice {
     pub total_count: usize,
 }
 
-/// Compute a hash of GraphOptions for cache key
+/// Compute a hash of `GraphOptions` for cache key
 fn compute_options_hash(options: &GraphOptions) -> u64 {
     let mut hasher = DefaultHasher::new();
 

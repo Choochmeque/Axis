@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::Display;
 
-/// Signing format - GPG (OpenPGP) or SSH
+/// Signing format - GPG (`OpenPGP`) or SSH
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display)]
 #[serde(rename_all = "PascalCase")]
 #[strum(serialize_all = "lowercase")]
@@ -46,7 +46,7 @@ pub struct GpgKey {
     pub key_id: String,
     /// User ID (name and email)
     pub user_id: String,
-    /// Email address extracted from user_id
+    /// Email address extracted from `user_id`
     pub email: Option<String>,
     /// Whether this is the default key
     pub is_default: bool,

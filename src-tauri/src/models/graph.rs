@@ -73,7 +73,7 @@ pub struct GraphOptions {
     pub skip: Option<usize>,
     /// Start from a specific ref
     pub from_ref: Option<String>,
-    /// Include all branches (not just current) - deprecated, use branch_filter instead
+    /// Include all branches (not just current) - deprecated, use `branch_filter` instead
     #[serde(default)]
     pub all_branches: bool,
     /// Branch filter (all, current, or specific branch)

@@ -20,7 +20,7 @@ pub struct HookService {
 }
 
 impl HookService {
-    /// Create a new HookService for a repository
+    /// Create a new `HookService` for a repository
     pub fn new(repo: &git2::Repository) -> Self {
         let repo_path = repo.workdir().unwrap_or_else(|| repo.path()).to_path_buf();
         let hooks_path = Self::resolve_hooks_path(repo);
@@ -462,12 +462,7 @@ mod tests {
             actual_path
                 .canonicalize()
                 .ok()
-                .map(|p| expected_path
-                    .canonicalize()
-                    .ok()
-                    .map(|e| p == e)
-                    .unwrap_or(false))
-                .unwrap_or(false)
+                .is_some_and(|p| expected_path.canonicalize().ok().is_some_and(|e| p == e))
                 || actual_path == expected_path
         );
         assert!(service.hooks_path.ends_with("hooks"));

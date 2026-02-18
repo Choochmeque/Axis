@@ -87,11 +87,10 @@ impl CustomActionsService {
     ) -> Result<ActionExecutionResult> {
         let command = Self::substitute_variables(&action.command, variables);
 
-        let working_dir = action
-            .working_dir
-            .as_ref()
-            .map(|d| Self::substitute_variables(d, variables))
-            .unwrap_or_else(|| variables.repo_path.clone());
+        let working_dir = action.working_dir.as_ref().map_or_else(
+            || variables.repo_path.clone(),
+            |d| Self::substitute_variables(d, variables),
+        );
 
         let start = Instant::now();
 

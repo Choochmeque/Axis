@@ -2,8 +2,8 @@
 
 //! Integration tests for gitignore operations.
 //!
-//! Pattern: RepoOperations performs actions → git CLI/filesystem verifies (source of truth)
-//!          git CLI/filesystem sets up state → RepoOperations reads/verifies
+//! Pattern: `RepoOperations` performs actions → git CLI/filesystem verifies (source of truth)
+//!          git CLI/filesystem sets up state → `RepoOperations` reads/verifies
 
 mod common;
 

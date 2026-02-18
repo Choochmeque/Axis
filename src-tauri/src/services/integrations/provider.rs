@@ -10,7 +10,7 @@ use crate::models::{
 
 /// Trait for integration providers (GitHub, GitLab, Bitbucket, Gitea)
 ///
-/// OAuth is handled by the IntegrationService, not by providers directly.
+/// OAuth is handled by the `IntegrationService`, not by providers directly.
 /// Providers receive tokens via their constructor and make API calls.
 #[async_trait]
 pub trait IntegrationProvider: Send + Sync {

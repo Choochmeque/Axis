@@ -22,7 +22,7 @@ use crate::services::{Git2Service, GitService};
 use std::sync::Arc;
 
 /// Unified async API for all repository operations.
-/// Hides whether operations use git2 (spawn_blocking) or CLI (tokio::process).
+/// Hides whether operations use `git2` (`spawn_blocking`) or CLI (`tokio::process`).
 ///
 /// Guards (`RepoReadGuard` / `RepoWriteGuard`) implement `Deref<Target = RepoOperations>`,
 /// so callers just write `guard.stash_list().await` without knowing the backend.
@@ -35,8 +35,8 @@ impl RepoOperations {
         Self { service }
     }
 
-    /// Run a git2 operation on a blocking thread.
-    /// The RwLock guard is held for the duration of the call.
+    /// Run a `git2` operation on a blocking thread.
+    /// The `RwLock` guard is held for the duration of the call.
     async fn git2<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Git2Service) -> R + Send + 'static,

@@ -302,7 +302,7 @@ impl OAuthFlow {
         let path = first_line.split_whitespace().nth(1).unwrap_or("");
 
         // Parse query string
-        let query_start = path.find('?').map(|i| i + 1).unwrap_or(path.len());
+        let query_start = path.find('?').map_or(path.len(), |i| i + 1);
         let query = &path[query_start..];
 
         let mut code = None;

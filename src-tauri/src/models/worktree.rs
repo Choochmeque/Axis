@@ -29,11 +29,11 @@ pub struct Worktree {
 pub struct AddWorktreeOptions {
     /// Path where to create the worktree
     pub path: String,
-    /// Branch to checkout (creates new branch if create_branch is true)
+    /// Branch to checkout (creates new branch if `create_branch` is true)
     pub branch: Option<String>,
     /// Create a new branch with this name
     pub create_branch: bool,
-    /// Commit/branch to base new branch on (if create_branch is true)
+    /// Commit/branch to base new branch on (if `create_branch` is true)
     pub base: Option<String>,
     /// Force creation even if branch is checked out elsewhere
     pub force: bool,

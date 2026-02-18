@@ -102,7 +102,7 @@ pub struct RebasePreview {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RebaseTarget {
-    /// Branch name or commit short_oid
+    /// Branch name or commit `short_oid`
     pub name: String,
     /// Full commit OID
     pub oid: String,

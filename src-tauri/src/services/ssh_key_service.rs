@@ -20,7 +20,7 @@ impl SshKeyService {
         PathBuf::from(expanded)
     }
 
-    /// Find ssh-keygen program (reuses pattern from SigningService)
+    /// Find `ssh-keygen` program (reuses pattern from `SigningService`)
     async fn find_ssh_keygen() -> Result<PathBuf> {
         #[cfg(target_os = "windows")]
         let candidates = vec![
@@ -456,7 +456,7 @@ impl SshKeyService {
 
     /// Check whether an OpenSSH private key is encrypted by parsing its binary header.
     ///
-    /// OpenSSH key format: AUTH_MAGIC ("openssh-key-v1\0") followed by:
+    /// `OpenSSH` key format: `AUTH_MAGIC` ("openssh-key-v1\0") followed by:
     /// - cipher name (u32 length + string): "none" if unencrypted, e.g. "aes256-ctr" if encrypted
     /// - KDF name (u32 length + string): "none" if unencrypted, "bcrypt" if encrypted
     ///
@@ -844,7 +844,7 @@ mod tests {
             algorithm: SshKeyAlgorithm::Ed25519,
             comment: None,
             passphrase: None,
-            filename: "".to_string(),
+            filename: String::new(),
             bits: None,
         };
 

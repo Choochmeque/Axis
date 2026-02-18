@@ -2,8 +2,8 @@
 
 //! Integration tests for git graph, search, and blame operations.
 //!
-//! Pattern: RepoOperations performs actions → git CLI verifies (source of truth)
-//!          git CLI sets up state → RepoOperations reads/verifies
+//! Pattern: `RepoOperations` performs actions → git CLI verifies (source of truth)
+//!          git CLI sets up state → `RepoOperations` reads/verifies
 
 mod common;
 
@@ -479,7 +479,7 @@ async fn test_search_empty_query() {
 
     // Action: search with empty query
     let options = SearchOptions {
-        query: "".to_string(),
+        query: String::new(),
         ..Default::default()
     };
     let result = ops.search_commits(options).await;

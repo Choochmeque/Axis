@@ -8,7 +8,8 @@ use super::RepoOperations;
 /// Remote, fetch, push, pull operations.
 impl RepoOperations {
     pub async fn list_remotes(&self) -> Result<Vec<Remote>> {
-        self.git2(|g| g.list_remotes()).await
+        self.git2(super::super::git2_service::Git2Service::list_remotes)
+            .await
     }
 
     pub async fn get_remote(&self, name: &str) -> Result<Remote> {
@@ -62,11 +63,11 @@ impl RepoOperations {
         let remote_name = remote_name.to_string();
         let options = options.clone();
         let refspecs_owned: Option<Vec<String>> =
-            refspecs.map(|r| r.iter().map(|s| s.to_string()).collect());
+            refspecs.map(|r| r.iter().map(std::string::ToString::to_string).collect());
         self.git2(move |g| {
             let refs: Option<Vec<&str>> = refspecs_owned
                 .as_ref()
-                .map(|v| v.iter().map(|s| s.as_str()).collect());
+                .map(|v| v.iter().map(std::string::String::as_str).collect());
             g.fetch(
                 &remote_name,
                 &options,

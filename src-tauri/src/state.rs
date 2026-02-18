@@ -15,11 +15,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
-/// Wrapper that holds an Arc<GitService> and a shared RwLock for read/write coordination.
+/// Wrapper that holds an `Arc<GitService>` and a shared `RwLock` for read/write coordination.
 ///
 /// Read operations acquire a shared lock (concurrent readers allowed).
 /// Write operations acquire an exclusive lock (blocks all other access).
-/// The RwLock coordinates across both git2 and git CLI operations.
+/// The `RwLock` coordinates across both `git2` and git CLI operations.
 #[derive(Clone)]
 pub struct GitServiceHandle {
     service: Arc<GitService>,
@@ -82,14 +82,14 @@ impl GitServiceHandle {
         }
     }
 
-    /// Set active state (lock-free, delegates to FileWatcher's AtomicBool)
+    /// Set active state (lock-free, delegates to `FileWatcher`'s `AtomicBool`)
     pub fn set_active(&self, active: bool) {
         self.service.set_active(active);
     }
 }
 
 /// Cache for open repository services.
-/// Stores GitService instances keyed by repository path.
+/// Stores `GitService` instances keyed by repository path.
 pub struct RepositoryCache {
     repos: RwLock<HashMap<PathBuf, GitServiceHandle>>,
 }
@@ -186,7 +186,7 @@ pub struct AppState {
     avatar_service: RwLock<Option<Arc<AvatarService>>>,
     integration_service: RwLock<Option<Arc<IntegrationService>>>,
     progress_registry: Arc<ProgressRegistry>,
-    /// In-memory cache for SSH key passphrases (SecretString zeroes memory on drop)
+    /// In-memory cache for SSH key passphrases (`SecretString` zeroes memory on drop)
     ssh_passphrase_cache: RwLock<HashMap<String, SecretString>>,
     /// Pending update ready to download & install
     pending_update: Mutex<Option<tauri_plugin_updater::Update>>,
@@ -302,7 +302,7 @@ impl AppState {
 
         // Clear active if this was it
         let mut active = self.active_repository_path.write();
-        if active.as_ref().map(|p| p.as_path()) == Some(path) {
+        if active.as_ref().map(std::path::PathBuf::as_path) == Some(path) {
             *active = None;
         }
     }
@@ -312,7 +312,7 @@ impl AppState {
             .ok_or(AxisError::NoRepositoryOpen)
     }
 
-    /// Get the GitService handle for the active repository
+    /// Get the `GitService` handle for the active repository
     pub fn get_git_service(&self) -> Result<GitServiceHandle> {
         let path = self.ensure_repository_open()?;
         let app_handle = self.get_app_handle()?;
@@ -454,14 +454,14 @@ impl AppState {
         self.ssh_passphrase_cache.read().get(key_path).cloned()
     }
 
-    /// Clear a cached passphrase (SecretString zeroes memory on drop)
+    /// Clear a cached passphrase (`SecretString` zeroes memory on drop)
     pub fn clear_cached_ssh_passphrase(&self, key_path: &str) {
         self.ssh_passphrase_cache.write().remove(key_path);
         log::debug!("Cleared cached passphrase for SSH key: {key_path}");
     }
 
     #[cfg(test)]
-    /// Clear all cached passphrases (all SecretStrings zeroed on drop)
+    /// Clear all cached passphrases (all `SecretStrings` zeroed on drop)
     pub fn clear_all_ssh_passphrases(&self) {
         self.ssh_passphrase_cache.write().clear();
         log::debug!("Cleared all cached SSH passphrases");

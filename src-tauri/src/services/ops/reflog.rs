@@ -16,7 +16,8 @@ impl RepoOperations {
     }
 
     pub async fn list_reflogs(&self) -> Result<Vec<String>> {
-        self.git2(|g| g.list_reflogs()).await
+        self.git2(super::super::git2_service::Git2Service::list_reflogs)
+            .await
     }
 
     pub async fn checkout_reflog_entry(&self, reflog_ref: &str) -> Result<()> {

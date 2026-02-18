@@ -65,7 +65,7 @@ impl RepoOperations {
     ) -> Result<()> {
         let remote_name = remote_name.to_string();
         let branch_name = branch_name.to_string();
-        let local_name = local_name.map(|s| s.to_string());
+        let local_name = local_name.map(std::string::ToString::to_string);
         self.git2(move |g| {
             g.checkout_remote_branch(&remote_name, &branch_name, local_name.as_deref(), force)
         })
@@ -94,7 +94,7 @@ impl RepoOperations {
         upstream: Option<&str>,
     ) -> Result<()> {
         let branch_name = branch_name.to_string();
-        let upstream = upstream.map(|s| s.to_string());
+        let upstream = upstream.map(std::string::ToString::to_string);
         self.git2(move |g| g.set_branch_upstream(&branch_name, upstream.as_deref()))
             .await
     }

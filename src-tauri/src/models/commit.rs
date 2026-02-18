@@ -313,7 +313,7 @@ mod tests {
         let sig = Signature {
             name: "Jane Doe".to_string(),
             email: "jane@example.com".to_string(),
-            timestamp: DateTime::from_timestamp(1700000000, 0)
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
         };
@@ -392,19 +392,19 @@ mod tests {
             author: Signature {
                 name: "Test".to_string(),
                 email: "test@example.com".to_string(),
-                timestamp: DateTime::from_timestamp(1700000000, 0)
+                timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                     .expect("valid timestamp")
                     .with_timezone(&Utc),
             },
             committer: Signature {
                 name: "Test".to_string(),
                 email: "test@example.com".to_string(),
-                timestamp: DateTime::from_timestamp(1700000000, 0)
+                timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                     .expect("valid timestamp")
                     .with_timezone(&Utc),
             },
             parent_oids: vec!["parent1".to_string()],
-            timestamp: DateTime::from_timestamp(1700000000, 0)
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
             is_merge: false,

@@ -113,7 +113,7 @@ impl HookResult {
         }
     }
 
-    /// Convert a failed hook result into an AxisError
+    /// Convert a failed hook result into an `AxisError`
     pub fn to_error(&self) -> crate::error::AxisError {
         let output = if !self.stderr.is_empty() {
             self.stderr.clone()

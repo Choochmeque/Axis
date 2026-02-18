@@ -156,7 +156,7 @@ impl GitCliService {
         Ok(result)
     }
 
-    /// Execute a git command with GIT_EDITOR disabled (for non-interactive operations)
+    /// Execute a git command with `GIT_EDITOR` disabled (for non-interactive operations)
     async fn execute_no_editor(&self, args: &[&str]) -> Result<GitCommandResult> {
         let output = create_command("git")
             .args(args)
@@ -635,7 +635,11 @@ impl GitCliService {
             .execute(&["diff", "--name-only", "--diff-filter=U"])
             .await?;
         if result.success {
-            Ok(result.stdout.lines().map(|s| s.to_string()).collect())
+            Ok(result
+                .stdout
+                .lines()
+                .map(std::string::ToString::to_string)
+                .collect())
         } else {
             Ok(Vec::new())
         }
@@ -687,14 +691,13 @@ impl GitCliService {
                         .split(" on ")
                         .nth(1)
                         .and_then(|s| s.split(':').next())
-                        .map(|s| s.to_string())
+                        .map(std::string::ToString::to_string)
                 } else {
                     None
                 };
 
                 let timestamp = DateTime::parse_from_rfc3339(timestamp_str)
-                    .map(|dt| dt.with_timezone(&Utc))
-                    .unwrap_or_else(|_| Utc::now());
+                    .map_or_else(|_| Utc::now(), |dt| dt.with_timezone(&Utc));
 
                 entries.push(StashEntry {
                     index,
@@ -1423,14 +1426,15 @@ impl GitCliService {
         };
 
         let branch_name = format!("{prefix}{name}");
-        let base_branch = base
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| match branch_type {
+        let base_branch = base.map_or_else(
+            || match branch_type {
                 GitFlowBranchType::Feature => config.develop.clone(),
                 GitFlowBranchType::Release => config.develop.clone(),
                 GitFlowBranchType::Hotfix => config.master.clone(),
                 GitFlowBranchType::Support => config.master.clone(),
-            });
+            },
+            std::string::ToString::to_string,
+        );
 
         // Create and checkout the new branch
         let result = self
@@ -2008,7 +2012,7 @@ impl GitCliService {
             .stdout
             .lines()
             .filter(|line| !line.is_empty())
-            .map(|line| line.to_string())
+            .map(std::string::ToString::to_string)
             .collect();
 
         Ok(PatchResult {
@@ -2573,7 +2577,7 @@ impl GitCliService {
                 .split('/')
                 .nth(1)
                 .and_then(|s| s.split_whitespace().next())
-                .map(|s| s.to_string());
+                .map(std::string::ToString::to_string);
             Ok((true, version))
         } else {
             Ok((false, None))
@@ -3918,7 +3922,7 @@ mod tests {
 
         // Stage the hunk using the real patch
         let result = service.stage_hunk(&patch).await;
-        assert!(result.is_ok(), "Failed to stage hunk: {:?}", result);
+        assert!(result.is_ok(), "Failed to stage hunk: {result:?}");
 
         // Verify the file is staged
         let status = Command::new("git")
@@ -3975,7 +3979,7 @@ mod tests {
 
         // Unstage the hunk using the real patch
         let result = service.unstage_hunk(&patch).await;
-        assert!(result.is_ok(), "Failed to unstage hunk: {:?}", result);
+        assert!(result.is_ok(), "Failed to unstage hunk: {result:?}");
 
         // Verify the file is no longer staged
         let status = Command::new("git")
@@ -4032,7 +4036,7 @@ mod tests {
 
         // Discard the changes
         let result = service.discard_hunk(&patch).await;
-        assert!(result.is_ok(), "Failed to discard hunk: {:?}", result);
+        assert!(result.is_ok(), "Failed to discard hunk: {result:?}");
 
         // Verify the file is back to original
         let content = fs::read_to_string(tmp.path().join("discard.txt")).expect("should read file");

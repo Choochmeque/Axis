@@ -15,7 +15,7 @@ use tauri::{AppHandle, Manager};
 use tauri_specta::Event as _;
 
 /// Per-repository file watcher that emits events based on active status.
-/// Active repos get detailed events; inactive repos get a single RepositoryDirtyEvent.
+/// Active repos get detailed events; inactive repos get a single `RepositoryDirtyEvent`.
 pub struct FileWatcher {
     is_active: Arc<AtomicBool>,
     watcher: Arc<Mutex<Option<RecommendedWatcher>>>,

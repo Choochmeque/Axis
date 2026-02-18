@@ -19,7 +19,10 @@ fn git_reflog_list(path: &std::path::Path, refname: &str) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get reflog count via CLI

@@ -49,7 +49,7 @@ fn git_grep_files(path: &std::path::Path, pattern: &str) -> Vec<String> {
 
     String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect()
 }
 
@@ -401,7 +401,7 @@ async fn test_grep_empty_pattern() {
 
     // Action: grep with empty pattern (should fail or return all)
     let options = GrepOptions {
-        pattern: "".to_string(),
+        pattern: String::new(),
         ..Default::default()
     };
     let result = ops.grep(&options).await;

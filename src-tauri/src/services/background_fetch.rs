@@ -22,7 +22,7 @@ impl BackgroundFetchService {
     }
 
     /// Start the background fetch task
-    /// interval_minutes: fetch interval in minutes (0 = disabled)
+    /// `interval_minutes`: fetch interval in minutes (0 = disabled)
     pub fn start(&self, cache: Arc<RepositoryCache>, app_handle: AppHandle, interval_minutes: u32) {
         if interval_minutes == 0 {
             log::info!("Background fetch disabled (interval is 0)");

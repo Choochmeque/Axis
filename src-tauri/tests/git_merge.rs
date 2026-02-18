@@ -44,11 +44,14 @@ fn git_conflicted_files(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Create a feature branch from a given base with a conflicting change
-/// The branch is created from base_ref, not current HEAD
+/// The branch is created from `base_ref`, not current HEAD
 fn create_conflicting_branch_from(
     path: &std::path::Path,
     branch_name: &str,

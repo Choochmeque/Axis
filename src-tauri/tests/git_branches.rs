@@ -19,7 +19,10 @@ fn git_branch_list(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Check if branch exists via CLI

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 /// Cache for signature verification results.
-/// Keyed by "repo_path:commit_oid" to support multi-repo.
+/// Keyed by "`repo_path:commit_oid`" to support multi-repo.
 /// Verification results are immutable per commit OID, so no TTL is needed.
 pub struct SignatureVerificationCache {
     entries: RwLock<HashMap<String, SignatureVerification>>,
@@ -61,7 +61,7 @@ mod tests {
     fn make_verification(verified: bool, signer: Option<&str>) -> SignatureVerification {
         SignatureVerification {
             verified,
-            signer: signer.map(|s| s.to_string()),
+            signer: signer.map(std::string::ToString::to_string),
         }
     }
 

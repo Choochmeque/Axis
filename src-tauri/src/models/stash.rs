@@ -112,7 +112,7 @@ mod tests {
             short_oid: "aaa".to_string(),
             branch: Some("feature".to_string()),
             author: "Test".to_string(),
-            timestamp: DateTime::from_timestamp(1700000000, 0)
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&Utc),
         };

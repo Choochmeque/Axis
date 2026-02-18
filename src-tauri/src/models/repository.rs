@@ -366,7 +366,7 @@ mod tests {
         let recent = RecentRepository {
             path: PathBuf::from("/test/path"),
             name: "recent-repo".to_string(),
-            last_opened: chrono::DateTime::from_timestamp(1700000000, 0)
+            last_opened: chrono::DateTime::from_timestamp(1_700_000_000, 0)
                 .expect("valid timestamp")
                 .with_timezone(&chrono::Utc),
             exists: true,

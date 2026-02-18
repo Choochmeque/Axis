@@ -12,7 +12,10 @@ fn git_remote_list(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get remote URL via CLI

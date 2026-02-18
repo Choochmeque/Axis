@@ -163,12 +163,11 @@ impl Database {
                     path: PathBuf::from(path),
                     name,
                     last_opened: chrono::DateTime::parse_from_rfc3339(&last_opened)
-                        .map(|dt| dt.with_timezone(&Utc))
-                        .unwrap_or_else(|_| Utc::now()),
+                        .map_or_else(|_| Utc::now(), |dt| dt.with_timezone(&Utc)),
                     is_pinned,
                 })
             })?
-            .filter_map(|r| r.ok())
+            .filter_map(std::result::Result::ok)
             .collect();
 
         Ok(repos)
@@ -318,7 +317,7 @@ impl Database {
                 let ssh_key_path: String = row.get(1)?;
                 Ok((remote_name, ssh_key_path))
             })?
-            .filter_map(|r| r.ok())
+            .filter_map(std::result::Result::ok)
             .collect();
 
         Ok(mappings)

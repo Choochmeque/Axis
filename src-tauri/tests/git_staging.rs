@@ -19,7 +19,10 @@ fn git_staged_files(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get list of unstaged modified files via CLI
@@ -28,7 +31,10 @@ fn git_unstaged_files(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get list of untracked files via CLI
@@ -37,7 +43,10 @@ fn git_untracked_files(path: &std::path::Path) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get commit message via CLI

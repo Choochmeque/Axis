@@ -41,7 +41,10 @@ fn git_diff_files(path: &std::path::Path, args: &[&str]) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
 /// Get file log via CLI
@@ -50,10 +53,13 @@ fn git_file_log(path: &std::path::Path, file_path: &str) -> Vec<String> {
     if output.is_empty() {
         return Vec::new();
     }
-    output.lines().map(|s| s.to_string()).collect()
+    output
+        .lines()
+        .map(std::string::ToString::to_string)
+        .collect()
 }
 
-/// Get path from FileDiff (new_path or old_path)
+/// Get path from `FileDiff` (`new_path` or `old_path`)
 fn diff_path(diff: &FileDiff) -> Option<&str> {
     diff.new_path.as_deref().or(diff.old_path.as_deref())
 }

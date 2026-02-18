@@ -2,8 +2,8 @@
 
 //! Integration tests for git bisect operations.
 //!
-//! Pattern: RepoOperations performs actions → git CLI verifies (source of truth)
-//!          git CLI sets up state → RepoOperations reads/verifies
+//! Pattern: `RepoOperations` performs actions → git CLI verifies (source of truth)
+//!          git CLI sets up state → `RepoOperations` reads/verifies
 
 mod common;
 

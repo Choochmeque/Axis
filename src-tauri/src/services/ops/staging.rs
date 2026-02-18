@@ -16,7 +16,8 @@ impl RepoOperations {
     }
 
     pub async fn stage_all(&self) -> Result<()> {
-        self.git2(|g| g.stage_all()).await
+        self.git2(super::super::git2_service::Git2Service::stage_all)
+            .await
     }
 
     pub async fn unstage_file(&self, path: &str) -> Result<()> {
@@ -30,7 +31,8 @@ impl RepoOperations {
     }
 
     pub async fn unstage_all(&self) -> Result<()> {
-        self.git2(|g| g.unstage_all()).await
+        self.git2(super::super::git2_service::Git2Service::unstage_all)
+            .await
     }
 
     pub async fn discard_file(&self, path: &str) -> Result<()> {
@@ -39,7 +41,8 @@ impl RepoOperations {
     }
 
     pub async fn discard_unstaged(&self) -> Result<()> {
-        self.git2(|g| g.discard_unstaged()).await
+        self.git2(super::super::git2_service::Git2Service::discard_unstaged)
+            .await
     }
 
     pub async fn delete_file(&self, path: &str) -> Result<()> {
@@ -55,8 +58,8 @@ impl RepoOperations {
         signing_config: Option<&SigningConfig>,
     ) -> Result<String> {
         let message = message.to_string();
-        let author_name = author_name.map(|s| s.to_string());
-        let author_email = author_email.map(|s| s.to_string());
+        let author_name = author_name.map(std::string::ToString::to_string);
+        let author_email = author_email.map(std::string::ToString::to_string);
         let signing_config = signing_config.cloned();
         self.git2(move |g| {
             g.create_commit(
@@ -70,7 +73,7 @@ impl RepoOperations {
     }
 
     pub async fn amend_commit(&self, message: Option<&str>) -> Result<String> {
-        let message = message.map(|s| s.to_string());
+        let message = message.map(std::string::ToString::to_string);
         self.git2(move |g| g.amend_commit(message.as_deref())).await
     }
 
@@ -81,7 +84,7 @@ impl RepoOperations {
 
     pub async fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
         let path = path.to_string();
-        let commit_oid = commit_oid.map(|s| s.to_string());
+        let commit_oid = commit_oid.map(std::string::ToString::to_string);
         self.git2(move |g| g.get_file_blob(&path, commit_oid.as_deref()))
             .await
     }

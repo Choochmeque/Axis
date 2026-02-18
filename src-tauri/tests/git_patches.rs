@@ -2,8 +2,8 @@
 
 //! Integration tests for git patches and archive operations.
 //!
-//! Pattern: RepoOperations performs actions → git CLI/filesystem verifies (source of truth)
-//!          git CLI/filesystem sets up state → RepoOperations reads/verifies
+//! Pattern: `RepoOperations` performs actions → git CLI/filesystem verifies (source of truth)
+//!          git CLI/filesystem sets up state → `RepoOperations` reads/verifies
 
 mod common;
 
@@ -56,7 +56,7 @@ fn git_format_patch(
         .expect("should execute git");
     String::from_utf8_lossy(&output.stdout)
         .lines()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect()
 }
 
@@ -176,7 +176,7 @@ async fn test_format_patch_single_commit() {
     // Verify: patch file exists on filesystem
     let patch_files: Vec<_> = std::fs::read_dir(&output_dir)
         .expect("should read dir")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .filter(|e| e.path().extension().is_some_and(|ext| ext == "patch"))
         .collect();
     assert!(!patch_files.is_empty(), "Patch file should exist");
@@ -222,7 +222,7 @@ async fn test_format_patch_verified_by_cli() {
     // Verify: patch can be parsed by git
     let patch_files: Vec<_> = std::fs::read_dir(&output_dir)
         .expect("should read dir")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -303,7 +303,7 @@ async fn test_apply_patch_verified_by_filesystem() {
     // Get patch file
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -334,7 +334,7 @@ async fn test_apply_patch_check_only() {
 
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -367,7 +367,7 @@ async fn test_apply_patch_reverse_flag_is_passed() {
 
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -400,7 +400,7 @@ async fn test_apply_mailbox_single_patch() {
 
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -439,7 +439,7 @@ async fn test_apply_mailbox_multiple_patches() {
 
     let mut patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
     patch_files.sort();
@@ -471,7 +471,7 @@ async fn test_cli_patch_applied_by_ops() {
 
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 
@@ -526,7 +526,7 @@ async fn test_apply_patch_conflict() {
 
     let patch_files: Vec<_> = std::fs::read_dir(&patch_dir)
         .expect("should read")
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .map(|e| e.path())
         .collect();
 

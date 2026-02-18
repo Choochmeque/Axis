@@ -7,11 +7,12 @@ use crate::services::{
 };
 use crate::storage::Database;
 use crate::storage::RecentRepositoryRow;
+use parking_lot::{Mutex, RwLock};
 use secrecy::SecretString;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 /// Wrapper that holds an Arc<GitService> and a shared RwLock for read/write coordination.
@@ -102,7 +103,7 @@ impl RepositoryCache {
 
     /// Get an existing cached service handle (without opening if not cached)
     pub fn get(&self, path: &Path) -> Option<GitServiceHandle> {
-        let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
+        let repos = self.repos.read();
         repos.get(path).cloned()
     }
 
@@ -115,7 +116,7 @@ impl RepositoryCache {
     ) -> Result<GitServiceHandle> {
         // Check if already cached
         {
-            let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
+            let repos = self.repos.read();
             if let Some(handle) = repos.get(path) {
                 return Ok(handle.clone());
             }
@@ -125,7 +126,7 @@ impl RepositoryCache {
         let service = GitService::open(path, app_handle.clone(), is_active)?;
         let handle = GitServiceHandle::new(service);
 
-        let mut repos = self.repos.write().unwrap_or_else(|e| e.into_inner());
+        let mut repos = self.repos.write();
         repos.insert(path.to_path_buf(), handle.clone());
 
         Ok(handle)
@@ -133,7 +134,7 @@ impl RepositoryCache {
 
     /// Set the active repository, updating all cached services
     pub fn set_active(&self, active_path: &Path) {
-        let repos = self.repos.read().unwrap_or_else(|e| e.into_inner());
+        let repos = self.repos.read();
         for (path, handle) in repos.iter() {
             handle.set_active(path == active_path);
         }
@@ -141,44 +142,30 @@ impl RepositoryCache {
 
     /// Remove a repository from the cache
     pub fn remove(&self, path: &Path) {
-        self.repos
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .remove(path);
+        self.repos.write().remove(path);
     }
 
     /// List all cached repository paths
     pub fn list_paths(&self) -> Vec<PathBuf> {
-        self.repos
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .keys()
-            .cloned()
-            .collect()
+        self.repos.read().keys().cloned().collect()
     }
 
     #[cfg(test)]
     /// Check if a repository is cached
     pub fn contains(&self, path: &Path) -> bool {
-        self.repos
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .contains_key(path)
+        self.repos.read().contains_key(path)
     }
 
     #[cfg(test)]
     /// Get the number of cached repositories
     pub fn len(&self) -> usize {
-        self.repos.read().unwrap_or_else(|e| e.into_inner()).len()
+        self.repos.read().len()
     }
 
     #[cfg(test)]
     /// Check if cache is empty
     pub fn is_empty(&self) -> bool {
-        self.repos
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .is_empty()
+        self.repos.read().is_empty()
     }
 }
 
@@ -231,20 +218,16 @@ impl AppState {
         // Initialize avatar service with app data dir
         if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
             let avatar_service = AvatarService::new(&app_data_dir);
-            *self
-                .avatar_service
-                .write()
-                .unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(avatar_service));
+            *self.avatar_service.write() = Some(Arc::new(avatar_service));
         }
 
-        *self.app_handle.write().unwrap_or_else(|e| e.into_inner()) = Some(app_handle);
+        *self.app_handle.write() = Some(app_handle);
     }
 
     /// Get the app handle
     pub fn get_app_handle(&self) -> Result<AppHandle> {
         self.app_handle
             .read()
-            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("App handle not set".to_string()))
     }
@@ -268,7 +251,6 @@ impl AppState {
     pub fn avatar_service(&self) -> Result<Arc<AvatarService>> {
         self.avatar_service
             .read()
-            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("Avatar service not initialized".to_string()))
     }
@@ -277,7 +259,6 @@ impl AppState {
     pub fn integration_service(&self) -> Result<Arc<IntegrationService>> {
         self.integration_service
             .read()
-            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or_else(|| AxisError::Other("Integration service not initialized".to_string()))
     }
@@ -297,10 +278,7 @@ impl AppState {
         // Update active flags
         self.repository_cache.set_active(path);
 
-        *self
-            .active_repository_path
-            .write()
-            .unwrap_or_else(|e| e.into_inner()) = Some(path.to_path_buf());
+        *self.active_repository_path.write() = Some(path.to_path_buf());
 
         // Return repo info
         let result = handle.read().await.get_repository_info().await;
@@ -308,17 +286,11 @@ impl AppState {
     }
 
     pub fn get_current_repository_path(&self) -> Option<PathBuf> {
-        self.active_repository_path
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .clone()
+        self.active_repository_path.read().clone()
     }
 
     pub fn close_current_repository(&self) {
-        let mut repo_path = self
-            .active_repository_path
-            .write()
-            .unwrap_or_else(|e| e.into_inner());
+        let mut repo_path = self.active_repository_path.write();
         *repo_path = None;
     }
 
@@ -329,10 +301,7 @@ impl AppState {
         self.signature_verification_cache.invalidate_repo(path);
 
         // Clear active if this was it
-        let mut active = self
-            .active_repository_path
-            .write()
-            .unwrap_or_else(|e| e.into_inner());
+        let mut active = self.active_repository_path.write();
         if active.as_ref().map(|p| p.as_path()) == Some(path) {
             *active = None;
         }
@@ -461,18 +430,12 @@ impl AppState {
 
     /// Store a pending update for later download & install
     pub fn set_pending_update(&self, update: tauri_plugin_updater::Update) {
-        *self
-            .pending_update
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = Some(update);
+        *self.pending_update.lock() = Some(update);
     }
 
     /// Take the pending update (removes it from state)
     pub fn take_pending_update(&self) -> Option<tauri_plugin_updater::Update> {
-        self.pending_update
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .take()
+        self.pending_update.lock().take()
     }
 
     // ==================== SSH Passphrase Cache ====================
@@ -482,36 +445,25 @@ impl AppState {
         let secret = SecretString::from(passphrase);
         self.ssh_passphrase_cache
             .write()
-            .unwrap_or_else(|e| e.into_inner())
             .insert(key_path.to_string(), secret);
         log::debug!("Cached passphrase for SSH key: {key_path}");
     }
 
     /// Get a cached passphrase for an SSH key (returns clone)
     pub fn get_cached_ssh_passphrase(&self, key_path: &str) -> Option<SecretString> {
-        self.ssh_passphrase_cache
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .get(key_path)
-            .cloned()
+        self.ssh_passphrase_cache.read().get(key_path).cloned()
     }
 
     /// Clear a cached passphrase (SecretString zeroes memory on drop)
     pub fn clear_cached_ssh_passphrase(&self, key_path: &str) {
-        self.ssh_passphrase_cache
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .remove(key_path);
+        self.ssh_passphrase_cache.write().remove(key_path);
         log::debug!("Cleared cached passphrase for SSH key: {key_path}");
     }
 
     #[cfg(test)]
     /// Clear all cached passphrases (all SecretStrings zeroed on drop)
     pub fn clear_all_ssh_passphrases(&self) {
-        self.ssh_passphrase_cache
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .clear();
+        self.ssh_passphrase_cache.write().clear();
         log::debug!("Cleared all cached SSH passphrases");
     }
 

@@ -1,9 +1,9 @@
 use crate::error::{AxisError, Result};
 use crate::models::AppSettings;
 use chrono::Utc;
+use parking_lot::Mutex;
 use rusqlite::{params, Connection};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 
 /// Raw database row for a recent repository (before enrichment)
 #[derive(Debug, Clone)]
@@ -33,10 +33,7 @@ impl Database {
     }
 
     fn init_schema(&self) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         conn.execute(
             "CREATE TABLE IF NOT EXISTS recent_repositories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,10 +98,7 @@ impl Database {
     }
 
     pub fn get_settings(&self) -> Result<AppSettings> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = 'app_settings'")?;
 
         let result: std::result::Result<String, _> = stmt.query_row([], |row| row.get(0));
@@ -119,10 +113,7 @@ impl Database {
     }
 
     pub fn save_settings(&self, settings: &AppSettings) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let json = serde_json::to_string(settings)?;
 
         conn.execute(
@@ -135,10 +126,7 @@ impl Database {
     }
 
     pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let now = Utc::now().to_rfc3339();
         // Normalize path: remove trailing slash to avoid duplicates
         let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
@@ -156,10 +144,7 @@ impl Database {
     }
 
     pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepositoryRow>> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT r.path, r.name, r.last_opened, (p.path IS NOT NULL) AS is_pinned
              FROM recent_repositories r
@@ -190,10 +175,7 @@ impl Database {
     }
 
     pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         // Normalize path: remove trailing slash
         let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
         conn.execute(
@@ -204,10 +186,7 @@ impl Database {
     }
 
     pub fn pin_repository(&self, path: &Path) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
         conn.execute(
             "INSERT OR IGNORE INTO pinned_repositories (path) VALUES (?1)",
@@ -217,10 +196,7 @@ impl Database {
     }
 
     pub fn unpin_repository(&self, path: &Path) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
         let path_str = path.to_string_lossy().trim_end_matches('/').to_string();
         conn.execute(
             "DELETE FROM pinned_repositories WHERE path = ?1",
@@ -232,10 +208,7 @@ impl Database {
     pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
         use base64::{engine::general_purpose::STANDARD, Engine};
 
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         let encoded = STANDARD.encode(value);
         conn.execute(
@@ -250,10 +223,7 @@ impl Database {
     pub fn get_secret(&self, key: &str) -> Result<Option<String>> {
         use base64::{engine::general_purpose::STANDARD, Engine};
 
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare("SELECT value FROM secrets WHERE key = ?1")?;
         let result: std::result::Result<String, _> = stmt.query_row(params![key], |row| row.get(0));
@@ -273,10 +243,7 @@ impl Database {
     }
 
     pub fn has_secret(&self, key: &str) -> Result<bool> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare("SELECT 1 FROM secrets WHERE key = ?1")?;
         let exists = stmt.exists(params![key])?;
@@ -285,10 +252,7 @@ impl Database {
     }
 
     pub fn delete_secret(&self, key: &str) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         conn.execute("DELETE FROM secrets WHERE key = ?1", params![key])?;
 
@@ -296,10 +260,7 @@ impl Database {
     }
 
     pub fn get_remote_ssh_key(&self, repo_path: &str, remote_name: &str) -> Result<Option<String>> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
             "SELECT ssh_key_path FROM remote_ssh_keys WHERE repo_path = ?1 AND remote_name = ?2",
@@ -321,10 +282,7 @@ impl Database {
         remote_name: &str,
         ssh_key_path: &str,
     ) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         conn.execute(
             "INSERT INTO remote_ssh_keys (repo_path, remote_name, ssh_key_path)
@@ -337,10 +295,7 @@ impl Database {
     }
 
     pub fn delete_remote_ssh_key(&self, repo_path: &str, remote_name: &str) -> Result<()> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         conn.execute(
             "DELETE FROM remote_ssh_keys WHERE repo_path = ?1 AND remote_name = ?2",
@@ -351,10 +306,7 @@ impl Database {
     }
 
     pub fn list_remote_ssh_keys(&self, repo_path: &str) -> Result<Vec<(String, String)>> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
+        let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
             "SELECT remote_name, ssh_key_path FROM remote_ssh_keys WHERE repo_path = ?1",

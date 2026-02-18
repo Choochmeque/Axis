@@ -1,6 +1,7 @@
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use tauri::AppHandle;
@@ -46,11 +47,7 @@ impl ProgressEmitter {
 
         let now = Instant::now();
         let should_emit = {
-            let mut last_emit = match self.last_emit.lock() {
-                Ok(guard) => guard,
-                Err(e) => e.into_inner(),
-            };
-
+            let mut last_emit = self.last_emit.lock();
             let last = last_emit.get(&event.operation_id).copied();
 
             if should_force
@@ -299,26 +296,22 @@ impl ProgressRegistry {
 
     pub fn register(&self, operation_id: &str) -> Arc<AtomicBool> {
         let token = Arc::new(AtomicBool::new(false));
-        if let Ok(mut emitters) = self.emitters.lock() {
-            emitters.insert(operation_id.to_string(), Arc::clone(&token));
-        }
+        self.emitters
+            .lock()
+            .insert(operation_id.to_string(), Arc::clone(&token));
         token
     }
 
     pub fn cancel(&self, operation_id: &str) -> bool {
-        if let Ok(emitters) = self.emitters.lock() {
-            if let Some(token) = emitters.get(operation_id) {
-                token.store(true, Ordering::SeqCst);
-                return true;
-            }
+        if let Some(token) = self.emitters.lock().get(operation_id) {
+            token.store(true, Ordering::SeqCst);
+            return true;
         }
         false
     }
 
     pub fn cleanup(&self, operation_id: &str) {
-        if let Ok(mut emitters) = self.emitters.lock() {
-            emitters.remove(operation_id);
-        }
+        self.emitters.lock().remove(operation_id);
     }
 }
 
@@ -338,13 +331,13 @@ mod tests {
     fn test_progress_registry_new() {
         let registry = ProgressRegistry::new();
         // Should be able to create a new registry
-        assert!(registry.emitters.lock().expect("should lock").is_empty());
+        assert!(registry.emitters.lock().is_empty());
     }
 
     #[test]
     fn test_progress_registry_default() {
         let registry = ProgressRegistry::default();
-        assert!(registry.emitters.lock().expect("should lock").is_empty());
+        assert!(registry.emitters.lock().is_empty());
     }
 
     #[test]
@@ -356,7 +349,7 @@ mod tests {
         assert!(!token.load(Ordering::SeqCst));
 
         // Operation should be tracked
-        let emitters = registry.emitters.lock().expect("should lock");
+        let emitters = registry.emitters.lock();
         assert!(emitters.contains_key("op-123"));
     }
 
@@ -374,7 +367,7 @@ mod tests {
         assert!(!token3.load(Ordering::SeqCst));
 
         // All should be tracked
-        let emitters = registry.emitters.lock().expect("should lock");
+        let emitters = registry.emitters.lock();
         assert_eq!(emitters.len(), 3);
     }
 
@@ -424,7 +417,7 @@ mod tests {
 
         // Operation should exist
         {
-            let emitters = registry.emitters.lock().expect("should lock");
+            let emitters = registry.emitters.lock();
             assert!(emitters.contains_key("op-123"));
         }
 
@@ -432,7 +425,7 @@ mod tests {
         registry.cleanup("op-123");
 
         // Operation should be removed
-        let emitters = registry.emitters.lock().expect("should lock");
+        let emitters = registry.emitters.lock();
         assert!(!emitters.contains_key("op-123"));
     }
 

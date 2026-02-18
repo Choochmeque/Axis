@@ -6,8 +6,9 @@ use http_body_util::BodyExt;
 use octocrab::models::IssueState as OctocrabIssueState;
 use octocrab::params;
 use octocrab::Octocrab;
+use parking_lot::RwLock;
 use serde::de::DeserializeOwned;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use crate::error::{AxisError, Result};
@@ -366,30 +367,19 @@ impl GitHubProvider {
     }
 
     fn get_client(&self) -> Result<Arc<Octocrab>> {
-        let guard = self
-            .client
+        self.client
             .read()
-            .map_err(|e| AxisError::Other(format!("Lock poisoned: {e}")))?;
-        guard
             .clone()
             .ok_or_else(|| AxisError::IntegrationNotConnected("GitHub".to_string()))
     }
 
     fn set_client(&self, client: Arc<Octocrab>) -> Result<()> {
-        let mut guard = self
-            .client
-            .write()
-            .map_err(|e| AxisError::Other(format!("Lock poisoned: {e}")))?;
-        *guard = Some(client);
+        *self.client.write() = Some(client);
         Ok(())
     }
 
     fn clear_client(&self) -> Result<()> {
-        let mut guard = self
-            .client
-            .write()
-            .map_err(|e| AxisError::Other(format!("Lock poisoned: {e}")))?;
-        *guard = None;
+        *self.client.write() = None;
         Ok(())
     }
 

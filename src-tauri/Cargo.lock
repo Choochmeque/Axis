@@ -24,6 +24,7 @@ dependencies = [
  "md-5",
  "notify",
  "octocrab",
+ "parking_lot",
  "rand 0.10.0",
  "regex",
  "reqwest 0.12.28",

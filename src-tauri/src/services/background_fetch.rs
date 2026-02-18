@@ -2,7 +2,8 @@ use crate::events::RemoteFetchedEvent;
 use crate::models::{FetchOptions, SshCredentials, SshKeyFormat};
 use crate::services::SshKeyService;
 use crate::state::{AppState, RepositoryCache};
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 use std::time::Duration;
 use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Manager};
@@ -149,22 +150,14 @@ impl BackgroundFetchService {
             }
         });
 
-        if let Ok(mut guard) = self.interval_handle.lock() {
-            *guard = Some(handle);
-        } else {
-            log::error!("Failed to acquire lock for background fetch handle");
-        }
+        *self.interval_handle.lock() = Some(handle);
     }
 
     /// Stop the background fetch task
     pub fn stop(&self) {
-        if let Ok(mut guard) = self.interval_handle.lock() {
-            if let Some(handle) = guard.take() {
-                log::info!("Stopping background fetch service");
-                handle.abort();
-            }
-        } else {
-            log::error!("Failed to acquire lock to stop background fetch");
+        if let Some(handle) = self.interval_handle.lock().take() {
+            log::info!("Stopping background fetch service");
+            handle.abort();
         }
     }
 
@@ -182,11 +175,7 @@ impl BackgroundFetchService {
     #[cfg(test)]
     /// Check if the background fetch service is running
     pub fn is_running(&self) -> bool {
-        if let Ok(guard) = self.interval_handle.lock() {
-            guard.is_some()
-        } else {
-            false
-        }
+        self.interval_handle.lock().is_some()
     }
 }
 

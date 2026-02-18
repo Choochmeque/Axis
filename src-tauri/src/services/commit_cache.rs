@@ -1,12 +1,12 @@
 use crate::error::Result;
 use crate::models::{GraphCommit, GraphOptions};
 use crate::state::GitServiceHandle;
+use parking_lot::RwLock;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::RwLock;
 
 /// Buffer size: fetch this many extra commits beyond what's requested
 pub const PREFETCH_BUFFER: usize = 500;
@@ -40,7 +40,7 @@ impl CommitCache {
 
     /// Get a cache entry if it exists
     pub fn get(&self, cache_key: &str) -> Option<CacheEntryRef> {
-        let entries = self.entries.read().ok()?;
+        let entries = self.entries.read();
         if entries.contains_key(cache_key) {
             Some(CacheEntryRef {
                 cache: self,
@@ -56,15 +56,13 @@ impl CommitCache {
     where
         F: FnOnce(&CommitCacheEntry) -> R,
     {
-        let entries = self.entries.read().ok()?;
+        let entries = self.entries.read();
         entries.get(cache_key).map(f)
     }
 
     /// Set or update a cache entry
     pub fn set(&self, cache_key: String, entry: CommitCacheEntry) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.insert(cache_key, entry);
-        }
+        self.entries.write().insert(cache_key, entry);
     }
 
     /// Update an existing cache entry (for appending prefetched commits)
@@ -72,10 +70,9 @@ impl CommitCache {
     where
         F: FnOnce(&mut CommitCacheEntry),
     {
-        if let Ok(mut entries) = self.entries.write() {
-            if let Some(entry) = entries.get_mut(cache_key) {
-                f(entry);
-            }
+        let mut entries = self.entries.write();
+        if let Some(entry) = entries.get_mut(cache_key) {
+            f(entry);
         }
     }
 
@@ -97,9 +94,9 @@ impl CommitCache {
     /// Invalidate all cache entries for a specific repository
     pub fn invalidate_repo(&self, repo_path: &Path) {
         let prefix = format!("{}:", repo_path.display());
-        if let Ok(mut entries) = self.entries.write() {
-            entries.retain(|key, _| !key.starts_with(&prefix));
-        }
+        self.entries
+            .write()
+            .retain(|key, _| !key.starts_with(&prefix));
     }
 
     /// Build a cache key from repo path and options

@@ -1,5 +1,5 @@
+use parking_lot::RwLock;
 use std::collections::HashMap;
-use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 /// A simple TTL-based cache for API responses
@@ -24,7 +24,7 @@ impl<T: Clone> TtlCache<T> {
 
     /// Get a value from the cache if it exists and hasn't expired
     pub fn get(&self, key: &str) -> Option<T> {
-        let entries = self.entries.read().ok()?;
+        let entries = self.entries.read();
         let entry = entries.get(key)?;
 
         if Instant::now() < entry.expires_at {
@@ -41,37 +41,32 @@ impl<T: Clone> TtlCache<T> {
 
     /// Set a value in the cache with a custom TTL
     pub fn set_with_ttl(&self, key: String, value: T, ttl: Duration) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.insert(
-                key,
-                CacheEntry {
-                    value,
-                    expires_at: Instant::now() + ttl,
-                },
-            );
-        }
+        let mut entries = self.entries.write();
+        entries.insert(
+            key,
+            CacheEntry {
+                value,
+                expires_at: Instant::now() + ttl,
+            },
+        );
     }
 
     #[cfg(test)]
     /// Remove a value from the cache
     pub fn remove(&self, key: &str) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.remove(key);
-        }
+        self.entries.write().remove(key);
     }
 
     /// Remove all entries with keys starting with the given prefix
     pub fn remove_by_prefix(&self, prefix: &str) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.retain(|key, _| !key.starts_with(prefix));
-        }
+        self.entries
+            .write()
+            .retain(|key, _| !key.starts_with(prefix));
     }
 
     /// Clear all entries from the cache
     pub fn clear(&self) {
-        if let Ok(mut entries) = self.entries.write() {
-            entries.clear();
-        }
+        self.entries.write().clear();
     }
 }
 

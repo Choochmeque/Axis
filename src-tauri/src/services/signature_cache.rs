@@ -1,7 +1,7 @@
 use crate::models::SignatureVerification;
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::RwLock;
 
 /// Cache for signature verification results.
 /// Keyed by "repo_path:commit_oid" to support multi-repo.
@@ -24,19 +24,12 @@ impl SignatureVerificationCache {
 
     /// Get a cached verification result
     pub fn get(&self, key: &str) -> Option<SignatureVerification> {
-        self.entries
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .get(key)
-            .cloned()
+        self.entries.read().get(key).cloned()
     }
 
     /// Store a verification result
     pub fn set(&self, key: String, result: SignatureVerification) {
-        self.entries
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .insert(key, result);
+        self.entries.write().insert(key, result);
     }
 
     /// Invalidate all entries for a repo (called on repo close)
@@ -44,17 +37,13 @@ impl SignatureVerificationCache {
         let prefix = format!("{}:", repo_path.display());
         self.entries
             .write()
-            .unwrap_or_else(|e| e.into_inner())
             .retain(|key, _| !key.starts_with(&prefix));
     }
 
     #[cfg(test)]
     /// Clear all entries
     pub fn clear(&self) {
-        self.entries
-            .write()
-            .unwrap_or_else(|e| e.into_inner())
-            .clear();
+        self.entries.write().clear();
     }
 }
 

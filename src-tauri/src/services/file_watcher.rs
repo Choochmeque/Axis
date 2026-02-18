@@ -4,10 +4,11 @@ use crate::events::{
 };
 use crate::state::AppState;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use parking_lot::Mutex;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
@@ -67,15 +68,11 @@ impl FileWatcher {
     /// Stop watching and clean up resources
     pub fn stop(&self) {
         // Drop the watcher to close the channel
-        if let Ok(mut guard) = self.watcher.lock() {
-            *guard = None;
-        }
+        *self.watcher.lock() = None;
 
         // The receiver thread will exit when the channel is closed
-        if let Ok(mut guard) = self.receiver_handle.lock() {
-            if let Some(handle) = guard.take() {
-                drop(handle);
-            }
+        if let Some(handle) = self.receiver_handle.lock().take() {
+            drop(handle);
         }
     }
 

@@ -5,6 +5,9 @@ on:
     - cron: '0 5 * * 4' # Every Thursday at 5 AM UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

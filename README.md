@@ -13,6 +13,7 @@
 [![Coverage](https://codecov.io/gh/Choochmeque/Axis/graph/badge.svg)](https://codecov.io/gh/Choochmeque/Axis)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/Choochmeque/Axis/releases)
+[![Downloads](https://img.shields.io/github/downloads/Choochmeque/Axis/total)](https://github.com/Choochmeque/Axis/releases)
 
 ---
 

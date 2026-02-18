@@ -83,7 +83,7 @@ specta = { version = "2.0.0-rc.22", features = ["derive", "chrono"] }
 specta-typescript = "0.0.9"
 
 # For testing
-tauri-plugin-webdriver = { version = "0.1", optional = true }
+tauri-plugin-webdriver = { version = "0.2", optional = true }
 
 [features]
 default = []

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitepress';
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs';
 
+const SITE_URL = 'https://axis-git.app';
+
 const guideSidebar = [
   {
     text: 'Getting Started',
@@ -56,14 +58,35 @@ export default defineConfig({
   cleanUrls: true,
 
   sitemap: {
-    hostname: 'https://axis-git.app',
+    hostname: SITE_URL,
   },
 
   transformHead({ pageData }) {
-    const canonicalUrl = `https://axis-git.app/${pageData.relativePath}`
+    // Build canonical URL with consistent trailing slash handling
+    let canonicalUrl = `${SITE_URL}/${pageData.relativePath}`
       .replace(/index\.md$/, '')
       .replace(/\.md$/, '');
-    return [['link', { rel: 'canonical', href: canonicalUrl }]];
+
+    // Remove trailing slash except for root URL (cleanUrls: true = no trailing slashes)
+    if (canonicalUrl !== `${SITE_URL}/`) {
+      canonicalUrl = canonicalUrl.replace(/\/$/, '');
+    }
+
+    const title = pageData.title || 'Axis';
+    const description =
+      pageData.description ||
+      'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.';
+
+    return [
+      ['link', { rel: 'canonical', href: canonicalUrl }],
+      ['meta', { property: 'og:url', content: canonicalUrl }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
+      ['meta', { name: 'twitter:url', content: canonicalUrl }],
+      ['meta', { name: 'twitter:title', content: title }],
+      ['meta', { name: 'twitter:description', content: description }],
+    ];
   },
 
   markdown: {
@@ -77,16 +100,8 @@ export default defineConfig({
     ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#0078d4' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: 'Axis - Modern Git GUI' }],
-    [
-      'meta',
-      {
-        property: 'og:description',
-        content:
-          'Axis is a modern Git GUI for Windows, macOS, and Linux. Features GitHub integration, AI-assisted commits, visual history, and native Rust performance.',
-      },
-    ],
-    ['meta', { property: 'og:url', content: 'https://axis-git.app/' }],
+    ['meta', { property: 'og:site_name', content: 'Axis' }],
+    ['meta', { property: 'og:locale', content: 'en_US' }],
     // Simple Analytics - privacy-friendly analytics (respects Do Not Track)
     [
       'script',

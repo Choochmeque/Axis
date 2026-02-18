@@ -1,3 +1,7 @@
+---
+description: Configure Axis preferences. Customize theme, Git settings, AI providers, and keyboard shortcuts.
+---
+
 # Settings
 
 Configure Axis to your preferences.

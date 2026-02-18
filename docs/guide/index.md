@@ -1,3 +1,7 @@
+---
+description: Complete user guide for Axis Git client. Learn staging, branches, merging, GitHub integration, and advanced Git features.
+---
+
 # User Guide
 
 Welcome to the Axis user guide. Here you'll find detailed documentation for all features.

@@ -1,3 +1,7 @@
+---
+description: Connect Axis to GitHub. Manage pull requests, issues, and view CI status directly in the app.
+---
+
 # GitHub Integration
 
 Connect Axis to GitHub for enhanced workflow.

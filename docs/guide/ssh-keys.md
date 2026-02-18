@@ -1,3 +1,7 @@
+---
+description: Generate and manage SSH keys in Axis. Secure authentication to GitHub and other Git remotes.
+---
+
 # SSH Keys
 
 SSH keys provide secure authentication to remote Git repositories without entering passwords. Axis includes full SSH key management - no terminal required.

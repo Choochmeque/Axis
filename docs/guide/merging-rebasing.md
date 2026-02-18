@@ -1,3 +1,7 @@
+---
+description: Merge and rebase branches in Axis. Understand when to use each and resolve conflicts visually.
+---
+
 # Merging & Rebasing
 
 Two ways to integrate changes from one branch into another. Understanding when to use each is essential for effective Git workflows.

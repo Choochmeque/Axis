@@ -1,3 +1,7 @@
+---
+description: Save work in progress with Git stash in Axis. Temporarily store changes and restore them later.
+---
+
 # Stashing
 
 Stash temporarily saves your uncommitted changes, allowing you to switch contexts without committing incomplete work.

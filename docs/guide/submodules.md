@@ -1,3 +1,7 @@
+---
+description: Manage Git submodules in Axis. Add, update, and sync nested repositories within your project.
+---
+
 # Submodules
 
 Manage nested Git repositories within your project.

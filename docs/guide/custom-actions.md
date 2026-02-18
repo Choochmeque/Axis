@@ -1,3 +1,7 @@
+---
+description: Create custom shell commands and scripts in Axis. Run frequent Git operations with one click.
+---
+
 # Custom Actions
 
 Custom actions allow you to define and run shell commands directly from Axis. Create shortcuts for your frequent Git operations, build scripts, or any command-line task.

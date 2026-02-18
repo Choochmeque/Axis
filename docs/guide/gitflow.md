@@ -1,3 +1,7 @@
+---
+description: Use GitFlow branching model in Axis. Built-in support for feature, release, and hotfix branches.
+---
+
 # GitFlow
 
 Built-in support for the GitFlow branching model.

@@ -1,3 +1,7 @@
+---
+description: Work on multiple branches simultaneously with Git worktrees in Axis. No more stashing or switching.
+---
+
 # Worktrees
 
 Work on multiple branches simultaneously without switching.

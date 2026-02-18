@@ -1,3 +1,7 @@
+---
+description: Stage files, hunks, or individual lines and create commits in Axis. Learn selective staging for clean commit history.
+---
+
 # Staging & Commits
 
 The staging area (index) lets you prepare changes before committing. You can stage entire files, specific hunks, or even individual lines.

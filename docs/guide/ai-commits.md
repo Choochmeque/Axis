@@ -1,3 +1,7 @@
+---
+description: Generate commit messages with AI in Axis. Supports Claude, OpenAI, and local Ollama models.
+---
+
 # AI-Assisted Commits
 
 Generate commit messages using AI.

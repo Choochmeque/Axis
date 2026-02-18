@@ -1,3 +1,7 @@
+---
+description: Clone, open, or initialize your first Git repository in Axis. Quick start guide for new users.
+---
+
 # First Repository
 
 ## Clone a Repository

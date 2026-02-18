@@ -1,3 +1,7 @@
+---
+description: Manage Git hooks visually in Axis. Run scripts automatically on commits, pushes, and merges.
+---
+
 # Git Hooks
 
 Git hooks are scripts that run automatically before or after Git events like commits, pushes, and merges. Axis provides a visual interface to manage and monitor hooks.

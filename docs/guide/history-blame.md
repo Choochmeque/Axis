@@ -1,3 +1,7 @@
+---
+description: View commit history, explore the commit graph, and use git blame to track changes in Axis.
+---
+
 # History & Blame
 
 View the complete history of your project and track who changed what and when.

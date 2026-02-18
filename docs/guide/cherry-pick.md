@@ -1,3 +1,7 @@
+---
+description: Cherry-pick specific commits from one branch to another in Axis without merging entire branches.
+---
+
 # Cherry Pick
 
 Cherry-pick applies the changes from specific commits onto your current branch, without merging entire branches.

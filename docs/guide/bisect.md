@@ -1,3 +1,7 @@
+---
+description: Find bugs with Git bisect in Axis. Binary search through commits to locate when a bug was introduced.
+---
+
 # Git Bisect
 
 Git bisect uses binary search to find the commit that introduced a bug. Instead of checking every commit, it efficiently narrows down the problematic commit.

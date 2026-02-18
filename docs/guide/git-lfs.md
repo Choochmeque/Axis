@@ -1,3 +1,7 @@
+---
+description: Configure Git Large File Storage in Axis. Store large binary files efficiently without bloating your repo.
+---
+
 # Git LFS
 
 Git Large File Storage (LFS) replaces large files with lightweight pointers, storing actual file contents on a remote server. This keeps your repository fast and manageable.

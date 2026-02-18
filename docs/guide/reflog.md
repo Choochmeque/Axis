@@ -1,3 +1,7 @@
+---
+description: Use Git reflog in Axis to recover lost commits and undo mistakes. Your safety net for Git operations.
+---
+
 # Reflog
 
 The reflog (reference log) records when branch tips and other references were updated. It's your safety net for recovering lost commits.

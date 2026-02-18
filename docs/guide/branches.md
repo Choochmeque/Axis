@@ -1,3 +1,7 @@
+---
+description: Create, switch, rename, and delete Git branches in Axis. Manage local and remote branches visually.
+---
+
 # Branches
 
 Branches let you work on different features or fixes in isolation. Each branch is an independent line of development.

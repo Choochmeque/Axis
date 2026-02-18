@@ -1,5 +1,7 @@
 ---
 layout: home
+title: Axis - Modern Git GUI
+description: Axis is a modern Git GUI for Windows, macOS, and Linux with GitHub integration, AI commits, and native Rust performance.
 
 hero:
   name: Axis

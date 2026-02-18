@@ -1,3 +1,7 @@
+---
+description: Keyboard shortcuts for Axis Git client. Speed up your workflow on macOS, Windows, and Linux.
+---
+
 # Keyboard Shortcuts
 
 Speed up your workflow with keyboard shortcuts.

@@ -1,3 +1,7 @@
+---
+description: Sign commits with GPG or SSH in Axis. Verify your identity and get the GitHub Verified badge.
+---
+
 # Commit Signing
 
 Sign your commits to verify your identity and prove that commits came from you. Axis supports both GPG and SSH signing.

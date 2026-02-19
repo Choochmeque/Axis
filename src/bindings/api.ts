@@ -735,6 +735,9 @@ async getRepositorySettings() : Promise<RepositorySettings> {
 async saveRepositoryUserConfig(userName: string | null, userEmail: string | null) : Promise<null> {
     return await TAURI_INVOKE("save_repository_user_config", { userName, userEmail });
 },
+async saveRepositorySigningConfig(signingFormat: SigningFormat | null, signingKey: string | null) : Promise<null> {
+    return await TAURI_INVOKE("save_repository_signing_config", { signingFormat, signingKey });
+},
 /**
  * List all hooks with their status
  */
@@ -1333,7 +1336,7 @@ export type AddWorktreeOptions = {
  */
 path: string; 
 /**
- * Branch to checkout (creates new branch if create_branch is true)
+ * Branch to checkout (creates new branch if `create_branch` is true)
  */
 branch: string | null; 
 /**
@@ -1341,7 +1344,7 @@ branch: string | null;
  */
 createBranch: boolean; 
 /**
- * Commit/branch to base new branch on (if create_branch is true)
+ * Commit/branch to base new branch on (if `create_branch` is true)
  */
 base: string | null; 
 /**
@@ -1563,7 +1566,7 @@ aheadCommits: Commit[];
  */
 behindCommits: Commit[]; 
 /**
- * Aggregate file changes from merge_base to compare branch
+ * Aggregate file changes from `merge_base` to compare branch
  */
 files: FileDiff[] }
 export type BranchFilter = { includeLocal: boolean; includeRemote: boolean }
@@ -2156,7 +2159,7 @@ keyId: string;
  */
 userId: string; 
 /**
- * Email address extracted from user_id
+ * Email address extracted from `user_id`
  */
 email: string | null; 
 /**
@@ -2220,7 +2223,7 @@ skip: number | null;
  */
 fromRef: string | null; 
 /**
- * Include all branches (not just current) - deprecated, use branch_filter instead
+ * Include all branches (not just current) - deprecated, use `branch_filter` instead
  */
 allBranches?: boolean; 
 /**
@@ -2332,7 +2335,7 @@ hookType: GitHookType;
  */
 content: string }
 /**
- * Options for ignoring a file, returned by get_ignore_options
+ * Options for ignoring a file, returned by `get_ignore_options`
  */
 export type IgnoreOptions = { 
 /**
@@ -3145,7 +3148,7 @@ message: string }
  */
 export type RebaseTarget = { 
 /**
- * Branch name or commit short_oid
+ * Branch name or commit `short_oid`
  */
 name: string; 
 /**
@@ -3191,7 +3194,7 @@ reflogRef: string;
  */
 newOid: string; 
 /**
- * Short form of new_oid
+ * Short form of `new_oid`
  */
 shortNewOid: string; 
 /**
@@ -3199,7 +3202,7 @@ shortNewOid: string;
  */
 oldOid: string; 
 /**
- * Short form of old_oid
+ * Short form of `old_oid`
  */
 shortOldOid: string; 
 /**
@@ -3298,7 +3301,15 @@ globalUserEmail: string | null;
 /**
  * List of remotes
  */
-remotes: Remote[] }
+remotes: Remote[]; 
+/**
+ * Repository signing format (from .git/config local)
+ */
+signingFormat: SigningFormat | null; 
+/**
+ * Repository signing key (from .git/config local)
+ */
+signingKey: string | null }
 export type RepositoryState = "Clean" | "Merging" | "Rebasing" | "RebasingInteractive" | "CherryPicking" | "Reverting" | "Bisecting" | "ApplyMailbox" | "ApplyMailboxOrRebase"
 export type RepositoryStatus = { staged: FileStatus[]; unstaged: FileStatus[]; untracked: FileStatus[]; conflicted: FileStatus[] }
 /**
@@ -3423,7 +3434,7 @@ gpgProgram: string | null;
  */
 sshProgram: string | null }
 /**
- * Signing format - GPG (OpenPGP) or SSH
+ * Signing format - GPG (`OpenPGP`) or SSH
  */
 export type SigningFormat = "Gpg" | "Ssh"
 /**

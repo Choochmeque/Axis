@@ -1890,6 +1890,7 @@
     "close": "Close",
     "tabs": {
       "identity": "Identity",
+      "signing": "Signing",
       "remotes": "Remotes",
       "hooks": "Hooks",
       "actions": "Actions"
@@ -1907,6 +1908,31 @@
       "emailPlaceholder": "Enter email...",
       "saved": "Identity saved",
       "saveFailed": "Failed to save identity"
+    },
+    "signing": {
+      "title": "Commit Signing",
+      "description": "Override the global signing settings for this repository only.",
+      "format": {
+        "label": "Signing Format",
+        "useGlobal": "Use global default",
+        "hint": "Global: {{format}}"
+      },
+      "key": {
+        "label": "Signing Key",
+        "useGlobal": "Use global default",
+        "hint": "Global: {{key}}",
+        "noGlobalKey": "No global key set",
+        "selectKey": "Select a key..."
+      },
+      "testSigning": "Test Signing",
+      "testing": "Testing...",
+      "signingWorks": "Signing works! Using: {{program}}",
+      "signingFailed": "Signing test failed",
+      "clearOverrides": "Clear Overrides",
+      "clearOverridesHint": "Remove all per-repository signing settings and use global defaults",
+      "saved": "Signing settings saved",
+      "saveFailed": "Failed to save signing settings",
+      "cleared": "Signing overrides cleared"
     },
     "remotes": {
       "title": "Remotes",

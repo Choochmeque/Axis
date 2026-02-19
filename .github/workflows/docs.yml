@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Create IndexNow key file
+        run: echo "${{ secrets.INDEXNOW_KEY }}" > docs/public/${{ secrets.INDEXNOW_KEY }}.txt
+
       - name: Build docs
         run: pnpm docs:build
 
@@ -58,3 +61,44 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit to IndexNow
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          python3 - <<'EOF'
+          import os, xml.etree.ElementTree as ET, json, urllib.request, urllib.error
+
+          sitemap_url = "https://axis-git.app/sitemap.xml"
+          key = os.environ["INDEXNOW_KEY"]
+
+          with urllib.request.urlopen(sitemap_url) as res:
+              tree = ET.fromstring(res.read())
+
+          ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          urls = [loc.text for loc in tree.findall("sm:url/sm:loc", ns)]
+
+          payload = json.dumps({
+              "host": "axis-git.app",
+              "key": key,
+              "keyLocation": f"https://axis-git.app/{key}.txt",
+              "urlList": urls,
+          }).encode("utf-8")
+
+          req = urllib.request.Request(
+              "https://api.indexnow.org/indexnow",
+              data=payload,
+              headers={"Content-Type": "application/json; charset=utf-8"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  print(f"IndexNow: {resp.status} — submitted {len(urls)} URLs")
+          except urllib.error.HTTPError as e:
+              print(f"IndexNow error: {e.code} {e.reason}")
+              raise
+          EOF

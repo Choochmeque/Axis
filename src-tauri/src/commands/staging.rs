@@ -145,7 +145,18 @@ pub async fn create_commit(
 
     let signing_config = if should_sign {
         let signing_service = SigningService::new(&path);
-        Some(signing_service.get_config_from_git()?)
+        let mut config = signing_service.get_config_from_git()?;
+
+        // Override with repo-specific signing config if present
+        let (repo_format, repo_key) = guard.get_repo_signing_config().await?;
+        if let Some(format) = repo_format {
+            config.format = format;
+        }
+        if let Some(key) = repo_key {
+            config.signing_key = Some(key);
+        }
+
+        Some(config)
     } else {
         None
     };

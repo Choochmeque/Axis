@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::models::RepositorySettings;
+use crate::models::{RepositorySettings, SigningFormat};
 use crate::state::AppState;
 use tauri::State;
 
@@ -12,6 +12,7 @@ pub async fn get_repository_settings(state: State<'_, AppState>) -> Result<Repos
     let (user_name, user_email) = guard.get_repo_user_config().await?;
     let (global_user_name, global_user_email) = guard.get_global_user_config().await?;
     let remotes = guard.list_remotes().await?;
+    let (signing_format, signing_key) = guard.get_repo_signing_config().await?;
 
     Ok(RepositorySettings {
         user_name,
@@ -19,6 +20,8 @@ pub async fn get_repository_settings(state: State<'_, AppState>) -> Result<Repos
         global_user_name,
         global_user_email,
         remotes,
+        signing_format,
+        signing_key,
     })
 }
 
@@ -34,5 +37,20 @@ pub async fn save_repository_user_config(
         .write()
         .await
         .set_repo_user_config(user_name.as_deref(), user_email.as_deref())
+        .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn save_repository_signing_config(
+    state: State<'_, AppState>,
+    signing_format: Option<SigningFormat>,
+    signing_key: Option<String>,
+) -> Result<()> {
+    state
+        .get_git_service()?
+        .write()
+        .await
+        .set_repo_signing_config(signing_format.as_ref(), signing_key.as_deref())
         .await
 }

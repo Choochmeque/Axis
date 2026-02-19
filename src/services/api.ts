@@ -454,6 +454,9 @@ export const repoSettingsApi = {
 
   saveUserConfig: (userName: string | null, userEmail: string | null) =>
     commands.saveRepositoryUserConfig(userName, userEmail),
+
+  saveSigningConfig: (signingFormat: SigningFormat | null, signingKey: string | null) =>
+    commands.saveRepositorySigningConfig(signingFormat, signingKey),
 };
 
 export const hooksApi = {

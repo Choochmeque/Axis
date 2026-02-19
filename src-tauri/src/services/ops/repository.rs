@@ -62,6 +62,22 @@ impl RepoOperations {
             .await
     }
 
+    pub async fn get_repo_signing_config(&self) -> Result<(Option<SigningFormat>, Option<String>)> {
+        self.git2(super::super::git2_service::Git2Service::get_repo_signing_config)
+            .await
+    }
+
+    pub async fn set_repo_signing_config(
+        &self,
+        format: Option<&SigningFormat>,
+        signing_key: Option<&str>,
+    ) -> Result<()> {
+        let format = format.cloned();
+        let signing_key = signing_key.map(std::string::ToString::to_string);
+        self.git2(move |g| g.set_repo_signing_config(format.as_ref(), signing_key.as_deref()))
+            .await
+    }
+
     pub async fn resolve_ref(&self, refspec: &str) -> Option<String> {
         let refspec = refspec.to_string();
         self.git2(move |g| {

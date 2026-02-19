@@ -12,14 +12,31 @@ import {
   ToggleLeft,
   ToggleRight,
   Terminal,
+  KeySquare,
 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { KeyRound } from 'lucide-react';
-import { repoSettingsApi, remoteApi, hooksApi, sshKeysApi, remoteSshKeysApi } from '@/services/api';
+import {
+  repoSettingsApi,
+  remoteApi,
+  hooksApi,
+  sshKeysApi,
+  remoteSshKeysApi,
+  signingApi,
+} from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import type { RepositorySettings, Remote, HookInfo, HookTemplate, SshKeyInfo } from '@/types';
-import { GitHookType, SshKeyFormat } from '@/types';
+import type {
+  RepositorySettings,
+  Remote,
+  HookInfo,
+  HookTemplate,
+  SshKeyInfo,
+  GpgKey,
+  SshKey,
+  SigningConfig,
+} from '@/types';
+import { GitHookType, SshKeyFormat, SigningFormat } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -42,7 +59,7 @@ interface RepositorySettingsDialogProps {
   onClose: () => void;
 }
 
-type SettingsTab = 'identity' | 'remotes' | 'hooks' | 'actions';
+type SettingsTab = 'identity' | 'signing' | 'remotes' | 'hooks' | 'actions';
 
 export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettingsDialogProps) {
   const { t } = useTranslation();
@@ -73,6 +90,7 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'identity', label: t('repoSettings.tabs.identity'), icon: <User size={16} /> },
+    { id: 'signing', label: t('repoSettings.tabs.signing'), icon: <KeySquare size={16} /> },
     { id: 'remotes', label: t('repoSettings.tabs.remotes'), icon: <Globe size={16} /> },
     { id: 'hooks', label: t('repoSettings.tabs.hooks'), icon: <FileCode2 size={16} /> },
     { id: 'actions', label: t('repoSettings.tabs.actions'), icon: <Terminal size={16} /> },
@@ -118,6 +136,9 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
               <>
                 {activeTab === 'identity' && (
                   <IdentitySettings settings={settings} onSettingsChange={setSettings} />
+                )}
+                {activeTab === 'signing' && (
+                  <SigningSettings settings={settings} onSettingsChange={setSettings} />
                 )}
                 {activeTab === 'remotes' && (
                   <RemotesSettings remotes={settings.remotes} onRemotesChange={loadSettings} />
@@ -244,6 +265,246 @@ function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps)
         <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
           {isSaving ? t('common.saving') : t('common.save')}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+interface SigningSettingsProps {
+  settings: RepositorySettings;
+  onSettingsChange: (settings: RepositorySettings) => void;
+}
+
+function SigningSettings({ settings, onSettingsChange }: SigningSettingsProps) {
+  const { t } = useTranslation();
+  const [signingFormat, setSigningFormat] = useState<SigningFormat | null>(
+    settings.signingFormat ?? null
+  );
+  const [signingKey, setSigningKey] = useState(settings.signingKey || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [gpgKeys, setGpgKeys] = useState<GpgKey[]>([]);
+  const [sshKeys, setSshKeys] = useState<SshKey[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
+  const [globalConfig, setGlobalConfig] = useState<SigningConfig | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    setSigningFormat(settings.signingFormat ?? null);
+    setSigningKey(settings.signingKey || '');
+  }, [settings]);
+
+  useEffect(() => {
+    const formatChanged = signingFormat !== (settings.signingFormat ?? null);
+    const keyChanged = (signingKey || null) !== (settings.signingKey || null);
+    setHasChanges(formatChanged || keyChanged);
+  }, [signingFormat, signingKey, settings]);
+
+  useEffect(() => {
+    loadKeys();
+    loadGlobalConfig();
+  }, []);
+
+  useEffect(() => {
+    loadKeys();
+  }, [signingFormat]);
+
+  const loadGlobalConfig = async () => {
+    try {
+      const config = await signingApi.getConfig();
+      setGlobalConfig(config);
+    } catch {
+      // Ignore errors loading global config
+    }
+  };
+
+  const loadKeys = async () => {
+    setIsLoadingKeys(true);
+    try {
+      const [gpg, ssh] = await Promise.all([signingApi.listGpgKeys(), signingApi.listSshKeys()]);
+      setGpgKeys(gpg);
+      setSshKeys(ssh);
+    } catch {
+      // Ignore errors loading keys
+    } finally {
+      setIsLoadingKeys(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await repoSettingsApi.saveSigningConfig(signingFormat, signingKey || null);
+      onSettingsChange({
+        ...settings,
+        signingFormat: signingFormat,
+        signingKey: signingKey || null,
+      });
+      setHasChanges(false);
+      toast.success(t('repoSettings.signing.saved'));
+    } catch (err) {
+      toast.error(t('repoSettings.signing.saveFailed'), getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSigningFormat(settings.signingFormat ?? null);
+    setSigningKey(settings.signingKey || '');
+    setTestResult(null);
+  };
+
+  const handleClearOverrides = async () => {
+    setIsSaving(true);
+    try {
+      await repoSettingsApi.saveSigningConfig(null, null);
+      onSettingsChange({
+        ...settings,
+        signingFormat: null,
+        signingKey: null,
+      });
+      setSigningFormat(null);
+      setSigningKey('');
+      setHasChanges(false);
+      setTestResult(null);
+      toast.success(t('repoSettings.signing.cleared'));
+    } catch (err) {
+      toast.error(t('repoSettings.signing.saveFailed'), getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestSigning = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const effectiveFormat = signingFormat ?? globalConfig?.format ?? SigningFormat.Gpg;
+      const effectiveKey = signingKey || globalConfig?.signingKey || null;
+      const result = await signingApi.testSigning({
+        format: effectiveFormat,
+        signingKey: effectiveKey,
+        gpgProgram: globalConfig?.gpgProgram ?? null,
+        sshProgram: globalConfig?.sshProgram ?? null,
+      });
+      if (result.success) {
+        setTestResult({
+          success: true,
+          message: t('repoSettings.signing.signingWorks', { program: result.programUsed }),
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: result.error || t('repoSettings.signing.signingFailed'),
+        });
+      }
+    } catch (err) {
+      setTestResult({ success: false, message: getErrorMessage(err) });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const effectiveFormat = signingFormat ?? globalConfig?.format ?? SigningFormat.Gpg;
+  const availableKeys =
+    effectiveFormat === SigningFormat.Gpg
+      ? gpgKeys.map((k) => ({ value: k.keyId, label: `${k.keyId} - ${k.userId}` }))
+      : sshKeys.map((k) => ({ value: k.path, label: `${k.keyType} - ${k.comment || k.path}` }));
+
+  const hasOverrides = settings.signingFormat !== null || settings.signingKey !== null;
+
+  return (
+    <div>
+      <h3 className={sectionTitleClass}>{t('repoSettings.signing.title')}</h3>
+      <p className="text-sm text-(--text-secondary) mb-4">
+        {t('repoSettings.signing.description')}
+      </p>
+
+      <FormField
+        label={t('repoSettings.signing.format.label')}
+        htmlFor="repoSigningFormat"
+        hint={
+          globalConfig?.format
+            ? t('repoSettings.signing.format.hint', {
+                format: globalConfig.format === SigningFormat.Gpg ? 'GPG' : 'SSH',
+              })
+            : undefined
+        }
+      >
+        <Select
+          id="repoSigningFormat"
+          value={signingFormat ?? '__global__'}
+          onValueChange={(value) => {
+            if (value === '__global__') {
+              setSigningFormat(null);
+            } else {
+              setSigningFormat(value as SigningFormat);
+            }
+            setSigningKey('');
+            setTestResult(null);
+          }}
+        >
+          <SelectItem value="__global__">{t('repoSettings.signing.format.useGlobal')}</SelectItem>
+          <SelectItem value={SigningFormat.Gpg}>GPG</SelectItem>
+          <SelectItem value={SigningFormat.Ssh}>SSH</SelectItem>
+        </Select>
+      </FormField>
+
+      <FormField
+        label={t('repoSettings.signing.key.label')}
+        htmlFor="repoSigningKey"
+        hint={
+          globalConfig?.signingKey
+            ? t('repoSettings.signing.key.hint', { key: globalConfig.signingKey })
+            : t('repoSettings.signing.key.noGlobalKey')
+        }
+      >
+        <Select
+          id="repoSigningKey"
+          value={signingKey || '__global__'}
+          onValueChange={(value) => {
+            setSigningKey(value === '__global__' ? '' : value);
+            setTestResult(null);
+          }}
+          disabled={isLoadingKeys}
+        >
+          <SelectItem value="__global__">{t('repoSettings.signing.key.useGlobal')}</SelectItem>
+          {availableKeys.map((key) => (
+            <SelectItem key={key.value} value={key.value}>
+              {key.label}
+            </SelectItem>
+          ))}
+        </Select>
+      </FormField>
+
+      {testResult && (
+        <Alert variant={testResult.success ? 'success' : 'error'} className="mb-4">
+          {testResult.message}
+        </Alert>
+      )}
+
+      <div className="flex gap-2 mt-4 flex-wrap">
+        <Button variant="secondary" onClick={handleTestSigning} disabled={isTesting || isSaving}>
+          {isTesting ? t('repoSettings.signing.testing') : t('repoSettings.signing.testSigning')}
+        </Button>
+        <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
+          {t('common.reset')}
+        </Button>
+        <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
+          {isSaving ? t('common.saving') : t('common.save')}
+        </Button>
+        {hasOverrides && (
+          <Button
+            variant="ghost"
+            onClick={handleClearOverrides}
+            disabled={isSaving}
+            title={t('repoSettings.signing.clearOverridesHint')}
+          >
+            {t('repoSettings.signing.clearOverrides')}
+          </Button>
+        )}
       </div>
     </div>
   );

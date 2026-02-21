@@ -53,6 +53,7 @@ import type {
   PushOptions,
   DiffTarget,
   CreateBranchOptions,
+  DeleteBranchOptions,
   BisectStartOptions,
   BisectMarkType,
   FetchOptions,
@@ -122,7 +123,7 @@ export const branchApi = {
 
   create: (name: string, options: CreateBranchOptions) => commands.createBranch(name, options),
 
-  delete: (name: string, force?: boolean) => commands.deleteBranch(name, force ?? null),
+  delete: (name: string, options: DeleteBranchOptions) => commands.deleteBranch(name, options),
 
   deleteRemote: (remoteName: string, branchName: string, force?: boolean) =>
     commands.deleteRemoteBranch(remoteName, branchName, force ?? null),

@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import { BranchType, type Branch } from '../../types';
+import type { Branch } from '../../types';
 import {
   Dialog,
   DialogContent,
@@ -39,54 +39,10 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
     }
   }, [isOpen]);
 
-  const { branches, loadBranches, refreshRepository } = useRepositoryStore();
+  const { loadBranches, refreshRepository } = useRepositoryStore();
 
-  // Find matching remote branch (even if not tracked)
-  // First check explicit upstream, then look for origin/{branch.name}
-  const remoteBranchInfo = useMemo(() => {
-    if (!branch) return null;
-
-    // If has explicit upstream tracking, use that
-    if (branch.upstream) {
-      const parts = branch.upstream.split('/');
-      return {
-        remoteName: parts[0],
-        branchName: parts.slice(1).join('/'),
-        displayName: branch.upstream,
-      };
-    }
-
-    // Otherwise, look for a matching remote branch (prefer origin)
-    const remoteBranches = branches.filter((b) => b.branchType === BranchType.Remote);
-
-    // Try origin first
-    const originMatch = remoteBranches.find((b) => b.name === `origin/${branch.name}`);
-    if (originMatch) {
-      return {
-        remoteName: 'origin',
-        branchName: branch.name,
-        displayName: `origin/${branch.name}`,
-      };
-    }
-
-    // Try any other remote
-    for (const rb of remoteBranches) {
-      const parts = rb.name.split('/');
-      const remote = parts[0];
-      const name = parts.slice(1).join('/');
-      if (name === branch.name) {
-        return {
-          remoteName: remote,
-          branchName: name,
-          displayName: rb.name,
-        };
-      }
-    }
-
-    return null;
-  }, [branch, branches]);
-
-  const hasRemoteBranch = !!remoteBranchInfo;
+  // Check if branch has an upstream tracking branch
+  const hasUpstream = !!branch?.upstream;
 
   const handleDelete = async () => {
     if (!branch) return;
@@ -95,17 +51,7 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
     setError(null);
 
     try {
-      // Delete local branch
-      await branchApi.delete(branch.name, force);
-
-      // Delete remote branch if requested
-      if (deleteRemote && remoteBranchInfo) {
-        await branchApi.deleteRemote(
-          remoteBranchInfo.remoteName,
-          remoteBranchInfo.branchName,
-          force
-        );
-      }
+      await branchApi.delete(branch.name, { force, deleteRemote });
 
       await loadBranches();
       await refreshRepository();
@@ -159,10 +105,10 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
             onCheckedChange={setForce}
           />
 
-          {hasRemoteBranch && (
+          {hasUpstream && (
             <CheckboxField
               id="delete-remote"
-              label={t('branches.delete.deleteRemote', { remote: remoteBranchInfo?.displayName })}
+              label={t('branches.delete.deleteRemote', { remote: branch.upstream })}
               checked={deleteRemote}
               onCheckedChange={setDeleteRemote}
             />

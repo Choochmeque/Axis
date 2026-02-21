@@ -2,11 +2,11 @@ use crate::error::{AxisError, Result};
 use crate::models::LargeBinaryFileInfo;
 use crate::models::{
     BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchType, Commit,
-    CreateTagOptions, EdgeType, FileLogResult, FileStatus, GraphCommit, GraphEdge, GraphResult,
-    IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType, LaneState, LogOptions,
-    RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions, Repository,
-    RepositoryState, RepositoryStatus, SearchResult, SignatureVerification, SigningConfig,
-    SigningFormat, SortOrder, SshCredentials, Tag, TagResult, TagSignature,
+    CreateTagOptions, DeleteBranchOptions, EdgeType, FileLogResult, FileStatus, GraphCommit,
+    GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType,
+    LaneState, LogOptions, RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions,
+    Repository, RepositoryState, RepositoryStatus, SearchResult, SignatureVerification,
+    SigningConfig, SigningFormat, SortOrder, SshCredentials, Tag, TagResult, TagSignature,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -1097,11 +1097,33 @@ impl Git2Service {
     }
 
     /// Delete a branch
-    pub fn delete_branch(&self, name: &str, force: bool) -> Result<()> {
+    pub fn delete_branch(
+        &self,
+        name: &str,
+        options: &DeleteBranchOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<()> {
         let repo = self.repo()?;
         let mut branch = repo.find_branch(name, git2::BranchType::Local)?;
 
-        if !force {
+        // Get upstream info before deleting local branch (if delete_remote is requested)
+        let upstream_info = if options.delete_remote {
+            branch.upstream().ok().and_then(|u| {
+                u.name().ok().flatten().map(|full_name| {
+                    // upstream name format: "origin/branch-name"
+                    let parts: Vec<&str> = full_name.splitn(2, '/').collect();
+                    if parts.len() == 2 {
+                        (parts[0].to_string(), parts[1].to_string())
+                    } else {
+                        ("origin".to_string(), full_name.to_string())
+                    }
+                })
+            })
+        } else {
+            None
+        };
+
+        if !options.force {
             // Check if branch is fully merged
             let head = repo.head()?;
             if let Ok(head_commit) = head.peel_to_commit() {
@@ -1114,6 +1136,14 @@ impl Git2Service {
         }
 
         branch.delete()?;
+        log::info!("Deleted local branch: {name}");
+
+        // Delete remote branch if requested and upstream was found
+        if let Some((remote_name, branch_name)) = upstream_info {
+            log::info!("Deleting remote branch: {remote_name}/{branch_name}");
+            self.delete_remote_branch(&remote_name, &branch_name, options.force, ssh_credentials)?;
+        }
+
         Ok(())
     }
 
@@ -4044,8 +4074,12 @@ mod tests {
         assert!(branches.iter().any(|b| b.name == "to-delete"));
 
         // Delete it (force=true to avoid merge check)
+        let delete_options = DeleteBranchOptions {
+            force: true,
+            delete_remote: false,
+        };
         service
-            .delete_branch("to-delete", true)
+            .delete_branch("to-delete", &delete_options, None)
             .expect("should delete branch");
 
         // Verify it's gone

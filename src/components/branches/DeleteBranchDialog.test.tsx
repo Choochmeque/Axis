@@ -13,23 +13,17 @@ vi.mock('react-i18next', () => ({
 }));
 
 const mockDelete = vi.fn();
-const mockDeleteRemote = vi.fn();
 const mockLoadBranches = vi.fn();
 const mockRefreshRepository = vi.fn();
 
 vi.mock('../../services/api', () => ({
   branchApi: {
     delete: (...args: unknown[]) => mockDelete(...args),
-    deleteRemote: (...args: unknown[]) => mockDeleteRemote(...args),
   },
 }));
 
 vi.mock('../../store/repositoryStore', () => ({
   useRepositoryStore: () => ({
-    branches: [
-      { name: 'origin/feature-branch', branchType: 'Remote' },
-      { name: 'origin/main', branchType: 'Remote' },
-    ],
     loadBranches: mockLoadBranches,
     refreshRepository: mockRefreshRepository,
   }),
@@ -152,11 +146,17 @@ describe('DeleteBranchDialog', () => {
     expect(screen.getByText('branches.delete.forceDelete')).toBeInTheDocument();
   });
 
-  it('should show delete remote checkbox when remote exists', () => {
+  it('should show delete remote checkbox when branch has upstream', () => {
+    const branchWithUpstream = { ...mockBranch, upstream: 'origin/feature-branch' };
+    render(<DeleteBranchDialog isOpen={true} onClose={vi.fn()} branch={branchWithUpstream} />);
+
+    expect(screen.getByText(/branches.delete.deleteRemote/)).toBeInTheDocument();
+  });
+
+  it('should not show delete remote checkbox when branch has no upstream', () => {
     render(<DeleteBranchDialog isOpen={true} onClose={vi.fn()} branch={mockBranch} />);
 
-    // Mock has origin/feature-branch
-    expect(screen.getByText(/branches.delete.deleteRemote/)).toBeInTheDocument();
+    expect(screen.queryByTestId('delete-remote')).not.toBeInTheDocument();
   });
 
   it('should call branchApi.delete when delete button clicked', async () => {
@@ -169,7 +169,10 @@ describe('DeleteBranchDialog', () => {
     fireEvent.click(screen.getByText('branches.delete.deleteButton'));
 
     await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('feature-branch', false);
+      expect(mockDelete).toHaveBeenCalledWith('feature-branch', {
+        force: false,
+        deleteRemote: false,
+      });
     });
   });
 
@@ -184,23 +187,29 @@ describe('DeleteBranchDialog', () => {
     fireEvent.click(screen.getByText('branches.delete.deleteButton'));
 
     await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalledWith('feature-branch', true);
+      expect(mockDelete).toHaveBeenCalledWith('feature-branch', {
+        force: true,
+        deleteRemote: false,
+      });
     });
   });
 
-  it('should delete remote when checkbox is checked', async () => {
+  it('should pass deleteRemote flag when checkbox is checked', async () => {
     mockDelete.mockResolvedValue(undefined);
-    mockDeleteRemote.mockResolvedValue(undefined);
     mockLoadBranches.mockResolvedValue(undefined);
     mockRefreshRepository.mockResolvedValue(undefined);
 
-    render(<DeleteBranchDialog isOpen={true} onClose={vi.fn()} branch={mockBranch} />);
+    const branchWithUpstream = { ...mockBranch, upstream: 'origin/feature-branch' };
+    render(<DeleteBranchDialog isOpen={true} onClose={vi.fn()} branch={branchWithUpstream} />);
 
     fireEvent.click(screen.getByTestId('delete-remote'));
     fireEvent.click(screen.getByText('branches.delete.deleteButton'));
 
     await waitFor(() => {
-      expect(mockDeleteRemote).toHaveBeenCalledWith('origin', 'feature-branch', false);
+      expect(mockDelete).toHaveBeenCalledWith('feature-branch', {
+        force: false,
+        deleteRemote: true,
+      });
     });
   });
 

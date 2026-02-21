@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::models::{
     Branch, BranchCompareResult, BranchFilter, BranchType, CheckoutOptions, CreateBranchOptions,
-    SshCredentials,
+    DeleteBranchOptions, SshCredentials,
 };
 
 use super::RepoOperations;
@@ -18,9 +18,15 @@ impl RepoOperations {
         self.git2(move |g| g.create_branch(&name, &options)).await
     }
 
-    pub async fn delete_branch(&self, name: &str, force: bool) -> Result<()> {
+    pub async fn delete_branch(
+        &self,
+        name: &str,
+        options: DeleteBranchOptions,
+        ssh_credentials: Option<SshCredentials>,
+    ) -> Result<()> {
         let name = name.to_string();
-        self.git2(move |g| g.delete_branch(&name, force)).await
+        self.git2(move |g| g.delete_branch(&name, &options, ssh_credentials))
+            .await
     }
 
     pub async fn delete_remote_branch(

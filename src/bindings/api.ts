@@ -132,8 +132,8 @@ async createBranch(name: string, options: CreateBranchOptions) : Promise<Branch>
 /**
  * Delete a branch
  */
-async deleteBranch(name: string, force: boolean | null) : Promise<null> {
-    return await TAURI_INVOKE("delete_branch", { name, force });
+async deleteBranch(name: string, options: DeleteBranchOptions) : Promise<null> {
+    return await TAURI_INVOKE("delete_branch", { name, options });
 },
 /**
  * Delete a remote branch
@@ -1863,6 +1863,18 @@ order: number;
  * Storage type (global or repository)
  */
 storage?: ActionStorageType | null }
+/**
+ * Options for branch deletion
+ */
+export type DeleteBranchOptions = { 
+/**
+ * Force deletion even if not fully merged
+ */
+force: boolean; 
+/**
+ * Delete the remote tracking branch as well
+ */
+deleteRemote: boolean }
 /**
  * Detected provider from remote URL
  */

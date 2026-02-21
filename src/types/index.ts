@@ -18,6 +18,7 @@ export type {
   BranchCompareResult,
   CreateBranchOptions,
   CheckoutOptions,
+  DeleteBranchOptions,
 
   // Diff types
   FileDiff,

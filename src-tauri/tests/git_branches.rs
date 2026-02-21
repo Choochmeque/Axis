@@ -4,7 +4,9 @@ mod common;
 
 use common::{git_cmd, setup_test_repo};
 
-use axis_lib::models::{BranchFilter, BranchType, CheckoutOptions, CreateBranchOptions};
+use axis_lib::models::{
+    BranchFilter, BranchType, CheckoutOptions, CreateBranchOptions, DeleteBranchOptions,
+};
 
 // ==================== Helpers ====================
 
@@ -94,7 +96,8 @@ async fn test_delete_branch_verified_by_cli() {
     git_cmd(tmp.path(), &["branch", "to-delete"]);
 
     // Action: RepoOperations deletes branch
-    ops.delete_branch("to-delete", false)
+    let delete_options = DeleteBranchOptions::default();
+    ops.delete_branch("to-delete", delete_options, None)
         .await
         .expect("should delete branch");
 
@@ -175,7 +178,8 @@ async fn test_delete_current_branch_fails() {
     let current = git_current_branch(tmp.path());
 
     // Action: try to delete current branch
-    let result = ops.delete_branch(&current, false).await;
+    let delete_options = DeleteBranchOptions::default();
+    let result = ops.delete_branch(&current, delete_options, None).await;
 
     // Verify: should fail
     assert!(result.is_err(), "Deleting current branch should fail");

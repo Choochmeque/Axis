@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::models::{
     Branch, BranchCompareResult, BranchType, CheckoutOptions, CreateBranchOptions,
+    DeleteBranchOptions,
 };
 use crate::services::HookProgressEmitter;
 use crate::state::AppState;
@@ -28,13 +29,18 @@ pub async fn create_branch(
 pub async fn delete_branch(
     state: State<'_, AppState>,
     name: String,
-    force: Option<bool>,
+    options: DeleteBranchOptions,
 ) -> Result<()> {
+    let ssh_creds = if options.delete_remote {
+        state.resolve_ssh_credentials("origin")?
+    } else {
+        None
+    };
     state
         .get_git_service()?
         .write()
         .await
-        .delete_branch(&name, force.unwrap_or(false))
+        .delete_branch(&name, options, ssh_creds)
         .await
 }
 

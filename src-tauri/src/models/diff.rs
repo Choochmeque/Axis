@@ -91,24 +91,6 @@ pub enum DiffTarget {
     Commit { oid: String },
 }
 
-// TODO: Use this for staging/unstaging specific hunks or lines in the UI instead of just file-level operations
-/// Request for staging/unstaging hunks or lines
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct PatchRequest {
-    pub file_path: String,
-    pub hunks: Option<Vec<usize>>, // Indices of hunks to stage/unstage
-    pub lines: Option<Vec<LineRange>>, // Specific line ranges
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct LineRange {
-    pub hunk_index: usize,
-    pub start_line: usize,
-    pub end_line: usize,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -479,83 +461,5 @@ mod tests {
         assert!(json.contains("\"binary\":false"));
         assert!(json.contains("\"additions\":10"));
         assert!(json.contains("\"deletions\":5"));
-    }
-
-    // ==================== PatchRequest Tests ====================
-
-    #[test]
-    fn test_patch_request_with_hunks() {
-        let request = PatchRequest {
-            file_path: "src/main.rs".to_string(),
-            hunks: Some(vec![0, 2, 3]),
-            lines: None,
-        };
-
-        assert_eq!(request.file_path, "src/main.rs");
-        assert_eq!(request.hunks, Some(vec![0, 2, 3]));
-        assert!(request.lines.is_none());
-    }
-
-    #[test]
-    fn test_patch_request_with_lines() {
-        let request = PatchRequest {
-            file_path: "src/lib.rs".to_string(),
-            hunks: None,
-            lines: Some(vec![LineRange {
-                hunk_index: 0,
-                start_line: 5,
-                end_line: 10,
-            }]),
-        };
-
-        assert!(request.hunks.is_none());
-        assert!(request.lines.is_some());
-        let lines = request.lines.expect("should have lines");
-        assert_eq!(lines.len(), 1);
-        assert_eq!(lines[0].hunk_index, 0);
-        assert_eq!(lines[0].start_line, 5);
-        assert_eq!(lines[0].end_line, 10);
-    }
-
-    #[test]
-    fn test_patch_request_serialization() {
-        let request = PatchRequest {
-            file_path: "file.rs".to_string(),
-            hunks: Some(vec![1]),
-            lines: None,
-        };
-
-        let json = serde_json::to_string(&request).expect("should serialize");
-        assert!(json.contains("\"filePath\":\"file.rs\""));
-        assert!(json.contains("\"hunks\":[1]"));
-    }
-
-    // ==================== LineRange Tests ====================
-
-    #[test]
-    fn test_line_range_creation() {
-        let range = LineRange {
-            hunk_index: 2,
-            start_line: 15,
-            end_line: 20,
-        };
-
-        assert_eq!(range.hunk_index, 2);
-        assert_eq!(range.start_line, 15);
-        assert_eq!(range.end_line, 20);
-    }
-
-    #[test]
-    fn test_line_range_serialization() {
-        let range = LineRange {
-            hunk_index: 0,
-            start_line: 1,
-            end_line: 5,
-        };
-
-        let json = serde_json::to_string(&range).expect("should serialize");
-        assert!(json.contains("\"hunkIndex\":0"));
-        assert!(json.contains("\"startLine\":1"));
-        assert!(json.contains("\"endLine\":5"));
     }
 }

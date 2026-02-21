@@ -8,9 +8,6 @@ pub enum AxisError {
     #[error("Repository not found: {0}")]
     RepositoryNotFound(String),
 
-    #[error("Repository already open: {0}")]
-    RepositoryAlreadyOpen(String),
-
     #[error("Invalid repository path: {0}")]
     InvalidRepositoryPath(String),
 
@@ -138,12 +135,6 @@ mod tests {
     fn test_repository_not_found_display() {
         let err = AxisError::RepositoryNotFound("/path/to/repo".to_string());
         assert_eq!(err.to_string(), "Repository not found: /path/to/repo");
-    }
-
-    #[test]
-    fn test_repository_already_open_display() {
-        let err = AxisError::RepositoryAlreadyOpen("/path/to/repo".to_string());
-        assert_eq!(err.to_string(), "Repository already open: /path/to/repo");
     }
 
     #[test]

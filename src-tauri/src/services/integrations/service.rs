@@ -160,17 +160,12 @@ impl IntegrationService {
                     move |key: &str| -> Result<Option<String>> { db.get_secret(key) }
                 };
 
-                let set_secret = {
-                    let db = Arc::clone(&db);
-                    move |key: &str, value: &str| -> Result<()> { db.set_secret(key, value) }
-                };
-
                 let delete_secret = {
                     let db = Arc::clone(&db);
                     move |key: &str| -> Result<()> { db.delete_secret(key) }
                 };
 
-                let provider = GitHubProvider::new(get_secret, set_secret, delete_secret);
+                let provider = GitHubProvider::new(get_secret, delete_secret);
                 Ok(Arc::new(provider))
             }
             ProviderType::GitLab | ProviderType::Bitbucket | ProviderType::Gitea => {

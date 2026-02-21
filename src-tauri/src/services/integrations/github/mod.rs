@@ -272,8 +272,6 @@ impl From<octocrab::Error> for AxisError {
 /// GitHub integration provider
 pub struct GitHubProvider {
     client: RwLock<Option<Arc<Octocrab>>>,
-    get_secret: Box<dyn Fn(&str) -> Result<Option<String>> + Send + Sync>,
-    set_secret: Box<dyn Fn(&str, &str) -> Result<()> + Send + Sync>,
     delete_secret: Box<dyn Fn(&str) -> Result<()> + Send + Sync>,
     // Caches
     pr_cache: TtlCache<PullRequestsPage>,
@@ -287,10 +285,9 @@ pub struct GitHubProvider {
 }
 
 impl GitHubProvider {
-    pub fn new<G, S, D>(get_secret: G, set_secret: S, delete_secret: D) -> Self
+    pub fn new<G, D>(get_secret: G, delete_secret: D) -> Self
     where
         G: Fn(&str) -> Result<Option<String>> + Send + Sync + 'static,
-        S: Fn(&str, &str) -> Result<()> + Send + Sync + 'static,
         D: Fn(&str) -> Result<()> + Send + Sync + 'static,
     {
         let mut client = None;
@@ -304,8 +301,6 @@ impl GitHubProvider {
 
         Self {
             client: RwLock::new(client),
-            get_secret: Box::new(get_secret),
-            set_secret: Box::new(set_secret),
             delete_secret: Box::new(delete_secret),
             pr_cache: TtlCache::new(CACHE_TTL_MEDIUM),
             issue_cache: TtlCache::new(CACHE_TTL_MEDIUM),
@@ -354,30 +349,11 @@ impl GitHubProvider {
             .remove_by_prefix(&format!("{owner}/{repo}/status/"));
     }
 
-    /// Set access token and create client (called after OAuth flow completes)
-    pub fn set_token(&self, token: String) -> Result<()> {
-        // Store token in secrets
-        (self.set_secret)(GITHUB_TOKEN_KEY, &token)?;
-
-        // Create Octocrab client
-        let client = Octocrab::builder()
-            .personal_token(token)
-            .build()
-            .map_err(|e| AxisError::IntegrationError(format!("Failed to create client: {e:?}")))?;
-
-        self.set_client(Arc::new(client));
-        Ok(())
-    }
-
     fn get_client(&self) -> Result<Arc<Octocrab>> {
         self.client
             .read()
             .clone()
             .ok_or_else(|| AxisError::IntegrationNotConnected("GitHub".to_string()))
-    }
-
-    fn set_client(&self, client: Arc<Octocrab>) {
-        *self.client.write() = Some(client);
     }
 
     fn clear_client(&self) {

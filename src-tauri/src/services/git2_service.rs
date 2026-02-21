@@ -34,7 +34,7 @@ fn build_credentials_callback(
                 let passphrase_str = ssh_credentials
                     .as_ref()
                     .and_then(|c| c.passphrase.as_ref())
-                    .map(|p| p.expose_secret().as_ref());
+                    .map(|p| p.expose_secret());
 
                 // 1. Try configured SSH key first
                 if let Some(ref key_path) = ssh_credentials.as_ref().map(|c| &c.key_path) {

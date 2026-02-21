@@ -313,7 +313,7 @@ code {
   }
 
   .diff-line-selected {
-    @apply ring-2 ring-inset ring-(--accent-color);
+    background-color: var(--accent-color) !important;
   }
 
   .diff-line-selectable {

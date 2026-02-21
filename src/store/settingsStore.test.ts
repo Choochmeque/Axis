@@ -41,7 +41,7 @@ describe('settingsStore', () => {
     gpgProgram: null,
     sshProgram: null,
     diffContextLines: 3,
-    diffWordWrap: false,
+    diffWordWrap: true,
     diffSideBySide: false,
     spellCheckCommitMessages: false,
     conventionalCommitsEnabled: false,

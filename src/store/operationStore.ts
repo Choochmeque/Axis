@@ -1,7 +1,7 @@
 import type { GitOperationType, ProgressStage } from '@/types';
 import { create } from 'zustand';
 
-export type OperationCategory = 'git' | 'file' | 'network' | 'general';
+export type OperationCategory = 'git' | 'file' | 'network' | 'hook' | 'general';
 
 export interface OperationProgress {
   stage: ProgressStage;

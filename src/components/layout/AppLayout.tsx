@@ -34,7 +34,7 @@ import { SettingsDialog } from '../settings/SettingsDialog';
 import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useDialogStore } from '../../store/dialogStore';
-import { useFileWatcher, useGitProgress } from '../../hooks';
+import { useFileWatcher, useGitProgress, useHookProgress } from '../../hooks';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -45,6 +45,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   useFileWatcher();
   // Listen for git operation progress events
   useGitProgress();
+  // Listen for hook progress events
+  useHookProgress();
 
   const {
     checkoutConflict,

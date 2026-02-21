@@ -5,6 +5,7 @@ use crate::models::{
     MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions, RebasePreview,
     RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
+use crate::services::HookProgressEmitter;
 use crate::state::AppState;
 use std::fs;
 use tauri::State;
@@ -71,8 +72,10 @@ pub async fn merge_branch(
 
     // Run post-merge hook if merge was successful (informational, don't fail)
     if merge_result.success && !settings.bypass_hooks {
+        let app_handle = state.get_app_handle()?;
+        let emitter = HookProgressEmitter::new(app_handle, state.progress_registry());
         let is_squash = options.squash;
-        let hook_result = guard.run_post_merge(is_squash).await;
+        let hook_result = guard.run_post_merge(is_squash, Some(&emitter)).await;
         if !hook_result.skipped && !hook_result.success {
             log::warn!("post-merge hook failed: {}", hook_result.stderr);
         }
@@ -136,9 +139,16 @@ pub async fn rebase_branch(
 
     // Run pre-rebase hook (can abort)
     if !skip_hooks {
+        let app_handle = state.get_app_handle()?;
+        let emitter = HookProgressEmitter::new(app_handle, state.progress_registry());
         let hook_result = guard
-            .run_pre_rebase(&options.onto, current_branch.as_deref())
+            .run_pre_rebase(&options.onto, current_branch.as_deref(), Some(&emitter))
             .await;
+
+        if hook_result.is_cancelled() {
+            return Err(AxisError::Other("Hook cancelled by user".into()));
+        }
+
         if !hook_result.skipped && !hook_result.success {
             let output = if hook_result.stderr.is_empty() {
                 &hook_result.stdout
@@ -312,9 +322,16 @@ pub async fn interactive_rebase(
 
     // Run pre-rebase hook
     if !skip_hooks {
+        let app_handle = state.get_app_handle()?;
+        let emitter = HookProgressEmitter::new(app_handle, state.progress_registry());
         let hook_result = guard
-            .run_pre_rebase(&options.onto, current_branch.as_deref())
+            .run_pre_rebase(&options.onto, current_branch.as_deref(), Some(&emitter))
             .await;
+
+        if hook_result.is_cancelled() {
+            return Err(AxisError::Other("Hook cancelled by user".into()));
+        }
+
         if !hook_result.skipped && !hook_result.success {
             let output = if hook_result.stderr.is_empty() {
                 &hook_result.stdout

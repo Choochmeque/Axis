@@ -1,16 +1,18 @@
-use crate::error::{AxisError, Result};
-use crate::models::{
-    get_hook_templates, GitHookType, HookDetails, HookInfo, HookResult, HookTemplate,
-};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::time::Duration;
+
 use strum::IntoEnumIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-use crate::services::create_command;
+use crate::error::{AxisError, Result};
+use crate::models::{
+    get_hook_templates, GitHookType, HookDetails, HookInfo, HookResult, HookTemplate,
+};
+use crate::services::{create_command, HookProgressEmitter};
 
 /// Service for Git hook execution and management.
 /// Created once per repository when the repo is opened.
@@ -85,6 +87,7 @@ impl HookService {
         hook_type: GitHookType,
         args: &[&str],
         stdin_data: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         let hook_path = self.hooks_path.join(hook_type.filename());
 
@@ -102,6 +105,11 @@ impl HookService {
                     return HookResult::not_executable(hook_type);
                 }
             }
+        }
+
+        // Emit running event
+        if let Some(e) = emitter {
+            e.emit_running(hook_type);
         }
 
         // Build command based on platform
@@ -128,21 +136,101 @@ impl HookService {
                     }
                 }
 
-                match child.wait_with_output().await {
-                    Ok(output) => HookResult {
-                        hook_type,
-                        success: output.status.success(),
-                        exit_code: output.status.code().unwrap_or(-1),
-                        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-                        skipped: false,
-                    },
-                    Err(e) => {
-                        HookResult::error(hook_type, &format!("Failed to wait for hook: {e}"))
+                // If emitter provided, poll with cancellation check
+                if let Some(e) = emitter {
+                    let result = self.wait_with_cancellation(&mut child, hook_type, e).await;
+                    // Emit terminal event
+                    if result.is_cancelled() {
+                        e.emit_cancelled(hook_type);
+                    } else if result.success {
+                        e.emit_complete(hook_type);
+                    } else {
+                        e.emit_failed(hook_type, &result.stderr);
+                    }
+                    result
+                } else {
+                    // Original behavior - wait without cancellation
+                    match child.wait_with_output().await {
+                        Ok(output) => HookResult {
+                            hook_type,
+                            success: output.status.success(),
+                            exit_code: output.status.code().unwrap_or(-1),
+                            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+                            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+                            skipped: false,
+                            cancelled: false,
+                        },
+                        Err(e) => {
+                            HookResult::error(hook_type, &format!("Failed to wait for hook: {e}"))
+                        }
                     }
                 }
             }
-            Err(e) => HookResult::error(hook_type, &format!("Failed to execute hook: {e}")),
+            Err(e) => {
+                let result = HookResult::error(hook_type, &format!("Failed to execute hook: {e}"));
+                if let Some(em) = emitter {
+                    em.emit_failed(hook_type, &result.stderr);
+                }
+                result
+            }
+        }
+    }
+
+    /// Wait for child process with cancellation support
+    async fn wait_with_cancellation(
+        &self,
+        child: &mut tokio::process::Child,
+        hook_type: GitHookType,
+        emitter: &HookProgressEmitter,
+    ) -> HookResult {
+        loop {
+            // Check for cancellation
+            if emitter.is_cancelled() {
+                log::info!("Hook {} cancelled by user", hook_type);
+                let _ = child.kill().await;
+                return HookResult::cancelled(hook_type);
+            }
+
+            // Poll with timeout
+            match tokio::time::timeout(Duration::from_millis(100), child.wait()).await {
+                Ok(Ok(status)) => {
+                    // Process finished - read output
+                    let stdout = if let Some(ref mut out) = child.stdout {
+                        let mut buf = Vec::new();
+                        use tokio::io::AsyncReadExt;
+                        let _ = out.read_to_end(&mut buf).await;
+                        String::from_utf8_lossy(&buf).to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    let stderr = if let Some(ref mut err) = child.stderr {
+                        let mut buf = Vec::new();
+                        use tokio::io::AsyncReadExt;
+                        let _ = err.read_to_end(&mut buf).await;
+                        String::from_utf8_lossy(&buf).to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    return HookResult {
+                        hook_type,
+                        success: status.success(),
+                        exit_code: status.code().unwrap_or(-1),
+                        stdout,
+                        stderr,
+                        skipped: false,
+                        cancelled: false,
+                    };
+                }
+                Ok(Err(e)) => {
+                    return HookResult::error(hook_type, &format!("Failed to wait for hook: {e}"));
+                }
+                Err(_) => {
+                    // Timeout - continue polling
+                    continue;
+                }
+            }
         }
     }
 
@@ -168,17 +256,19 @@ impl HookService {
 
     // ==================== Hook Runners ====================
 
-    /// Run pre-commit hook
-    pub async fn run_pre_commit(&self) -> HookResult {
-        self.execute_hook(GitHookType::PreCommit, &[], None).await
+    /// Run pre-commit hook with optional progress emitter
+    pub async fn run_pre_commit(&self, emitter: Option<&HookProgressEmitter>) -> HookResult {
+        self.execute_hook(GitHookType::PreCommit, &[], None, emitter)
+            .await
     }
 
-    /// Run prepare-commit-msg hook
+    /// Run prepare-commit-msg hook with optional progress emitter
     pub async fn run_prepare_commit_msg(
         &self,
         msg_file: &Path,
         source: Option<&str>,
         sha: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         let msg_file_str = msg_file.to_string_lossy();
         let mut args: Vec<&str> = vec![msg_file_str.as_ref()];
@@ -188,75 +278,109 @@ impl HookService {
         if let Some(s) = sha {
             args.push(s);
         }
-        self.execute_hook(GitHookType::PrepareCommitMsg, &args, None)
+        self.execute_hook(GitHookType::PrepareCommitMsg, &args, None, emitter)
             .await
     }
 
-    /// Run commit-msg hook
-    pub async fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
+    /// Run commit-msg hook with optional progress emitter
+    pub async fn run_commit_msg(
+        &self,
+        msg_file: &Path,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let msg_file_str = msg_file.to_string_lossy();
-        self.execute_hook(GitHookType::CommitMsg, &[msg_file_str.as_ref()], None)
+        self.execute_hook(
+            GitHookType::CommitMsg,
+            &[msg_file_str.as_ref()],
+            None,
+            emitter,
+        )
+        .await
+    }
+
+    /// Run post-commit hook with optional progress emitter
+    pub async fn run_post_commit(&self, emitter: Option<&HookProgressEmitter>) -> HookResult {
+        self.execute_hook(GitHookType::PostCommit, &[], None, emitter)
             .await
     }
 
-    /// Run post-commit hook
-    pub async fn run_post_commit(&self) -> HookResult {
-        self.execute_hook(GitHookType::PostCommit, &[], None).await
-    }
-
-    /// Run pre-push hook
+    /// Run pre-push hook with optional progress emitter
     /// refs format: "<local ref> <local sha> <remote ref> <remote sha>\n" per line
     pub async fn run_pre_push(
         &self,
         remote_name: &str,
         remote_url: &str,
         refs_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         self.execute_hook(
             GitHookType::PrePush,
             &[remote_name, remote_url],
             Some(refs_stdin),
+            emitter,
         )
         .await
     }
 
-    /// Run post-merge hook
-    pub async fn run_post_merge(&self, is_squash: bool) -> HookResult {
+    /// Run post-merge hook with optional progress emitter
+    pub async fn run_post_merge(
+        &self,
+        is_squash: bool,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let flag = if is_squash { "1" } else { "0" };
-        self.execute_hook(GitHookType::PostMerge, &[flag], None)
+        self.execute_hook(GitHookType::PostMerge, &[flag], None, emitter)
             .await
     }
 
-    /// Run pre-rebase hook
-    pub async fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
+    /// Run pre-rebase hook with optional progress emitter
+    pub async fn run_pre_rebase(
+        &self,
+        upstream: &str,
+        rebased_branch: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let mut args = vec![upstream];
         if let Some(branch) = rebased_branch {
             args.push(branch);
         }
-        self.execute_hook(GitHookType::PreRebase, &args, None).await
+        self.execute_hook(GitHookType::PreRebase, &args, None, emitter)
+            .await
     }
 
-    /// Run post-checkout hook
+    /// Run post-checkout hook with optional progress emitter
     pub async fn run_post_checkout(
         &self,
         prev_head: &str,
         new_head: &str,
         is_branch: bool,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         let flag = if is_branch { "1" } else { "0" };
         self.execute_hook(
             GitHookType::PostCheckout,
             &[prev_head, new_head, flag],
             None,
+            emitter,
         )
         .await
     }
 
-    /// Run post-rewrite hook
+    /// Run post-rewrite hook with optional progress emitter
     /// rewrites format: "<old sha> <new sha>\n" per line
-    pub async fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
-        self.execute_hook(GitHookType::PostRewrite, &[command], Some(rewrites_stdin))
-            .await
+    pub async fn run_post_rewrite(
+        &self,
+        command: &str,
+        rewrites_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
+        self.execute_hook(
+            GitHookType::PostRewrite,
+            &[command],
+            Some(rewrites_stdin),
+            emitter,
+        )
+        .await
     }
 
     // ==================== Hook Management ====================
@@ -843,7 +967,7 @@ mod tests {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_pre_commit().await;
+        let result = service.run_pre_commit(None).await;
 
         assert!(result.skipped);
         assert!(result.success);
@@ -861,7 +985,7 @@ mod tests {
             .create_hook(GitHookType::PreCommit, hook_content)
             .expect("should create hook");
 
-        let result = service.run_pre_commit().await;
+        let result = service.run_pre_commit(None).await;
 
         assert!(!result.skipped);
         assert!(result.success);
@@ -881,7 +1005,7 @@ mod tests {
             .create_hook(GitHookType::PreCommit, hook_content)
             .expect("should create hook");
 
-        let result = service.run_pre_commit().await;
+        let result = service.run_pre_commit(None).await;
 
         assert!(!result.skipped);
         assert!(!result.success);
@@ -926,7 +1050,7 @@ mod tests {
         let service = HookService::new(&repo);
 
         // No hook exists, should be skipped
-        let result = service.run_post_merge(false).await;
+        let result = service.run_post_merge(false, None).await;
         assert!(result.skipped);
     }
 
@@ -935,7 +1059,9 @@ mod tests {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_post_checkout("abc123", "def456", true).await;
+        let result = service
+            .run_post_checkout("abc123", "def456", true, None)
+            .await;
         assert!(result.skipped);
     }
 
@@ -944,7 +1070,9 @@ mod tests {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_pre_rebase("upstream", Some("feature")).await;
+        let result = service
+            .run_pre_rebase("upstream", Some("feature"), None)
+            .await;
         assert!(result.skipped);
     }
 
@@ -955,7 +1083,7 @@ mod tests {
 
         let refs = "refs/heads/main abc123 refs/heads/main def456\n";
         let result = service
-            .run_pre_push("origin", "https://example.com/repo.git", refs)
+            .run_pre_push("origin", "https://example.com/repo.git", refs, None)
             .await;
         assert!(result.skipped);
     }
@@ -966,7 +1094,7 @@ mod tests {
         let service = HookService::new(&repo);
 
         let rewrites = "abc123 def456\n";
-        let result = service.run_post_rewrite("rebase", rewrites).await;
+        let result = service.run_post_rewrite("rebase", rewrites, None).await;
         assert!(result.skipped);
     }
 }

@@ -1169,6 +1169,7 @@ export const events = __makeEvents__<{
 filesChangedEvent: FilesChangedEvent,
 gitOperationProgressEvent: GitOperationProgressEvent,
 headChangedEvent: HeadChangedEvent,
+hookProgressEvent: HookProgressEvent,
 indexChangedEvent: IndexChangedEvent,
 integrationStatusChangedEvent: IntegrationStatusChangedEvent,
 menuActionEvent: MenuActionEvent,
@@ -1182,6 +1183,7 @@ watchErrorEvent: WatchErrorEvent
 filesChangedEvent: "files-changed-event",
 gitOperationProgressEvent: "git-operation-progress-event",
 headChangedEvent: "head-changed-event",
+hookProgressEvent: "hook-progress-event",
 indexChangedEvent: "index-changed-event",
 integrationStatusChangedEvent: "integration-status-changed-event",
 menuActionEvent: "menu-action-event",
@@ -1411,7 +1413,7 @@ prefix: string | null }
 export type ArchiveResult = { message: string; outputPath: string | null; sizeBytes: number | null }
 export type AvatarResponse = { source: AvatarSource; path: string | null }
 export type AvatarSource = "Integration" | "Gravatar" | "Default"
-export type AxisError = { type: "RepositoryNotFound"; data: string } | { type: "RepositoryAlreadyOpen"; data: string } | { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "RemoteNotFound"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AuthenticationFailed"; data: string } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "ProviderNotDetected" } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" } | { type: "SshKeyError"; data: string } | { type: "SshKeyAlreadyExists"; data: string } | { type: "SshKeygenNotFound" } | { type: "InvalidKeyFilename"; data: string }
+export type AxisError = { type: "RepositoryNotFound"; data: string } | { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "RemoteNotFound"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AuthenticationFailed"; data: string } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "ProviderNotDetected" } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" } | { type: "SshKeyError"; data: string } | { type: "SshKeyAlreadyExists"; data: string } | { type: "SshKeygenNotFound" } | { type: "InvalidKeyFilename"; data: string }
 /**
  * Mark type for bisect marking operations
  */
@@ -2314,6 +2316,11 @@ path: string;
  * Whether the hook file is executable (Unix only, always true on Windows)
  */
 isExecutable: boolean }
+/**
+ * Progress update for hook execution
+ */
+export type HookProgressEvent = { operationId: string; hookType: GitHookType; stage: HookStage; message: string | null; canAbort: boolean }
+export type HookStage = "Running" | "Complete" | "Failed" | "Cancelled"
 /**
  * Template for creating hooks
  */

@@ -7,6 +7,7 @@ mod file_watcher;
 mod git2_service;
 mod git_cli_service;
 mod git_service;
+mod hook_progress;
 mod hook_service;
 mod integrations;
 #[cfg(feature = "integration")]
@@ -27,6 +28,7 @@ pub use file_watcher::*;
 pub use git2_service::*;
 pub use git_cli_service::*;
 pub use git_service::*;
+pub use hook_progress::*;
 pub use hook_service::*;
 pub use integrations::*;
 pub use process_utils::*;

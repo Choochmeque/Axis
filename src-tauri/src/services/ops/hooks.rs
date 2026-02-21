@@ -1,6 +1,8 @@
+use std::path::Path;
+
 use crate::error::Result;
 use crate::models::{GitHookType, HookDetails, HookInfo, HookResult, HookTemplate};
-use std::path::Path;
+use crate::services::HookProgressEmitter;
 
 use super::RepoOperations;
 
@@ -8,8 +10,8 @@ use super::RepoOperations;
 impl RepoOperations {
     // ---- Execution (async) ----
 
-    pub async fn run_pre_commit(&self) -> HookResult {
-        self.service.hook().run_pre_commit().await
+    pub async fn run_pre_commit(&self, emitter: Option<&HookProgressEmitter>) -> HookResult {
+        self.service.hook().run_pre_commit(emitter).await
     }
 
     pub async fn run_prepare_commit_msg(

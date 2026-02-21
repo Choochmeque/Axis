@@ -320,6 +320,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::OAuthCallbackEvent,
             crate::events::IntegrationStatusChangedEvent,
             crate::events::GitOperationProgressEvent,
+            crate::events::HookProgressEvent,
             crate::events::UpdateDownloadProgressEvent
         ])
 }

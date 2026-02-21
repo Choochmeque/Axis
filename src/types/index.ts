@@ -267,6 +267,7 @@ import type {
   GitOperationType as GitOperationTypeType,
   // Hook types
   GitHookType as GitHookTypeType,
+  HookStage as HookStageType,
   // SSH Key types
   SshKeyAlgorithm as SshKeyAlgorithmType,
   SshKeyFormat as SshKeyFormatType,
@@ -680,6 +681,16 @@ export const GitHookType: { [K in GitHookTypeType]: K } = {
 };
 
 export type GitHookType = GitHookTypeType;
+
+// Hook stage enum helpers
+export const HookStage: { [K in HookStageType]: K } = {
+  Running: 'Running',
+  Complete: 'Complete',
+  Failed: 'Failed',
+  Cancelled: 'Cancelled',
+};
+
+export type HookStage = HookStageType;
 
 // Custom actions enum helpers
 export const ActionContext: { [K in ActionContextType]: K } = {

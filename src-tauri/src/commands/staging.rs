@@ -1,9 +1,11 @@
-use crate::error::Result;
-use crate::models::LfsCheckResult;
-use crate::services::SigningService;
-use crate::state::AppState;
 use std::fs;
+
 use tauri::State;
+
+use crate::error::{AxisError, Result};
+use crate::models::LfsCheckResult;
+use crate::services::{HookProgressEmitter, SigningService};
+use crate::state::AppState;
 
 #[tauri::command]
 #[specta::specta]
@@ -104,8 +106,15 @@ pub async fn create_commit(
     let mut final_message = message.clone();
 
     if !skip_hooks {
-        // 1. Run pre-commit hook
-        let result = guard.run_pre_commit().await;
+        // 1. Run pre-commit hook with progress emitter
+        let app_handle = state.get_app_handle()?;
+        let emitter = HookProgressEmitter::new(app_handle, state.progress_registry());
+        let result = guard.run_pre_commit(Some(&emitter)).await;
+
+        if result.is_cancelled() {
+            return Err(AxisError::Other("Hook cancelled by user".into()));
+        }
+
         if !result.skipped && !result.success {
             return Err(result.to_error());
         }

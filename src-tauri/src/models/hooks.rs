@@ -74,6 +74,9 @@ pub struct HookResult {
     pub stderr: String,
     /// Whether the hook was skipped (not found or not executable)
     pub skipped: bool,
+    /// Whether the hook was cancelled by user
+    #[serde(default)]
+    pub cancelled: bool,
 }
 
 impl HookResult {
@@ -86,6 +89,7 @@ impl HookResult {
             stdout: String::new(),
             stderr: String::new(),
             skipped: true,
+            cancelled: false,
         }
     }
 
@@ -98,6 +102,7 @@ impl HookResult {
             stdout: String::new(),
             stderr: "Hook exists but is not executable".to_string(),
             skipped: true,
+            cancelled: false,
         }
     }
 
@@ -110,7 +115,26 @@ impl HookResult {
             stdout: String::new(),
             stderr: message.to_string(),
             skipped: false,
+            cancelled: false,
         }
+    }
+
+    /// Create a result for a cancelled hook
+    pub fn cancelled(hook_type: GitHookType) -> Self {
+        Self {
+            hook_type,
+            success: false,
+            exit_code: -1,
+            stdout: String::new(),
+            stderr: "Hook cancelled by user".to_string(),
+            skipped: false,
+            cancelled: true,
+        }
+    }
+
+    /// Check if the hook was cancelled
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled
     }
 
     /// Convert a failed hook result into an `AxisError`
@@ -455,6 +479,7 @@ mod tests {
             stdout: "Lint passed".to_string(),
             stderr: String::new(),
             skipped: false,
+            cancelled: false,
         };
 
         let json = serde_json::to_string(&result).expect("should serialize");
@@ -462,6 +487,30 @@ mod tests {
         assert!(json.contains("\"success\":true"));
         assert!(json.contains("\"exitCode\":0"));
         assert!(json.contains("\"stdout\":\"Lint passed\""));
+    }
+
+    #[test]
+    fn test_hook_result_cancelled() {
+        let result = HookResult::cancelled(GitHookType::PreCommit);
+
+        assert_eq!(result.hook_type, GitHookType::PreCommit);
+        assert!(!result.success);
+        assert_eq!(result.exit_code, -1);
+        assert!(result.is_cancelled());
+        assert!(!result.skipped);
+        assert!(result.stderr.contains("cancelled"));
+    }
+
+    #[test]
+    fn test_hook_result_is_cancelled() {
+        let skipped = HookResult::skipped(GitHookType::PreCommit);
+        assert!(!skipped.is_cancelled());
+
+        let error = HookResult::error(GitHookType::PreCommit, "failed");
+        assert!(!error.is_cancelled());
+
+        let cancelled = HookResult::cancelled(GitHookType::PreCommit);
+        assert!(cancelled.is_cancelled());
     }
 
     // ==================== HookInfo Tests ====================

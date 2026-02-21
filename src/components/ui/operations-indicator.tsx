@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { shellApi } from '@/services/api';
 import { useOperationStore, type Operation, type OperationProgress } from '@/store/operationStore';
 import { ProgressStage } from '@/types';
 
@@ -66,6 +67,14 @@ function OperationItem({ operation }: { operation: Operation }) {
     return () => clearInterval(interval);
   }, []);
 
+  const handleCancel = async () => {
+    try {
+      await shellApi.cancelOperation(operation.id);
+    } catch (err) {
+      console.warn('Failed to cancel operation:', err);
+    }
+  };
+
   const progress = operation.progress;
   const percent = progress ? getProgressPercent(progress) : 0;
 
@@ -87,6 +96,11 @@ function OperationItem({ operation }: { operation: Operation }) {
         )}
       </div>
       <div className="operations-item-time">{formatDuration(operation.startedAt)}</div>
+      {operation.cancellable && (
+        <button className="operations-cancel-btn" onClick={handleCancel}>
+          <X size={14} />
+        </button>
+      )}
     </div>
   );
 }

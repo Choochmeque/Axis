@@ -28,11 +28,6 @@ impl HookProgressEmitter {
         }
     }
 
-    /// Get the operation ID
-    pub fn operation_id(&self) -> &str {
-        &self.operation_id
-    }
-
     /// Check if the operation was cancelled
     pub fn is_cancelled(&self) -> bool {
         self.cancel_token.load(Ordering::SeqCst)

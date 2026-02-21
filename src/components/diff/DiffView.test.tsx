@@ -51,7 +51,7 @@ vi.mock('@/store/stagingStore', () => ({
 let mockSettings = {
   diffSideBySide: false,
   diffContextLines: 3,
-  diffWordWrap: false,
+  diffWordWrap: true,
   showLineNumbers: true,
 };
 
@@ -437,7 +437,7 @@ describe('DiffView view modes', () => {
     mockSettings = {
       diffSideBySide: false,
       diffContextLines: 3,
-      diffWordWrap: false,
+      diffWordWrap: true,
       showLineNumbers: true,
     };
   });

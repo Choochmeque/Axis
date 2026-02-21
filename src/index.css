@@ -307,6 +307,23 @@ code {
     font-size: var(--app-font-size);
   }
 
+  /* Diff line selection mode */
+  .diff-line-checkbox {
+    @apply shrink-0 w-6 flex items-center justify-center;
+  }
+
+  .diff-line-selected {
+    @apply ring-2 ring-inset ring-(--accent-color);
+  }
+
+  .diff-line-selectable {
+    @apply cursor-pointer;
+  }
+
+  .diff-line-selectable:hover {
+    @apply brightness-95;
+  }
+
   /* Resize handle for panels */
   .resize-handle {
     width: 4px;

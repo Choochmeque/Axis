@@ -1,6 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Columns, Rows, FileCode, Binary, Plus, Minus, X, ChevronDown, Image } from 'lucide-react';
+import {
+  Columns,
+  Rows,
+  FileCode,
+  Binary,
+  Plus,
+  Minus,
+  X,
+  ChevronDown,
+  Image,
+  ListChecks,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,7 +21,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  Checkbox,
 } from '@/components/ui';
+import { useLineSelection } from '@/hooks/useLineSelection';
+import type { UseLineSelectionReturn } from '@/hooks/useLineSelection';
+import { generatePartialPatch, isLineSelectable } from '@/lib/patchUtils';
 import { DiffLineType, DiffStatus } from '@/types';
 import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
 import { cn, testId } from '@/lib/utils';
@@ -312,12 +327,20 @@ export function DiffView({
 }: DiffViewProps) {
   const { t } = useTranslation();
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
+  const [lineSelectionMode, setLineSelectionMode] = useState(false);
+  const [isProcessingLines, setIsProcessingLines] = useState(false);
   const contextLinesInitialized = useRef(false);
   const viewModeInitialized = useRef(false);
 
   // Use store for diff settings (persists across file selections and triggers re-fetch)
   const { diffSettings, setDiffSettings } = useStagingStore();
   const { settings } = useSettingsStore();
+
+  // Line selection hook
+  const lineSelection = useLineSelection({
+    hunks: diff?.hunks ?? [],
+    enabled: lineSelectionMode,
+  });
 
   // Initialize viewMode from settings (settings = default, button = session override)
   const [viewMode, setViewMode] = useState<DiffViewMode>('unified');
@@ -374,6 +397,32 @@ export function DiffView({
       setLoadingHunk(null);
     }
   };
+
+  const handleStageSelectedLines = useCallback(async () => {
+    if (!diff || !onStageHunk || lineSelection.selectionCount === 0) return;
+    const patch = generatePartialPatch(diff, lineSelection.selectedLines);
+    if (!patch) return;
+    setIsProcessingLines(true);
+    try {
+      await onStageHunk(patch);
+      lineSelection.clearSelection();
+    } finally {
+      setIsProcessingLines(false);
+    }
+  }, [diff, onStageHunk, lineSelection]);
+
+  const handleUnstageSelectedLines = useCallback(async () => {
+    if (!diff || !onUnstageHunk || lineSelection.selectionCount === 0) return;
+    const patch = generatePartialPatch(diff, lineSelection.selectedLines);
+    if (!patch) return;
+    setIsProcessingLines(true);
+    try {
+      await onUnstageHunk(patch);
+      lineSelection.clearSelection();
+    } finally {
+      setIsProcessingLines(false);
+    }
+  }, [diff, onUnstageHunk, lineSelection]);
 
   const diffViewClass = 'flex flex-col h-full bg-(--bg-primary) overflow-hidden';
   const emptyStateClass =
@@ -435,6 +484,13 @@ export function DiffView({
         onViewModeChange={setViewMode}
         diffSettings={diffSettings}
         onDiffSettingsChange={setDiffSettings}
+        mode={mode}
+        lineSelectionMode={lineSelectionMode}
+        onLineSelectionModeChange={setLineSelectionMode}
+        lineSelection={lineSelection}
+        isProcessingLines={isProcessingLines}
+        onStageSelectedLines={handleStageSelectedLines}
+        onUnstageSelectedLines={handleUnstageSelectedLines}
       />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
@@ -449,6 +505,8 @@ export function DiffView({
             onStageHunk={onStageHunk ? handleStageHunk : undefined}
             onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
+            lineSelectionMode={lineSelectionMode}
+            lineSelection={lineSelection}
           />
         ) : (
           <SplitDiff
@@ -460,6 +518,8 @@ export function DiffView({
             onStageHunk={onStageHunk ? handleStageHunk : undefined}
             onUnstageHunk={onUnstageHunk ? handleUnstageHunk : undefined}
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
+            lineSelectionMode={lineSelectionMode}
+            lineSelection={lineSelection}
           />
         )}
       </div>
@@ -473,6 +533,13 @@ interface DiffHeaderProps {
   onViewModeChange: (mode: DiffViewMode) => void;
   diffSettings: DiffSettings;
   onDiffSettingsChange: (settings: DiffSettings) => void;
+  mode: DiffMode;
+  lineSelectionMode: boolean;
+  onLineSelectionModeChange: (enabled: boolean) => void;
+  lineSelection: UseLineSelectionReturn;
+  isProcessingLines: boolean;
+  onStageSelectedLines: () => Promise<void>;
+  onUnstageSelectedLines: () => Promise<void>;
 }
 
 const contextLineOptions: ContextLines[] = [1, 3, 6, 12, 25, 50, 100];
@@ -483,11 +550,19 @@ function DiffHeader({
   onViewModeChange,
   diffSettings,
   onDiffSettingsChange,
+  mode,
+  lineSelectionMode,
+  onLineSelectionModeChange,
+  lineSelection,
+  isProcessingLines,
+  onStageSelectedLines,
+  onUnstageSelectedLines,
 }: DiffHeaderProps) {
   const { t } = useTranslation();
   const fileName = diff.newPath || diff.oldPath || t('diff.unknownFile');
   const statusText = getStatusText(diff.status, t);
   const statusColorClass = getStatusColorClass(diff.status);
+  const showLineSelectionToggle = mode === 'workdir' || mode === 'staged';
 
   return (
     <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
@@ -510,6 +585,53 @@ function DiffHeader({
           <span className="text-xs font-medium font-mono text-error">-{diff.deletions}</span>
         )}
       </div>
+
+      {/* Line selection actions */}
+      {lineSelectionMode && lineSelection.hasSelection && (
+        <>
+          {mode === 'workdir' && (
+            <button
+              className={hunkActionClass}
+              onClick={onStageSelectedLines}
+              disabled={isProcessingLines}
+            >
+              <Plus size={14} />
+              <span>
+                {t('diff.lineMode.stageSelected', { count: lineSelection.selectionCount })}
+              </span>
+            </button>
+          )}
+          {mode === 'staged' && (
+            <button
+              className={hunkActionClass}
+              onClick={onUnstageSelectedLines}
+              disabled={isProcessingLines}
+            >
+              <Minus size={14} />
+              <span>
+                {t('diff.lineMode.unstageSelected', { count: lineSelection.selectionCount })}
+              </span>
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Line selection mode toggle */}
+      {showLineSelectionToggle && (
+        <button
+          className={cn(
+            'flex items-center gap-1 px-2 h-6 border rounded text-sm transition-colors',
+            lineSelectionMode
+              ? 'bg-(--accent-color) text-white border-(--accent-color)'
+              : 'bg-transparent text-(--text-secondary) border-(--border-color) hover:bg-(--bg-hover) hover:text-(--text-primary)'
+          )}
+          onClick={() => onLineSelectionModeChange(!lineSelectionMode)}
+          title={t('diff.lineMode.toggle')}
+        >
+          <ListChecks size={14} />
+          <span>{t('diff.lineMode.label')}</span>
+        </button>
+      )}
 
       {/* Diff Settings Dropdown */}
       <DropdownMenu>
@@ -615,6 +737,8 @@ interface UnifiedDiffProps {
   onStageHunk?: (hunkIndex: number) => Promise<void>;
   onUnstageHunk?: (hunkIndex: number) => Promise<void>;
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
+  lineSelectionMode?: boolean;
+  lineSelection?: UseLineSelectionReturn;
 }
 
 const hunkActionClass =
@@ -629,6 +753,8 @@ function UnifiedDiff({
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
+  lineSelectionMode,
+  lineSelection,
 }: UnifiedDiffProps) {
   const { t } = useTranslation();
 
@@ -678,14 +804,22 @@ function UnifiedDiff({
             )}
           </div>
           <div className="flex flex-col">
-            {hunk.lines.map((line, lineIndex) => (
-              <UnifiedDiffLine
-                key={lineIndex}
-                line={line}
-                wordWrap={wordWrap}
-                showLineNumbers={showLineNumbers}
-              />
-            ))}
+            {hunk.lines.map((line, lineIndex) => {
+              const isSelectable = isLineSelectable(line.lineType);
+              const isSelected = lineSelection?.isLineSelected(hunkIndex, lineIndex) ?? false;
+              return (
+                <UnifiedDiffLine
+                  key={lineIndex}
+                  line={line}
+                  wordWrap={wordWrap}
+                  showLineNumbers={showLineNumbers}
+                  lineSelectionMode={lineSelectionMode}
+                  isSelectable={isSelectable}
+                  isSelected={isSelected}
+                  onToggle={(e) => lineSelection?.toggleLine(hunkIndex, lineIndex, e)}
+                />
+              );
+            })}
           </div>
         </div>
       ))}
@@ -697,17 +831,55 @@ interface UnifiedDiffLineProps {
   line: DiffLine;
   wordWrap?: boolean;
   showLineNumbers?: boolean;
+  lineSelectionMode?: boolean;
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  onToggle?: (event?: React.MouseEvent) => void;
 }
 
 const lineNoClass =
   'shrink-0 w-12 py-0 px-2 text-right text-(--text-tertiary) border-r border-(--border-color) select-none tabular-nums';
 
-function UnifiedDiffLine({ line, wordWrap, showLineNumbers = true }: UnifiedDiffLineProps) {
+function UnifiedDiffLine({
+  line,
+  wordWrap,
+  showLineNumbers = true,
+  lineSelectionMode,
+  isSelectable,
+  isSelected,
+  onToggle,
+}: UnifiedDiffLineProps) {
   const { bgClass, lineNoBgClass, prefixColorClass } = getLineClasses(line.lineType);
   const prefix = getLinePrefix(line.lineType);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (lineSelectionMode && isSelectable && onToggle) {
+      onToggle(e);
+    }
+  };
+
   return (
-    <div className={cn('flex leading-5.5 font-mono diff-text', bgClass)}>
+    <div
+      className={cn(
+        'flex leading-5.5 font-mono diff-text',
+        bgClass,
+        isSelected && 'diff-line-selected',
+        lineSelectionMode && isSelectable && 'diff-line-selectable'
+      )}
+      onClick={handleClick}
+    >
+      {/* Checkbox column */}
+      {lineSelectionMode && (
+        <span className="diff-line-checkbox">
+          {isSelectable && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggle?.()}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+        </span>
+      )}
       {showLineNumbers && (
         <>
           <span className={cn(lineNoClass, lineNoBgClass)}>{line.oldLineNo ?? ''}</span>
@@ -738,6 +910,8 @@ interface SplitDiffProps {
   onStageHunk?: (hunkIndex: number) => Promise<void>;
   onUnstageHunk?: (hunkIndex: number) => Promise<void>;
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
+  lineSelectionMode?: boolean;
+  lineSelection?: UseLineSelectionReturn;
 }
 
 function SplitDiff({
@@ -749,6 +923,8 @@ function SplitDiff({
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
+  lineSelectionMode,
+  lineSelection,
 }: SplitDiffProps) {
   const { t } = useTranslation();
 
@@ -800,8 +976,11 @@ function SplitDiff({
           <div className="flex flex-col">
             <SplitHunkLines
               lines={hunk.lines}
+              hunkIndex={hunkIndex}
               wordWrap={wordWrap}
               showLineNumbers={showLineNumbers}
+              lineSelectionMode={lineSelectionMode}
+              lineSelection={lineSelection}
             />
           </div>
         </div>
@@ -812,29 +991,81 @@ function SplitDiff({
 
 interface SplitHunkLinesProps {
   lines: DiffLine[];
+  hunkIndex: number;
   wordWrap?: boolean;
   showLineNumbers?: boolean;
+  lineSelectionMode?: boolean;
+  lineSelection?: UseLineSelectionReturn;
 }
 
-function SplitHunkLines({ lines, wordWrap, showLineNumbers = true }: SplitHunkLinesProps) {
+function SplitHunkLines({
+  lines,
+  hunkIndex,
+  wordWrap,
+  showLineNumbers = true,
+  lineSelectionMode,
+  lineSelection,
+}: SplitHunkLinesProps) {
   const pairs = pairLinesForSplit(lines);
   const contentClass = wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre';
 
   return (
     <>
       {pairs.map((pair, index) => {
-        const leftClasses = getLineClasses(pair.left?.lineType || DiffLineType.Context);
-        const rightClasses = getLineClasses(pair.right?.lineType || DiffLineType.Context);
+        const leftLine = pair.left?.line;
+        const rightLine = pair.right?.line;
+        const leftClasses = getLineClasses(leftLine?.lineType || DiffLineType.Context);
+        const rightClasses = getLineClasses(rightLine?.lineType || DiffLineType.Context);
         const leftEmpty = pair.left === null;
         const rightEmpty = pair.right === null;
+
+        // Check if lines are selectable (only deletions on left, additions on right)
+        const leftSelectable = leftLine?.lineType === DiffLineType.Deletion;
+        const rightSelectable = rightLine?.lineType === DiffLineType.Addition;
+        const leftSelected = !!(
+          pair.left && lineSelection?.isLineSelected(hunkIndex, pair.left.originalIndex)
+        );
+        const rightSelected = !!(
+          pair.right && lineSelection?.isLineSelected(hunkIndex, pair.right.originalIndex)
+        );
+
+        const handleLeftClick = (e: React.MouseEvent) => {
+          if (lineSelectionMode && leftSelectable && pair.left) {
+            lineSelection?.toggleLine(hunkIndex, pair.left.originalIndex, e);
+          }
+        };
+
+        const handleRightClick = (e: React.MouseEvent) => {
+          if (lineSelectionMode && rightSelectable && pair.right) {
+            lineSelection?.toggleLine(hunkIndex, pair.right.originalIndex, e);
+          }
+        };
+
         return (
           <div key={index} className={cn('flex', !wordWrap && 'min-w-fit')}>
+            {/* Left side (deletions) */}
             <div
               className={cn(
                 'w-1/2 min-w-80 flex leading-5.5 font-mono diff-text border-r border-(--border-color)',
-                leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.bgClass
+                leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.bgClass,
+                leftSelected && 'diff-line-selected',
+                lineSelectionMode && leftSelectable && 'diff-line-selectable'
               )}
+              onClick={handleLeftClick}
             >
+              {lineSelectionMode && (
+                <span className="diff-line-checkbox">
+                  {leftSelectable && (
+                    <Checkbox
+                      checked={leftSelected}
+                      onCheckedChange={() =>
+                        pair.left && lineSelection?.toggleLine(hunkIndex, pair.left.originalIndex)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                </span>
+              )}
               {showLineNumbers && (
                 <span
                   className={cn(
@@ -842,19 +1073,36 @@ function SplitHunkLines({ lines, wordWrap, showLineNumbers = true }: SplitHunkLi
                     leftEmpty ? 'bg-(--bg-secondary)' : leftClasses.lineNoBgClass
                   )}
                 >
-                  {pair.left?.oldLineNo ?? ''}
+                  {leftLine?.oldLineNo ?? ''}
                 </span>
               )}
               <span className={cn('flex-1 py-0 px-3', contentClass)}>
-                <code className="font-inherit">{pair.left?.content ?? ''}</code>
+                <code className="font-inherit">{leftLine?.content ?? ''}</code>
               </span>
             </div>
+            {/* Right side (additions) */}
             <div
               className={cn(
                 'w-1/2 min-w-80 flex leading-5.5 font-mono diff-text',
-                rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.bgClass
+                rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.bgClass,
+                rightSelected && 'diff-line-selected',
+                lineSelectionMode && rightSelectable && 'diff-line-selectable'
               )}
+              onClick={handleRightClick}
             >
+              {lineSelectionMode && (
+                <span className="diff-line-checkbox">
+                  {rightSelectable && (
+                    <Checkbox
+                      checked={rightSelected}
+                      onCheckedChange={() =>
+                        pair.right && lineSelection?.toggleLine(hunkIndex, pair.right.originalIndex)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                </span>
+              )}
               {showLineNumbers && (
                 <span
                   className={cn(
@@ -862,11 +1110,11 @@ function SplitHunkLines({ lines, wordWrap, showLineNumbers = true }: SplitHunkLi
                     rightEmpty ? 'bg-(--bg-secondary)' : rightClasses.lineNoBgClass
                   )}
                 >
-                  {pair.right?.newLineNo ?? ''}
+                  {rightLine?.newLineNo ?? ''}
                 </span>
               )}
               <span className={cn('flex-1 py-0 px-3', contentClass)}>
-                <code className="font-inherit">{pair.right?.content ?? ''}</code>
+                <code className="font-inherit">{rightLine?.content ?? ''}</code>
               </span>
             </div>
           </div>
@@ -876,9 +1124,14 @@ function SplitHunkLines({ lines, wordWrap, showLineNumbers = true }: SplitHunkLi
   );
 }
 
+interface LinePairItem {
+  line: DiffLine;
+  originalIndex: number;
+}
+
 interface LinePair {
-  left: DiffLine | null;
-  right: DiffLine | null;
+  left: LinePairItem | null;
+  right: LinePairItem | null;
 }
 
 function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
@@ -889,20 +1142,21 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
     const line = lines[i];
 
     if (line.lineType === DiffLineType.Context) {
-      pairs.push({ left: line, right: line });
+      const item = { line, originalIndex: i };
+      pairs.push({ left: item, right: item });
       i++;
     } else if (line.lineType === DiffLineType.Deletion) {
-      // Collect consecutive deletions
-      const deletions: DiffLine[] = [];
+      // Collect consecutive deletions with their indices
+      const deletions: LinePairItem[] = [];
       while (i < lines.length && lines[i].lineType === DiffLineType.Deletion) {
-        deletions.push(lines[i]);
+        deletions.push({ line: lines[i], originalIndex: i });
         i++;
       }
 
-      // Collect consecutive additions
-      const additions: DiffLine[] = [];
+      // Collect consecutive additions with their indices
+      const additions: LinePairItem[] = [];
       while (i < lines.length && lines[i].lineType === DiffLineType.Addition) {
-        additions.push(lines[i]);
+        additions.push({ line: lines[i], originalIndex: i });
         i++;
       }
 
@@ -915,7 +1169,7 @@ function pairLinesForSplit(lines: DiffLine[]): LinePair[] {
         });
       }
     } else if (line.lineType === DiffLineType.Addition) {
-      pairs.push({ left: null, right: line });
+      pairs.push({ left: null, right: { line, originalIndex: i } });
       i++;
     } else {
       i++;

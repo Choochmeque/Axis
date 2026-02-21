@@ -1312,6 +1312,14 @@
       "unstageTitle": "Unstage hunk",
       "discard": "Discard",
       "discardTitle": "Discard hunk"
+    },
+    "lineMode": {
+      "toggle": "Toggle line selection mode",
+      "label": "Lines",
+      "stageSelected": "Stage {{count}} line(s)",
+      "unstageSelected": "Unstage {{count}} line(s)",
+      "noLinesToStage": "No lines to stage",
+      "selectAllInHunk": "Select all lines in hunk"
     }
   },
   "history": {

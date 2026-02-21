@@ -43,6 +43,11 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
   const currentBranch = branches.find((b) => b.isHead);
   const { checkSshKeyForRemote } = useSshKeyCheck();
 
+  // Extract remote name from upstream (e.g., "origin/main" -> "origin")
+  const upstreamRemote = currentBranch?.upstream?.split('/')[0];
+  // Show setUpstream checkbox only if no upstream or pushing to different remote
+  const showSetUpstream = !upstreamRemote || upstreamRemote !== selectedRemote;
+
   useEffect(() => {
     if (isOpen) {
       loadRemotes();
@@ -152,13 +157,15 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
             </Select>
           </FormField>
 
-          <CheckboxField
-            id="set-upstream"
-            label={t('remotes.push.setUpstream')}
-            checked={setUpstream}
-            onCheckedChange={setSetUpstream}
-            disabled={isLoading}
-          />
+          {showSetUpstream && (
+            <CheckboxField
+              id="set-upstream"
+              label={t('remotes.push.setUpstream')}
+              checked={setUpstream}
+              onCheckedChange={setSetUpstream}
+              disabled={isLoading}
+            />
+          )}
 
           <CheckboxField
             id="tags"

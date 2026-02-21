@@ -502,10 +502,10 @@ async reflogCheckout(reflogRef: string) : Promise<null> {
     return await TAURI_INVOKE("reflog_checkout", { reflogRef });
 },
 /**
- * List all tags
+ * List tags with optional filtering, sorting, and limiting
  */
-async tagList() : Promise<Tag[]> {
-    return await TAURI_INVOKE("tag_list");
+async tagList(options: ListTagsOptions | null) : Promise<Tag[]> {
+    return await TAURI_INVOKE("tag_list", { options });
 },
 /**
  * Create a new tag
@@ -2807,6 +2807,22 @@ pattern: string;
  * Source file where the pattern is defined (usually .gitattributes)
  */
 sourceFile: string }
+/**
+ * Options for listing tags
+ */
+export type ListTagsOptions = { 
+/**
+ * Filter pattern (glob-style)
+ */
+pattern: string | null; 
+/**
+ * Sort order (defaults to Alphabetical)
+ */
+sort?: TagSortOrder; 
+/**
+ * Maximum number of tags to return
+ */
+limit: number | null }
 export type LogOptions = { limit: number | null; skip: number | null; fromRef: string | null; branchFilter?: BranchFilterType; includeRemotes?: boolean; sortOrder?: SortOrder }
 /**
  * Menu item IDs for custom actions
@@ -3774,6 +3790,7 @@ export type TagResult = { success: boolean; message: string; tag: Tag | null }
  * Signature for a tag tagger
  */
 export type TagSignature = { name: string; email: string; timestamp: string }
+export type TagSortOrder = "Alphabetical" | "AlphabeticalDesc" | "CreationDate" | "CreationDateDesc"
 export type Theme = "Light" | "Dark" | "System"
 export type UpdateDownloadProgressEvent = { downloaded: number; total: number | null }
 export type UpdateInfo = { version: string; date: string | null; body: string | null }

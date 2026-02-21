@@ -4,9 +4,10 @@ use crate::models::{
     BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchType, Commit,
     CreateTagOptions, DeleteBranchOptions, EdgeType, FileLogResult, FileStatus, GraphCommit,
     GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType,
-    LaneState, LogOptions, RebasePreview, RebaseTarget, ReflogAction, ReflogEntry, ReflogOptions,
-    Repository, RepositoryState, RepositoryStatus, SearchResult, SignatureVerification,
-    SigningConfig, SigningFormat, SortOrder, SshCredentials, Tag, TagResult, TagSignature,
+    LaneState, ListTagsOptions, LogOptions, RebasePreview, RebaseTarget, ReflogAction, ReflogEntry,
+    ReflogOptions, Repository, RepositoryState, RepositoryStatus, SearchResult,
+    SignatureVerification, SigningConfig, SigningFormat, SortOrder, SshCredentials, Tag, TagResult,
+    TagSignature, TagSortOrder,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -2585,8 +2586,12 @@ impl Git2Service {
 
     // ==================== Tag Operations ====================
 
-    /// List all tags
-    pub fn tag_list(&self, repo: Option<&Git2Repository>) -> Result<Vec<Tag>> {
+    /// List tags with optional filtering, sorting, and limiting
+    pub fn tag_list(
+        &self,
+        options: ListTagsOptions,
+        repo: Option<&Git2Repository>,
+    ) -> Result<Vec<Tag>> {
         let owned_repo;
         let repo = if let Some(r) = repo {
             r
@@ -2594,10 +2599,59 @@ impl Git2Service {
             owned_repo = self.repo()?;
             &owned_repo
         };
-        let tag_names = repo.tag_names(None)?;
-        let mut tags = Vec::new();
 
-        for name in tag_names.iter().flatten() {
+        // Get tag names with optional pattern filtering
+        let tag_names = repo.tag_names(options.pattern.as_deref())?;
+        let mut names: Vec<String> = tag_names.iter().flatten().map(String::from).collect();
+
+        // For date-based sorting, we need to get timestamps first
+        let needs_date_sort = matches!(
+            options.sort,
+            TagSortOrder::CreationDate | TagSortOrder::CreationDateDesc
+        );
+
+        if needs_date_sort {
+            // Collect (name, timestamp) pairs for sorting
+            let mut name_times: Vec<(String, i64)> = names
+                .into_iter()
+                .filter_map(|name| {
+                    let full_name = format!("refs/tags/{name}");
+                    let reference = repo.find_reference(&full_name).ok()?;
+                    let target_obj = reference.peel(git2::ObjectType::Commit).ok()?;
+                    let commit = target_obj.peel_to_commit().ok()?;
+                    Some((name, commit.time().seconds()))
+                })
+                .collect();
+
+            // Sort by timestamp
+            match options.sort {
+                TagSortOrder::CreationDate => name_times.sort_by_key(|(_, t)| *t),
+                TagSortOrder::CreationDateDesc => {
+                    name_times.sort_by_key(|(_, t)| std::cmp::Reverse(*t))
+                }
+                _ => {}
+            }
+
+            names = name_times.into_iter().map(|(n, _)| n).collect();
+        } else {
+            // Natural alphabetical sorting (handles version numbers correctly)
+            match options.sort {
+                TagSortOrder::Alphabetical => names.sort_by(|a, b| natord::compare(a, b)),
+                TagSortOrder::AlphabeticalDesc => {
+                    names.sort_by(|a, b| natord::compare(b, a));
+                }
+                _ => {}
+            }
+        }
+
+        // Apply limit
+        if let Some(limit) = options.limit {
+            names.truncate(limit);
+        }
+
+        // Build full Tag objects
+        let mut tags = Vec::with_capacity(names.len());
+        for name in names {
             let full_name = format!("refs/tags/{name}");
             let reference = repo.find_reference(&full_name)?;
 
@@ -2643,7 +2697,7 @@ impl Git2Service {
             };
 
             tags.push(Tag {
-                name: name.to_string(),
+                name,
                 full_name,
                 target_oid: target_oid.clone(),
                 short_oid: target_oid.chars().take(7).collect(),
@@ -2655,8 +2709,6 @@ impl Git2Service {
             });
         }
 
-        // Sort alphabetically by name
-        tags.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(tags)
     }
 
@@ -2693,7 +2745,7 @@ impl Git2Service {
         }
 
         // Return the created tag
-        let tags = self.tag_list(Some(&repo))?;
+        let tags = self.tag_list(ListTagsOptions::default(), Some(&repo))?;
         let created_tag = tags.into_iter().find(|t| t.name == name);
 
         Ok(TagResult {
@@ -4476,7 +4528,9 @@ mod tests {
         let (tmp, service) = setup_test_repo();
         create_initial_commit(&service, &tmp);
 
-        let tags = service.tag_list(None).expect("should list tags");
+        let tags = service
+            .tag_list(ListTagsOptions::default(), None)
+            .expect("should list tags");
         assert!(tags.is_empty());
     }
 
@@ -4490,7 +4544,9 @@ mod tests {
             .expect("should create lightweight tag");
         assert!(result.success);
 
-        let tags = service.tag_list(None).expect("should list tags");
+        let tags = service
+            .tag_list(ListTagsOptions::default(), None)
+            .expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v1.0.0");
         assert!(!tags[0].is_annotated);
@@ -4514,7 +4570,9 @@ mod tests {
 
         assert!(result.success);
 
-        let tags = service.tag_list(None).expect("should list tags");
+        let tags = service
+            .tag_list(ListTagsOptions::default(), None)
+            .expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v2.0.0");
         assert!(tags[0].is_annotated);
@@ -4529,14 +4587,20 @@ mod tests {
         service
             .tag_create("v1.0.0", &CreateTagOptions::default())
             .expect("should create tag");
-        assert_eq!(service.tag_list(None).expect("should list tags").len(), 1);
+        assert_eq!(
+            service
+                .tag_list(ListTagsOptions::default(), None)
+                .expect("should list tags")
+                .len(),
+            1
+        );
 
         // Delete the tag
         let result = service.tag_delete("v1.0.0").expect("should delete tag");
         assert!(result.success);
 
         assert!(service
-            .tag_list(None)
+            .tag_list(ListTagsOptions::default(), None)
             .expect("should list tags after delete")
             .is_empty());
     }

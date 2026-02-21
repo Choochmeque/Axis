@@ -1,15 +1,23 @@
 use crate::error::Result;
-use crate::models::{CreateTagOptions, Tag, TagResult};
+use crate::models::{CreateTagOptions, ListTagsOptions, Tag, TagResult};
 use crate::state::AppState;
 use tauri::State;
 
 // ==================== Tag Commands ====================
 
-/// List all tags
+/// List tags with optional filtering, sorting, and limiting
 #[tauri::command]
 #[specta::specta]
-pub async fn tag_list(state: State<'_, AppState>) -> Result<Vec<Tag>> {
-    state.get_git_service()?.read().await.tag_list().await
+pub async fn tag_list(
+    state: State<'_, AppState>,
+    options: Option<ListTagsOptions>,
+) -> Result<Vec<Tag>> {
+    state
+        .get_git_service()?
+        .read()
+        .await
+        .tag_list(options.unwrap_or_default())
+        .await
 }
 
 /// Create a new tag

@@ -111,6 +111,7 @@ export type {
   Tag,
   TagSignature,
   CreateTagOptions,
+  ListTagsOptions,
   TagResult,
 
   // Submodule types

@@ -1,12 +1,12 @@
 use crate::error::Result;
-use crate::models::{CreateTagOptions, SshCredentials, Tag, TagResult};
+use crate::models::{CreateTagOptions, ListTagsOptions, SshCredentials, Tag, TagResult};
 
 use super::RepoOperations;
 
 /// Tag operations (git2 + CLI for remote ops).
 impl RepoOperations {
-    pub async fn tag_list(&self) -> Result<Vec<Tag>> {
-        self.git2(|g| g.tag_list(None)).await
+    pub async fn tag_list(&self, options: ListTagsOptions) -> Result<Vec<Tag>> {
+        self.git2(move |g| g.tag_list(options, None)).await
     }
 
     pub async fn tag_create(&self, name: &str, options: &CreateTagOptions) -> Result<TagResult> {

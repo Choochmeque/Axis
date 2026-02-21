@@ -34,6 +34,7 @@ import type {
   StashApplyOptions,
   ReflogOptions,
   CreateTagOptions,
+  ListTagsOptions,
   AddSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
@@ -351,7 +352,7 @@ export const reflogApi = {
 };
 
 export const tagApi = {
-  list: () => commands.tagList(),
+  list: (options?: ListTagsOptions) => commands.tagList(options ?? null),
 
   create: (name: string, options: CreateTagOptions) => commands.tagCreate(name, options),
 

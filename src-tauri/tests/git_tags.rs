@@ -4,7 +4,7 @@ mod common;
 
 use common::{git_cmd, setup_test_repo};
 
-use axis_lib::models::CreateTagOptions;
+use axis_lib::models::{CreateTagOptions, ListTagsOptions};
 
 // ==================== Helper ====================
 
@@ -86,7 +86,10 @@ async fn test_cli_tag_read_by_ops() {
     git_cmd(tmp.path(), &["tag", "cli-tag"]);
 
     // Verify: RepoOperations sees the tag
-    let tags = ops.tag_list().await.expect("should list tags");
+    let tags = ops
+        .tag_list(ListTagsOptions::default())
+        .await
+        .expect("should list tags");
     assert!(
         tags.iter().any(|t| t.name == "cli-tag"),
         "RepoOperations should see tag created by CLI"
@@ -149,7 +152,10 @@ async fn test_list_multiple_tags() {
     git_cmd(tmp.path(), &["tag", "v2.0.0"]);
 
     // Action: list tags
-    let tags = ops.tag_list().await.expect("should list tags");
+    let tags = ops
+        .tag_list(ListTagsOptions::default())
+        .await
+        .expect("should list tags");
 
     // Verify: all tags present
     let tag_names: Vec<&str> = tags.iter().map(|t| t.name.as_str()).collect();
@@ -187,7 +193,10 @@ async fn test_list_empty_tags() {
     let (_tmp, ops) = setup_test_repo();
 
     // Action: list tags on repo with no tags
-    let tags = ops.tag_list().await.expect("should list tags");
+    let tags = ops
+        .tag_list(ListTagsOptions::default())
+        .await
+        .expect("should list tags");
 
     // Verify: empty list
     assert!(tags.is_empty(), "New repo should have no tags");
@@ -246,7 +255,10 @@ async fn test_tag_info_fields() {
     );
 
     // Action: list and find the tag
-    let tags = ops.tag_list().await.expect("should list tags");
+    let tags = ops
+        .tag_list(ListTagsOptions::default())
+        .await
+        .expect("should list tags");
     let tag = tags
         .iter()
         .find(|t| t.name == "detailed")

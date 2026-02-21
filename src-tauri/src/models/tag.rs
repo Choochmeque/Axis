@@ -55,8 +55,9 @@ pub struct CreateTagOptions {
 pub struct ListTagsOptions {
     /// Filter pattern (glob-style)
     pub pattern: Option<String>,
-    /// Sort order
-    pub sort: Option<TagSortOrder>,
+    /// Sort order (defaults to Alphabetical)
+    #[serde(default)]
+    pub sort: TagSortOrder,
     /// Maximum number of tags to return
     pub limit: Option<usize>,
 }
@@ -261,7 +262,7 @@ mod tests {
     fn test_list_tags_options_default() {
         let opts = ListTagsOptions::default();
         assert!(opts.pattern.is_none());
-        assert!(opts.sort.is_none());
+        assert!(matches!(opts.sort, TagSortOrder::Alphabetical));
         assert!(opts.limit.is_none());
     }
 
@@ -269,13 +270,22 @@ mod tests {
     fn test_list_tags_options_with_pattern() {
         let opts = ListTagsOptions {
             pattern: Some("v*".to_string()),
-            sort: Some(TagSortOrder::CreationDateDesc),
+            sort: TagSortOrder::CreationDateDesc,
             limit: Some(10),
         };
 
         assert_eq!(opts.pattern, Some("v*".to_string()));
-        assert!(matches!(opts.sort, Some(TagSortOrder::CreationDateDesc)));
+        assert!(matches!(opts.sort, TagSortOrder::CreationDateDesc));
         assert_eq!(opts.limit, Some(10));
+    }
+
+    #[test]
+    fn test_list_tags_options_sort_defaults_on_deserialize() {
+        let json = r#"{"pattern": "v*"}"#;
+        let opts: ListTagsOptions = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(opts.pattern, Some("v*".to_string()));
+        assert!(matches!(opts.sort, TagSortOrder::Alphabetical));
+        assert!(opts.limit.is_none());
     }
 
     // ==================== TagResult Tests ====================

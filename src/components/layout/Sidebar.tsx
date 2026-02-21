@@ -462,28 +462,26 @@ export function Sidebar() {
 
             <Section title={t('sidebar.sections.tags')} icon={<Tag />} defaultExpanded={false}>
               {tags.length > 0 ? (
-                [...tags]
-                  .sort((a, b) => naturalCompare(a.name, b.name))
-                  .map((tag) => (
-                    <TagContextMenu
-                      key={tag.name}
-                      tag={tag}
-                      remotes={remotes}
-                      onCheckout={() => handleTagCheckout(tag.name)}
-                      onPush={(remote) => handleTagPush(tag.name, remote)}
-                      onDelete={() => openDeleteTagDialog({ tag })}
+                tags.map((tag) => (
+                  <TagContextMenu
+                    key={tag.name}
+                    tag={tag}
+                    remotes={remotes}
+                    onCheckout={() => handleTagCheckout(tag.name)}
+                    onPush={(remote) => handleTagPush(tag.name, remote)}
+                    onDelete={() => openDeleteTagDialog({ tag })}
+                  >
+                    <button
+                      className={sidebarItemClass}
+                      onClick={() => handleRefClick(tag.targetOid)}
                     >
-                      <button
-                        className={sidebarItemClass}
-                        onClick={() => handleRefClick(tag.targetOid)}
-                      >
-                        <Tag size={12} />
-                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                          {tag.name}
-                        </span>
-                      </button>
-                    </TagContextMenu>
-                  ))
+                      <Tag size={12} />
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {tag.name}
+                      </span>
+                    </button>
+                  </TagContextMenu>
+                ))
               ) : (
                 <div
                   className={cn(

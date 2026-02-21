@@ -7,7 +7,7 @@ import { operations } from '@/store/operationStore';
 import { HookStage } from '@/types';
 
 function getHookName(hookType: string): string {
-  return i18n.t(`settings.hooks.labels.${hookType}`);
+  return i18n.t(`repoSettings.hooks.labels.${hookType}`);
 }
 
 export function useHookProgress() {

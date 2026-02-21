@@ -1,7 +1,7 @@
 use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{FetchOptions, FetchResult, PullOptions, PushOptions, PushResult, Remote};
-use crate::services::ProgressContext;
+use crate::services::{HookProgressEmitter, ProgressContext};
 use crate::state::AppState;
 use tauri::State;
 
@@ -127,6 +127,8 @@ pub async fn push_remote(
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
+    let app_handle = state.get_app_handle()?;
+
     // Run pre-push hook (can abort)
     if !skip_hooks {
         // Get remote URL for the hook
@@ -145,11 +147,16 @@ pub async fn push_remote(
             .build_push_refs_stdin(&remote_name, &refspecs)
             .await;
 
+        let emitter = HookProgressEmitter::new(app_handle.clone(), state.progress_registry());
         let hook_result = git_service
             .write()
             .await
-            .run_pre_push(&remote_name, &remote_url, &refs_stdin)
+            .run_pre_push(&remote_name, &remote_url, &refs_stdin, Some(&emitter))
             .await;
+
+        if hook_result.is_cancelled() {
+            return Err(AxisError::Other("Hook cancelled by user".into()));
+        }
 
         if !hook_result.skipped && !hook_result.success {
             let output = if hook_result.stderr.is_empty() {
@@ -163,8 +170,6 @@ pub async fn push_remote(
             )));
         }
     }
-
-    let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);
@@ -196,6 +201,8 @@ pub async fn push_current_branch(
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
+    let app_handle = state.get_app_handle()?;
+
     // Run pre-push hook (can abort)
     if !skip_hooks {
         // Get current branch name
@@ -219,11 +226,16 @@ pub async fn push_current_branch(
                 .build_push_refs_stdin(&remote_name, &refspecs)
                 .await;
 
+            let emitter = HookProgressEmitter::new(app_handle.clone(), state.progress_registry());
             let hook_result = git_service
                 .write()
                 .await
-                .run_pre_push(&remote_name, &remote_url, &refs_stdin)
+                .run_pre_push(&remote_name, &remote_url, &refs_stdin, Some(&emitter))
                 .await;
+
+            if hook_result.is_cancelled() {
+                return Err(AxisError::Other("Hook cancelled by user".into()));
+            }
 
             if !hook_result.skipped && !hook_result.success {
                 let output = if hook_result.stderr.is_empty() {
@@ -238,8 +250,6 @@ pub async fn push_current_branch(
             }
         }
     }
-
-    let app_handle = state.get_app_handle()?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Push, ProgressStage::Connecting, None);

@@ -19,19 +19,24 @@ impl RepoOperations {
         msg_file: &Path,
         source: Option<&str>,
         sha: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         self.service
             .hook()
-            .run_prepare_commit_msg(msg_file, source, sha)
+            .run_prepare_commit_msg(msg_file, source, sha, emitter)
             .await
     }
 
-    pub async fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
-        self.service.hook().run_commit_msg(msg_file).await
+    pub async fn run_commit_msg(
+        &self,
+        msg_file: &Path,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
+        self.service.hook().run_commit_msg(msg_file, emitter).await
     }
 
-    pub async fn run_post_commit(&self) -> HookResult {
-        self.service.hook().run_post_commit().await
+    pub async fn run_post_commit(&self, emitter: Option<&HookProgressEmitter>) -> HookResult {
+        self.service.hook().run_post_commit(emitter).await
     }
 
     pub async fn run_pre_push(
@@ -39,21 +44,31 @@ impl RepoOperations {
         remote_name: &str,
         remote_url: &str,
         refs_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         self.service
             .hook()
-            .run_pre_push(remote_name, remote_url, refs_stdin)
+            .run_pre_push(remote_name, remote_url, refs_stdin, emitter)
             .await
     }
 
-    pub async fn run_post_merge(&self, is_squash: bool) -> HookResult {
-        self.service.hook().run_post_merge(is_squash).await
+    pub async fn run_post_merge(
+        &self,
+        is_squash: bool,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
+        self.service.hook().run_post_merge(is_squash, emitter).await
     }
 
-    pub async fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
+    pub async fn run_pre_rebase(
+        &self,
+        upstream: &str,
+        rebased_branch: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         self.service
             .hook()
-            .run_pre_rebase(upstream, rebased_branch)
+            .run_pre_rebase(upstream, rebased_branch, emitter)
             .await
     }
 
@@ -62,17 +77,23 @@ impl RepoOperations {
         prev_head: &str,
         new_head: &str,
         is_branch: bool,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         self.service
             .hook()
-            .run_post_checkout(prev_head, new_head, is_branch)
+            .run_post_checkout(prev_head, new_head, is_branch, emitter)
             .await
     }
 
-    pub async fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
+    pub async fn run_post_rewrite(
+        &self,
+        command: &str,
+        rewrites_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         self.service
             .hook()
-            .run_post_rewrite(command, rewrites_stdin)
+            .run_post_rewrite(command, rewrites_stdin, emitter)
             .await
     }
 

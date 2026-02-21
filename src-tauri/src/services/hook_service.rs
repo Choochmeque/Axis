@@ -262,12 +262,13 @@ impl HookService {
             .await
     }
 
-    /// Run prepare-commit-msg hook
+    /// Run prepare-commit-msg hook with optional progress emitter
     pub async fn run_prepare_commit_msg(
         &self,
         msg_file: &Path,
         source: Option<&str>,
         sha: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         let msg_file_str = msg_file.to_string_lossy();
         let mut args: Vec<&str> = vec![msg_file_str.as_ref()];
@@ -277,82 +278,107 @@ impl HookService {
         if let Some(s) = sha {
             args.push(s);
         }
-        self.execute_hook(GitHookType::PrepareCommitMsg, &args, None, None)
+        self.execute_hook(GitHookType::PrepareCommitMsg, &args, None, emitter)
             .await
     }
 
-    /// Run commit-msg hook
-    pub async fn run_commit_msg(&self, msg_file: &Path) -> HookResult {
+    /// Run commit-msg hook with optional progress emitter
+    pub async fn run_commit_msg(
+        &self,
+        msg_file: &Path,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let msg_file_str = msg_file.to_string_lossy();
-        self.execute_hook(GitHookType::CommitMsg, &[msg_file_str.as_ref()], None, None)
+        self.execute_hook(
+            GitHookType::CommitMsg,
+            &[msg_file_str.as_ref()],
+            None,
+            emitter,
+        )
+        .await
+    }
+
+    /// Run post-commit hook with optional progress emitter
+    pub async fn run_post_commit(&self, emitter: Option<&HookProgressEmitter>) -> HookResult {
+        self.execute_hook(GitHookType::PostCommit, &[], None, emitter)
             .await
     }
 
-    /// Run post-commit hook
-    pub async fn run_post_commit(&self) -> HookResult {
-        self.execute_hook(GitHookType::PostCommit, &[], None, None)
-            .await
-    }
-
-    /// Run pre-push hook
+    /// Run pre-push hook with optional progress emitter
     /// refs format: "<local ref> <local sha> <remote ref> <remote sha>\n" per line
     pub async fn run_pre_push(
         &self,
         remote_name: &str,
         remote_url: &str,
         refs_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         self.execute_hook(
             GitHookType::PrePush,
             &[remote_name, remote_url],
             Some(refs_stdin),
-            None,
+            emitter,
         )
         .await
     }
 
-    /// Run post-merge hook
-    pub async fn run_post_merge(&self, is_squash: bool) -> HookResult {
+    /// Run post-merge hook with optional progress emitter
+    pub async fn run_post_merge(
+        &self,
+        is_squash: bool,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let flag = if is_squash { "1" } else { "0" };
-        self.execute_hook(GitHookType::PostMerge, &[flag], None, None)
+        self.execute_hook(GitHookType::PostMerge, &[flag], None, emitter)
             .await
     }
 
-    /// Run pre-rebase hook
-    pub async fn run_pre_rebase(&self, upstream: &str, rebased_branch: Option<&str>) -> HookResult {
+    /// Run pre-rebase hook with optional progress emitter
+    pub async fn run_pre_rebase(
+        &self,
+        upstream: &str,
+        rebased_branch: Option<&str>,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         let mut args = vec![upstream];
         if let Some(branch) = rebased_branch {
             args.push(branch);
         }
-        self.execute_hook(GitHookType::PreRebase, &args, None, None)
+        self.execute_hook(GitHookType::PreRebase, &args, None, emitter)
             .await
     }
 
-    /// Run post-checkout hook
+    /// Run post-checkout hook with optional progress emitter
     pub async fn run_post_checkout(
         &self,
         prev_head: &str,
         new_head: &str,
         is_branch: bool,
+        emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
         let flag = if is_branch { "1" } else { "0" };
         self.execute_hook(
             GitHookType::PostCheckout,
             &[prev_head, new_head, flag],
             None,
-            None,
+            emitter,
         )
         .await
     }
 
-    /// Run post-rewrite hook
+    /// Run post-rewrite hook with optional progress emitter
     /// rewrites format: "<old sha> <new sha>\n" per line
-    pub async fn run_post_rewrite(&self, command: &str, rewrites_stdin: &str) -> HookResult {
+    pub async fn run_post_rewrite(
+        &self,
+        command: &str,
+        rewrites_stdin: &str,
+        emitter: Option<&HookProgressEmitter>,
+    ) -> HookResult {
         self.execute_hook(
             GitHookType::PostRewrite,
             &[command],
             Some(rewrites_stdin),
-            None,
+            emitter,
         )
         .await
     }
@@ -1024,7 +1050,7 @@ mod tests {
         let service = HookService::new(&repo);
 
         // No hook exists, should be skipped
-        let result = service.run_post_merge(false).await;
+        let result = service.run_post_merge(false, None).await;
         assert!(result.skipped);
     }
 
@@ -1033,7 +1059,9 @@ mod tests {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_post_checkout("abc123", "def456", true).await;
+        let result = service
+            .run_post_checkout("abc123", "def456", true, None)
+            .await;
         assert!(result.skipped);
     }
 
@@ -1042,7 +1070,9 @@ mod tests {
         let (_tmp, repo) = setup_test_repo();
         let service = HookService::new(&repo);
 
-        let result = service.run_pre_rebase("upstream", Some("feature")).await;
+        let result = service
+            .run_pre_rebase("upstream", Some("feature"), None)
+            .await;
         assert!(result.skipped);
     }
 
@@ -1053,7 +1083,7 @@ mod tests {
 
         let refs = "refs/heads/main abc123 refs/heads/main def456\n";
         let result = service
-            .run_pre_push("origin", "https://example.com/repo.git", refs)
+            .run_pre_push("origin", "https://example.com/repo.git", refs, None)
             .await;
         assert!(result.skipped);
     }
@@ -1064,7 +1094,7 @@ mod tests {
         let service = HookService::new(&repo);
 
         let rewrites = "abc123 def456\n";
-        let result = service.run_post_rewrite("rebase", rewrites).await;
+        let result = service.run_post_rewrite("rebase", rewrites, None).await;
         assert!(result.skipped);
     }
 }

@@ -221,35 +221,18 @@ export function RebaseOntoDialog({
                     disabled={isLoading}
                     placeholder={t('merge.rebaseOnto.selectOldBase')}
                   >
-                    <SelectItem value="" disabled>
-                      {t('merge.rebaseOnto.selectOldBase')}
-                    </SelectItem>
-                    {branches.length > 0 && (
-                      <>
-                        <SelectItem value="__branches_header__" disabled className="font-semibold">
-                          {t('merge.rebaseOnto.branches')}
-                        </SelectItem>
-                        {branches.map((branch) => (
-                          <SelectItem key={branch.fullName} value={branch.name}>
-                            {branch.name}
-                            {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                    {commits.length > 0 && (
-                      <>
-                        <SelectItem value="__commits_header__" disabled className="font-semibold">
-                          {t('merge.rebaseOnto.recentCommits')}
-                        </SelectItem>
-                        {commits.slice(0, 20).map((commit) => (
-                          <SelectItem key={commit.oid} value={commit.oid}>
-                            <span className="font-mono text-xs">{commit.shortOid}</span>{' '}
-                            <span className="truncate">{commit.summary}</span>
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.fullName} value={branch.name}>
+                        {branch.name}
+                        {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
+                      </SelectItem>
+                    ))}
+                    {commits.slice(0, 20).map((commit) => (
+                      <SelectItem key={commit.oid} value={commit.oid}>
+                        <span className="font-mono text-xs">{commit.shortOid}</span>{' '}
+                        <span className="truncate">{commit.summary}</span>
+                      </SelectItem>
+                    ))}
                   </Select>
                 </FormField>
               )}

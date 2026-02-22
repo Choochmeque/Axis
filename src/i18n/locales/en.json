@@ -774,7 +774,7 @@
       "selectOldBaseError": "Please select a starting point",
       "branches": "Branches",
       "recentCommits": "Recent Commits",
-      "description": "Move commits from <strong>{{currentBranch}}</strong> (after <strong>{{oldBase}}</strong>) onto <strong>{{newBase}}</strong>.",
+      "description": "Move commits from \"{{currentBranch}}\" (after \"{{oldBase}}\") onto \"{{newBase}}\".",
       "warning": "Warning: Rebase rewrites commit history. Only rebase commits that haven't been pushed to a shared repository.",
       "rebaseButton": "Rebase"
     },

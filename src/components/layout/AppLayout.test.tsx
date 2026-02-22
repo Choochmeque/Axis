@@ -256,6 +256,13 @@ let mockDialogStore = {
     targetCommit: null as string | null,
   },
   closeRebaseDialog: mockCloseRebaseDialog,
+  rebaseOntoDialog: {
+    isOpen: false,
+    onRebaseComplete: null as ((result: unknown) => void) | null,
+    currentBranch: 'main',
+    newBase: '',
+  },
+  closeRebaseOntoDialog: mockCloseRebaseOntoDialog,
   mergeDialog: {
     isOpen: false,
     onMergeComplete: null as ((result: unknown) => void) | null,

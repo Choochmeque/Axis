@@ -20,12 +20,16 @@ const mockGetConflictedFiles = vi.fn();
 const mockGetState = vi.fn();
 const mockGetConflictContent = vi.fn();
 const mockResolveConflict = vi.fn();
+const mockMarkResolved = vi.fn();
+const mockMarkUnresolved = vi.fn();
 
 vi.mock('@/services/api', () => ({
   conflictApi: {
     getConflictedFiles: () => mockGetConflictedFiles(),
     getConflictContent: (path: string) => mockGetConflictContent(path),
     resolveConflict: (...args: unknown[]) => mockResolveConflict(...args),
+    markResolved: (path: string) => mockMarkResolved(path),
+    markUnresolved: (path: string) => mockMarkUnresolved(path),
   },
   operationApi: {
     getState: () => mockGetState(),
@@ -216,6 +220,26 @@ describe('ConflictResolver', () => {
 
     await waitFor(() => {
       expect(screen.getByText('src/file1.ts')).toBeInTheDocument();
+    });
+  });
+
+  it('should render mark unresolved button for resolved files', async () => {
+    mockGetConflictedFiles.mockResolvedValue([{ path: 'src/file1.ts', isResolved: true }]);
+
+    render(<ConflictResolver />);
+
+    await waitFor(() => {
+      expect(screen.getByText('merge.conflictResolver.markUnresolved')).toBeInTheDocument();
+    });
+  });
+
+  it('should render mark resolved button for unresolved files', async () => {
+    mockGetConflictedFiles.mockResolvedValue([{ path: 'src/file1.ts', isResolved: false }]);
+
+    render(<ConflictResolver />);
+
+    await waitFor(() => {
+      expect(screen.getByText('merge.conflictResolver.markResolved')).toBeInTheDocument();
     });
   });
 });

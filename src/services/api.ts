@@ -303,6 +303,8 @@ export const conflictApi = {
     commands.resolveConflict(path, resolution, customContent ?? null),
 
   markResolved: (path: string) => commands.markConflictResolved(path),
+
+  markUnresolved: (path: string) => commands.markConflictUnresolved(path),
 };
 
 export const operationApi = {

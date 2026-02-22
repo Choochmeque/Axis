@@ -38,6 +38,7 @@ pub struct GitCliService {
     repo_path: std::path::PathBuf,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationType {
     Merge,

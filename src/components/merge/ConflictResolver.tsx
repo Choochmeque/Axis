@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { AlertTriangle, Check, X, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Check, X, RefreshCw, RotateCcw } from 'lucide-react';
 import { conflictApi, operationApi } from '@/services/api';
 import { ConflictResolution } from '@/types';
 import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
@@ -127,6 +127,22 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
     } catch (err) {
       console.error('Failed to resolve conflict:', getErrorMessage(err));
       setError(t('merge.conflictResolver.failedResolve'));
+    }
+  };
+
+  const handleUnresolve = async () => {
+    if (!selectedFile) return;
+
+    try {
+      await conflictApi.markUnresolved(selectedFile);
+      await loadConflicts();
+      // Reload content to show restored conflict markers
+      const content = await conflictApi.getConflictContent(selectedFile);
+      setConflictContent(content);
+      setMergedContent(content.merged);
+    } catch (err) {
+      console.error('Failed to unresolve conflict:', getErrorMessage(err));
+      setError(t('merge.conflictResolver.failedUnresolve'));
     }
   };
 
@@ -301,9 +317,16 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                 <div className="flex flex-col h-full overflow-hidden">
                   <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success shrink-0">
                     <span>{t('merge.conflictResolver.merged')}</span>
-                    <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
-                      {t('merge.conflictResolver.markResolved')}
-                    </button>
+                    {conflicts.find((c) => c.path === selectedFile)?.isResolved ? (
+                      <button className={btnSmallClass} onClick={handleUnresolve}>
+                        <RotateCcw size={14} className="mr-1 inline" />
+                        {t('merge.conflictResolver.markUnresolved')}
+                      </button>
+                    ) : (
+                      <button className={btnPrimarySmallClass} onClick={handleResolveMerged}>
+                        {t('merge.conflictResolver.markResolved')}
+                      </button>
+                    )}
                   </div>
                   <Textarea
                     resizable={false}

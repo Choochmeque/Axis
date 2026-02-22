@@ -729,6 +729,19 @@ pub async fn mark_conflict_resolved(state: State<'_, AppState>, path: String) ->
     Ok(())
 }
 
+/// Mark a file as unresolved (restore conflict markers)
+#[tauri::command]
+#[specta::specta]
+pub async fn mark_conflict_unresolved(state: State<'_, AppState>, path: String) -> Result<()> {
+    state
+        .get_git_service()?
+        .write()
+        .await
+        .mark_unresolved(&path)
+        .await?;
+    Ok(())
+}
+
 // ==================== Operation State Commands ====================
 
 /// Get the current operation in progress

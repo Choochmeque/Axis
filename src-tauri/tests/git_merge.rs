@@ -729,6 +729,62 @@ async fn test_mark_resolved_verified_by_cli() {
 }
 
 #[tokio::test]
+async fn test_mark_unresolved_verified_by_cli() {
+    let (tmp, ops) = setup_test_repo();
+
+    let base = git_head_oid(tmp.path());
+
+    // Setup: create merge conflict
+    std::fs::write(tmp.path().join("conflict.txt"), "main content\n").expect("should write");
+    git_cmd(tmp.path(), &["add", "."]);
+    git_cmd(tmp.path(), &["commit", "-m", "main"]);
+
+    create_conflicting_branch_from(
+        tmp.path(),
+        "feature",
+        &base,
+        "conflict.txt",
+        "feature content\n",
+    );
+
+    let _ = ops.merge("feature", None, false, false, false, false).await;
+    assert!(
+        !git_conflicted_files(tmp.path()).is_empty(),
+        "Should have conflicts"
+    );
+
+    // Resolve the conflict manually and mark as resolved
+    std::fs::write(tmp.path().join("conflict.txt"), "resolved content").expect("should write");
+    ops.mark_resolved("conflict.txt")
+        .await
+        .expect("should mark resolved");
+
+    // Verify it was resolved
+    let conflicts = git_conflicted_files(tmp.path());
+    assert!(
+        !conflicts.contains(&"conflict.txt".to_string()),
+        "File should be resolved first"
+    );
+
+    // Action: mark as unresolved
+    let result = ops
+        .mark_unresolved("conflict.txt")
+        .await
+        .expect("should mark unresolved");
+
+    // Verify
+    assert!(result.success, "Mark unresolved should succeed");
+
+    // Verify: conflict markers are restored in the file
+    let content =
+        std::fs::read_to_string(tmp.path().join("conflict.txt")).expect("should read file");
+    assert!(
+        content.contains("<<<<<<<"),
+        "Should have conflict markers after unresolving"
+    );
+}
+
+#[tokio::test]
 async fn test_resolve_with_ours_verified_by_cli() {
     let (tmp, ops) = setup_test_repo();
 

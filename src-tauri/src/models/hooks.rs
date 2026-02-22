@@ -80,6 +80,7 @@ impl HookResult {
     }
 
     /// Create a result for a hook that isn't executable
+    #[cfg(unix)]
     pub fn not_executable(hook_type: GitHookType) -> Self {
         Self {
             hook_type,
@@ -423,6 +424,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn test_hook_result_not_executable() {
         let result = HookResult::not_executable(GitHookType::CommitMsg);
 

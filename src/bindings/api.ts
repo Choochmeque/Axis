@@ -177,8 +177,8 @@ async setBranchUpstream(branchName: string, upstream: string | null) : Promise<n
 async compareBranches(baseRef: string, compareRef: string) : Promise<BranchCompareResult> {
     return await TAURI_INVOKE("compare_branches", { baseRef, compareRef });
 },
-async listRemotes() : Promise<Remote[]> {
-    return await TAURI_INVOKE("list_remotes");
+async listRemotes(options: ListRemoteOptions | null) : Promise<Remote[]> {
+    return await TAURI_INVOKE("list_remotes", { options });
 },
 async getRemote(name: string) : Promise<Remote> {
     return await TAURI_INVOKE("get_remote", { name });
@@ -2832,6 +2832,18 @@ pattern: string;
  */
 sourceFile: string }
 /**
+ * Options for listing remotes
+ */
+export type ListRemoteOptions = { 
+/**
+ * Sort order (defaults to Alphabetical)
+ */
+sort?: RemoteSortOrder; 
+/**
+ * Maximum number of remotes to return
+ */
+limit: number | null }
+/**
  * Options for listing submodules
  */
 export type ListSubmoduleOptions = { 
@@ -3336,6 +3348,10 @@ export type Remote = { name: string; url: string | null; pushUrl: string | null;
  * Remote fetch completed with new commits
  */
 export type RemoteFetchedEvent = { path: string; newCommits: number }
+/**
+ * Sort order for remote listing
+ */
+export type RemoteSortOrder = "Alphabetical" | "AlphabeticalDesc"
 /**
  * Mapping of a remote to an SSH key path
  */

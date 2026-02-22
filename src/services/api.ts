@@ -38,6 +38,7 @@ import type {
   ListTagsOptions,
   AddSubmoduleOptions,
   ListSubmoduleOptions,
+  ListRemoteOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
   AddWorktreeOptions,
@@ -148,7 +149,7 @@ export const branchApi = {
 };
 
 export const remoteApi = {
-  list: () => commands.listRemotes(),
+  list: (options?: ListRemoteOptions) => commands.listRemotes(options ?? null),
 
   get: (name: string) => commands.getRemote(name),
 

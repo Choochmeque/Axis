@@ -75,7 +75,12 @@ pub async fn integration_disconnect(
 pub async fn integration_detect_provider(
     state: State<'_, AppState>,
 ) -> Result<Option<DetectedProvider>> {
-    let remotes = state.get_git_service()?.read().await.list_remotes().await?;
+    let remotes = state
+        .get_git_service()?
+        .read()
+        .await
+        .list_remotes(&Default::default())
+        .await?;
 
     // Try origin first, then any other remote
     let origin_url = remotes

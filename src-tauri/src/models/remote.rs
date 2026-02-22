@@ -1,6 +1,26 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+/// Sort order for remote listing
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
+pub enum RemoteSortOrder {
+    #[default]
+    Alphabetical,
+    AlphabeticalDesc,
+}
+
+/// Options for listing remotes
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ListRemoteOptions {
+    /// Sort order (defaults to Alphabetical)
+    #[serde(default)]
+    pub sort: RemoteSortOrder,
+    /// Maximum number of remotes to return
+    pub limit: Option<usize>,
+}
+
 /// Represents a Git remote
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -499,5 +519,78 @@ mod tests {
 
         assert!(!opts.rebase);
         assert!(opts.ff_only);
+    }
+
+    // ==================== RemoteSortOrder Tests ====================
+
+    #[test]
+    fn test_remote_sort_order_default() {
+        let sort = RemoteSortOrder::default();
+        assert_eq!(sort, RemoteSortOrder::Alphabetical);
+    }
+
+    #[test]
+    fn test_remote_sort_order_equality() {
+        assert_eq!(RemoteSortOrder::Alphabetical, RemoteSortOrder::Alphabetical);
+        assert_eq!(
+            RemoteSortOrder::AlphabeticalDesc,
+            RemoteSortOrder::AlphabeticalDesc
+        );
+        assert_ne!(
+            RemoteSortOrder::Alphabetical,
+            RemoteSortOrder::AlphabeticalDesc
+        );
+    }
+
+    #[test]
+    fn test_remote_sort_order_serialization() {
+        let alphabetical = RemoteSortOrder::Alphabetical;
+        let json = serde_json::to_string(&alphabetical).expect("should serialize");
+        assert_eq!(json, "\"Alphabetical\"");
+
+        let desc = RemoteSortOrder::AlphabeticalDesc;
+        let json = serde_json::to_string(&desc).expect("should serialize");
+        assert_eq!(json, "\"AlphabeticalDesc\"");
+    }
+
+    #[test]
+    fn test_remote_sort_order_deserialization() {
+        let sort: RemoteSortOrder =
+            serde_json::from_str("\"Alphabetical\"").expect("should deserialize");
+        assert_eq!(sort, RemoteSortOrder::Alphabetical);
+
+        let sort: RemoteSortOrder =
+            serde_json::from_str("\"AlphabeticalDesc\"").expect("should deserialize");
+        assert_eq!(sort, RemoteSortOrder::AlphabeticalDesc);
+    }
+
+    // ==================== ListRemoteOptions Tests ====================
+
+    #[test]
+    fn test_list_remote_options_default() {
+        let options = ListRemoteOptions::default();
+        assert_eq!(options.sort, RemoteSortOrder::Alphabetical);
+        assert!(options.limit.is_none());
+    }
+
+    #[test]
+    fn test_list_remote_options_custom() {
+        let options = ListRemoteOptions {
+            sort: RemoteSortOrder::AlphabeticalDesc,
+            limit: Some(10),
+        };
+        assert_eq!(options.sort, RemoteSortOrder::AlphabeticalDesc);
+        assert_eq!(options.limit, Some(10));
+    }
+
+    #[test]
+    fn test_list_remote_options_serialization() {
+        let options = ListRemoteOptions {
+            sort: RemoteSortOrder::AlphabeticalDesc,
+            limit: Some(5),
+        };
+        let json = serde_json::to_string(&options).expect("should serialize");
+        assert!(json.contains("\"sort\":\"AlphabeticalDesc\""));
+        assert!(json.contains("\"limit\":5"));
     }
 }

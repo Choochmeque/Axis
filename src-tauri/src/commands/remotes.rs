@@ -1,14 +1,24 @@
 use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
-use crate::models::{FetchOptions, FetchResult, PullOptions, PushOptions, PushResult, Remote};
+use crate::models::{
+    FetchOptions, FetchResult, ListRemoteOptions, PullOptions, PushOptions, PushResult, Remote,
+};
 use crate::services::{HookProgressEmitter, ProgressContext};
 use crate::state::AppState;
 use tauri::State;
 
 #[tauri::command]
 #[specta::specta]
-pub async fn list_remotes(state: State<'_, AppState>) -> Result<Vec<Remote>> {
-    state.get_git_service()?.read().await.list_remotes().await
+pub async fn list_remotes(
+    state: State<'_, AppState>,
+    options: Option<ListRemoteOptions>,
+) -> Result<Vec<Remote>> {
+    state
+        .get_git_service()?
+        .read()
+        .await
+        .list_remotes(&options.unwrap_or_default())
+        .await
 }
 
 #[tauri::command]
@@ -300,7 +310,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
-    let remotes = guard.list_remotes().await?;
+    let remotes = guard.list_remotes(&Default::default()).await?;
     let options = FetchOptions::default();
 
     let mut results = Vec::new();

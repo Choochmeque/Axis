@@ -1,15 +1,16 @@
 use crate::error::Result;
 use crate::models::{
-    FetchOptions, FetchResult, PullOptions, PushOptions, PushResult, Remote, SshCredentials,
+    FetchOptions, FetchResult, ListRemoteOptions, PullOptions, PushOptions, PushResult, Remote,
+    SshCredentials,
 };
 
 use super::RepoOperations;
 
 /// Remote, fetch, push, pull operations.
 impl RepoOperations {
-    pub async fn list_remotes(&self) -> Result<Vec<Remote>> {
-        self.git2(super::super::git2_service::Git2Service::list_remotes)
-            .await
+    pub async fn list_remotes(&self, options: &ListRemoteOptions) -> Result<Vec<Remote>> {
+        let options = options.clone();
+        self.git2(move |g| g.list_remotes(&options)).await
     }
 
     pub async fn get_remote(&self, name: &str) -> Result<Remote> {

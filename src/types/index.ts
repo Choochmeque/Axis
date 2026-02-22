@@ -28,6 +28,7 @@ export type {
 
   // Remote types
   Remote,
+  ListRemoteOptions,
   FetchOptions,
   FetchProgress,
   FetchResult,
@@ -250,6 +251,7 @@ import type {
   SigningFormat as SigningFormatType,
   SubmoduleStatus as SubmoduleStatusType,
   SubmoduleSortOrder as SubmoduleSortOrderType,
+  RemoteSortOrder as RemoteSortOrderType,
   ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
   BisectMarkType as BisectMarkTypeType,
@@ -477,6 +479,13 @@ export const SubmoduleSortOrder: { [K in SubmoduleSortOrderType]: K } = {
 };
 
 export type SubmoduleSortOrder = SubmoduleSortOrderType;
+
+export const RemoteSortOrder: { [K in RemoteSortOrderType]: K } = {
+  Alphabetical: 'Alphabetical',
+  AlphabeticalDesc: 'AlphabeticalDesc',
+};
+
+export type RemoteSortOrder = RemoteSortOrderType;
 
 export const ConflictType: { [K in ConflictTypeType]: K } = {
   Content: 'Content',

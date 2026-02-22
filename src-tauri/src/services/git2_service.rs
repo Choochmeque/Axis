@@ -1443,7 +1443,12 @@ impl Git2Service {
     // ==================== Remote Operations ====================
 
     /// List all remotes
-    pub fn list_remotes(&self) -> Result<Vec<crate::models::Remote>> {
+    pub fn list_remotes(
+        &self,
+        options: &crate::models::ListRemoteOptions,
+    ) -> Result<Vec<crate::models::Remote>> {
+        use crate::models::RemoteSortOrder;
+
         let repo = self.repo()?;
         let remote_names = repo.remotes()?;
         let mut remotes = Vec::new();
@@ -1468,6 +1473,21 @@ impl Git2Service {
                         .collect(),
                 });
             }
+        }
+
+        // Sort remotes using natord for natural ordering
+        match options.sort {
+            RemoteSortOrder::Alphabetical => {
+                remotes.sort_by(|a, b| natord::compare(&a.name, &b.name));
+            }
+            RemoteSortOrder::AlphabeticalDesc => {
+                remotes.sort_by(|a, b| natord::compare(&b.name, &a.name));
+            }
+        }
+
+        // Apply limit if specified
+        if let Some(limit) = options.limit {
+            remotes.truncate(limit);
         }
 
         Ok(remotes)
@@ -4207,7 +4227,9 @@ mod tests {
             .add_remote("upstream", "https://github.com/other/repo.git")
             .expect("should add upstream remote");
 
-        let remotes = service.list_remotes().expect("should list remotes");
+        let remotes = service
+            .list_remotes(&Default::default())
+            .expect("should list remotes");
         assert_eq!(remotes.len(), 2);
         assert!(remotes.iter().any(|r| r.name == "origin"));
         assert!(remotes.iter().any(|r| r.name == "upstream"));
@@ -4240,7 +4262,9 @@ mod tests {
             .expect("should add remote");
 
         // Verify it exists
-        let remotes = service.list_remotes().expect("should list remotes");
+        let remotes = service
+            .list_remotes(&Default::default())
+            .expect("should list remotes");
         assert_eq!(remotes.len(), 1);
 
         // Remove it
@@ -4250,7 +4274,7 @@ mod tests {
 
         // Verify it's gone
         let remotes = service
-            .list_remotes()
+            .list_remotes(&Default::default())
             .expect("should list remotes after remove");
         assert!(remotes.is_empty());
     }
@@ -4269,7 +4293,9 @@ mod tests {
             .expect("should rename remote");
 
         // Verify the rename
-        let remotes = service.list_remotes().expect("should list remotes");
+        let remotes = service
+            .list_remotes(&Default::default())
+            .expect("should list remotes");
         assert!(!remotes.iter().any(|r| r.name == "old-remote"));
         assert!(remotes.iter().any(|r| r.name == "new-remote"));
     }

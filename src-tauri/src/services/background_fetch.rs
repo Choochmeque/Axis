@@ -57,16 +57,17 @@ impl BackgroundFetchService {
                             .unwrap_or(None);
 
                         // List remotes (read lock)
-                        let remotes = match handle.read().await.list_remotes().await {
-                            Ok(remotes) => remotes,
-                            Err(e) => {
-                                log::warn!(
-                                    "Background fetch: failed to list remotes for {}: {e}",
-                                    path.display()
-                                );
-                                continue;
-                            }
-                        };
+                        let remotes =
+                            match handle.read().await.list_remotes(&Default::default()).await {
+                                Ok(remotes) => remotes,
+                                Err(e) => {
+                                    log::warn!(
+                                        "Background fetch: failed to list remotes for {}: {e}",
+                                        path.display()
+                                    );
+                                    continue;
+                                }
+                            };
 
                         let options = FetchOptions::default();
                         let mut total_updates = 0u32;

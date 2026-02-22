@@ -40,7 +40,7 @@ import { useStagingStore } from '../../store/stagingStore';
 import { useLfsStore } from '../../store/lfsStore';
 import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
 import { useDialogStore } from '../../store/dialogStore';
-import { cn, naturalCompare, testId } from '../../lib/utils';
+import { cn, testId } from '../../lib/utils';
 import type { Branch } from '../../types';
 import { BranchContextMenu, RemoteBranchContextMenu } from '../branches';
 import { TagContextMenu } from '../tags/TagContextMenu';
@@ -602,26 +602,24 @@ export function Sidebar() {
               defaultExpanded={false}
             >
               {submodules.length > 0 ? (
-                [...submodules]
-                  .sort((a, b) => naturalCompare(a.name, b.name))
-                  .map((submodule) => (
-                    <div key={submodule.path} className={sidebarItemClass}>
-                      <FolderGit2 size={12} />
-                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {submodule.name}
+                submodules.map((submodule) => (
+                  <div key={submodule.path} className={sidebarItemClass}>
+                    <FolderGit2 size={12} />
+                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {submodule.name}
+                    </span>
+                    {submodule.status !== 'Current' && (
+                      <span
+                        className={cn(
+                          'badge',
+                          submodule.status === 'Modified' && 'bg-warning text-white'
+                        )}
+                      >
+                        {submodule.status}
                       </span>
-                      {submodule.status !== 'Current' && (
-                        <span
-                          className={cn(
-                            'badge',
-                            submodule.status === 'Modified' && 'bg-warning text-white'
-                          )}
-                        >
-                          {submodule.status}
-                        </span>
-                      )}
-                    </div>
-                  ))
+                    )}
+                  </div>
+                ))
               ) : (
                 <div
                   className={cn(

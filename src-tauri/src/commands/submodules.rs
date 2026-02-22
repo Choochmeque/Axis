@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::models::{
-    AddSubmoduleOptions, Submodule, SubmoduleResult, SyncSubmoduleOptions, UpdateSubmoduleOptions,
+    AddSubmoduleOptions, ListSubmoduleOptions, Submodule, SubmoduleResult, SyncSubmoduleOptions,
+    UpdateSubmoduleOptions,
 };
 use crate::state::AppState;
 use tauri::State;
@@ -10,8 +11,16 @@ use tauri::State;
 /// List all submodules
 #[tauri::command]
 #[specta::specta]
-pub async fn submodule_list(state: State<'_, AppState>) -> Result<Vec<Submodule>> {
-    state.get_git_service()?.read().await.submodule_list().await
+pub async fn submodule_list(
+    state: State<'_, AppState>,
+    options: Option<ListSubmoduleOptions>,
+) -> Result<Vec<Submodule>> {
+    state
+        .get_git_service()?
+        .read()
+        .await
+        .submodule_list(&options.unwrap_or_default())
+        .await
 }
 
 /// Add a new submodule

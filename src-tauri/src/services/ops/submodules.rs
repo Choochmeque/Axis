@@ -1,15 +1,15 @@
 use crate::error::Result;
 use crate::models::{
-    AddSubmoduleOptions, SshCredentials, Submodule, SubmoduleResult, SyncSubmoduleOptions,
-    UpdateSubmoduleOptions,
+    AddSubmoduleOptions, ListSubmoduleOptions, SshCredentials, Submodule, SubmoduleResult,
+    SyncSubmoduleOptions, UpdateSubmoduleOptions,
 };
 
 use super::RepoOperations;
 
 /// Submodule operations.
 impl RepoOperations {
-    pub async fn submodule_list(&self) -> Result<Vec<Submodule>> {
-        self.service.git_cli().submodule_list().await
+    pub async fn submodule_list(&self, options: &ListSubmoduleOptions) -> Result<Vec<Submodule>> {
+        self.service.git_cli().submodule_list(options).await
     }
 
     pub async fn submodule_add(

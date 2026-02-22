@@ -37,6 +37,7 @@ import type {
   CreateTagOptions,
   ListTagsOptions,
   AddSubmoduleOptions,
+  ListSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
   AddWorktreeOptions,
@@ -372,7 +373,7 @@ export const tagApi = {
 };
 
 export const submoduleApi = {
-  list: () => commands.submoduleList(),
+  list: (options: ListSubmoduleOptions | null = null) => commands.submoduleList(options),
 
   add: (options: AddSubmoduleOptions) => commands.submoduleAdd(options),
 

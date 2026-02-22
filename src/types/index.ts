@@ -118,6 +118,7 @@ export type {
   // Submodule types
   Submodule,
   AddSubmoduleOptions,
+  ListSubmoduleOptions,
   UpdateSubmoduleOptions,
   SyncSubmoduleOptions,
   SubmoduleResult,
@@ -248,6 +249,7 @@ import type {
   Theme as ThemeType,
   SigningFormat as SigningFormatType,
   SubmoduleStatus as SubmoduleStatusType,
+  SubmoduleSortOrder as SubmoduleSortOrderType,
   ConflictType as ConflictTypeType,
   MenuAction as MenuActionType,
   BisectMarkType as BisectMarkTypeType,
@@ -466,6 +468,15 @@ export const SubmoduleStatus: { [K in SubmoduleStatusType]: K } = {
 };
 
 export type SubmoduleStatus = SubmoduleStatusType;
+
+export const SubmoduleSortOrder: { [K in SubmoduleSortOrderType]: K } = {
+  Alphabetical: 'Alphabetical',
+  AlphabeticalDesc: 'AlphabeticalDesc',
+  Path: 'Path',
+  PathDesc: 'PathDesc',
+};
+
+export type SubmoduleSortOrder = SubmoduleSortOrderType;
 
 export const ConflictType: { [K in ConflictTypeType]: K } = {
   Content: 'Content',

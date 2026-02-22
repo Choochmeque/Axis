@@ -6,10 +6,10 @@ use crate::models::{
     GitFlowBranchType, GitFlowConfig, GitFlowFinishOptions, GitFlowInitOptions, GitFlowResult,
     GrepMatch, GrepOptions, GrepResult, LfsEnvironment, LfsFetchOptions, LfsFile, LfsFileStatus,
     LfsMigrateMode, LfsMigrateOptions, LfsPruneOptions, LfsPruneResult, LfsPullOptions,
-    LfsPushOptions, LfsResult, LfsStatus, LfsTrackedPattern, PatchResult, RemoveWorktreeOptions,
-    StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule, SubmoduleResult,
-    SubmoduleStatus, SyncSubmoduleOptions, TagResult, UpdateSubmoduleOptions, Worktree,
-    WorktreeResult,
+    LfsPushOptions, LfsResult, LfsStatus, LfsTrackedPattern, ListSubmoduleOptions, PatchResult,
+    RemoveWorktreeOptions, StashApplyOptions, StashEntry, StashResult, StashSaveOptions, Submodule,
+    SubmoduleResult, SubmoduleSortOrder, SubmoduleStatus, SyncSubmoduleOptions, TagResult,
+    UpdateSubmoduleOptions, Worktree, WorktreeResult,
 };
 use crate::models::{InteractiveRebaseEntry, RebaseAction, RebaseProgress};
 use chrono::{DateTime, Utc};
@@ -976,7 +976,7 @@ impl GitCliService {
     // ==================== Submodule Operations ====================
 
     /// List all submodules
-    pub async fn submodule_list(&self) -> Result<Vec<Submodule>> {
+    pub async fn submodule_list(&self, options: &ListSubmoduleOptions) -> Result<Vec<Submodule>> {
         // Use git submodule status for detailed info
         let result = self
             .execute(&["submodule", "status", "--recursive"])
@@ -1078,6 +1078,27 @@ impl GitCliService {
                     status,
                 });
             }
+        }
+
+        // Sort submodules based on options
+        match options.sort {
+            SubmoduleSortOrder::Alphabetical => {
+                submodules.sort_by(|a, b| natord::compare(&a.name, &b.name));
+            }
+            SubmoduleSortOrder::AlphabeticalDesc => {
+                submodules.sort_by(|a, b| natord::compare(&b.name, &a.name));
+            }
+            SubmoduleSortOrder::Path => {
+                submodules.sort_by(|a, b| natord::compare(&a.path, &b.path));
+            }
+            SubmoduleSortOrder::PathDesc => {
+                submodules.sort_by(|a, b| natord::compare(&b.path, &a.path));
+            }
+        }
+
+        // Apply limit if specified
+        if let Some(limit) = options.limit {
+            submodules.truncate(limit);
         }
 
         Ok(submodules)
@@ -3673,7 +3694,7 @@ mod tests {
         create_initial_commit(&tmp);
 
         let submodules = service
-            .submodule_list()
+            .submodule_list(&ListSubmoduleOptions::default())
             .await
             .expect("should list submodules");
         assert!(submodules.is_empty());

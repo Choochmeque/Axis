@@ -44,6 +44,28 @@ pub enum SubmoduleStatus {
     Unknown,
 }
 
+/// Sort order for submodule listing
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
+pub enum SubmoduleSortOrder {
+    #[default]
+    Alphabetical,
+    AlphabeticalDesc,
+    Path,
+    PathDesc,
+}
+
+/// Options for listing submodules
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ListSubmoduleOptions {
+    /// Sort order (defaults to Alphabetical)
+    #[serde(default)]
+    pub sort: SubmoduleSortOrder,
+    /// Maximum number of submodules to return
+    pub limit: Option<usize>,
+}
+
 /// Options for adding a submodule
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -226,6 +248,100 @@ mod tests {
         let status: SubmoduleStatus =
             serde_json::from_str("\"Missing\"").expect("should deserialize");
         assert_eq!(status, SubmoduleStatus::Missing);
+    }
+
+    // ==================== SubmoduleSortOrder Tests ====================
+
+    #[test]
+    fn test_submodule_sort_order_default() {
+        let sort = SubmoduleSortOrder::default();
+        assert_eq!(sort, SubmoduleSortOrder::Alphabetical);
+    }
+
+    #[test]
+    fn test_submodule_sort_order_equality() {
+        assert_eq!(
+            SubmoduleSortOrder::Alphabetical,
+            SubmoduleSortOrder::Alphabetical
+        );
+        assert_eq!(
+            SubmoduleSortOrder::AlphabeticalDesc,
+            SubmoduleSortOrder::AlphabeticalDesc
+        );
+        assert_eq!(SubmoduleSortOrder::Path, SubmoduleSortOrder::Path);
+        assert_eq!(SubmoduleSortOrder::PathDesc, SubmoduleSortOrder::PathDesc);
+        assert_ne!(
+            SubmoduleSortOrder::Alphabetical,
+            SubmoduleSortOrder::AlphabeticalDesc
+        );
+    }
+
+    #[test]
+    fn test_submodule_sort_order_serialization() {
+        let alphabetical = SubmoduleSortOrder::Alphabetical;
+        let json = serde_json::to_string(&alphabetical).expect("should serialize");
+        assert_eq!(json, "\"Alphabetical\"");
+
+        let desc = SubmoduleSortOrder::AlphabeticalDesc;
+        let json = serde_json::to_string(&desc).expect("should serialize");
+        assert_eq!(json, "\"AlphabeticalDesc\"");
+
+        let path = SubmoduleSortOrder::Path;
+        let json = serde_json::to_string(&path).expect("should serialize");
+        assert_eq!(json, "\"Path\"");
+
+        let path_desc = SubmoduleSortOrder::PathDesc;
+        let json = serde_json::to_string(&path_desc).expect("should serialize");
+        assert_eq!(json, "\"PathDesc\"");
+    }
+
+    #[test]
+    fn test_submodule_sort_order_deserialization() {
+        let sort: SubmoduleSortOrder =
+            serde_json::from_str("\"Alphabetical\"").expect("should deserialize");
+        assert_eq!(sort, SubmoduleSortOrder::Alphabetical);
+
+        let sort: SubmoduleSortOrder =
+            serde_json::from_str("\"AlphabeticalDesc\"").expect("should deserialize");
+        assert_eq!(sort, SubmoduleSortOrder::AlphabeticalDesc);
+
+        let sort: SubmoduleSortOrder =
+            serde_json::from_str("\"Path\"").expect("should deserialize");
+        assert_eq!(sort, SubmoduleSortOrder::Path);
+
+        let sort: SubmoduleSortOrder =
+            serde_json::from_str("\"PathDesc\"").expect("should deserialize");
+        assert_eq!(sort, SubmoduleSortOrder::PathDesc);
+    }
+
+    // ==================== ListSubmoduleOptions Tests ====================
+
+    #[test]
+    fn test_list_submodule_options_default() {
+        let options = ListSubmoduleOptions::default();
+        assert_eq!(options.sort, SubmoduleSortOrder::Alphabetical);
+        assert!(options.limit.is_none());
+    }
+
+    #[test]
+    fn test_list_submodule_options_custom() {
+        let options = ListSubmoduleOptions {
+            sort: SubmoduleSortOrder::Path,
+            limit: Some(10),
+        };
+        assert_eq!(options.sort, SubmoduleSortOrder::Path);
+        assert_eq!(options.limit, Some(10));
+    }
+
+    #[test]
+    fn test_list_submodule_options_serialization() {
+        let options = ListSubmoduleOptions {
+            sort: SubmoduleSortOrder::AlphabeticalDesc,
+            limit: Some(5),
+        };
+        let json = serde_json::to_string(&options).expect("should serialize");
+        assert!(json.contains("\"sort\":\"AlphabeticalDesc\""));
+        assert!(json.contains("\"limit\":5"));
     }
 
     // ==================== AddSubmoduleOptions Tests ====================

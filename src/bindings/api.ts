@@ -552,8 +552,8 @@ async tagDeleteRemote(name: string, remote: string) : Promise<TagResult> {
 /**
  * List all submodules
  */
-async submoduleList() : Promise<Submodule[]> {
-    return await TAURI_INVOKE("submodule_list");
+async submoduleList(options: ListSubmoduleOptions | null) : Promise<Submodule[]> {
+    return await TAURI_INVOKE("submodule_list", { options });
 },
 /**
  * Add a new submodule
@@ -2832,6 +2832,18 @@ pattern: string;
  */
 sourceFile: string }
 /**
+ * Options for listing submodules
+ */
+export type ListSubmoduleOptions = { 
+/**
+ * Sort order (defaults to Alphabetical)
+ */
+sort?: SubmoduleSortOrder; 
+/**
+ * Maximum number of submodules to return
+ */
+limit: number | null }
+/**
  * Options for listing tags
  */
 export type ListTagsOptions = { 
@@ -3738,6 +3750,10 @@ export type SubmoduleResult = { success: boolean; message: string;
  * Affected submodules
  */
 submodules: string[] }
+/**
+ * Sort order for submodule listing
+ */
+export type SubmoduleSortOrder = "Alphabetical" | "AlphabeticalDesc" | "Path" | "PathDesc"
 /**
  * Status of a submodule
  */

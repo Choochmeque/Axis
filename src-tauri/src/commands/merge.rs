@@ -2,8 +2,8 @@ use crate::error::{AxisError, Result};
 use crate::models::{
     CherryPickOptions, CherryPickResult, ConflictContent, ConflictResolution, ConflictedFile,
     InteractiveRebaseEntry, InteractiveRebaseOptions, InteractiveRebasePreview, MergeOptions,
-    MergeResult, MergeType, OperationState, RebaseAction, RebaseOptions, RebasePreview,
-    RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
+    MergeResult, MergeType, OperationState, RebaseAction, RebaseOntoOptions, RebaseOptions,
+    RebasePreview, RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
 use crate::services::HookProgressEmitter;
 use crate::state::AppState;
@@ -188,6 +188,85 @@ pub async fn rebase_branch(
     } else {
         Err(AxisError::Other(format!(
             "Rebase failed: {}",
+            result.stderr.trim()
+        )))
+    }
+}
+
+/// Rebase commits onto a new base (git rebase --onto)
+#[tauri::command]
+#[specta::specta]
+pub async fn rebase_onto(
+    state: State<'_, AppState>,
+    options: RebaseOntoOptions,
+    bypass_hooks: Option<bool>,
+) -> Result<RebaseResult> {
+    let settings = state.get_settings()?;
+    let git_service = state.get_git_service()?;
+    let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
+
+    let guard = git_service.write().await;
+
+    // Get current branch name for pre-rebase hook
+    let current_branch = guard.get_current_branch().await;
+
+    // Run pre-rebase hook (can abort)
+    if !skip_hooks {
+        let app_handle = state.get_app_handle()?;
+        let emitter = HookProgressEmitter::new(app_handle, state.progress_registry());
+        let hook_result = guard
+            .run_pre_rebase(&options.new_base, current_branch.as_deref(), Some(&emitter))
+            .await;
+
+        if hook_result.is_cancelled() {
+            return Err(AxisError::Other("Hook cancelled by user".into()));
+        }
+
+        if !hook_result.skipped && !hook_result.success {
+            let output = if hook_result.stderr.is_empty() {
+                &hook_result.stdout
+            } else {
+                &hook_result.stderr
+            };
+            return Err(AxisError::Other(format!(
+                "Hook 'pre-rebase' failed:\n{}",
+                output.trim()
+            )));
+        }
+    }
+
+    let result = guard
+        .rebase_onto(
+            &options.new_base,
+            &options.old_base,
+            options.branch.as_deref(),
+        )
+        .await?;
+
+    if result.success {
+        Ok(RebaseResult {
+            success: true,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts: Vec::new(),
+            message: result.stdout.trim().to_string(),
+        })
+    } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
+        let conflicts = guard.get_conflicted_files_enriched().await?;
+
+        Ok(RebaseResult {
+            success: false,
+            commits_rebased: 0,
+            current_commit: None,
+            total_commits: None,
+            conflicts,
+            message: "Rebase conflicts detected. Please resolve conflicts and continue."
+                .to_string(),
+        })
+    } else {
+        Err(AxisError::Other(format!(
+            "Rebase onto failed: {}",
             result.stderr.trim()
         )))
     }

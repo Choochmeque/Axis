@@ -25,6 +25,7 @@ import type {
   FileLogOptions,
   MergeOptions,
   RebaseOptions,
+  RebaseOntoOptions,
   InteractiveRebaseOptions,
   CherryPickOptions,
   RevertOptions,
@@ -257,6 +258,9 @@ export const mergeApi = {
 export const rebaseApi = {
   rebase: (options: RebaseOptions, bypassHooks?: boolean) =>
     commands.rebaseBranch(options, bypassHooks ?? null),
+
+  rebaseOnto: (options: RebaseOntoOptions, bypassHooks?: boolean) =>
+    commands.rebaseOnto(options, bypassHooks ?? null),
 
   abort: () => commands.rebaseAbort(),
 

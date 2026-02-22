@@ -18,6 +18,7 @@ import {
   EditPauseDialog,
   MergeDialog,
   RebaseDialog,
+  RebaseOntoDialog,
   ResetConfirmDialog,
   RevertCommitDialog,
 } from '../merge';
@@ -69,6 +70,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     closeRevertCommitDialog,
     rebaseDialog,
     closeRebaseDialog,
+    rebaseOntoDialog,
+    closeRebaseOntoDialog,
     archiveDialog,
     closeArchiveDialog,
     patchDialog,
@@ -208,6 +211,19 @@ export function AppLayout({ children }: AppLayoutProps) {
         }}
         currentBranch={rebaseDialog.currentBranch || repository?.currentBranch || ''}
         targetCommit={rebaseDialog.targetCommit}
+      />
+      <RebaseOntoDialog
+        isOpen={rebaseOntoDialog.isOpen}
+        onClose={closeRebaseOntoDialog}
+        onRebaseComplete={async (result) => {
+          rebaseOntoDialog.onRebaseComplete?.(result);
+          await loadCommits();
+          await loadStatus();
+          await loadBranches();
+          closeRebaseOntoDialog();
+        }}
+        currentBranch={rebaseOntoDialog.currentBranch || repository?.currentBranch || ''}
+        newBase={rebaseOntoDialog.newBase}
       />
       <MergeDialog
         isOpen={mergeDialog.isOpen}

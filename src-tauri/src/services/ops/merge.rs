@@ -39,6 +39,18 @@ impl RepoOperations {
         self.service.git_cli().rebase(onto, interactive).await
     }
 
+    pub async fn rebase_onto(
+        &self,
+        new_base: &str,
+        old_base: &str,
+        branch: Option<&str>,
+    ) -> Result<GitCommandResult> {
+        self.service
+            .git_cli()
+            .rebase_onto(new_base, old_base, branch)
+            .await
+    }
+
     pub async fn rebase_abort(&self) -> Result<GitCommandResult> {
         self.service.git_cli().rebase_abort().await
     }

@@ -66,6 +66,18 @@ pub struct RebaseOptions {
     pub autosquash: bool,
 }
 
+/// Options for rebase --onto operations
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseOntoOptions {
+    /// Target branch/commit where commits will be replayed (new_base)
+    pub new_base: String,
+    /// Starting point - commits AFTER this point will be moved (old_base)
+    pub old_base: String,
+    /// Optional branch to rebase (defaults to current branch)
+    pub branch: Option<String>,
+}
+
 /// Result of a rebase operation
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -543,6 +555,50 @@ mod tests {
         };
         assert!(opts.interactive);
         assert!(opts.autosquash);
+    }
+
+    // ==================== RebaseOntoOptions Tests ====================
+
+    #[test]
+    fn test_rebase_onto_options_default() {
+        let opts = RebaseOntoOptions::default();
+        assert!(opts.new_base.is_empty());
+        assert!(opts.old_base.is_empty());
+        assert!(opts.branch.is_none());
+    }
+
+    #[test]
+    fn test_rebase_onto_options_with_branch() {
+        let opts = RebaseOntoOptions {
+            new_base: "main".to_string(),
+            old_base: "feature-old".to_string(),
+            branch: Some("feature".to_string()),
+        };
+        assert_eq!(opts.new_base, "main");
+        assert_eq!(opts.old_base, "feature-old");
+        assert_eq!(opts.branch, Some("feature".to_string()));
+    }
+
+    #[test]
+    fn test_rebase_onto_options_serialization() {
+        let opts = RebaseOntoOptions {
+            new_base: "main".to_string(),
+            old_base: "feature-old".to_string(),
+            branch: Some("feature".to_string()),
+        };
+        let json = serde_json::to_string(&opts).expect("should serialize");
+        assert!(json.contains("\"newBase\":\"main\""));
+        assert!(json.contains("\"oldBase\":\"feature-old\""));
+        assert!(json.contains("\"branch\":\"feature\""));
+    }
+
+    #[test]
+    fn test_rebase_onto_options_deserialization() {
+        let json = r#"{"newBase":"main","oldBase":"develop","branch":null}"#;
+        let opts: RebaseOntoOptions = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(opts.new_base, "main");
+        assert_eq!(opts.old_base, "develop");
+        assert!(opts.branch.is_none());
     }
 
     // ==================== RebaseAction Tests ====================

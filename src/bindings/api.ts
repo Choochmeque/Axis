@@ -274,6 +274,12 @@ async rebaseBranch(options: RebaseOptions, bypassHooks: boolean | null) : Promis
     return await TAURI_INVOKE("rebase_branch", { options, bypassHooks });
 },
 /**
+ * Rebase commits onto a new base (git rebase --onto)
+ */
+async rebaseOnto(options: RebaseOntoOptions, bypassHooks: boolean | null) : Promise<RebaseResult> {
+    return await TAURI_INVOKE("rebase_onto", { options, bypassHooks });
+},
+/**
  * Abort an in-progress rebase
  */
 async rebaseAbort() : Promise<null> {
@@ -3080,6 +3086,22 @@ export type PushedRef = { refName: string; status: PushStatus; message: string |
  * Action for each commit in interactive rebase
  */
 export type RebaseAction = "Pick" | "Reword" | "Edit" | "Squash" | "Fixup" | "Drop"
+/**
+ * Options for rebase --onto operations
+ */
+export type RebaseOntoOptions = { 
+/**
+ * Target branch/commit where commits will be replayed (new_base)
+ */
+newBase: string; 
+/**
+ * Starting point - commits AFTER this point will be moved (old_base)
+ */
+oldBase: string; 
+/**
+ * Optional branch to rebase (defaults to current branch)
+ */
+branch: string | null }
 /**
  * Options for rebase operations
  */

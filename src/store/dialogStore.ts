@@ -60,6 +60,14 @@ interface RebaseDialogState {
   onRebaseComplete?: (result: RebaseResult) => void;
 }
 
+// Rebase onto dialog state
+interface RebaseOntoDialogState {
+  isOpen: boolean;
+  currentBranch: string;
+  newBase: string;
+  onRebaseComplete?: (result: RebaseResult) => void;
+}
+
 // Archive dialog state
 interface ArchiveDialogState {
   isOpen: boolean;
@@ -197,6 +205,9 @@ interface DialogState {
   // Rebase dialog
   rebaseDialog: RebaseDialogState;
 
+  // Rebase onto dialog
+  rebaseOntoDialog: RebaseOntoDialogState;
+
   // Archive dialog
   archiveDialog: ArchiveDialogState;
 
@@ -293,6 +304,14 @@ interface DialogState {
     onRebaseComplete?: (result: RebaseResult) => void;
   }) => void;
   closeRebaseDialog: () => void;
+
+  // Rebase onto dialog actions
+  openRebaseOntoDialog: (options: {
+    currentBranch: string;
+    newBase: string;
+    onRebaseComplete?: (result: RebaseResult) => void;
+  }) => void;
+  closeRebaseOntoDialog: () => void;
 
   // Archive dialog actions
   openArchiveDialog: (options: { commitOid?: string; commitSummary?: string }) => void;
@@ -433,6 +452,13 @@ const initialRebaseDialogState: RebaseDialogState = {
   onRebaseComplete: undefined,
 };
 
+const initialRebaseOntoDialogState: RebaseOntoDialogState = {
+  isOpen: false,
+  currentBranch: '',
+  newBase: '',
+  onRebaseComplete: undefined,
+};
+
 const initialArchiveDialogState: ArchiveDialogState = {
   isOpen: false,
   commitOid: undefined,
@@ -540,6 +566,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   resetConfirmDialog: initialResetConfirmDialogState,
   revertCommitDialog: initialRevertCommitDialogState,
   rebaseDialog: initialRebaseDialogState,
+  rebaseOntoDialog: initialRebaseOntoDialogState,
   archiveDialog: initialArchiveDialogState,
   patchDialog: initialPatchDialogState,
   bisectDialog: initialBisectDialogState,
@@ -644,6 +671,21 @@ export const useDialogStore = create<DialogState>((set) => ({
 
   closeRebaseDialog: () => {
     set({ rebaseDialog: initialRebaseDialogState });
+  },
+
+  openRebaseOntoDialog: (options) => {
+    set({
+      rebaseOntoDialog: {
+        isOpen: true,
+        currentBranch: options.currentBranch,
+        newBase: options.newBase,
+        onRebaseComplete: options.onRebaseComplete,
+      },
+    });
+  },
+
+  closeRebaseOntoDialog: () => {
+    set({ rebaseOntoDialog: initialRebaseOntoDialogState });
   },
 
   openArchiveDialog: (options) => {

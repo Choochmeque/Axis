@@ -13,11 +13,11 @@ use std::time::Duration;
 
 use crate::error::{AxisError, Result};
 use crate::models::{
-    CIConclusion, CIRun, CIRunStatus, CiRunsPage, CommitStatus, CommitStatusState,
-    CreateIssueOptions, CreatePrOptions, IntegrationCommit, IntegrationLabel, IntegrationRepoInfo,
-    IntegrationStatus, IntegrationUser, Issue, IssueDetail, IssueState, IssuesPage, MergeMethod,
-    MergePrOptions, Notification, NotificationReason, NotificationSubjectType, NotificationsPage,
-    PrState, ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
+    CIRun, CIRunStatus, CiRunsPage, CommitStatus, CommitStatusState, CreateIssueOptions,
+    CreatePrOptions, IntegrationCommit, IntegrationLabel, IntegrationRepoInfo, IntegrationStatus,
+    IntegrationUser, Issue, IssueDetail, IssueState, IssuesPage, MergeMethod, MergePrOptions,
+    Notification, NotificationReason, NotificationSubjectType, NotificationsPage, PrState,
+    ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
 };
 use crate::services::integrations::{IntegrationProvider, TtlCache};
 
@@ -140,31 +140,15 @@ impl From<octocrab::models::activity::Notification> for Notification {
             provider: ProviderType::GitHub,
             id: notification.id.to_string(),
             unread: notification.unread,
-            reason: match notification.reason.as_str() {
-                "assign" => NotificationReason::Assigned,
-                "author" => NotificationReason::Author,
-                "comment" => NotificationReason::Comment,
-                "invitation" => NotificationReason::Invitation,
-                "manual" => NotificationReason::Manual,
-                "mention" => NotificationReason::Mention,
-                "review_requested" => NotificationReason::ReviewRequested,
-                "security_alert" => NotificationReason::SecurityAlert,
-                "state_change" => NotificationReason::StateChange,
-                "team_mention" => NotificationReason::TeamMention,
-                "ci_activity" => NotificationReason::CiActivity,
-                _ => NotificationReason::Subscribed, // "subscribed" and unknown reasons
-            },
-            subject_type: match notification.subject.r#type.as_str() {
-                "PullRequest" => NotificationSubjectType::PullRequest,
-                "Release" => NotificationSubjectType::Release,
-                "Discussion" => NotificationSubjectType::Discussion,
-                "Commit" => NotificationSubjectType::Commit,
-                "RepositoryVulnerabilityAlert" => {
-                    NotificationSubjectType::RepositoryVulnerabilityAlert
-                }
-                "CheckSuite" => NotificationSubjectType::CheckSuite,
-                _ => NotificationSubjectType::Issue, // "Issue" and unknown types
-            },
+            reason: notification
+                .reason
+                .parse()
+                .unwrap_or(NotificationReason::Subscribed),
+            subject_type: notification
+                .subject
+                .r#type
+                .parse()
+                .unwrap_or(NotificationSubjectType::Issue),
             subject_title: notification.subject.title,
             subject_url: notification.subject.url.map(|u| u.to_string()),
             repository: notification.repository.full_name.unwrap_or_default(),
@@ -180,20 +164,8 @@ impl From<octocrab::models::workflows::Run> for CIRun {
             provider: ProviderType::GitHub,
             id: run.id.to_string(),
             name: run.name,
-            status: match run.status.as_str() {
-                "in_progress" => CIRunStatus::InProgress,
-                "completed" => CIRunStatus::Completed,
-                _ => CIRunStatus::Queued, // "queued" and unknown statuses
-            },
-            conclusion: match run.conclusion.as_deref() {
-                Some("success") => Some(CIConclusion::Success),
-                Some("failure") => Some(CIConclusion::Failure),
-                Some("neutral") => Some(CIConclusion::Neutral),
-                Some("cancelled") => Some(CIConclusion::Cancelled),
-                Some("timed_out") => Some(CIConclusion::TimedOut),
-                Some("action_required") => Some(CIConclusion::ActionRequired),
-                _ => None,
-            },
+            status: run.status.parse().unwrap_or(CIRunStatus::Queued),
+            conclusion: run.conclusion.as_deref().and_then(|c| c.parse().ok()),
             commit_sha: run.head_sha,
             branch: Some(run.head_branch),
             event: run.event,
@@ -757,12 +729,10 @@ impl IntegrationProvider for GitHubProvider {
 
         let response: serde_json::Value = Self::parse_response(http_response).await?;
 
-        let state = match response["state"].as_str() {
-            Some("success") => CommitStatusState::Success,
-            Some("failure") => CommitStatusState::Failure,
-            Some("error") => CommitStatusState::Error,
-            _ => CommitStatusState::Pending, // "pending" and unknown states
-        };
+        let state = response["state"]
+            .as_str()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(CommitStatusState::Pending);
 
         // Get check runs (separate from commit statuses)
         let checks_route = format!("/repos/{owner}/{repo}/commits/{sha}/check-runs");
@@ -782,21 +752,12 @@ impl IntegrationProvider for GitHubProvider {
             .unwrap_or(&Vec::new())
             .iter()
             .map(|check| {
-                let status = match check["status"].as_str() {
-                    Some("queued") => CIRunStatus::Queued,
-                    Some("in_progress") => CIRunStatus::InProgress,
-                    _ => CIRunStatus::Completed,
-                };
+                let status = check["status"]
+                    .as_str()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(CIRunStatus::Completed);
 
-                let conclusion = check["conclusion"].as_str().map(|c| match c {
-                    "success" => CIConclusion::Success,
-                    "failure" => CIConclusion::Failure,
-                    "cancelled" => CIConclusion::Cancelled,
-                    "skipped" => CIConclusion::Skipped,
-                    "timed_out" => CIConclusion::TimedOut,
-                    "action_required" => CIConclusion::ActionRequired,
-                    _ => CIConclusion::Neutral, // "neutral" and unknown conclusions
-                });
+                let conclusion = check["conclusion"].as_str().and_then(|c| c.parse().ok());
 
                 CIRun {
                     provider: self.provider_type(),

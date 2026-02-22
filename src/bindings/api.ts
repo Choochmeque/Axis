@@ -1425,7 +1425,7 @@ prefix: string | null }
 export type ArchiveResult = { message: string; outputPath: string | null; sizeBytes: number | null }
 export type AvatarResponse = { source: AvatarSource; path: string | null }
 export type AvatarSource = "Integration" | "Gravatar" | "Default"
-export type AxisError = { type: "RepositoryNotFound"; data: string } | { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "RemoteNotFound"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AuthenticationFailed"; data: string } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "ProviderNotDetected" } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" } | { type: "SshKeyError"; data: string } | { type: "SshKeyAlreadyExists"; data: string } | { type: "SshKeygenNotFound" } | { type: "InvalidKeyFilename"; data: string }
+export type AxisError = { type: "InvalidRepositoryPath"; data: string } | { type: "GitError"; data: string } | { type: "IoError"; data: string } | { type: "DatabaseError"; data: string } | { type: "SerializationError"; data: string } | { type: "InvalidReference"; data: string } | { type: "NoRepositoryOpen" } | { type: "BranchNotFound"; data: string } | { type: "BranchNotMerged"; data: string } | { type: "FileNotFound"; data: string } | { type: "CannotFastForward" } | { type: "RebaseRequired" } | { type: "MergeConflict" } | { type: "CheckoutConflict"; data: string[] } | { type: "StashApplyConflict"; data: string[] } | { type: "AiServiceError"; data: string } | { type: "ApiKeyNotConfigured"; data: string } | { type: "DiffTooLarge"; data: number } | { type: "Other"; data: string } | { type: "IntegrationNotConnected"; data: string } | { type: "IntegrationError"; data: string } | { type: "OAuthError"; data: string } | { type: "OAuthCancelled" } | { type: "SshKeyError"; data: string } | { type: "SshKeyAlreadyExists"; data: string } | { type: "SshKeygenNotFound" } | { type: "InvalidKeyFilename"; data: string }
 /**
  * Mark type for bisect marking operations
  */
@@ -3091,11 +3091,11 @@ export type RebaseAction = "Pick" | "Reword" | "Edit" | "Squash" | "Fixup" | "Dr
  */
 export type RebaseOntoOptions = { 
 /**
- * Target branch/commit where commits will be replayed (new_base)
+ * Target branch/commit where commits will be replayed (`new_base`)
  */
 newBase: string; 
 /**
- * Starting point - commits AFTER this point will be moved (old_base)
+ * Starting point - commits AFTER this point will be moved (`old_base`)
  */
 oldBase: string; 
 /**

@@ -124,6 +124,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_conflict_content,
             crate::commands::resolve_conflict,
             crate::commands::mark_conflict_resolved,
+            crate::commands::mark_conflict_unresolved,
             // Operation state
             crate::commands::get_operation_state,
             // Bisect commands

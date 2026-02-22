@@ -845,6 +845,8 @@
       "useThis": "Use This",
       "merged": "Merged Result",
       "markResolved": "Mark Resolved",
+      "markUnresolved": "Mark Unresolved",
+      "failedUnresolve": "Failed to unresolve conflict",
       "deleted": "(deleted)",
       "operations": {
         "merging": "Merging",

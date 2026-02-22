@@ -117,6 +117,10 @@ impl RepoOperations {
         self.service.git_cli().mark_resolved(path).await
     }
 
+    pub async fn mark_unresolved(&self, path: &str) -> Result<GitCommandResult> {
+        self.service.git_cli().mark_unresolved(path).await
+    }
+
     pub async fn get_conflict_base(&self, path: &str) -> Result<String> {
         self.service.git_cli().get_conflict_base(path).await
     }

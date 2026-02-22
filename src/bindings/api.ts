@@ -388,6 +388,12 @@ async markConflictResolved(path: string) : Promise<null> {
     return await TAURI_INVOKE("mark_conflict_resolved", { path });
 },
 /**
+ * Mark a file as unresolved (restore conflict markers)
+ */
+async markConflictUnresolved(path: string) : Promise<null> {
+    return await TAURI_INVOKE("mark_conflict_unresolved", { path });
+},
+/**
  * Get the current operation in progress
  */
 async getOperationState() : Promise<OperationState> {

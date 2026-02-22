@@ -30,6 +30,9 @@ const CACHE_TTL_SHORT: Duration = Duration::from_secs(30); // For frequently cha
 const CACHE_TTL_MEDIUM: Duration = Duration::from_secs(60); // For PRs, issues, CI runs
 const CACHE_TTL_LONG: Duration = Duration::from_secs(300); // For repo info
 
+/// Type alias for the delete secret callback function
+type DeleteSecretFn = Box<dyn Fn(&str) -> Result<()> + Send + Sync>;
+
 impl From<PrState> for params::State {
     fn from(state: PrState) -> Self {
         match state {
@@ -272,7 +275,7 @@ impl From<octocrab::Error> for AxisError {
 /// GitHub integration provider
 pub struct GitHubProvider {
     client: RwLock<Option<Arc<Octocrab>>>,
-    delete_secret: Box<dyn Fn(&str) -> Result<()> + Send + Sync>,
+    delete_secret: DeleteSecretFn,
     // Caches
     pr_cache: TtlCache<PullRequestsPage>,
     issue_cache: TtlCache<IssuesPage>,
@@ -398,7 +401,7 @@ impl IntegrationProvider for GitHubProvider {
     async fn get_status(&self) -> Result<IntegrationStatus> {
         let Ok(client) = self.get_client() else {
             return Ok(IntegrationStatus {
-                provider: ProviderType::GitHub,
+                provider: self.provider_type(),
                 connected: false,
                 username: None,
                 avatar_url: None,
@@ -407,13 +410,13 @@ impl IntegrationProvider for GitHubProvider {
 
         match client.current().user().await {
             Ok(user) => Ok(IntegrationStatus {
-                provider: ProviderType::GitHub,
+                provider: self.provider_type(),
                 connected: true,
                 username: Some(user.login),
                 avatar_url: Some(user.avatar_url.to_string()),
             }),
             Err(_) => Ok(IntegrationStatus {
-                provider: ProviderType::GitHub,
+                provider: self.provider_type(),
                 connected: false,
                 username: None,
                 avatar_url: None,
@@ -441,7 +444,7 @@ impl IntegrationProvider for GitHubProvider {
         let repository = client.repos(owner, repo).get().await?;
 
         let info = IntegrationRepoInfo {
-            provider: ProviderType::GitHub,
+            provider: self.provider_type(),
             owner: repository
                 .owner
                 .as_ref()
@@ -796,7 +799,7 @@ impl IntegrationProvider for GitHubProvider {
                 });
 
                 CIRun {
-                    provider: ProviderType::GitHub,
+                    provider: self.provider_type(),
                     id: check["id"].as_u64().unwrap_or(0).to_string(),
                     name: check["name"].as_str().unwrap_or("").to_string(),
                     status,

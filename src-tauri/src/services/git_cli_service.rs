@@ -456,6 +456,7 @@ impl GitCliService {
         self.execute(&args).await
     }
 
+    #[cfg(test)]
     /// Cherry-pick a range of commits
     pub async fn cherry_pick_range(
         &self,

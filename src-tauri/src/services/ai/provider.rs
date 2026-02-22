@@ -25,6 +25,7 @@ pub trait AiProviderTrait: Send + Sync {
 
     fn default_model(&self) -> &'static str;
 
+    #[cfg(test)]
     fn name(&self) -> &'static str;
 
     fn requires_api_key(&self) -> bool {

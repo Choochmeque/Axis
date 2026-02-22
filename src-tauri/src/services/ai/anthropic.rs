@@ -159,6 +159,7 @@ impl AiProviderTrait for AnthropicProvider {
         "claude-3-5-haiku-latest"
     }
 
+    #[cfg(test)]
     fn name(&self) -> &'static str {
         "Anthropic"
     }

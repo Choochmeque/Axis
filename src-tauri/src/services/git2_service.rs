@@ -747,7 +747,7 @@ impl Git2Service {
         let file_path = workdir.join(path);
 
         if !file_path.exists() {
-            return Err(AxisError::Other(format!("File not found: {path}")));
+            return Err(AxisError::FileNotFound(format!("File not found: {path}")));
         }
 
         std::fs::remove_file(&file_path)

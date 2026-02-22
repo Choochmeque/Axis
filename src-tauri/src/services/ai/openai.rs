@@ -174,6 +174,7 @@ impl AiProviderTrait for OpenAiProvider {
         "gpt-4o-mini"
     }
 
+    #[cfg(test)]
     fn name(&self) -> &'static str {
         "OpenAI"
     }

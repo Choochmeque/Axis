@@ -5,9 +5,6 @@ use thiserror::Error;
 #[derive(Debug, Error, Serialize, Type)]
 #[serde(tag = "type", content = "data")]
 pub enum AxisError {
-    #[error("Repository not found: {0}")]
-    RepositoryNotFound(String),
-
     #[error("Invalid repository path: {0}")]
     InvalidRepositoryPath(String),
 
@@ -35,9 +32,6 @@ pub enum AxisError {
     #[error("Branch not fully merged: {0}")]
     BranchNotMerged(String),
 
-    #[error("Remote not found: {0}")]
-    RemoteNotFound(String),
-
     #[error("File not found: {0}")]
     FileNotFound(String),
 
@@ -56,9 +50,6 @@ pub enum AxisError {
     #[error("Stash applied with conflicts")]
     StashApplyConflict(Vec<String>),
 
-    #[error("Authentication failed: {0}")]
-    AuthenticationFailed(String),
-
     #[error("AI service error: {0}")]
     AiServiceError(String),
 
@@ -76,9 +67,6 @@ pub enum AxisError {
 
     #[error("Integration error: {0}")]
     IntegrationError(String),
-
-    #[error("Provider not detected")]
-    ProviderNotDetected,
 
     #[error("OAuth error: {0}")]
     OAuthError(String),
@@ -130,12 +118,6 @@ mod tests {
     use super::*;
 
     // ==================== Error Display Tests ====================
-
-    #[test]
-    fn test_repository_not_found_display() {
-        let err = AxisError::RepositoryNotFound("/path/to/repo".to_string());
-        assert_eq!(err.to_string(), "Repository not found: /path/to/repo");
-    }
 
     #[test]
     fn test_invalid_repository_path_display() {
@@ -192,12 +174,6 @@ mod tests {
     }
 
     #[test]
-    fn test_remote_not_found_display() {
-        let err = AxisError::RemoteNotFound("upstream".to_string());
-        assert_eq!(err.to_string(), "Remote not found: upstream");
-    }
-
-    #[test]
     fn test_file_not_found_display() {
         let err = AxisError::FileNotFound("src/main.rs".to_string());
         assert_eq!(err.to_string(), "File not found: src/main.rs");
@@ -243,15 +219,6 @@ mod tests {
     }
 
     #[test]
-    fn test_authentication_failed_display() {
-        let err = AxisError::AuthenticationFailed("invalid credentials".to_string());
-        assert_eq!(
-            err.to_string(),
-            "Authentication failed: invalid credentials"
-        );
-    }
-
-    #[test]
     fn test_ai_service_error_display() {
         let err = AxisError::AiServiceError("rate limit exceeded".to_string());
         assert_eq!(err.to_string(), "AI service error: rate limit exceeded");
@@ -285,12 +252,6 @@ mod tests {
     fn test_integration_error_display() {
         let err = AxisError::IntegrationError("API request failed".to_string());
         assert_eq!(err.to_string(), "Integration error: API request failed");
-    }
-
-    #[test]
-    fn test_provider_not_detected_display() {
-        let err = AxisError::ProviderNotDetected;
-        assert_eq!(err.to_string(), "Provider not detected");
     }
 
     #[test]

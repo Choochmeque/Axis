@@ -211,6 +211,7 @@ impl AiProviderTrait for OllamaProvider {
         "llama3.2"
     }
 
+    #[cfg(test)]
     fn name(&self) -> &'static str {
         "Ollama"
     }

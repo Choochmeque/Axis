@@ -425,9 +425,9 @@ impl IntegrationProvider for GitHubProvider {
             name: repository.name,
             full_name: repository.full_name.unwrap_or_default(),
             description: repository.description,
-            stars: repository.stargazers_count.unwrap_or(0) as u32,
-            forks: repository.forks_count.unwrap_or(0) as u32,
-            open_issues_count: repository.open_issues_count.unwrap_or(0) as u32,
+            stars: repository.stargazers_count.unwrap_or(0),
+            forks: repository.forks_count.unwrap_or(0),
+            open_issues_count: repository.open_issues_count.unwrap_or(0),
             is_private: repository.private.unwrap_or(false),
             default_branch: repository
                 .default_branch

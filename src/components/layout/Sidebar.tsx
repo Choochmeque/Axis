@@ -406,48 +406,42 @@ export function Sidebar() {
               defaultExpanded={true}
             >
               {localBranches.length > 0 ? (
-                [...localBranches]
-                  .sort((a, b) => naturalCompare(a.name, b.name))
-                  .map((branch) => (
-                    <BranchContextMenu
-                      key={branch.name}
-                      branch={branch}
-                      onCheckout={() => handleBranchCheckout(branch.name)}
+                localBranches.map((branch) => (
+                  <BranchContextMenu
+                    key={branch.name}
+                    branch={branch}
+                    onCheckout={() => handleBranchCheckout(branch.name)}
+                  >
+                    <button
+                      className={cn(sidebarItemClass, branch.isHead && 'font-semibold')}
+                      onClick={() => handleRefClick(branch.targetOid)}
+                      onDoubleClick={() => {
+                        if (!branch.isHead) {
+                          handleBranchCheckout(branch.name);
+                        }
+                      }}
                     >
-                      <button
-                        className={cn(sidebarItemClass, branch.isHead && 'font-semibold')}
-                        onClick={() => handleRefClick(branch.targetOid)}
-                        onDoubleClick={() => {
-                          if (!branch.isHead) {
-                            handleBranchCheckout(branch.name);
-                          }
-                        }}
-                      >
-                        {branch.isHead ? (
-                          <Pointer size={12} className="shrink-0 rotate-90" />
-                        ) : (
-                          <span className="w-3 shrink-0" />
-                        )}
-                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                          {branch.name}
+                      {branch.isHead ? (
+                        <Pointer size={12} className="shrink-0 rotate-90" />
+                      ) : (
+                        <span className="w-3 shrink-0" />
+                      )}
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {branch.name}
+                      </span>
+                      {branch.ahead !== null && branch.ahead > 0 && (
+                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
+                          {branch.ahead}↑
                         </span>
-                        {branch.ahead !== null && branch.ahead > 0 && (
-                          <span
-                            className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}
-                          >
-                            {branch.ahead}↑
-                          </span>
-                        )}
-                        {branch.behind !== null && branch.behind > 0 && (
-                          <span
-                            className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}
-                          >
-                            {branch.behind}↓
-                          </span>
-                        )}
-                      </button>
-                    </BranchContextMenu>
-                  ))
+                      )}
+                      {branch.behind !== null && branch.behind > 0 && (
+                        <span className={cn('badge', 'bg-(--bg-tertiary) text-(--text-secondary)')}>
+                          {branch.behind}↓
+                        </span>
+                      )}
+                    </button>
+                  </BranchContextMenu>
+                ))
               ) : (
                 <div
                   className={cn(

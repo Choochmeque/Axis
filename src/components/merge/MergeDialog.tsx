@@ -70,7 +70,11 @@ export function MergeDialog({
 
   const loadBranches = async () => {
     try {
-      const allBranches = await branchApi.list({ includeLocal: true, includeRemote: true });
+      const allBranches = await branchApi.list({
+        includeLocal: true,
+        includeRemote: true,
+        limit: null,
+      });
       // Filter out the current branch
       const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
       setBranches(otherBranches);

@@ -29,11 +29,27 @@ pub enum BranchType {
     Remote,
 }
 
+/// Sort order for branch listing
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[serde(rename_all = "PascalCase")]
+pub enum BranchSortOrder {
+    #[default]
+    Alphabetical,
+    AlphabeticalDesc,
+    LastCommitDate,
+    LastCommitDateDesc,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BranchFilter {
     pub include_local: bool,
     pub include_remote: bool,
+    /// Sort order (defaults to Alphabetical)
+    #[serde(default)]
+    pub sort: BranchSortOrder,
+    /// Maximum number of branches to return
+    pub limit: Option<usize>,
 }
 
 /// Result of comparing two branches
@@ -91,6 +107,73 @@ mod tests {
         assert_eq!(remote, BranchType::Remote);
     }
 
+    // ==================== BranchSortOrder Tests ====================
+
+    #[test]
+    fn test_branch_sort_order_default() {
+        let sort = BranchSortOrder::default();
+        assert_eq!(sort, BranchSortOrder::Alphabetical);
+    }
+
+    #[test]
+    fn test_branch_sort_order_equality() {
+        assert_eq!(BranchSortOrder::Alphabetical, BranchSortOrder::Alphabetical);
+        assert_eq!(
+            BranchSortOrder::AlphabeticalDesc,
+            BranchSortOrder::AlphabeticalDesc
+        );
+        assert_eq!(
+            BranchSortOrder::LastCommitDate,
+            BranchSortOrder::LastCommitDate
+        );
+        assert_eq!(
+            BranchSortOrder::LastCommitDateDesc,
+            BranchSortOrder::LastCommitDateDesc
+        );
+        assert_ne!(
+            BranchSortOrder::Alphabetical,
+            BranchSortOrder::AlphabeticalDesc
+        );
+    }
+
+    #[test]
+    fn test_branch_sort_order_serialization() {
+        let alphabetical = BranchSortOrder::Alphabetical;
+        let json = serde_json::to_string(&alphabetical).expect("should serialize");
+        assert_eq!(json, "\"Alphabetical\"");
+
+        let desc = BranchSortOrder::AlphabeticalDesc;
+        let json = serde_json::to_string(&desc).expect("should serialize");
+        assert_eq!(json, "\"AlphabeticalDesc\"");
+
+        let date = BranchSortOrder::LastCommitDate;
+        let json = serde_json::to_string(&date).expect("should serialize");
+        assert_eq!(json, "\"LastCommitDate\"");
+
+        let date_desc = BranchSortOrder::LastCommitDateDesc;
+        let json = serde_json::to_string(&date_desc).expect("should serialize");
+        assert_eq!(json, "\"LastCommitDateDesc\"");
+    }
+
+    #[test]
+    fn test_branch_sort_order_deserialization() {
+        let sort: BranchSortOrder =
+            serde_json::from_str("\"Alphabetical\"").expect("should deserialize");
+        assert_eq!(sort, BranchSortOrder::Alphabetical);
+
+        let sort: BranchSortOrder =
+            serde_json::from_str("\"AlphabeticalDesc\"").expect("should deserialize");
+        assert_eq!(sort, BranchSortOrder::AlphabeticalDesc);
+
+        let sort: BranchSortOrder =
+            serde_json::from_str("\"LastCommitDate\"").expect("should deserialize");
+        assert_eq!(sort, BranchSortOrder::LastCommitDate);
+
+        let sort: BranchSortOrder =
+            serde_json::from_str("\"LastCommitDateDesc\"").expect("should deserialize");
+        assert_eq!(sort, BranchSortOrder::LastCommitDateDesc);
+    }
+
     // ==================== BranchFilter Tests ====================
 
     #[test]
@@ -98,6 +181,8 @@ mod tests {
         let filter = BranchFilter::default();
         assert!(!filter.include_local);
         assert!(!filter.include_remote);
+        assert_eq!(filter.sort, BranchSortOrder::Alphabetical);
+        assert!(filter.limit.is_none());
     }
 
     #[test]
@@ -105,9 +190,12 @@ mod tests {
         let filter = BranchFilter {
             include_local: true,
             include_remote: false,
+            ..Default::default()
         };
         assert!(filter.include_local);
         assert!(!filter.include_remote);
+        assert_eq!(filter.sort, BranchSortOrder::Alphabetical);
+        assert!(filter.limit.is_none());
     }
 
     // ==================== Branch Tests ====================

@@ -59,7 +59,7 @@ export function RebaseOntoDialog({
     setIsLoadingData(true);
     try {
       const [allBranches, recentCommits] = await Promise.all([
-        branchApi.list({ includeLocal: true, includeRemote: true }),
+        branchApi.list({ includeLocal: true, includeRemote: true, limit: null }),
         commitApi.getHistory({ limit: 50, skip: null, fromRef: null }),
       ]);
       // Filter out the current branch and the new base

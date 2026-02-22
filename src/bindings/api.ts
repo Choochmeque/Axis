@@ -1583,8 +1583,20 @@ behindCommits: Commit[];
  * Aggregate file changes from `merge_base` to compare branch
  */
 files: FileDiff[] }
-export type BranchFilter = { includeLocal: boolean; includeRemote: boolean }
+export type BranchFilter = { includeLocal: boolean; includeRemote: boolean; 
+/**
+ * Sort order (defaults to Alphabetical)
+ */
+sort?: BranchSortOrder; 
+/**
+ * Maximum number of branches to return
+ */
+limit: number | null }
 export type BranchFilterType = "All" | "Current" | { Specific: string }
+/**
+ * Sort order for branch listing
+ */
+export type BranchSortOrder = "Alphabetical" | "AlphabeticalDesc" | "LastCommitDate" | "LastCommitDateDesc"
 export type BranchType = "Local" | "Remote"
 /**
  * CI/CD run conclusion

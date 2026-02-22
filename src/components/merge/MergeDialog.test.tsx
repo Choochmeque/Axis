@@ -313,7 +313,11 @@ describe('MergeDialog', () => {
     render(<MergeDialog {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockList).toHaveBeenCalledWith({ includeLocal: true, includeRemote: true });
+      expect(mockList).toHaveBeenCalledWith({
+        includeLocal: true,
+        includeRemote: true,
+        limit: null,
+      });
     });
   });
 });

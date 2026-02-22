@@ -1,13 +1,13 @@
 use crate::error::{AxisError, Result};
 use crate::models::LargeBinaryFileInfo;
 use crate::models::{
-    BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchType, Commit,
-    CreateTagOptions, DeleteBranchOptions, EdgeType, FileLogResult, FileStatus, GraphCommit,
-    GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion, IgnoreSuggestionType,
-    LaneState, ListTagsOptions, LogOptions, RebasePreview, RebaseTarget, ReflogAction, ReflogEntry,
-    ReflogOptions, Repository, RepositoryState, RepositoryStatus, SearchResult,
-    SignatureVerification, SigningConfig, SigningFormat, SortOrder, SshCredentials, Tag, TagResult,
-    TagSignature, TagSortOrder,
+    BlameLine, BlameResult, Branch, BranchFilter, BranchFilterType, BranchSortOrder, BranchType,
+    Commit, CreateTagOptions, DeleteBranchOptions, EdgeType, FileLogResult, FileStatus,
+    GraphCommit, GraphEdge, GraphResult, IgnoreOptions, IgnoreResult, IgnoreSuggestion,
+    IgnoreSuggestionType, LaneState, ListTagsOptions, LogOptions, RebasePreview, RebaseTarget,
+    ReflogAction, ReflogEntry, ReflogOptions, Repository, RepositoryState, RepositoryStatus,
+    SearchResult, SignatureVerification, SigningConfig, SigningFormat, SortOrder, SshCredentials,
+    Tag, TagResult, TagSignature, TagSortOrder,
 };
 use crate::services::SigningService;
 use chrono::{DateTime, Utc};
@@ -570,16 +570,26 @@ impl Git2Service {
             }
         }
 
-        // Sort: current branch first, then alphabetically
+        // Sort: current branch first, then by specified sort order
         branches.sort_by(|a, b| {
             if a.is_head {
-                std::cmp::Ordering::Less
-            } else if b.is_head {
-                std::cmp::Ordering::Greater
-            } else {
-                a.name.cmp(&b.name)
+                return std::cmp::Ordering::Less;
+            }
+            if b.is_head {
+                return std::cmp::Ordering::Greater;
+            }
+            match filter.sort {
+                BranchSortOrder::Alphabetical => natord::compare(&a.name, &b.name),
+                BranchSortOrder::AlphabeticalDesc => natord::compare(&b.name, &a.name),
+                BranchSortOrder::LastCommitDate => a.last_commit_time.cmp(&b.last_commit_time),
+                BranchSortOrder::LastCommitDateDesc => b.last_commit_time.cmp(&a.last_commit_time),
             }
         });
+
+        // Apply limit if specified
+        if let Some(limit) = filter.limit {
+            branches.truncate(limit);
+        }
 
         Ok(branches)
     }
@@ -3591,6 +3601,7 @@ mod tests {
             .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
+                ..Default::default()
             })
             .expect("should list branches");
         assert!(!branches.is_empty());
@@ -3623,6 +3634,7 @@ mod tests {
             .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
+                ..Default::default()
             })
             .expect("should list branches");
         assert_eq!(branches.len(), 2);
@@ -4099,6 +4111,7 @@ mod tests {
             .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
+                ..Default::default()
             })
             .expect("should list branches");
         assert!(!branches.iter().any(|b| b.name == "old-name"));
@@ -4121,6 +4134,7 @@ mod tests {
             .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
+                ..Default::default()
             })
             .expect("should list branches");
         assert!(branches.iter().any(|b| b.name == "to-delete"));
@@ -4139,6 +4153,7 @@ mod tests {
             .list_branches(&BranchFilter {
                 include_local: true,
                 include_remote: false,
+                ..Default::default()
             })
             .expect("should list branches after delete");
         assert!(!branches.iter().any(|b| b.name == "to-delete"));

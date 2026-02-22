@@ -352,7 +352,7 @@ impl SigningService {
     }
 
     /// List available SSH keys from ~/.ssh
-    pub fn list_ssh_keys(&self) -> Result<Vec<SshKey>> {
+    pub fn list_ssh_keys() -> Result<Vec<SshKey>> {
         let ssh_dir_str = shellexpand::tilde("~/.ssh").to_string();
         let ssh_dir = Path::new(&ssh_dir_str);
 
@@ -817,15 +817,8 @@ mod tests {
 
     #[test]
     fn test_list_ssh_keys_no_ssh_dir() {
-        let tmp = TempDir::new().expect("should create temp dir");
-
-        // Initialize a git repo in a temp dir (no .ssh folder)
-        git2::Repository::init(tmp.path()).expect("should init repo");
-
-        let service = SigningService::new(tmp.path());
-
         // This should not error, just return whatever keys exist on the system
-        let result = service.list_ssh_keys();
+        let result = SigningService::list_ssh_keys();
         assert!(result.is_ok());
     }
 }

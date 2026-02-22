@@ -389,20 +389,16 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, id: &MenuId) {
         log::error!("[Menu] Failed to emit menu action event: {e:?}");
     }
 
-    match MenuAction::from_str(id_str) {
-        Ok(MenuAction::NewWindow) => {
-            // Create a new window
-            let _ = tauri::WebviewWindowBuilder::new(
-                app,
-                format!("main-{}", uuid::Uuid::new_v4()),
-                tauri::WebviewUrl::App("index.html".into()),
-            )
-            .title("Axis")
-            .inner_size(1200.0, 800.0)
-            .build();
-        }
-        _ => {
-            // Other menu items are handled by the frontend via the event
-        }
+    if let Ok(MenuAction::NewWindow) = MenuAction::from_str(id_str) {
+        // Create a new window
+        let _ = tauri::WebviewWindowBuilder::new(
+            app,
+            format!("main-{}", uuid::Uuid::new_v4()),
+            tauri::WebviewUrl::App("index.html".into()),
+        )
+        .title("Axis")
+        .inner_size(1200.0, 800.0)
+        .build();
     }
+    // Other menu items are handled by the frontend via the event
 }

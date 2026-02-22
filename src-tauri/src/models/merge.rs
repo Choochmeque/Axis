@@ -5,6 +5,8 @@ use strum::{Display, EnumString};
 use super::commit::Commit;
 
 /// Options for merge operations
+// Allow excessive bools: these map directly to git merge CLI flags
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MergeOptions {
@@ -70,9 +72,9 @@ pub struct RebaseOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RebaseOntoOptions {
-    /// Target branch/commit where commits will be replayed (new_base)
+    /// Target branch/commit where commits will be replayed (`new_base`)
     pub new_base: String,
-    /// Starting point - commits AFTER this point will be moved (old_base)
+    /// Starting point - commits AFTER this point will be moved (`old_base`)
     pub old_base: String,
     /// Optional branch to rebase (defaults to current branch)
     pub branch: Option<String>,

@@ -51,6 +51,8 @@ pub struct GitFlowInitOptions {
 }
 
 /// Options for finishing a feature/release/hotfix
+// Allow excessive bools: these map directly to git-flow CLI flags
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GitFlowFinishOptions {
@@ -94,7 +96,8 @@ pub enum GitFlowBranchType {
 }
 
 impl GitFlowBranchType {
-    pub fn as_str(&self) -> &'static str {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
         match self {
             GitFlowBranchType::Feature => "feature",
             GitFlowBranchType::Release => "release",
@@ -105,6 +108,8 @@ impl GitFlowBranchType {
 }
 
 /// Content search options
+// Allow excessive bools: these map directly to grep CLI flags
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GrepOptions {

@@ -180,6 +180,8 @@ impl GitCliService {
     // ==================== Merge Operations ====================
 
     /// Merge a branch into the current branch
+    // Allow excessive bools: these map directly to git merge CLI flags
+    #[allow(clippy::fn_params_excessive_bools)]
     pub async fn merge(
         &self,
         branch: &str,
@@ -330,6 +332,9 @@ impl GitCliService {
     }
 
     /// Get detailed rebase progress by parsing .git/rebase-merge or .git/rebase-apply state files
+    // Allow unnecessary_wraps: Result is part of the API contract for consistency with other ops,
+    // and future implementations might need to return errors (e.g., parsing failures).
+    #[allow(clippy::unnecessary_wraps)]
     pub fn get_rebase_progress(&self) -> Result<Option<RebaseProgress>> {
         let rebase_merge = self.repo_path.join(".git/rebase-merge");
         let rebase_apply = self.repo_path.join(".git/rebase-apply");
@@ -587,14 +592,21 @@ impl GitCliService {
     }
 
     // ==================== Status Helpers ====================
+    //
+    // Allow unnecessary_wraps for the following status check functions:
+    // Result<bool> is used for API consistency with other ops layer functions.
+    // While these specific implementations never error, the API contract
+    // allows for future implementations that might (e.g., reading git config).
 
     /// Check if we're in a merge state
+    #[allow(clippy::unnecessary_wraps)]
     pub fn is_merging(&self) -> Result<bool> {
         let merge_head = self.repo_path.join(".git/MERGE_HEAD");
         Ok(merge_head.exists())
     }
 
     /// Check if we're in a rebase state
+    #[allow(clippy::unnecessary_wraps)]
     pub fn is_rebasing(&self) -> Result<bool> {
         let rebase_merge = self.repo_path.join(".git/rebase-merge");
         let rebase_apply = self.repo_path.join(".git/rebase-apply");
@@ -602,12 +614,14 @@ impl GitCliService {
     }
 
     /// Check if we're in a cherry-pick state
+    #[allow(clippy::unnecessary_wraps)]
     pub fn is_cherry_picking(&self) -> Result<bool> {
         let cherry_pick_head = self.repo_path.join(".git/CHERRY_PICK_HEAD");
         Ok(cherry_pick_head.exists())
     }
 
     /// Check if we're in a revert state
+    #[allow(clippy::unnecessary_wraps)]
     pub fn is_reverting(&self) -> Result<bool> {
         let revert_head = self.repo_path.join(".git/REVERT_HEAD");
         Ok(revert_head.exists())
@@ -2186,6 +2200,8 @@ impl GitCliService {
     // ==================== Bisect Operations ====================
 
     /// Check if we're in a bisect state
+    // Allow unnecessary_wraps: Result<bool> used for API consistency with other status checks.
+    #[allow(clippy::unnecessary_wraps)]
     pub fn is_bisecting(&self) -> Result<bool> {
         let bisect_start = self.repo_path.join(".git/BISECT_START");
         Ok(bisect_start.exists())

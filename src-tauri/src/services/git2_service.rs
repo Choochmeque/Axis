@@ -35,7 +35,7 @@ fn build_credentials_callback(
                 let passphrase_str = ssh_credentials
                     .as_ref()
                     .and_then(|c| c.passphrase.as_ref())
-                    .map(|p| p.expose_secret());
+                    .map(ExposeSecret::expose_secret);
 
                 // 1. Try configured SSH key first
                 if let Some(ref key_path) = ssh_credentials.as_ref().map(|c| &c.key_path) {
@@ -895,7 +895,7 @@ impl Git2Service {
         options: &crate::models::DiffOptions,
     ) -> Result<Vec<crate::models::FileDiff>> {
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
         // Include untracked files in the diff with their content
         diff_opts.include_untracked(true);
         diff_opts.show_untracked_content(true);
@@ -904,7 +904,7 @@ impl Git2Service {
         let repo = self.repo()?;
         let mut diff = repo.diff_index_to_workdir(None, Some(&mut diff_opts))?;
         diff.find_similar(None)?;
-        self.parse_diff(&diff)
+        Self::parse_diff(&diff)
     }
 
     /// Generate diff for staged changes (index vs HEAD)
@@ -914,7 +914,7 @@ impl Git2Service {
     ) -> Result<Vec<crate::models::FileDiff>> {
         let repo = self.repo()?;
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
 
         let head_tree = if Self::is_head_unborn(&repo) {
             None
@@ -923,7 +923,7 @@ impl Git2Service {
         };
         let mut diff = repo.diff_tree_to_index(head_tree.as_ref(), None, Some(&mut diff_opts))?;
         diff.find_similar(None)?;
-        self.parse_diff(&diff)
+        Self::parse_diff(&diff)
     }
 
     /// Generate diff for all uncommitted changes (workdir vs HEAD)
@@ -933,7 +933,7 @@ impl Git2Service {
     ) -> Result<Vec<crate::models::FileDiff>> {
         let repo = self.repo()?;
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
         // Include untracked files in the diff with their content
         diff_opts.include_untracked(true);
         diff_opts.show_untracked_content(true);
@@ -947,7 +947,7 @@ impl Git2Service {
         let mut diff =
             repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))?;
         diff.find_similar(None)?;
-        self.parse_diff(&diff)
+        Self::parse_diff(&diff)
     }
 
     /// Generate diff for a specific commit (commit vs its parent)
@@ -965,7 +965,7 @@ impl Git2Service {
         let tree = commit.tree()?;
 
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
 
         let parent_tree = if commit.parent_count() > 0 {
             Some(commit.parent(0)?.tree()?)
@@ -977,7 +977,7 @@ impl Git2Service {
             repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
         diff.find_similar(None)?;
 
-        self.parse_diff(&diff)
+        Self::parse_diff(&diff)
     }
 
     /// Generate diff between two commits
@@ -1003,13 +1003,13 @@ impl Git2Service {
         let to_tree = to_commit.tree()?;
 
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
 
         let mut diff =
             repo.diff_tree_to_tree(Some(&from_tree), Some(&to_tree), Some(&mut diff_opts))?;
         diff.find_similar(None)?;
 
-        self.parse_diff(&diff)
+        Self::parse_diff(&diff)
     }
 
     /// Get diff for a single file (staged or unstaged)
@@ -1055,11 +1055,7 @@ impl Git2Service {
     }
 
     /// Apply diff options to git2 `DiffOptions`
-    fn apply_diff_options(
-        &self,
-        opts: &mut git2::DiffOptions,
-        custom: &crate::models::DiffOptions,
-    ) {
+    fn apply_diff_options(opts: &mut git2::DiffOptions, custom: &crate::models::DiffOptions) {
         if let Some(context) = custom.context_lines {
             opts.context_lines(context);
         }
@@ -1190,19 +1186,18 @@ impl Git2Service {
         let repo = self.repo()?;
         // If create is true and branch doesn't exist, create it first
         let branch = if options.create {
-            match repo.find_branch(name, git2::BranchType::Local) {
-                Ok(b) => b,
-                Err(_) => {
-                    let head = repo.head()?.peel_to_commit()?;
-                    let mut new_branch = repo.branch(name, &head, false)?;
+            if let Ok(b) = repo.find_branch(name, git2::BranchType::Local) {
+                b
+            } else {
+                let head = repo.head()?.peel_to_commit()?;
+                let mut new_branch = repo.branch(name, &head, false)?;
 
-                    // Set up tracking if specified
-                    if let Some(ref upstream) = options.track {
-                        new_branch.set_upstream(Some(upstream))?;
-                    }
-
-                    new_branch
+                // Set up tracking if specified
+                if let Some(ref upstream) = options.track {
+                    new_branch.set_upstream(Some(upstream))?;
                 }
+
+                new_branch
             }
         } else {
             repo.find_branch(name, git2::BranchType::Local)?
@@ -1952,7 +1947,10 @@ impl Git2Service {
     }
 
     /// Parse a git2 Diff into our `FileDiff` model
-    fn parse_diff(&self, diff: &git2::Diff) -> Result<Vec<crate::models::FileDiff>> {
+    // Allow many lines: this is a complex diff parsing function with multiple callbacks
+    // that must be defined together. The structure is dictated by git2's callback API.
+    #[allow(clippy::too_many_lines)]
+    fn parse_diff(diff: &git2::Diff) -> Result<Vec<crate::models::FileDiff>> {
         use crate::models::{DiffHunk, DiffLine, DiffLineType, DiffStatus, FileDiff};
         use std::cell::RefCell;
 
@@ -2097,6 +2095,9 @@ impl Git2Service {
     // ==================== Graph Operations ====================
 
     /// Build a commit graph with lane assignments for visualization
+    // Allow many lines: this is a complex graph algorithm that assigns lanes to commits
+    // for visualization. The algorithm must be kept together for correctness and readability.
+    #[allow(clippy::too_many_lines)]
     pub fn build_graph(
         &self,
         options: &crate::models::GraphOptions,
@@ -2589,7 +2590,7 @@ impl Git2Service {
     /// List tags with optional filtering, sorting, and limiting
     pub fn tag_list(
         &self,
-        options: ListTagsOptions,
+        options: &ListTagsOptions,
         repo: Option<&Git2Repository>,
     ) -> Result<Vec<Tag>> {
         let owned_repo;
@@ -2627,7 +2628,7 @@ impl Git2Service {
             match options.sort {
                 TagSortOrder::CreationDate => name_times.sort_by_key(|(_, t)| *t),
                 TagSortOrder::CreationDateDesc => {
-                    name_times.sort_by_key(|(_, t)| std::cmp::Reverse(*t))
+                    name_times.sort_by_key(|(_, t)| std::cmp::Reverse(*t));
                 }
                 _ => {}
             }
@@ -2745,7 +2746,7 @@ impl Git2Service {
         }
 
         // Return the created tag
-        let tags = self.tag_list(ListTagsOptions::default(), Some(&repo))?;
+        let tags = self.tag_list(&ListTagsOptions::default(), Some(&repo))?;
         let created_tag = tags.into_iter().find(|t| t.name == name);
 
         Ok(TagResult {
@@ -2888,7 +2889,7 @@ impl Git2Service {
             let commit = repo.find_commit(oid)?;
 
             // Check if this commit touches any of the specified paths
-            if self.commit_touches_paths(&repo, &commit, &options.paths, options.follow_renames)? {
+            if Self::commit_touches_paths(&repo, &commit, &options.paths, options.follow_renames)? {
                 if skipped < skip {
                     skipped += 1;
                     continue;
@@ -2915,7 +2916,6 @@ impl Git2Service {
 
     /// Check if a commit modified any of the specified paths
     fn commit_touches_paths(
-        &self,
         repo: &Git2Repository,
         commit: &git2::Commit,
         paths: &[String],
@@ -3007,13 +3007,13 @@ impl Git2Service {
         };
 
         let mut diff_opts = git2::DiffOptions::new();
-        self.apply_diff_options(&mut diff_opts, options);
+        Self::apply_diff_options(&mut diff_opts, options);
         diff_opts.pathspec(path);
 
         let diff =
             repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))?;
 
-        let diffs = self.parse_diff(&diff)?;
+        let diffs = Self::parse_diff(&diff)?;
         Ok(diffs.into_iter().next())
     }
 
@@ -3273,7 +3273,7 @@ impl Git2Service {
         }
 
         // Generate pattern suggestions
-        let suggestions = self.get_ignore_suggestions(file_path);
+        let suggestions = Self::get_ignore_suggestions(file_path);
 
         Ok(IgnoreOptions {
             gitignore_files,
@@ -3283,7 +3283,7 @@ impl Git2Service {
     }
 
     /// Generate pattern suggestions for ignoring a file
-    fn get_ignore_suggestions(&self, file_path: &str) -> Vec<IgnoreSuggestion> {
+    fn get_ignore_suggestions(file_path: &str) -> Vec<IgnoreSuggestion> {
         let path = std::path::Path::new(file_path);
         let mut suggestions = Vec::new();
 
@@ -4529,7 +4529,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let tags = service
-            .tag_list(ListTagsOptions::default(), None)
+            .tag_list(&ListTagsOptions::default(), None)
             .expect("should list tags");
         assert!(tags.is_empty());
     }
@@ -4545,7 +4545,7 @@ mod tests {
         assert!(result.success);
 
         let tags = service
-            .tag_list(ListTagsOptions::default(), None)
+            .tag_list(&ListTagsOptions::default(), None)
             .expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v1.0.0");
@@ -4571,7 +4571,7 @@ mod tests {
         assert!(result.success);
 
         let tags = service
-            .tag_list(ListTagsOptions::default(), None)
+            .tag_list(&ListTagsOptions::default(), None)
             .expect("should list tags");
         assert_eq!(tags.len(), 1);
         assert_eq!(tags[0].name, "v2.0.0");
@@ -4589,7 +4589,7 @@ mod tests {
             .expect("should create tag");
         assert_eq!(
             service
-                .tag_list(ListTagsOptions::default(), None)
+                .tag_list(&ListTagsOptions::default(), None)
                 .expect("should list tags")
                 .len(),
             1
@@ -4600,7 +4600,7 @@ mod tests {
         assert!(result.success);
 
         assert!(service
-            .tag_list(ListTagsOptions::default(), None)
+            .tag_list(&ListTagsOptions::default(), None)
             .expect("should list tags after delete")
             .is_empty());
     }

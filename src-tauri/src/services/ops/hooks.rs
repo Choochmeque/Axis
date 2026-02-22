@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::error::Result;
 use crate::models::{GitHookType, HookDetails, HookInfo, HookResult, HookTemplate};
-use crate::services::HookProgressEmitter;
+use crate::services::{HookProgressEmitter, HookService};
 
 use super::RepoOperations;
 
@@ -123,11 +123,17 @@ impl RepoOperations {
         self.service.hook().toggle_hook(hook_type)
     }
 
+    // Allow unused_self: these methods keep &self for API consistency with other RepoOperations methods.
+    // Callers access templates through the ops layer rather than HookService directly.
+    #[must_use]
+    #[allow(clippy::unused_self)]
     pub fn get_templates(&self) -> Vec<HookTemplate> {
-        self.service.hook().get_templates()
+        HookService::get_templates()
     }
 
+    #[must_use]
+    #[allow(clippy::unused_self)]
     pub fn get_templates_for_type(&self, hook_type: GitHookType) -> Vec<HookTemplate> {
-        self.service.hook().get_templates_for_type(hook_type)
+        HookService::get_templates_for_type(hook_type)
     }
 }

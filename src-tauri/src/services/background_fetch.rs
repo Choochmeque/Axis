@@ -23,6 +23,9 @@ impl BackgroundFetchService {
 
     /// Start the background fetch task
     /// `interval_minutes`: fetch interval in minutes (0 = disabled)
+    // Allow many lines: this is a self-contained async background task that processes
+    // repositories in a loop. Extracting parts would obscure the task's structure.
+    #[allow(clippy::too_many_lines)]
     pub fn start(&self, cache: Arc<RepositoryCache>, app_handle: AppHandle, interval_minutes: u32) {
         if interval_minutes == 0 {
             log::info!("Background fetch disabled (interval is 0)");
@@ -73,7 +76,7 @@ impl BackgroundFetchService {
                                 app_state.database(),
                                 &repo_path_str,
                                 &remote.name,
-                                &default_ssh_key,
+                                default_ssh_key.as_ref(),
                             );
 
                             // Skip encrypted keys when no cached passphrase is available

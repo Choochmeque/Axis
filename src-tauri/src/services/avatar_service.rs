@@ -52,7 +52,7 @@ impl AvatarService {
             if file_name_str.starts_with(&pattern) {
                 let path = entry.path();
 
-                if self.is_cache_valid(&path) {
+                if Self::is_cache_valid(&path) {
                     return Some(path.to_string_lossy().to_string());
                 }
                 let _ = fs::remove_file(&path);
@@ -64,7 +64,7 @@ impl AvatarService {
     }
 
     /// Check if a cached file is still valid (within TTL)
-    fn is_cache_valid(&self, path: &Path) -> bool {
+    fn is_cache_valid(path: &Path) -> bool {
         let Ok(metadata) = fs::metadata(path) else {
             return false;
         };
@@ -426,7 +426,7 @@ mod tests {
         fs::write(&file_path, b"data").expect("should write file");
 
         // File just created should be valid
-        assert!(service.is_cache_valid(&file_path));
+        assert!(AvatarService::is_cache_valid(&file_path));
     }
 
     #[test]
@@ -435,6 +435,6 @@ mod tests {
         let service = AvatarService::new(tmp.path());
 
         let file_path = service.cache_dir.join("nonexistent.png");
-        assert!(!service.is_cache_valid(&file_path));
+        assert!(!AvatarService::is_cache_valid(&file_path));
     }
 }

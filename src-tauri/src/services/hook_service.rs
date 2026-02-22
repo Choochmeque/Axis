@@ -5,7 +5,7 @@ use std::process::Stdio;
 use std::time::Duration;
 
 use strum::IntoEnumIterator;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
 
 use crate::error::{AxisError, Result};
@@ -113,7 +113,7 @@ impl HookService {
         }
 
         // Build command based on platform
-        let mut cmd = self.build_command(&hook_path, args);
+        let mut cmd = Self::build_command(&hook_path, args);
 
         cmd.current_dir(&self.repo_path)
             .env("GIT_DIR", self.repo_path.join(".git"))
@@ -186,7 +186,7 @@ impl HookService {
         loop {
             // Check for cancellation
             if emitter.is_cancelled() {
-                log::info!("Hook {} cancelled by user", hook_type);
+                log::info!("Hook {hook_type} cancelled by user");
                 let _ = child.kill().await;
                 return HookResult::cancelled(hook_type);
             }
@@ -197,7 +197,6 @@ impl HookService {
                     // Process finished - read output
                     let stdout = if let Some(ref mut out) = child.stdout {
                         let mut buf = Vec::new();
-                        use tokio::io::AsyncReadExt;
                         let _ = out.read_to_end(&mut buf).await;
                         String::from_utf8_lossy(&buf).to_string()
                     } else {
@@ -206,7 +205,6 @@ impl HookService {
 
                     let stderr = if let Some(ref mut err) = child.stderr {
                         let mut buf = Vec::new();
-                        use tokio::io::AsyncReadExt;
                         let _ = err.read_to_end(&mut buf).await;
                         String::from_utf8_lossy(&buf).to_string()
                     } else {
@@ -228,14 +226,13 @@ impl HookService {
                 }
                 Err(_) => {
                     // Timeout - continue polling
-                    continue;
                 }
             }
         }
     }
 
     /// Build the appropriate command for the platform
-    fn build_command(&self, hook_path: &Path, args: &[&str]) -> Command {
+    fn build_command(hook_path: &Path, args: &[&str]) -> Command {
         #[cfg(unix)]
         {
             // On Unix, execute directly - OS handles shebang
@@ -546,12 +543,14 @@ impl HookService {
     }
 
     /// Get available hook templates
-    pub fn get_templates(&self) -> Vec<HookTemplate> {
+    #[must_use]
+    pub fn get_templates() -> Vec<HookTemplate> {
         get_hook_templates()
     }
 
     /// Get templates for a specific hook type
-    pub fn get_templates_for_type(&self, hook_type: GitHookType) -> Vec<HookTemplate> {
+    #[must_use]
+    pub fn get_templates_for_type(hook_type: GitHookType) -> Vec<HookTemplate> {
         get_hook_templates()
             .into_iter()
             .filter(|t| t.hook_type == hook_type)
@@ -899,10 +898,7 @@ mod tests {
 
     #[test]
     fn test_get_templates() {
-        let (_tmp, repo) = setup_test_repo();
-        let service = HookService::new(&repo);
-
-        let templates = service.get_templates();
+        let templates = HookService::get_templates();
 
         // Should have some templates
         assert!(!templates.is_empty());
@@ -916,10 +912,7 @@ mod tests {
 
     #[test]
     fn test_get_templates_for_type() {
-        let (_tmp, repo) = setup_test_repo();
-        let service = HookService::new(&repo);
-
-        let templates = service.get_templates_for_type(GitHookType::PreCommit);
+        let templates = HookService::get_templates_for_type(GitHookType::PreCommit);
 
         // All templates should be for pre-commit
         for template in &templates {

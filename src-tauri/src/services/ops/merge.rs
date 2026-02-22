@@ -10,6 +10,8 @@ use super::RepoOperations;
 impl RepoOperations {
     // ---- Merge ----
 
+    // Allow excessive bools: these map directly to git merge CLI flags
+    #[allow(clippy::fn_params_excessive_bools)]
     pub async fn merge(
         &self,
         branch: &str,

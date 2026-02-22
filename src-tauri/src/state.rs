@@ -410,7 +410,7 @@ impl AppState {
             &self.database,
             &repo_path,
             remote_name,
-            &settings.default_ssh_key,
+            settings.default_ssh_key.as_ref(),
         ))
     }
 

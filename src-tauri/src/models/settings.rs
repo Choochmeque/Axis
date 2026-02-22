@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::{Display, EnumString};
 
+// Allow excessive bools: this is a configuration struct where each bool represents
+// an independent user preference. Grouping into enums would reduce usability.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {

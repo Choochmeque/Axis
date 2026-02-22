@@ -411,7 +411,7 @@ impl SshKeyService {
         database: &Database,
         repo_path: &str,
         remote_name: &str,
-        default_ssh_key: &Option<String>,
+        default_ssh_key: Option<&String>,
     ) -> Option<String> {
         // 1. Check per-remote key
         match database.get_remote_ssh_key(repo_path, remote_name) {
@@ -429,7 +429,7 @@ impl SshKeyService {
         }
 
         // 2. Check global default
-        default_ssh_key.clone()
+        default_ssh_key.cloned()
     }
 
     // ==================== Key format detection ====================
@@ -756,12 +756,8 @@ mod tests {
         db.set_remote_ssh_key("/repo", "origin", "~/.ssh/remote_key")
             .expect("should set");
 
-        let result = SshKeyService::resolve_ssh_key(
-            &db,
-            "/repo",
-            "origin",
-            &Some("~/.ssh/global_key".to_string()),
-        );
+        let global_key = "~/.ssh/global_key".to_string();
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
         assert_eq!(result, Some("~/.ssh/remote_key".to_string()));
     }
 
@@ -769,12 +765,8 @@ mod tests {
     fn test_resolve_ssh_key_global_default() {
         let db = Database::open_in_memory().expect("should create db");
 
-        let result = SshKeyService::resolve_ssh_key(
-            &db,
-            "/repo",
-            "origin",
-            &Some("~/.ssh/global_key".to_string()),
-        );
+        let global_key = "~/.ssh/global_key".to_string();
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
         assert_eq!(result, Some("~/.ssh/global_key".to_string()));
     }
 
@@ -782,7 +774,7 @@ mod tests {
     fn test_resolve_ssh_key_none() {
         let db = Database::open_in_memory().expect("should create db");
 
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", &None);
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", None);
         assert!(result.is_none());
     }
 
@@ -792,12 +784,8 @@ mod tests {
         db.set_remote_ssh_key("/repo", "origin", "auto")
             .expect("should set");
 
-        let result = SshKeyService::resolve_ssh_key(
-            &db,
-            "/repo",
-            "origin",
-            &Some("~/.ssh/global_key".to_string()),
-        );
+        let global_key = "~/.ssh/global_key".to_string();
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
         // "auto" sentinel means use system default (None)
         assert!(result.is_none());
     }
@@ -808,12 +796,8 @@ mod tests {
         db.set_remote_ssh_key("/repo", "origin", "~/.ssh/specific_key")
             .expect("should set");
 
-        let result = SshKeyService::resolve_ssh_key(
-            &db,
-            "/repo",
-            "origin",
-            &Some("~/.ssh/global_key".to_string()),
-        );
+        let global_key = "~/.ssh/global_key".to_string();
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
         assert_eq!(result, Some("~/.ssh/specific_key".to_string()));
     }
 

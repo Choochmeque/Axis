@@ -24,10 +24,8 @@ pub async fn list_gpg_keys(state: State<'_, AppState>) -> Result<Vec<GpgKey>> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn list_ssh_keys(state: State<'_, AppState>) -> Result<Vec<SshKey>> {
-    let path = state.ensure_repository_open()?;
-    let service = SigningService::new(&path);
-    service.list_ssh_keys()
+pub async fn list_ssh_keys(_state: State<'_, AppState>) -> Result<Vec<SshKey>> {
+    SigningService::list_ssh_keys()
 }
 
 #[tauri::command]

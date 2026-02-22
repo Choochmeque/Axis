@@ -61,6 +61,8 @@ pub struct AddSubmoduleOptions {
 }
 
 /// Options for updating submodules
+// Allow excessive bools: these map directly to git submodule update CLI flags
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateSubmoduleOptions {

@@ -4,6 +4,9 @@ use specta::Type;
 
 use super::{Commit, FileDiff};
 
+// Allow field name because `branch_type` is part of the API contract with the frontend.
+// Renaming to `kind` would require coordinated frontend changes.
+#[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Branch {

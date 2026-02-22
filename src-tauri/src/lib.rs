@@ -23,6 +23,9 @@ use tauri::Manager;
 
 use tauri_specta::{collect_commands, collect_events};
 
+// Allow many lines: this function registers all Tauri commands and events.
+// It's a configuration function that should stay together for maintainability.
+#[allow(clippy::too_many_lines)]
 fn get_specta_builder() -> tauri_specta::Builder {
     tauri_specta::Builder::new()
         .commands(collect_commands![
@@ -327,6 +330,15 @@ fn get_specta_builder() -> tauri_specta::Builder {
         ])
 }
 
+/// Main entry point for the Tauri application.
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - The app data directory cannot be determined
+/// - Database initialization fails
+/// - Menu creation or setup fails
+/// - The Tauri application fails to start
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::init();

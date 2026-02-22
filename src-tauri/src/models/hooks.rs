@@ -31,19 +31,21 @@ pub enum GitHookType {
 
 impl GitHookType {
     /// Whether this hook can abort the operation
-    pub fn can_abort(&self) -> bool {
+    #[must_use]
+    pub fn can_abort(self) -> bool {
         matches!(
             self,
-            GitHookType::PreCommit
-                | GitHookType::PrepareCommitMsg
-                | GitHookType::CommitMsg
-                | GitHookType::PrePush
-                | GitHookType::PreRebase
+            Self::PreCommit
+                | Self::PrepareCommitMsg
+                | Self::CommitMsg
+                | Self::PrePush
+                | Self::PreRebase
         )
     }
 
     /// Get the hook filename
-    pub fn filename(&self) -> &'static str {
+    #[must_use]
+    pub fn filename(self) -> &'static str {
         match self {
             GitHookType::PreCommit => "pre-commit",
             GitHookType::PrepareCommitMsg => "prepare-commit-msg",
@@ -198,6 +200,9 @@ pub struct HookTemplate {
 }
 
 /// Built-in hook templates
+// Allow many lines: this function is a static data definition, not complex logic.
+// Each template is a self-contained shell script; splitting would reduce readability.
+#[allow(clippy::too_many_lines)]
 pub fn get_hook_templates() -> Vec<HookTemplate> {
     vec![
         HookTemplate {

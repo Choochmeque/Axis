@@ -19,7 +19,7 @@ fn hooks_dir(path: &std::path::Path) -> std::path::PathBuf {
 
 /// Get hook file path
 fn hook_path(path: &std::path::Path, hook_type: GitHookType) -> std::path::PathBuf {
-    hooks_dir(path).join(hook_type.filename())
+    hooks_dir(path).join(hook_type.to_string())
 }
 
 /// Check if hook file exists

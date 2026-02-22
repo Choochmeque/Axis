@@ -1464,7 +1464,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Started {} '{name}'", branch_type.as_str()),
+            message: format!("Started {branch_type} '{name}'"),
             branch: Some(branch_name),
         })
     }
@@ -1581,7 +1581,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Finished {} '{name}'", branch_type.as_str()),
+            message: format!("Finished {branch_type} '{name}'"),
             branch: Some(target_branch),
         })
     }
@@ -1620,7 +1620,7 @@ impl GitCliService {
 
         Ok(GitFlowResult {
             success: true,
-            message: format!("Published {} '{name}' to origin", branch_type.as_str()),
+            message: format!("Published {branch_type} '{name}' to origin"),
             branch: Some(branch_name),
         })
     }

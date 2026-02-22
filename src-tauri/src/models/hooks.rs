@@ -42,22 +42,6 @@ impl GitHookType {
                 | Self::PreRebase
         )
     }
-
-    /// Get the hook filename
-    #[must_use]
-    pub fn filename(self) -> &'static str {
-        match self {
-            GitHookType::PreCommit => "pre-commit",
-            GitHookType::PrepareCommitMsg => "prepare-commit-msg",
-            GitHookType::CommitMsg => "commit-msg",
-            GitHookType::PostCommit => "post-commit",
-            GitHookType::PrePush => "pre-push",
-            GitHookType::PostMerge => "post-merge",
-            GitHookType::PreRebase => "pre-rebase",
-            GitHookType::PostCheckout => "post-checkout",
-            GitHookType::PostRewrite => "post-rewrite",
-        }
-    }
 }
 
 /// Result of running a git hook
@@ -402,22 +386,6 @@ mod tests {
         assert!(!GitHookType::PostMerge.can_abort());
         assert!(!GitHookType::PostCheckout.can_abort());
         assert!(!GitHookType::PostRewrite.can_abort());
-    }
-
-    #[test]
-    fn test_git_hook_type_filename() {
-        assert_eq!(GitHookType::PreCommit.filename(), "pre-commit");
-        assert_eq!(
-            GitHookType::PrepareCommitMsg.filename(),
-            "prepare-commit-msg"
-        );
-        assert_eq!(GitHookType::CommitMsg.filename(), "commit-msg");
-        assert_eq!(GitHookType::PostCommit.filename(), "post-commit");
-        assert_eq!(GitHookType::PrePush.filename(), "pre-push");
-        assert_eq!(GitHookType::PostMerge.filename(), "post-merge");
-        assert_eq!(GitHookType::PreRebase.filename(), "pre-rebase");
-        assert_eq!(GitHookType::PostCheckout.filename(), "post-checkout");
-        assert_eq!(GitHookType::PostRewrite.filename(), "post-rewrite");
     }
 
     #[test]

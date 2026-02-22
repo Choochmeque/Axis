@@ -61,7 +61,7 @@ impl HookService {
     #[cfg(test)]
     /// Check if a hook exists and is executable
     fn hook_exists(&self, hook_type: GitHookType) -> bool {
-        let hook_path = self.hooks_path.join(hook_type.filename());
+        let hook_path = self.hooks_path.join(hook_type.to_string());
         if !hook_path.exists() || !hook_path.is_file() {
             return false;
         }
@@ -89,7 +89,7 @@ impl HookService {
         stdin_data: Option<&str>,
         emitter: Option<&HookProgressEmitter>,
     ) -> HookResult {
-        let hook_path = self.hooks_path.join(hook_type.filename());
+        let hook_path = self.hooks_path.join(hook_type.to_string());
 
         // Check if hook exists
         if !hook_path.exists() || !hook_path.is_file() {
@@ -391,8 +391,8 @@ impl HookService {
 
     /// Get info for a specific hook
     pub fn get_hook_info(&self, hook_type: GitHookType) -> HookInfo {
-        let filename = hook_type.filename();
-        let hook_path = self.hooks_path.join(filename);
+        let filename = hook_type.to_string();
+        let hook_path = self.hooks_path.join(&filename);
         let disabled_path = self.hooks_path.join(format!("{filename}.disabled"));
 
         let (exists, enabled, actual_path) = if hook_path.exists() && hook_path.is_file() {
@@ -446,14 +446,11 @@ impl HookService {
         // Ensure hooks directory exists
         fs::create_dir_all(&self.hooks_path).map_err(AxisError::from)?;
 
-        let hook_path = self.hooks_path.join(hook_type.filename());
+        let hook_path = self.hooks_path.join(hook_type.to_string());
 
         // Check if hook already exists
         if hook_path.exists() {
-            return Err(AxisError::Other(format!(
-                "Hook {} already exists",
-                hook_type.filename()
-            )));
+            return Err(AxisError::Other(format!("Hook {hook_type} already exists")));
         }
 
         // Write the hook file
@@ -480,10 +477,7 @@ impl HookService {
         let info = self.get_hook_info(hook_type);
 
         if !info.exists {
-            return Err(AxisError::Other(format!(
-                "Hook {} does not exist",
-                hook_type.filename()
-            )));
+            return Err(AxisError::Other(format!("Hook {hook_type} does not exist")));
         }
 
         // Write the updated content
@@ -510,10 +504,7 @@ impl HookService {
         let info = self.get_hook_info(hook_type);
 
         if !info.exists {
-            return Err(AxisError::Other(format!(
-                "Hook {} does not exist",
-                hook_type.filename()
-            )));
+            return Err(AxisError::Other(format!("Hook {hook_type} does not exist")));
         }
 
         fs::remove_file(&info.path).map_err(AxisError::from)?;
@@ -522,8 +513,8 @@ impl HookService {
 
     /// Toggle hook enabled/disabled state
     pub fn toggle_hook(&self, hook_type: GitHookType) -> Result<bool> {
-        let filename = hook_type.filename();
-        let hook_path = self.hooks_path.join(filename);
+        let filename = hook_type.to_string();
+        let hook_path = self.hooks_path.join(&filename);
         let disabled_path = self.hooks_path.join(format!("{filename}.disabled"));
 
         if hook_path.exists() && hook_path.is_file() {
@@ -535,10 +526,7 @@ impl HookService {
             fs::rename(&disabled_path, &hook_path).map_err(AxisError::from)?;
             Ok(true) // Now enabled
         } else {
-            Err(AxisError::Other(format!(
-                "Hook {} does not exist",
-                hook_type.filename()
-            )))
+            Err(AxisError::Other(format!("Hook {hook_type} does not exist")))
         }
     }
 

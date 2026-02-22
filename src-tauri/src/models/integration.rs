@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use strum::Display;
+use strum::{Display, EnumString};
 
 /// Supported integration providers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type, Display)]
@@ -155,8 +155,9 @@ pub struct CreateIssueOptions {
 }
 
 /// CI/CD run status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, EnumString)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "snake_case")]
 pub enum CIRunStatus {
     Queued,
     InProgress,
@@ -164,8 +165,9 @@ pub enum CIRunStatus {
 }
 
 /// CI/CD run conclusion
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, EnumString)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "snake_case")]
 pub enum CIConclusion {
     Success,
     Failure,
@@ -226,8 +228,9 @@ pub struct NotificationsPage {
 }
 
 /// Combined commit status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, EnumString)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "snake_case")]
 pub enum CommitStatusState {
     Pending,
     Success,
@@ -245,9 +248,11 @@ pub struct CommitStatus {
 }
 
 /// Notification reason
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, EnumString)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "snake_case")]
 pub enum NotificationReason {
+    #[strum(serialize = "assign")]
     Assigned,
     Author,
     Comment,
@@ -263,7 +268,7 @@ pub enum NotificationReason {
 }
 
 /// Notification subject type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, EnumString)]
 #[serde(rename_all = "PascalCase")]
 pub enum NotificationSubjectType {
     Issue,

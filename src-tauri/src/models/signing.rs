@@ -1,27 +1,17 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use strum::Display;
+use strum::{Display, EnumString};
 
 /// Signing format - GPG (`OpenPGP`) or SSH
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display, EnumString)]
 #[serde(rename_all = "PascalCase")]
-#[strum(serialize_all = "lowercase")]
+#[strum(ascii_case_insensitive)]
 pub enum SigningFormat {
     #[default]
+    #[strum(to_string = "gpg", serialize = "openpgp")]
     Gpg,
+    #[strum(serialize = "ssh")]
     Ssh,
-}
-
-impl std::str::FromStr for SigningFormat {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "gpg" | "openpgp" => Ok(SigningFormat::Gpg),
-            "ssh" => Ok(SigningFormat::Ssh),
-            _ => Err(format!("Unknown signing format: {s}")),
-        }
-    }
 }
 
 /// Configuration for commit signing (how to sign, not whether to sign)
@@ -156,8 +146,6 @@ mod tests {
     fn test_signing_format_from_str_invalid() {
         let result: Result<SigningFormat, _> = "invalid".parse();
         assert!(result.is_err());
-        let err = result.expect_err("should be error");
-        assert!(err.contains("Unknown signing format"));
     }
 
     // ==================== SigningConfig Tests ====================

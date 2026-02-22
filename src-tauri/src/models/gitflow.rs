@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use strum::{AsRefStr, Display};
 
 /// Git-flow configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -86,25 +87,14 @@ pub struct GitFlowResult {
 }
 
 /// Type of git-flow branch
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Display, AsRefStr)]
 #[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "lowercase")]
 pub enum GitFlowBranchType {
     Feature,
     Release,
     Hotfix,
     Support,
-}
-
-impl GitFlowBranchType {
-    #[must_use]
-    pub fn as_str(self) -> &'static str {
-        match self {
-            GitFlowBranchType::Feature => "feature",
-            GitFlowBranchType::Release => "release",
-            GitFlowBranchType::Hotfix => "hotfix",
-            GitFlowBranchType::Support => "support",
-        }
-    }
 }
 
 /// Content search options
@@ -329,11 +319,11 @@ mod tests {
     // ==================== GitFlowBranchType Tests ====================
 
     #[test]
-    fn test_git_flow_branch_type_as_str() {
-        assert_eq!(GitFlowBranchType::Feature.as_str(), "feature");
-        assert_eq!(GitFlowBranchType::Release.as_str(), "release");
-        assert_eq!(GitFlowBranchType::Hotfix.as_str(), "hotfix");
-        assert_eq!(GitFlowBranchType::Support.as_str(), "support");
+    fn test_git_flow_branch_type_display() {
+        assert_eq!(GitFlowBranchType::Feature.to_string(), "feature");
+        assert_eq!(GitFlowBranchType::Release.to_string(), "release");
+        assert_eq!(GitFlowBranchType::Hotfix.to_string(), "hotfix");
+        assert_eq!(GitFlowBranchType::Support.to_string(), "support");
     }
 
     #[test]

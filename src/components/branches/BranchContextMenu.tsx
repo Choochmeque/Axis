@@ -43,6 +43,7 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
     openPushDialog,
     openBranchCompareDialog,
     openMergeDialog,
+    openRebaseOntoDialog,
   } = useDialogStore();
   const currentBranch = branches.find((b) => b.isHead);
   const hasUpstream = !!branch.upstream;
@@ -108,7 +109,16 @@ export function BranchContextMenu({ branch, children, onCheckout }: BranchContex
           </MenuItem>
         )}
         {!isCurrentBranch && (
-          <MenuItem icon={GitMerge} disabled className="[&>svg]:rotate-180">
+          <MenuItem
+            icon={GitMerge}
+            className="[&>svg]:rotate-180"
+            onSelect={() =>
+              openRebaseOntoDialog({
+                currentBranch: currentBranch?.name ?? '',
+                newBase: branch.name,
+              })
+            }
+          >
             {t('branches.contextMenu.rebaseOnto', { name: branch.name })}
           </MenuItem>
         )}

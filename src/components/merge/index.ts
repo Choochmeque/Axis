@@ -1,5 +1,6 @@
 export { MergeDialog } from './MergeDialog';
 export { RebaseDialog } from './RebaseDialog';
+export { RebaseOntoDialog } from './RebaseOntoDialog';
 export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
 export { RewordDialog } from './RewordDialog';
 export { EditPauseDialog } from './EditPauseDialog';

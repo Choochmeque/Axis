@@ -65,6 +65,7 @@ export type {
 
   // Rebase types
   RebaseOptions,
+  RebaseOntoOptions,
   RebaseResult,
   RebasePreview,
   RebaseTarget,

@@ -764,6 +764,20 @@
       "loading": "Loading...",
       "selectBranchError": "Please select a branch to rebase onto"
     },
+    "rebaseOnto": {
+      "title": "Rebase Onto",
+      "currentBranch": "Current Branch",
+      "newBase": "New Base (target)",
+      "oldBase": "Starting Point",
+      "oldBaseHint": "Commits after this point will be moved",
+      "selectOldBase": "Select starting point...",
+      "selectOldBaseError": "Please select a starting point",
+      "branches": "Branches",
+      "recentCommits": "Recent Commits",
+      "description": "Move commits from <strong>{{currentBranch}}</strong> (after <strong>{{oldBase}}</strong>) onto <strong>{{newBase}}</strong>.",
+      "warning": "Warning: Rebase rewrites commit history. Only rebase commits that haven't been pushed to a shared repository.",
+      "rebaseButton": "Rebase"
+    },
     "cherryPick": {
       "title": "Cherry Pick",
       "commitToPick": "Commit to Cherry Pick",

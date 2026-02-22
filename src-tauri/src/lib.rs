@@ -102,6 +102,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::merge_continue,
             // Rebase commands
             crate::commands::rebase_branch,
+            crate::commands::rebase_onto,
             crate::commands::rebase_abort,
             crate::commands::rebase_continue,
             crate::commands::rebase_skip,

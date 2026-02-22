@@ -81,6 +81,8 @@ vi.mock('../merge', () => ({
     rebaseDialogProps = props;
     return props.isOpen ? <div data-testid="rebase-dialog">Rebase</div> : null;
   },
+  RebaseOntoDialog: (props: Record<string, unknown>) =>
+    props.isOpen ? <div data-testid="rebase-onto-dialog">RebaseOnto</div> : null,
   ResetConfirmDialog: (props: Record<string, unknown>) => {
     resetConfirmDialogProps = props;
     return props.isOpen ? <div data-testid="reset-confirm-dialog">ResetConfirm</div> : null;
@@ -197,6 +199,7 @@ const mockCloseCherryPickDialog = vi.fn();
 const mockCloseResetConfirmDialog = vi.fn();
 const mockCloseRevertCommitDialog = vi.fn();
 const mockCloseRebaseDialog = vi.fn();
+const mockCloseRebaseOntoDialog = vi.fn();
 const mockCloseMergeDialog = vi.fn();
 const mockCloseArchiveDialog = vi.fn();
 const mockClosePatchDialog = vi.fn();
@@ -385,6 +388,13 @@ describe('AppLayout', () => {
         targetCommit: null,
       },
       closeRebaseDialog: mockCloseRebaseDialog,
+      rebaseOntoDialog: {
+        isOpen: false,
+        onRebaseComplete: null,
+        currentBranch: 'main',
+        newBase: '',
+      },
+      closeRebaseOntoDialog: mockCloseRebaseOntoDialog,
       mergeDialog: { isOpen: false, onMergeComplete: null, sourceBranch: null },
       closeMergeDialog: mockCloseMergeDialog,
       archiveDialog: { isOpen: false, commitOid: null, commitSummary: null },

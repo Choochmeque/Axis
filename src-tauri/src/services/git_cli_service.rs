@@ -976,6 +976,7 @@ impl GitCliService {
     // ==================== Submodule Operations ====================
 
     /// List all submodules
+    #[allow(clippy::too_many_lines)]
     pub async fn submodule_list(&self, options: &ListSubmoduleOptions) -> Result<Vec<Submodule>> {
         // Use git submodule status for detailed info
         let result = self

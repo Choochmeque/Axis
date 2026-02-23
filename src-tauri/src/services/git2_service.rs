@@ -3501,6 +3501,7 @@ impl Git2Service {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ListRemoteOptions;
     use std::fs;
     use tempfile::TempDir;
 
@@ -4220,7 +4221,7 @@ mod tests {
             .expect("should add upstream remote");
 
         let remotes = service
-            .list_remotes(&Default::default())
+            .list_remotes(&ListRemoteOptions::default())
             .expect("should list remotes");
         assert_eq!(remotes.len(), 2);
         assert!(remotes.iter().any(|r| r.name == "origin"));
@@ -4255,7 +4256,7 @@ mod tests {
 
         // Verify it exists
         let remotes = service
-            .list_remotes(&Default::default())
+            .list_remotes(&ListRemoteOptions::default())
             .expect("should list remotes");
         assert_eq!(remotes.len(), 1);
 
@@ -4266,7 +4267,7 @@ mod tests {
 
         // Verify it's gone
         let remotes = service
-            .list_remotes(&Default::default())
+            .list_remotes(&ListRemoteOptions::default())
             .expect("should list remotes after remove");
         assert!(remotes.is_empty());
     }
@@ -4286,7 +4287,7 @@ mod tests {
 
         // Verify the rename
         let remotes = service
-            .list_remotes(&Default::default())
+            .list_remotes(&ListRemoteOptions::default())
             .expect("should list remotes");
         assert!(!remotes.iter().any(|r| r.name == "old-remote"));
         assert!(remotes.iter().any(|r| r.name == "new-remote"));

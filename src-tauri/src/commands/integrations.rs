@@ -4,8 +4,8 @@ use crate::error::Result;
 use crate::models::{
     CiRunsPage, CommitStatus, CreateIssueOptions, CreatePrOptions, DetectedProvider,
     IntegrationLabel, IntegrationRepoInfo, IntegrationStatus, Issue, IssueDetail, IssueState,
-    IssuesPage, MergePrOptions, NotificationsPage, PrState, ProviderType, PullRequest,
-    PullRequestDetail, PullRequestsPage,
+    IssuesPage, ListRemoteOptions, MergePrOptions, NotificationsPage, PrState, ProviderType,
+    PullRequest, PullRequestDetail, PullRequestsPage,
 };
 use crate::services::detect_provider;
 use crate::state::AppState;
@@ -79,7 +79,7 @@ pub async fn integration_detect_provider(
         .get_git_service()?
         .read()
         .await
-        .list_remotes(Default::default())
+        .list_remotes(ListRemoteOptions::default())
         .await?;
 
     // Try origin first, then any other remote

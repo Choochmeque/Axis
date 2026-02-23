@@ -1,5 +1,5 @@
 use crate::error::{AxisError, Result};
-use crate::models::{AppSettings, Repository, SshCredentials};
+use crate::models::{AppSettings, ListRemoteOptions, Repository, SshCredentials};
 use crate::services::ops::RepoOperations;
 use crate::services::{
     AvatarService, BackgroundFetchService, CommitCache, GitService, IntegrationService,
@@ -474,7 +474,7 @@ impl AppState {
             .ok()?
             .read()
             .await
-            .list_remotes(Default::default())
+            .list_remotes(ListRemoteOptions::default())
             .await
             .ok()?;
 

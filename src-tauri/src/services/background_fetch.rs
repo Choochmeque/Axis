@@ -58,7 +58,7 @@ impl BackgroundFetchService {
 
                         // List remotes (read lock)
                         let remotes =
-                            match handle.read().await.list_remotes(&Default::default()).await {
+                            match handle.read().await.list_remotes(Default::default()).await {
                                 Ok(remotes) => remotes,
                                 Err(e) => {
                                     log::warn!(

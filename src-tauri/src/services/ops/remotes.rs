@@ -8,8 +8,7 @@ use super::RepoOperations;
 
 /// Remote, fetch, push, pull operations.
 impl RepoOperations {
-    pub async fn list_remotes(&self, options: &ListRemoteOptions) -> Result<Vec<Remote>> {
-        let options = options.clone();
+    pub async fn list_remotes(&self, options: ListRemoteOptions) -> Result<Vec<Remote>> {
         self.git2(move |g| g.list_remotes(&options)).await
     }
 

@@ -17,7 +17,7 @@ pub async fn list_remotes(
         .get_git_service()?
         .read()
         .await
-        .list_remotes(&options.unwrap_or_default())
+        .list_remotes(options.unwrap_or_default())
         .await
 }
 
@@ -310,7 +310,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
-    let remotes = guard.list_remotes(&Default::default()).await?;
+    let remotes = guard.list_remotes(Default::default()).await?;
     let options = FetchOptions::default();
 
     let mut results = Vec::new();

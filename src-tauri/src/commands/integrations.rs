@@ -79,7 +79,7 @@ pub async fn integration_detect_provider(
         .get_git_service()?
         .read()
         .await
-        .list_remotes(&Default::default())
+        .list_remotes(Default::default())
         .await?;
 
     // Try origin first, then any other remote

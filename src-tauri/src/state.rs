@@ -474,7 +474,7 @@ impl AppState {
             .ok()?
             .read()
             .await
-            .list_remotes(&Default::default())
+            .list_remotes(Default::default())
             .await
             .ok()?;
 

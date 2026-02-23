@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GitFork } from 'lucide-react';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { GitFork, FolderOpen } from 'lucide-react';
 
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -61,6 +62,18 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
     onOpenChange(isOpen);
   };
 
+  const handleBrowse = async () => {
+    const selected = await openDialog({
+      directory: true,
+      multiple: false,
+      title: t('worktrees.add.selectPath'),
+    });
+
+    if (selected && typeof selected === 'string') {
+      setPath(selected);
+    }
+  };
+
   const handleAdd = async () => {
     if (!path.trim()) {
       setError(t('worktrees.add.pathRequired'));
@@ -117,14 +130,20 @@ export function AddWorktreeDialog({ open, onOpenChange }: AddWorktreeDialogProps
             htmlFor="worktree-path"
             hint={t('worktrees.add.pathHint')}
           >
-            <Input
-              id="worktree-path"
-              type="text"
-              value={path}
-              onChange={(e) => setPath(e.target.value)}
-              placeholder={t('worktrees.add.pathPlaceholder')}
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <Input
+                id="worktree-path"
+                type="text"
+                value={path}
+                onChange={(e) => setPath(e.target.value)}
+                placeholder={t('worktrees.add.pathPlaceholder')}
+                autoFocus
+                className="flex-1"
+              />
+              <Button variant="secondary" onClick={handleBrowse}>
+                <FolderOpen size={16} />
+              </Button>
+            </div>
           </FormField>
 
           <CheckboxField

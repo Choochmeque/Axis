@@ -1775,7 +1775,8 @@
       "pathRequired": "Path is required",
       "branchRequired": "Branch name is required (or select detached HEAD)",
       "creating": "Creating...",
-      "addButton": "Add Worktree"
+      "addButton": "Add Worktree",
+      "selectPath": "Select Worktree Location"
     },
     "remove": {
       "title": "Remove Worktree",

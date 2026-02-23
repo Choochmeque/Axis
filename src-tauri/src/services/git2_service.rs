@@ -570,20 +570,12 @@ impl Git2Service {
             }
         }
 
-        // Sort: current branch first, then by specified sort order
-        branches.sort_by(|a, b| {
-            if a.is_head {
-                return std::cmp::Ordering::Less;
-            }
-            if b.is_head {
-                return std::cmp::Ordering::Greater;
-            }
-            match filter.sort {
-                BranchSortOrder::Alphabetical => natord::compare(&a.name, &b.name),
-                BranchSortOrder::AlphabeticalDesc => natord::compare(&b.name, &a.name),
-                BranchSortOrder::LastCommitDate => a.last_commit_time.cmp(&b.last_commit_time),
-                BranchSortOrder::LastCommitDateDesc => b.last_commit_time.cmp(&a.last_commit_time),
-            }
+        // Sort by specified sort order
+        branches.sort_by(|a, b| match filter.sort {
+            BranchSortOrder::Alphabetical => natord::compare(&a.name, &b.name),
+            BranchSortOrder::AlphabeticalDesc => natord::compare(&b.name, &a.name),
+            BranchSortOrder::LastCommitDate => a.last_commit_time.cmp(&b.last_commit_time),
+            BranchSortOrder::LastCommitDateDesc => b.last_commit_time.cmp(&a.last_commit_time),
         });
 
         // Apply limit if specified

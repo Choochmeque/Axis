@@ -68,14 +68,14 @@ Axis is a modern Git GUI that combines the power of a full-featured Git client w
   <h2>Get Started</h2>
   <p>Download Axis for your platform and start using Git the way it should be.</p>
   <div class="download-buttons">
-    <a href="https://github.com/Choochmeque/Axis/releases/latest" class="download-btn primary">
+    <a href="https://github.com/Choochmeque/Axis/releases/latest" class="download-btn primary" title="Download the latest stable release of Axis">
       Download Stable
     </a>
-    <a href="https://github.com/Choochmeque/Axis/releases" class="download-btn secondary">
+    <a href="https://github.com/Choochmeque/Axis/releases" class="download-btn secondary" title="Browse all Axis releases including nightly builds">
       Nightly Builds
     </a>
   </div>
   <p class="download-note">
-    See the <a href="/guide/installation">installation guide</a> for release channel details
+    See the <a href="/guide/installation" title="Axis installation guide">installation guide</a> for release channel details
   </p>
 </div>

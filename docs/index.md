@@ -45,6 +45,13 @@ features:
 
 Axis is a modern Git GUI that combines the power of a full-featured Git client with an intuitive interface. Whether you're managing complex branching strategies or just committing your daily work, Axis makes Git accessible without sacrificing power — all with native performance thanks to Rust.
 
+### Easy to Get Started
+
+- **Visual Interface** - No command line needed — see branches, commits, and changes at a glance
+- **Guided Workflows** - Step-by-step dialogs for common operations like merging and rebasing
+- **Clear Feedback** - Understand what's happening with your repository without cryptic messages
+- **Safe Operations** - Preview changes before applying them, with easy undo when things go wrong
+
 ### Built for Developers
 
 - **Interactive Rebase** - Visualize and edit your commit history with ease

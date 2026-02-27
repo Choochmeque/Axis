@@ -76,6 +76,6 @@ Axis is a modern Git GUI that combines the power of a full-featured Git client w
     </a>
   </div>
   <p class="download-note">
-    <a href="/guide/installation">Learn more</a> about release channels
+    See the <a href="/guide/installation">installation guide</a> for release channel details
   </p>
 </div>

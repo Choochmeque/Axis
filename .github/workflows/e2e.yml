@@ -38,7 +38,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          shared-key: rust-${{ runner.os }}-release
+          shared-key: rust-${{ runner.os }}-e2e
 
       - name: Cache and install APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -93,7 +93,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          shared-key: rust-${{ runner.os }}-release
+          shared-key: rust-${{ runner.os }}-e2e
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
@@ -137,7 +137,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          shared-key: rust-${{ runner.os }}-release
+          shared-key: rust-${{ runner.os }}-e2e
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

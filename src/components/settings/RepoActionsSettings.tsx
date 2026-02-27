@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { GripVertical, Pencil, Plus, Terminal, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Terminal, GripVertical } from 'lucide-react';
-import { Button, Alert, ConfirmDialog } from '@/components/ui';
 import { ActionEditorDialog } from '@/components/custom-actions';
+import { Alert, Button, ConfirmDialog } from '@/components/ui';
 import { useCustomActionsStore } from '@/store/customActionsStore';
-import { ActionStorageType } from '@/types';
 import type { CustomAction } from '@/types';
+import { ActionStorageType } from '@/types';
 
 const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';

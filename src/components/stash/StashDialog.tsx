@@ -1,25 +1,24 @@
+import { Archive } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Archive } from 'lucide-react';
-
-import { toast, useOperation } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { stashApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast, useOperation } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { testId } from '@/lib/utils';
+import { stashApi } from '../../services/api';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 interface StashDialogProps {
   isOpen: boolean;

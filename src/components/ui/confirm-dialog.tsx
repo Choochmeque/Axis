@@ -1,14 +1,14 @@
-import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
   Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
 } from '@/components/ui';
 
 interface ConfirmDialogProps {

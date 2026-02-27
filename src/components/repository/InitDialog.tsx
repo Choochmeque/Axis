@@ -1,25 +1,25 @@
+import { open } from '@tauri-apps/plugin-dialog';
+import { FolderOpen, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { open } from '@tauri-apps/plugin-dialog';
-import { FolderPlus, FolderOpen } from 'lucide-react';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  Input,
+} from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { TabType, useTabsStore } from '@/store/tabsStore';
-import { getErrorMessage } from '@/lib/errorUtils';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Input,
-  CheckboxField,
-  Alert,
-} from '@/components/ui';
-import { testId } from '@/lib/utils';
 
 interface InitDialogProps {
   open: boolean;

@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useIntegrationStore } from './integrationStore';
-import { PrState, IssueState, ProviderType } from '@/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   DetectedProvider,
   IntegrationStatus,
-  PullRequest,
-  Issue,
   IntegrationUser,
+  Issue,
+  PullRequest,
 } from '@/types';
+import { IssueState, ProviderType, PrState } from '@/types';
+import { useIntegrationStore } from './integrationStore';
 
 vi.mock('@/bindings/api', () => ({
   events: {

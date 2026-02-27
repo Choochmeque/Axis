@@ -1,41 +1,41 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Sidebar } from './Sidebar';
-import { Toolbar } from './Toolbar';
-import { StatusBar } from './StatusBar';
+import { useFileWatcher, useGitProgress, useHookProgress } from '../../hooks';
+import { useDialogStore } from '../../store/dialogStore';
+import { useRepositoryStore } from '../../store/repositoryStore';
 import {
+  CheckoutBranchDialog,
   CheckoutConflictDialog,
   CreateBranchDialog,
-  CheckoutBranchDialog,
   DeleteBranchDialog,
   RenameBranchDialog,
 } from '../branches';
 import { BranchCompareDialog } from '../branches/BranchCompareDialog';
+import { ActionConfirmDialog, ActionOutputDialog } from '../custom-actions';
+import { ArchiveDialog } from '../history/ArchiveDialog';
+import { PatchDialog } from '../history/PatchDialog';
 import {
   CherryPickDialog,
-  InteractiveRebaseDialog,
-  RewordDialog,
   EditPauseDialog,
+  InteractiveRebaseDialog,
   MergeDialog,
   RebaseDialog,
   RebaseOntoDialog,
   ResetConfirmDialog,
   RevertCommitDialog,
+  RewordDialog,
 } from '../merge';
-import { ActionConfirmDialog, ActionOutputDialog } from '../custom-actions';
-import { TagDialog, DeleteTagDialog } from '../tags';
-import { ArchiveDialog } from '../history/ArchiveDialog';
-import { PatchDialog } from '../history/PatchDialog';
 import { BisectDialog } from '../merge/BisectDialog';
-import { FetchDialog, PushDialog, PullDialog, PassphraseDialog } from '../remotes';
-import { StashDialog } from '../stash/StashDialog';
+import { FetchDialog, PassphraseDialog, PullDialog, PushDialog } from '../remotes';
+import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
+import { SettingsDialog } from '../settings/SettingsDialog';
 import { DiscardConfirmDialog } from '../staging/DiscardConfirmDialog';
 import { LargeBinaryWarningDialog } from '../staging/LargeBinaryWarningDialog';
-import { SettingsDialog } from '../settings/SettingsDialog';
-import { RepositorySettingsDialog } from '../settings/RepositorySettingsDialog';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { useDialogStore } from '../../store/dialogStore';
-import { useFileWatcher, useGitProgress, useHookProgress } from '../../hooks';
+import { StashDialog } from '../stash/StashDialog';
+import { DeleteTagDialog, TagDialog } from '../tags';
+import { Sidebar } from './Sidebar';
+import { StatusBar } from './StatusBar';
+import { Toolbar } from './Toolbar';
 
 interface AppLayoutProps {
   children: ReactNode;

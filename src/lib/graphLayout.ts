@@ -2,13 +2,14 @@
  * Graph layout calculator that extracts per-row rendering data from the Graph class.
  * Reuses the existing graph.ts algorithm for lane assignment and color computation.
  */
-import type { GraphCommit } from '@/types';
-import { Graph } from '@/lib/graph';
+
 import {
+  buildCommitLookup,
   defaultGraphConfig,
   defaultMuteConfig,
-  buildCommitLookup,
 } from '@/components/history/CommitGraph';
+import { Graph } from '@/lib/graph';
+import type { GraphCommit } from '@/types';
 
 // Per-row layout data for rendering
 export interface RowGraphData {

@@ -1,26 +1,26 @@
-import { useMemo } from 'react';
-import type React from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  FileQuestion,
-  ArrowRightLeft,
-  Copy,
   AlertTriangle,
-  FileType,
-  ChevronRight,
+  ArrowRightLeft,
   ChevronDown,
+  ChevronRight,
+  Copy,
+  FileQuestion,
+  FileType,
   Folder,
+  Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react';
-import { Checkbox, TreeView as UITreeView, buildTreeFromPaths, VirtualList } from '@/components/ui';
+import type React from 'react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { buildTreeFromPaths, Checkbox, TreeView as UITreeView, VirtualList } from '@/components/ui';
 import type { SelectionKey } from '@/hooks';
-import { StatusType } from '@/types';
-import type { FileStatus, StatusType as StatusTypeType } from '@/types';
 import { cn, testId } from '@/lib/utils';
-import { StagingViewMode } from './StagingFilters';
+import type { FileStatus, StatusType as StatusTypeType } from '@/types';
+import { StatusType } from '@/types';
 import { StagingFileContextMenu } from './StagingFileContextMenu';
+import { StagingViewMode } from './StagingFilters';
 
 // Extended file type for fluid staging
 export interface FluidFile extends FileStatus {

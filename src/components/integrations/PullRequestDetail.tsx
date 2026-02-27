@@ -1,42 +1,42 @@
-import { useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  GitPullRequest,
-  GitMerge,
-  XCircle,
-  X,
-  ExternalLink,
-  User,
-  GitBranch,
   Calendar,
-  MessageSquare,
-  FileCode,
-  Plus,
-  Minus,
   ChevronDown,
+  ExternalLink,
+  FileCode,
+  GitBranch,
+  GitMerge,
+  GitPullRequest,
+  MessageSquare,
+  Minus,
+  Plus,
+  User,
+  X,
+  XCircle,
 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 import {
   Button,
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuTrigger,
 } from '@/components/ui';
-import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
-import { cn, getLabelColors } from '@/lib/utils';
 import { formatDateTime } from '@/lib/dateUtils';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { cn, getLabelColors } from '@/lib/utils';
 import { shellApi } from '@/services/api';
-import { PrState, MergeMethod } from '@/types';
+import { useIntegrationStore } from '@/store/integrationStore';
 import type { PullRequestDetail as PullRequestDetailType } from '@/types';
+import { MergeMethod, PrState } from '@/types';
 
 interface PullRequestDetailProps {
   prDetail: PullRequestDetailType | null;

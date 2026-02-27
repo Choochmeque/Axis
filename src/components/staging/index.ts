@@ -1,11 +1,11 @@
-export { StagingView } from './StagingView';
-export { FileStatusList } from './FileStatusList';
 export { CommitForm } from './CommitForm';
+export { FileStatusList } from './FileStatusList';
+export { StagingFileContextMenu } from './StagingFileContextMenu';
 export {
   StagingFilters,
-  StagingSortBy,
-  StagingShowOnly,
-  StagingViewMode,
   StagingMode,
+  StagingShowOnly,
+  StagingSortBy,
+  StagingViewMode,
 } from './StagingFilters';
-export { StagingFileContextMenu } from './StagingFileContextMenu';
+export { StagingView } from './StagingView';

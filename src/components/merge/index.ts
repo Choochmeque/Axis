@@ -1,11 +1,11 @@
+export { CherryPickDialog } from './CherryPickDialog';
+export { ConflictResolver } from './ConflictResolver';
+export { EditPauseDialog } from './EditPauseDialog';
+export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
 export { MergeDialog } from './MergeDialog';
+export { RebaseBanner } from './RebaseBanner';
 export { RebaseDialog } from './RebaseDialog';
 export { RebaseOntoDialog } from './RebaseOntoDialog';
-export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
-export { RewordDialog } from './RewordDialog';
-export { EditPauseDialog } from './EditPauseDialog';
-export { RebaseBanner } from './RebaseBanner';
-export { CherryPickDialog } from './CherryPickDialog';
 export { ResetConfirmDialog } from './ResetConfirmDialog';
 export { RevertCommitDialog } from './RevertCommitDialog';
-export { ConflictResolver } from './ConflictResolver';
+export { RewordDialog } from './RewordDialog';

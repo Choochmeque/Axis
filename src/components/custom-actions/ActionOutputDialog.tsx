@@ -1,13 +1,13 @@
+import { CheckCircle, Terminal, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, XCircle, Terminal } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
 } from '@/components/ui';
 import { useCustomActionsStore } from '@/store/customActionsStore';
 

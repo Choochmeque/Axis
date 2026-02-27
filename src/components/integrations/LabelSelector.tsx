@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Check, Tag, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Check, X } from 'lucide-react';
 
 import { Input } from '@/components/ui';
-import { useIntegrationStore } from '@/store/integrationStore';
 import { getLabelColors } from '@/lib/utils';
+import { useIntegrationStore } from '@/store/integrationStore';
 import type { IntegrationLabel } from '@/types';
 
 interface LabelSelectorProps {

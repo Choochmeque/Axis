@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useOperationStore, type Operation } from '@/store/operationStore';
+import { type Operation, useOperationStore } from '@/store/operationStore';
 import type { GitOperationType } from '@/types';
 
 /**

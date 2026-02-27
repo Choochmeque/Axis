@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { HistoryFileContextMenu } from './HistoryFileContextMenu';
-import { DiffStatus } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
 import type { FileDiff } from '@/types';
+import { DiffStatus } from '@/types';
+import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

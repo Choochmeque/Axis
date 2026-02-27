@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ActionConfirmDialog } from './ActionConfirmDialog';
-import { ActionContext, ActionStorageType } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CustomAction } from '@/types';
+import { ActionContext, ActionStorageType } from '@/types';
+import { ActionConfirmDialog } from './ActionConfirmDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

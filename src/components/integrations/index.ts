@@ -1,15 +1,12 @@
-export { PullRequestsView } from './PullRequestsView';
-export { PullRequestList } from './PullRequestList';
-export { PullRequestDetail } from './PullRequestDetail';
-export { CreatePullRequestDialog } from './CreatePullRequestDialog';
-
-export { IssuesView } from './IssuesView';
-export { IssueList } from './IssueList';
-export { IssueDetail } from './IssueDetail';
-export { CreateIssueDialog } from './CreateIssueDialog';
-
-export { CIView } from './CIView';
 export { CIRunList } from './CIRunList';
-
-export { NotificationsView } from './NotificationsView';
+export { CIView } from './CIView';
+export { CreateIssueDialog } from './CreateIssueDialog';
+export { CreatePullRequestDialog } from './CreatePullRequestDialog';
+export { IssueDetail } from './IssueDetail';
+export { IssueList } from './IssueList';
+export { IssuesView } from './IssuesView';
 export { NotificationList } from './NotificationList';
+export { NotificationsView } from './NotificationsView';
+export { PullRequestDetail } from './PullRequestDetail';
+export { PullRequestList } from './PullRequestList';
+export { PullRequestsView } from './PullRequestsView';

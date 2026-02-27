@@ -1,11 +1,11 @@
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { StatusType } from '@/types';
+import { useRepositoryStore } from '../../store/repositoryStore';
+import { useStagingStore } from '../../store/stagingStore';
+import { type DiffMode, DiffView } from '../diff';
 import { StagingView } from '../staging';
 import { CommitForm } from '../staging/CommitForm';
-import { DiffView, type DiffMode } from '../diff';
 import { StashDiffView } from '../stash';
-import { useStagingStore } from '../../store/stagingStore';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { StatusType } from '@/types';
 
 export function WorkspaceView() {
   const {

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BlameView } from './BlameView';
+import { describe, expect, it, vi } from 'vitest';
 import type { BlameLine } from '@/types';
+import { BlameView } from './BlameView';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

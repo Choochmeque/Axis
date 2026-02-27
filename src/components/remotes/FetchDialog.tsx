@@ -1,27 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
-
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  OperationProgressBar,
+  Select,
+  SelectItem,
+} from '@/components/ui';
 import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi, shellApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote } from '../../types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  Button,
-  FormField,
-  Select,
-  SelectItem,
-  CheckboxField,
-  Alert,
-  OperationProgressBar,
-} from '@/components/ui';
 
 interface FetchDialogProps {
   isOpen: boolean;

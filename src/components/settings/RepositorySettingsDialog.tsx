@@ -1,57 +1,57 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import CodeEditor from '@uiw/react-textarea-code-editor';
 import {
-  Settings,
-  User,
-  Globe,
-  Plus,
-  Pencil,
-  Trash2,
   FileCode2,
+  Globe,
+  KeyRound,
+  KeySquare,
+  Pencil,
+  Plus,
+  Settings,
+  Terminal,
   ToggleLeft,
   ToggleRight,
-  Terminal,
-  KeySquare,
+  Trash2,
+  User,
 } from 'lucide-react';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { KeyRound } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  repoSettingsApi,
-  remoteApi,
-  hooksApi,
-  sshKeysApi,
-  remoteSshKeysApi,
-  signingApi,
-} from '@/services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import type {
-  RepositorySettings,
-  Remote,
-  HookInfo,
-  HookTemplate,
-  SshKeyInfo,
-  GpgKey,
-  SshKey,
-  SigningConfig,
-} from '@/types';
-import { GitHookType, SshKeyFormat, SigningFormat } from '@/types';
-import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
-  Alert,
   Select,
   SelectItem,
 } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '@/lib/utils';
+import {
+  hooksApi,
+  remoteApi,
+  remoteSshKeysApi,
+  repoSettingsApi,
+  signingApi,
+  sshKeysApi,
+} from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type {
+  GpgKey,
+  HookInfo,
+  HookTemplate,
+  Remote,
+  RepositorySettings,
+  SigningConfig,
+  SshKey,
+  SshKeyInfo,
+} from '@/types';
+import { GitHookType, SigningFormat, SshKeyFormat } from '@/types';
 import { RepoActionsSettings } from './RepoActionsSettings';
 
 interface RepositorySettingsDialogProps {

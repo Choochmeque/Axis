@@ -1,6 +1,6 @@
-import type { FileDiff, DiffHunk } from '@/types';
-import { DiffLineType } from '@/types';
 import { deserializeLineKey } from '@/components/diff/types';
+import type { DiffHunk, FileDiff } from '@/types';
+import { DiffLineType } from '@/types';
 
 /**
  * Generate a valid unified diff patch for selected lines.

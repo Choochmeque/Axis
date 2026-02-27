@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useSshKeyCheck } from './useSshKeyCheck';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SshKeyFormat } from '@/types';
+import { useSshKeyCheck } from './useSshKeyCheck';
 
 const mockRemoteSshKeysGet = vi.fn();
 const mockSshKeysCheckFormat = vi.fn();

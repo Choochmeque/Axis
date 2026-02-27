@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActionContext, CustomAction } from '@/types';
 import { CustomActionsMenuSection } from './CustomActionsMenuSection';
-import type { CustomAction, ActionContext } from '@/types';
 
 const mockGetActionsForContext = vi.fn();
 const mockConfirmAndExecute = vi.fn();

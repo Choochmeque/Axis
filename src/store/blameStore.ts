@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-
+import { getErrorMessage } from '@/lib/errorUtils';
 import { blameApi } from '@/services/api';
 import type { BlameResult } from '@/types';
-import { getErrorMessage } from '@/lib/errorUtils';
 
 interface BlameState {
   // Cache: Map<`${path}:${commitOid || 'HEAD'}`, BlameResult>

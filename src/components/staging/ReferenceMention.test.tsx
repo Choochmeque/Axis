@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ReferenceMention } from './ReferenceMention';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReferenceItem } from '@/hooks/useReferenceMention';
+import { ReferenceMention } from './ReferenceMention';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-
+import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi } from '@/services/api';
 import type { InteractiveRebaseEntry, InteractiveRebasePreview, RebaseAction } from '@/types';
-import { getErrorMessage } from '@/lib/errorUtils';
 
 interface InteractiveRebaseState {
   // Dialog state

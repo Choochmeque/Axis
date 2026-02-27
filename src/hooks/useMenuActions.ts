@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { events } from '@/bindings/api';
 import { toast } from '@/hooks';

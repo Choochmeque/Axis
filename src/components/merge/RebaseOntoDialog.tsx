@@ -1,24 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitBranch, Loader2 } from 'lucide-react';
-
-import { toast, useOperation } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { rebaseApi, branchApi, commitApi } from '@/services/api';
-import { BranchType, type Branch, type Commit, type RebaseResult } from '@/types';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Select,
   SelectItem,
-  Alert,
 } from '@/components/ui';
+import { toast, useOperation } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { branchApi, commitApi, rebaseApi } from '@/services/api';
+import { type Branch, BranchType, type Commit, type RebaseResult } from '@/types';
 
 interface RebaseOntoDialogProps {
   isOpen: boolean;

@@ -1,31 +1,30 @@
-import { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
+  Archive,
+  ArrowUpFromLine,
+  Check,
+  CherryIcon,
+  Copy,
+  FileText,
   GitBranch,
   GitMerge,
-  Tag,
-  RotateCcw,
-  Copy,
-  CherryIcon,
-  Undo2,
-  Check,
-  Archive,
-  FileText,
-  ArrowUpFromLine,
   PenTool,
+  RotateCcw,
   Search,
+  Tag,
+  Undo2,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { toast } from '@/hooks';
 import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '@/services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
 import { useDialogStore } from '@/store/dialogStore';
-import { ResetMode } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import type { GraphCommit, ResetMode as ResetModeType } from '@/types';
-import { CustomActionsMenuSection } from '@/components/custom-actions';
-import { ActionContext } from '@/types';
+import { ActionContext, ResetMode } from '@/types';
 
 interface CommitContextMenuProps {
   commit: GraphCommit;

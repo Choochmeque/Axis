@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ActionEditorDialog } from './ActionEditorDialog';
-import { ActionContext, ActionStorageType } from '@/types';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CustomAction } from '@/types';
+import { ActionContext, ActionStorageType } from '@/types';
+import { ActionEditorDialog } from './ActionEditorDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

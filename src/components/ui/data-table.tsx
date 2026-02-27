@@ -1,16 +1,16 @@
-import { useRef, useCallback, useImperativeHandle, forwardRef, type Ref } from 'react';
 import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
   type ColumnDef,
   type ColumnResizeMode,
+  flexRender,
+  getCoreRowModel,
   type Row,
+  useReactTable,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { cn } from '@/lib/utils';
-import { useListSelection } from '@/hooks';
+import { forwardRef, type Ref, useCallback, useImperativeHandle, useRef } from 'react';
 import type { SelectionKey, SelectionMode } from '@/hooks';
+import { useListSelection } from '@/hooks';
+import { cn } from '@/lib/utils';
 
 export interface DataTableRef {
   scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
@@ -246,10 +246,10 @@ export const DataTable = forwardRef(DataTableInner) as <TData>(
 
 // Re-export useful types and utilities from @tanstack/react-table
 export {
-  createColumnHelper,
+  type CellContext,
   type ColumnDef,
+  createColumnHelper,
+  type HeaderContext,
   type Row,
   type Table,
-  type CellContext,
-  type HeaderContext,
 } from '@tanstack/react-table';

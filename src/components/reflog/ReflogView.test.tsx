@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { ReflogView } from './ReflogView';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReflogAction } from '@/types';
+import { ReflogView } from './ReflogView';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

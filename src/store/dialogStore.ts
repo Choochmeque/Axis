@@ -3,8 +3,8 @@ import { create } from 'zustand';
 import type {
   BisectResult,
   Branch,
-  Commit,
   CherryPickResult,
+  Commit,
   LargeBinaryFileInfo,
   MergeResult,
   RebaseResult,

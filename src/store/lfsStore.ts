@@ -1,21 +1,20 @@
 import { create } from 'zustand';
-
+import type {
+  GitEnvironment,
+  LfsEnvironment,
+  LfsFetchOptions,
+  LfsFile,
+  LfsMigrateOptions,
+  LfsPruneOptions,
+  LfsPullOptions,
+  LfsPushOptions,
+  LfsStatus,
+  LfsTrackedPattern,
+} from '@/bindings/api';
 import i18n from '@/i18n';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { lfsApi } from '@/services/api';
 import { useToastStore } from './toastStore';
-import type {
-  LfsStatus,
-  LfsTrackedPattern,
-  LfsFile,
-  LfsEnvironment,
-  GitEnvironment,
-  LfsFetchOptions,
-  LfsPullOptions,
-  LfsPushOptions,
-  LfsMigrateOptions,
-  LfsPruneOptions,
-} from '@/bindings/api';
 
 interface LfsState {
   // Data

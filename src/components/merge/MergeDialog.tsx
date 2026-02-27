@@ -1,28 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitMerge } from 'lucide-react';
-
-import { toast, useOperation } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { mergeApi, branchApi } from '../../services/api';
-import { BranchType, type Branch, type MergeResult } from '../../types';
-import { cn } from '../../lib/utils';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Select,
   SelectItem,
   Textarea,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast, useOperation } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { cn } from '../../lib/utils';
+import { branchApi, mergeApi } from '../../services/api';
+import { type Branch, BranchType, type MergeResult } from '../../types';
 
 interface MergeDialogProps {
   isOpen: boolean;

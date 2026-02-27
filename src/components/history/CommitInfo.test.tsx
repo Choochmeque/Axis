@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CommitInfo } from './CommitInfo';
-import { RefType, SigningFormat } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import type { Commit, GraphCommit } from '@/types';
+import { RefType, SigningFormat } from '@/types';
+import { CommitInfo } from './CommitInfo';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

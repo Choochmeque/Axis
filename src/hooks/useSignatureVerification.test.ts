@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { useSignatureVerification } from './useSignatureVerification';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SigningFormat } from '@/types';
+import { useSignatureVerification } from './useSignatureVerification';
 
 const mockVerifyCommitSignature = vi.fn();
 

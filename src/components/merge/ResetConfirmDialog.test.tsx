@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ResetConfirmDialog } from './ResetConfirmDialog';
-import { ResetMode } from '@/types';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Commit } from '@/types';
+import { ResetMode } from '@/types';
+import { ResetConfirmDialog } from './ResetConfirmDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

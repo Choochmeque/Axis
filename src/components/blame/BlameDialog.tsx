@@ -1,15 +1,14 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { FileText } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { FileText } from 'lucide-react';
-
-import { useBlameStore } from '@/store/blameStore';
-import { commitApi } from '@/services/api';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { BlameView } from './BlameView';
 import { CommitInfo } from '@/components/history/CommitInfo';
+import { Dialog, DialogBody, DialogContent, DialogTitle } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { commitApi } from '@/services/api';
+import { useBlameStore } from '@/store/blameStore';
 import type { Commit } from '@/types';
-import { Dialog, DialogContent, DialogTitle, DialogBody } from '@/components/ui';
+import { BlameView } from './BlameView';
 
 interface BlameDialogProps {
   isOpen: boolean;

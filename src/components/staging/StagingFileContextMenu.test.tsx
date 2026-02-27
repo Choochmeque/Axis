@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { StagingFileContextMenu } from './StagingFileContextMenu';
-import { StatusType } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
 import type { FileStatus } from '@/types';
+import { StatusType } from '@/types';
+import { StagingFileContextMenu } from './StagingFileContextMenu';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

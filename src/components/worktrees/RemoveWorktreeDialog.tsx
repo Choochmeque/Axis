@@ -1,22 +1,21 @@
+import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2 } from 'lucide-react';
-
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui';
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { worktreeApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  CheckboxField,
-  Alert,
-} from '@/components/ui';
 import type { Worktree } from '@/types';
 
 interface RemoveWorktreeDialogProps {

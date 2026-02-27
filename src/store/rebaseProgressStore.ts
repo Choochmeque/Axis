@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi } from '@/services/api';
 import type { RebaseProgress } from '@/types';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { toast } from '@/hooks';
 
 interface RebaseProgressState {
   // Data

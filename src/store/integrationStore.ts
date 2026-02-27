@@ -5,23 +5,23 @@ import i18n from '@/i18n';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { normalizePath } from '@/lib/utils';
 import { integrationApi } from '@/services/api';
-import { PrState, IssueState } from '@/types';
 import type {
-  DetectedProvider,
-  IntegrationStatus,
-  IntegrationRepoInfo,
-  IntegrationLabel,
-  PullRequest,
-  PullRequestDetail,
-  Issue,
-  IssueDetail,
   CIRun,
   CommitStatus,
-  Notification,
-  CreatePrOptions,
-  MergePrOptions,
   CreateIssueOptions,
+  CreatePrOptions,
+  DetectedProvider,
+  IntegrationLabel,
+  IntegrationRepoInfo,
+  IntegrationStatus,
+  Issue,
+  IssueDetail,
+  MergePrOptions,
+  Notification,
+  PullRequest,
+  PullRequestDetail,
 } from '@/types';
+import { IssueState, PrState } from '@/types';
 
 // Per-repository cache for integration data
 interface IntegrationRepoCache {

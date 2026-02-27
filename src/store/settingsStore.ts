@@ -3,8 +3,8 @@ import i18n from '@/i18n';
 
 import { settingsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
-import { AiProvider, SigningFormat, Theme } from '@/types';
 import type { AppSettings, Theme as ThemeType } from '@/types';
+import { AiProvider, SigningFormat, Theme } from '@/types';
 
 interface SettingsState {
   settings: AppSettings | null;

@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitMerge, X } from 'lucide-react';
-
-import { operationApi, mergeApi } from '@/services/api';
-import { type OperationState } from '@/types';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { Button } from '@/components/ui';
+import { mergeApi, operationApi } from '@/services/api';
+import type { OperationState } from '@/types';
 
 interface MergeBannerProps {
   onComplete?: () => void;

@@ -1,5 +1,5 @@
-import { create, StateCreator } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create, type StateCreator } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { normalizePath } from '@/lib/utils';
 

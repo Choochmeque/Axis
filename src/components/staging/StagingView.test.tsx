@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { StagingView } from './StagingView';
-import { StatusType } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FileStatus } from '@/types';
+import { StatusType } from '@/types';
+import { StagingView } from './StagingView';
 
 interface WorkingStatus {
   staged: FileStatus[];

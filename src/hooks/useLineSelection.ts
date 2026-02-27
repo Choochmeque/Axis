@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback, useRef, useInsertionEffect } from 'react';
+import { useCallback, useInsertionEffect, useMemo, useRef, useState } from 'react';
+import { createLineKey } from '@/components/diff/types';
 import type { DiffHunk } from '@/types';
 import { DiffLineType } from '@/types';
-import { createLineKey } from '@/components/diff/types';
 
 interface UseLineSelectionOptions {
   hunks: DiffHunk[];

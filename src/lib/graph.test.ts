@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Branch, Vertex, Graph, GG } from './graph';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { GraphCommit } from '@/types';
+import { Branch, GG, Graph, Vertex } from './graph';
 
 describe('Branch', () => {
   let branch: Branch;

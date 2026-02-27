@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Check, RefreshCw, RotateCcw, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { AlertTriangle, Check, X, RefreshCw, RotateCcw } from 'lucide-react';
-import { conflictApi, operationApi } from '@/services/api';
-import { ConflictResolution } from '@/types';
-import type { ConflictedFile, ConflictContent, OperationState } from '@/types';
 import { Textarea } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '@/lib/utils';
+import { conflictApi, operationApi } from '@/services/api';
+import type { ConflictContent, ConflictedFile, OperationState } from '@/types';
+import { ConflictResolution } from '@/types';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary)';

@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronRight, Tag as TagIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag as TagIcon, ChevronDown, ChevronRight } from 'lucide-react';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { tagApi, remoteApi } from '../../services/api';
-import type { TagResult, Remote } from '../../types';
-import { cn } from '../../lib/utils';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
   SelectItem,
   Textarea,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '../../lib/utils';
+import { remoteApi, tagApi } from '../../services/api';
+import type { Remote, TagResult } from '../../types';
 
 interface TagDialogProps {
   isOpen: boolean;

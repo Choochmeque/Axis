@@ -1,15 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Plus, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
-import { IssueList } from './IssueList';
-import { IssueDetail } from './IssueDetail';
-import { CreateIssueDialog } from './CreateIssueDialog';
-import { IssueState } from '@/types';
 import type { Issue } from '@/types';
+import { IssueState } from '@/types';
+import { CreateIssueDialog } from './CreateIssueDialog';
+import { IssueDetail } from './IssueDetail';
+import { IssueList } from './IssueList';
 
 export function IssuesView() {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { RenameBranchDialog } from './RenameBranchDialog';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Branch } from '@/types';
+import { RenameBranchDialog } from './RenameBranchDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

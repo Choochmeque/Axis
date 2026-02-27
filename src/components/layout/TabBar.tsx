@@ -1,11 +1,11 @@
 import * as Tabs from '@radix-ui/react-tabs';
-import { X, Home } from 'lucide-react';
-import { TabType, useTabsStore, type Tab } from '@/store/tabsStore';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useIntegrationStore } from '@/store/integrationStore';
-import { useStagingStore } from '@/store/stagingStore';
+import { Home, X } from 'lucide-react';
 import { commands } from '@/bindings/api';
 import { cn } from '@/lib/utils';
+import { useIntegrationStore } from '@/store/integrationStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useStagingStore } from '@/store/stagingStore';
+import { type Tab, TabType, useTabsStore } from '@/store/tabsStore';
 
 interface TabBarProps {
   onTabChange: (tab: Tab) => void;

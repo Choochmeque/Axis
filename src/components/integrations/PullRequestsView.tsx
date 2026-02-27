@@ -1,15 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Plus, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
-import { PullRequestList } from './PullRequestList';
-import { PullRequestDetail } from './PullRequestDetail';
-import { CreatePullRequestDialog } from './CreatePullRequestDialog';
-import { PrState } from '@/types';
 import type { PullRequest } from '@/types';
+import { PrState } from '@/types';
+import { CreatePullRequestDialog } from './CreatePullRequestDialog';
+import { PullRequestDetail } from './PullRequestDetail';
+import { PullRequestList } from './PullRequestList';
 
 export function PullRequestsView() {
   const { t } = useTranslation();

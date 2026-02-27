@@ -1,5 +1,5 @@
-import type { GitOperationType, ProgressStage } from '@/types';
 import { create } from 'zustand';
+import type { GitOperationType, ProgressStage } from '@/types';
 
 export type OperationCategory = 'git' | 'file' | 'network' | 'hook' | 'general';
 

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InteractiveRebaseEntry, InteractiveRebasePreview } from '@/types';
+import { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

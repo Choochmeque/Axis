@@ -1,44 +1,44 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  Columns,
-  Rows,
-  FileCode,
   Binary,
-  Plus,
-  Minus,
-  X,
   ChevronDown,
+  Columns,
+  FileCode,
   Image,
   ListChecks,
+  Minus,
+  Plus,
+  Rows,
+  X,
 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
+  Checkbox,
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
-  Checkbox,
+  DropdownMenuTrigger,
 } from '@/components/ui';
-import { useLineSelection } from '@/hooks/useLineSelection';
 import type { UseLineSelectionReturn } from '@/hooks/useLineSelection';
-import { generatePartialPatch, isLineSelectable } from '@/lib/patchUtils';
-import { DiffLineType, DiffStatus } from '@/types';
-import type { FileDiff, DiffHunk, DiffLine, DiffLineType as DiffLineTypeType } from '@/types';
-import { cn, testId } from '@/lib/utils';
+import { useLineSelection } from '@/hooks/useLineSelection';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { generatePartialPatch, isLineSelectable } from '@/lib/patchUtils';
+import { cn, testId } from '@/lib/utils';
 import { diffApi } from '@/services/api';
-import { useStagingStore, DiffCompareMode, WhitespaceMode } from '@/store/stagingStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type {
-  DiffSettings,
   ContextLines,
   DiffCompareMode as DiffCompareModeType,
+  DiffSettings,
   WhitespaceMode as WhitespaceModeType,
 } from '@/store/stagingStore';
+import { DiffCompareMode, useStagingStore, WhitespaceMode } from '@/store/stagingStore';
+import type { DiffHunk, DiffLine, DiffLineType as DiffLineTypeType, FileDiff } from '@/types';
+import { DiffLineType, DiffStatus } from '@/types';
 
 // Re-export types for external use
 export type {

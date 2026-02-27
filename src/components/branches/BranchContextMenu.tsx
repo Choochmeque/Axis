@@ -1,26 +1,26 @@
-import { ReactNode, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Check,
+  Copy,
+  Diff,
   GitBranch,
   GitMerge,
   GitPullRequest,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Diff,
   Pencil,
   Trash2,
-  Copy,
-  Check,
 } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { toast } from '@/hooks';
 import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { remoteApi, branchApi } from '@/services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
+import { branchApi, remoteApi } from '@/services/api';
 import { useDialogStore } from '@/store/dialogStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import type { Branch, Remote } from '@/types';
-import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ActionContext } from '@/types';
 
 interface BranchContextMenuProps {

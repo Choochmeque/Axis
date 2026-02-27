@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from './settingsStore';
 
 vi.mock('@/services/api', () => ({
@@ -24,7 +24,7 @@ vi.mock('@/store/toastStore', () => ({
 }));
 
 import { settingsApi } from '@/services/api';
-import { Theme, SigningFormat, AiProvider } from '@/types';
+import { AiProvider, SigningFormat, Theme } from '@/types';
 
 describe('settingsStore', () => {
   const mockSettings = {

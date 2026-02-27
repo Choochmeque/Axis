@@ -1,28 +1,27 @@
+import {
+  Calendar,
+  CheckCircle2,
+  CircleDot,
+  ExternalLink,
+  MessageSquare,
+  Milestone,
+  Tag,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  CircleDot,
-  CheckCircle2,
-  X,
-  ExternalLink,
-  User,
-  Calendar,
-  MessageSquare,
-  Tag,
-  Users,
-  Milestone,
-} from 'lucide-react';
 import Markdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
-import { Button } from '@/components/ui';
-import { cn, getLabelColors } from '@/lib/utils';
-import { formatDateTime } from '@/lib/dateUtils';
-import { shellApi } from '@/services/api';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 import type { IssueDetail as IssueDetailType } from '@/bindings/api';
+import { Button } from '@/components/ui';
+import { formatDateTime } from '@/lib/dateUtils';
+import { cn, getLabelColors } from '@/lib/utils';
+import { shellApi } from '@/services/api';
 import { IssueState } from '@/types';
 
 interface IssueDetailProps {

@@ -1,230 +1,196 @@
 // Re-export all types from generated bindings
 export type {
-  // Repository types
-  Repository,
-  RepositoryStatus,
-  RepositorySettings,
-  RecentRepository,
-  FileStatus,
-
-  // Commit types
-  Commit,
-  LogOptions,
-  Signature,
-
-  // Branch types
-  Branch,
-  BranchFilter,
-  BranchCompareResult,
-  CreateBranchOptions,
-  CheckoutOptions,
-  DeleteBranchOptions,
-
-  // Diff types
-  FileDiff,
-  DiffHunk,
-  DiffLine,
-  DiffOptions,
-
-  // Remote types
-  Remote,
-  ListRemoteOptions,
-  FetchOptions,
-  FetchProgress,
-  FetchResult,
-  UpdatedRef,
-  PullOptions,
-  PushOptions,
-  PushResult,
-  PushedRef,
-
-  // Graph types
-  GraphCommit,
-  GraphEdge,
-  CommitRef,
-  GraphOptions,
-  GraphResult,
-
-  // Blame types
-  BlameResult,
-  BlameLine,
-
-  // Search types
-  SearchOptions,
-  SearchResult,
-  GrepOptions,
-  GrepMatch,
-  GrepResult,
-
-  // File log types
-  FileLogOptions,
-  FileLogResult,
-
-  // Merge types
-  MergeOptions,
-  MergeResult,
-
-  // Rebase types
-  RebaseOptions,
-  RebaseOntoOptions,
-  RebaseResult,
-  RebasePreview,
-  RebaseTarget,
-  RebaseAction,
-  RebaseProgress,
-  InteractiveRebaseEntry,
-  InteractiveRebaseOptions,
-  InteractiveRebasePreview,
-
-  // Cherry-pick types
-  CherryPickOptions,
-  CherryPickResult,
-
-  // Revert types
-  RevertOptions,
-  RevertResult,
-
-  // Conflict types
-  ConflictedFile,
-  ConflictContent,
-
-  // Operation state
-  OperationState,
-
-  // Bisect types
-  BisectStartOptions,
-  BisectResult,
-  BisectState,
-
-  // Reset types
-  ResetOptions,
-
-  // Stash types
-  StashEntry,
-  StashSaveOptions,
-  StashApplyOptions,
-  StashResult,
-
-  // Reflog types
-  ReflogEntry,
-  ReflogOptions,
-
-  // Tag types
-  Tag,
-  TagSignature,
-  CreateTagOptions,
-  ListTagsOptions,
-  TagResult,
-
-  // Submodule types
-  Submodule,
+  ActionExecutionResult,
+  ActionVariables,
   AddSubmoduleOptions,
-  ListSubmoduleOptions,
-  UpdateSubmoduleOptions,
-  SyncSubmoduleOptions,
-  SubmoduleResult,
-
-  // Worktree types
-  Worktree,
   AddWorktreeOptions,
-  RemoveWorktreeOptions,
-  WorktreeResult,
-
-  // Git-flow types
-  GitFlowConfig,
-  GitFlowInitOptions,
-  GitFlowFinishOptions,
-  GitFlowResult,
-
+  ApplyMailboxOptions,
+  ApplyPatchOptions,
   // Settings types
   AppSettings,
-  SigningConfig,
-  GpgKey,
-  SshKey,
-  SigningTestResult,
-  SignatureVerification,
-
-  // SSH Key Management types
-  SshKeyInfo,
-  GenerateSshKeyOptions,
-  ImportSshKeyOptions,
-  ExportSshKeyOptions,
-  RemoteSshKeyMapping,
-
   // Archive types
   ArchiveOptions,
   ArchiveResult,
-
+  // Avatar types
+  AvatarResponse,
+  AvatarSource,
+  BisectResult,
+  // Bisect types
+  BisectStartOptions,
+  BisectState,
+  BlameLine,
+  // Blame types
+  BlameResult,
+  // Branch types
+  Branch,
+  BranchCompareResult,
+  BranchFilter,
+  CheckoutOptions,
+  // Cherry-pick types
+  CherryPickOptions,
+  CherryPickResult,
+  CIRun,
+  CiRunsPage,
+  // Commit types
+  Commit,
+  CommitRef,
+  CommitStatus,
+  ConflictContent,
+  // Conflict types
+  ConflictedFile,
+  CreateBranchOptions,
+  CreateIssueOptions,
+  CreatePatchOptions,
+  CreatePrOptions,
+  CreateTagOptions,
+  // Custom actions types
+  CustomAction,
+  DeleteBranchOptions,
+  // Integration types
+  DetectedProvider,
+  DiffHunk,
+  DiffLine,
+  DiffOptions,
+  ExportSshKeyOptions,
+  FetchOptions,
+  FetchProgress,
+  FetchResult,
+  // Diff types
+  FileDiff,
+  // File log types
+  FileLogOptions,
+  FileLogResult,
+  FileStatus,
   // Patch types
   FormatPatchOptions,
-  CreatePatchOptions,
-  ApplyPatchOptions,
-  ApplyMailboxOptions,
-  PatchResult,
-
+  GenerateSshKeyOptions,
+  GitEnvironment,
+  // Git-flow types
+  GitFlowConfig,
+  GitFlowFinishOptions,
+  GitFlowInitOptions,
+  GitFlowResult,
+  // Progress types
+  GitOperationProgressEvent,
+  GpgKey,
+  // Graph types
+  GraphCommit,
+  GraphEdge,
+  GraphOptions,
+  GraphResult,
+  GrepMatch,
+  GrepOptions,
+  GrepResult,
+  HookDetails,
+  // Hook types
+  HookInfo,
+  HookTemplate,
   // Gitignore types
   IgnoreOptions,
   IgnoreResult,
   IgnoreSuggestion,
   IgnoreSuggestionType,
-
-  // Integration types
-  DetectedProvider,
-  IntegrationStatus,
+  ImportSshKeyOptions,
+  IntegrationLabel,
   IntegrationRepoInfo,
-  PullRequest,
-  PullRequestDetail,
+  IntegrationStatus,
+  IntegrationUser,
+  InteractiveRebaseEntry,
+  InteractiveRebaseOptions,
+  InteractiveRebasePreview,
   Issue,
   IssueDetail,
-  CIRun,
-  CommitStatus,
-  Notification,
-  CreatePrOptions,
-  MergePrOptions,
-  CreateIssueOptions,
-  IntegrationUser,
-  IntegrationLabel,
-  CiRunsPage,
-  PullRequestsPage,
   IssuesPage,
-  NotificationsPage,
-
-  // Avatar types
-  AvatarResponse,
-  AvatarSource,
-
+  LargeBinaryFileInfo,
+  LfsCheckResult,
+  LfsEnvironment,
+  LfsFetchOptions,
+  LfsFile,
+  LfsMigrateOptions,
+  LfsPruneOptions,
+  LfsPruneResult,
+  LfsPullOptions,
+  LfsPushOptions,
+  LfsResult,
   // LFS types
   LfsStatus,
   LfsTrackedPattern,
-  LfsFile,
-  LfsFetchOptions,
-  LfsPullOptions,
-  LfsPushOptions,
-  LfsMigrateOptions,
-  LfsResult,
-  LfsEnvironment,
-  GitEnvironment,
-  LfsPruneOptions,
-  LfsPruneResult,
-  LargeBinaryFileInfo,
-  LfsCheckResult,
-
-  // Progress types
-  GitOperationProgressEvent,
-
-  // Hook types
-  HookInfo,
-  HookDetails,
-  HookTemplate,
-
-  // Custom actions types
-  CustomAction,
-  ActionVariables,
-  ActionExecutionResult,
-
+  ListRemoteOptions,
+  ListSubmoduleOptions,
+  ListTagsOptions,
+  LogOptions,
+  // Merge types
+  MergeOptions,
+  MergePrOptions,
+  MergeResult,
+  Notification,
+  NotificationsPage,
+  // Operation state
+  OperationState,
+  PatchResult,
+  PullOptions,
+  PullRequest,
+  PullRequestDetail,
+  PullRequestsPage,
+  PushedRef,
+  PushOptions,
+  PushResult,
+  RebaseAction,
+  RebaseOntoOptions,
+  // Rebase types
+  RebaseOptions,
+  RebasePreview,
+  RebaseProgress,
+  RebaseResult,
+  RebaseTarget,
+  RecentRepository,
+  // Reflog types
+  ReflogEntry,
+  ReflogOptions,
+  // Remote types
+  Remote,
+  RemoteSshKeyMapping,
+  RemoveWorktreeOptions,
+  // Repository types
+  Repository,
+  RepositorySettings,
+  RepositoryStatus,
+  // Reset types
+  ResetOptions,
+  // Revert types
+  RevertOptions,
+  RevertResult,
+  // Search types
+  SearchOptions,
+  SearchResult,
+  Signature,
+  SignatureVerification,
+  SigningConfig,
+  SigningTestResult,
+  SshKey,
+  // SSH Key Management types
+  SshKeyInfo,
+  StashApplyOptions,
+  // Stash types
+  StashEntry,
+  StashResult,
+  StashSaveOptions,
+  // Submodule types
+  Submodule,
+  SubmoduleResult,
+  SyncSubmoduleOptions,
+  // Tag types
+  Tag,
+  TagResult,
+  TagSignature,
+  UpdateDownloadProgressEvent,
+  UpdatedRef,
   // Update types
   UpdateInfo,
-  UpdateDownloadProgressEvent,
+  UpdateSubmoduleOptions,
+  // Worktree types
+  Worktree,
+  WorktreeResult,
 } from '../bindings/api';
 
 // Import types used locally
@@ -232,52 +198,52 @@ import type {
   ActionContext as ActionContextType,
   ActionStorageType as ActionStorageTypeType,
   AiProvider as AiProviderType,
-  BranchType as BranchTypeType,
-  BranchFilterType as BranchFilterTypeType,
-  SortOrder as SortOrderType,
-  RepositoryState as RepositoryStateType,
-  StatusType as StatusTypeType,
-  DiffTarget as DiffTargetType,
-  DiffStatus as DiffStatusType,
-  DiffLineType as DiffLineTypeType,
-  EdgeType as EdgeTypeType,
-  RefType as RefTypeType,
-  ConflictResolution as ConflictResolutionType,
-  MergeType as MergeTypeType,
-  PushStatus as PushStatusType,
-  RefUpdateStatus as RefUpdateStatusType,
-  ResetMode as ResetModeType,
-  Theme as ThemeType,
-  SigningFormat as SigningFormatType,
-  SubmoduleStatus as SubmoduleStatusType,
-  SubmoduleSortOrder as SubmoduleSortOrderType,
-  RemoteSortOrder as RemoteSortOrderType,
-  ConflictType as ConflictTypeType,
-  MenuAction as MenuActionType,
   BisectMarkType as BisectMarkTypeType,
-  // Integration types
-  PrState as PrStateType,
-  IssueState as IssueStateType,
-  MergeMethod as MergeMethodType,
-  ProviderType as ProviderTypeType,
-  CIRunStatus as CIRunStatusType,
+  BranchFilterType as BranchFilterTypeType,
+  BranchType as BranchTypeType,
   CIConclusion as CIConclusionType,
+  CIRunStatus as CIRunStatusType,
   CommitStatusState as CommitStatusStateType,
-  NotificationReason as NotificationReasonType,
+  ConflictResolution as ConflictResolutionType,
+  ConflictType as ConflictTypeType,
+  DiffLineType as DiffLineTypeType,
+  DiffStatus as DiffStatusType,
+  DiffTarget as DiffTargetType,
+  EdgeType as EdgeTypeType,
+  // Hook types
+  GitHookType as GitHookTypeType,
+  GitOperationType as GitOperationTypeType,
+  HookStage as HookStageType,
+  IssueState as IssueStateType,
   // LFS types
   LfsFileStatus as LfsFileStatusType,
   LfsMigrateMode as LfsMigrateModeType,
-  // Reflog types
-  ReflogAction as ReflogActionType,
+  MenuAction as MenuActionType,
+  MergeMethod as MergeMethodType,
+  MergeType as MergeTypeType,
+  NotificationReason as NotificationReasonType,
   // Progress types
   ProgressStage as ProgressStageType,
-  GitOperationType as GitOperationTypeType,
-  // Hook types
-  GitHookType as GitHookTypeType,
-  HookStage as HookStageType,
+  ProviderType as ProviderTypeType,
+  // Integration types
+  PrState as PrStateType,
+  PushStatus as PushStatusType,
+  // Reflog types
+  ReflogAction as ReflogActionType,
+  RefType as RefTypeType,
+  RefUpdateStatus as RefUpdateStatusType,
+  RemoteSortOrder as RemoteSortOrderType,
+  RepositoryState as RepositoryStateType,
+  ResetMode as ResetModeType,
+  SigningFormat as SigningFormatType,
+  SortOrder as SortOrderType,
   // SSH Key types
   SshKeyAlgorithm as SshKeyAlgorithmType,
   SshKeyFormat as SshKeyFormatType,
+  StatusType as StatusTypeType,
+  SubmoduleSortOrder as SubmoduleSortOrderType,
+  SubmoduleStatus as SubmoduleStatusType,
+  Theme as ThemeType,
 } from '../bindings/api';
 
 export type GitFlowBranchType = 'Feature' | 'Release' | 'Hotfix' | 'Support';

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useAvatarStore, getAvatarSrcUrl } from './avatarStore';
-import type { AvatarSource, AvatarResponse } from '@/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AvatarResponse, AvatarSource } from '@/types';
+import { getAvatarSrcUrl, useAvatarStore } from './avatarStore';
 
 vi.mock('@/services/api', () => ({
   avatarApi: {

@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { StashContextMenu } from './StashContextMenu';
-import type { StashEntry } from '@/types';
-import { stashApi } from '@/services/api';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '@/hooks';
 import { copyToClipboard } from '@/lib/actions';
+import { stashApi } from '@/services/api';
+import type { StashEntry } from '@/types';
+import { StashContextMenu } from './StashContextMenu';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

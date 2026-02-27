@@ -1,13 +1,13 @@
+import { Calendar, Copy, GitBranch, GitCommit, Key, ShieldCheck, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Copy, GitCommit, Calendar, GitBranch, Tag, ShieldCheck, Key } from 'lucide-react';
 import { Avatar, Skeleton } from '@/components/ui';
-import { formatFullDateTime } from '@/lib/dateUtils';
-import { RefType, SigningFormat } from '@/types';
-import type { Commit, GraphCommit } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSignatureVerification } from '@/hooks';
-import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/actions';
+import { formatFullDateTime } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { Commit, GraphCommit } from '@/types';
+import { RefType, SigningFormat } from '@/types';
 
 interface CommitInfoProps {
   commit: Commit | GraphCommit;

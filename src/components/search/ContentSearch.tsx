@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { AlertCircle, ChevronDown, ChevronRight, FileText, Search, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, FileText, AlertCircle, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { Checkbox, Input } from '@/components/ui';
 import { grepApi } from '@/services/api';
 import { useSettingsStore } from '@/store/settingsStore';

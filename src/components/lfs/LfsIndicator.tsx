@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import { HardDrive } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface LfsIndicatorProps {

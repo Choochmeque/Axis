@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { StatusType } from '@/types';
 import { WorkspaceView } from './WorkspaceView';
-import { StatusType } from '@/types';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

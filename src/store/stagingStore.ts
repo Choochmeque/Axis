@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 
 import i18n from '@/i18n';
+import { type ConventionalCommitParts, getEmptyCommitParts } from '@/lib/conventionalCommits';
+import { type DebouncedFn, debounce } from '@/lib/debounce';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { normalizePath } from '@/lib/utils';
+import { commitApi, diffApi, lfsApi, repositoryApi, stagingApi } from '@/services/api';
+import { useDialogStore } from '@/store/dialogStore';
 import { operations } from '@/store/operationStore';
-import { stagingApi, repositoryApi, diffApi, commitApi, lfsApi } from '@/services/api';
-import type { RepositoryStatus, FileDiff, FileStatus, DiffOptions, LfsCheckResult } from '@/types';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useDialogStore } from '@/store/dialogStore';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { debounce, type DebouncedFn } from '@/lib/debounce';
-import { getEmptyCommitParts, type ConventionalCommitParts } from '@/lib/conventionalCommits';
-import { normalizePath } from '@/lib/utils';
+import type { DiffOptions, FileDiff, FileStatus, LfsCheckResult, RepositoryStatus } from '@/types';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;

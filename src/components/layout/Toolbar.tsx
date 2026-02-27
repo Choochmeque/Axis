@@ -1,24 +1,24 @@
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  GitCommit,
+  Archive,
   ArrowDownToLine,
   ArrowUpFromLine,
-  RefreshCw,
-  GitBranch,
-  GitMerge,
-  Archive,
-  Settings,
   FolderOpen,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  RefreshCw,
+  Settings,
   Terminal,
 } from 'lucide-react';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useDialogStore } from '@/store/dialogStore';
-import { shellApi } from '@/services/api';
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
 import { showInFinder } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { testId } from '@/lib/utils';
+import { shellApi } from '@/services/api';
+import { useDialogStore } from '@/store/dialogStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =

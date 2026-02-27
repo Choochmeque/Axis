@@ -1,23 +1,22 @@
+import { Loader2, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Loader2 } from 'lucide-react';
-
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi } from '@/services/api';
 import { useRebaseProgressStore } from '@/store/rebaseProgressStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  Alert,
-} from '@/components/ui';
 
 export function EditPauseDialog() {
   const { t } = useTranslation();

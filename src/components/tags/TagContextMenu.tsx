@@ -1,11 +1,11 @@
-import { ReactNode } from 'react';
+import { Check, Copy, GitCompare, Info, Trash2, Upload } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Check, Info, GitCompare, Upload, Trash2 } from 'lucide-react';
-import type { Tag, Remote } from '@/types';
-import { ActionContext } from '@/types';
-import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { CustomActionsMenuSection } from '@/components/custom-actions';
+import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from '@/components/ui';
 import { copyToClipboard } from '@/lib/actions';
+import type { Remote, Tag } from '@/types';
+import { ActionContext } from '@/types';
 
 interface TagContextMenuProps {
   tag: Tag;

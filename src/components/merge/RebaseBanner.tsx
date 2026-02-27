@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { GitBranch, MessageSquare, Pencil, SkipForward, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GitBranch, X, SkipForward, Pencil, MessageSquare } from 'lucide-react';
-
-import { operationApi, rebaseApi } from '@/services/api';
-import { type OperationState } from '@/types';
+import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { operationApi, rebaseApi } from '@/services/api';
 import { useRebaseProgressStore } from '@/store/rebaseProgressStore';
-import { Button } from '@/components/ui';
+import type { OperationState } from '@/types';
 
 interface RebaseBannerProps {
   onComplete?: () => void;

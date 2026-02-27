@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useLineSelection } from './useLineSelection';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DiffHunk, DiffLine } from '@/types';
 import { DiffLineType } from '@/types';
+import { useLineSelection } from './useLineSelection';
 
 // Helper to create a DiffLine
 function createLine(

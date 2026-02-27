@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BisectBanner } from './BisectBanner';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BisectMarkType } from '@/types';
+import { BisectBanner } from './BisectBanner';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

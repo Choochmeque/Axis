@@ -1,25 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
-import { FolderPlus, FolderOpen } from 'lucide-react';
-
+import { FolderOpen, FolderPlus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  Input,
+} from '@/components/ui';
 import { useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { repositoryApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { TabType, useTabsStore } from '@/store/tabsStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Input,
-  Alert,
-} from '@/components/ui';
 
 interface CloneDialogProps {
   open: boolean;

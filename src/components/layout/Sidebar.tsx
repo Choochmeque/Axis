@@ -1,57 +1,57 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  ChevronDown,
-  ChevronRight,
-  GitBranch,
-  GitFork,
-  GitMerge,
-  Tag,
-  Cloud,
-  Archive,
-  FileCode,
-  History,
-  Search,
-  Folder,
-  FolderGit2,
-  Pointer,
-  RotateCcw,
-  Lock,
-  HardDrive,
-  Link2,
-  GitPullRequest,
-  CircleDot,
-  Play,
-  Bell,
-  Github,
-} from 'lucide-react';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
-  TreeView,
+  Archive,
+  Bell,
+  ChevronDown,
+  ChevronRight,
+  CircleDot,
+  Cloud,
+  FileCode,
+  Folder,
+  FolderGit2,
+  GitBranch,
+  GitFork,
+  Github,
+  GitMerge,
+  GitPullRequest,
+  HardDrive,
+  History,
+  Link2,
+  Lock,
+  Play,
+  Pointer,
+  RotateCcw,
+  Search,
+  Tag,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
   buildTreeFromPaths,
+  ContextMenuContent,
+  ContextMenuPortal,
   ContextMenuRoot,
   ContextMenuTrigger,
-  ContextMenuPortal,
-  ContextMenuContent,
   MenuItem,
+  TreeView,
 } from '@/components/ui';
-import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
-import { useStagingStore } from '../../store/stagingStore';
-import { useLfsStore } from '../../store/lfsStore';
-import { useIntegrationStore, initIntegrationListeners } from '../../store/integrationStore';
-import { useDialogStore } from '../../store/dialogStore';
-import { cn, testId } from '../../lib/utils';
-import type { Branch } from '../../types';
-import { BranchContextMenu, RemoteBranchContextMenu } from '../branches';
-import { TagContextMenu } from '../tags/TagContextMenu';
-import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
-import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
-import { StashContextMenu } from '../stash';
-import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
-import { tagApi, branchApi } from '../../services/api';
-import { BranchType, PrState, IssueState, CIRunStatus } from '@/types';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { BranchType, CIRunStatus, IssueState, PrState } from '@/types';
+import { cn, testId } from '../../lib/utils';
+import { branchApi, tagApi } from '../../services/api';
+import { useDialogStore } from '../../store/dialogStore';
+import { initIntegrationListeners, useIntegrationStore } from '../../store/integrationStore';
+import { useLfsStore } from '../../store/lfsStore';
+import { useRepositoryStore, type ViewType } from '../../store/repositoryStore';
+import { useStagingStore } from '../../store/stagingStore';
+import type { Branch } from '../../types';
+import { BranchContextMenu, RemoteBranchContextMenu } from '../branches';
+import { AddRemoteDialog } from '../remotes/AddRemoteDialog';
+import { StashContextMenu } from '../stash';
+import { AddSubmoduleDialog } from '../submodules/AddSubmoduleDialog';
+import { TagContextMenu } from '../tags/TagContextMenu';
+import { AddWorktreeDialog, WorktreeContextMenu } from '../worktrees';
 
 // Tailwind class constants
 const sidebarItemClass =

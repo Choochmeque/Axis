@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { PullRequestDetail } from './PullRequestDetail';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PullRequestDetail as PullRequestDetailType } from '@/types';
+import { PullRequestDetail } from './PullRequestDetail';
 
 // Mock shellApi
 const mockOpenUrl = vi.fn();

@@ -1,23 +1,22 @@
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Loader2,
-  MinusCircle,
   AlertCircle,
+  CheckCircle2,
+  Clock,
   ExternalLink,
   GitBranch,
   GitCommit,
+  Loader2,
+  MinusCircle,
+  XCircle,
 } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-import { formatRelativeTime } from '@/lib/dateUtils';
-import { shellApi } from '@/services/api';
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { VirtualList } from '@/components/ui';
-import { CIRunStatus, CIConclusion } from '@/types';
+import { formatRelativeTime } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
+import { shellApi } from '@/services/api';
 import type { CIRun } from '@/types';
+import { CIConclusion, CIRunStatus } from '@/types';
 
 interface CIRunListProps {
   ciRuns: CIRun[];

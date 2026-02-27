@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Graph, GG } from '@/lib/graph';
+import { GG, Graph } from '@/lib/graph';
 import type { GraphCommit } from '@/types';
 
 export const defaultGraphConfig: GG.GraphConfig = {

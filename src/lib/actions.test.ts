@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Branch } from '@/types';
 import { BranchType } from '@/types';
 
@@ -37,7 +37,7 @@ vi.mock('@/services/nativeNotification', () => ({
 }));
 
 // Import after mocks
-import { copyToClipboard, showInFinder, notifyNewCommits } from './actions';
+import { copyToClipboard, notifyNewCommits, showInFinder } from './actions';
 
 describe('copyToClipboard', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { OperationsIndicator } from '@/components/ui/operations-indicator';
 import { ToastHistoryDropdown } from '@/components/ui/toast';

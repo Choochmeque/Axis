@@ -1,29 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
 import {
-  GitBranch,
+  AlertCircle,
+  Bug,
   Check,
-  Upload,
+  GitBranch,
   Plus,
   RefreshCw,
-  AlertCircle,
-  X,
-  Settings,
   Rocket,
-  Bug,
+  Settings,
+  Upload,
+  X,
 } from 'lucide-react';
-import { gitflowApi } from '../../services/api';
-import type { GitFlowConfig, GitFlowResult, GitFlowBranchType } from '../../types';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
 } from '@/components/ui';
+import { gitflowApi } from '../../services/api';
+import type { GitFlowBranchType, GitFlowConfig, GitFlowResult } from '../../types';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';

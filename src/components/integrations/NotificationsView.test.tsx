@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DetectedProvider, IntegrationStatus, Notification } from '@/types';
 import { NotificationsView } from './NotificationsView';
-import type { Notification, DetectedProvider, IntegrationStatus } from '@/types';
 
 // Mock stores
 const mockLoadNotifications = vi.fn();

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CIView } from './CIView';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CIRun, DetectedProvider, IntegrationStatus } from '@/types';
+import { CIView } from './CIView';
 
 // Mock stores
 const mockLoadCiRuns = vi.fn();

@@ -1,10 +1,9 @@
-import { useRef, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Loader2, FileText } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import { FileText, Loader2 } from 'lucide-react';
+import { useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
 import type { BlameLine } from '@/types';
 
 interface BlameViewProps {

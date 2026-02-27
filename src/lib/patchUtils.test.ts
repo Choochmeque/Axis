@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { generatePartialPatch, isLineSelectable } from './patchUtils';
-import type { FileDiff, DiffHunk, DiffLine } from '@/types';
+import { describe, expect, it } from 'vitest';
+import type { DiffHunk, DiffLine, FileDiff } from '@/types';
 import { DiffLineType } from '@/types';
+import { generatePartialPatch, isLineSelectable } from './patchUtils';
 
 // Helper to create a DiffLine
 function createLine(

@@ -1,14 +1,14 @@
-import { ReactNode, useState } from 'react';
+import { Copy, FolderOpen, Lock, Play, Trash2, Unlock } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Lock, Unlock, Trash2, FolderOpen, Copy } from 'lucide-react';
 
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
-import type { Worktree } from '@/types';
+import { toast } from '@/hooks';
+import { copyToClipboard, showInFinder } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { worktreeApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { copyToClipboard, showInFinder } from '@/lib/actions';
+import type { Worktree } from '@/types';
 import { RemoveWorktreeDialog } from './RemoveWorktreeDialog';
 
 interface WorktreeContextMenuProps {

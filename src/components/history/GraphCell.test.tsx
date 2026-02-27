@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { GraphCell } from './GraphCell';
+import { describe, expect, it, vi } from 'vitest';
 import type { RowGraphData } from '@/lib/graphLayout';
+import { GraphCell } from './GraphCell';
 
 vi.mock('@/lib/graphLayout', () => ({
   // eslint-disable-next-line @typescript-eslint/naming-convention -- Mock matches actual constant name

@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Plus, Upload, Download, Trash2, Copy, KeyRound } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { copyToClipboard } from '@/lib/actions';
-import { sshKeysApi } from '@/services/api';
-import { SshKeyAlgorithm } from '@/types';
-import type { SshKeyInfo, SshKeyAlgorithm as SshKeyAlgorithmType } from '@/types';
+import { Copy, Download, KeyRound, Plus, Trash2, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
   SelectItem,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast } from '@/hooks';
+import { copyToClipboard } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { sshKeysApi } from '@/services/api';
+import type { SshKeyAlgorithm as SshKeyAlgorithmType, SshKeyInfo } from '@/types';
+import { SshKeyAlgorithm } from '@/types';
 
 const sectionTitleClass =
   'm-0 mb-4 pb-2 border-b border-(--border-color) text-sm font-semibold text-(--text-primary) first:mt-0 not-first:mt-6';

@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ArrowUpFromLine } from 'lucide-react';
-
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  OperationProgressBar,
+  Select,
+  SelectItem,
+} from '@/components/ui';
 import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { remoteApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Remote } from '../../types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Select,
-  SelectItem,
-  CheckboxField,
-  Alert,
-  OperationProgressBar,
-} from '@/components/ui';
 
 interface PushDialogProps {
   isOpen: boolean;

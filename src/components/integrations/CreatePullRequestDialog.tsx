@@ -1,30 +1,29 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitBranch, Sparkles } from 'lucide-react';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LabelSelector } from '@/components/integrations/LabelSelector';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   MarkdownEditor,
-  CheckboxField,
   Select,
   SelectItem,
-  Alert,
 } from '@/components/ui';
-import { LabelSelector } from '@/components/integrations/LabelSelector';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useIntegrationStore } from '@/store/integrationStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { aiApi } from '@/services/api';
-import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { aiApi } from '@/services/api';
+import { useIntegrationStore } from '@/store/integrationStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { IntegrationLabel } from '@/types';
 
 interface CreatePullRequestDialogProps {

@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DiffStatus } from '@/types';
-import type { FileDiff, DiffStatus as DiffStatusType } from '@/types';
-import { cn } from '@/lib/utils';
 import { VirtualList } from '@/components/ui';
 import type { SelectionKey } from '@/hooks';
+import { cn } from '@/lib/utils';
+import type { DiffStatus as DiffStatusType, FileDiff } from '@/types';
+import { DiffStatus } from '@/types';
 import { HistoryFileContextMenu } from './HistoryFileContextMenu';
 
 interface CommitFileListProps {

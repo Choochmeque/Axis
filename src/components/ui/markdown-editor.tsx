@@ -1,21 +1,21 @@
-import { useState, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   Bold,
-  Italic,
-  Heading2,
-  Quote,
   Code,
+  Heading2,
+  Italic,
   Link,
   List,
-  ListOrdered,
   ListChecks,
+  ListOrdered,
+  Quote,
 } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 import { Textarea } from '@/components/ui';
 import { cn } from '@/lib/utils';

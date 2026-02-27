@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BranchContextMenu } from './BranchContextMenu';
+import { describe, expect, it, vi } from 'vitest';
 import type { Branch } from '@/types';
+import { BranchContextMenu } from './BranchContextMenu';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

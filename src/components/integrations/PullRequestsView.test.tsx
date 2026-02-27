@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { PullRequestsView } from './PullRequestsView';
-import type { PullRequest, PullRequestDetail, DetectedProvider, IntegrationStatus } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DetectedProvider, IntegrationStatus, PullRequest, PullRequestDetail } from '@/types';
 import { PrState } from '@/types';
+import { PullRequestsView } from './PullRequestsView';
 
 // Mock stores
 const mockLoadPullRequests = vi.fn();

@@ -1,4 +1,4 @@
-import { Terminal, Loader2 } from 'lucide-react';
+import { Loader2, Terminal } from 'lucide-react';
 import { MenuItem, MenuSeparator } from '@/components/ui';
 import { useCustomActionsStore } from '@/store/customActionsStore';
 import { useRepositoryStore } from '@/store/repositoryStore';

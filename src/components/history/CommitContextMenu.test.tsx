@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CommitContextMenu } from './CommitContextMenu';
+import { describe, expect, it, vi } from 'vitest';
 import type { GraphCommit } from '@/types';
+import { CommitContextMenu } from './CommitContextMenu';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { useRef } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GraphCommit } from '@/types';
 import {
-  CommitGraph,
   buildCommitLookup,
+  CommitGraph,
   defaultGraphConfig,
   defaultMuteConfig,
 } from './CommitGraph';
-import type { GraphCommit } from '@/types';
 
 // Mock the Graph class
 const mockRender = vi.fn();

@@ -1,6 +1,6 @@
+import { CheckCheck, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw, CheckCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';

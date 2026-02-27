@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Issue, PullRequest, IssueState, PrState } from '@/types';
+import type { Issue, IssueState, PrState, PullRequest } from '@/types';
 
 export interface ReferenceItem {
   type: 'issue' | 'pr';

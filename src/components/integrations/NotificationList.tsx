@@ -1,22 +1,21 @@
+import {
+  Circle,
+  CircleDot,
+  ExternalLink,
+  GitCommit,
+  GitPullRequest,
+  MessageSquare,
+  Play,
+  Shield,
+  Tag,
+} from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  GitPullRequest,
-  CircleDot,
-  Tag,
-  MessageSquare,
-  GitCommit,
-  Shield,
-  Play,
-  ExternalLink,
-  Circle,
-} from 'lucide-react';
-
+import type { Notification } from '@/bindings/api';
+import { VirtualList } from '@/components/ui';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { shellApi } from '@/services/api';
-import { VirtualList } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
-import type { Notification } from '@/bindings/api';
 
 interface NotificationListProps {
   notifications: Notification[];

@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useLfsStore } from './lfsStore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  GitEnvironment,
+  LfsEnvironment,
+  LfsFile,
+  LfsPruneResult,
+  LfsResult,
   LfsStatus,
   LfsTrackedPattern,
-  LfsFile,
-  LfsEnvironment,
-  GitEnvironment,
-  LfsResult,
-  LfsPruneResult,
 } from '@/bindings/api';
+import { useLfsStore } from './lfsStore';
 
 vi.mock('@/services/api', () => ({
   lfsApi: {

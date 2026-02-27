@@ -1,14 +1,13 @@
-import { useEffect, useState, useRef } from 'react';
+import { AlertCircle, AlertTriangle, Bell, Check, Info, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, Check, AlertTriangle, Info, X, Bell } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
 import {
-  useToastStore,
   type Toast,
-  type ToastType,
   type ToastHistoryItem,
+  type ToastType,
+  useToastStore,
 } from '@/store/toastStore';
 
 const icons: Record<ToastType, React.ElementType> = {

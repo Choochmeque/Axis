@@ -1,20 +1,20 @@
+import { open } from '@tauri-apps/plugin-dialog';
+import { Clock, FolderOpen, FolderPlus, GitBranchPlus, Pin, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FolderOpen, FolderPlus, GitBranchPlus, Clock, Search, Pin } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-dialog';
-import type { RecentRepository } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
 import {
+  ContextMenuContent,
+  ContextMenuPortal,
+  ContextMenuRoot,
+  ContextMenuTrigger,
   Input,
   Select,
   SelectItem,
   VirtualList,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  ContextMenuPortal,
-  ContextMenuContent,
 } from '@/components/ui';
 import { testId } from '@/lib/utils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { RecentRepository } from '@/types';
 import { CloneDialog } from './repository/CloneDialog';
 import { InitDialog } from './repository/InitDialog';
 import { RecentRepoContextMenu } from './repository/RecentRepoContextMenu';

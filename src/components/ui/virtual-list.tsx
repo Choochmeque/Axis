@@ -1,9 +1,9 @@
-import { useRef, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useListSelection } from '@/hooks';
+import { type ReactNode, useEffect, useRef } from 'react';
 import type { SelectionKey, SelectionMode } from '@/hooks';
+import { useListSelection } from '@/hooks';
+import { cn } from '@/lib/utils';
 
 interface VirtualListProps<T> {
   items: T[];

@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Cloud } from 'lucide-react';
-import { remoteApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
-  Alert,
 } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { remoteApi } from '../../services/api';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 interface AddRemoteDialogProps {
   open: boolean;

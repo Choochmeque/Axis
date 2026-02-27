@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useDialogStore } from './dialogStore';
-import { ResetMode } from '@/types';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { Branch, Commit } from '@/types';
+import { ResetMode } from '@/types';
+import { useDialogStore } from './dialogStore';
 
 describe('dialogStore', () => {
   const mockCommit: Commit = {

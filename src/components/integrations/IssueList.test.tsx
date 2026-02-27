@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { IssueList } from './IssueList';
+import { describe, expect, it, vi } from 'vitest';
 import type { Issue } from '@/bindings/api';
+import { IssueList } from './IssueList';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

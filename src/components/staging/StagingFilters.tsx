@@ -1,13 +1,13 @@
+import { ChevronDown, Columns2, LayoutPanelTop, List, ListTree, Rows3, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, List, Columns2, ListTree, Square, Rows3, LayoutPanelTop } from 'lucide-react';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui';
 
 /* eslint-disable @typescript-eslint/naming-convention */

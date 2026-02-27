@@ -1,26 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
+import { HelpCircle, Terminal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Terminal, HelpCircle } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
   SelectItem,
-  CheckboxField,
   Textarea,
-  Alert,
 } from '@/components/ui';
-import { useCustomActionsStore } from '@/store/customActionsStore';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { ActionContext, ActionStorageType } from '@/types';
+import { useCustomActionsStore } from '@/store/customActionsStore';
 import type { CustomAction } from '@/types';
+import { ActionContext, ActionStorageType } from '@/types';
 
 interface ActionEditorDialogProps {
   open: boolean;

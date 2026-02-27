@@ -1,5 +1,5 @@
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { useEffect, useRef } from 'react';
-import { UnlistenFn } from '@tauri-apps/api/event';
 
 import { events } from '@/bindings/api';
 import i18n from '@/i18n';

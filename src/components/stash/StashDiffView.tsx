@@ -1,13 +1,13 @@
+import { Archive, Binary, FileCode, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { X, Archive, FileCode, Binary } from 'lucide-react';
-import { DiffLineType, DiffStatus } from '@/types';
 import type {
-  StashEntry,
-  FileDiff,
   DiffHunk,
   DiffLine,
   DiffLineType as DiffLineTypeType,
+  FileDiff,
+  StashEntry,
 } from '@/types';
+import { DiffLineType, DiffStatus } from '@/types';
 import { cn } from '../../lib/utils';
 
 interface StashDiffViewProps {

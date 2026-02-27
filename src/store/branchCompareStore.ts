@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-
-import { branchApi, diffApi } from '@/services/api';
-import type { BranchCompareResult, FileDiff, Commit } from '@/types';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { branchApi, diffApi } from '@/services/api';
+import type { BranchCompareResult, Commit, FileDiff } from '@/types';
 
 export type CompareTab = 'commits' | 'files';
 

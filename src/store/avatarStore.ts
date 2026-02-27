@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { create } from 'zustand';
 
 import { avatarApi } from '@/services/api';
 import type { AvatarResponse } from '@/types';

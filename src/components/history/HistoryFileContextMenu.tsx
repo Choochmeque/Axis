@@ -1,11 +1,11 @@
-import { ReactNode, useState } from 'react';
+import { Copy, Diff, Eye, FileCode, FileText, FolderOpen, History, RotateCcw } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, FileText, RotateCcw, FileCode, FolderOpen, Copy, Eye, Diff } from 'lucide-react';
-import type { FileDiff } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
+import { BlameDialog } from '@/components/blame';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 import { copyToClipboard, showInFinder } from '@/lib/actions';
-import { BlameDialog } from '@/components/blame';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { FileDiff } from '@/types';
 
 interface HistoryFileContextMenuProps {
   file: FileDiff;

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CommitFileList } from './CommitFileList';
-import { DiffStatus } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
 import type { FileDiff } from '@/types';
+import { DiffStatus } from '@/types';
+import { CommitFileList } from './CommitFileList';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

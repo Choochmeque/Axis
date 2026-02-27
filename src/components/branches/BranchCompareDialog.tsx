@@ -1,14 +1,14 @@
+import { ArrowRight, Diff, FileCode, GitBranch, GitCommit } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Diff, GitBranch, ArrowRight, FileCode, GitCommit } from 'lucide-react';
-import { Dialog, DialogContent, DialogTitle, DialogBody, Alert, Button } from '@/components/ui';
 import { DiffView } from '@/components/diff';
-import { CommitCompareList } from './CommitCompareList';
 import { CommitFileList } from '@/components/history/CommitFileList';
-import { useBranchCompareStore } from '@/store/branchCompareStore';
+import { Alert, Button, Dialog, DialogBody, DialogContent, DialogTitle } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useBranchCompareStore } from '@/store/branchCompareStore';
 import type { Branch } from '@/types';
+import { CommitCompareList } from './CommitCompareList';
 
 interface BranchCompareDialogProps {
   isOpen: boolean;

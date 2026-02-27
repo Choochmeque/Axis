@@ -1,22 +1,21 @@
-import { useState, useEffect } from 'react';
+import { Loader2, MessageSquare } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Loader2 } from 'lucide-react';
-
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  Textarea,
+} from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { useRebaseProgressStore } from '@/store/rebaseProgressStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  Textarea,
-} from '@/components/ui';
 
 export function RewordDialog() {
   const { t } = useTranslation();

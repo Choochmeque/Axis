@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useListSelection } from './useListSelection';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SelectionKey } from './useListSelection';
+import { useListSelection } from './useListSelection';
 
 interface TestItem {
   id: string;

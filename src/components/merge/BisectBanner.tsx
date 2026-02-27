@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { CheckCircle2, Search, SkipForward, X, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, CheckCircle2, XCircle, SkipForward, X } from 'lucide-react';
-
-import { bisectApi } from '@/services/api';
-import { BisectMarkType, type BisectState } from '@/types';
+import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { Button } from '@/components/ui';
+import { bisectApi } from '@/services/api';
+import { BisectMarkType, type BisectState } from '@/types';
 
 interface BisectBannerProps {
   onComplete?: () => void;

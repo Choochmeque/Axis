@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Undo2 } from 'lucide-react';
-
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  Label,
+} from '@/components/ui';
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { revertApi } from '../../services/api';
 import type { Commit, RevertResult } from '../../types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  Label,
-  CheckboxField,
-  Alert,
-} from '@/components/ui';
 
 interface RevertCommitDialogProps {
   isOpen: boolean;

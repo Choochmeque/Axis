@@ -1,25 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { GitFork, FolderOpen } from 'lucide-react';
-
-import { toast, useOperation } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { worktreeApi, branchApi } from '@/services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
+import { FolderOpen, GitFork } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast, useOperation } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { branchApi, worktreeApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import type { Branch } from '@/types';
 
 interface AddWorktreeDialogProps {

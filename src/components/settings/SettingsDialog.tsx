@@ -1,47 +1,47 @@
-import { useState, useEffect, useMemo, useRef, startTransition } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  Settings,
-  Palette,
-  GitBranch,
   FileText,
-  Sparkles,
-  Link2,
-  Terminal,
+  GitBranch,
   KeyRound,
+  Link2,
+  Palette,
+  Settings,
+  Sparkles,
+  Terminal,
 } from 'lucide-react';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { settingsApi, signingApi, aiApi, lfsApi, avatarApi, sshKeysApi } from '@/services/api';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GitEnvironment } from '@/bindings/api';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useUpdateStore } from '@/store/updateStore';
-import { useIntegrationStore, initIntegrationListeners } from '@/store/integrationStore';
-import { SigningFormat, Theme, AiProvider, ProviderType, SshKeyFormat } from '@/types';
-import type {
-  AppSettings,
-  Theme as ThemeType,
-  SigningFormat as SigningFormatType,
-  AiProvider as AiProviderType,
-  GpgKey,
-  SshKey,
-  SshKeyInfo,
-} from '@/types';
-import { cn } from '@/lib/utils';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
   SelectItem,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '@/lib/utils';
+import { aiApi, avatarApi, lfsApi, settingsApi, signingApi, sshKeysApi } from '@/services/api';
+import { initIntegrationListeners, useIntegrationStore } from '@/store/integrationStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useUpdateStore } from '@/store/updateStore';
+import type {
+  AiProvider as AiProviderType,
+  AppSettings,
+  GpgKey,
+  SigningFormat as SigningFormatType,
+  SshKey,
+  SshKeyInfo,
+  Theme as ThemeType,
+} from '@/types';
+import { AiProvider, ProviderType, SigningFormat, SshKeyFormat, Theme } from '@/types';
 import { GlobalActionsSettings } from './GlobalActionsSettings';
 import { SshKeysSettings } from './SshKeysSettings';
 

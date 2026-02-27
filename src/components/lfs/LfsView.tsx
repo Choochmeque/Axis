@@ -1,34 +1,34 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  HardDrive,
-  RefreshCw,
-  Plus,
-  Download,
-  Upload,
   AlertCircle,
-  X,
   Check,
-  FileBox,
-  Trash2,
+  Download,
   ExternalLink,
+  FileBox,
+  HardDrive,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
-import { useLfsStore } from '@/store/lfsStore';
-import { cn } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { LfsFile } from '@/bindings/api';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  ConfirmDialog,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   VirtualList,
-  ConfirmDialog,
 } from '@/components/ui';
-import type { LfsFile } from '@/bindings/api';
+import { cn } from '@/lib/utils';
+import { useLfsStore } from '@/store/lfsStore';
 
 type LfsListItem =
   | { type: 'header'; label: string; icon: 'downloaded' | 'pointer'; count: number }
@@ -94,7 +94,7 @@ export function LfsView() {
     if (bytes === 0) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+    return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
   };
 
   const downloadedFiles = files.filter((f) => f.isDownloaded);

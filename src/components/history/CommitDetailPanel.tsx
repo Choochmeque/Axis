@@ -1,11 +1,11 @@
+import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { X } from 'lucide-react';
-import { CommitInfo } from './CommitInfo';
-import { CommitFileList } from './CommitFileList';
-import { DiffView } from '../diff';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Commit, GraphCommit } from '../../types';
+import { DiffView } from '../diff';
+import { CommitFileList } from './CommitFileList';
+import { CommitInfo } from './CommitInfo';
 
 interface CommitDetailPanelProps {
   commit: Commit | GraphCommit;

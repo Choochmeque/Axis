@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { signingApi } from '@/services/api';
+import { useEffect, useRef, useState } from 'react';
 import { getErrorMessage } from '@/lib/errorUtils';
-import type { SignatureVerification } from '@/types';
-import type { SigningFormat } from '@/types';
+import { signingApi } from '@/services/api';
+import type { SignatureVerification, SigningFormat } from '@/types';
 
 interface UseSignatureVerificationResult {
   verification: SignatureVerification | null;

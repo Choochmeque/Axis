@@ -1,22 +1,22 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { GitCommit, History, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { History, GitCommit, Loader2 } from 'lucide-react';
-import { graphApi } from '@/services/api';
+import {
+  Avatar,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui';
 import { formatMediumDate } from '@/lib/dateUtils';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { cn } from '@/lib/utils';
-import { CommitInfo } from './CommitInfo';
-import { DiffView } from '../diff';
+import { graphApi } from '@/services/api';
 import type { Commit, FileDiff } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  CheckboxField,
-  Avatar,
-} from '@/components/ui';
+import { DiffView } from '../diff';
+import { CommitInfo } from './CommitInfo';
 
 interface FileLogDialogProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useStagingStore } from './stagingStore';
-import { stagingApi, repositoryApi, diffApi, commitApi, lfsApi } from '../services/api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { commitApi, diffApi, lfsApi, repositoryApi, stagingApi } from '../services/api';
 import { useSettingsStore } from '../store/settingsStore';
+import { useStagingStore } from './stagingStore';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({

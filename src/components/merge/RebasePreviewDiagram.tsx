@@ -1,6 +1,6 @@
-import { useMemo, type ReactElement } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
+import { type ReactElement, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RebasePreview } from '../../types';
 
 interface RebasePreviewDiagramProps {

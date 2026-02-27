@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import { Download, RefreshCw, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useUpdateStore } from '@/store/updateStore';
 
 export function UpdateBanner() {

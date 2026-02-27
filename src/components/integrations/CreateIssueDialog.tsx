@@ -1,23 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { CircleDot } from 'lucide-react';
-
-import { getErrorMessage } from '@/lib/errorUtils';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Textarea,
-  Alert,
 } from '@/components/ui';
-import { useIntegrationStore } from '@/store/integrationStore';
 import { toast } from '@/hooks';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { useIntegrationStore } from '@/store/integrationStore';
 
 interface CreateIssueDialogProps {
   isOpen: boolean;

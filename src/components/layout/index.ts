@@ -1,4 +1,4 @@
 export { AppLayout } from './AppLayout';
-export { Toolbar } from './Toolbar';
 export { Sidebar } from './Sidebar';
 export { StatusBar } from './StatusBar';
+export { Toolbar } from './Toolbar';

@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import * as Tabs from '@radix-ui/react-tabs';
-import { FileCode, FolderOpen, Upload, Download } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { Download, FileCode, FolderOpen, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  Input,
+  Label,
+} from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { patchApi } from '../../services/api';
 import type { PatchResult } from '../../types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Input,
-  Label,
-  CheckboxField,
-  Alert,
-} from '@/components/ui';
 
 interface PatchDialogProps {
   isOpen: boolean;

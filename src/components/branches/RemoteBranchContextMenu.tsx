@@ -1,13 +1,13 @@
-import { ReactNode, useState } from 'react';
+import { ArrowDownToLine, Copy, Diff, GitBranch, Trash2 } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GitBranch, ArrowDownToLine, Diff, Trash2, Copy } from 'lucide-react';
-import type { Branch } from '@/types';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
-import { copyToClipboard } from '@/lib/actions';
 import { toast } from '@/hooks';
+import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { Branch } from '@/types';
+import { DeleteRemoteBranchDialog } from './DeleteRemoteBranchDialog';
 
 interface RemoteBranchContextMenuProps {
   branch: Branch;

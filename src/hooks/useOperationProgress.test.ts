@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useOperationProgress } from './useOperationProgress';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Operation } from '@/store/operationStore';
 import { ProgressStage } from '@/types';
+import { useOperationProgress } from './useOperationProgress';
 
 const mockOperations = new Map<string, Operation>();
 

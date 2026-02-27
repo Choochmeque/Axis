@@ -1,11 +1,10 @@
+import { Clock, GitMerge, GitPullRequest, User, XCircle } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GitPullRequest, GitMerge, XCircle, Clock, User } from 'lucide-react';
-
-import { formatRelativeTime } from '@/lib/dateUtils';
+import type { PullRequest, PullRequestDetail } from '@/bindings/api';
 import { VirtualList } from '@/components/ui';
 import type { SelectionKey } from '@/hooks';
-import type { PullRequest, PullRequestDetail } from '@/bindings/api';
+import { formatRelativeTime } from '@/lib/dateUtils';
 
 interface PullRequestListProps {
   pullRequests: PullRequest[];

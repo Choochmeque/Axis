@@ -1,25 +1,25 @@
-import { ReactNode, useState } from 'react';
+import { ChevronRight, Copy, GitBranch, Play, Trash2 } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Trash2, GitBranch, Copy, ChevronRight } from 'lucide-react';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import {
   Button,
-  Input,
   ContextMenu,
+  ContextMenuPortal,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  Input,
   MenuItem,
   MenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubTrigger,
-  ContextMenuPortal,
-  ContextMenuSubContent,
 } from '@/components/ui';
-import type { StashEntry } from '@/types';
-import { ActionContext } from '@/types';
-import { CustomActionsMenuSection } from '@/components/custom-actions';
+import { toast } from '@/hooks';
+import { copyToClipboard } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { stashApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { copyToClipboard } from '@/lib/actions';
+import type { StashEntry } from '@/types';
+import { ActionContext } from '@/types';
 
 interface StashContextMenuProps {
   stash: StashEntry;

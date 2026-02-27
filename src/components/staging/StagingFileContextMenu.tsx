@@ -1,44 +1,43 @@
-import { ReactNode, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  FileCode,
-  FolderOpen,
-  Copy,
-  Terminal,
-  Eye,
-  Diff,
-  FileText,
-  FilePlus,
-  Plus,
-  Minus,
-  XCircle,
-  EyeOff,
-  GitCommit,
-  RotateCcw,
-  History,
-  FileSearch,
-  Move,
-  ChevronDown,
-  ChevronUp,
-  GitMerge,
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Diff,
+  Eye,
+  EyeOff,
+  FileCode,
+  FilePlus,
+  FileSearch,
+  FileText,
+  FolderOpen,
+  GitCommit,
+  GitMerge,
+  History,
+  Minus,
+  Move,
+  Plus,
+  RotateCcw,
+  Terminal,
+  XCircle,
 } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CustomActionsMenuSection } from '@/components/custom-actions';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
+import { toast } from '@/hooks';
 import { copyToClipboard, showInFinder } from '@/lib/actions';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { conflictApi } from '@/services/api';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
-import { StatusType } from '@/types';
 import type { FileStatus } from '@/types';
-import { FileLogDialog } from '../history/FileLogDialog';
+import { ActionContext, StatusType } from '@/types';
 import { BlameDialog } from '../blame';
-import { IgnoreDialog } from './IgnoreDialog';
+import { FileLogDialog } from '../history/FileLogDialog';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { CustomActionsMenuSection } from '@/components/custom-actions';
-import { ActionContext } from '@/types';
-import { conflictApi } from '@/services/api';
-import { toast } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { IgnoreDialog } from './IgnoreDialog';
 
 interface StagingFileContextMenuProps {
   file: FileStatus;

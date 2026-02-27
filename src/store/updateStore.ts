@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { events } from '@/bindings/api';
-import { updateApi } from '@/services/api';
-import { UpdateInfo } from '@/types';
 import i18n from '@/i18n';
+import { updateApi } from '@/services/api';
+import type { UpdateInfo } from '@/types';
 
 interface UpdateState {
   updateAvailable: UpdateInfo | null;

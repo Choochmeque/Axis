@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { GraphCommit } from '@/types';
 import {
   computeGraphLayout,
-  getMaxColumns,
   GRAPH_COLORS,
-  type RowGraphData,
-  type PassingLane,
+  getMaxColumns,
   type LineSegment,
+  type PassingLane,
+  type RowGraphData,
 } from './graphLayout';
-import type { GraphCommit } from '@/types';
 
 describe('graphLayout', () => {
   describe('getMaxColumns', () => {

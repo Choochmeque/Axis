@@ -1,27 +1,26 @@
-import { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { GitBranch, Loader2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-
+import { ArrowDown, ArrowUp, GitBranch, GripVertical, Loader2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  Select,
+  SelectItem,
+} from '@/components/ui';
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { rebaseApi } from '@/services/api';
 import { useInteractiveRebaseStore } from '@/store/interactiveRebaseStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useStagingStore } from '@/store/stagingStore';
-import type { RebaseAction, InteractiveRebaseEntry } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  Select,
-  SelectItem,
-  Alert,
-} from '@/components/ui';
+import type { InteractiveRebaseEntry, RebaseAction } from '@/types';
 
 const REBASE_ACTIONS: { value: RebaseAction; label: string; description: string }[] = [
   { value: 'Pick', label: 'pick', description: 'use commit' },

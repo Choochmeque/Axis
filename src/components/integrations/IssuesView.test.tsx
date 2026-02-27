@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { IssuesView } from './IssuesView';
-import type { Issue, IssueDetail, DetectedProvider, IntegrationStatus } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DetectedProvider, IntegrationStatus, Issue, IssueDetail } from '@/types';
 import { IssueState } from '@/types';
+import { IssuesView } from './IssuesView';
 
 // Mock stores
 const mockLoadIssues = vi.fn();

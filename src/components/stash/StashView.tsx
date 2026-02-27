@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, Archive, GitBranch, Play, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Archive, Play, Trash2, Plus, RefreshCw, GitBranch, AlertCircle, X } from 'lucide-react';
-import { stashApi } from '../../services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import type { StashEntry } from '../../types';
-import { cn } from '../../lib/utils';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { formatTimestamp } from '@/lib/dateUtils';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
-  CheckboxField,
 } from '@/components/ui';
+import { formatTimestamp } from '@/lib/dateUtils';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { cn } from '../../lib/utils';
+import { stashApi } from '../../services/api';
+import type { StashEntry } from '../../types';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';

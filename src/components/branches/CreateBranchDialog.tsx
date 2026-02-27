@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
-import { toast } from '@/hooks';
-import { validateBranchName } from '@/lib/branchValidation';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { testId } from '@/lib/utils';
-import { branchApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
   SelectItem,
-  CheckboxField,
-  Alert,
 } from '@/components/ui';
+import { toast } from '@/hooks';
+import { validateBranchName } from '@/lib/branchValidation';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
 import { BranchType } from '@/types';
+import { branchApi } from '../../services/api';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 interface CreateBranchDialogProps {
   open: boolean;

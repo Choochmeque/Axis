@@ -1,12 +1,11 @@
+import { CheckCircle2, CircleDot, Clock, User } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CircleDot, CheckCircle2, Clock, User } from 'lucide-react';
-
-import { formatRelativeTime } from '@/lib/dateUtils';
-import { getLabelColors } from '@/lib/utils';
+import type { Issue, IssueDetail } from '@/bindings/api';
 import { VirtualList } from '@/components/ui';
 import type { SelectionKey } from '@/hooks';
-import type { Issue, IssueDetail } from '@/bindings/api';
+import { formatRelativeTime } from '@/lib/dateUtils';
+import { getLabelColors } from '@/lib/utils';
 
 interface IssueListProps {
   issues: Issue[];

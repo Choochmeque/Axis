@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock window.matchMedia before any imports that might use it
 vi.hoisted(() => {
@@ -17,9 +17,9 @@ vi.hoisted(() => {
   });
 });
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ContentSearch } from './ContentSearch';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { grepApi } from '../../services/api';
+import { ContentSearch } from './ContentSearch';
 
 // Mock the API
 vi.mock('../../services/api', () => ({

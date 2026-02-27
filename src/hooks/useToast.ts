@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { useToastStore, type ToastType } from '@/store/toastStore';
+import { type ToastType, useToastStore } from '@/store/toastStore';
 
 interface ToastHelpers {
   success: (title: string, description?: string) => string;

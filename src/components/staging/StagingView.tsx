@@ -1,21 +1,21 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useStagingStore } from '@/store/stagingStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { Alert, Button, Checkbox } from '@/components/ui';
+import { cn, naturalCompare, testId } from '@/lib/utils';
 import { useDialogStore } from '@/store/dialogStore';
-import { Checkbox, Alert, Button } from '@/components/ui';
-import { FileStatusList, FluidFileList, type FluidFile } from './FileStatusList';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useStagingStore } from '@/store/stagingStore';
+import type { FileStatus, StatusType as StatusTypeType } from '@/types';
+import { StatusType } from '@/types';
+import { FileStatusList, type FluidFile, FluidFileList } from './FileStatusList';
 import {
   StagingFilters,
-  StagingSortBy,
-  StagingShowOnly,
-  StagingViewMode,
   StagingMode,
+  StagingShowOnly,
+  StagingSortBy,
+  StagingViewMode,
 } from './StagingFilters';
-import { StatusType } from '@/types';
-import type { FileStatus, StatusType as StatusTypeType } from '@/types';
-import { cn, naturalCompare, testId } from '@/lib/utils';
 
 // Helper to get filename from path
 function getFilename(path: string): string {

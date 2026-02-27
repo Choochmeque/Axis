@@ -1,9 +1,9 @@
 import { ChevronDown, ChevronRight, GitCommit } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
-import { formatTimeAgo } from '@/lib/dateUtils';
 import { Avatar } from '@/components/ui';
+import { formatTimeAgo } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
 import type { Commit } from '@/types';
 
 interface CommitCompareListProps {

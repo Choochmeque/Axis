@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { FileDiff, StashEntry } from '@/types';
+import { DiffLineType, DiffStatus } from '@/types';
 import { StashDiffView } from './StashDiffView';
-import { DiffStatus, DiffLineType } from '@/types';
-import type { StashEntry, FileDiff } from '@/types';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

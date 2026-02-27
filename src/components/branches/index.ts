@@ -1,7 +1,7 @@
-export { CreateBranchDialog } from './CreateBranchDialog';
+export { BranchContextMenu } from './BranchContextMenu';
 export { CheckoutBranchDialog } from './CheckoutBranchDialog';
 export { CheckoutConflictDialog } from './CheckoutConflictDialog';
+export { CreateBranchDialog } from './CreateBranchDialog';
 export { DeleteBranchDialog } from './DeleteBranchDialog';
-export { RenameBranchDialog } from './RenameBranchDialog';
-export { BranchContextMenu } from './BranchContextMenu';
 export { RemoteBranchContextMenu } from './RemoteBranchContextMenu';
+export { RenameBranchDialog } from './RenameBranchDialog';

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CIRunList } from './CIRunList';
-import { CIRunStatus, CIConclusion } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import type { CIRun } from '@/types';
+import { CIConclusion, CIRunStatus } from '@/types';
+import { CIRunList } from './CIRunList';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

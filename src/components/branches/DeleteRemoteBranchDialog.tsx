@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { branchApi } from '../../services/api';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { getErrorMessage } from '@/lib/errorUtils';
-import type { Branch } from '../../types';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
   CheckboxField,
-  Alert,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
 } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { branchApi } from '../../services/api';
+import { useRepositoryStore } from '../../store/repositoryStore';
+import type { Branch } from '../../types';
 
 interface DeleteRemoteBranchDialogProps {
   open: boolean;

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useTabsStore, TabType } from './tabsStore';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { TabType, useTabsStore } from './tabsStore';
 
 describe('tabsStore', () => {
   const welcomeTab = {

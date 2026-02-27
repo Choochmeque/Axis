@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
+import { CheckCircle2, Search, SkipForward, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, CheckCircle2, XCircle, SkipForward } from 'lucide-react';
-
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  Input,
+} from '@/components/ui';
 import { toast, useOperation } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { bisectApi } from '@/services/api';
-import { BisectMarkType, type BisectState, type BisectResult } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Input,
-  Alert,
-} from '@/components/ui';
+import { BisectMarkType, type BisectResult, type BisectState } from '@/types';
 
 interface BisectDialogProps {
   isOpen: boolean;

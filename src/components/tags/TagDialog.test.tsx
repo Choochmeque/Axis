@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { TagDialog } from './TagDialog';
-import { tagApi } from '../../services/api';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '@/hooks';
+import { tagApi } from '../../services/api';
+import { TagDialog } from './TagDialog';
 
 // Mock the API
 vi.mock('../../services/api', () => ({

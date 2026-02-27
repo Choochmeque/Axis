@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useCustomActionsStore } from './customActionsStore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActionExecutionResult, ActionVariables, CustomAction } from '@/types';
 import { ActionContext, ActionStorageType } from '@/types';
-import type { CustomAction, ActionExecutionResult, ActionVariables } from '@/types';
+import { useCustomActionsStore } from './customActionsStore';
 
 vi.mock('@/services/api', () => ({
   customActionsApi: {

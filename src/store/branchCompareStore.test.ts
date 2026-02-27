@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BranchCompareResult, Commit, FileDiff } from '@/types';
 import { useBranchCompareStore } from './branchCompareStore';
-import type { BranchCompareResult, FileDiff, Commit } from '@/types';
 
 vi.mock('@/services/api', () => ({
   branchApi: {

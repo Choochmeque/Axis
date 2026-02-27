@@ -1,10 +1,10 @@
+import { AlertTriangle, GitBranch } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { GitBranch, AlertTriangle } from 'lucide-react';
-import type { RecentRepository } from '@/types';
 import { Badge } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/dateUtils';
 import { truncatePath } from '@/lib/pathUtils';
+import { cn } from '@/lib/utils';
+import type { RecentRepository } from '@/types';
 
 interface RepoCardProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
   repo: RecentRepository;

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
 import { User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { useAvatarStore, getAvatarSrcUrl } from '@/store/avatarStore';
+import { getAvatarSrcUrl, useAvatarStore } from '@/store/avatarStore';
 import type { AvatarResponse } from '@/types';
 
 interface AvatarProps {

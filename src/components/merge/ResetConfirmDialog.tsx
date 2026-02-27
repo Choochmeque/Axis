@@ -1,22 +1,22 @@
+import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw, AlertTriangle } from 'lucide-react';
-import { operationApi } from '@/services/api';
-import { ResetMode } from '@/types';
-import type { Commit, ResetMode as ResetModeType } from '@/types';
-import { cn } from '@/lib/utils';
-import { getErrorMessage } from '@/lib/errorUtils';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  Label,
   Alert,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  Label,
 } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '@/lib/utils';
+import { operationApi } from '@/services/api';
+import type { Commit, ResetMode as ResetModeType } from '@/types';
+import { ResetMode } from '@/types';
 
 interface ResetConfirmDialogProps {
   isOpen: boolean;

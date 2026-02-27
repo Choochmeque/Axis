@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  formatRelativeTime,
-  formatTimeAgo,
-  formatShortDate,
+  formatDateTime,
   formatFullDateTime,
   formatMediumDate,
+  formatRelativeTime,
+  formatShortDate,
+  formatTimeAgo,
   formatTimestamp,
-  formatDateTime,
 } from './dateUtils';
 
 vi.mock('@/i18n', () => ({
@@ -21,11 +21,11 @@ vi.mock('@/i18n', () => ({
 }));
 
 describe('dateUtils', () => {
-  const NOW = new Date('2024-01-15T12:00:00Z').getTime();
+  const Now = new Date('2024-01-15T12:00:00Z').getTime();
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(NOW);
+    vi.setSystemTime(Now);
   });
 
   afterEach(() => {
@@ -34,44 +34,44 @@ describe('dateUtils', () => {
 
   describe('formatRelativeTime', () => {
     it('should return "just now" for times less than 60 seconds ago', () => {
-      const timestamp = NOW - 30 * 1000; // 30 seconds ago
+      const timestamp = Now - 30 * 1000; // 30 seconds ago
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.justNow');
     });
 
     it('should return minutes ago for times less than 60 minutes', () => {
-      const timestamp = NOW - 5 * 60 * 1000; // 5 minutes ago
+      const timestamp = Now - 5 * 60 * 1000; // 5 minutes ago
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.minutesAgo:5');
     });
 
     it('should return hours ago for times less than 24 hours', () => {
-      const timestamp = NOW - 3 * 60 * 60 * 1000; // 3 hours ago
+      const timestamp = Now - 3 * 60 * 60 * 1000; // 3 hours ago
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.hoursAgo:3');
     });
 
     it('should return "yesterday" for 1 day ago', () => {
-      const timestamp = NOW - 24 * 60 * 60 * 1000; // 1 day ago
+      const timestamp = Now - 24 * 60 * 60 * 1000; // 1 day ago
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.yesterday');
     });
 
     it('should return days ago for times less than 7 days', () => {
-      const timestamp = NOW - 3 * 24 * 60 * 60 * 1000; // 3 days ago
+      const timestamp = Now - 3 * 24 * 60 * 60 * 1000; // 3 days ago
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.daysAgo:3');
     });
 
     it('should return weeks ago for times less than 30 days', () => {
-      const timestamp = NOW - 14 * 24 * 60 * 60 * 1000; // 14 days ago = 2 weeks
+      const timestamp = Now - 14 * 24 * 60 * 60 * 1000; // 14 days ago = 2 weeks
       expect(formatRelativeTime(timestamp)).toBe('lib.dates.weeksAgo:2');
     });
 
     it('should return locale date for older times', () => {
-      const timestamp = NOW - 60 * 24 * 60 * 60 * 1000; // 60 days ago
+      const timestamp = Now - 60 * 24 * 60 * 60 * 1000; // 60 days ago
       const result = formatRelativeTime(timestamp);
       // Should be a locale date string, not a translation key
       expect(result).not.toContain('lib.dates');
     });
 
     it('should accept both number and string timestamps', () => {
-      const numTimestamp = NOW - 5 * 60 * 1000;
+      const numTimestamp = Now - 5 * 60 * 1000;
       const strTimestamp = new Date(numTimestamp).toISOString();
 
       expect(formatRelativeTime(numTimestamp)).toBe('lib.dates.minutesAgo:5');
@@ -81,57 +81,57 @@ describe('dateUtils', () => {
 
   describe('formatTimeAgo', () => {
     it('should return "less than a minute ago" for < 30 seconds', () => {
-      const timestamp = NOW - 20 * 1000;
+      const timestamp = Now - 20 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.lessThanMinuteAgo');
     });
 
     it('should return "about a minute ago" for < 90 seconds', () => {
-      const timestamp = NOW - 60 * 1000;
+      const timestamp = Now - 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.aboutMinuteAgo');
     });
 
     it('should return "X minutes ago" for < 45 minutes', () => {
-      const timestamp = NOW - 30 * 60 * 1000;
+      const timestamp = Now - 30 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.minutesAgoLong:30');
     });
 
     it('should return "about an hour ago" for < 90 minutes', () => {
-      const timestamp = NOW - 60 * 60 * 1000;
+      const timestamp = Now - 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.aboutHourAgo');
     });
 
     it('should return "about X hours ago" for < 24 hours', () => {
-      const timestamp = NOW - 5 * 60 * 60 * 1000;
+      const timestamp = Now - 5 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.aboutHoursAgo:5');
     });
 
     it('should return "a day ago" for < 42 hours', () => {
-      const timestamp = NOW - 30 * 60 * 60 * 1000;
+      const timestamp = Now - 30 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.dayAgo');
     });
 
     it('should return "X days ago" for < 30 days', () => {
-      const timestamp = NOW - 10 * 24 * 60 * 60 * 1000;
+      const timestamp = Now - 10 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.daysAgoLong:10');
     });
 
     it('should return "about a month ago" for < 45 days', () => {
-      const timestamp = NOW - 35 * 24 * 60 * 60 * 1000;
+      const timestamp = Now - 35 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.aboutMonthAgo');
     });
 
     it('should return "X months ago" for < 365 days', () => {
-      const timestamp = NOW - 100 * 24 * 60 * 60 * 1000;
+      const timestamp = Now - 100 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.monthsAgo:3');
     });
 
     it('should return "about a year ago" for < 18 months', () => {
-      const timestamp = NOW - 400 * 24 * 60 * 60 * 1000;
+      const timestamp = Now - 400 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.aboutYearAgo');
     });
 
     it('should return "X years ago" for older dates', () => {
-      const timestamp = NOW - 800 * 24 * 60 * 60 * 1000;
+      const timestamp = Now - 800 * 24 * 60 * 60 * 1000;
       expect(formatTimeAgo(timestamp)).toBe('lib.dates.yearsAgo:2');
     });
   });

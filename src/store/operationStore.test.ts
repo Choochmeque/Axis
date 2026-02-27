@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useOperationStore, operations } from './operationStore';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { operations, useOperationStore } from './operationStore';
 
 describe('operationStore', () => {
   beforeEach(() => {

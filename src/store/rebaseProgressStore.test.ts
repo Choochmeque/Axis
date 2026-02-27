@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useRebaseProgressStore } from './rebaseProgressStore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RebaseProgress, RebaseResult } from '@/types';
+import { useRebaseProgressStore } from './rebaseProgressStore';
 
 vi.mock('@/services/api', () => ({
   rebaseApi: {

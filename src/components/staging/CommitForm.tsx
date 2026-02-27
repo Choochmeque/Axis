@@ -1,40 +1,40 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ChevronDown, Sparkles } from 'lucide-react';
-import { toast, useReferenceMention } from '@/hooks';
-import { getErrorMessage } from '@/lib/errorUtils';
-import { testId } from '@/lib/utils';
-import { useStagingStore } from '@/store/stagingStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useIntegrationStore } from '@/store/integrationStore';
-import { operations } from '@/store/operationStore';
-import { ReferenceMention } from './ReferenceMention';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Checkbox,
   CheckboxField,
   DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
-  DropdownMenuSeparator,
+  DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
   Select,
   SelectItem,
   Textarea,
 } from '@/components/ui';
-import { remoteApi, commitApi, signingApi, aiApi, hooksApi } from '@/services/api';
-import type { SigningConfig } from '@/types';
+import { toast, useReferenceMention } from '@/hooks';
 import {
   COMMIT_TYPES,
-  formatConventionalCommit,
-  parseConventionalCommit,
-  getEmptyCommitParts,
-  type ConventionalCommitParts,
   type CommitType,
+  type ConventionalCommitParts,
+  formatConventionalCommit,
+  getEmptyCommitParts,
+  parseConventionalCommit,
 } from '@/lib/conventionalCommits';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
+import { aiApi, commitApi, hooksApi, remoteApi, signingApi } from '@/services/api';
+import { useIntegrationStore } from '@/store/integrationStore';
+import { operations } from '@/store/operationStore';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useStagingStore } from '@/store/stagingStore';
+import type { SigningConfig } from '@/types';
+import { ReferenceMention } from './ReferenceMention';
 
 export function CommitForm() {
   const { t } = useTranslation();

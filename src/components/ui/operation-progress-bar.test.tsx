@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { OperationProgressBar } from './operation-progress-bar';
-import { ProgressStage } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
 import type { OperationProgress } from '@/store/operationStore';
+import { ProgressStage } from '@/types';
+import { OperationProgressBar } from './operation-progress-bar';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

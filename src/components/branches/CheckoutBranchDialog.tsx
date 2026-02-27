@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GitBranch } from 'lucide-react';
-import { useRepositoryStore } from '../../store/repositoryStore';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
+  Alert,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Select,
-  SelectItem,
   SelectGroup,
+  SelectItem,
   SelectLabel,
-  Alert,
 } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { BranchType } from '@/types';
+import { useRepositoryStore } from '../../store/repositoryStore';
 
 interface CheckoutBranchDialogProps {
   isOpen: boolean;

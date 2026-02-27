@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { EyeOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
+  Input,
   Select,
   SelectItem,
-  Input,
-  CheckboxField,
 } from '@/components/ui';
-import { gitignoreApi } from '@/services/api';
 import { toast } from '@/hooks/useToast';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { gitignoreApi } from '@/services/api';
 import { useStagingStore } from '@/store/stagingStore';
 import type { IgnoreOptions, IgnoreSuggestion } from '@/types';
 

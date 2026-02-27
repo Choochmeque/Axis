@@ -1,34 +1,29 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  History,
-  RefreshCw,
   AlertCircle,
-  X,
-  GitCommit,
-  GitMerge,
-  Undo2,
-  RotateCcw,
-  ArrowLeftRight,
-  Download,
   Archive,
-  GitBranch,
+  ArrowLeftRight,
   Check,
   Copy,
+  Download,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  History,
+  RefreshCw,
+  RotateCcw,
+  Undo2,
+  X,
 } from 'lucide-react';
-import { reflogApi, branchApi } from '@/services/api';
-import { ReflogAction } from '@/types';
-import type { ReflogEntry } from '@/types';
-import { cn } from '@/lib/utils';
-import { formatTimestamp } from '@/lib/dateUtils';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   FormField,
   Input,
   Select,
@@ -36,9 +31,14 @@ import {
   VirtualList,
 } from '@/components/ui';
 import type { SelectionKey } from '@/hooks';
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { getErrorMessage } from '@/lib/errorUtils';
 import { copyToClipboard } from '@/lib/actions';
+import { formatTimestamp } from '@/lib/dateUtils';
+import { getErrorMessage } from '@/lib/errorUtils';
+import { cn } from '@/lib/utils';
+import { branchApi, reflogApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { ReflogEntry } from '@/types';
+import { ReflogAction } from '@/types';
 
 const btnIconClass =
   'flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded text-(--text-secondary) cursor-pointer transition-colors hover:bg-(--bg-hover) hover:text-(--text-primary) disabled:opacity-50 disabled:cursor-not-allowed';

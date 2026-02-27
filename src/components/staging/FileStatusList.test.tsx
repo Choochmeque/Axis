@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { FileStatusList, FluidFileList } from './FileStatusList';
-import { StatusType } from '@/types';
-import type { FileStatus } from '@/types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import type { SelectionKey } from '@/hooks';
+import type { FileStatus } from '@/types';
+import { StatusType } from '@/types';
+import { FileStatusList, FluidFileList } from './FileStatusList';
 import { StagingViewMode } from './StagingFilters';
 
 vi.mock('react-i18next', () => ({

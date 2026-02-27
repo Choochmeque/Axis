@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { SshKeysSettings } from './SshKeysSettings';
-import { sshKeysApi } from '@/services/api';
 import { open } from '@tauri-apps/plugin-dialog';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sshKeysApi } from '@/services/api';
 import type { SshKeyInfo } from '@/types';
+import { SshKeysSettings } from './SshKeysSettings';
 
 // Mock the API
 vi.mock('@/services/api', () => ({

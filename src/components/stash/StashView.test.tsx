@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { StashView } from './StashView';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { stashApi } from '../../services/api';
+import { StashView } from './StashView';
 
 // Mock the API
 vi.mock('../../services/api', () => ({

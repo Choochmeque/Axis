@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlameStore } from './blameStore';
 
 vi.mock('@/services/api', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/lib/errorUtils', () => ({
 }));
 
 import { blameApi } from '@/services/api';
-import { BlameResult } from '@/types';
+import type { BlameResult } from '@/types';
 
 describe('blameStore', () => {
   const mockBlameResult: BlameResult = {

@@ -1,18 +1,18 @@
-import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui';
-import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '@/lib/utils';
-import { BranchFilterType, BranchType, SortOrder } from '@/types';
+import { useRepositoryStore } from '@/store/repositoryStore';
 import type { SortOrder as SortOrderType } from '@/types';
+import { BranchFilterType, BranchType, SortOrder } from '@/types';
 
 export function HistoryFilters() {
   const { t } = useTranslation();

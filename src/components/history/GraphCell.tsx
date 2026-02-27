@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { type RowGraphData, GRAPH_COLORS } from '@/lib/graphLayout';
+import { GRAPH_COLORS, type RowGraphData } from '@/lib/graphLayout';
 
 interface GraphCellProps {
   data: RowGraphData;

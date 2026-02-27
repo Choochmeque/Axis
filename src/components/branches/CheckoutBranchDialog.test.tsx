@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CheckoutBranchDialog } from './CheckoutBranchDialog';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BranchType } from '@/types';
+import { CheckoutBranchDialog } from './CheckoutBranchDialog';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

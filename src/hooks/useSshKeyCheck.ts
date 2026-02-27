@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { sshKeysApi, remoteSshKeysApi } from '@/services/api';
-import { SshKeyFormat } from '@/types';
-import { useSettingsStore } from '@/store/settingsStore';
+import { remoteSshKeysApi, sshKeysApi } from '@/services/api';
 import { useDialogStore } from '@/store/dialogStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { SshKeyFormat } from '@/types';
 
 export function useSshKeyCheck() {
   const openPassphraseDialog = useDialogStore((s) => s.openPassphraseDialog);

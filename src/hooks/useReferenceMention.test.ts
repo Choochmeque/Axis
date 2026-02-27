@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useReferenceMention } from './useReferenceMention';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Issue, PullRequest } from '@/types';
+import { useReferenceMention } from './useReferenceMention';
 
 describe('useReferenceMention', () => {
   const mockIssues: Issue[] = [

@@ -1,33 +1,34 @@
 // Refactored to use DataTable with virtualization
+
+import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
-import { Skeleton } from '@/components/ui';
-import { testId } from '@/lib/utils';
-
-import { useRepositoryStore } from '@/store/repositoryStore';
-import { useScrollToCommit } from '@/hooks/useScrollToCommit';
-import type { GraphCommit } from '@/types';
-import { RefType } from '@/types';
-import { CommitDetailPanel } from './CommitDetailPanel';
-import { CommitContextMenu } from './CommitContextMenu';
-import { HistoryFilters } from './HistoryFilters';
-import { GraphCell } from './GraphCell';
 import {
+  Avatar,
+  Button,
+  ContextMenuContent,
+  ContextMenuPortal,
   ContextMenuRoot,
   ContextMenuTrigger,
-  ContextMenuPortal,
-  ContextMenuContent,
+  Skeleton,
 } from '@/components/ui';
+import { type ColumnDef, DataTable, type DataTableRef } from '@/components/ui/data-table';
+import type { SelectionKey } from '@/hooks';
+import { useScrollToCommit } from '@/hooks/useScrollToCommit';
+import { formatShortDate } from '@/lib/dateUtils';
+import { computeGraphLayout, getMaxColumns, type RowGraphData } from '@/lib/graphLayout';
+import { testId } from '@/lib/utils';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { GraphCommit } from '@/types';
+import { RefType } from '@/types';
 import { BisectBanner } from '../merge/BisectBanner';
 import { MergeBanner } from '../merge/MergeBanner';
 import { RebaseBanner } from '../merge/RebaseBanner';
-import { DataTable, type ColumnDef, type DataTableRef } from '@/components/ui/data-table';
-import type { SelectionKey } from '@/hooks';
-import { Avatar, Button } from '@/components/ui';
-import { formatShortDate } from '@/lib/dateUtils';
-import { computeGraphLayout, getMaxColumns, type RowGraphData } from '@/lib/graphLayout';
+import { CommitContextMenu } from './CommitContextMenu';
+import { CommitDetailPanel } from './CommitDetailPanel';
+import { GraphCell } from './GraphCell';
+import { HistoryFilters } from './HistoryFilters';
 
 const UNCOMMITTED = 'uncommitted';
 

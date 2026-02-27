@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { NotificationList } from './NotificationList';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@/bindings/api';
+import { NotificationList } from './NotificationList';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

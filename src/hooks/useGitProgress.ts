@@ -1,10 +1,10 @@
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { useEffect, useRef } from 'react';
-import { UnlistenFn } from '@tauri-apps/api/event';
 
 import { events } from '@/bindings/api';
 import i18n from '@/i18n';
-import { operations, OperationProgress } from '@/store/operationStore';
-import { GitOperationType, ProgressStage } from '@/types';
+import { type OperationProgress, operations } from '@/store/operationStore';
+import { type GitOperationType, ProgressStage } from '@/types';
 
 function getOperationName(operationType: GitOperationType): string {
   return i18n.t(`ui.operations.names.${operationType}`);

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { useOperationStore, type OperationCategory } from '@/store/operationStore';
+import { type OperationCategory, useOperationStore } from '@/store/operationStore';
 
 interface TrackOperationOptions {
   name: string;

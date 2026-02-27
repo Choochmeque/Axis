@@ -1,25 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Pencil } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  Button,
+  CheckboxField,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  FormField,
+  Input,
+} from '@/components/ui';
 import { toast } from '@/hooks';
 import { validateBranchName } from '@/lib/branchValidation';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { branchApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Branch } from '../../types';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-  DialogClose,
-  Button,
-  FormField,
-  Input,
-  CheckboxField,
-  Alert,
-} from '@/components/ui';
 
 interface RenameBranchDialogProps {
   isOpen: boolean;

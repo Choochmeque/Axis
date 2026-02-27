@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useRepositoryStore } from './repositoryStore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  repositoryApi,
-  graphApi,
   branchApi,
-  tagApi,
+  diffApi,
+  graphApi,
+  repositoryApi,
   stashApi,
   submoduleApi,
+  tagApi,
   worktreeApi,
-  diffApi,
 } from '../services/api';
+import { useRepositoryStore } from './repositoryStore';
 
 // Suppress unused import warnings - these are used in the mock
 void graphApi;
@@ -18,8 +18,9 @@ void stashApi;
 void submoduleApi;
 void worktreeApi;
 void diffApi;
-import type { GraphCommit, Branch } from '../types';
-import { BranchType, RepositoryState, BranchFilterType, SortOrder } from '../types';
+
+import type { Branch, GraphCommit } from '../types';
+import { BranchFilterType, BranchType, RepositoryState, SortOrder } from '../types';
 
 // Mock the API modules
 vi.mock('../services/api', () => ({

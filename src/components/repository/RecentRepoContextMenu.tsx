@@ -1,13 +1,13 @@
-import { type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FolderOpen, ExternalLink, Trash2, Pin, PinOff, FolderSearch } from 'lucide-react';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import type { RecentRepository } from '@/types';
-import { repositoryApi, shellApi } from '@/services/api';
-import { useRepositoryStore } from '@/store/repositoryStore';
+import { ExternalLink, FolderOpen, FolderSearch, Pin, PinOff, Trash2 } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContextMenu, MenuItem, MenuSeparator } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { repositoryApi, shellApi } from '@/services/api';
+import { useRepositoryStore } from '@/store/repositoryStore';
+import type { RecentRepository } from '@/types';
 
 interface RecentRepoContextMenuProps {
   repo: RecentRepository;

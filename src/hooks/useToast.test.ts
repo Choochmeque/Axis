@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useToast, toast } from './useToast';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast, useToast } from './useToast';
 
 const mockAddToast = vi.fn().mockReturnValue('toast-id-1');
 const mockRemoveToast = vi.fn();

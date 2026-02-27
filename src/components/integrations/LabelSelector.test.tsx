@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { LabelSelector } from './LabelSelector';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IntegrationLabel } from '@/types';
+import { LabelSelector } from './LabelSelector';
 
 // Mock i18n
 vi.mock('react-i18next', () => ({

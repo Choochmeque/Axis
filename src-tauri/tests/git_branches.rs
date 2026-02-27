@@ -61,6 +61,7 @@ async fn test_cli_branch_read_by_ops() {
     let filter = BranchFilter {
         include_local: true,
         include_remote: false,
+        ..Default::default()
     };
     let branches = ops
         .list_branches(filter)

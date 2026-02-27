@@ -345,7 +345,7 @@ async fn test_run_pre_commit_no_hook() {
     let (_tmp, ops) = setup_test_repo();
 
     // Action: run pre-commit when no hook exists
-    let result = ops.run_pre_commit().await;
+    let result = ops.run_pre_commit(None).await;
 
     // Verify: skipped
     assert!(result.skipped, "Should be skipped when hook doesn't exist");
@@ -364,7 +364,7 @@ async fn test_run_pre_commit_success() {
     );
 
     // Action: run pre-commit
-    let result = ops.run_pre_commit().await;
+    let result = ops.run_pre_commit(None).await;
 
     // Verify: success
     assert!(result.success, "Hook should succeed");
@@ -384,7 +384,7 @@ async fn test_run_pre_commit_failure() {
     );
 
     // Action: run pre-commit
-    let result = ops.run_pre_commit().await;
+    let result = ops.run_pre_commit(None).await;
 
     // Verify: failure
     assert!(!result.success, "Hook should fail");
@@ -407,7 +407,7 @@ async fn test_run_commit_msg_success() {
     std::fs::write(&msg_file, "Test commit message").expect("should write msg");
 
     // Action: run commit-msg
-    let result = ops.run_commit_msg(&msg_file).await;
+    let result = ops.run_commit_msg(&msg_file, None).await;
 
     // Verify: success
     assert!(result.success, "Hook should succeed");
@@ -423,7 +423,7 @@ async fn test_run_post_commit() {
     write_hook(tmp.path(), GitHookType::PostCommit, &hook_content);
 
     // Action: run post-commit
-    let result = ops.run_post_commit().await;
+    let result = ops.run_post_commit(None).await;
 
     // Verify: hook ran
     assert!(result.success, "Hook should succeed");
@@ -516,7 +516,7 @@ async fn test_hook_with_output() {
     );
 
     // Action: run hook
-    let result = ops.run_pre_commit().await;
+    let result = ops.run_pre_commit(None).await;
 
     // Verify: captured output
     assert!(result.success);

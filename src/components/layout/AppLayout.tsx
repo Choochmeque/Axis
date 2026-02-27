@@ -149,8 +149,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeTagDialog}
         onTagCreated={async (result) => {
           tagDialog.onTagCreated?.(result);
-          await loadTags();
-          await loadCommits();
+          await Promise.all([loadTags(), loadCommits()]);
           closeTagDialog();
         }}
         targetCommit={tagDialog.targetCommit}
@@ -166,8 +165,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeCherryPickDialog}
         onCherryPickComplete={async (result) => {
           cherryPickDialog.onCherryPickComplete?.(result);
-          await loadCommits();
-          await loadStatus();
+          await Promise.all([loadCommits(), loadStatus()]);
           closeCherryPickDialog();
         }}
         commits={cherryPickDialog.commits}
@@ -178,9 +176,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           onClose={closeResetConfirmDialog}
           onResetComplete={async () => {
             resetConfirmDialog.onResetComplete?.();
-            await loadCommits();
-            await loadStatus();
-            await loadBranches();
+            await Promise.all([loadCommits(), loadStatus(), loadBranches()]);
             closeResetConfirmDialog();
           }}
           commit={resetConfirmDialog.commit}
@@ -193,8 +189,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeRevertCommitDialog}
         onRevertComplete={async (result) => {
           revertCommitDialog.onRevertComplete?.(result);
-          await loadCommits();
-          await loadStatus();
+          await Promise.all([loadCommits(), loadStatus()]);
           closeRevertCommitDialog();
         }}
         commits={revertCommitDialog.commits}
@@ -204,9 +199,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeRebaseDialog}
         onRebaseComplete={async (result) => {
           rebaseDialog.onRebaseComplete?.(result);
-          await loadCommits();
-          await loadStatus();
-          await loadBranches();
+          await Promise.all([loadCommits(), loadStatus(), loadBranches()]);
           closeRebaseDialog();
         }}
         currentBranch={rebaseDialog.currentBranch || repository?.currentBranch || ''}
@@ -217,9 +210,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeRebaseOntoDialog}
         onRebaseComplete={async (result) => {
           rebaseOntoDialog.onRebaseComplete?.(result);
-          await loadCommits();
-          await loadStatus();
-          await loadBranches();
+          await Promise.all([loadCommits(), loadStatus(), loadBranches()]);
           closeRebaseOntoDialog();
         }}
         currentBranch={rebaseOntoDialog.currentBranch || repository?.currentBranch || ''}
@@ -230,9 +221,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeMergeDialog}
         onMergeComplete={async (result) => {
           mergeDialog.onMergeComplete?.(result);
-          await loadCommits();
-          await loadStatus();
-          await loadBranches();
+          await Promise.all([loadCommits(), loadStatus(), loadBranches()]);
           closeMergeDialog();
         }}
         currentBranch={repository?.currentBranch || ''}
@@ -260,8 +249,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={closeBisectDialog}
         onBisectComplete={async (result) => {
           bisectDialog.onBisectComplete?.(result);
-          await loadCommits();
-          await loadStatus();
+          await Promise.all([loadCommits(), loadStatus()]);
           closeBisectDialog();
         }}
         badCommit={bisectDialog.badCommit}

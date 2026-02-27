@@ -135,9 +135,11 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
 
     try {
       await conflictApi.markUnresolved(selectedFile);
-      await loadConflicts();
-      // Reload content to show restored conflict markers
-      const content = await conflictApi.getConflictContent(selectedFile);
+      // Reload conflicts and content in parallel
+      const [, content] = await Promise.all([
+        loadConflicts(),
+        conflictApi.getConflictContent(selectedFile),
+      ]);
       setConflictContent(content);
       setMergedContent(content.merged);
     } catch (err) {

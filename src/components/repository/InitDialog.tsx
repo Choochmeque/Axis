@@ -59,8 +59,7 @@ export function InitDialog({ open: isOpen, onOpenChange }: InitDialogProps) {
 
     try {
       const repo = await repositoryApi.init(path.trim(), bare);
-      await openRepository(repo.path);
-      await loadRecentRepositories();
+      await Promise.all([openRepository(repo.path), loadRecentRepositories()]);
 
       // Create tab for new repository
       const existingTab = findTabByPath(repo.path);

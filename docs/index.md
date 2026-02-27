@@ -14,9 +14,6 @@ hero:
     - theme: brand
       text: Download
       link: https://github.com/Choochmeque/Axis/releases
-    - theme: alt
-      text: View on GitHub
-      link: https://github.com/Choochmeque/Axis
 
 features:
   - icon: 🚀

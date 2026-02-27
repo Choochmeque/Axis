@@ -191,7 +191,7 @@ describe('CommitForm', () => {
     const textarea = screen.getByPlaceholderText('staging.commitForm.placeholder');
     fireEvent.change(textarea, { target: { value: 'Test message' } });
 
-    expect(textarea).toHaveValue('Test message');
+    expect(mockSetCommitMessage).toHaveBeenCalledWith('Test message');
   });
 
   it('should show author info when available', async () => {

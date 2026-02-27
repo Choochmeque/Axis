@@ -58,7 +58,6 @@ export function CommitForm() {
   const currentBranch = branches.find((b) => b.isHead);
   const { settings } = useSettingsStore();
 
-  const [localMessage, setLocalMessage] = useState(commitMessage);
   const [bypassHooks, setBypassHooks] = useState(false);
   // Initialize from settings, can be overridden per-commit
   const [signCommit, setSignCommit] = useState(settings?.signCommits ?? false);
@@ -96,10 +95,6 @@ export function CommitForm() {
     isLoading: isLoadingIssues || isLoadingPrs,
     onLoadData: loadIntegrationData,
   });
-
-  useEffect(() => {
-    setLocalMessage(commitMessage);
-  }, [commitMessage]);
 
   // Sync signCommit with settings when settings change
   useEffect(() => {
@@ -192,7 +187,6 @@ export function CommitForm() {
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart ?? 0;
-    setLocalMessage(value);
     setCommitMessage(value);
     referenceMention.handleInputChange(value, cursorPosition);
   };
@@ -205,7 +199,7 @@ export function CommitForm() {
 
     if (enabled) {
       // Try to parse existing message into structured parts
-      const parsed = parseConventionalCommit(localMessage);
+      const parsed = parseConventionalCommit(commitMessage);
       if (parsed) {
         setCommitParts(parsed);
       } else {
@@ -216,7 +210,6 @@ export function CommitForm() {
       // Format structured parts back to message
       const formatted = formatConventionalCommit(commitParts);
       if (formatted) {
-        setLocalMessage(formatted);
         setCommitMessage(formatted);
       }
     }
@@ -231,13 +224,12 @@ export function CommitForm() {
     setCommitParts(newParts);
     // Update the message in real-time
     const formatted = formatConventionalCommit(newParts);
-    setLocalMessage(formatted);
     setCommitMessage(formatted);
   };
 
   const handleCommit = async () => {
     try {
-      let finalMessage = localMessage;
+      let finalMessage = commitMessage;
 
       // Handle sign-off by appending to message
       if (signOff && !isAmending) {
@@ -262,7 +254,7 @@ export function CommitForm() {
       } else {
         await createCommit(signCommit, bypassHooks);
       }
-      setLocalMessage('');
+      setCommitMessage('');
 
       if (pushAfterCommit) {
         try {
@@ -294,7 +286,6 @@ export function CommitForm() {
           referenceMention.items[referenceMention.selectedIndex]
         );
         if (newValue !== null) {
-          setLocalMessage(newValue);
           setCommitMessage(newValue);
         }
       }
@@ -317,7 +308,6 @@ export function CommitForm() {
     try {
       setIsGeneratingMessage(true);
       const response = await aiApi.generateCommitMessage();
-      setLocalMessage(response.message);
       setCommitMessage(response.message);
 
       // If in structured mode, try to parse the generated message
@@ -340,8 +330,8 @@ export function CommitForm() {
 
   // Parse message when entering amend mode in structured mode
   useEffect(() => {
-    if (isAmending && structuredMode && localMessage) {
-      const parsed = parseConventionalCommit(localMessage);
+    if (isAmending && structuredMode && commitMessage) {
+      const parsed = parseConventionalCommit(commitMessage);
       if (parsed) {
         setCommitParts(parsed);
       } else {
@@ -350,10 +340,10 @@ export function CommitForm() {
         toast.info(t('staging.notConventionalFormat'));
       }
     }
-  }, [isAmending, structuredMode, localMessage, setCommitParts, setStructuredMode, t]);
+  }, [isAmending, structuredMode, commitMessage, setCommitParts, setStructuredMode, t]);
 
   const stagedCount = status?.staged.length ?? 0;
-  const canCommit = stagedCount > 0 && (localMessage.trim() || isAmending);
+  const canCommit = stagedCount > 0 && (commitMessage.trim() || isAmending);
 
   return (
     <div
@@ -516,7 +506,7 @@ export function CommitForm() {
                   ? t('staging.commitForm.amendPlaceholder')
                   : t('staging.commitForm.placeholder')
               }
-              value={localMessage}
+              value={commitMessage}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
               disabled={isCommitting}
@@ -531,7 +521,6 @@ export function CommitForm() {
               onSelect={(item) => {
                 const newValue = referenceMention.handleSelect(item);
                 if (newValue !== null) {
-                  setLocalMessage(newValue);
                   setCommitMessage(newValue);
                 }
               }}

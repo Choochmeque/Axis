@@ -67,8 +67,7 @@ export function RenameBranchDialog({ isOpen, onClose, branch }: RenameBranchDial
 
     try {
       await branchApi.rename(branch.name, newName.trim(), force);
-      await loadBranches();
-      await refreshRepository();
+      await Promise.all([loadBranches(), refreshRepository()]);
       onClose();
       toast.success(t('notifications.success.branchRenamed', { name: newName.trim() }));
     } catch (err) {

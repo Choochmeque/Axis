@@ -215,8 +215,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     e.stopPropagation();
     try {
       await reflogApi.checkout(entry.reflogRef);
-      await loadBranches();
-      await loadCommits();
+      await Promise.all([loadBranches(), loadCommits()]);
       onRefresh?.();
     } catch (err) {
       console.error('Failed to checkout:', err);
@@ -238,8 +237,7 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         force: false,
         track: null,
       });
-      await loadBranches();
-      await loadCommits();
+      await Promise.all([loadBranches(), loadCommits()]);
       setShowBranchDialog(false);
       setBranchName('');
       onRefresh?.();

@@ -50,8 +50,7 @@ export function StashDialog({ isOpen, onClose }: StashDialogProps) {
             includeIgnored: false,
           });
 
-          await loadStashes();
-          await refreshRepository();
+          await Promise.all([loadStashes(), refreshRepository()]);
         }
       );
 

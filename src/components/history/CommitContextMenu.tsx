@@ -71,10 +71,7 @@ export function CommitContextMenu({
     } else {
       try {
         await branchApi.checkout(commit.oid, { create: false, force: false, track: null });
-        await reloadRepositoryInfo();
-        await loadBranches();
-        await loadCommits();
-        await loadStatus();
+        await Promise.all([reloadRepositoryInfo(), loadBranches(), loadCommits(), loadStatus()]);
       } catch (err) {
         toast.error(t('history.contextMenu.checkoutFailed'), getErrorMessage(err));
       }

@@ -79,9 +79,7 @@ export function PullDialog({ isOpen, onClose }: PullDialogProps) {
     try {
       await remoteApi.pull(selectedRemote, currentBranch.name, { rebase, ffOnly });
 
-      await loadBranches();
-      await loadCommits();
-      await refreshRepository();
+      await Promise.all([loadBranches(), loadCommits(), refreshRepository()]);
 
       onClose();
       toast.success(t('remotes.pull.complete'));

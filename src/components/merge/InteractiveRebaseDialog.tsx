@@ -76,9 +76,11 @@ export function InteractiveRebaseDialog() {
         toast.success(t('merge.interactiveRebase.notifications.complete'));
         reset();
         // Refresh repository data
-        await useRepositoryStore.getState().loadCommits();
-        await useStagingStore.getState().loadStatus();
-        await useRepositoryStore.getState().loadBranches();
+        await Promise.all([
+          useRepositoryStore.getState().loadCommits(),
+          useStagingStore.getState().loadStatus(),
+          useRepositoryStore.getState().loadBranches(),
+        ]);
       } else if (result.conflicts.length > 0) {
         toast.warning(t('merge.interactiveRebase.notifications.hasConflicts'));
         reset();

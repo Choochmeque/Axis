@@ -55,8 +55,7 @@ export function DeleteRemoteBranchDialog({
 
     try {
       await branchApi.deleteRemote(remoteName, branchName, force);
-      await loadBranches();
-      await refreshRepository();
+      await Promise.all([loadBranches(), refreshRepository()]);
       onOpenChange(false);
     } catch (err) {
       setError(getErrorMessage(err));

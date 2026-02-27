@@ -235,9 +235,7 @@ export function Sidebar() {
     async (tagName: string) => {
       try {
         await branchApi.checkout(tagName, { create: false, force: false, track: null });
-        await loadBranches();
-        await loadCommits();
-        await loadStatus();
+        await Promise.all([loadBranches(), loadCommits(), loadStatus()]);
       } catch (err) {
         toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }

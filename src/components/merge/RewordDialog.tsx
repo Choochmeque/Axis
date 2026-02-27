@@ -50,9 +50,11 @@ export function RewordDialog() {
         closeRewordDialog();
         setMessage('');
         // Refresh data
-        await useRepositoryStore.getState().loadCommits();
-        await useRepositoryStore.getState().loadStatus();
-        await useStagingStore.getState().loadStatus();
+        await Promise.all([
+          useRepositoryStore.getState().loadCommits(),
+          useRepositoryStore.getState().loadStatus(),
+          useStagingStore.getState().loadStatus(),
+        ]);
         // Check if there are more paused actions
         await loadProgress();
       }

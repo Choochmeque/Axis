@@ -53,8 +53,7 @@ export function DeleteBranchDialog({ isOpen, onClose, branch }: DeleteBranchDial
     try {
       await branchApi.delete(branch.name, { force, deleteRemote });
 
-      await loadBranches();
-      await refreshRepository();
+      await Promise.all([loadBranches(), refreshRepository()]);
       onClose();
       toast.success(t('notifications.success.branchDeleted', { name: branch.name }));
     } catch (err) {

@@ -91,8 +91,7 @@ export function PushDialog({ isOpen, onClose }: PushDialogProps) {
         tags,
       });
 
-      await loadBranches();
-      await refreshRepository();
+      await Promise.all([loadBranches(), refreshRepository()]);
 
       onClose();
       toast.success(t('remotes.push.complete'));

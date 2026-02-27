@@ -34,10 +34,12 @@ export function EditPauseDialog() {
         toast.success(t('merge.editPause.continued'));
         closeEditPauseDialog();
         // Refresh data
-        await useRepositoryStore.getState().loadCommits();
-        await useRepositoryStore.getState().loadStatus();
-        await useStagingStore.getState().loadStatus();
-        await useRepositoryStore.getState().loadBranches();
+        await Promise.all([
+          useRepositoryStore.getState().loadCommits(),
+          useRepositoryStore.getState().loadStatus(),
+          useStagingStore.getState().loadStatus(),
+          useRepositoryStore.getState().loadBranches(),
+        ]);
         // Check if there are more paused actions
         await loadProgress();
       } else if (result.conflicts.length > 0) {
@@ -61,10 +63,12 @@ export function EditPauseDialog() {
       toast.success(t('merge.editPause.aborted'));
       closeEditPauseDialog();
       // Refresh data
-      await useRepositoryStore.getState().loadCommits();
-      await useRepositoryStore.getState().loadStatus();
-      await useStagingStore.getState().loadStatus();
-      await useRepositoryStore.getState().loadBranches();
+      await Promise.all([
+        useRepositoryStore.getState().loadCommits(),
+        useRepositoryStore.getState().loadStatus(),
+        useStagingStore.getState().loadStatus(),
+        useRepositoryStore.getState().loadBranches(),
+      ]);
     } catch (err) {
       toast.error(t('merge.editPause.abortFailed'), getErrorMessage(err));
     } finally {

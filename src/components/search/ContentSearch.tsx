@@ -217,7 +217,7 @@ export function ContentSearch({ onFileSelect }: ContentSearchProps) {
                 <div className="bg-(--bg-primary)">
                   {matches.map((match, index) => (
                     <div
-                      key={index}
+                      key={`${match.lineNumber ?? 0}-${index}`}
                       className="flex items-start py-1 px-3 pl-8 cursor-pointer text-xs font-mono hover:bg-(--bg-hover)"
                       onClick={() => handleMatchClick(match)}
                     >

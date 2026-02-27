@@ -1011,7 +1011,7 @@ function SplitHunkLines({
 
   return (
     <>
-      {pairs.map((pair, index) => {
+      {pairs.map((pair) => {
         const leftLine = pair.left?.line;
         const rightLine = pair.right?.line;
         const leftClasses = getLineClasses(leftLine?.lineType || DiffLineType.Context);
@@ -1042,7 +1042,10 @@ function SplitHunkLines({
         };
 
         return (
-          <div key={index} className={cn('flex', !wordWrap && 'min-w-fit')}>
+          <div
+            key={`${pair.left?.originalIndex ?? 'l'}-${pair.right?.originalIndex ?? 'r'}`}
+            className={cn('flex', !wordWrap && 'min-w-fit')}
+          >
             {/* Left side (deletions) */}
             <div
               className={cn(

@@ -171,7 +171,7 @@ export function StashView({ onRefresh }: StashViewProps) {
         ) : (
           stashes.map((stash) => (
             <div
-              key={stash.index}
+              key={stash.stashRef}
               className={cn(
                 'p-3 mb-2 rounded-md cursor-pointer transition-colors border',
                 selectedIndex === stash.index

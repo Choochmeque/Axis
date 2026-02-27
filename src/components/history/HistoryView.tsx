@@ -354,8 +354,11 @@ export function HistoryView() {
           </div>
           {/* Skeleton rows */}
           <div className="flex-1 overflow-hidden">
-            {[65, 45, 80, 55, 70, 40, 75, 50, 60, 85, 48, 72, 58, 68, 52].map((width, i) => (
-              <div key={i} className="flex items-center h-9 px-2 border-b border-(--border-color)">
+            {[65, 45, 80, 55, 70, 40, 75, 50, 60, 85, 48, 72, 58, 68, 52].map((width) => (
+              <div
+                key={width}
+                className="flex items-center h-9 px-2 border-b border-(--border-color)"
+              >
                 <div className="w-25 px-2">
                   <Skeleton className="h-3 w-16" />
                 </div>

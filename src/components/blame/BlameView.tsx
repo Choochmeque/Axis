@@ -103,7 +103,7 @@ export function BlameView({
 
             return (
               <div
-                key={virtualRow.index}
+                key={line.lineNumber}
                 className={cn(
                   'absolute top-0 left-0 w-full flex items-stretch',
                   'border-b border-(--border-color)/30',

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/App.tsx", "e2e/**/*.ts", "docs/.vitepress/**/*.ts"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/bindings/**"],
+  "ignoreDependencies": [
+    "@tauri-apps/plugin-opener",
+    "@tauri-apps/plugin-process",
+    "@tauri-apps/plugin-updater",
+    "@wdio/globals",
+    "@wdio/local-runner",
+    "@wdio/mocha-framework",
+    "@wdio/spec-reporter",
+    "webdriverio"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "vite": {
+    "entry": ["vite.config.ts"]
+  },
+  "vitest": {
+    "entry": ["src/**/*.test.{ts,tsx}", "vitest.config.ts"]
+  }
+}

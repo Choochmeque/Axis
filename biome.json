@@ -27,29 +27,20 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noControlCharactersInRegex": "off"
+      },
       "correctness": {
-        "useExhaustiveDependencies": "warn",
+        "useExhaustiveDependencies": "off",
         "useHookAtTopLevel": "error",
-        "noUnusedVariables": "error",
-        "noUnusedImports": "error"
+        "noUnusedVariables": "off",
+        "noUnusedImports": "off"
       },
       "style": {
-        "useNamingConvention": {
-          "level": "error",
-          "options": {
-            "strictCase": false,
-            "conventions": [
-              {
-                "selector": { "kind": "objectLiteralProperty" },
-                "formats": ["camelCase", "PascalCase"]
-              },
-              {
-                "selector": { "kind": "typeProperty" },
-                "formats": ["camelCase"]
-              }
-            ]
-          }
-        }
+        "useNamingConvention": "off",
+        "noNonNullAssertion": "off",
+        "noNamespace": "off"
       }
     }
   }

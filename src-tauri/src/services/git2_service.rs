@@ -254,12 +254,12 @@ impl Git2Service {
     }
 
     /// Check for dirty working directory files that would conflict with checkout between two commits.
-    /// Returns list of conflicting file paths, empty if no conflicts.
+    /// Returns (conflicting_files, files_to_update) - conflicting files and files that need updating.
     fn check_dirty_files_for_checkout(
         repo: &Git2Repository,
         from_commit: &git2::Commit,
         to_commit: &git2::Commit,
-    ) -> Result<Vec<String>> {
+    ) -> Result<(Vec<String>, Vec<String>)> {
         let diff =
             repo.diff_tree_to_tree(Some(&from_commit.tree()?), Some(&to_commit.tree()?), None)?;
 
@@ -281,16 +281,24 @@ impl Git2Service {
             None,
         )?;
 
-        // Check for dirty files in working directory
+        // Check for dirty files in working directory (both staged and unstaged)
         let statuses = repo.statuses(None)?;
         let mut conflicting_files: Vec<String> = Vec::new();
         for entry in statuses.iter() {
             let status = entry.status();
+            // Check both working tree (unstaged) and index (staged) changes
             if status.intersects(
+                // Working tree (unstaged) changes
                 git2::Status::WT_MODIFIED
                     | git2::Status::WT_DELETED
                     | git2::Status::WT_RENAMED
-                    | git2::Status::WT_TYPECHANGE,
+                    | git2::Status::WT_TYPECHANGE
+                    // Index (staged) changes
+                    | git2::Status::INDEX_NEW
+                    | git2::Status::INDEX_MODIFIED
+                    | git2::Status::INDEX_DELETED
+                    | git2::Status::INDEX_RENAMED
+                    | git2::Status::INDEX_TYPECHANGE,
             ) {
                 if let Some(path) = entry.path() {
                     if files_to_update.contains(path) {
@@ -300,7 +308,8 @@ impl Git2Service {
             }
         }
 
-        Ok(conflicting_files)
+        let files_to_update_vec: Vec<String> = files_to_update.into_iter().collect();
+        Ok((conflicting_files, files_to_update_vec))
     }
 
     /// Get current branch
@@ -1862,7 +1871,7 @@ impl Git2Service {
 
         if ahead == 0 {
             // Can fast-forward - but first check for dirty files that would be overwritten
-            let conflicting_files =
+            let (conflicting_files, files_to_update) =
                 Self::check_dirty_files_for_checkout(&repo, &local_commit, &fetch_commit)?;
             if !conflicting_files.is_empty() {
                 return Err(AxisError::CheckoutConflict(conflicting_files));
@@ -1879,9 +1888,13 @@ impl Git2Service {
                 &format!("pull: fast-forward {branch_name} from {remote_ref}"),
             )?;
 
-            // Update working directory
+            // Update working directory - only checkout files that changed between commits
+            // This preserves local changes to files not affected by the pull
             let mut checkout_opts = git2::build::CheckoutBuilder::new();
             checkout_opts.force();
+            for path in &files_to_update {
+                checkout_opts.path(path);
+            }
             repo.checkout_head(Some(&mut checkout_opts))?;
 
             return Ok(());
@@ -1907,7 +1920,7 @@ impl Git2Service {
 
         if analysis.is_fast_forward() {
             // Already handled above, but just in case - check for dirty files first
-            let conflicting_files =
+            let (conflicting_files, files_to_update) =
                 Self::check_dirty_files_for_checkout(&repo, &local_commit, &fetch_commit)?;
             if !conflicting_files.is_empty() {
                 return Err(AxisError::CheckoutConflict(conflicting_files));
@@ -1918,19 +1931,26 @@ impl Git2Service {
                 .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
 
             repo.reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
-            repo.checkout_head(Some(&mut git2::build::CheckoutBuilder::new().force()))?;
+
+            // Path-specific checkout to preserve local changes
+            let mut checkout_opts = git2::build::CheckoutBuilder::new();
+            checkout_opts.force();
+            for path in &files_to_update {
+                checkout_opts.path(path);
+            }
+            repo.checkout_head(Some(&mut checkout_opts))?;
             return Ok(());
         }
 
         if analysis.is_normal() {
             // Check for dirty files that would conflict with merge
-            let conflicting_files =
+            let (conflicting_files, _files_to_update) =
                 Self::check_dirty_files_for_checkout(&repo, &local_commit, &fetch_commit)?;
             if !conflicting_files.is_empty() {
                 return Err(AxisError::CheckoutConflict(conflicting_files));
             }
 
-            // Perform merge
+            // Perform merge (git2 merge handles the working directory update)
             repo.merge(&[&annotated], None, None)?;
 
             // Check for conflicts

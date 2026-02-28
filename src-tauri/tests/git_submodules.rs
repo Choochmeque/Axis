@@ -82,7 +82,10 @@ async fn test_submodule_list_empty() {
     let (_tmp, ops) = setup_test_repo();
 
     // Action: list submodules (none exist)
-    let result = ops.submodule_list(&ListSubmoduleOptions::default()).await.expect("should list");
+    let result = ops
+        .submodule_list(&ListSubmoduleOptions::default())
+        .await
+        .expect("should list");
 
     // Verify: empty list
     assert!(result.is_empty(), "Should have no submodules initially");
@@ -104,7 +107,10 @@ async fn test_submodule_list_after_add() {
     );
 
     // Action: list via RepoOperations
-    let result = ops.submodule_list(&ListSubmoduleOptions::default()).await.expect("should list");
+    let result = ops
+        .submodule_list(&ListSubmoduleOptions::default())
+        .await
+        .expect("should list");
 
     // Verify: sees CLI-added submodule
     assert_eq!(result.len(), 1, "Should have one submodule");
@@ -130,7 +136,10 @@ async fn test_submodule_list_multiple() {
     );
 
     // Action
-    let result = ops.submodule_list(&ListSubmoduleOptions::default()).await.expect("should list");
+    let result = ops
+        .submodule_list(&ListSubmoduleOptions::default())
+        .await
+        .expect("should list");
 
     // Verify
     assert_eq!(result.len(), 2, "Should have two submodules");
@@ -339,7 +348,10 @@ async fn test_cli_submodule_read_by_ops() {
     );
 
     // Action: RepoOperations lists
-    let result = ops.submodule_list(&ListSubmoduleOptions::default()).await.expect("should list");
+    let result = ops
+        .submodule_list(&ListSubmoduleOptions::default())
+        .await
+        .expect("should list");
 
     // Verify: sees CLI-added submodule
     assert!(
@@ -364,7 +376,10 @@ async fn test_submodule_has_correct_info() {
     git_add_submodule(tmp.path(), &url, "info/lib");
 
     // Action
-    let result = ops.submodule_list(&ListSubmoduleOptions::default()).await.expect("should list");
+    let result = ops
+        .submodule_list(&ListSubmoduleOptions::default())
+        .await
+        .expect("should list");
 
     // Verify: has correct info
     let sm = &result[0];

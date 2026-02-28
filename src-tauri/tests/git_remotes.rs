@@ -80,7 +80,10 @@ async fn test_cli_remote_read_by_ops() {
     );
 
     // Verify: RepoOperations sees the remote
-    let remotes = ops.list_remotes(ListRemoteOptions::default()).await.expect("should list remotes");
+    let remotes = ops
+        .list_remotes(ListRemoteOptions::default())
+        .await
+        .expect("should list remotes");
     assert!(
         remotes.iter().any(|r| r.name == "origin"),
         "RepoOperations should see CLI remote"
@@ -216,7 +219,10 @@ async fn test_list_remotes_verified_by_cli() {
     let cli_remotes = git_remote_list(tmp.path());
 
     // Action: RepoOperations lists remotes
-    let ops_remotes = ops.list_remotes(ListRemoteOptions::default()).await.expect("should list remotes");
+    let ops_remotes = ops
+        .list_remotes(ListRemoteOptions::default())
+        .await
+        .expect("should list remotes");
 
     // Verify: same count and names
     assert_eq!(ops_remotes.len(), cli_remotes.len());
@@ -354,7 +360,10 @@ async fn test_list_remotes_empty() {
     let (_tmp, ops) = setup_test_repo();
 
     // Action: list remotes on repo with no remotes
-    let remotes = ops.list_remotes(ListRemoteOptions::default()).await.expect("should list remotes");
+    let remotes = ops
+        .list_remotes(ListRemoteOptions::default())
+        .await
+        .expect("should list remotes");
 
     // Verify: empty list
     assert!(remotes.is_empty(), "New repo should have no remotes");

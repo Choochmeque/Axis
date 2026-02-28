@@ -156,10 +156,10 @@ jobs:
           mkdir -p src-tauri/target/release/bundle/dmg
 
           # Create DMG using create-dmg
-          pnpm dlx create-dmg "$APP_PATH" src-tauri/target/release/bundle/dmg || true
+          npx -y create-dmg "$APP_PATH" src-tauri/target/release/bundle/dmg --overwrite
 
-          # Rename to match expected naming convention
-          mv "src-tauri/target/release/bundle/dmg/${APP_NAME} "*.dmg \
+          # Rename to match expected naming convention (create-dmg outputs "App Name X.Y.Z.dmg")
+          mv src-tauri/target/release/bundle/dmg/*.dmg \
              "src-tauri/target/release/bundle/dmg/${APP_NAME}_${{ steps.version.outputs.version }}_aarch64.dmg"
 
       - name: Collect build artifacts (Windows)

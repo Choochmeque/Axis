@@ -41,7 +41,7 @@
             "conventions": [
               {
                 "selector": { "kind": "objectLiteralProperty" },
-                "formats": ["camelCase"]
+                "formats": ["camelCase", "PascalCase"]
               },
               {
                 "selector": { "kind": "typeProperty" },

@@ -134,14 +134,33 @@ jobs:
           cp src-tauri/target/release/bundle/appimage/*.AppImage nightly-dist/
           cp src-tauri/target/release/bundle/appimage/*.AppImage.sig nightly-dist/
 
-      - name: Build Tauri app (macOS)
+      - name: Build Tauri app bundle (macOS)
         if: matrix.os == 'macos-latest'
-        run: pnpm tauri build --bundles app,dmg -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY_NIGHTLY }}\"}}}"
+        run: pnpm tauri build --bundles app -c "{\"version\":\"${{ steps.version.outputs.version }}\",\"bundle\":{\"createUpdaterArtifacts\":true},\"plugins\":{\"updater\":{\"pubkey\":\"${{ secrets.TAURI_SIGNING_PUBLIC_KEY_NIGHTLY }}\"}}}"
         env:
           AXIS_UPDATE_CHANNEL: nightly
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_NIGHTLY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD_NIGHTLY }}
           TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY_NIGHTLY }}
+
+      - name: Clear extended attributes and create DMG (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          APP_PATH=$(find src-tauri/target/release/bundle/macos -name "*.app" -type d | head -1)
+          APP_NAME=$(basename "$APP_PATH" .app)
+
+          # Clear extended attributes
+          xattr -cr "$APP_PATH"
+
+          # Create DMG directory
+          mkdir -p src-tauri/target/release/bundle/dmg
+
+          # Create DMG using create-dmg
+          pnpm dlx create-dmg "$APP_PATH" src-tauri/target/release/bundle/dmg || true
+
+          # Rename to match expected naming convention
+          mv "src-tauri/target/release/bundle/dmg/${APP_NAME} "*.dmg \
+             "src-tauri/target/release/bundle/dmg/${APP_NAME}_${{ steps.version.outputs.version }}_aarch64.dmg"
 
       - name: Collect build artifacts (Windows)
         if: matrix.os == 'windows-latest'

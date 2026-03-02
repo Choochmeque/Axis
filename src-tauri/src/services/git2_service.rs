@@ -32,11 +32,6 @@ fn build_credentials_callback(
     move |url, username_from_url, allowed_types| {
         if allowed_types.contains(git2::CredentialType::SSH_KEY) {
             if let Some(username) = username_from_url {
-                let passphrase_str = ssh_credentials
-                    .as_ref()
-                    .and_then(|c| c.passphrase.as_ref())
-                    .map(ExposeSecret::expose_secret);
-
                 // 1. Try configured SSH key first
                 if let Some(ref key_path) = ssh_credentials.as_ref().map(|c| &c.key_path) {
                     let expanded = shellexpand::tilde(key_path).to_string();
@@ -49,6 +44,12 @@ fn build_credentials_callback(
                         } else {
                             None
                         };
+
+                        let passphrase_str = ssh_credentials
+                            .as_ref()
+                            .and_then(|c| c.passphrase.as_ref())
+                            .map(ExposeSecret::expose_secret);
+
                         if let Ok(cred) =
                             Cred::ssh_key(username, pub_key_opt, private_key, passphrase_str)
                         {

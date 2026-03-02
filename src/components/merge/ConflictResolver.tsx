@@ -1,7 +1,7 @@
 import { AlertTriangle, Check, RefreshCw, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { Textarea } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,19 @@ interface ConflictResolverProps {
 
 export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
   const { t } = useTranslation();
+  const { defaultLayout: mainLayout, onLayoutChanged: onMainLayoutChanged } = useDefaultLayout({
+    groupId: 'conflict-resolver-main',
+    storage: localStorage,
+  });
+  const { defaultLayout: verticalLayout, onLayoutChanged: onVerticalLayoutChanged } =
+    useDefaultLayout({
+      groupId: 'conflict-resolver-vertical',
+      storage: localStorage,
+    });
+  const { defaultLayout: diffLayout, onLayoutChanged: onDiffLayoutChanged } = useDefaultLayout({
+    groupId: 'conflict-resolver-diff',
+    storage: localStorage,
+  });
   const [conflicts, setConflicts] = useState<ConflictedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [conflictContent, setConflictContent] = useState<ConflictContent | null>(null);
@@ -216,13 +229,14 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
         </div>
       )}
 
-      <PanelGroup
-        direction="horizontal"
-        autoSaveId="conflict-resolver-main"
+      <Group
+        orientation="horizontal"
+        defaultLayout={mainLayout}
+        onLayoutChange={onMainLayoutChanged}
         className="flex-1 min-h-0"
       >
         {/* File list panel */}
-        <Panel defaultSize={20} minSize={10} maxSize={40}>
+        <Panel defaultSize="20%" minSize="10%" maxSize="40%">
           <div className="flex flex-col h-full bg-(--bg-secondary) overflow-hidden">
             <div className="py-2 px-3 text-sm font-semibold text-(--text-secondary) uppercase tracking-wide border-b border-(--border-color) shrink-0">
               {conflicts.length === 1
@@ -257,29 +271,31 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
           </div>
         </Panel>
 
-        <PanelResizeHandle className="resize-handle" />
+        <Separator className="resize-handle" />
 
         {/* Content panel */}
-        <Panel defaultSize={80} minSize={50}>
+        <Panel defaultSize="80%" minSize="50%">
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
               {t('merge.conflictResolver.loading')}
             </div>
           ) : conflictContent ? (
-            <PanelGroup
-              direction="vertical"
-              autoSaveId="conflict-resolver-vertical"
+            <Group
+              orientation="vertical"
+              defaultLayout={verticalLayout}
+              onLayoutChange={onVerticalLayoutChanged}
               className="h-full"
             >
               {/* Ours/Theirs diff panel */}
-              <Panel defaultSize={60} minSize={20}>
-                <PanelGroup
-                  direction="horizontal"
-                  autoSaveId="conflict-resolver-diff"
+              <Panel defaultSize="60%" minSize="20%">
+                <Group
+                  orientation="horizontal"
+                  defaultLayout={diffLayout}
+                  onLayoutChange={onDiffLayoutChanged}
                   className="h-full"
                 >
                   {/* Ours panel */}
-                  <Panel defaultSize={50} minSize={20}>
+                  <Panel defaultSize="50%" minSize="20%">
                     <div className="flex flex-col h-full min-w-0 overflow-hidden">
                       <div className="flex items-center justify-between py-2 px-3 bg-(--accent-color)/10 border-b border-(--border-color) text-xs font-semibold text-(--accent-color) shrink-0">
                         <span>{t('merge.conflictResolver.ours')}</span>
@@ -293,10 +309,10 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                     </div>
                   </Panel>
 
-                  <PanelResizeHandle className="resize-handle" />
+                  <Separator className="resize-handle" />
 
                   {/* Theirs panel */}
-                  <Panel defaultSize={50} minSize={20}>
+                  <Panel defaultSize="50%" minSize="20%">
                     <div className="flex flex-col h-full min-w-0 overflow-hidden">
                       <div className="flex items-center justify-between py-2 px-3 bg-(--color-branch-remote)/10 border-b border-(--border-color) text-xs font-semibold text-(--color-branch-remote) shrink-0">
                         <span>{t('merge.conflictResolver.theirs')}</span>
@@ -309,13 +325,13 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                       </pre>
                     </div>
                   </Panel>
-                </PanelGroup>
+                </Group>
               </Panel>
 
-              <PanelResizeHandle className="resize-handle-vertical" />
+              <Separator className="resize-handle-vertical" />
 
               {/* Merged result panel */}
-              <Panel defaultSize={40} minSize={15}>
+              <Panel defaultSize="40%" minSize="15%">
                 <div className="flex flex-col h-full overflow-hidden">
                   <div className="flex items-center justify-between py-2 px-3 bg-success/10 border-b border-(--border-color) text-xs font-semibold text-success shrink-0">
                     <span>{t('merge.conflictResolver.merged')}</span>
@@ -338,14 +354,14 @@ export function ConflictResolver({ onAllResolved }: ConflictResolverProps) {
                   />
                 </div>
               </Panel>
-            </PanelGroup>
+            </Group>
           ) : (
             <div className="flex items-center justify-center h-full text-(--text-secondary) text-sm">
               {t('merge.conflictResolver.selectFile')}
             </div>
           )}
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

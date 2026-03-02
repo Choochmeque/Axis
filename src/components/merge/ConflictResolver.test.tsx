@@ -46,8 +46,12 @@ vi.mock('@/lib/errorUtils', () => ({
 
 vi.mock('react-resizable-panels', () => ({
   Panel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PanelGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PanelResizeHandle: () => <div data-testid="resize-handle" />,
+  Group: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Separator: () => <div data-testid="resize-handle" />,
+  useDefaultLayout: () => ({
+    defaultLayout: undefined,
+    onLayoutChanged: vi.fn(),
+  }),
 }));
 
 describe('ConflictResolver', () => {

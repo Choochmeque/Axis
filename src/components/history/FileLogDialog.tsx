@@ -1,7 +1,7 @@
 import { GitCommit, History, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import {
   Avatar,
   CheckboxField,
@@ -28,6 +28,14 @@ const PAGE_SIZE = 50;
 
 export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps) {
   const { t } = useTranslation();
+  const { defaultLayout: mainLayout, onLayoutChanged: onMainLayoutChanged } = useDefaultLayout({
+    groupId: 'file-log-layout',
+    storage: localStorage,
+  });
+  const { defaultLayout: leftLayout, onLayoutChanged: onLeftLayoutChanged } = useDefaultLayout({
+    groupId: 'file-log-left-layout',
+    storage: localStorage,
+  });
   const [commits, setCommits] = useState<Commit[]>([]);
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [selectedDiff, setSelectedDiff] = useState<FileDiff | null>(null);
@@ -163,11 +171,19 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
           ) : (
             <div className="flex flex-col h-full">
               <div className="flex-1 min-h-0">
-                <PanelGroup direction="horizontal" autoSaveId="file-log-layout">
-                  <Panel defaultSize={40} minSize={25} maxSize={60}>
+                <Group
+                  orientation="horizontal"
+                  defaultLayout={mainLayout}
+                  onLayoutChange={onMainLayoutChanged}
+                >
+                  <Panel defaultSize="40%" minSize="25%" maxSize="60%">
                     <div className="flex flex-col h-full">
-                      <PanelGroup direction="vertical" autoSaveId="file-log-left-layout">
-                        <Panel defaultSize={65} minSize={30}>
+                      <Group
+                        orientation="vertical"
+                        defaultLayout={leftLayout}
+                        onLayoutChange={onLeftLayoutChanged}
+                      >
+                        <Panel defaultSize="65%" minSize="30%">
                           <div className="flex flex-col h-full border-r border-(--border-color)">
                             <div
                               ref={listRef}
@@ -211,8 +227,8 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                             </div>
                           </div>
                         </Panel>
-                        <PanelResizeHandle className="resize-handle-vertical" />
-                        <Panel defaultSize={35} minSize={20}>
+                        <Separator className="resize-handle-vertical" />
+                        <Panel defaultSize="35%" minSize="20%">
                           {selectedCommit ? (
                             <CommitInfo commit={selectedCommit} />
                           ) : (
@@ -221,11 +237,11 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                             </div>
                           )}
                         </Panel>
-                      </PanelGroup>
+                      </Group>
                     </div>
                   </Panel>
-                  <PanelResizeHandle className="resize-handle" />
-                  <Panel minSize={40}>
+                  <Separator className="resize-handle" />
+                  <Panel minSize="40%">
                     <DiffView
                       diff={selectedDiff}
                       isLoading={isLoadingDiff}
@@ -233,7 +249,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                       parentCommitOid={selectedCommit?.parentOids[0]}
                     />
                   </Panel>
-                </PanelGroup>
+                </Group>
               </div>
               <div className="shrink-0 p-3 border-t border-(--border-color) bg-(--bg-secondary)">
                 <CheckboxField

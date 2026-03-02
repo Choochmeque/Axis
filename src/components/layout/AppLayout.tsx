@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { useFileWatcher, useGitProgress, useHookProgress } from '../../hooks';
 import { useDialogStore } from '../../store/dialogStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
@@ -111,22 +111,31 @@ export function AppLayout({ children }: AppLayoutProps) {
   } = useDialogStore();
   const { loadStatus, loadBranches, repository, remotes } = useRepositoryStore();
 
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'main-layout',
+    storage: localStorage,
+  });
+
   return (
     <>
       <div className="flex flex-col h-full bg-(--bg-primary) text-(--text-primary)">
         <Toolbar />
         <div className="flex-1 flex overflow-hidden">
-          <PanelGroup direction="horizontal" autoSaveId="main-layout">
-            <Panel defaultSize={20} minSize={15} maxSize={40}>
+          <Group
+            orientation="horizontal"
+            defaultLayout={defaultLayout}
+            onLayoutChange={onLayoutChanged}
+          >
+            <Panel minSize="15%" maxSize="40%">
               <Sidebar />
             </Panel>
-            <PanelResizeHandle className="resize-handle" />
-            <Panel minSize={50}>
+            <Separator className="resize-handle" />
+            <Panel minSize="50%">
               <main className="flex-1 h-full flex flex-col overflow-hidden bg-(--bg-secondary)">
                 {children}
               </main>
             </Panel>
-          </PanelGroup>
+          </Group>
         </div>
         <StatusBar />
       </div>

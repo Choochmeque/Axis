@@ -1,7 +1,7 @@
 import { Plus, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 
 import { Button } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
@@ -13,6 +13,10 @@ import { PullRequestList } from './PullRequestList';
 
 export function PullRequestsView() {
   const { t } = useTranslation();
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'pr-view-layout',
+    storage: localStorage,
+  });
   const {
     pullRequests,
     selectedPr,
@@ -139,8 +143,13 @@ export function PullRequestsView() {
 
       {/* Content */}
       {selectedPr ? (
-        <PanelGroup direction="horizontal" autoSaveId="pr-view-layout" className="flex-1">
-          <Panel defaultSize={40} minSize={25} maxSize={60}>
+        <Group
+          orientation="horizontal"
+          defaultLayout={defaultLayout}
+          onLayoutChange={onLayoutChanged}
+          className="flex-1"
+        >
+          <Panel defaultSize="40%" minSize="25%" maxSize="60%">
             <PullRequestList
               pullRequests={pullRequests}
               selectedPr={selectedPr}
@@ -152,12 +161,12 @@ export function PullRequestsView() {
             />
           </Panel>
 
-          <PanelResizeHandle className="resize-handle" />
+          <Separator className="resize-handle" />
 
-          <Panel minSize={40}>
+          <Panel minSize="40%">
             <PullRequestDetail prDetail={selectedPr} onClose={clearSelectedPr} />
           </Panel>
-        </PanelGroup>
+        </Group>
       ) : (
         <div className="flex-1 overflow-hidden">
           <PullRequestList

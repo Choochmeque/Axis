@@ -3,7 +3,7 @@
 import { GitBranch, GitCommit, Loader2, Tag, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import {
   Avatar,
   Button,
@@ -72,6 +72,10 @@ function GitRef({ name, type, color, isActive, remotes }: GitRefProps) {
 
 export function HistoryView() {
   const { t } = useTranslation();
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'history-layout',
+    storage: localStorage,
+  });
   const {
     commits,
     isLoadingCommits,
@@ -470,15 +474,15 @@ export function HistoryView() {
 
   return (
     <div className={viewClass} {...testId('e2e-history-view')}>
-      <PanelGroup direction="vertical" autoSaveId="history-layout">
-        <Panel defaultSize={50} minSize={20}>
+      <Group orientation="vertical" defaultLayout={defaultLayout} onLayoutChange={onLayoutChanged}>
+        <Panel defaultSize="50%" minSize="20%">
           {commitListContent}
         </Panel>
-        <PanelResizeHandle className="resize-handle-vertical" />
-        <Panel defaultSize={50} minSize={30}>
+        <Separator className="resize-handle-vertical" />
+        <Panel defaultSize="50%" minSize="30%">
           <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

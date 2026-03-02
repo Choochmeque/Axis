@@ -1,4 +1,4 @@
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { StatusType } from '@/types';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
@@ -8,6 +8,16 @@ import { CommitForm } from '../staging/CommitForm';
 import { StashDiffView } from '../stash';
 
 export function WorkspaceView() {
+  const { defaultLayout: verticalLayout, onLayoutChanged: onVerticalLayoutChanged } =
+    useDefaultLayout({
+      groupId: 'workspace-vertical-layout',
+      storage: localStorage,
+    });
+  const { defaultLayout: horizontalLayout, onLayoutChanged: onHorizontalLayoutChanged } =
+    useDefaultLayout({
+      groupId: 'workspace-layout',
+      storage: localStorage,
+    });
   const {
     selectedFile,
     selectedFileDiff,
@@ -45,14 +55,22 @@ export function WorkspaceView() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PanelGroup direction="vertical" autoSaveId="workspace-vertical-layout">
-        <Panel defaultSize={80} minSize={50}>
-          <PanelGroup direction="horizontal" autoSaveId="workspace-layout">
-            <Panel defaultSize={35} minSize={25} maxSize={50}>
+      <Group
+        orientation="vertical"
+        defaultLayout={verticalLayout}
+        onLayoutChange={onVerticalLayoutChanged}
+      >
+        <Panel defaultSize="80%" minSize="50%">
+          <Group
+            orientation="horizontal"
+            defaultLayout={horizontalLayout}
+            onLayoutChange={onHorizontalLayoutChanged}
+          >
+            <Panel defaultSize="35%" minSize="25%" maxSize="50%">
               <StagingView />
             </Panel>
-            <PanelResizeHandle className="resize-handle" />
-            <Panel minSize={50}>
+            <Separator className="resize-handle" />
+            <Panel minSize="50%">
               <DiffView
                 diff={selectedFileDiff}
                 isLoading={isLoadingDiff}
@@ -63,13 +81,13 @@ export function WorkspaceView() {
                 onDiscardHunk={canDiscard ? discardHunk : undefined}
               />
             </Panel>
-          </PanelGroup>
+          </Group>
         </Panel>
-        <PanelResizeHandle className="resize-handle-vertical" />
-        <Panel defaultSize={20} minSize={10} maxSize={50}>
+        <Separator className="resize-handle-vertical" />
+        <Panel defaultSize="20%" minSize="10%" maxSize="50%">
           <CommitForm />
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

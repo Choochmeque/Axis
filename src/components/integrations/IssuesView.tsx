@@ -1,7 +1,7 @@
 import { Plus, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 
 import { Button } from '@/components/ui';
 import { useIntegrationStore } from '@/store/integrationStore';
@@ -13,6 +13,10 @@ import { IssueList } from './IssueList';
 
 export function IssuesView() {
   const { t } = useTranslation();
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'issues-view-layout',
+    storage: localStorage,
+  });
   const {
     issues,
     selectedIssue,
@@ -139,8 +143,13 @@ export function IssuesView() {
 
       {/* Content */}
       {selectedIssue ? (
-        <PanelGroup direction="horizontal" autoSaveId="issues-view-layout" className="flex-1">
-          <Panel defaultSize={40} minSize={25} maxSize={60}>
+        <Group
+          orientation="horizontal"
+          defaultLayout={defaultLayout}
+          onLayoutChange={onLayoutChanged}
+          className="flex-1"
+        >
+          <Panel defaultSize="40%" minSize="25%" maxSize="60%">
             <IssueList
               issues={issues}
               selectedIssue={selectedIssue}
@@ -152,12 +161,12 @@ export function IssuesView() {
             />
           </Panel>
 
-          <PanelResizeHandle className="resize-handle" />
+          <Separator className="resize-handle" />
 
-          <Panel minSize={40}>
+          <Panel minSize="40%">
             <IssueDetail issueDetail={selectedIssue} onClose={clearSelectedIssue} />
           </Panel>
-        </PanelGroup>
+        </Group>
       ) : (
         <div className="flex-1 overflow-hidden">
           <IssueList

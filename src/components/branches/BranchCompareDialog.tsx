@@ -1,7 +1,7 @@
 import { ArrowRight, Diff, FileCode, GitBranch, GitCommit } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { DiffView } from '@/components/diff';
 import { CommitFileList } from '@/components/history/CommitFileList';
 import { Alert, Button, Dialog, DialogBody, DialogContent, DialogTitle } from '@/components/ui';
@@ -24,6 +24,14 @@ export function BranchCompareDialog({
   compareBranch,
 }: BranchCompareDialogProps) {
   const { t } = useTranslation();
+  const { defaultLayout: mainLayout, onLayoutChanged: onMainLayoutChanged } = useDefaultLayout({
+    groupId: 'branch-compare-layout',
+    storage: localStorage,
+  });
+  const { defaultLayout: commitLayout, onLayoutChanged: onCommitLayoutChanged } = useDefaultLayout({
+    groupId: 'branch-compare-commit-layout',
+    storage: localStorage,
+  });
   const {
     compareResult,
     isLoading,
@@ -144,8 +152,12 @@ export function BranchCompareDialog({
           {/* Main content panels */}
           {!isLoading && compareResult && (
             <div className="flex-1 min-h-0 border border-(--border-color) rounded-md overflow-hidden">
-              <PanelGroup direction="horizontal" autoSaveId="branch-compare-layout">
-                <Panel defaultSize={35} minSize={20} maxSize={50}>
+              <Group
+                orientation="horizontal"
+                defaultLayout={mainLayout}
+                onLayoutChange={onMainLayoutChanged}
+              >
+                <Panel defaultSize="35%" minSize="20%" maxSize="50%">
                   {activeTab === 'commits' ? (
                     <CommitCompareList
                       aheadCommits={compareResult.aheadCommits}
@@ -163,15 +175,19 @@ export function BranchCompareDialog({
                     />
                   )}
                 </Panel>
-                <PanelResizeHandle className="resize-handle" />
-                <Panel minSize={50}>
+                <Separator className="resize-handle" />
+                <Panel minSize="50%">
                   {activeTab === 'commits' && !selectedCommit ? (
                     <div className="flex flex-col h-full items-center justify-center text-(--text-secondary) text-sm">
                       {t('branches.compare.selectCommitPrompt')}
                     </div>
                   ) : activeTab === 'commits' && selectedCommit ? (
-                    <PanelGroup direction="vertical" autoSaveId="branch-compare-commit-layout">
-                      <Panel defaultSize={30} minSize={15} maxSize={50}>
+                    <Group
+                      orientation="vertical"
+                      defaultLayout={commitLayout}
+                      onLayoutChange={onCommitLayoutChanged}
+                    >
+                      <Panel defaultSize="30%" minSize="15%" maxSize="50%">
                         <CommitFileList
                           files={selectedCommitFiles}
                           selectedFile={selectedFile}
@@ -180,8 +196,8 @@ export function BranchCompareDialog({
                           commitOid={selectedCommit?.oid}
                         />
                       </Panel>
-                      <PanelResizeHandle className="resize-handle-vertical" />
-                      <Panel minSize={50}>
+                      <Separator className="resize-handle-vertical" />
+                      <Panel minSize="50%">
                         <DiffView
                           diff={selectedFile}
                           isLoading={isLoadingFiles}
@@ -189,7 +205,7 @@ export function BranchCompareDialog({
                           parentCommitOid={parentOid}
                         />
                       </Panel>
-                    </PanelGroup>
+                    </Group>
                   ) : (
                     <DiffView
                       diff={selectedFile}
@@ -199,7 +215,7 @@ export function BranchCompareDialog({
                     />
                   )}
                 </Panel>
-              </PanelGroup>
+              </Group>
             </div>
           )}
         </DialogBody>

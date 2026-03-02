@@ -33,8 +33,12 @@ vi.mock('react-resizable-panels', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Panel: ({ children }: any) => <div data-testid="panel">{children}</div>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  PanelGroup: ({ children }: any) => <div data-testid="panel-group">{children}</div>,
-  PanelResizeHandle: () => <div data-testid="resize-handle" />,
+  Group: ({ children }: any) => <div data-testid="panel-group">{children}</div>,
+  Separator: () => <div data-testid="resize-handle" />,
+  useDefaultLayout: () => ({
+    defaultLayout: undefined,
+    onLayoutChanged: vi.fn(),
+  }),
 }));
 
 // Mock child components

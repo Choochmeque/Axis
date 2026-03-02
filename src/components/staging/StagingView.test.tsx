@@ -26,10 +26,14 @@ vi.mock('@/lib/utils', () => ({
 
 vi.mock('react-resizable-panels', () => ({
   Panel: ({ children }: { children: React.ReactNode }) => <div data-testid="panel">{children}</div>,
-  PanelGroup: ({ children }: { children: React.ReactNode }) => (
+  Group: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="panel-group">{children}</div>
   ),
-  PanelResizeHandle: () => <div data-testid="resize-handle" />,
+  Separator: () => <div data-testid="resize-handle" />,
+  useDefaultLayout: () => ({
+    defaultLayout: undefined,
+    onLayoutChanged: vi.fn(),
+  }),
 }));
 
 const mockLoadStatus = vi.fn();

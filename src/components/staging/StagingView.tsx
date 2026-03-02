@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { Alert, Button, Checkbox } from '@/components/ui';
 import { cn, naturalCompare, testId } from '@/lib/utils';
 import { useDialogStore } from '@/store/dialogStore';
@@ -100,6 +100,10 @@ const sectionTitleClass = 'text-xs font-semibold uppercase text-(--text-secondar
 
 export function StagingView() {
   const { t } = useTranslation();
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'staging-layout',
+    storage: localStorage,
+  });
   const {
     status,
     isLoadingStatus,
@@ -279,9 +283,14 @@ export function StagingView() {
 
   // Render split view staging
   const renderSplitView = () => (
-    <PanelGroup direction="vertical" autoSaveId="staging-layout" className="flex-1 min-h-0">
+    <Group
+      orientation="vertical"
+      defaultLayout={defaultLayout}
+      onLayoutChange={onLayoutChanged}
+      className="flex-1 min-h-0"
+    >
       {/* Staged changes section */}
-      <Panel defaultSize={hasConflicts ? 33 : 50} minSize={15}>
+      <Panel defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
@@ -316,12 +325,12 @@ export function StagingView() {
         </div>
       </Panel>
 
-      <PanelResizeHandle className="resize-handle-vertical" />
+      <Separator className="resize-handle-vertical" />
 
       {/* Conflicts section - shown between staged and unstaged when there are conflicts */}
       {hasConflicts && (
         <>
-          <Panel defaultSize={34} minSize={15}>
+          <Panel defaultSize="34%" minSize="15%">
             <div className="flex flex-col h-full min-h-0 overflow-hidden">
               <div className={cn(sectionHeaderClass, 'bg-error/10')}>
                 <div className="flex items-center gap-2">
@@ -343,12 +352,12 @@ export function StagingView() {
               />
             </div>
           </Panel>
-          <PanelResizeHandle className="resize-handle-vertical" />
+          <Separator className="resize-handle-vertical" />
         </>
       )}
 
       {/* Unstaged changes section */}
-      <Panel defaultSize={hasConflicts ? 33 : 50} minSize={15}>
+      <Panel defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
@@ -384,7 +393,7 @@ export function StagingView() {
           />
         </div>
       </Panel>
-    </PanelGroup>
+    </Group>
   );
 
   return (

@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import type { Commit, GraphCommit } from '../../types';
 import { DiffView } from '../diff';
@@ -15,6 +15,14 @@ interface CommitDetailPanelProps {
 
 export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitDetailPanelProps) {
   const { t } = useTranslation();
+  const { defaultLayout: mainLayout, onLayoutChanged: onMainLayoutChanged } = useDefaultLayout({
+    groupId: 'commit-detail-layout',
+    storage: localStorage,
+  });
+  const { defaultLayout: leftLayout, onLayoutChanged: onLeftLayoutChanged } = useDefaultLayout({
+    groupId: 'commit-detail-left-layout',
+    storage: localStorage,
+  });
   const { selectedCommitFiles, selectedCommitFile, isLoadingCommitFiles, selectCommitFile } =
     useRepositoryStore();
 
@@ -36,10 +44,18 @@ export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitD
         </button>
       </div>
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden *:data-panel-group:flex-1 *:data-panel-group:min-h-0">
-        <PanelGroup direction="horizontal" autoSaveId="commit-detail-layout">
-          <Panel defaultSize={35} minSize={20} maxSize={50}>
-            <PanelGroup direction="vertical" autoSaveId="commit-detail-left-layout">
-              <Panel defaultSize={60} minSize={30}>
+        <Group
+          orientation="horizontal"
+          defaultLayout={mainLayout}
+          onLayoutChange={onMainLayoutChanged}
+        >
+          <Panel defaultSize="35%" minSize="20%" maxSize="50%">
+            <Group
+              orientation="vertical"
+              defaultLayout={leftLayout}
+              onLayoutChange={onLeftLayoutChanged}
+            >
+              <Panel defaultSize="60%" minSize="30%">
                 <CommitFileList
                   files={selectedCommitFiles}
                   selectedFile={selectedCommitFile}
@@ -48,14 +64,14 @@ export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitD
                   commitOid={commit.oid}
                 />
               </Panel>
-              <PanelResizeHandle className="resize-handle-vertical" />
-              <Panel defaultSize={40} minSize={20}>
+              <Separator className="resize-handle-vertical" />
+              <Panel defaultSize="40%" minSize="20%">
                 <CommitInfo commit={commit} onScrollToCommit={onScrollToCommit} />
               </Panel>
-            </PanelGroup>
+            </Group>
           </Panel>
-          <PanelResizeHandle className="resize-handle" />
-          <Panel minSize={50}>
+          <Separator className="resize-handle" />
+          <Panel minSize="50%">
             <DiffView
               diff={selectedCommitFile}
               isLoading={isLoadingCommitFiles}
@@ -63,7 +79,7 @@ export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitD
               parentCommitOid={parentCommitOid}
             />
           </Panel>
-        </PanelGroup>
+        </Group>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { CommitInfo } from '@/components/history/CommitInfo';
 import { Dialog, DialogBody, DialogContent, DialogTitle } from '@/components/ui';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -21,6 +21,10 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
   const { t } = useTranslation();
   const { result, isLoading, error, hoveredCommitOid, loadBlame, setHoveredCommit, clear } =
     useBlameStore();
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    groupId: 'blame-layout',
+    storage: localStorage,
+  });
 
   const [hoveredCommit, setHoveredCommitData] = useState<Commit | null>(null);
   const [isLoadingCommit, setIsLoadingCommit] = useState(false);
@@ -88,8 +92,12 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
         <DialogTitle icon={FileText}>{t('blame.title', { path: fileName })}</DialogTitle>
 
         <DialogBody className="flex-1 min-h-0 p-0">
-          <PanelGroup direction="horizontal" autoSaveId="blame-layout">
-            <Panel defaultSize={70} minSize={50}>
+          <Group
+            orientation="horizontal"
+            defaultLayout={defaultLayout}
+            onLayoutChange={onLayoutChanged}
+          >
+            <Panel defaultSize="70%" minSize="50%">
               <BlameView
                 lines={result?.lines ?? []}
                 isLoading={isLoading}
@@ -99,8 +107,8 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
                 onClickCommit={handleCommitClick}
               />
             </Panel>
-            <PanelResizeHandle className="resize-handle" />
-            <Panel defaultSize={30} minSize={20}>
+            <Separator className="resize-handle" />
+            <Panel defaultSize="30%" minSize="20%">
               {displayedCommit ? (
                 <CommitInfo commit={displayedCommit} />
               ) : (
@@ -113,7 +121,7 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
                 </div>
               )}
             </Panel>
-          </PanelGroup>
+          </Group>
         </DialogBody>
       </DialogContent>
     </Dialog>

@@ -69,7 +69,7 @@ async-trait = "0.1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 # File watching
-notify = "6"
+notify = "8"
 
 # GitHub/GitLab integrations
 octocrab = "0.49"

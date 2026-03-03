@@ -32,6 +32,9 @@ pub enum AxisError {
     #[error("Branch not fully merged: {0}")]
     BranchNotMerged(String),
 
+    #[error("Branch is checked out in worktree: {0}")]
+    BranchInWorktree(String),
+
     #[error("File not found: {0}")]
     FileNotFound(String),
 
@@ -171,6 +174,15 @@ mod tests {
     fn test_branch_not_merged_display() {
         let err = AxisError::BranchNotMerged("feature".to_string());
         assert_eq!(err.to_string(), "Branch not fully merged: feature");
+    }
+
+    #[test]
+    fn test_branch_in_worktree_display() {
+        let err = AxisError::BranchInWorktree("/path/to/worktree".to_string());
+        assert_eq!(
+            err.to_string(),
+            "Branch is checked out in worktree: /path/to/worktree"
+        );
     }
 
     #[test]

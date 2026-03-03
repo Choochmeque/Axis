@@ -13,6 +13,7 @@ const ERROR_KEYS: Record<AxisError['type'], string> = {
   NoRepositoryOpen: 'lib.errors.noRepositoryOpen',
   BranchNotFound: 'lib.errors.branchNotFound',
   BranchNotMerged: 'lib.errors.branchNotMerged',
+  BranchInWorktree: 'lib.errors.branchInWorktree',
   FileNotFound: 'lib.errors.fileNotFound',
   CannotFastForward: 'lib.errors.cannotFastForward',
   RebaseRequired: 'lib.errors.rebaseRequired',
@@ -53,6 +54,8 @@ function getInterpolationParams(err: AxisError): Record<string, string> | undefi
     case 'BranchNotFound':
     case 'BranchNotMerged':
       return { branch: err.data as string };
+    case 'BranchInWorktree':
+      return { path: err.data as string };
     case 'ApiKeyNotConfigured':
     case 'IntegrationNotConnected':
       return { provider: err.data as string };

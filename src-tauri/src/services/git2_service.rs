@@ -255,7 +255,7 @@ impl Git2Service {
     }
 
     /// Check for dirty working directory files that would conflict with checkout between two commits.
-    /// Returns (conflicting_files, files_to_update) - conflicting files and files that need updating.
+    /// Returns (`conflicting_files`, `files_to_update`) - conflicting files and files that need updating.
     fn check_dirty_files_for_checkout(
         repo: &Git2Repository,
         from_commit: &git2::Commit,
@@ -1131,6 +1131,27 @@ impl Git2Service {
         } else {
             None
         };
+
+        // Check if branch is checked out in any worktree
+        if let Ok(worktree_names) = repo.worktrees() {
+            let branch_ref = format!("refs/heads/{name}");
+            for wt_name in worktree_names.iter().flatten() {
+                if let Ok(wt) = repo.find_worktree(wt_name) {
+                    if let Some(wt_path) = wt.path().to_str() {
+                        // Open the worktree's gitdir to check its HEAD
+                        let wt_repo_path = repo.path().join("worktrees").join(wt_name);
+                        let head_path = wt_repo_path.join("HEAD");
+                        if let Ok(head_content) = std::fs::read_to_string(&head_path) {
+                            let head_ref = head_content.trim();
+                            // Check if HEAD points to this branch (format: "ref: refs/heads/branch-name")
+                            if head_ref == format!("ref: {branch_ref}") {
+                                return Err(AxisError::BranchInWorktree(wt_path.to_string()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if !options.force {
             // Check if branch is fully merged

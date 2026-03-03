@@ -2222,6 +2222,7 @@
       "noRepositoryOpen": "No repository is open",
       "branchNotFound": "Branch not found: {{branch}}",
       "branchNotMerged": "Branch not fully merged: {{branch}}",
+      "branchInWorktree": "Branch is checked out in worktree at {{path}}. Remove or switch the worktree first.",
       "fileNotFound": "File not found: {{path}}",
       "cannotFastForward": "Cannot fast-forward, merge or rebase required",
       "rebaseRequired": "Rebase required",

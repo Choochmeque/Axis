@@ -1,15 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
+import { formatBytes } from '@/lib/utils';
 import type { OperationProgress } from '@/store/operationStore';
 import { ProgressStage } from '@/types';
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
-}
 
 function formatProgressText(progress: OperationProgress, t: (key: string) => string): string {
   const bytes = formatBytes(progress.receivedBytes);

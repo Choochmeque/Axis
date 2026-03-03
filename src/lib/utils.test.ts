@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cn, naturalCompare, normalizePath } from './utils';
+import { cn, formatBytes, naturalCompare, normalizePath } from './utils';
 
 describe('utils', () => {
   describe('cn', () => {
@@ -82,6 +82,34 @@ describe('utils', () => {
 
     it('should handle empty string', () => {
       expect(normalizePath('')).toBe('');
+    });
+  });
+
+  describe('formatBytes', () => {
+    it('should format 0 bytes', () => {
+      expect(formatBytes(0)).toBe('0 B');
+    });
+
+    it('should format bytes', () => {
+      expect(formatBytes(500)).toBe('500 B');
+      expect(formatBytes(1023)).toBe('1023 B');
+    });
+
+    it('should format kilobytes', () => {
+      expect(formatBytes(1024)).toBe('1 KB');
+      expect(formatBytes(2048)).toBe('2 KB');
+      expect(formatBytes(1536)).toBe('1.5 KB');
+    });
+
+    it('should format megabytes', () => {
+      expect(formatBytes(1048576)).toBe('1 MB');
+      expect(formatBytes(2456789)).toBe('2.34 MB');
+      expect(formatBytes(104857600)).toBe('100 MB');
+    });
+
+    it('should format gigabytes', () => {
+      expect(formatBytes(1073741824)).toBe('1 GB');
+      expect(formatBytes(2147483648)).toBe('2 GB');
     });
   });
 });

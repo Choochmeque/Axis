@@ -1,20 +1,34 @@
 import { create } from 'zustand';
 import i18n from '@/i18n';
 
-import { settingsApi } from '@/services/api';
+import { aiApi, settingsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
 import type { AppSettings, Theme as ThemeType } from '@/types';
 import { AiProvider, SigningFormat, Theme } from '@/types';
+
+interface AiModelsCache {
+  models: string[];
+  loading: boolean;
+  error: string | null;
+}
 
 interface SettingsState {
   settings: AppSettings | null;
   isLoading: boolean;
   error: string | null;
 
+  // AI models cache per provider
+  aiModelsCache: Record<AiProvider, AiModelsCache>;
+
   loadSettings: () => Promise<void>;
   updateSettings: (settings: AppSettings) => Promise<void>;
   setTheme: (theme: ThemeType) => void;
   getEffectiveTheme: () => 'light' | 'dark';
+
+  // AI models methods
+  loadAiModels: (provider: AiProvider, force?: boolean) => Promise<void>;
+  getAiModels: (provider: AiProvider) => AiModelsCache;
+  clearAiModelsCache: () => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -48,10 +62,23 @@ const DEFAULT_SETTINGS: AppSettings = {
   largeBinaryThreshold: 10485760,
 };
 
+const createEmptyModelsCache = (): AiModelsCache => ({
+  models: [],
+  loading: false,
+  error: null,
+});
+
+const INITIAL_AI_MODELS_CACHE: Record<AiProvider, AiModelsCache> = {
+  [AiProvider.OpenAi]: createEmptyModelsCache(),
+  [AiProvider.Anthropic]: createEmptyModelsCache(),
+  [AiProvider.Ollama]: createEmptyModelsCache(),
+};
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
   isLoading: false,
   error: null,
+  aiModelsCache: { ...INITIAL_AI_MODELS_CACHE },
 
   loadSettings: async () => {
     set({ isLoading: true, error: null });
@@ -97,6 +124,59 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return theme === Theme.Dark ? 'dark' : 'light';
+  },
+
+  loadAiModels: async (provider: AiProvider, force = false) => {
+    const { aiModelsCache } = get();
+    const cache = aiModelsCache[provider];
+
+    // Skip if already loaded and not forcing refresh
+    if (!force && cache.models.length > 0) {
+      return;
+    }
+
+    // Skip if already loading
+    if (cache.loading) {
+      return;
+    }
+
+    // Set loading state
+    set({
+      aiModelsCache: {
+        ...aiModelsCache,
+        [provider]: { ...cache, loading: true, error: null },
+      },
+    });
+
+    try {
+      const models = await aiApi.listModels(provider);
+      set({
+        aiModelsCache: {
+          ...get().aiModelsCache,
+          [provider]: { models, loading: false, error: null },
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to load ${provider} models:`, error);
+      set({
+        aiModelsCache: {
+          ...get().aiModelsCache,
+          [provider]: {
+            models: [],
+            loading: false,
+            error: error instanceof Error ? error.message : 'Failed to load models',
+          },
+        },
+      });
+    }
+  },
+
+  getAiModels: (provider: AiProvider) => {
+    return get().aiModelsCache[provider];
+  },
+
+  clearAiModelsCache: () => {
+    set({ aiModelsCache: { ...INITIAL_AI_MODELS_CACHE } });
   },
 }));
 

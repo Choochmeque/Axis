@@ -551,7 +551,7 @@ export const aiApi = {
 
   testConnection: (provider: AiProvider) => commands.testAiConnection(provider),
 
-  listOllamaModels: (ollamaUrl?: string) => commands.listOllamaModels(ollamaUrl ?? null),
+  listModels: (provider: AiProvider) => commands.listAiModels(provider),
 };
 
 export const lfsApi = {

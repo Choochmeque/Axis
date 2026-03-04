@@ -106,12 +106,23 @@ pub async fn test_ai_connection(state: State<'_, AppState>, provider: AiProvider
 
 #[tauri::command]
 #[specta::specta]
-pub async fn list_ollama_models(
+pub async fn list_ai_models(
     state: State<'_, AppState>,
-    ollama_url: Option<String>,
+    provider: AiProvider,
 ) -> Result<Vec<String>> {
-    let url = ollama_url.or_else(|| state.get_settings().ok().and_then(|s| s.ai_ollama_url));
-    OllamaProvider::list_models(url.as_deref()).await
+    let settings = state.get_settings()?;
+    let ai_provider = create_provider(&provider);
+    let secret_key = get_secret_key(&provider);
+
+    let api_key = if ai_provider.requires_api_key() {
+        state.get_secret(&secret_key)?
+    } else {
+        None
+    };
+
+    ai_provider
+        .list_models(api_key.as_deref(), settings.ai_ollama_url.as_deref())
+        .await
 }
 
 #[tauri::command]

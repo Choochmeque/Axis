@@ -91,7 +91,7 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
             <SelectPrimitive.ScrollUpButton className="flex items-center justify-center py-1 text-(--text-tertiary)">
               <ChevronUp size={14} />
             </SelectPrimitive.ScrollUpButton>
-            <SelectPrimitive.Viewport>{children}</SelectPrimitive.Viewport>
+            <SelectPrimitive.Viewport className="max-h-75">{children}</SelectPrimitive.Viewport>
             <SelectPrimitive.ScrollDownButton className="flex items-center justify-center py-1 text-(--text-tertiary)">
               <ChevronDown size={14} />
             </SelectPrimitive.ScrollDownButton>

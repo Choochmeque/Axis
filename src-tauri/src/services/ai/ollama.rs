@@ -53,7 +53,7 @@ struct OllamaModelsResponse {
 }
 
 impl OllamaProvider {
-    pub async fn list_models(base_url: Option<&str>) -> Result<Vec<String>> {
+    async fn fetch_models(base_url: Option<&str>) -> Result<Vec<String>> {
         let base_url = base_url.unwrap_or(DEFAULT_OLLAMA_URL);
         let url = format!("{base_url}/api/tags");
 
@@ -218,6 +218,15 @@ impl AiProviderTrait for OllamaProvider {
 
     fn requires_api_key(&self) -> bool {
         false
+    }
+
+    async fn list_models(
+        &self,
+        _api_key: Option<&str>,
+        base_url: Option<&str>,
+    ) -> Result<Vec<String>> {
+        let url = base_url.unwrap_or(&self.base_url);
+        Self::fetch_models(Some(url)).await
     }
 }
 

@@ -45,7 +45,7 @@ pub struct GitOperationProgressEvent {
 }
 
 impl GitOperationProgressEvent {
-    pub fn new(
+    pub const fn new(
         operation_id: String,
         operation_type: GitOperationType,
         stage: ProgressStage,

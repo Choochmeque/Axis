@@ -33,7 +33,7 @@ vi.mock('@/services/api', () => ({
   },
   aiApi: {
     hasApiKey: vi.fn().mockResolvedValue(false),
-    listOllamaModels: vi.fn().mockResolvedValue([]),
+    listModels: vi.fn().mockResolvedValue([]),
   },
 }));
 

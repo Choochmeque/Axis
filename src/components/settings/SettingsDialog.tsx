@@ -870,14 +870,20 @@ function DiffSettings({ settings, updateSetting }: SettingsPanelProps) {
 
 function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
   const { t } = useTranslation();
+  const loadAiModels = useSettingsStore((state) => state.loadAiModels);
+  const getAiModels = useSettingsStore((state) => state.getAiModels);
+
   const [apiKey, setApiKey] = useState('');
   const [hasKey, setHasKey] = useState(false);
   const [isLoadingKey, setIsLoadingKey] = useState(false);
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+  // Get cached models from store
+  const aiModelsCache = getAiModels(settings.aiProvider);
+  const availableModels = aiModelsCache.models;
+  const isLoadingModels = aiModelsCache.loading;
 
   useEffect(() => {
     const checkApiKey = async () => {
@@ -899,34 +905,16 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
   }, [settings.aiProvider]);
 
   useEffect(() => {
-    const loadModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
-        setOllamaModels(models);
-      } catch (err) {
-        console.error('Failed to load Ollama models:', err);
-        setOllamaModels([]);
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
-    if (settings.aiProvider === AiProvider.Ollama) {
-      loadModels();
+    // For providers requiring API key, only load if key is configured
+    if (settings.aiProvider !== AiProvider.Ollama && !hasKey) {
+      return;
     }
-  }, [settings.aiProvider, settings.aiOllamaUrl]);
+    // Load models from cache (will fetch if not cached)
+    loadAiModels(settings.aiProvider);
+  }, [settings.aiProvider, settings.aiOllamaUrl, hasKey, loadAiModels]);
 
-  const loadOllamaModels = async () => {
-    setIsLoadingModels(true);
-    try {
-      const models = await aiApi.listOllamaModels(settings.aiOllamaUrl ?? undefined);
-      setOllamaModels(models);
-    } catch (err) {
-      console.error('Failed to load Ollama models:', err);
-      setOllamaModels([]);
-    } finally {
-      setIsLoadingModels(false);
-    }
+  const refreshModels = () => {
+    loadAiModels(settings.aiProvider, true); // force refresh
   };
 
   const handleSaveApiKey = async () => {
@@ -1082,39 +1070,33 @@ function AiSettings({ settings, updateSetting }: SettingsPanelProps) {
         htmlFor="aiModel"
         hint={t('settings.ai.model.hint', { model: defaultModels[settings.aiProvider] })}
       >
-        {settings.aiProvider === AiProvider.Ollama ? (
-          <div className="flex gap-2">
-            <Select
-              id="aiModel"
-              value={settings.aiModel || ''}
-              onValueChange={(value) => updateSetting('aiModel', value || null)}
-              className="flex-1"
-              disabled={isLoadingModels}
-              placeholder={
-                isLoadingModels
-                  ? t('settings.ai.model.loadingModels')
-                  : `Default (${defaultModels[settings.aiProvider]})`
-              }
-            >
-              {ollamaModels.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))}
-            </Select>
-            <Button variant="secondary" onClick={loadOllamaModels} disabled={isLoadingModels}>
-              {t('common.refresh')}
-            </Button>
-          </div>
-        ) : (
-          <Input
+        <div className="flex gap-2">
+          <Select
             id="aiModel"
-            type="text"
             value={settings.aiModel || ''}
-            onChange={(e) => updateSetting('aiModel', e.target.value || null)}
-            placeholder={defaultModels[settings.aiProvider]}
-          />
-        )}
+            onValueChange={(value) => updateSetting('aiModel', value || null)}
+            className="flex-1"
+            disabled={isLoadingModels || (providerRequiresApiKey && !hasKey)}
+            placeholder={
+              isLoadingModels
+                ? t('settings.ai.model.loadingModels')
+                : `Default (${defaultModels[settings.aiProvider]})`
+            }
+          >
+            {availableModels.map((model) => (
+              <SelectItem key={model} value={model}>
+                {model}
+              </SelectItem>
+            ))}
+          </Select>
+          <Button
+            variant="secondary"
+            onClick={refreshModels}
+            disabled={isLoadingModels || (providerRequiresApiKey && !hasKey)}
+          >
+            {t('common.refresh')}
+          </Button>
+        </div>
       </FormField>
 
       <div className={groupClass}>

@@ -877,8 +877,8 @@ async deleteAiApiKey(provider: AiProvider) : Promise<null> {
 async testAiConnection(provider: AiProvider) : Promise<boolean> {
     return await TAURI_INVOKE("test_ai_connection", { provider });
 },
-async listOllamaModels(ollamaUrl: string | null) : Promise<string[]> {
-    return await TAURI_INVOKE("list_ollama_models", { ollamaUrl });
+async listAiModels(provider: AiProvider) : Promise<string[]> {
+    return await TAURI_INVOKE("list_ai_models", { provider });
 },
 async generatePrDescription(sourceBranch: string, targetBranch: string, includeDiffSummary: boolean, availableLabels: string[]) : Promise<GeneratePrDescriptionResponse> {
     return await TAURI_INVOKE("generate_pr_description", { sourceBranch, targetBranch, includeDiffSummary, availableLabels });

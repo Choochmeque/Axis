@@ -42,7 +42,7 @@ impl Commit {
 
         let signature = Self::extract_signature(repo, commit.id());
 
-        Commit {
+        Self {
             oid: commit.id().to_string(),
             short_oid: commit.id().to_string()[..7].to_string(),
             message: commit.message().unwrap_or("").to_string(),
@@ -79,7 +79,7 @@ impl Commit {
 
 impl Signature {
     pub fn from_git2_signature(sig: &git2::Signature) -> Self {
-        Signature {
+        Self {
             name: sig.name().unwrap_or("Unknown").to_string(),
             email: sig.email().unwrap_or("").to_string(),
             timestamp: DateTime::from_timestamp(sig.when().seconds(), 0)
@@ -89,7 +89,7 @@ impl Signature {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum BranchFilterType {
     #[default]
@@ -98,7 +98,7 @@ pub enum BranchFilterType {
     Specific(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum SortOrder {
     #[default]
@@ -120,13 +120,13 @@ pub struct LogOptions {
     pub sort_order: SortOrder,
 }
 
-fn default_include_remotes() -> bool {
+const fn default_include_remotes() -> bool {
     true
 }
 
 impl Default for LogOptions {
     fn default() -> Self {
-        LogOptions {
+        Self {
             limit: Some(100),
             skip: None,
             from_ref: None,

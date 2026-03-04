@@ -16,7 +16,7 @@ pub struct Repository {
     pub state: RepositoryState,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum RepositoryState {
     Clean,
@@ -33,21 +33,19 @@ pub enum RepositoryState {
 impl From<git2::RepositoryState> for RepositoryState {
     fn from(state: git2::RepositoryState) -> Self {
         match state {
-            git2::RepositoryState::Clean => RepositoryState::Clean,
-            git2::RepositoryState::Merge => RepositoryState::Merging,
-            git2::RepositoryState::Rebase | git2::RepositoryState::RebaseMerge => {
-                RepositoryState::Rebasing
-            }
-            git2::RepositoryState::RebaseInteractive => RepositoryState::RebasingInteractive,
+            git2::RepositoryState::Clean => Self::Clean,
+            git2::RepositoryState::Merge => Self::Merging,
+            git2::RepositoryState::Rebase | git2::RepositoryState::RebaseMerge => Self::Rebasing,
+            git2::RepositoryState::RebaseInteractive => Self::RebasingInteractive,
             git2::RepositoryState::CherryPick | git2::RepositoryState::CherryPickSequence => {
-                RepositoryState::CherryPicking
+                Self::CherryPicking
             }
             git2::RepositoryState::Revert | git2::RepositoryState::RevertSequence => {
-                RepositoryState::Reverting
+                Self::Reverting
             }
-            git2::RepositoryState::Bisect => RepositoryState::Bisecting,
-            git2::RepositoryState::ApplyMailbox => RepositoryState::ApplyMailbox,
-            git2::RepositoryState::ApplyMailboxOrRebase => RepositoryState::ApplyMailboxOrRebase,
+            git2::RepositoryState::Bisect => Self::Bisecting,
+            git2::RepositoryState::ApplyMailbox => Self::ApplyMailbox,
+            git2::RepositoryState::ApplyMailboxOrRebase => Self::ApplyMailboxOrRebase,
         }
     }
 }

@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BranchType } from '@/types';
+import { BranchFilterType, BranchType } from '@/types';
 import { Sidebar } from './Sidebar';
 
 vi.mock('react-i18next', () => ({
@@ -44,6 +44,13 @@ const mockRepositoryStore = {
   submodules: [{ name: 'sub1', path: 'libs/sub1', status: 'Current' }],
   worktrees: [
     { path: '/test/repo', branch: 'main', isMain: true, shortOid: 'abc1234', isLocked: false },
+    {
+      path: '/test/repo-feature',
+      branch: 'feature',
+      isMain: false,
+      shortOid: 'def5678',
+      isLocked: false,
+    },
   ],
   status: { staged: [], unstaged: ['file.ts'], untracked: ['new.ts'] },
   currentView: 'file-status',
@@ -61,8 +68,19 @@ const mockRepositoryStore = {
   switchRepository: vi.fn(),
 };
 
+const { mockSetState, mockRefresh } = vi.hoisted(() => ({
+  mockSetState: vi.fn(),
+  mockRefresh: vi.fn(),
+}));
+
 vi.mock('../../store/repositoryStore', () => ({
-  useRepositoryStore: () => mockRepositoryStore,
+  useRepositoryStore: Object.assign(() => mockRepositoryStore, {
+    setState: (state: Record<string, unknown>) => mockSetState(state),
+    getState: () => ({
+      ...mockRepositoryStore,
+      refresh: mockRefresh,
+    }),
+  }),
 }));
 
 vi.mock('../../store/stagingStore', () => ({
@@ -204,6 +222,8 @@ describe('Sidebar', () => {
     mockRepositoryStore.repository = { path: '/test/repo', name: 'test-repo', isUnborn: false };
     mockRepositoryStore.currentView = 'file-status';
     mockRepositoryStore.selectedStash = null;
+    mockSetState.mockClear();
+    mockRefresh.mockClear();
   });
 
   it('should render workspace section', () => {
@@ -376,5 +396,40 @@ describe('Sidebar', () => {
     fireEvent.click(screen.getByText('sidebar.views.history'));
 
     expect(mockRepositoryStore.clearStashSelection).toHaveBeenCalled();
+  });
+
+  it('should reset branchFilter when switching worktrees', async () => {
+    mockRepositoryStore.switchRepository.mockResolvedValue(undefined);
+
+    render(<Sidebar />);
+
+    // Expand worktrees section first
+    fireEvent.click(screen.getByText('sidebar.sections.worktrees'));
+
+    // Find all buttons that contain 'feature' text - there's one in branches and one in worktrees
+    const allFeatureElements = screen.getAllByText('feature');
+    // Get the button parent elements
+    const featureButtons = allFeatureElements
+      .map((el) => el.closest('button'))
+      .filter((btn): btn is HTMLButtonElement => btn !== null);
+
+    // There should be at least one feature button
+    expect(featureButtons.length).toBeGreaterThan(0);
+
+    // Click each feature button and check which one triggers switchRepository
+    for (const btn of featureButtons) {
+      fireEvent.click(btn);
+    }
+
+    // Verify switchRepository was called with the worktree path
+    await waitFor(() => {
+      expect(mockRepositoryStore.switchRepository).toHaveBeenCalledWith('/test/repo-feature');
+    });
+
+    // Verify branchFilter was reset before switch
+    expect(mockSetState).toHaveBeenCalledWith({ branchFilter: BranchFilterType.All });
+
+    // Verify refresh was called with force=true
+    expect(mockRefresh).toHaveBeenCalledWith(true);
   });
 });

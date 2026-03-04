@@ -6,6 +6,9 @@ vi.mock('@/services/api', () => ({
     get: vi.fn(),
     save: vi.fn(),
   },
+  aiApi: {
+    listModels: vi.fn(),
+  },
 }));
 
 vi.mock('@/i18n', () => ({
@@ -23,7 +26,7 @@ vi.mock('@/store/toastStore', () => ({
   },
 }));
 
-import { settingsApi } from '@/services/api';
+import { aiApi, settingsApi } from '@/services/api';
 import { AiProvider, SigningFormat, Theme } from '@/types';
 
 describe('settingsStore', () => {
@@ -58,12 +61,19 @@ describe('settingsStore', () => {
     largeBinaryThreshold: 10485760,
   };
 
+  const emptyModelsCache = { models: [], loading: false, error: null };
+
   beforeEach(() => {
     vi.useFakeTimers();
     useSettingsStore.setState({
       settings: null,
       isLoading: false,
       error: null,
+      aiModelsCache: {
+        [AiProvider.OpenAi]: { ...emptyModelsCache },
+        [AiProvider.Anthropic]: { ...emptyModelsCache },
+        [AiProvider.Ollama]: { ...emptyModelsCache },
+      },
     });
     vi.clearAllMocks();
 
@@ -188,6 +198,133 @@ describe('settingsStore', () => {
       // Should follow system preference
       const result = useSettingsStore.getState().getEffectiveTheme();
       expect(['light', 'dark']).toContain(result);
+    });
+  });
+
+  describe('AI Models Cache', () => {
+    it('should return empty cache for provider by default', () => {
+      const cache = useSettingsStore.getState().getAiModels(AiProvider.OpenAi);
+
+      expect(cache.models).toEqual([]);
+      expect(cache.loading).toBe(false);
+      expect(cache.error).toBeNull();
+    });
+
+    it('should load models and cache them', async () => {
+      const mockModels = ['gpt-4o', 'gpt-4o-mini'];
+      vi.mocked(aiApi.listModels).mockResolvedValue(mockModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+
+      const cache = useSettingsStore.getState().getAiModels(AiProvider.OpenAi);
+      expect(cache.models).toEqual(mockModels);
+      expect(cache.loading).toBe(false);
+      expect(cache.error).toBeNull();
+    });
+
+    it('should not reload cached models without force', async () => {
+      const mockModels = ['gpt-4o', 'gpt-4o-mini'];
+      vi.mocked(aiApi.listModels).mockResolvedValue(mockModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+      vi.mocked(aiApi.listModels).mockClear();
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+
+      expect(aiApi.listModels).not.toHaveBeenCalled();
+    });
+
+    it('should reload models with force=true', async () => {
+      const initialModels = ['gpt-4o'];
+      const updatedModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1'];
+      vi.mocked(aiApi.listModels).mockResolvedValue(initialModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+      vi.mocked(aiApi.listModels).mockResolvedValue(updatedModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi, true);
+
+      const cache = useSettingsStore.getState().getAiModels(AiProvider.OpenAi);
+      expect(cache.models).toEqual(updatedModels);
+      expect(aiApi.listModels).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle errors when loading models', async () => {
+      vi.mocked(aiApi.listModels).mockRejectedValue(new Error('API error'));
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+
+      const cache = useSettingsStore.getState().getAiModels(AiProvider.OpenAi);
+      expect(cache.models).toEqual([]);
+      expect(cache.loading).toBe(false);
+      expect(cache.error).toBe('API error');
+    });
+
+    it('should cache models separately per provider', async () => {
+      const openAiModels = ['gpt-4o', 'gpt-4o-mini'];
+      const anthropicModels = ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'];
+
+      vi.mocked(aiApi.listModels)
+        .mockResolvedValueOnce(openAiModels)
+        .mockResolvedValueOnce(anthropicModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+      await useSettingsStore.getState().loadAiModels(AiProvider.Anthropic);
+
+      expect(useSettingsStore.getState().getAiModels(AiProvider.OpenAi).models).toEqual(
+        openAiModels
+      );
+      expect(useSettingsStore.getState().getAiModels(AiProvider.Anthropic).models).toEqual(
+        anthropicModels
+      );
+    });
+
+    it('should clear all cached models', async () => {
+      const mockModels = ['gpt-4o'];
+      vi.mocked(aiApi.listModels).mockResolvedValue(mockModels);
+
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+      useSettingsStore.getState().clearAiModelsCache();
+
+      const cache = useSettingsStore.getState().getAiModels(AiProvider.OpenAi);
+      expect(cache.models).toEqual([]);
+    });
+
+    it('should set loading state while fetching', async () => {
+      let resolvePromise: (value: string[]) => void;
+      const pendingPromise = new Promise<string[]>((resolve) => {
+        resolvePromise = resolve;
+      });
+      vi.mocked(aiApi.listModels).mockReturnValue(pendingPromise);
+
+      const loadPromise = useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+
+      expect(useSettingsStore.getState().getAiModels(AiProvider.OpenAi).loading).toBe(true);
+
+      resolvePromise!(['gpt-4o']);
+      await loadPromise;
+
+      expect(useSettingsStore.getState().getAiModels(AiProvider.OpenAi).loading).toBe(false);
+    });
+
+    it('should not start loading if already loading', async () => {
+      let resolvePromise: (value: string[]) => void;
+      const pendingPromise = new Promise<string[]>((resolve) => {
+        resolvePromise = resolve;
+      });
+      vi.mocked(aiApi.listModels).mockReturnValue(pendingPromise);
+
+      // Start first load
+      const loadPromise1 = useSettingsStore.getState().loadAiModels(AiProvider.OpenAi);
+
+      // Try to start second load while first is in progress
+      await useSettingsStore.getState().loadAiModels(AiProvider.OpenAi, true);
+
+      // Should only have called once
+      expect(aiApi.listModels).toHaveBeenCalledTimes(1);
+
+      resolvePromise!(['gpt-4o']);
+      await loadPromise1;
     });
   });
 });

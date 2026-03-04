@@ -23,6 +23,12 @@ pub trait AiProviderTrait: Send + Sync {
         base_url: Option<&str>,
     ) -> Result<(String, String, Vec<String>, String)>;
 
+    async fn list_models(
+        &self,
+        api_key: Option<&str>,
+        base_url: Option<&str>,
+    ) -> Result<Vec<String>>;
+
     fn default_model(&self) -> &'static str;
 
     #[cfg(test)]

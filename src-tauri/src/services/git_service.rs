@@ -48,17 +48,17 @@ impl GitService {
     }
 
     /// Access the Git2 (libgit2) service
-    pub fn git2(&self) -> &Git2Service {
+    pub const fn git2(&self) -> &Git2Service {
         &self.git2
     }
 
     /// Access the Git CLI service
-    pub fn git_cli(&self) -> &GitCliService {
+    pub const fn git_cli(&self) -> &GitCliService {
         &self.git_cli
     }
 
     /// Access the Hook service
-    pub fn hook(&self) -> &HookService {
+    pub const fn hook(&self) -> &HookService {
         &self.hook
     }
 

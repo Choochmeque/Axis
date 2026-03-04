@@ -15,7 +15,7 @@ pub struct SigningService {
 
 impl SigningService {
     pub fn new(repo_path: &Path) -> Self {
-        SigningService {
+        Self {
             repo_path: repo_path.to_path_buf(),
         }
     }

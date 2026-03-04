@@ -129,7 +129,7 @@ pub struct ActionExecutionResult {
 
 impl ActionExecutionResult {
     /// Create a successful result
-    pub fn success(stdout: String, stderr: String, duration_ms: u64) -> Self {
+    pub const fn success(stdout: String, stderr: String, duration_ms: u64) -> Self {
         Self {
             exit_code: 0,
             stdout,
@@ -139,7 +139,7 @@ impl ActionExecutionResult {
     }
 
     /// Create a failed result
-    pub fn failure(exit_code: i32, stdout: String, stderr: String, duration_ms: u64) -> Self {
+    pub const fn failure(exit_code: i32, stdout: String, stderr: String, duration_ms: u64) -> Self {
         Self {
             exit_code,
             stdout,
@@ -149,7 +149,7 @@ impl ActionExecutionResult {
     }
 
     /// Create an error result (command couldn't be executed)
-    pub fn error(message: String) -> Self {
+    pub const fn error(message: String) -> Self {
         Self {
             exit_code: -1,
             stdout: String::new(),
@@ -179,7 +179,7 @@ impl Default for RepoActionsFile {
 }
 
 impl RepoActionsFile {
-    pub fn v1(actions: Vec<CustomAction>) -> Self {
+    pub const fn v1(actions: Vec<CustomAction>) -> Self {
         Self {
             version: 1,
             actions,

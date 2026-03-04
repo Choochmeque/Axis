@@ -45,7 +45,7 @@ pub enum SubmoduleStatus {
 }
 
 /// Sort order for submodule listing
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum SubmoduleSortOrder {
     #[default]

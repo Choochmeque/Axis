@@ -24,7 +24,7 @@ impl Database {
         let db_path = app_data_dir.join("axis.db");
         let conn = Connection::open(db_path)?;
 
-        let db = Database {
+        let db = Self {
             conn: Mutex::new(conn),
         };
         db.init_schema()?;
@@ -93,6 +93,8 @@ impl Database {
             "UPDATE recent_repositories SET path = RTRIM(path, '/') WHERE path LIKE '%/'",
             [],
         )?;
+
+        drop(conn); // Explicitly drop the lock before returning
 
         Ok(())
     }
@@ -255,6 +257,8 @@ impl Database {
 
         conn.execute("DELETE FROM secrets WHERE key = ?1", params![key])?;
 
+        drop(conn); // Explicitly drop the lock before returning
+
         Ok(())
     }
 
@@ -290,6 +294,8 @@ impl Database {
             params![repo_path, remote_name, ssh_key_path],
         )?;
 
+        drop(conn); // Explicitly drop the lock before returning
+
         Ok(())
     }
 
@@ -300,6 +306,8 @@ impl Database {
             "DELETE FROM remote_ssh_keys WHERE repo_path = ?1 AND remote_name = ?2",
             params![repo_path, remote_name],
         )?;
+
+        drop(conn); // Explicitly drop the lock before returning
 
         Ok(())
     }

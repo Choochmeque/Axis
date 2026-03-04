@@ -3,7 +3,9 @@ use specta::Type;
 use strum::{Display, EnumString};
 
 /// Signing format - GPG (`OpenPGP`) or SSH
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display, EnumString)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, Type, Display, EnumString,
+)]
 #[serde(rename_all = "PascalCase")]
 #[strum(ascii_case_insensitive)]
 pub enum SigningFormat {

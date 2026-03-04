@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 /// Sort order for remote listing
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum RemoteSortOrder {
     #[default]

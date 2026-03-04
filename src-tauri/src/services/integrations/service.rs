@@ -46,8 +46,10 @@ impl IntegrationService {
         // Create and cache the provider
         let provider = self.create_provider(provider_type)?;
 
-        let mut providers = self.providers.write().await;
-        providers.insert(provider_type, Arc::clone(&provider));
+        self.providers
+            .write()
+            .await
+            .insert(provider_type, Arc::clone(&provider));
 
         Ok(provider)
     }

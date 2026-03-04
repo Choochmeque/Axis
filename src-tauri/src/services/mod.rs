@@ -13,7 +13,7 @@ mod integrations;
 #[cfg(feature = "integration")]
 pub mod ops;
 #[cfg(not(feature = "integration"))]
-pub(crate) mod ops;
+pub mod ops;
 mod process_utils;
 mod progress_emitter;
 mod signature_cache;

@@ -22,7 +22,7 @@ pub struct Branch {
     pub last_commit_time: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum BranchType {
     Local,
@@ -30,7 +30,7 @@ pub enum BranchType {
 }
 
 /// Sort order for branch listing
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum BranchSortOrder {
     #[default]

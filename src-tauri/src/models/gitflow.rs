@@ -17,7 +17,7 @@ pub struct GitFlowConfig {
 
 impl Default for GitFlowConfig {
     fn default() -> Self {
-        GitFlowConfig {
+        Self {
             master: "main".to_string(),
             develop: "develop".to_string(),
             feature_prefix: "feature/".to_string(),

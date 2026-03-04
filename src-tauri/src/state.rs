@@ -197,7 +197,7 @@ impl AppState {
         let database = Arc::new(database);
         let integration_service = IntegrationService::new(Arc::clone(&database));
 
-        AppState {
+        Self {
             active_repository_path: RwLock::new(None),
             repository_cache: Arc::new(RepositoryCache::new()),
             commit_cache: Arc::new(CommitCache::new()),

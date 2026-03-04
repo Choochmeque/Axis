@@ -29,7 +29,7 @@ impl AvatarService {
     }
 
     /// Get the source prefix for cache filenames
-    fn source_prefix(source: &AvatarSource) -> &'static str {
+    const fn source_prefix(source: &AvatarSource) -> &'static str {
         match source {
             AvatarSource::Integration => "integration",
             AvatarSource::Gravatar => "gravatar",

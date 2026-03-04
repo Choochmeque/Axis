@@ -31,6 +31,16 @@ struct AnthropicContent {
     text: String,
 }
 
+#[derive(Deserialize)]
+struct AnthropicModelsResponse {
+    data: Vec<AnthropicModel>,
+}
+
+#[derive(Deserialize)]
+struct AnthropicModel {
+    id: String,
+}
+
 #[async_trait]
 impl AiProviderTrait for AnthropicProvider {
     async fn generate_commit_message(
@@ -153,6 +163,52 @@ impl AiProviderTrait for AnthropicProvider {
 
         let (title, body, labels) = parse_pr_response(&raw);
         Ok((title, body, labels, model))
+    }
+
+    async fn list_models(
+        &self,
+        api_key: Option<&str>,
+        _base_url: Option<&str>,
+    ) -> Result<Vec<String>> {
+        let api_key =
+            api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("Anthropic".to_string()))?;
+
+        let client = reqwest::Client::new();
+        let response = client
+            .get("https://api.anthropic.com/v1/models")
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01")
+            .send()
+            .await
+            .map_err(|e| {
+                AxisError::AiServiceError(format!("Failed to fetch Anthropic models: {e}"))
+            })?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(AxisError::AiServiceError(format!(
+                "Anthropic API error ({status}): {error_text}"
+            )));
+        }
+
+        let response: AnthropicModelsResponse = response
+            .json()
+            .await
+            .map_err(|e| AxisError::AiServiceError(format!("Failed to parse response: {e}")))?;
+
+        let mut models: Vec<String> = response
+            .data
+            .into_iter()
+            .map(|m| m.id)
+            .filter(|id| id.starts_with("claude-"))
+            .collect();
+
+        models.sort();
+        Ok(models)
     }
 
     fn default_model(&self) -> &'static str {

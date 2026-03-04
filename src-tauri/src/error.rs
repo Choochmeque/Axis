@@ -92,25 +92,25 @@ pub enum AxisError {
 
 impl From<git2::Error> for AxisError {
     fn from(err: git2::Error) -> Self {
-        AxisError::GitError(err.to_string())
+        Self::GitError(err.to_string())
     }
 }
 
 impl From<std::io::Error> for AxisError {
     fn from(err: std::io::Error) -> Self {
-        AxisError::IoError(err.to_string())
+        Self::IoError(err.to_string())
     }
 }
 
 impl From<rusqlite::Error> for AxisError {
     fn from(err: rusqlite::Error) -> Self {
-        AxisError::DatabaseError(err.to_string())
+        Self::DatabaseError(err.to_string())
     }
 }
 
 impl From<serde_json::Error> for AxisError {
     fn from(err: serde_json::Error) -> Self {
-        AxisError::SerializationError(err.to_string())
+        Self::SerializationError(err.to_string())
     }
 }
 

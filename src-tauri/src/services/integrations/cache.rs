@@ -24,14 +24,10 @@ impl<T: Clone> TtlCache<T> {
 
     /// Get a value from the cache if it exists and hasn't expired
     pub fn get(&self, key: &str) -> Option<T> {
-        let entries = self.entries.read();
-        let entry = entries.get(key)?;
-
-        if Instant::now() < entry.expires_at {
-            Some(entry.value.clone())
-        } else {
-            None
-        }
+        self.entries
+            .read()
+            .get(key)
+            .and_then(|entry| (Instant::now() < entry.expires_at).then(|| entry.value.clone()))
     }
 
     /// Set a value in the cache with the default TTL

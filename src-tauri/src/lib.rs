@@ -340,6 +340,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
 /// - Menu creation or setup fails
 /// - The Tauri application fails to start
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[allow(clippy::large_stack_frames)] // tauri::generate_context!() creates large Context struct
 pub fn run() {
     env_logger::init();
 

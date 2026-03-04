@@ -856,39 +856,42 @@ pub async fn get_operation_state(state: State<'_, AppState>) -> Result<Operation
     let git_service = state.get_git_service()?;
     let guard = git_service.read().await;
 
-    if guard.is_rebasing()? {
+    let result = if guard.is_rebasing()? {
         let progress = guard.get_rebase_progress()?;
         match progress {
-            Some(p) => Ok(OperationState::Rebasing {
+            Some(p) => OperationState::Rebasing {
                 onto: p.onto,
                 current: Some(p.current_step),
                 total: Some(p.total_steps),
                 paused_action: p.paused_action,
                 head_name: p.head_name,
-            }),
-            None => Ok(OperationState::Rebasing {
+            },
+            None => OperationState::Rebasing {
                 onto: None,
                 current: None,
                 total: None,
                 paused_action: None,
                 head_name: None,
-            }),
+            },
         }
     } else if guard.is_merging()? {
-        Ok(OperationState::Merging { branch: None })
+        OperationState::Merging { branch: None }
     } else if guard.is_cherry_picking()? {
-        Ok(OperationState::CherryPicking { commit: None })
+        OperationState::CherryPicking { commit: None }
     } else if guard.is_reverting()? {
-        Ok(OperationState::Reverting { commit: None })
+        OperationState::Reverting { commit: None }
     } else if guard.is_bisecting()? {
         let bisect_state = guard.get_bisect_state().await?;
-        Ok(OperationState::Bisecting {
+        OperationState::Bisecting {
             current_commit: bisect_state.current_commit,
             steps_remaining: bisect_state.steps_remaining,
-        })
+        }
     } else {
-        Ok(OperationState::None)
-    }
+        OperationState::None
+    };
+
+    drop(guard);
+    Ok(result)
 }
 
 // ==================== Reset Commands ====================

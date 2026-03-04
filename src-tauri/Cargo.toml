@@ -37,7 +37,7 @@ git2 = "0.20"
 tokio = { version = "1", features = ["full"] }
 
 # Database
-turso = { git = "https://github.com/tursodatabase/turso", rev = "2bac3f7" }
+turso = "0.5"
 
 # Error handling
 thiserror = "2"

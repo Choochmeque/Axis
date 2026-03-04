@@ -166,7 +166,8 @@ impl BackgroundFetchService {
 
     /// Stop the background fetch task
     pub fn stop(&self) {
-        if let Some(handle) = self.interval_handle.lock().take() {
+        let handle = self.interval_handle.lock().take();
+        if let Some(handle) = handle {
             log::info!("Stopping background fetch service");
             handle.abort();
         }

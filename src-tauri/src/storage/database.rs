@@ -22,10 +22,10 @@ impl Database {
     pub async fn new(app_data_dir: &Path) -> Result<Self> {
         std::fs::create_dir_all(app_data_dir)?;
         let db_path = app_data_dir.join("axis.db");
-        let db = Builder::new_local(&db_path.to_string_lossy())
+        let conn = Builder::new_local(&db_path.to_string_lossy())
             .build()
-            .await?;
-        let conn = db.connect()?;
+            .await?
+            .connect()?;
 
         let database = Self {
             conn: Mutex::new(conn),

@@ -15,13 +15,15 @@ pub async fn get_diff(
     let opts = options.unwrap_or_default();
     let git_service = state.get_git_service()?;
     let guard = git_service.read().await;
-    match target {
+    let result = match target {
         DiffTarget::WorkdirToIndex => guard.diff_workdir(&opts).await,
         DiffTarget::IndexToHead => guard.diff_staged(&opts).await,
         DiffTarget::WorkdirToHead => guard.diff_head(&opts).await,
         DiffTarget::Commit { oid } => guard.diff_commit(&oid, &opts).await,
         DiffTarget::CommitToCommit { from, to } => guard.diff_commits(&from, &to, &opts).await,
-    }
+    };
+    drop(guard);
+    result
 }
 
 /// Get diff for a single file

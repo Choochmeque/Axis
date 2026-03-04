@@ -71,7 +71,8 @@ impl FileWatcher {
         *self.watcher.lock() = None;
 
         // The receiver thread will exit when the channel is closed
-        if let Some(handle) = self.receiver_handle.lock().take() {
+        let handle = self.receiver_handle.lock().take();
+        if let Some(handle) = handle {
             drop(handle);
         }
     }
@@ -185,14 +186,14 @@ impl FileWatcher {
                             state.commit_cache().invalidate_repo(&repo_path);
                         }
                     }
-                    for ref_name in pending_refs.drain(..) {
+                    for ref_name in std::mem::take(&mut pending_refs) {
                         let _ = RefChangedEvent { ref_name }.emit(&app_handle);
                     }
 
                     // Emit file changes
                     if !pending_changes.is_empty() {
-                        let paths: Vec<String> = pending_changes
-                            .drain(..)
+                        let paths: Vec<String> = std::mem::take(&mut pending_changes)
+                            .into_iter()
                             .filter_map(|p| {
                                 p.strip_prefix(&repo_path)
                                     .ok()

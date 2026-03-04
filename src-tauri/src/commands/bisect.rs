@@ -19,6 +19,7 @@ pub async fn bisect_start(
 
     if result.success {
         let bisect_state = guard.get_bisect_state().await?;
+        drop(guard);
         Ok(BisectResult {
             success: true,
             state: bisect_state,
@@ -64,6 +65,7 @@ pub async fn bisect_mark(
     };
 
     let mut bisect_state = guard.get_bisect_state().await?;
+    drop(guard);
     bisect_state.first_bad_commit = first_bad;
 
     Ok(BisectResult {

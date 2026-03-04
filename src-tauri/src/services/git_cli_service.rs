@@ -2064,10 +2064,10 @@ impl GitCliService {
         commit_oid: Option<&str>,
         output_path: &Path,
     ) -> Result<PatchResult> {
-        let args = match commit_oid {
-            Some(oid) => vec!["format-patch", "-1", "--stdout", oid],
-            None => vec!["diff", "--cached"],
-        };
+        let args = commit_oid.map_or_else(
+            || vec!["diff", "--cached"],
+            |oid| vec!["format-patch", "-1", "--stdout", oid],
+        );
 
         let result = self.execute(&args).await?;
 
@@ -2910,14 +2910,15 @@ impl GitCliService {
                 let path_and_size = parts.last().unwrap_or(&"").trim();
                 let (path, size) = if path_and_size.ends_with(')') {
                     // Has size info
-                    if let Some(paren_pos) = path_and_size.rfind('(') {
-                        let path = path_and_size[..paren_pos].trim();
-                        let size_str = &path_and_size[paren_pos + 1..path_and_size.len() - 1];
-                        let size = Self::parse_size(size_str);
-                        (path.to_string(), size)
-                    } else {
-                        (path_and_size.to_string(), 0)
-                    }
+                    path_and_size.rfind('(').map_or_else(
+                        || (path_and_size.to_string(), 0),
+                        |paren_pos| {
+                            let path = path_and_size[..paren_pos].trim();
+                            let size_str = &path_and_size[paren_pos + 1..path_and_size.len() - 1];
+                            let size = Self::parse_size(size_str);
+                            (path.to_string(), size)
+                        },
+                    )
                 } else {
                     (path_and_size.to_string(), 0)
                 };
@@ -2956,27 +2957,30 @@ impl GitCliService {
 
         // Parse the number using integer arithmetic to avoid f64->u64 cast warnings
         let num_str = parts[0];
-        if let Some(dot_pos) = num_str.find('.') {
-            // Has decimal point - split into whole and fractional parts
-            let whole_str = &num_str[..dot_pos];
-            let frac_str = &num_str[dot_pos + 1..];
+        num_str.find('.').map_or_else(
+            || {
+                // No decimal point - just a whole number
+                let whole: u64 = num_str.parse().unwrap_or(0);
+                whole.saturating_mul(multiplier)
+            },
+            |dot_pos| {
+                // Has decimal point - split into whole and fractional parts
+                let whole_str = &num_str[..dot_pos];
+                let frac_str = &num_str[dot_pos + 1..];
 
-            let whole: u64 = whole_str.parse().unwrap_or(0);
-            let frac_digits = frac_str.len();
-            let frac: u64 = frac_str.parse().unwrap_or(0);
+                let whole: u64 = whole_str.parse().unwrap_or(0);
+                let frac_digits = frac_str.len();
+                let frac: u64 = frac_str.parse().unwrap_or(0);
 
-            // whole_bytes = whole * multiplier
-            // frac_bytes = (frac * multiplier) / 10^frac_digits
-            let whole_bytes = whole.saturating_mul(multiplier);
-            let divisor = 10u64.saturating_pow(u32::try_from(frac_digits).unwrap_or(u32::MAX));
-            let frac_bytes = frac.saturating_mul(multiplier) / divisor;
+                // whole_bytes = whole * multiplier
+                // frac_bytes = (frac * multiplier) / 10^frac_digits
+                let whole_bytes = whole.saturating_mul(multiplier);
+                let divisor = 10u64.saturating_pow(u32::try_from(frac_digits).unwrap_or(u32::MAX));
+                let frac_bytes = frac.saturating_mul(multiplier) / divisor;
 
-            whole_bytes.saturating_add(frac_bytes)
-        } else {
-            // No decimal point - just a whole number
-            let whole: u64 = num_str.parse().unwrap_or(0);
-            whole.saturating_mul(multiplier)
-        }
+                whole_bytes.saturating_add(frac_bytes)
+            },
+        )
     }
 
     /// Fetch LFS objects from remote

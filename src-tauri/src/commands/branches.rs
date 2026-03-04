@@ -92,6 +92,7 @@ pub async fn checkout_branch(
         }
     }
 
+    drop(guard);
     Ok(())
 }
 

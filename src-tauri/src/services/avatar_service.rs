@@ -76,10 +76,7 @@ impl AvatarService {
         let ttl = Duration::from_secs(AVATAR_TTL_HOURS * 3600);
         let now = SystemTime::now();
 
-        match now.duration_since(modified) {
-            Ok(age) => age < ttl,
-            Err(_) => true,
-        }
+        now.duration_since(modified).map_or(true, |age| age < ttl)
     }
 
     /// Fetch avatar from URL and cache it

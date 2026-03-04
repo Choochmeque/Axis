@@ -6,17 +6,21 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings> {
-    state.get_settings()
+    state.get_settings().await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn save_settings(state: State<'_, AppState>, settings: AppSettings) -> Result<()> {
     // Get old settings to check if auto_fetch_interval changed
-    let old_interval = state.get_settings().map(|s| s.auto_fetch_interval).ok();
+    let old_interval = state
+        .get_settings()
+        .await
+        .map(|s| s.auto_fetch_interval)
+        .ok();
 
     // Save the new settings
-    state.save_settings(&settings)?;
+    state.save_settings(&settings).await?;
 
     // Restart background fetch if interval changed
     if old_interval != Some(settings.auto_fetch_interval) {

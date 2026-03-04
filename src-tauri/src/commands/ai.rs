@@ -15,7 +15,7 @@ use tauri::State;
 pub async fn generate_commit_message(
     state: State<'_, AppState>,
 ) -> Result<GenerateCommitMessageResponse> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
 
     if !settings.ai_enabled {
         return Err(AxisError::AiServiceError(
@@ -42,7 +42,7 @@ pub async fn generate_commit_message(
     let secret_key = get_secret_key(&settings.ai_provider);
 
     let api_key = if provider.requires_api_key() {
-        state.get_secret(&secret_key)?
+        state.get_secret(&secret_key).await?
     } else {
         None
     };
@@ -71,21 +71,21 @@ pub async fn set_ai_api_key(
     api_key: String,
 ) -> Result<()> {
     let secret_key = get_secret_key(&provider);
-    state.set_secret(&secret_key, &api_key)
+    state.set_secret(&secret_key, &api_key).await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn has_ai_api_key(state: State<'_, AppState>, provider: AiProvider) -> Result<bool> {
     let secret_key = get_secret_key(&provider);
-    state.has_secret(&secret_key)
+    state.has_secret(&secret_key).await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_ai_api_key(state: State<'_, AppState>, provider: AiProvider) -> Result<()> {
     let secret_key = get_secret_key(&provider);
-    state.delete_secret(&secret_key)
+    state.delete_secret(&secret_key).await
 }
 
 #[tauri::command]
@@ -93,12 +93,12 @@ pub async fn delete_ai_api_key(state: State<'_, AppState>, provider: AiProvider)
 pub async fn test_ai_connection(state: State<'_, AppState>, provider: AiProvider) -> Result<bool> {
     match provider {
         AiProvider::Ollama => {
-            let settings = state.get_settings()?;
+            let settings = state.get_settings().await?;
             OllamaProvider::test_connection(settings.ai_ollama_url.as_deref()).await
         }
         AiProvider::OpenAi | AiProvider::Anthropic => {
             let secret_key = get_secret_key(&provider);
-            let has_key = state.has_secret(&secret_key)?;
+            let has_key = state.has_secret(&secret_key).await?;
             Ok(has_key)
         }
     }
@@ -110,12 +110,12 @@ pub async fn list_ai_models(
     state: State<'_, AppState>,
     provider: AiProvider,
 ) -> Result<Vec<String>> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let ai_provider = create_provider(&provider);
     let secret_key = get_secret_key(&provider);
 
     let api_key = if ai_provider.requires_api_key() {
-        state.get_secret(&secret_key)?
+        state.get_secret(&secret_key).await?
     } else {
         None
     };
@@ -134,7 +134,7 @@ pub async fn generate_pr_description(
     include_diff_summary: bool,
     available_labels: Vec<String>,
 ) -> Result<GeneratePrDescriptionResponse> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
 
     if !settings.ai_enabled {
         return Err(AxisError::AiServiceError(
@@ -183,7 +183,7 @@ pub async fn generate_pr_description(
     let secret_key = get_secret_key(&settings.ai_provider);
 
     let api_key = if provider.requires_api_key() {
-        state.get_secret(&secret_key)?
+        state.get_secret(&secret_key).await?
     } else {
         None
     };

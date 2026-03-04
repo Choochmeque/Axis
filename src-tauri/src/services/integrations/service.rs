@@ -44,7 +44,7 @@ impl IntegrationService {
         }
 
         // Create and cache the provider
-        let provider = self.create_provider(provider_type)?;
+        let provider = self.create_provider(provider_type).await?;
 
         self.providers
             .write()
@@ -103,7 +103,7 @@ impl IntegrationService {
 
         // Store token
         let token_key = get_provider_token_key(ProviderType::GitHub);
-        self.database.set_secret(&token_key, &token)?;
+        self.database.set_secret(&token_key, &token).await?;
 
         // Clear cached provider so it gets recreated with the new token
         {
@@ -152,22 +152,14 @@ impl IntegrationService {
     }
 
     /// Create a provider instance
-    fn create_provider(&self, provider_type: ProviderType) -> Result<Arc<dyn IntegrationProvider>> {
+    async fn create_provider(
+        &self,
+        provider_type: ProviderType,
+    ) -> Result<Arc<dyn IntegrationProvider>> {
         match provider_type {
             ProviderType::GitHub => {
                 let db = Arc::clone(&self.database);
-
-                let get_secret = {
-                    let db = Arc::clone(&db);
-                    move |key: &str| -> Result<Option<String>> { db.get_secret(key) }
-                };
-
-                let delete_secret = {
-                    let db = Arc::clone(&db);
-                    move |key: &str| -> Result<()> { db.delete_secret(key) }
-                };
-
-                let provider = GitHubProvider::new(get_secret, delete_secret);
+                let provider = GitHubProvider::new(db).await;
                 Ok(Arc::new(provider))
             }
             ProviderType::GitLab | ProviderType::Bitbucket | ProviderType::Gitea => {

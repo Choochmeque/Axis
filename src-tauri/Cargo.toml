@@ -37,7 +37,7 @@ git2 = "0.20"
 tokio = { version = "1", features = ["full"] }
 
 # Database
-rusqlite = { version = "0.38", features = ["bundled"] }
+turso = { git = "https://github.com/tursodatabase/turso", rev = "2bac3f7" }
 
 # Error handling
 thiserror = "2"

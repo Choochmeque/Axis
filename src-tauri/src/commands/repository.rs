@@ -31,7 +31,7 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
         .await?;
 
     // Add to recent repositories
-    state.add_recent_repository(&path, &repo_info.name)?;
+    state.add_recent_repository(&path, &repo_info.name).await?;
 
     Ok(repo_info)
 }
@@ -53,7 +53,7 @@ pub async fn init_repository(
     state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
-    state.add_recent_repository(&path, &repo_info.name)?;
+    state.add_recent_repository(&path, &repo_info.name).await?;
 
     Ok(repo_info)
 }
@@ -85,7 +85,7 @@ pub async fn clone_repository(
     ctx.emit(GitOperationType::Clone, ProgressStage::Connecting, None);
 
     // Resolve global default SSH key for clone
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let ssh_creds = settings.default_ssh_key.clone().map(|key_path| {
         let passphrase = state.get_cached_ssh_passphrase(&key_path);
         SshCredentials {
@@ -111,7 +111,7 @@ pub async fn clone_repository(
     state.switch_active_repository(&path).await?;
 
     // Add to recent repositories
-    state.add_recent_repository(&path, &repo_info.name)?;
+    state.add_recent_repository(&path, &repo_info.name).await?;
 
     Ok(repo_info)
 }
@@ -192,7 +192,7 @@ pub async fn get_commit(state: State<'_, AppState>, oid: String) -> Result<Commi
 #[tauri::command]
 #[specta::specta]
 pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<RecentRepository>> {
-    let rows = state.get_recent_repositories()?;
+    let rows = state.get_recent_repositories().await?;
 
     let handles: Vec<_> = rows
         .into_iter()
@@ -214,21 +214,21 @@ pub async fn get_recent_repositories(state: State<'_, AppState>) -> Result<Vec<R
 #[specta::specta]
 pub async fn remove_recent_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
-    state.remove_recent_repository(&path)
+    state.remove_recent_repository(&path).await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn pin_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
-    state.pin_repository(&path)
+    state.pin_repository(&path).await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn unpin_repository(state: State<'_, AppState>, path: String) -> Result<()> {
     let path = PathBuf::from(&path);
-    state.unpin_repository(&path)
+    state.unpin_repository(&path).await
 }
 
 #[tauri::command]

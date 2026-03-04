@@ -407,14 +407,14 @@ impl SshKeyService {
 
     /// Resolve which SSH key to use for a remote operation.
     /// Resolution order: per-remote → global default → None (system default)
-    pub fn resolve_ssh_key(
+    pub async fn resolve_ssh_key(
         database: &Database,
         repo_path: &str,
         remote_name: &str,
         default_ssh_key: Option<&String>,
     ) -> Option<String> {
         // 1. Check per-remote key
-        match database.get_remote_ssh_key(repo_path, remote_name) {
+        match database.get_remote_ssh_key(repo_path, remote_name).await {
             Ok(Some(key_path)) => {
                 // Special sentinel "auto" means explicitly use system default
                 if key_path == "auto" {
@@ -750,54 +750,61 @@ mod tests {
 
     // ==================== resolve_ssh_key Tests ====================
 
-    #[test]
-    fn test_resolve_ssh_key_per_remote() {
-        let db = Database::open_in_memory().expect("should create db");
+    #[tokio::test]
+    async fn test_resolve_ssh_key_per_remote() {
+        let db = Database::open_in_memory().await.expect("should create db");
         db.set_remote_ssh_key("/repo", "origin", "~/.ssh/remote_key")
+            .await
             .expect("should set");
 
         let global_key = "~/.ssh/global_key".to_string();
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
+        let result =
+            SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key)).await;
         assert_eq!(result, Some("~/.ssh/remote_key".to_string()));
     }
 
-    #[test]
-    fn test_resolve_ssh_key_global_default() {
-        let db = Database::open_in_memory().expect("should create db");
+    #[tokio::test]
+    async fn test_resolve_ssh_key_global_default() {
+        let db = Database::open_in_memory().await.expect("should create db");
 
         let global_key = "~/.ssh/global_key".to_string();
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
+        let result =
+            SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key)).await;
         assert_eq!(result, Some("~/.ssh/global_key".to_string()));
     }
 
-    #[test]
-    fn test_resolve_ssh_key_none() {
-        let db = Database::open_in_memory().expect("should create db");
+    #[tokio::test]
+    async fn test_resolve_ssh_key_none() {
+        let db = Database::open_in_memory().await.expect("should create db");
 
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", None);
+        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", None).await;
         assert!(result.is_none());
     }
 
-    #[test]
-    fn test_resolve_ssh_key_auto_sentinel() {
-        let db = Database::open_in_memory().expect("should create db");
+    #[tokio::test]
+    async fn test_resolve_ssh_key_auto_sentinel() {
+        let db = Database::open_in_memory().await.expect("should create db");
         db.set_remote_ssh_key("/repo", "origin", "auto")
+            .await
             .expect("should set");
 
         let global_key = "~/.ssh/global_key".to_string();
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
+        let result =
+            SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key)).await;
         // "auto" sentinel means use system default (None)
         assert!(result.is_none());
     }
 
-    #[test]
-    fn test_resolve_ssh_key_per_remote_overrides_global() {
-        let db = Database::open_in_memory().expect("should create db");
+    #[tokio::test]
+    async fn test_resolve_ssh_key_per_remote_overrides_global() {
+        let db = Database::open_in_memory().await.expect("should create db");
         db.set_remote_ssh_key("/repo", "origin", "~/.ssh/specific_key")
+            .await
             .expect("should set");
 
         let global_key = "~/.ssh/global_key".to_string();
-        let result = SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key));
+        let result =
+            SshKeyService::resolve_ssh_key(&db, "/repo", "origin", Some(&global_key)).await;
         assert_eq!(result, Some("~/.ssh/specific_key".to_string()));
     }
 

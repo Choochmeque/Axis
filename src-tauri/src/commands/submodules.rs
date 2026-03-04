@@ -30,7 +30,7 @@ pub async fn submodule_add(
     state: State<'_, AppState>,
     options: AddSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let ssh_creds = state.resolve_ssh_credentials("origin")?;
+    let ssh_creds = state.resolve_ssh_credentials("origin").await?;
     state
         .get_git_service()?
         .write()
@@ -61,7 +61,7 @@ pub async fn submodule_update(
     state: State<'_, AppState>,
     options: UpdateSubmoduleOptions,
 ) -> Result<SubmoduleResult> {
-    let ssh_creds = state.resolve_ssh_credentials("origin")?;
+    let ssh_creds = state.resolve_ssh_credentials("origin").await?;
     state
         .get_git_service()?
         .write()

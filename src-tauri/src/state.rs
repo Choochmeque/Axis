@@ -126,8 +126,9 @@ impl RepositoryCache {
         let service = GitService::open(path, app_handle.clone(), is_active)?;
         let handle = GitServiceHandle::new(service);
 
-        let mut repos = self.repos.write();
-        repos.insert(path.to_path_buf(), handle.clone());
+        self.repos
+            .write()
+            .insert(path.to_path_buf(), handle.clone());
 
         Ok(handle)
     }
@@ -319,48 +320,48 @@ impl AppState {
         self.repository_cache.get_or_open(&path, &app_handle, true)
     }
 
-    pub fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
-        self.database.add_recent_repository(path, name)
+    pub async fn add_recent_repository(&self, path: &Path, name: &str) -> Result<()> {
+        self.database.add_recent_repository(path, name).await
     }
 
-    pub fn get_recent_repositories(&self) -> Result<Vec<RecentRepositoryRow>> {
-        self.database.get_recent_repositories()
+    pub async fn get_recent_repositories(&self) -> Result<Vec<RecentRepositoryRow>> {
+        self.database.get_recent_repositories().await
     }
 
-    pub fn remove_recent_repository(&self, path: &Path) -> Result<()> {
-        self.database.remove_recent_repository(path)
+    pub async fn remove_recent_repository(&self, path: &Path) -> Result<()> {
+        self.database.remove_recent_repository(path).await
     }
 
-    pub fn pin_repository(&self, path: &Path) -> Result<()> {
-        self.database.pin_repository(path)
+    pub async fn pin_repository(&self, path: &Path) -> Result<()> {
+        self.database.pin_repository(path).await
     }
 
-    pub fn unpin_repository(&self, path: &Path) -> Result<()> {
-        self.database.unpin_repository(path)
+    pub async fn unpin_repository(&self, path: &Path) -> Result<()> {
+        self.database.unpin_repository(path).await
     }
 
-    pub fn get_settings(&self) -> Result<AppSettings> {
-        self.database.get_settings()
+    pub async fn get_settings(&self) -> Result<AppSettings> {
+        self.database.get_settings().await
     }
 
-    pub fn save_settings(&self, settings: &AppSettings) -> Result<()> {
-        self.database.save_settings(settings)
+    pub async fn save_settings(&self, settings: &AppSettings) -> Result<()> {
+        self.database.save_settings(settings).await
     }
 
-    pub fn get_secret(&self, key: &str) -> Result<Option<String>> {
-        self.database.get_secret(key)
+    pub async fn get_secret(&self, key: &str) -> Result<Option<String>> {
+        self.database.get_secret(key).await
     }
 
-    pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
-        self.database.set_secret(key, value)
+    pub async fn set_secret(&self, key: &str, value: &str) -> Result<()> {
+        self.database.set_secret(key, value).await
     }
 
-    pub fn has_secret(&self, key: &str) -> Result<bool> {
-        self.database.has_secret(key)
+    pub async fn has_secret(&self, key: &str) -> Result<bool> {
+        self.database.has_secret(key).await
     }
 
-    pub fn delete_secret(&self, key: &str) -> Result<()> {
-        self.database.delete_secret(key)
+    pub async fn delete_secret(&self, key: &str) -> Result<()> {
+        self.database.delete_secret(key).await
     }
 
     /// Start the background fetch service
@@ -403,20 +404,24 @@ impl AppState {
     }
 
     /// Resolve the SSH key for a remote operation
-    pub fn resolve_ssh_key_for_remote(&self, remote_name: &str) -> Result<Option<String>> {
-        let settings = self.get_settings()?;
+    pub async fn resolve_ssh_key_for_remote(&self, remote_name: &str) -> Result<Option<String>> {
+        let settings = self.get_settings().await?;
         let repo_path = self.get_repo_path_string()?;
         Ok(SshKeyService::resolve_ssh_key(
             &self.database,
             &repo_path,
             remote_name,
             settings.default_ssh_key.as_ref(),
-        ))
+        )
+        .await)
     }
 
     /// Resolve SSH credentials (key path + cached passphrase) for a remote
-    pub fn resolve_ssh_credentials(&self, remote_name: &str) -> Result<Option<SshCredentials>> {
-        let ssh_key = self.resolve_ssh_key_for_remote(remote_name)?;
+    pub async fn resolve_ssh_credentials(
+        &self,
+        remote_name: &str,
+    ) -> Result<Option<SshCredentials>> {
+        let ssh_key = self.resolve_ssh_key_for_remote(remote_name).await?;
         Ok(ssh_key.map(|key_path| {
             let passphrase = self.get_cached_ssh_passphrase(&key_path);
             SshCredentials {
@@ -568,37 +573,45 @@ mod tests {
     // ==================== AppState Basic Tests ====================
     // Note: AppState requires Database and AppHandle, testing basic error paths
 
-    #[test]
-    fn test_app_state_get_current_repository_path_none() {
+    #[tokio::test]
+    async fn test_app_state_get_current_repository_path_none() {
         // Create a temporary in-memory database for testing
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Initially no repository should be active
         assert!(state.get_current_repository_path().is_none());
     }
 
-    #[test]
-    fn test_app_state_ensure_repository_open_error() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_ensure_repository_open_error() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let result = state.ensure_repository_open();
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_app_state_get_app_handle_error() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_get_app_handle_error() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let result = state.get_app_handle();
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_app_state_close_current_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_close_current_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Close when nothing is open should not panic
@@ -606,9 +619,11 @@ mod tests {
         assert!(state.get_current_repository_path().is_none());
     }
 
-    #[test]
-    fn test_app_state_close_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_close_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let path = PathBuf::from("/test/repo");
@@ -617,27 +632,33 @@ mod tests {
         assert!(state.get_current_repository_path().is_none());
     }
 
-    #[test]
-    fn test_app_state_repository_cache() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_repository_cache() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let cache = state.repository_cache();
         assert!(cache.is_empty());
     }
 
-    #[test]
-    fn test_app_state_commit_cache() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_commit_cache() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Just verify we can get the commit cache
         let _cache = state.commit_cache();
     }
 
-    #[test]
-    fn test_app_state_signature_verification_cache() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_signature_verification_cache() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let cache = state.signature_verification_cache();
@@ -645,9 +666,11 @@ mod tests {
         assert!(cache.get("anything").is_none());
     }
 
-    #[test]
-    fn test_app_state_avatar_service_not_initialized() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_avatar_service_not_initialized() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Avatar service is not initialized until set_app_handle is called
@@ -655,9 +678,11 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_app_state_integration_service() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_integration_service() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Integration service is initialized in new()
@@ -665,9 +690,11 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_app_state_progress_registry() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_progress_registry() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let registry = state.progress_registry();
@@ -676,18 +703,22 @@ mod tests {
         assert!(!token.load(std::sync::atomic::Ordering::SeqCst));
     }
 
-    #[test]
-    fn test_app_state_background_fetch_not_running() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_background_fetch_not_running() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Initially not running
         assert!(!state.is_background_fetch_running());
     }
 
-    #[test]
-    fn test_app_state_stop_background_fetch() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_stop_background_fetch() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Stop should not panic even if not running
@@ -695,127 +726,168 @@ mod tests {
         assert!(!state.is_background_fetch_running());
     }
 
-    #[test]
-    fn test_app_state_get_settings() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_get_settings() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
-        let result = state.get_settings();
+        let result = state.get_settings().await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_app_state_save_settings() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_save_settings() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let settings = AppSettings::default();
-        let result = state.save_settings(&settings);
+        let result = state.save_settings(&settings).await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_app_state_get_recent_repositories_empty() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_get_recent_repositories_empty() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
-        let result = state.get_recent_repositories();
+        let result = state.get_recent_repositories().await;
         assert!(result.is_ok());
         assert!(result.expect("should get repos").is_empty());
     }
 
-    #[test]
-    fn test_app_state_add_recent_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_add_recent_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let path = PathBuf::from("/test/repo");
-        let result = state.add_recent_repository(&path, "test-repo");
+        let result = state.add_recent_repository(&path, "test-repo").await;
         assert!(result.is_ok());
 
-        let repos = state.get_recent_repositories().expect("should get repos");
+        let repos = state
+            .get_recent_repositories()
+            .await
+            .expect("should get repos");
         assert_eq!(repos.len(), 1);
     }
 
-    #[test]
-    fn test_app_state_remove_recent_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_remove_recent_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let path = PathBuf::from("/test/repo");
         state
             .add_recent_repository(&path, "test-repo")
+            .await
             .expect("should add");
 
-        let result = state.remove_recent_repository(&path);
+        let result = state.remove_recent_repository(&path).await;
         assert!(result.is_ok());
 
-        let repos = state.get_recent_repositories().expect("should get repos");
+        let repos = state
+            .get_recent_repositories()
+            .await
+            .expect("should get repos");
         assert!(repos.is_empty());
     }
 
     // ==================== Pin Repository Tests ====================
 
-    #[test]
-    fn test_app_state_pin_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_pin_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let path = PathBuf::from("/test/repo");
         state
             .add_recent_repository(&path, "test-repo")
+            .await
             .expect("should add");
-        state.pin_repository(&path).expect("should pin");
+        state.pin_repository(&path).await.expect("should pin");
 
-        let repos = state.get_recent_repositories().expect("should get repos");
+        let repos = state
+            .get_recent_repositories()
+            .await
+            .expect("should get repos");
         assert_eq!(repos.len(), 1);
         assert!(repos[0].is_pinned);
     }
 
-    #[test]
-    fn test_app_state_unpin_repository() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_unpin_repository() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         let path = PathBuf::from("/test/repo");
         state
             .add_recent_repository(&path, "test-repo")
+            .await
             .expect("should add");
-        state.pin_repository(&path).expect("should pin");
-        state.unpin_repository(&path).expect("should unpin");
+        state.pin_repository(&path).await.expect("should pin");
+        state.unpin_repository(&path).await.expect("should unpin");
 
-        let repos = state.get_recent_repositories().expect("should get repos");
+        let repos = state
+            .get_recent_repositories()
+            .await
+            .expect("should get repos");
         assert_eq!(repos.len(), 1);
         assert!(!repos[0].is_pinned);
     }
 
-    #[test]
-    fn test_app_state_secrets() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_secrets() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Initially no secret
-        assert!(!state.has_secret("test-key").expect("should check"));
-        assert!(state.get_secret("test-key").expect("should get").is_none());
+        assert!(!state.has_secret("test-key").await.expect("should check"));
+        assert!(state
+            .get_secret("test-key")
+            .await
+            .expect("should get")
+            .is_none());
 
         // Set secret
         state
             .set_secret("test-key", "test-value")
+            .await
             .expect("should set");
-        assert!(state.has_secret("test-key").expect("should check"));
+        assert!(state.has_secret("test-key").await.expect("should check"));
         assert_eq!(
-            state.get_secret("test-key").expect("should get"),
+            state.get_secret("test-key").await.expect("should get"),
             Some("test-value".to_string())
         );
 
         // Delete secret
-        state.delete_secret("test-key").expect("should delete");
-        assert!(!state.has_secret("test-key").expect("should check"));
+        state
+            .delete_secret("test-key")
+            .await
+            .expect("should delete");
+        assert!(!state.has_secret("test-key").await.expect("should check"));
     }
 
-    #[test]
-    fn test_app_state_get_git_service_error() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_app_state_get_git_service_error() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // No repository open
@@ -825,19 +897,23 @@ mod tests {
 
     // ==================== SSH Passphrase Cache Tests ====================
 
-    #[test]
-    fn test_ssh_passphrase_cache_empty() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_empty() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         assert!(state.get_cached_ssh_passphrase("~/.ssh/id_rsa").is_none());
     }
 
-    #[test]
-    fn test_ssh_passphrase_cache_store_and_retrieve() {
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_store_and_retrieve() {
         use secrecy::ExposeSecret;
 
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         state.cache_ssh_passphrase("~/.ssh/id_rsa", "my_secret".to_string());
@@ -848,9 +924,11 @@ mod tests {
         assert_eq!(cached.expose_secret(), "my_secret");
     }
 
-    #[test]
-    fn test_ssh_passphrase_cache_clear_single() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_clear_single() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
@@ -862,9 +940,11 @@ mod tests {
         assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_some());
     }
 
-    #[test]
-    fn test_ssh_passphrase_cache_clear_all() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_clear_all() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         state.cache_ssh_passphrase("~/.ssh/key1", "pass1".to_string());
@@ -876,11 +956,13 @@ mod tests {
         assert!(state.get_cached_ssh_passphrase("~/.ssh/key2").is_none());
     }
 
-    #[test]
-    fn test_ssh_passphrase_cache_overwrite() {
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_overwrite() {
         use secrecy::ExposeSecret;
 
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         state.cache_ssh_passphrase("~/.ssh/key", "old_pass".to_string());
@@ -892,9 +974,11 @@ mod tests {
         assert_eq!(cached.expose_secret(), "new_pass");
     }
 
-    #[test]
-    fn test_ssh_passphrase_cache_clear_nonexistent() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_ssh_passphrase_cache_clear_nonexistent() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Should not panic
@@ -903,17 +987,21 @@ mod tests {
 
     // ==================== Pending Update Tests ====================
 
-    #[test]
-    fn test_pending_update_initially_none() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_pending_update_initially_none() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         assert!(state.take_pending_update().is_none());
     }
 
-    #[test]
-    fn test_take_pending_update_returns_none_when_empty() {
-        let db = crate::storage::Database::open_in_memory().expect("should create in-memory db");
+    #[tokio::test]
+    async fn test_take_pending_update_returns_none_when_empty() {
+        let db = crate::storage::Database::open_in_memory()
+            .await
+            .expect("should create in-memory db");
         let state = AppState::new(db);
 
         // Multiple takes should all return None

@@ -20,6 +20,7 @@ use crate::models::{
     ProviderType, PullRequest, PullRequestDetail, PullRequestsPage,
 };
 use crate::services::integrations::{IntegrationProvider, TtlCache};
+use crate::storage::Database;
 
 pub use oauth::OAuthFlow;
 
@@ -29,9 +30,6 @@ const GITHUB_TOKEN_KEY: &str = "integration_github_token";
 const CACHE_TTL_SHORT: Duration = Duration::from_secs(30); // For frequently changing data (notifications)
 const CACHE_TTL_MEDIUM: Duration = Duration::from_secs(60); // For PRs, issues, CI runs
 const CACHE_TTL_LONG: Duration = Duration::from_secs(300); // For repo info
-
-/// Type alias for the delete secret callback function
-type DeleteSecretFn = Box<dyn Fn(&str) -> Result<()> + Send + Sync>;
 
 impl From<PrState> for params::State {
     fn from(state: PrState) -> Self {
@@ -247,7 +245,7 @@ impl From<octocrab::Error> for AxisError {
 /// GitHub integration provider
 pub struct GitHubProvider {
     client: RwLock<Option<Arc<Octocrab>>>,
-    delete_secret: DeleteSecretFn,
+    database: Arc<Database>,
     // Caches
     pr_cache: TtlCache<PullRequestsPage>,
     issue_cache: TtlCache<IssuesPage>,
@@ -260,15 +258,11 @@ pub struct GitHubProvider {
 }
 
 impl GitHubProvider {
-    pub fn new<G, D>(get_secret: G, delete_secret: D) -> Self
-    where
-        G: Fn(&str) -> Result<Option<String>> + Send + Sync + 'static,
-        D: Fn(&str) -> Result<()> + Send + Sync + 'static,
-    {
+    pub async fn new(database: Arc<Database>) -> Self {
         let mut client = None;
 
         // Try to initialize client from stored token
-        if let Ok(Some(token)) = get_secret(GITHUB_TOKEN_KEY) {
+        if let Ok(Some(token)) = database.get_secret(GITHUB_TOKEN_KEY).await {
             if let Ok(c) = Octocrab::builder().personal_token(token).build() {
                 client = Some(Arc::new(c));
             }
@@ -276,7 +270,7 @@ impl GitHubProvider {
 
         Self {
             client: RwLock::new(client),
-            delete_secret: Box::new(delete_secret),
+            database,
             pr_cache: TtlCache::new(CACHE_TTL_MEDIUM),
             issue_cache: TtlCache::new(CACHE_TTL_MEDIUM),
             ci_cache: TtlCache::new(CACHE_TTL_MEDIUM),
@@ -397,7 +391,7 @@ impl IntegrationProvider for GitHubProvider {
     }
 
     async fn disconnect(&self) -> Result<()> {
-        (self.delete_secret)(GITHUB_TOKEN_KEY)?;
+        self.database.delete_secret(GITHUB_TOKEN_KEY).await?;
         self.clear_client();
         self.clear_caches();
         Ok(())

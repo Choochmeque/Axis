@@ -96,7 +96,7 @@ pub async fn create_commit(
     bypass_hooks: Option<bool>,
 ) -> Result<String> {
     let path = state.ensure_repository_open()?;
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
@@ -215,7 +215,7 @@ pub async fn amend_commit(
     bypass_hooks: Option<bool>,
 ) -> Result<String> {
     let path = state.ensure_repository_open()?;
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings

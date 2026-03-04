@@ -19,7 +19,7 @@ pub async fn merge_branch(
     state: State<'_, AppState>,
     options: MergeOptions,
 ) -> Result<MergeResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
@@ -126,7 +126,7 @@ pub async fn rebase_branch(
     options: RebaseOptions,
     bypass_hooks: Option<bool>,
 ) -> Result<RebaseResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
@@ -201,7 +201,7 @@ pub async fn rebase_onto(
     options: RebaseOntoOptions,
     bypass_hooks: Option<bool>,
 ) -> Result<RebaseResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 
@@ -390,7 +390,7 @@ pub async fn interactive_rebase(
     options: InteractiveRebaseOptions,
     bypass_hooks: Option<bool>,
 ) -> Result<RebaseResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
 

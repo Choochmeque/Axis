@@ -53,6 +53,7 @@ impl BackgroundFetchService {
                         let repo_path_str = path.to_string_lossy().to_string();
                         let default_ssh_key = app_state
                             .get_settings()
+                            .await
                             .map(|s| s.default_ssh_key)
                             .unwrap_or(None);
 
@@ -82,7 +83,8 @@ impl BackgroundFetchService {
                                 &repo_path_str,
                                 &remote.name,
                                 default_ssh_key.as_ref(),
-                            );
+                            )
+                            .await;
 
                             // Skip encrypted keys when no cached passphrase is available
                             if let Some(key_path) = &ssh_key {

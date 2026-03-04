@@ -375,9 +375,8 @@ impl Database {
     /// Create an in-memory database for testing
     #[cfg(test)]
     pub async fn open_in_memory() -> Result<Self> {
-        let db = Builder::new_local(":memory:").build().await?;
-        let conn = db.connect()?;
-        let database = Database {
+        let conn = Builder::new_local(":memory:").build().await?.connect()?;
+        let database = Self {
             conn: Mutex::new(conn),
         };
         database.init_schema().await?;

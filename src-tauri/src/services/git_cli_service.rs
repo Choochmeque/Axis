@@ -2530,8 +2530,69 @@ impl GitCliService {
                 path: Some(options.path.clone()),
             })
         } else {
-            Err(AxisError::GitError(result.stderr.trim().to_string()))
+            let stderr = result.stderr.trim();
+            // Handle invalid worktree case where .git is a directory instead of a file
+            // This can happen with corrupted or improperly set up worktrees
+            if stderr.contains("is not a .git file") {
+                // Fall back to manual cleanup
+                self.worktree_remove_invalid(&options.path, options.force)
+                    .await
+            } else {
+                Err(AxisError::GitError(stderr.to_string()))
+            }
         }
+    }
+
+    /// Remove an invalid worktree that git worktree remove can't handle
+    /// (e.g., when .git is a directory instead of a file)
+    async fn worktree_remove_invalid(&self, path: &str, force: bool) -> Result<WorktreeResult> {
+        let worktree_path = Path::new(path);
+        let worktree_name = worktree_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| AxisError::GitError("Invalid worktree path".to_string()))?;
+
+        // Get the git directory path (.git/worktrees/<name>)
+        let git_dir = self.repo_path.join(".git");
+        let worktrees_entry = git_dir.join("worktrees").join(worktree_name);
+
+        log::debug!(
+            "Attempting manual cleanup for invalid worktree: {path}, worktrees_entry: {}",
+            worktrees_entry.display()
+        );
+
+        // Remove the worktree entry from .git/worktrees/ if it exists
+        if worktrees_entry.exists() {
+            std::fs::remove_dir_all(&worktrees_entry).map_err(|e| {
+                AxisError::GitError(format!(
+                    "Failed to remove worktree metadata at {}: {e}",
+                    worktrees_entry.display()
+                ))
+            })?;
+            log::debug!(
+                "Removed worktree metadata directory: {}",
+                worktrees_entry.display()
+            );
+        }
+
+        // Optionally remove the worktree directory itself if force is enabled
+        if force && worktree_path.exists() {
+            std::fs::remove_dir_all(worktree_path).map_err(|e| {
+                AxisError::GitError(format!(
+                    "Failed to remove worktree directory at {path}: {e}"
+                ))
+            })?;
+            log::debug!("Removed worktree directory: {path}");
+        }
+
+        // Run git worktree prune to clean up any remaining stale entries
+        let _ = self.worktree_prune(false).await;
+
+        Ok(WorktreeResult {
+            success: true,
+            message: format!("Worktree cleaned up: {path}"),
+            path: Some(path.to_string()),
+        })
     }
 
     /// Lock a worktree to prevent deletion

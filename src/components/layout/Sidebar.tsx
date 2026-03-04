@@ -37,7 +37,7 @@ import {
 } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { BranchType, CIRunStatus, IssueState, PrState } from '@/types';
+import { BranchFilterType, BranchType, CIRunStatus, IssueState, PrState } from '@/types';
 import { cn, testId } from '../../lib/utils';
 import { branchApi, tagApi } from '../../services/api';
 import { useDialogStore } from '../../store/dialogStore';
@@ -282,8 +282,17 @@ export function Sidebar() {
       try {
         // Reset staging store to clear old worktree's state
         useStagingStore.getState().reset();
+
+        // Reset branchFilter to default before switching to avoid invalid reference errors
+        // (the old filter may reference commits that don't exist in the new worktree)
+        useRepositoryStore.setState({ branchFilter: BranchFilterType.All });
+
         const { switchRepository } = useRepositoryStore.getState();
         await switchRepository(worktreePath);
+
+        // Force refresh to load data for new worktree
+        useRepositoryStore.getState().refresh(true);
+
         toast.success(t('notifications.success.worktreeSwitched'));
       } catch (err) {
         toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));

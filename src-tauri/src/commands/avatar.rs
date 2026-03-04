@@ -14,7 +14,7 @@ pub async fn get_avatar(
     email: String,
     sha: Option<String>,
 ) -> Result<AvatarResponse> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let cache_key = AvatarService::md5_hash(email.to_lowercase().trim());
     let avatar_service = state.avatar_service()?;
 

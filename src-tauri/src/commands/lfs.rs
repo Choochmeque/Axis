@@ -85,7 +85,7 @@ pub async fn lfs_list_files(state: State<'_, AppState>) -> Result<Vec<LfsFile>> 
 #[specta::specta]
 pub async fn lfs_fetch(state: State<'_, AppState>, options: LfsFetchOptions) -> Result<LfsResult> {
     let remote = options.remote.as_deref().unwrap_or("origin");
-    let ssh_creds = state.resolve_ssh_credentials(remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(remote).await?;
     state
         .get_git_service()?
         .write()
@@ -99,7 +99,7 @@ pub async fn lfs_fetch(state: State<'_, AppState>, options: LfsFetchOptions) -> 
 #[specta::specta]
 pub async fn lfs_pull(state: State<'_, AppState>, options: LfsPullOptions) -> Result<LfsResult> {
     let remote = options.remote.as_deref().unwrap_or("origin");
-    let ssh_creds = state.resolve_ssh_credentials(remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(remote).await?;
     state
         .get_git_service()?
         .write()
@@ -113,7 +113,7 @@ pub async fn lfs_pull(state: State<'_, AppState>, options: LfsPullOptions) -> Re
 #[specta::specta]
 pub async fn lfs_push(state: State<'_, AppState>, options: LfsPushOptions) -> Result<LfsResult> {
     let remote = options.remote.as_deref().unwrap_or("origin");
-    let ssh_creds = state.resolve_ssh_credentials(remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(remote).await?;
     state
         .get_git_service()?
         .write()

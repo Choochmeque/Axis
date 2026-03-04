@@ -102,8 +102,8 @@ impl From<std::io::Error> for AxisError {
     }
 }
 
-impl From<rusqlite::Error> for AxisError {
-    fn from(err: rusqlite::Error) -> Self {
+impl From<turso::Error> for AxisError {
+    fn from(err: turso::Error) -> Self {
         Self::DatabaseError(err.to_string())
     }
 }

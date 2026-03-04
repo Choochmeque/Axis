@@ -361,7 +361,7 @@ impl LaneState {
 
     #[cfg(test)]
     /// Get the maximum lane currently in use
-    pub fn max_lane(&self) -> usize {
+    pub const fn max_lane(&self) -> usize {
         self.active_lanes.len().saturating_sub(1)
     }
 }

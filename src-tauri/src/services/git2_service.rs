@@ -155,7 +155,7 @@ fn build_certificate_check_callback(
             }
             // known_hosts format: hostname[,hostname2] key-type base64-key [comment]
             // Also handles hashed hostnames (starting with |1|)
-            if let Some(hosts_part) = line.split_whitespace().next() {
+            line.split_whitespace().next().is_some_and(|hosts_part| {
                 // Check each comma-separated hostname/IP
                 hosts_part.split(',').any(|h| {
                     let h = h.trim_start_matches('[');
@@ -163,9 +163,7 @@ fn build_certificate_check_callback(
                     // Strip port suffix like ":22" from bracketed entries
                     h == hostname || h.starts_with(&format!("{hostname}:"))
                 })
-            } else {
-                false
-            }
+            })
         });
 
         if host_found {
@@ -669,7 +667,7 @@ impl Git2Service {
     pub fn stage_all(&self) -> Result<()> {
         let repo = self.repo()?;
         let mut index = repo.index()?;
-        index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+        index.add_all(std::iter::once("*"), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
         Ok(())
     }
@@ -790,15 +788,13 @@ impl Git2Service {
         };
 
         // Get parent commit(s)
-        let parents = if let Ok(head) = repo.head() {
-            if let Ok(commit) = head.peel_to_commit() {
-                vec![commit]
-            } else {
-                vec![]
-            }
-        } else {
-            vec![]
-        };
+        let parents = repo.head().map_or_else(
+            |_| vec![],
+            |head| {
+                head.peel_to_commit()
+                    .map_or_else(|_| vec![], |commit| vec![commit])
+            },
+        );
 
         let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
@@ -2458,11 +2454,7 @@ impl Git2Service {
             let short_name = name_str.strip_prefix("refs/tags/").unwrap_or(&name_str);
 
             // Resolve annotated tags to their target commit
-            let target_oid = if let Ok(tag) = repo.find_tag(oid) {
-                tag.target_id()
-            } else {
-                oid
-            };
+            let target_oid = repo.find_tag(oid).map_or(oid, |tag| tag.target_id());
 
             commit_refs
                 .entry(target_oid.to_string())
@@ -2597,22 +2589,25 @@ impl Git2Service {
                 let is_group_start = last_oid != Some(commit_oid);
                 last_oid = Some(commit_oid);
 
-                let (author, timestamp) = if let Ok(commit) = repo.find_commit(commit_oid) {
-                    let sig = commit.author();
-                    (
-                        sig.name().unwrap_or("Unknown").to_string(),
-                        chrono::DateTime::from_timestamp(sig.when().seconds(), 0)
-                            .unwrap_or_default()
-                            .with_timezone(&chrono::Utc),
-                    )
-                } else {
-                    (
-                        "Unknown".to_string(),
-                        chrono::DateTime::from_timestamp(0, 0)
-                            .unwrap_or_default()
-                            .with_timezone(&chrono::Utc),
-                    )
-                };
+                let (author, timestamp) = repo.find_commit(commit_oid).map_or_else(
+                    |_| {
+                        (
+                            "Unknown".to_string(),
+                            chrono::DateTime::from_timestamp(0, 0)
+                                .unwrap_or_default()
+                                .with_timezone(&chrono::Utc),
+                        )
+                    },
+                    |commit| {
+                        let sig = commit.author();
+                        (
+                            sig.name().unwrap_or("Unknown").to_string(),
+                            chrono::DateTime::from_timestamp(sig.when().seconds(), 0)
+                                .unwrap_or_default()
+                                .with_timezone(&chrono::Utc),
+                        )
+                    },
+                );
 
                 blame_lines.push(BlameLine {
                     line_number: line_num,
@@ -2726,8 +2721,8 @@ impl Git2Service {
             // Check if this is an annotated tag
             let tag_obj = reference.peel(git2::ObjectType::Tag).ok();
 
-            let (is_annotated, message, tagger) = if let Some(obj) = tag_obj {
-                if let Some(tag) = obj.as_tag() {
+            let (is_annotated, message, tagger) = tag_obj.map_or((false, None, None), |obj| {
+                obj.as_tag().map_or((false, None, None), |tag| {
                     let tagger_sig = tag.tagger().map(|sig| {
                         let timestamp = DateTime::from_timestamp(sig.when().seconds(), 0)
                             .unwrap_or_else(Utc::now)
@@ -2743,22 +2738,17 @@ impl Git2Service {
                         tag.message().map(std::string::ToString::to_string),
                         tagger_sig,
                     )
-                } else {
-                    (false, None, None)
-                }
-            } else {
-                (false, None, None)
-            };
+                })
+            });
 
             // Get target commit info
-            let (target_summary, target_time) = if let Ok(commit) = target_obj.peel_to_commit() {
-                let summary = commit.summary().map(std::string::ToString::to_string);
-                let time = DateTime::from_timestamp(commit.time().seconds(), 0)
-                    .map(|dt| dt.with_timezone(&Utc));
-                (summary, time)
-            } else {
-                (None, None)
-            };
+            let (target_summary, target_time) =
+                target_obj.peel_to_commit().map_or((None, None), |commit| {
+                    let summary = commit.summary().map(std::string::ToString::to_string);
+                    let time = DateTime::from_timestamp(commit.time().seconds(), 0)
+                        .map(|dt| dt.with_timezone(&Utc));
+                    (summary, time)
+                });
 
             tags.push(Tag {
                 name,
@@ -3435,14 +3425,15 @@ impl Git2Service {
     /// Suggest an LFS tracking pattern for a file based on its extension
     fn suggest_lfs_pattern(path: &str) -> String {
         let p = Path::new(path);
-        match p.extension().and_then(|e| e.to_str()) {
-            Some(ext) => format!("*.{ext}"),
-            None => p
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or(path)
-                .to_string(),
-        }
+        p.extension().and_then(|e| e.to_str()).map_or_else(
+            || {
+                p.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(path)
+                    .to_string()
+            },
+            |ext| format!("*.{ext}"),
+        )
     }
 
     /// Check if a file path matches any of the given LFS tracked patterns
@@ -3503,22 +3494,16 @@ impl Git2Service {
             }
 
             // Check if binary using git2's Blob::is_binary()
-            let is_binary = match repo.blob_path(&abs_path) {
-                Ok(oid) => match repo.find_blob(oid) {
-                    Ok(blob) => blob.is_binary(),
-                    Err(_) => false,
-                },
-                Err(_) => {
+            let is_binary = repo.blob_path(&abs_path).map_or_else(
+                |_| {
                     // Fallback: read first 8KB and check for null bytes
-                    match std::fs::read(&abs_path) {
-                        Ok(content) => {
-                            let check_len = content.len().min(8192);
-                            content[..check_len].contains(&0)
-                        }
-                        Err(_) => false,
-                    }
-                }
-            };
+                    std::fs::read(&abs_path).is_ok_and(|content| {
+                        let check_len = content.len().min(8192);
+                        content[..check_len].contains(&0)
+                    })
+                },
+                |oid| repo.find_blob(oid).is_ok_and(|blob| blob.is_binary()),
+            );
 
             if !is_binary {
                 continue;

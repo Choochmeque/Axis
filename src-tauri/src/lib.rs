@@ -340,6 +340,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
 /// - Menu creation or setup fails
 /// - The Tauri application fails to start
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[allow(clippy::large_stack_frames)] // tauri::generate_context!() creates large Context struct
 pub fn run() {
     env_logger::init();
 
@@ -376,11 +377,15 @@ pub fn run() {
                 .app_data_dir()
                 .expect("Failed to get app data directory");
 
-            let database = Database::new(&app_data_dir).expect("Failed to initialize database");
+            // Database::new() is async, so we need to block on it during setup
+            let runtime = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+            let database = runtime
+                .block_on(Database::new(&app_data_dir))
+                .expect("Failed to initialize database");
 
             // Get auto_fetch_interval from settings before creating AppState
-            let auto_fetch_interval = database
-                .get_settings()
+            let auto_fetch_interval = runtime
+                .block_on(database.get_settings())
                 .map(|s| s.auto_fetch_interval)
                 .unwrap_or(5);
 

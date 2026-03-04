@@ -56,7 +56,7 @@ pub async fn tag_push(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
-    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote).await?;
     state
         .get_git_service()?
         .write()
@@ -69,7 +69,7 @@ pub async fn tag_push(
 #[tauri::command]
 #[specta::specta]
 pub async fn tag_push_all(state: State<'_, AppState>, remote: String) -> Result<TagResult> {
-    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote).await?;
     state
         .get_git_service()?
         .write()
@@ -86,7 +86,7 @@ pub async fn tag_delete_remote(
     name: String,
     remote: String,
 ) -> Result<TagResult> {
-    let ssh_creds = state.resolve_ssh_credentials(&remote)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote).await?;
     state
         .get_git_service()?
         .write()

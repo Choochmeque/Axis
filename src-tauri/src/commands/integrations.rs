@@ -89,11 +89,7 @@ pub async fn integration_detect_provider(
         .and_then(|r| r.url.clone())
         .or_else(|| remotes.first().and_then(|r| r.url.clone()));
 
-    if let Some(url) = origin_url {
-        Ok(detect_provider(&url))
-    } else {
-        Ok(None)
-    }
+    Ok(origin_url.and_then(|url| detect_provider(&url)))
 }
 
 // ============================================================================

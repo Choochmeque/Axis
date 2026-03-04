@@ -345,8 +345,7 @@ mod tests {
         assert!(!token.load(Ordering::SeqCst));
 
         // Operation should be tracked
-        let emitters = registry.emitters.lock();
-        assert!(emitters.contains_key("op-123"));
+        assert!(registry.emitters.lock().contains_key("op-123"));
     }
 
     #[test]
@@ -363,8 +362,7 @@ mod tests {
         assert!(!token3.load(Ordering::SeqCst));
 
         // All should be tracked
-        let emitters = registry.emitters.lock();
-        assert_eq!(emitters.len(), 3);
+        assert_eq!(registry.emitters.lock().len(), 3);
     }
 
     #[test]
@@ -412,17 +410,13 @@ mod tests {
         registry.register("op-123");
 
         // Operation should exist
-        {
-            let emitters = registry.emitters.lock();
-            assert!(emitters.contains_key("op-123"));
-        }
+        assert!(registry.emitters.lock().contains_key("op-123"));
 
         // Cleanup
         registry.cleanup("op-123");
 
         // Operation should be removed
-        let emitters = registry.emitters.lock();
-        assert!(!emitters.contains_key("op-123"));
+        assert!(!registry.emitters.lock().contains_key("op-123"));
     }
 
     #[test]

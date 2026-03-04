@@ -99,7 +99,7 @@ impl AiProviderTrait for OllamaProvider {
         conventional_commits: bool,
     ) -> Result<(String, String)> {
         let base_url = base_url.unwrap_or(&self.base_url);
-        let model = model.unwrap_or(self.default_model()).to_string();
+        let model = model.unwrap_or_else(|| self.default_model()).to_string();
         let (system_prompt, user_prompt) = build_prompt(diff, conventional_commits);
 
         let request = OllamaRequest {
@@ -158,7 +158,7 @@ impl AiProviderTrait for OllamaProvider {
         base_url: Option<&str>,
     ) -> Result<(String, String, Vec<String>, String)> {
         let base_url = base_url.unwrap_or(&self.base_url);
-        let model = model.unwrap_or(self.default_model()).to_string();
+        let model = model.unwrap_or_else(|| self.default_model()).to_string();
         let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary, available_labels);
 
         let request = OllamaRequest {

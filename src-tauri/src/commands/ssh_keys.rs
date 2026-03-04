@@ -63,6 +63,7 @@ pub async fn get_remote_ssh_key(
     state
         .database()
         .get_remote_ssh_key(&repo_path, &remote_name)
+        .await
 }
 
 #[tauri::command]
@@ -76,6 +77,7 @@ pub async fn set_remote_ssh_key(
     state
         .database()
         .set_remote_ssh_key(&repo_path, &remote_name, &ssh_key_path)
+        .await
 }
 
 #[tauri::command]
@@ -85,13 +87,14 @@ pub async fn delete_remote_ssh_key(state: State<'_, AppState>, remote_name: Stri
     state
         .database()
         .delete_remote_ssh_key(&repo_path, &remote_name)
+        .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn list_remote_ssh_keys(state: State<'_, AppState>) -> Result<Vec<RemoteSshKeyMapping>> {
     let repo_path = state.get_repo_path_string()?;
-    let mappings = state.database().list_remote_ssh_keys(&repo_path)?;
+    let mappings = state.database().list_remote_ssh_keys(&repo_path).await?;
     Ok(mappings
         .into_iter()
         .map(|(remote_name, ssh_key_path)| RemoteSshKeyMapping {

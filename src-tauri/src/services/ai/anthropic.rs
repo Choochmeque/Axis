@@ -54,7 +54,7 @@ impl AiProviderTrait for AnthropicProvider {
         let api_key =
             api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("Anthropic".to_string()))?;
 
-        let model = model.unwrap_or(self.default_model()).to_string();
+        let model = model.unwrap_or_else(|| self.default_model()).to_string();
         let (system_prompt, user_prompt) = build_prompt(diff, conventional_commits);
 
         let request = AnthropicRequest {
@@ -115,7 +115,7 @@ impl AiProviderTrait for AnthropicProvider {
         let api_key =
             api_key.ok_or_else(|| AxisError::ApiKeyNotConfigured("Anthropic".to_string()))?;
 
-        let model = model.unwrap_or(self.default_model()).to_string();
+        let model = model.unwrap_or_else(|| self.default_model()).to_string();
         let (system_prompt, user_prompt) = build_pr_prompt(commits, diff_summary, available_labels);
 
         let request = AnthropicRequest {

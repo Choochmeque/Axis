@@ -57,11 +57,10 @@ pub async fn create_patch(
     let output_dir = PathBuf::from(&options.output_dir);
 
     // Generate output filename
-    let filename = if let Some(ref oid) = options.commit_oid {
-        format!("{}.patch", &oid[..7.min(oid.len())])
-    } else {
-        "staged-changes.patch".to_string()
-    };
+    let filename = options.commit_oid.as_ref().map_or_else(
+        || "staged-changes.patch".to_string(),
+        |oid| format!("{}.patch", &oid[..7.min(oid.len())]),
+    );
 
     let output_path = output_dir.join(filename);
     state

@@ -103,7 +103,7 @@ pub async fn fetch_remote(
     options: FetchOptions,
 ) -> Result<FetchResult> {
     let app_handle = state.get_app_handle()?;
-    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name).await?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
@@ -130,9 +130,9 @@ pub async fn push_remote(
     options: PushOptions,
     bypass_hooks: Option<bool>,
 ) -> Result<PushResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
-    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name).await?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -204,9 +204,9 @@ pub async fn push_current_branch(
     options: PushOptions,
     bypass_hooks: Option<bool>,
 ) -> Result<PushResult> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
-    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name).await?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
     let skip_hooks = bypass_hooks.unwrap_or(settings.bypass_hooks);
@@ -285,7 +285,7 @@ pub async fn pull_remote(
     options: PullOptions,
 ) -> Result<()> {
     let app_handle = state.get_app_handle()?;
-    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name).await?;
     let ctx = ProgressContext::new(app_handle, state.progress_registry());
 
     ctx.emit(GitOperationType::Pull, ProgressStage::Connecting, None);
@@ -316,7 +316,7 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
     let mut results = Vec::new();
     let mut errors = Vec::new();
     for remote in remotes {
-        let ssh_creds = state.resolve_ssh_credentials(&remote.name)?;
+        let ssh_creds = state.resolve_ssh_credentials(&remote.name).await?;
         let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
         ctx.emit(GitOperationType::Fetch, ProgressStage::Connecting, None);
 
@@ -335,6 +335,8 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
             }
         }
     }
+
+    drop(guard);
 
     if results.is_empty() && !errors.is_empty() {
         return Err(AxisError::Other(format!(

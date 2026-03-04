@@ -450,11 +450,13 @@ impl SigningService {
     ) -> Option<String> {
         let ssh_program = Self::find_ssh_program().await?;
 
-        // Get allowed signers file from git config
-        let repo = git2::Repository::open(repo_path).ok()?;
-        let config = repo.config().ok()?;
-        let allowed_signers = config.get_string("gpg.ssh.allowedSignersFile").ok()?;
-        let allowed_signers = expand_path(&allowed_signers);
+        // Get allowed signers file from git config (extract before async to avoid Send issues)
+        let allowed_signers = {
+            let repo = git2::Repository::open(repo_path).ok()?;
+            let config = repo.config().ok()?;
+            let signers = config.get_string("gpg.ssh.allowedSignersFile").ok()?;
+            expand_path(&signers)
+        };
 
         if !Path::new(&allowed_signers).exists() {
             return None;

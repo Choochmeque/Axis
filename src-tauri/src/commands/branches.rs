@@ -32,7 +32,7 @@ pub async fn delete_branch(
     options: DeleteBranchOptions,
 ) -> Result<()> {
     let ssh_creds = if options.delete_remote {
-        state.resolve_ssh_credentials("origin")?
+        state.resolve_ssh_credentials("origin").await?
     } else {
         None
     };
@@ -69,7 +69,7 @@ pub async fn checkout_branch(
     name: String,
     options: CheckoutOptions,
 ) -> Result<()> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
@@ -92,6 +92,7 @@ pub async fn checkout_branch(
         }
     }
 
+    drop(guard);
     Ok(())
 }
 
@@ -105,7 +106,7 @@ pub async fn checkout_remote_branch(
     local_name: Option<String>,
     force: bool,
 ) -> Result<()> {
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
     let guard = git_service.write().await;
 
@@ -129,6 +130,8 @@ pub async fn checkout_remote_branch(
             log::warn!("post-checkout hook failed: {}", result.stderr);
         }
     }
+
+    drop(guard);
 
     Ok(())
 }
@@ -174,7 +177,7 @@ pub async fn delete_remote_branch(
     branch_name: String,
     force: Option<bool>,
 ) -> Result<()> {
-    let ssh_creds = state.resolve_ssh_credentials(&remote_name)?;
+    let ssh_creds = state.resolve_ssh_credentials(&remote_name).await?;
     state
         .get_git_service()?
         .write()

@@ -11,7 +11,7 @@ use tokio::process::Command;
 
 /// Windows flag to prevent spawning a visible console window.
 #[cfg(target_os = "windows")]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Get extended PATH that includes common tool installation directories.
 /// This is needed because GUI apps on macOS don't inherit shell PATH.

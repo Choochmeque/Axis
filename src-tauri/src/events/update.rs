@@ -45,8 +45,8 @@ mod tests {
         };
 
         let cloned = event.clone();
-        assert_eq!(cloned.downloaded, 100);
-        assert_eq!(cloned.total, Some(200));
+        assert_eq!(event.downloaded, cloned.downloaded);
+        assert_eq!(event.total, cloned.total);
     }
 
     #[test]

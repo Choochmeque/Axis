@@ -96,7 +96,7 @@ pub async fn create_commit(
     bypass_hooks: Option<bool>,
 ) -> Result<String> {
     let path = state.ensure_repository_open()?;
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
@@ -204,6 +204,8 @@ pub async fn create_commit(
         }
     }
 
+    drop(guard);
+
     Ok(oid)
 }
 
@@ -215,7 +217,7 @@ pub async fn amend_commit(
     bypass_hooks: Option<bool>,
 ) -> Result<String> {
     let path = state.ensure_repository_open()?;
-    let settings = state.get_settings()?;
+    let settings = state.get_settings().await?;
     let git_service = state.get_git_service()?;
 
     // Use explicit bypass_hooks param if provided, otherwise use settings
@@ -269,6 +271,8 @@ pub async fn amend_commit(
             }
         }
     }
+
+    drop(guard);
 
     Ok(new_oid)
 }
@@ -351,6 +355,8 @@ pub async fn check_files_for_lfs(
     let files = guard
         .check_files_for_lfs(&paths, threshold, &pattern_strings)
         .await?;
+
+    drop(guard);
 
     Ok(LfsCheckResult {
         files,

@@ -14,6 +14,8 @@ pub async fn get_repository_settings(state: State<'_, AppState>) -> Result<Repos
     let remotes = guard.list_remotes(ListRemoteOptions::default()).await?;
     let (signing_format, signing_key) = guard.get_repo_signing_config().await?;
 
+    drop(guard);
+
     Ok(RepositorySettings {
         user_name,
         user_email,

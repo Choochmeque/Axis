@@ -270,6 +270,8 @@ pub async fn amend_commit(
         }
     }
 
+    drop(guard);
+
     Ok(new_oid)
 }
 
@@ -351,6 +353,8 @@ pub async fn check_files_for_lfs(
     let files = guard
         .check_files_for_lfs(&paths, threshold, &pattern_strings)
         .await?;
+
+    drop(guard);
 
     Ok(LfsCheckResult {
         files,

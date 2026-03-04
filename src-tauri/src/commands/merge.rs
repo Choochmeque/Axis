@@ -792,6 +792,8 @@ pub async fn resolve_conflict(
         }
     }
 
+    drop(guard);
+
     Ok(())
 }
 

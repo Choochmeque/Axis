@@ -791,11 +791,8 @@ impl Git2Service {
 
         // Get parent commit(s)
         let parents = if let Ok(head) = repo.head() {
-            if let Ok(commit) = head.peel_to_commit() {
-                vec![commit]
-            } else {
-                vec![]
-            }
+            head.peel_to_commit()
+                .map_or_else(|_| vec![], |commit| vec![commit])
         } else {
             vec![]
         };
@@ -2458,11 +2455,7 @@ impl Git2Service {
             let short_name = name_str.strip_prefix("refs/tags/").unwrap_or(&name_str);
 
             // Resolve annotated tags to their target commit
-            let target_oid = if let Ok(tag) = repo.find_tag(oid) {
-                tag.target_id()
-            } else {
-                oid
-            };
+            let target_oid = repo.find_tag(oid).map_or(oid, |tag| tag.target_id());
 
             commit_refs
                 .entry(target_oid.to_string())

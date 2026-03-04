@@ -336,6 +336,8 @@ pub async fn fetch_all(state: State<'_, AppState>) -> Result<Vec<FetchResult>> {
         }
     }
 
+    drop(guard);
+
     if results.is_empty() && !errors.is_empty() {
         return Err(AxisError::Other(format!(
             "Failed to fetch:\n{}",

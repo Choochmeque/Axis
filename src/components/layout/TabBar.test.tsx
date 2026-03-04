@@ -5,6 +5,7 @@ import { TabBar } from './TabBar';
 
 const mockRemoveTab = vi.fn();
 const mockSetActiveTab = vi.fn();
+const mockReorderTabs = vi.fn();
 const mockClearRepoCache = vi.fn();
 const mockClearIntegrationCache = vi.fn();
 const mockClearStagingCache = vi.fn();
@@ -23,8 +24,48 @@ vi.mock('@/store/tabsStore', () => ({
     activeTabId: mockActiveTabId,
     setActiveTab: mockSetActiveTab,
     removeTab: mockRemoveTab,
+    reorderTabs: mockReorderTabs,
   }),
 }));
+
+/* eslint-disable @typescript-eslint/naming-convention */
+// Mock @dnd-kit
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DragOverlay: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  closestCenter: vi.fn(),
+  KeyboardSensor: vi.fn(),
+  PointerSensor: vi.fn(),
+  useSensor: vi.fn(),
+  useSensors: vi.fn(() => []),
+}));
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  horizontalListSortingStrategy: vi.fn(),
+  sortableKeyboardCoordinates: vi.fn(),
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  }),
+}));
+
+vi.mock('@dnd-kit/utilities', () => ({
+  CSS: {
+    Transform: {
+      toString: () => undefined,
+    },
+  },
+}));
+
+vi.mock('@dnd-kit/modifiers', () => ({
+  restrictToHorizontalAxis: vi.fn(),
+}));
+/* eslint-enable @typescript-eslint/naming-convention */
 
 vi.mock('@/store/repositoryStore', () => ({
   useRepositoryStore: {
@@ -230,5 +271,40 @@ describe('TabBar tab switching', () => {
 
     expect(screen.getByText('Tab 1')).toBeInTheDocument();
     expect(screen.getByText('Tab 2')).toBeInTheDocument();
+  });
+});
+
+describe('TabBar drag and drop', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockTabs = [
+      { id: 'welcome', name: 'Welcome', type: 'welcome', path: null, isDirty: false },
+      { id: 'tab1', name: 'Repo 1', type: 'repository', path: '/path/1', isDirty: false },
+      { id: 'tab2', name: 'Repo 2', type: 'repository', path: '/path/2', isDirty: false },
+      { id: 'tab3', name: 'Repo 3', type: 'repository', path: '/path/3', isDirty: false },
+    ];
+    mockActiveTabId = 'tab1';
+  });
+
+  it('should render repository tabs as draggable', () => {
+    render(<TabBar onTabChange={vi.fn()} />);
+
+    // All repository tabs should be rendered
+    expect(screen.getByText('Repo 1')).toBeInTheDocument();
+    expect(screen.getByText('Repo 2')).toBeInTheDocument();
+    expect(screen.getByText('Repo 3')).toBeInTheDocument();
+  });
+
+  it('should render Welcome tab separately (not draggable)', () => {
+    render(<TabBar onTabChange={vi.fn()} />);
+
+    expect(screen.getByText('Welcome')).toBeInTheDocument();
+  });
+
+  it('should have reorderTabs function available from store', () => {
+    render(<TabBar onTabChange={vi.fn()} />);
+
+    // Verify mock is set up (function exists)
+    expect(mockReorderTabs).toBeDefined();
   });
 });

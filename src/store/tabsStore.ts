@@ -1,3 +1,4 @@
+import { arrayMove } from '@dnd-kit/sortable';
 import { create, type StateCreator } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -24,6 +25,7 @@ interface TabsState {
   findTabByPath: (path: string) => Tab | undefined;
   markTabDirty: (path: string) => void;
   clearTabDirty: (path: string) => void;
+  reorderTabs: (activeId: string, overId: string) => void;
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -144,6 +146,22 @@ const createTabsSlice: StateCreator<TabsState> = (set, get) => ({
         tab.path && normalizePath(tab.path) === key ? { ...tab, isDirty: false } : tab
       ),
     }));
+  },
+
+  reorderTabs: (activeId, overId) => {
+    if (activeId === overId) return;
+
+    const { tabs } = get();
+    const oldIndex = tabs.findIndex((t) => t.id === activeId);
+    const newIndex = tabs.findIndex((t) => t.id === overId);
+
+    // Invalid indices
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Prevent moving Welcome tab (index 0) or moving to Welcome position
+    if (oldIndex === 0 || newIndex === 0) return;
+
+    set({ tabs: arrayMove(tabs, oldIndex, newIndex) });
   },
 });
 

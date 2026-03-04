@@ -1401,3 +1401,23 @@ code {
   gap: 0.125rem;
   flex-shrink: 0;
 }
+
+/* Tab Drag and Drop */
+.tab-dragging {
+  opacity: 0.5;
+}
+
+.tab-drag-overlay {
+  background: var(--bg-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--accent-color);
+  border-radius: 4px;
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-dragging,
+  .tab-drag-overlay {
+    transition: none;
+  }
+}

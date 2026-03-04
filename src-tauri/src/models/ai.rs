@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use strum::{Display, EnumString};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type, Default, PartialEq, Display, EnumString)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, Type, Default, PartialEq, Eq, Display, EnumString,
+)]
 #[serde(rename_all = "PascalCase")]
 pub enum AiProvider {
     #[default]

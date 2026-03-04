@@ -15,7 +15,7 @@ pub struct BackgroundFetchService {
 }
 
 impl BackgroundFetchService {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             interval_handle: Mutex::new(None),
         }

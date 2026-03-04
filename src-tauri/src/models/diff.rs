@@ -18,7 +18,7 @@ pub struct FileDiff {
 }
 
 /// The type of change for a file in a diff
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum DiffStatus {
     Added,
@@ -53,7 +53,7 @@ pub struct DiffLine {
     pub new_line_no: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum DiffLineType {
     Context,

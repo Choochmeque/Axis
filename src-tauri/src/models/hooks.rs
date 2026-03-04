@@ -32,7 +32,7 @@ pub enum GitHookType {
 impl GitHookType {
     /// Whether this hook can abort the operation
     #[must_use]
-    pub fn can_abort(self) -> bool {
+    pub const fn can_abort(self) -> bool {
         matches!(
             self,
             Self::PreCommit
@@ -67,7 +67,7 @@ pub struct HookResult {
 
 impl HookResult {
     /// Create a result for a skipped hook (hook doesn't exist)
-    pub fn skipped(hook_type: GitHookType) -> Self {
+    pub const fn skipped(hook_type: GitHookType) -> Self {
         Self {
             hook_type,
             success: true,
@@ -120,7 +120,7 @@ impl HookResult {
     }
 
     /// Check if the hook was cancelled
-    pub fn is_cancelled(&self) -> bool {
+    pub const fn is_cancelled(&self) -> bool {
         self.cancelled
     }
 

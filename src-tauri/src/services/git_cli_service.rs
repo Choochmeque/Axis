@@ -57,7 +57,7 @@ pub struct GitCommandResult {
 
 impl GitCliService {
     pub fn new(repo_path: &Path) -> Self {
-        GitCliService {
+        Self {
             repo_path: repo_path.to_path_buf(),
         }
     }
@@ -3140,7 +3140,7 @@ impl GitCliService {
                 match options.mode {
                     LfsMigrateMode::Import => "Files migrated to LFS".to_string(),
                     LfsMigrateMode::Export => "Files migrated from LFS".to_string(),
-                    LfsMigrateMode::Info => result.stdout.clone(),
+                    LfsMigrateMode::Info => result.stdout,
                 }
             } else {
                 format!("LFS migrate failed: {}", result.stderr.trim())
@@ -3239,7 +3239,7 @@ impl GitCliService {
 
 impl From<Output> for GitCommandResult {
     fn from(output: Output) -> Self {
-        GitCommandResult {
+        Self {
             success: output.status.success(),
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),

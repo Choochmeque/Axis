@@ -177,13 +177,12 @@ fn build_certificate_check_callback(
                 "Host {hostname} found in known_hosts, accepting (key: {} bytes)",
                 remote_hostkey.len()
             );
-            Ok(CertificateCheckStatus::CertificateOk)
         } else {
             // Host not in known_hosts — accept like StrictHostKeyChecking=accept-new
             log::info!("Host {hostname} not found in known_hosts, accepting new host key");
             // TODO: In the future, prompt the user before accepting unknown hosts
-            Ok(CertificateCheckStatus::CertificateOk)
         }
+        Ok(CertificateCheckStatus::CertificateOk)
     }
 }
 
@@ -191,7 +190,7 @@ impl Git2Service {
     /// Open an existing repository
     pub fn open(path: &Path) -> Result<Self> {
         let _ = Git2Repository::open(path)?;
-        Ok(Git2Service {
+        Ok(Self {
             path: path.to_path_buf(),
         })
     }
@@ -204,7 +203,7 @@ impl Git2Service {
             Git2Repository::init(path)?;
         }
 
-        Ok(Git2Service {
+        Ok(Self {
             path: path.to_path_buf(),
         })
     }
@@ -239,7 +238,7 @@ impl Git2Service {
             .fetch_options(fetch_options)
             .clone(url, path)?;
 
-        Ok(Git2Service {
+        Ok(Self {
             path: path.to_path_buf(),
         })
     }
@@ -1071,10 +1070,10 @@ impl Git2Service {
         if let Some(context) = custom.context_lines {
             opts.context_lines(context);
         }
-        if let Some(true) = custom.ignore_whitespace {
+        if custom.ignore_whitespace == Some(true) {
             opts.ignore_whitespace(true);
         }
-        if let Some(true) = custom.ignore_whitespace_eol {
+        if custom.ignore_whitespace_eol == Some(true) {
             opts.ignore_whitespace_eol(true);
         }
     }

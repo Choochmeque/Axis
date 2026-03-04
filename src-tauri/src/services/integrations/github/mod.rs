@@ -36,9 +36,9 @@ type DeleteSecretFn = Box<dyn Fn(&str) -> Result<()> + Send + Sync>;
 impl From<PrState> for params::State {
     fn from(state: PrState) -> Self {
         match state {
-            PrState::Open => params::State::Open,
-            PrState::Closed | PrState::Merged => params::State::Closed,
-            PrState::All => params::State::All,
+            PrState::Open => Self::Open,
+            PrState::Closed | PrState::Merged => Self::Closed,
+            PrState::All => Self::All,
         }
     }
 }
@@ -46,9 +46,9 @@ impl From<PrState> for params::State {
 impl From<IssueState> for params::State {
     fn from(state: IssueState) -> Self {
         match state {
-            IssueState::Open => params::State::Open,
-            IssueState::Closed => params::State::Closed,
-            IssueState::All => params::State::All,
+            IssueState::Open => Self::Open,
+            IssueState::Closed => Self::Closed,
+            IssueState::All => Self::All,
         }
     }
 }
@@ -56,16 +56,16 @@ impl From<IssueState> for params::State {
 impl From<MergeMethod> for params::pulls::MergeMethod {
     fn from(method: MergeMethod) -> Self {
         match method {
-            MergeMethod::Merge => params::pulls::MergeMethod::Merge,
-            MergeMethod::Squash => params::pulls::MergeMethod::Squash,
-            MergeMethod::Rebase => params::pulls::MergeMethod::Rebase,
+            MergeMethod::Merge => Self::Merge,
+            MergeMethod::Squash => Self::Squash,
+            MergeMethod::Rebase => Self::Rebase,
         }
     }
 }
 
 impl From<octocrab::models::Author> for IntegrationUser {
     fn from(author: octocrab::models::Author) -> Self {
-        IntegrationUser {
+        Self {
             login: author.login,
             avatar_url: author.avatar_url.to_string(),
             url: author.html_url.to_string(),
@@ -75,7 +75,7 @@ impl From<octocrab::models::Author> for IntegrationUser {
 
 impl From<octocrab::models::Label> for IntegrationLabel {
     fn from(label: octocrab::models::Label) -> Self {
-        IntegrationLabel {
+        Self {
             name: label.name,
             color: label.color,
             description: label.description,
@@ -85,7 +85,7 @@ impl From<octocrab::models::Label> for IntegrationLabel {
 
 impl From<octocrab::models::pulls::PullRequest> for PullRequest {
     fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
-        PullRequest {
+        Self {
             provider: ProviderType::GitHub,
             number: u32::try_from(pr.number).unwrap_or(u32::MAX),
             title: pr.title.clone().unwrap_or_default(),
@@ -116,7 +116,7 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
 
 impl From<octocrab::models::issues::Issue> for Issue {
     fn from(issue: octocrab::models::issues::Issue) -> Self {
-        Issue {
+        Self {
             provider: ProviderType::GitHub,
             number: u32::try_from(issue.number).unwrap_or(u32::MAX),
             title: issue.title.clone(),
@@ -136,7 +136,7 @@ impl From<octocrab::models::issues::Issue> for Issue {
 
 impl From<octocrab::models::activity::Notification> for Notification {
     fn from(notification: octocrab::models::activity::Notification) -> Self {
-        Notification {
+        Self {
             provider: ProviderType::GitHub,
             id: notification.id.to_string(),
             unread: notification.unread,
@@ -160,7 +160,7 @@ impl From<octocrab::models::activity::Notification> for Notification {
 
 impl From<octocrab::models::workflows::Run> for CIRun {
     fn from(run: octocrab::models::workflows::Run) -> Self {
-        CIRun {
+        Self {
             provider: ProviderType::GitHub,
             id: run.id.to_string(),
             name: run.name,
@@ -184,7 +184,7 @@ impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequests
             .map(std::convert::Into::into)
             .collect();
 
-        PullRequestsPage {
+        Self {
             items,
             has_more: page.next.is_some(),
         }
@@ -201,7 +201,7 @@ impl From<octocrab::Page<octocrab::models::issues::Issue>> for IssuesPage {
             .map(std::convert::Into::into)
             .collect();
 
-        IssuesPage {
+        Self {
             items,
             has_more: page.next.is_some(),
         }
@@ -216,7 +216,7 @@ impl From<octocrab::Page<octocrab::models::activity::Notification>> for Notifica
             .map(std::convert::Into::into)
             .collect();
 
-        NotificationsPage {
+        Self {
             items,
             has_more: page.next.is_some(),
         }
@@ -231,7 +231,7 @@ impl From<octocrab::Page<octocrab::models::workflows::Run>> for CiRunsPage {
             .map(std::convert::Into::into)
             .collect();
 
-        CiRunsPage {
+        Self {
             runs: items,
             has_more: page.next.is_some(),
         }
@@ -240,7 +240,7 @@ impl From<octocrab::Page<octocrab::models::workflows::Run>> for CiRunsPage {
 
 impl From<octocrab::Error> for AxisError {
     fn from(err: octocrab::Error) -> Self {
-        AxisError::IntegrationError(format!("GitHub API error: {err:?}"))
+        Self::IntegrationError(format!("GitHub API error: {err:?}"))
     }
 }
 

@@ -12,7 +12,7 @@ pub struct FileStatus {
     pub old_path: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum StatusType {
     Untracked,
@@ -47,7 +47,7 @@ impl FileStatus {
                 .unwrap_or(StatusType::Untracked)
         };
 
-        FileStatus {
+        Self {
             path,
             status: primary_status,
             staged_status,

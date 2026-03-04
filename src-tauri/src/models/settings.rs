@@ -60,7 +60,9 @@ pub struct AppSettings {
     pub large_binary_threshold: u64, // in bytes, default 10MB
 }
 
-#[derive(Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Default, Type)]
+#[derive(
+    Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Eq, Default, Type,
+)]
 #[serde(rename_all = "PascalCase")]
 #[strum(serialize_all = "lowercase")]
 pub enum Theme {

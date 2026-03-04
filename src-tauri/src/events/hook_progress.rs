@@ -27,7 +27,7 @@ pub struct HookProgressEvent {
 }
 
 impl HookProgressEvent {
-    pub fn new(operation_id: String, hook_type: GitHookType, stage: HookStage) -> Self {
+    pub const fn new(operation_id: String, hook_type: GitHookType, stage: HookStage) -> Self {
         Self {
             operation_id,
             hook_type,

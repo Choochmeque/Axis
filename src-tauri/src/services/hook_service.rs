@@ -396,11 +396,11 @@ impl HookService {
         let disabled_path = self.hooks_path.join(format!("{filename}.disabled"));
 
         let (exists, enabled, actual_path) = if hook_path.exists() && hook_path.is_file() {
-            (true, true, hook_path.clone())
+            (true, true, hook_path)
         } else if disabled_path.exists() && disabled_path.is_file() {
             (true, false, disabled_path)
         } else {
-            (false, false, hook_path.clone())
+            (false, false, hook_path)
         };
 
         let is_executable = if exists {

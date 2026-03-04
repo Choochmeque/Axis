@@ -31,7 +31,7 @@ pub struct RepoOperations {
 }
 
 impl RepoOperations {
-    pub fn new(service: Arc<GitService>) -> Self {
+    pub const fn new(service: Arc<GitService>) -> Self {
         Self { service }
     }
 

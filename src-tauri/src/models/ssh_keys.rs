@@ -4,7 +4,9 @@ use specta::Type;
 use strum::{Display, EnumString};
 
 /// SSH key algorithm
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display, EnumString)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, Type, Display, EnumString,
+)]
 #[serde(rename_all = "PascalCase")]
 #[strum(serialize_all = "lowercase")]
 pub enum SshKeyAlgorithm {
@@ -15,7 +17,9 @@ pub enum SshKeyAlgorithm {
 }
 
 /// SSH private key format / encryption status
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, Type, Display, EnumString)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, Type, Display, EnumString,
+)]
 #[serde(rename_all = "PascalCase")]
 #[strum(serialize_all = "PascalCase")]
 pub enum SshKeyFormat {

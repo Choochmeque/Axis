@@ -32,7 +32,7 @@ pub struct GraphEdge {
 }
 
 /// Type of edge in the commit graph
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum EdgeType {
     /// Straight line (same lane)
@@ -55,7 +55,7 @@ pub struct CommitRef {
 }
 
 /// Type of reference
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "PascalCase")]
 pub enum RefType {
     LocalBranch,
@@ -90,13 +90,13 @@ pub struct GraphOptions {
     pub include_uncommitted: bool,
 }
 
-fn default_include_remotes() -> bool {
+const fn default_include_remotes() -> bool {
     true
 }
 
 impl Default for GraphOptions {
     fn default() -> Self {
-        GraphOptions {
+        Self {
             limit: Some(100),
             skip: None,
             from_ref: None,
@@ -141,7 +141,7 @@ pub struct SearchOptions {
 
 impl Default for SearchOptions {
     fn default() -> Self {
-        SearchOptions {
+        Self {
             query: String::new(),
             search_message: true,
             search_author: true,
@@ -176,7 +176,7 @@ pub struct FileLogOptions {
 
 impl Default for FileLogOptions {
     fn default() -> Self {
-        FileLogOptions {
+        Self {
             paths: Vec::new(),
             limit: Some(50),
             skip: None,
@@ -236,7 +236,7 @@ pub struct LaneState {
 
 impl LaneState {
     pub fn new() -> Self {
-        LaneState {
+        Self {
             active_lanes: Vec::new(),
             commit_lanes: HashMap::new(),
         }

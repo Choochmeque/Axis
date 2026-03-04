@@ -389,7 +389,7 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, id: &MenuId) {
         log::error!("[Menu] Failed to emit menu action event: {e:?}");
     }
 
-    if let Ok(MenuAction::NewWindow) = MenuAction::from_str(id_str) {
+    if matches!(MenuAction::from_str(id_str), Ok(MenuAction::NewWindow)) {
         // Create a new window
         let _ = tauri::WebviewWindowBuilder::new(
             app,

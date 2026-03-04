@@ -1074,6 +1074,12 @@
       "changes": "{{count}} changes",
       "clean": "Clean",
       "loading": "Loading..."
+    },
+    "tabs": {
+      "dragToReorder": "Drag to reorder tabs",
+      "pickedUp": "Picked up {{name}}",
+      "dropped": "Dropped {{name}} at position {{position}}",
+      "cancelled": "Reorder cancelled"
     }
   },
   "sidebar": {

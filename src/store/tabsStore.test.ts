@@ -272,4 +272,88 @@ describe('tabsStore', () => {
       expect(tab?.isDirty).toBe(false);
     });
   });
+
+  describe('reorderTabs', () => {
+    it('should reorder tabs correctly', () => {
+      const id1 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 1',
+        path: '/repo1',
+      });
+      const id2 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 2',
+        path: '/repo2',
+      });
+      const id3 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 3',
+        path: '/repo3',
+      });
+
+      // Move Repo 3 to position of Repo 1
+      useTabsStore.getState().reorderTabs(id3, id1);
+
+      const state = useTabsStore.getState();
+      expect(state.tabs[0].id).toBe('welcome');
+      expect(state.tabs[1].id).toBe(id3);
+      expect(state.tabs[2].id).toBe(id1);
+      expect(state.tabs[3].id).toBe(id2);
+    });
+
+    it('should not move Welcome tab', () => {
+      const id1 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 1',
+        path: '/repo1',
+      });
+
+      useTabsStore.getState().reorderTabs('welcome', id1);
+
+      const state = useTabsStore.getState();
+      expect(state.tabs[0].id).toBe('welcome');
+      expect(state.tabs[1].id).toBe(id1);
+    });
+
+    it('should not move tab to Welcome position', () => {
+      const id1 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 1',
+        path: '/repo1',
+      });
+
+      useTabsStore.getState().reorderTabs(id1, 'welcome');
+
+      const state = useTabsStore.getState();
+      expect(state.tabs[0].id).toBe('welcome');
+      expect(state.tabs[1].id).toBe(id1);
+    });
+
+    it('should handle same id gracefully', () => {
+      const id1 = useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 1',
+        path: '/repo1',
+      });
+
+      useTabsStore.getState().reorderTabs(id1, id1);
+
+      const state = useTabsStore.getState();
+      expect(state.tabs).toHaveLength(2);
+      expect(state.tabs[1].id).toBe(id1);
+    });
+
+    it('should handle invalid ids gracefully', () => {
+      useTabsStore.getState().addTab({
+        type: TabType.Repository,
+        name: 'Repo 1',
+        path: '/repo1',
+      });
+
+      useTabsStore.getState().reorderTabs('non-existent', 'also-non-existent');
+
+      const state = useTabsStore.getState();
+      expect(state.tabs).toHaveLength(2);
+    });
+  });
 });

@@ -127,7 +127,7 @@ impl CustomActionsService {
     ) -> std::io::Result<std::process::Output> {
         #[cfg(windows)]
         {
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
             Command::new("cmd")
                 .args(["/C", command])
                 .current_dir(working_dir)

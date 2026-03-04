@@ -204,6 +204,8 @@ pub async fn create_commit(
         }
     }
 
+    drop(guard);
+
     Ok(oid)
 }
 

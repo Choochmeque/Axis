@@ -81,6 +81,8 @@ pub async fn merge_branch(
         }
     }
 
+    drop(guard);
+
     Ok(merge_result)
 }
 
@@ -176,6 +178,8 @@ pub async fn rebase_branch(
     } else if result.stdout.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
 
+        drop(guard);
+
         Ok(RebaseResult {
             success: false,
             commits_rebased: 0,
@@ -255,6 +259,8 @@ pub async fn rebase_onto(
     } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
 
+        drop(guard);
+
         Ok(RebaseResult {
             success: false,
             commits_rebased: 0,
@@ -305,6 +311,8 @@ pub async fn rebase_continue(state: State<'_, AppState>) -> Result<RebaseResult>
         })
     } else if result.stdout.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
+
+        drop(guard);
 
         Ok(RebaseResult {
             success: false,
@@ -364,6 +372,8 @@ pub async fn get_interactive_rebase_preview(
     let git_service = state.get_git_service()?;
     let guard = git_service.read().await;
     let preview = guard.get_rebase_preview(&onto).await?;
+
+    drop(guard);
 
     // Convert commits to interactive entries with default 'pick' action
     let entries: Vec<InteractiveRebaseEntry> = preview
@@ -448,6 +458,8 @@ pub async fn interactive_rebase(
     } else if result.stdout.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
 
+        drop(guard);
+
         Ok(RebaseResult {
             success: false,
             commits_rebased: 0,
@@ -495,6 +507,8 @@ pub async fn rebase_continue_with_message(
         })
     } else if result.stdout.contains("CONFLICT") || result.stderr.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
+
+        drop(guard);
 
         Ok(RebaseResult {
             success: false,
@@ -544,6 +558,8 @@ pub async fn cherry_pick(
         }
     }
 
+    drop(guard);
+
     Ok(CherryPickResult {
         success: all_success,
         commit_oids,
@@ -591,6 +607,8 @@ pub async fn cherry_pick_continue(state: State<'_, AppState>) -> Result<CherryPi
     } else if result.stdout.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
 
+        drop(guard);
+
         Ok(CherryPickResult {
             success: false,
             commit_oids: Vec::new(),
@@ -623,6 +641,8 @@ pub async fn cherry_pick_skip(state: State<'_, AppState>) -> Result<CherryPickRe
         })
     } else if result.stdout.contains("CONFLICT") {
         let conflicts = guard.get_conflicted_files_enriched().await?;
+
+        drop(guard);
 
         Ok(CherryPickResult {
             success: false,
@@ -668,6 +688,8 @@ pub async fn revert_commits(
             )));
         }
     }
+
+    drop(guard);
 
     Ok(RevertResult {
         success: all_success,
@@ -742,6 +764,8 @@ pub async fn get_conflict_content(
     let base = guard.get_conflict_base(&path).await.ok();
     let ours = guard.get_conflict_ours(&path).await.ok();
     let theirs = guard.get_conflict_theirs(&path).await.ok();
+
+    drop(guard);
 
     // Read current working tree content
     let merged = fs::read_to_string(repo_path.join(&path))?;

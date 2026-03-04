@@ -130,6 +130,8 @@ pub async fn checkout_remote_branch(
         }
     }
 
+    drop(guard);
+
     Ok(())
 }
 

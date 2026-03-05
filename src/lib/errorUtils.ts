@@ -18,6 +18,7 @@ const ERROR_KEYS: Record<AxisError['type'], string> = {
   CannotFastForward: 'lib.errors.cannotFastForward',
   RebaseRequired: 'lib.errors.rebaseRequired',
   MergeConflict: 'lib.errors.mergeConflict',
+  RebaseConflict: 'lib.errors.rebaseConflict',
   CheckoutConflict: 'lib.errors.checkoutConflict',
   StashApplyConflict: 'lib.errors.stashApplyConflict',
   AiServiceError: 'lib.errors.aiServiceError',

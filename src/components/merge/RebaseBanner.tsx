@@ -1,4 +1,4 @@
-import { GitBranch, MessageSquare, Pencil, SkipForward, X } from 'lucide-react';
+import { GitBranch, MessageSquare, Pencil, Play, SkipForward, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
@@ -45,6 +45,34 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
       onComplete?.();
     } catch (err) {
       toast.error(t('merge.rebaseBanner.abortFailed'), getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    setIsLoading(true);
+    try {
+      const result = await rebaseApi.continue();
+      if (result.success) {
+        toast.success(t('merge.rebaseBanner.continued'));
+        onComplete?.();
+      } else {
+        // Check if rebase is still in progress (conflict on next commit)
+        const newState = await operationApi.getState();
+        const stillRebasing =
+          newState && typeof newState === 'object' && 'Rebasing' in newState;
+        if (stillRebasing) {
+          // Not an error - just hit another conflict
+          toast.info(t('merge.rebaseBanner.conflictEncountered'));
+          onComplete?.();
+        } else {
+          toast.error(t('merge.rebaseBanner.continueFailed'), result.message);
+        }
+      }
+      await loadState();
+    } catch (err) {
+      toast.error(t('merge.rebaseBanner.continueFailed'), getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +186,15 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
             <MessageSquare size={14} />
           </Button>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleContinue}
+          disabled={isLoading}
+          title={t('merge.rebaseBanner.continue')}
+        >
+          <Play size={14} />
+        </Button>
         <Button
           size="sm"
           variant="ghost"

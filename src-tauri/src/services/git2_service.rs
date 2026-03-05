@@ -428,7 +428,80 @@ impl Git2Service {
             }
         }
 
+        // During a merge, include resolved files in staged even if content matches HEAD
+        // This happens when user chooses "Use Ours" - git doesn't show it as a change
+        // but it should appear in staged since the merge needs to be committed
+        if repo.state() == git2::RepositoryState::Merge {
+            Self::add_resolved_merge_files(&repo, &mut result)?;
+        }
+
         Ok(result)
+    }
+
+    /// Add files that were resolved during a merge to the staged list.
+    /// This handles the case where resolved content matches HEAD exactly,
+    /// which git doesn't report as a staged change.
+    fn add_resolved_merge_files(
+        repo: &Git2Repository,
+        result: &mut RepositoryStatus,
+    ) -> Result<()> {
+        // Read MERGE_HEAD to get the commit being merged
+        let merge_head_path = repo.path().join("MERGE_HEAD");
+        let Ok(merge_head_content) = std::fs::read_to_string(&merge_head_path) else {
+            return Ok(()); // No MERGE_HEAD, nothing to do
+        };
+
+        let Ok(merge_head_oid) = git2::Oid::from_str(merge_head_content.trim()) else {
+            return Ok(()); // Invalid OID, nothing to do
+        };
+
+        // Get HEAD and MERGE_HEAD trees
+        let head_commit = repo.head()?.peel_to_commit()?;
+        let head_tree = head_commit.tree()?;
+
+        let merge_commit = repo.find_commit(merge_head_oid)?;
+        let merge_tree = merge_commit.tree()?;
+
+        // Diff HEAD vs MERGE_HEAD to find files involved in the merge
+        let diff = repo.diff_tree_to_tree(Some(&head_tree), Some(&merge_tree), None)?;
+
+        // Collect paths already accounted for
+        let mut known_paths: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for file in &result.staged {
+            known_paths.insert(file.path.clone());
+        }
+        for file in &result.conflicted {
+            known_paths.insert(file.path.clone());
+        }
+        for file in &result.unstaged {
+            known_paths.insert(file.path.clone());
+        }
+
+        // Add files from the merge that aren't already accounted for
+        for delta in diff.deltas() {
+            let path = delta
+                .new_file()
+                .path()
+                .or_else(|| delta.old_file().path())
+                .map(|p| p.to_string_lossy().to_string());
+
+            if let Some(path) = path {
+                if !known_paths.contains(&path) {
+                    // This file was part of the merge but isn't showing in status
+                    // It was resolved and its content matches HEAD (e.g., "Use Ours")
+                    result.staged.push(FileStatus {
+                        path,
+                        status: crate::models::StatusType::Modified,
+                        staged_status: Some(crate::models::StatusType::Modified),
+                        unstaged_status: None,
+                        is_conflict: false,
+                        old_path: None,
+                    });
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Get commit history
@@ -787,35 +860,73 @@ impl Git2Service {
             repo.signature()?
         };
 
-        // Get parent commit(s)
-        let parents = repo.head().map_or_else(
-            |_| vec![],
-            |head| {
-                head.peel_to_commit()
-                    .map_or_else(|_| vec![], |commit| vec![commit])
-            },
-        );
+        // Get parent commit(s) - check for merge in progress
+        let mut parents: Vec<git2::Commit> = vec![];
+
+        // First parent is HEAD
+        if let Ok(head) = repo.head() {
+            if let Ok(commit) = head.peel_to_commit() {
+                parents.push(commit);
+            }
+        }
+
+        // Check for MERGE_HEAD (merge in progress) and add as second parent
+        let merge_head_path = repo.path().join("MERGE_HEAD");
+        if merge_head_path.exists() {
+            if let Ok(merge_head_content) = std::fs::read_to_string(&merge_head_path) {
+                if let Ok(merge_head_oid) = git2::Oid::from_str(merge_head_content.trim()) {
+                    if let Ok(merge_commit) = repo.find_commit(merge_head_oid) {
+                        parents.push(merge_commit);
+                    }
+                }
+            }
+        }
 
         let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
         // Sign the commit if config is provided with a key
         if let Some(config) = signing_config {
             if config.signing_key.is_some() {
-                return self.create_commit_signed(
-                    &repo,
-                    message,
-                    &sig,
-                    &tree,
-                    &parent_refs,
-                    config,
-                );
+                let oid =
+                    self.create_commit_signed(&repo, message, &sig, &tree, &parent_refs, config)?;
+                // Clean up merge state after successful commit
+                Self::cleanup_merge_state(&repo)?;
+                return Ok(oid);
             }
         }
 
         // Create unsigned commit
         let oid = repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)?;
 
+        // Clean up merge state after successful commit
+        Self::cleanup_merge_state(&repo)?;
+
         Ok(oid.to_string())
+    }
+
+    /// Clean up merge-related files after a successful merge commit
+    fn cleanup_merge_state(repo: &Git2Repository) -> Result<()> {
+        let git_dir = repo.path();
+
+        // Remove MERGE_HEAD
+        let merge_head = git_dir.join("MERGE_HEAD");
+        if merge_head.exists() {
+            std::fs::remove_file(&merge_head)?;
+        }
+
+        // Remove MERGE_MSG
+        let merge_msg = git_dir.join("MERGE_MSG");
+        if merge_msg.exists() {
+            std::fs::remove_file(&merge_msg)?;
+        }
+
+        // Remove MERGE_MODE
+        let merge_mode = git_dir.join("MERGE_MODE");
+        if merge_mode.exists() {
+            std::fs::remove_file(&merge_mode)?;
+        }
+
+        Ok(())
     }
 
     /// Internal: Create a signed commit
@@ -5130,5 +5241,163 @@ mod tests {
         let flagged_paths: Vec<&str> = result.iter().map(|f| f.path.as_str()).collect();
         assert!(flagged_paths.contains(&"a.bin"));
         assert!(flagged_paths.contains(&"b.psd"));
+    }
+
+    // ==================== Merge Status Tests ====================
+
+    #[test]
+    fn test_status_during_merge_shows_resolved_files() {
+        let (tmp, service) = setup_test_repo();
+        let repo = service.repo().expect("should get repository");
+        let sig =
+            git2::Signature::now("Test User", "test@example.com").expect("should create signature");
+
+        // Create initial commit
+        let file_path = tmp.path().join("conflict.txt");
+        fs::write(&file_path, "initial content").expect("should write file");
+        let mut index = repo.index().expect("should get index");
+        index
+            .add_path(Path::new("conflict.txt"))
+            .expect("should add file");
+        index.write().expect("should write index");
+        let tree_id = index.write_tree().expect("should write tree");
+        let tree = repo.find_tree(tree_id).expect("should find tree");
+        let initial_commit_oid = repo
+            .commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+            .expect("should create initial commit");
+        let initial_commit = repo
+            .find_commit(initial_commit_oid)
+            .expect("should find initial commit");
+
+        // Create main branch explicitly pointing to initial commit
+        repo.branch("main", &initial_commit, false)
+            .expect("should create main branch");
+        repo.set_head("refs/heads/main")
+            .expect("should set HEAD to main");
+
+        // Create a feature branch and make a change there
+        repo.branch("feature", &initial_commit, false)
+            .expect("should create feature branch");
+        repo.set_head("refs/heads/feature")
+            .expect("should set HEAD to feature");
+        repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+            .expect("should checkout feature");
+
+        fs::write(&file_path, "feature content").expect("should write feature content");
+        let mut index = repo.index().expect("should get index");
+        index
+            .add_path(Path::new("conflict.txt"))
+            .expect("should add file");
+        index.write().expect("should write index");
+        let tree_id = index.write_tree().expect("should write tree");
+        let tree = repo.find_tree(tree_id).expect("should find tree");
+        let feature_commit_oid = repo
+            .commit(
+                Some("HEAD"),
+                &sig,
+                &sig,
+                "Feature commit",
+                &tree,
+                &[&initial_commit],
+            )
+            .expect("should create feature commit");
+
+        // Go back to main and make a conflicting change
+        repo.set_head("refs/heads/main")
+            .expect("should set HEAD to main");
+        repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+            .expect("should checkout main");
+
+        fs::write(&file_path, "main content").expect("should write main content");
+        let mut index = repo.index().expect("should get index");
+        index
+            .add_path(Path::new("conflict.txt"))
+            .expect("should add file");
+        index.write().expect("should write index");
+        let tree_id = index.write_tree().expect("should write tree");
+        let tree = repo.find_tree(tree_id).expect("should find tree");
+        repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            "Main commit",
+            &tree,
+            &[&initial_commit],
+        )
+        .expect("should create main commit");
+
+        // Start merge with feature branch using annotated commit
+        let annotated_commit = repo
+            .find_annotated_commit(feature_commit_oid)
+            .expect("should create annotated commit");
+
+        // Perform merge (creates conflict)
+        let mut merge_opts = git2::MergeOptions::new();
+        let mut checkout_opts = git2::build::CheckoutBuilder::new();
+        checkout_opts.allow_conflicts(true);
+        repo.merge(
+            &[&annotated_commit],
+            Some(&mut merge_opts),
+            Some(&mut checkout_opts),
+        )
+        .expect("should start merge");
+
+        // Verify we have a conflict
+        let status = service.status().expect("should get status");
+        assert!(
+            !status.conflicted.is_empty(),
+            "should have conflicted files"
+        );
+
+        // Resolve conflict by choosing "ours" content (main content)
+        // This makes the resolved content match HEAD
+        fs::write(&file_path, "main content").expect("should write resolved content");
+        let mut index = repo.index().expect("should get index");
+        index
+            .add_path(Path::new("conflict.txt"))
+            .expect("should add resolved file");
+        index.write().expect("should write index");
+
+        // Now status should show the file in staged even though content matches HEAD
+        let status = service.status().expect("should get status after resolve");
+        assert!(
+            status.conflicted.is_empty(),
+            "should have no more conflicts"
+        );
+        assert!(
+            status.staged.iter().any(|f| f.path == "conflict.txt"),
+            "resolved file should appear in staged: {:?}",
+            status.staged
+        );
+    }
+
+    #[test]
+    fn test_status_no_merge_no_extra_staged() {
+        // When not in a merge, resolved merge files logic should not add anything
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        // Just a normal modified file scenario
+        let file_path = tmp.path().join("README.md");
+        fs::write(&file_path, "# Updated content").expect("should write");
+
+        let status = service.status().expect("should get status");
+        // Should only have the modified file in unstaged, nothing extra
+        assert_eq!(status.unstaged.len(), 1);
+        assert!(status.staged.is_empty());
+        assert!(status.conflicted.is_empty());
+    }
+
+    #[test]
+    fn test_add_resolved_merge_files_no_merge_head() {
+        // Test the helper function when there's no MERGE_HEAD file
+        let (_tmp, service) = setup_test_repo();
+        let repo = service.repo().expect("should get repository");
+        let mut result = RepositoryStatus::default();
+
+        // Should not error when MERGE_HEAD doesn't exist
+        Git2Service::add_resolved_merge_files(&repo, &mut result)
+            .expect("should handle missing MERGE_HEAD gracefully");
+        assert!(result.staged.is_empty());
     }
 }

@@ -108,8 +108,26 @@ export const SELECTORS = {
     return byTestId('e2e-sidebar-stashes-section');
   },
 
+  // Conflict Resolution
+  get STAGING_CONFLICTED_HEADER() {
+    return byTestId('e2e-staging-conflicted-header');
+  },
+  get CONFLICT_USE_ALL_OURS() {
+    return byTestId('e2e-conflict-use-all-ours');
+  },
+  get CONFLICT_USE_ALL_THEIRS() {
+    return byTestId('e2e-conflict-use-all-theirs');
+  },
+  get CONFLICT_MARK_RESOLVED() {
+    return byTestId('e2e-conflict-mark-resolved');
+  },
+
   // Dynamic selectors
   stagingFile: (filename: string) => byTestId(`e2e-staging-file-${filename}`),
+  conflictedFile: (filename: string) => byTestId(`e2e-staging-conflicted-file-${filename}`),
   repoCard: (name: string) => byTestId(`e2e-repo-card-${name}`),
   sidebarStash: (index: number) => byTestId(`e2e-sidebar-stash-${index}`),
+  conflictHunkUseOurs: (index: number) => byTestId(`e2e-conflict-hunk-use-ours-${index}`),
+  conflictHunkUseTheirs: (index: number) => byTestId(`e2e-conflict-hunk-use-theirs-${index}`),
+  conflictHunkResolved: (index: number) => byTestId(`e2e-conflict-hunk-resolved-${index}`),
 };

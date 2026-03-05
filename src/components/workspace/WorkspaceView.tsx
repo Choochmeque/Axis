@@ -1,5 +1,11 @@
+import { useMemo } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
-import { StatusType } from '@/types';
+import {
+  areAllSectionsResolved,
+  buildResolvedContent,
+  conflictToFileDiff,
+} from '@/lib/conflictParser';
+import { ConflictResolution, StatusType } from '@/types';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
 import { type DiffMode, DiffView } from '../diff';
@@ -26,10 +32,17 @@ export function WorkspaceView() {
     stageHunk,
     unstageHunk,
     discardHunk,
+    // Conflict resolution
+    selectedConflictContent,
+    hunkResolutions,
+    resolveHunk,
+    resolveAllHunks,
+    resolveConflict,
   } = useStagingStore();
 
   // Don't show discard for untracked files (they can only be deleted, not discarded)
   const isUntracked = selectedFile?.status === StatusType.Untracked;
+  const isConflicted = selectedFile?.status === StatusType.Conflicted;
   const canDiscard = !isUntracked;
 
   const { selectedStash, selectedStashFiles, isLoadingStashFiles, clearStashSelection, commits } =
@@ -39,7 +52,34 @@ export function WorkspaceView() {
   // Skip the virtual "uncommitted" entry that may be first in the graph
   const headCommitOid = commits.find((c) => c.oid !== 'uncommitted')?.oid;
 
-  const diffMode: DiffMode = isSelectedFileStaged ? 'staged' : 'workdir';
+  // Compute conflict diff if in conflict mode
+  const conflictDiff = useMemo(() => {
+    if (!selectedConflictContent) return null;
+    return conflictToFileDiff(selectedConflictContent);
+  }, [selectedConflictContent]);
+
+  // Check if all hunks are resolved
+  const allHunksResolved = useMemo(() => {
+    if (!selectedConflictContent) return false;
+    return areAllSectionsResolved(selectedConflictContent.merged, hunkResolutions);
+  }, [selectedConflictContent, hunkResolutions]);
+
+  // Handle marking conflict as resolved
+  const handleMarkResolved = async () => {
+    if (!selectedConflictContent || !allHunksResolved) return;
+    const resolvedContent = buildResolvedContent(selectedConflictContent.merged, hunkResolutions);
+    await resolveConflict(ConflictResolution.Merged, resolvedContent);
+  };
+
+  // Determine diff mode
+  const diffMode: DiffMode = isConflicted
+    ? 'conflict'
+    : isSelectedFileStaged
+      ? 'staged'
+      : 'workdir';
+
+  // Get the appropriate diff to display
+  const displayDiff = isConflicted ? conflictDiff : selectedFileDiff;
 
   // Show stash diff view when a stash is selected
   if (selectedStash) {
@@ -72,13 +112,19 @@ export function WorkspaceView() {
             <Separator className="resize-handle" />
             <Panel minSize="50%">
               <DiffView
-                diff={selectedFileDiff}
+                diff={displayDiff}
                 isLoading={isLoadingDiff}
                 mode={diffMode}
                 parentCommitOid={headCommitOid}
-                onStageHunk={stageHunk}
-                onUnstageHunk={unstageHunk}
-                onDiscardHunk={canDiscard ? discardHunk : undefined}
+                onStageHunk={!isConflicted ? stageHunk : undefined}
+                onUnstageHunk={!isConflicted ? unstageHunk : undefined}
+                onDiscardHunk={!isConflicted && canDiscard ? discardHunk : undefined}
+                // Conflict resolution props
+                hunkResolutions={isConflicted ? hunkResolutions : undefined}
+                onResolveHunk={isConflicted ? resolveHunk : undefined}
+                onResolveAll={isConflicted ? resolveAllHunks : undefined}
+                onMarkResolved={isConflicted ? handleMarkResolved : undefined}
+                allHunksResolved={isConflicted ? allHunksResolved : undefined}
               />
             </Panel>
           </Group>

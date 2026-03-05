@@ -13,7 +13,6 @@ import {
   FileText,
   FolderOpen,
   GitCommit,
-  GitMerge,
   History,
   Minus,
   Move,
@@ -158,14 +157,6 @@ export function StagingFileContextMenu({
               }}
             >
               {t('staging.contextMenu.useTheirs')}
-            </MenuItem>
-            <MenuItem
-              icon={GitMerge}
-              onSelect={() => {
-                useRepositoryStore.getState().setCurrentView('conflicts');
-              }}
-            >
-              {t('staging.contextMenu.openConflictResolver')}
             </MenuItem>
             <MenuSeparator />
           </>

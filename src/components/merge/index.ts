@@ -1,5 +1,4 @@
 export { CherryPickDialog } from './CherryPickDialog';
-export { ConflictResolver } from './ConflictResolver';
 export { EditPauseDialog } from './EditPauseDialog';
 export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
 export { MergeDialog } from './MergeDialog';

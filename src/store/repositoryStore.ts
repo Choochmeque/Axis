@@ -55,8 +55,7 @@ export type ViewType =
   | 'pull-requests'
   | 'issues'
   | 'ci'
-  | 'notifications'
-  | 'conflicts';
+  | 'notifications';
 
 // Per-repo cache for view state
 interface RepoViewCache {
@@ -643,7 +642,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         await get().refreshRepository();
         await get().loadStatus();
         toast.warning(i18n.t('stash.applyConflict'));
-        set({ currentView: 'conflicts' });
+        set({ currentView: 'file-status' });
         return false;
       }
       toast.error(i18n.t('stash.contextMenu.applyFailed'), getErrorMessage(err));
@@ -665,7 +664,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         await get().refreshRepository();
         await get().loadStatus();
         toast.warning(i18n.t('stash.popConflict'));
-        set({ currentView: 'conflicts' });
+        set({ currentView: 'file-status' });
         return false;
       }
       toast.error(i18n.t('stash.contextMenu.popFailed'), getErrorMessage(err));

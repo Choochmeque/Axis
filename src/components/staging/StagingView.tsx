@@ -262,7 +262,12 @@ export function StagingView() {
         <div className="flex flex-col shrink-0 max-h-50 overflow-hidden border-t border-(--border-color)">
           <div className={cn(sectionHeaderClass, 'bg-error/10')}>
             <div className="flex items-center gap-2">
-              <span className={cn(sectionTitleClass, 'text-error')}>{t('staging.conflicts')}</span>
+              <span
+                {...testId('e2e-staging-conflicted-header')}
+                className={cn(sectionTitleClass, 'text-error')}
+              >
+                {t('staging.conflicts')}
+              </span>
               <span className={cn('badge', 'text-sm font-normal text-error')}>
                 {conflictedFiles.length}
               </span>
@@ -334,7 +339,10 @@ export function StagingView() {
             <div className="flex flex-col h-full min-h-0 overflow-hidden">
               <div className={cn(sectionHeaderClass, 'bg-error/10')}>
                 <div className="flex items-center gap-2">
-                  <span className={cn(sectionTitleClass, 'text-error')}>
+                  <span
+                    {...testId('e2e-staging-conflicted-header')}
+                    className={cn(sectionTitleClass, 'text-error')}
+                  >
                     {t('staging.conflicts')}
                   </span>
                   <span className={cn('badge', 'text-sm font-normal text-error')}>

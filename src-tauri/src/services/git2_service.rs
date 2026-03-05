@@ -5246,6 +5246,7 @@ mod tests {
     // ==================== Merge Status Tests ====================
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn test_status_during_merge_shows_resolved_files() {
         let (tmp, service) = setup_test_repo();
         let repo = service.repo().expect("should get repository");

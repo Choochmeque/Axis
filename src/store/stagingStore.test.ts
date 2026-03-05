@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { commitApi, diffApi, lfsApi, repositoryApi, stagingApi } from '../services/api';
+import {
+  commitApi,
+  conflictApi,
+  diffApi,
+  lfsApi,
+  repositoryApi,
+  stagingApi,
+} from '../services/api';
 import { useSettingsStore } from '../store/settingsStore';
 import { useStagingStore } from './stagingStore';
 
@@ -31,6 +38,10 @@ vi.mock('../services/api', () => ({
   lfsApi: {
     track: vi.fn(),
   },
+  conflictApi: {
+    getConflictContent: vi.fn(),
+    resolveConflict: vi.fn(),
+  },
 }));
 
 // Mock the settings store
@@ -61,6 +72,8 @@ describe('stagingStore', () => {
       selectedFileDiff: null,
       isSelectedFileStaged: false,
       isLoadingDiff: false,
+      selectedConflictContent: null,
+      hunkResolutions: new Map(),
       commitMessage: '',
       isAmending: false,
       isCommitting: false,
@@ -1051,6 +1064,545 @@ describe('stagingStore', () => {
 
       expect(lfsApi.track).toHaveBeenCalledWith('*.psd');
       expect(stagingApi.stageFile).toHaveBeenCalledWith('assets/image.psd');
+    });
+  });
+
+  describe('conflict handling', () => {
+    describe('selectFile with conflicts', () => {
+      it('should load conflict content for conflicted files', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+
+        const mockConflictContent = {
+          path: 'conflicted.txt',
+          base: 'base content',
+          ours: 'our content',
+          theirs: 'their content',
+          merged: '<<<<<<< HEAD\nour content\n=======\ntheir content\n>>>>>>> feature-branch\n',
+        };
+
+        vi.mocked(conflictApi.getConflictContent).mockResolvedValue(mockConflictContent);
+
+        await useStagingStore.getState().selectFile(mockFile, false);
+
+        expect(conflictApi.getConflictContent).toHaveBeenCalledWith('conflicted.txt');
+        const state = useStagingStore.getState();
+        expect(state.selectedFile).toEqual(mockFile);
+        expect(state.selectedConflictContent).toEqual(mockConflictContent);
+        expect(state.isLoadingDiff).toBe(false);
+      });
+
+      it('should set selectedConflictContent state', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+
+        const mockConflictContent = {
+          path: 'conflicted.txt',
+          base: 'base',
+          ours: 'ours',
+          theirs: 'theirs',
+          merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+        };
+
+        vi.mocked(conflictApi.getConflictContent).mockResolvedValue(mockConflictContent);
+
+        await useStagingStore.getState().selectFile(mockFile, false);
+
+        expect(useStagingStore.getState().selectedConflictContent).toEqual(mockConflictContent);
+      });
+
+      it('should clear conflict content when selecting non-conflicted file', async () => {
+        // Set initial conflict state
+        useStagingStore.setState({
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+          },
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        const mockFile = {
+          path: 'normal.txt',
+          status: 'Modified' as const,
+          stagedStatus: null,
+          unstagedStatus: 'Modified' as const,
+          isConflict: false,
+          oldPath: null,
+        };
+
+        const mockDiff = {
+          oldPath: 'normal.txt',
+          newPath: 'normal.txt',
+          oldOid: null,
+          newOid: null,
+          status: 'Modified' as const,
+          binary: false,
+          hunks: [],
+          additions: 0,
+          deletions: 0,
+        };
+
+        vi.mocked(diffApi.getFile).mockResolvedValue(mockDiff);
+
+        await useStagingStore.getState().selectFile(mockFile, false);
+
+        const state = useStagingStore.getState();
+        expect(state.selectedConflictContent).toBeNull();
+        expect(state.hunkResolutions.size).toBe(0);
+      });
+
+      it('should set isLoadingDiff while fetching conflict content', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+
+        let resolvePromise: (value: unknown) => void;
+        const promise = new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+        vi.mocked(conflictApi.getConflictContent).mockReturnValue(promise as never);
+
+        const selectPromise = useStagingStore.getState().selectFile(mockFile, false);
+
+        // Check loading state
+        expect(useStagingStore.getState().isLoadingDiff).toBe(true);
+
+        // Resolve the promise
+        resolvePromise!({
+          path: 'conflicted.txt',
+          base: 'base',
+          ours: 'ours',
+          theirs: 'theirs',
+          merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+        });
+        await selectPromise;
+
+        expect(useStagingStore.getState().isLoadingDiff).toBe(false);
+      });
+
+      it('should set error on conflict content fetch failure', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+
+        vi.mocked(conflictApi.getConflictContent).mockRejectedValue(
+          new Error('Failed to load conflict')
+        );
+
+        await useStagingStore.getState().selectFile(mockFile, false);
+
+        const state = useStagingStore.getState();
+        expect(state.error).toBe('Failed to load conflict');
+        expect(state.selectedConflictContent).toBeNull();
+        expect(state.isLoadingDiff).toBe(false);
+      });
+
+      it('should clear hunk resolutions when selecting conflicted file', async () => {
+        // Set initial resolutions
+        useStagingStore.setState({
+          hunkResolutions: new Map([
+            [0, 'ours'],
+            [1, 'theirs'],
+          ]),
+        });
+
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+
+        vi.mocked(conflictApi.getConflictContent).mockResolvedValue({
+          path: 'conflicted.txt',
+          base: 'base',
+          ours: 'ours',
+          theirs: 'theirs',
+          merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+        });
+
+        await useStagingStore.getState().selectFile(mockFile, false);
+
+        expect(useStagingStore.getState().hunkResolutions.size).toBe(0);
+      });
+    });
+
+    describe('resolveHunk', () => {
+      it('should add hunk resolution to map', () => {
+        useStagingStore.getState().resolveHunk(0, 'ours');
+
+        expect(useStagingStore.getState().hunkResolutions.get(0)).toBe('ours');
+      });
+
+      it('should update existing hunk resolution', () => {
+        useStagingStore.setState({
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        useStagingStore.getState().resolveHunk(0, 'theirs');
+
+        expect(useStagingStore.getState().hunkResolutions.get(0)).toBe('theirs');
+      });
+
+      it('should handle multiple hunk resolutions', () => {
+        useStagingStore.getState().resolveHunk(0, 'ours');
+        useStagingStore.getState().resolveHunk(1, 'theirs');
+        useStagingStore.getState().resolveHunk(2, 'ours');
+
+        const resolutions = useStagingStore.getState().hunkResolutions;
+        expect(resolutions.get(0)).toBe('ours');
+        expect(resolutions.get(1)).toBe('theirs');
+        expect(resolutions.get(2)).toBe('ours');
+      });
+    });
+
+    describe('resolveAllHunks', () => {
+      it('should set all hunks to ours resolution', () => {
+        useStagingStore.setState({
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged:
+              '<<<<<<< HEAD\nours1\n=======\ntheirs1\n>>>>>>> branch\ncontext\n<<<<<<< HEAD\nours2\n=======\ntheirs2\n>>>>>>> branch\n',
+          },
+        });
+
+        useStagingStore.getState().resolveAllHunks('ours');
+
+        const resolutions = useStagingStore.getState().hunkResolutions;
+        expect(resolutions.get(0)).toBe('ours');
+        expect(resolutions.get(1)).toBe('ours');
+      });
+
+      it('should set all hunks to theirs resolution', () => {
+        useStagingStore.setState({
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged:
+              '<<<<<<< HEAD\nours1\n=======\ntheirs1\n>>>>>>> branch\ncontext\n<<<<<<< HEAD\nours2\n=======\ntheirs2\n>>>>>>> branch\n',
+          },
+        });
+
+        useStagingStore.getState().resolveAllHunks('theirs');
+
+        const resolutions = useStagingStore.getState().hunkResolutions;
+        expect(resolutions.get(0)).toBe('theirs');
+        expect(resolutions.get(1)).toBe('theirs');
+      });
+
+      it('should do nothing when no conflict content', () => {
+        useStagingStore.getState().resolveAllHunks('ours');
+
+        expect(useStagingStore.getState().hunkResolutions.size).toBe(0);
+      });
+    });
+
+    describe('clearHunkResolutions', () => {
+      it('should clear all hunk resolutions', () => {
+        useStagingStore.setState({
+          hunkResolutions: new Map([
+            [0, 'ours'],
+            [1, 'theirs'],
+          ]),
+        });
+
+        useStagingStore.getState().clearHunkResolutions();
+
+        expect(useStagingStore.getState().hunkResolutions.size).toBe(0);
+      });
+    });
+
+    describe('resolveConflict', () => {
+      it('should call conflictApi.resolveConflict with Ours', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({ selectedFile: mockFile });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Ours');
+        await vi.runAllTimersAsync();
+
+        expect(conflictApi.resolveConflict).toHaveBeenCalledWith(
+          'conflicted.txt',
+          'Ours',
+          undefined
+        );
+      });
+
+      it('should call conflictApi.resolveConflict with Theirs', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({ selectedFile: mockFile });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Theirs');
+        await vi.runAllTimersAsync();
+
+        expect(conflictApi.resolveConflict).toHaveBeenCalledWith(
+          'conflicted.txt',
+          'Theirs',
+          undefined
+        );
+      });
+
+      it('should call conflictApi.resolveConflict with Merged and custom content', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({ selectedFile: mockFile });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Merged', 'custom merged content');
+        await vi.runAllTimersAsync();
+
+        expect(conflictApi.resolveConflict).toHaveBeenCalledWith(
+          'conflicted.txt',
+          'Merged',
+          'custom merged content'
+        );
+      });
+
+      it('should build content from hunk resolutions when Merged without custom content', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({
+          selectedFile: mockFile,
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'our content',
+            theirs: 'their content',
+            merged: '<<<<<<< HEAD\nour content\n=======\ntheir content\n>>>>>>> branch\n',
+          },
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Merged');
+        await vi.runAllTimersAsync();
+
+        // Should build content using ours resolution
+        expect(conflictApi.resolveConflict).toHaveBeenCalledWith(
+          'conflicted.txt',
+          'Merged',
+          'our content\n'
+        );
+      });
+
+      it('should refresh status after resolve', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({ selectedFile: mockFile });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Ours');
+        await vi.runAllTimersAsync();
+
+        expect(repositoryApi.getStatus).toHaveBeenCalled();
+      });
+
+      it('should clear selectedFile and selectedConflictContent after resolve', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({
+          selectedFile: mockFile,
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+          },
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(conflictApi.resolveConflict).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().resolveConflict('Ours');
+        await vi.runAllTimersAsync();
+
+        const state = useStagingStore.getState();
+        expect(state.selectedFile).toBeNull();
+        expect(state.selectedConflictContent).toBeNull();
+        expect(state.hunkResolutions.size).toBe(0);
+      });
+
+      it('should do nothing when no file is selected', async () => {
+        await useStagingStore.getState().resolveConflict('Ours');
+
+        expect(conflictApi.resolveConflict).not.toHaveBeenCalled();
+      });
+
+      it('should set error on resolve failure', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({ selectedFile: mockFile });
+
+        vi.mocked(conflictApi.resolveConflict).mockRejectedValue(new Error('Resolve failed'));
+
+        await useStagingStore.getState().resolveConflict('Ours');
+
+        expect(useStagingStore.getState().error).toBe('Resolve failed');
+      });
+    });
+
+    describe('discardFile clears conflict state', () => {
+      it('should clear conflict content when discarding selected conflicted file', async () => {
+        const mockFile = {
+          path: 'conflicted.txt',
+          status: 'Conflicted' as const,
+          stagedStatus: null,
+          unstagedStatus: null,
+          isConflict: true,
+          oldPath: null,
+        };
+        useStagingStore.setState({
+          selectedFile: mockFile,
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+          },
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(stagingApi.discardFile).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().discardFile('conflicted.txt');
+        await vi.runAllTimersAsync();
+
+        const state = useStagingStore.getState();
+        expect(state.selectedConflictContent).toBeNull();
+        expect(state.hunkResolutions.size).toBe(0);
+      });
+    });
+
+    describe('discardUnstaged clears conflict state', () => {
+      it('should clear conflict content when discarding all unstaged', async () => {
+        useStagingStore.setState({
+          selectedFile: {
+            path: 'conflicted.txt',
+            status: 'Conflicted',
+            stagedStatus: null,
+            unstagedStatus: null,
+            isConflict: true,
+            oldPath: null,
+          },
+          selectedConflictContent: {
+            path: 'conflicted.txt',
+            base: 'base',
+            ours: 'ours',
+            theirs: 'theirs',
+            merged: '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n',
+          },
+          hunkResolutions: new Map([[0, 'ours']]),
+        });
+
+        const mockStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+        vi.mocked(stagingApi.discardUnstaged).mockResolvedValue(null);
+        vi.mocked(repositoryApi.getStatus).mockResolvedValue(mockStatus);
+
+        await useStagingStore.getState().discardUnstaged();
+        await vi.runAllTimersAsync();
+
+        const state = useStagingStore.getState();
+        expect(state.selectedConflictContent).toBeNull();
+        expect(state.hunkResolutions.size).toBe(0);
+      });
     });
   });
 });

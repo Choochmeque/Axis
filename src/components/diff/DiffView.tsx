@@ -1,8 +1,11 @@
 import {
   Binary,
+  Check,
   ChevronDown,
   Columns,
   FileCode,
+  GitBranch,
+  GitMerge,
   Image,
   ListChecks,
   Minus,
@@ -48,7 +51,7 @@ export type {
   DiffSettings,
 };
 
-export type DiffMode = 'workdir' | 'staged' | 'commit';
+export type DiffMode = 'workdir' | 'staged' | 'commit' | 'conflict';
 
 interface DiffViewProps {
   diff: FileDiff | null;
@@ -59,6 +62,12 @@ interface DiffViewProps {
   onStageHunk?: (patch: string) => Promise<void>;
   onUnstageHunk?: (patch: string) => Promise<void>;
   onDiscardHunk?: (patch: string) => Promise<void>;
+  // Conflict resolution props
+  hunkResolutions?: Map<number, 'ours' | 'theirs'>;
+  onResolveHunk?: (hunkIndex: number, resolution: 'ours' | 'theirs') => void;
+  onResolveAll?: (resolution: 'ours' | 'theirs') => void;
+  onMarkResolved?: () => void;
+  allHunksResolved?: boolean;
 }
 
 // Image extensions we support displaying
@@ -324,6 +333,11 @@ export function DiffView({
   onStageHunk,
   onUnstageHunk,
   onDiscardHunk,
+  hunkResolutions,
+  onResolveHunk,
+  onResolveAll,
+  onMarkResolved,
+  allHunksResolved,
 }: DiffViewProps) {
   const { t } = useTranslation();
   const [loadingHunk, setLoadingHunk] = useState<number | null>(null);
@@ -491,6 +505,11 @@ export function DiffView({
         isProcessingLines={isProcessingLines}
         onStageSelectedLines={handleStageSelectedLines}
         onUnstageSelectedLines={handleUnstageSelectedLines}
+        hunkResolutions={hunkResolutions}
+        onResolveAll={onResolveAll}
+        onMarkResolved={onMarkResolved}
+        allHunksResolved={allHunksResolved}
+        totalHunks={diff.hunks.length}
       />
       <div className="flex-1 overflow-auto">
         {diff.hunks.length === 0 ? (
@@ -507,6 +526,8 @@ export function DiffView({
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
             lineSelectionMode={lineSelectionMode}
             lineSelection={lineSelection}
+            hunkResolutions={hunkResolutions}
+            onResolveHunk={onResolveHunk}
           />
         ) : (
           <SplitDiff
@@ -520,6 +541,8 @@ export function DiffView({
             onDiscardHunk={onDiscardHunk ? handleDiscardHunk : undefined}
             lineSelectionMode={lineSelectionMode}
             lineSelection={lineSelection}
+            hunkResolutions={hunkResolutions}
+            onResolveHunk={onResolveHunk}
           />
         )}
       </div>
@@ -540,6 +563,12 @@ interface DiffHeaderProps {
   isProcessingLines: boolean;
   onStageSelectedLines: () => Promise<void>;
   onUnstageSelectedLines: () => Promise<void>;
+  // Conflict props
+  hunkResolutions?: Map<number, 'ours' | 'theirs'>;
+  onResolveAll?: (resolution: 'ours' | 'theirs') => void;
+  onMarkResolved?: () => void;
+  allHunksResolved?: boolean;
+  totalHunks?: number;
 }
 
 const contextLineOptions: ContextLines[] = [1, 3, 6, 12, 25, 50, 100];
@@ -557,12 +586,19 @@ function DiffHeader({
   isProcessingLines,
   onStageSelectedLines,
   onUnstageSelectedLines,
+  hunkResolutions,
+  onResolveAll,
+  onMarkResolved,
+  allHunksResolved,
+  totalHunks,
 }: DiffHeaderProps) {
   const { t } = useTranslation();
   const fileName = diff.newPath || diff.oldPath || t('diff.unknownFile');
   const statusText = getStatusText(diff.status, t);
   const statusColorClass = getStatusColorClass(diff.status);
   const showLineSelectionToggle = mode === 'workdir' || mode === 'staged';
+  const isConflictMode = mode === 'conflict';
+  const resolvedCount = hunkResolutions?.size ?? 0;
 
   return (
     <div className="flex items-center gap-3 h-10 px-3 bg-(--bg-header) border-b border-(--border-color) shrink-0">
@@ -585,6 +621,51 @@ function DiffHeader({
           <span className="text-xs font-medium font-mono text-error">-{diff.deletions}</span>
         )}
       </div>
+
+      {/* Conflict resolution actions */}
+      {isConflictMode && (
+        <>
+          <span className="text-xs text-(--text-secondary)">
+            {t('diff.conflict.resolvedCount', { resolved: resolvedCount, total: totalHunks ?? 0 })}
+          </span>
+          {onResolveAll && (
+            <>
+              <button
+                className={hunkActionClass}
+                onClick={() => onResolveAll('ours')}
+                {...testId('e2e-conflict-use-all-ours')}
+              >
+                <GitBranch size={14} />
+                <span>{t('diff.conflict.useAllOurs')}</span>
+              </button>
+              <button
+                className={hunkActionClass}
+                onClick={() => onResolveAll('theirs')}
+                {...testId('e2e-conflict-use-all-theirs')}
+              >
+                <GitMerge size={14} />
+                <span>{t('diff.conflict.useAllTheirs')}</span>
+              </button>
+            </>
+          )}
+          {onMarkResolved && (
+            <button
+              className={cn(
+                hunkActionClass,
+                allHunksResolved
+                  ? 'border-success text-success hover:not-disabled:bg-success hover:not-disabled:text-white'
+                  : ''
+              )}
+              onClick={onMarkResolved}
+              disabled={!allHunksResolved}
+              {...testId('e2e-conflict-mark-resolved')}
+            >
+              <Check size={14} />
+              <span>{t('diff.conflict.markResolved')}</span>
+            </button>
+          )}
+        </>
+      )}
 
       {/* Line selection actions */}
       {lineSelectionMode && lineSelection.hasSelection && (
@@ -739,6 +820,9 @@ interface UnifiedDiffProps {
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
   lineSelectionMode?: boolean;
   lineSelection?: UseLineSelectionReturn;
+  // Conflict props
+  hunkResolutions?: Map<number, 'ours' | 'theirs'>;
+  onResolveHunk?: (hunkIndex: number, resolution: 'ours' | 'theirs') => void;
 }
 
 const hunkActionClass =
@@ -755,11 +839,29 @@ function UnifiedDiff({
   onDiscardHunk,
   lineSelectionMode,
   lineSelection,
+  hunkResolutions,
+  onResolveHunk,
 }: UnifiedDiffProps) {
   const { t } = useTranslation();
+  const isConflictMode = mode === 'conflict';
 
   return (
     <div className={cn(!wordWrap && 'min-w-fit')}>
+      {/* Conflict mode legend */}
+      {isConflictMode && (
+        <div className="flex items-center gap-4 py-1.5 px-3 bg-(--bg-secondary) border-b border-(--border-color)">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm bg-(--diff-delete-bg) border border-(--diff-delete-line)" />
+            <GitBranch size={14} className="text-(--diff-delete-line)" />
+            <span className="text-sm text-(--diff-delete-line)">{t('diff.conflict.ours')}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm bg-(--diff-add-bg) border border-(--diff-add-line)" />
+            <GitMerge size={14} className="text-(--diff-add-line)" />
+            <span className="text-sm text-(--diff-add-line)">{t('diff.conflict.theirs')}</span>
+          </div>
+        </div>
+      )}
       {hunks.map((hunk, hunkIndex) => (
         <div key={hunkIndex} className="mb-1">
           <div className="flex items-center justify-between gap-2 py-1.5 px-3 bg-(--diff-hunk-bg) text-(--text-secondary) font-mono text-xs border-y border-(--border-color)">
@@ -801,6 +903,41 @@ function UnifiedDiff({
                 <Minus size={14} />
                 <span>{t('diff.hunk.unstage')}</span>
               </button>
+            )}
+            {isConflictMode && onResolveHunk && (
+              <>
+                <button
+                  className={cn(
+                    hunkActionClass,
+                    hunkResolutions?.get(hunkIndex) === 'ours' &&
+                      'bg-(--accent-color) text-white border-(--accent-color)'
+                  )}
+                  onClick={() => onResolveHunk(hunkIndex, 'ours')}
+                  {...testId(`e2e-conflict-hunk-use-ours-${hunkIndex}`)}
+                >
+                  <GitBranch size={14} />
+                  <span>{t('diff.conflict.useOurs')}</span>
+                </button>
+                <button
+                  className={cn(
+                    hunkActionClass,
+                    hunkResolutions?.get(hunkIndex) === 'theirs' &&
+                      'bg-(--accent-color) text-white border-(--accent-color)'
+                  )}
+                  onClick={() => onResolveHunk(hunkIndex, 'theirs')}
+                  {...testId(`e2e-conflict-hunk-use-theirs-${hunkIndex}`)}
+                >
+                  <GitMerge size={14} />
+                  <span>{t('diff.conflict.useTheirs')}</span>
+                </button>
+                {hunkResolutions?.has(hunkIndex) && (
+                  <Check
+                    size={16}
+                    className="text-success"
+                    {...testId(`e2e-conflict-hunk-resolved-${hunkIndex}`)}
+                  />
+                )}
+              </>
             )}
           </div>
           <div className="flex flex-col">
@@ -912,6 +1049,9 @@ interface SplitDiffProps {
   onDiscardHunk?: (hunkIndex: number) => Promise<void>;
   lineSelectionMode?: boolean;
   lineSelection?: UseLineSelectionReturn;
+  // Conflict props
+  hunkResolutions?: Map<number, 'ours' | 'theirs'>;
+  onResolveHunk?: (hunkIndex: number, resolution: 'ours' | 'theirs') => void;
 }
 
 function SplitDiff({
@@ -925,8 +1065,11 @@ function SplitDiff({
   onDiscardHunk,
   lineSelectionMode,
   lineSelection,
+  hunkResolutions,
+  onResolveHunk,
 }: SplitDiffProps) {
   const { t } = useTranslation();
+  const isConflictMode = mode === 'conflict';
 
   return (
     <div className={cn(!wordWrap && 'min-w-fit')}>
@@ -972,6 +1115,41 @@ function SplitDiff({
                 <span>{t('diff.hunk.unstage')}</span>
               </button>
             )}
+            {isConflictMode && onResolveHunk && (
+              <>
+                <button
+                  className={cn(
+                    hunkActionClass,
+                    hunkResolutions?.get(hunkIndex) === 'ours' &&
+                      'bg-(--accent-color) text-white border-(--accent-color)'
+                  )}
+                  onClick={() => onResolveHunk(hunkIndex, 'ours')}
+                  {...testId(`e2e-conflict-hunk-use-ours-${hunkIndex}`)}
+                >
+                  <GitBranch size={14} />
+                  <span>{t('diff.conflict.useOurs')}</span>
+                </button>
+                <button
+                  className={cn(
+                    hunkActionClass,
+                    hunkResolutions?.get(hunkIndex) === 'theirs' &&
+                      'bg-(--accent-color) text-white border-(--accent-color)'
+                  )}
+                  onClick={() => onResolveHunk(hunkIndex, 'theirs')}
+                  {...testId(`e2e-conflict-hunk-use-theirs-${hunkIndex}`)}
+                >
+                  <GitMerge size={14} />
+                  <span>{t('diff.conflict.useTheirs')}</span>
+                </button>
+                {hunkResolutions?.has(hunkIndex) && (
+                  <Check
+                    size={16}
+                    className="text-success"
+                    {...testId(`e2e-conflict-hunk-resolved-${hunkIndex}`)}
+                  />
+                )}
+              </>
+            )}
           </div>
           <div className="flex flex-col">
             <SplitHunkLines
@@ -981,6 +1159,7 @@ function SplitDiff({
               showLineNumbers={showLineNumbers}
               lineSelectionMode={lineSelectionMode}
               lineSelection={lineSelection}
+              isConflictMode={isConflictMode}
             />
           </div>
         </div>
@@ -996,6 +1175,7 @@ interface SplitHunkLinesProps {
   showLineNumbers?: boolean;
   lineSelectionMode?: boolean;
   lineSelection?: UseLineSelectionReturn;
+  isConflictMode?: boolean;
 }
 
 function SplitHunkLines({
@@ -1005,12 +1185,31 @@ function SplitHunkLines({
   showLineNumbers = true,
   lineSelectionMode,
   lineSelection,
+  isConflictMode,
 }: SplitHunkLinesProps) {
+  const { t } = useTranslation();
   const pairs = pairLinesForSplit(lines);
   const contentClass = wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre';
 
   return (
     <>
+      {/* Conflict mode column headers */}
+      {isConflictMode && hunkIndex === 0 && (
+        <div className={cn('flex', !wordWrap && 'min-w-fit')}>
+          <div className="w-1/2 min-w-80 flex items-center justify-center py-1.5 bg-(--diff-delete-bg) border-r border-(--border-color)">
+            <GitBranch size={14} className="mr-1.5 text-(--diff-delete-line)" />
+            <span className="text-sm font-medium text-(--diff-delete-line)">
+              {t('diff.conflict.ours')}
+            </span>
+          </div>
+          <div className="w-1/2 min-w-80 flex items-center justify-center py-1.5 bg-(--diff-add-bg)">
+            <GitMerge size={14} className="mr-1.5 text-(--diff-add-line)" />
+            <span className="text-sm font-medium text-(--diff-add-line)">
+              {t('diff.conflict.theirs')}
+            </span>
+          </div>
+        </div>
+      )}
       {pairs.map((pair) => {
         const leftLine = pair.left?.line;
         const rightLine = pair.right?.line;

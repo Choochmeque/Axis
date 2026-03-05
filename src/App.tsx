@@ -8,7 +8,6 @@ import { CIView, IssuesView, NotificationsView, PullRequestsView } from './compo
 import { AppLayout } from './components/layout';
 import { TabBar } from './components/layout/TabBar';
 import { LfsView } from './components/lfs';
-import { ConflictResolver } from './components/merge';
 import { ReflogView } from './components/reflog';
 import { ContentSearch } from './components/search/ContentSearch';
 import { UpdateBanner } from './components/update';
@@ -292,16 +291,6 @@ function App() {
         return <CIView key="ci" />;
       case 'notifications':
         return <NotificationsView key="notifications" />;
-      case 'conflicts':
-        return (
-          <ConflictResolver
-            key="conflicts"
-            onAllResolved={() => {
-              useRepositoryStore.getState().setCurrentView('file-status');
-              useStagingStore.getState().loadStatus();
-            }}
-          />
-        );
       default:
         return <WorkspaceView key="workspace" />;
     }

@@ -1342,6 +1342,20 @@
       "unstageSelected": "Unstage {{count}} line(s)",
       "noLinesToStage": "No lines to stage",
       "selectAllInHunk": "Select all lines in hunk"
+    },
+    "conflict": {
+      "useOurs": "Use Ours",
+      "useTheirs": "Use Theirs",
+      "useAllOurs": "Use All Ours",
+      "useAllTheirs": "Use All Theirs",
+      "markResolved": "Mark Resolved",
+      "ours": "Ours (current branch)",
+      "theirs": "Theirs (incoming)",
+      "conflictHunks": "{{count}} conflict",
+      "conflictHunks_plural": "{{count}} conflicts",
+      "resolved": "Resolved",
+      "unresolved": "Unresolved",
+      "resolvedCount": "{{resolved}}/{{total}} resolved"
     }
   },
   "history": {
@@ -2168,6 +2182,8 @@
     "staging": {
       "loadingStatus": "Loading status",
       "loadingDiff": "Loading diff",
+      "loadingConflict": "Loading conflict",
+      "resolvingConflict": "Resolving conflict",
       "creatingCommit": "Creating commit",
       "amendingCommit": "Amending commit",
       "commitMessageRequired": "Commit message is required"

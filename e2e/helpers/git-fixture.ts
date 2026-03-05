@@ -80,3 +80,19 @@ export function modifyFile(dir: string, filename: string, content: string): void
 export function cleanupTempDir(dir: string): void {
   rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 1000 });
 }
+
+/**
+ * Execute a git command in a repo directory.
+ *
+ * @param dir Directory to run the command in
+ * @param args Git command arguments
+ * @param allowFailure If true, don't throw on non-zero exit
+ * @returns stdout from the command
+ */
+export function execInRepo(dir: string, args: string[], allowFailure = false): string {
+  const result = spawnSync('git', args, { ...GIT_OPTS, cwd: dir });
+  if (result.status !== 0 && !allowFailure) {
+    throw new Error(`git ${args.join(' ')} failed: ${result.stderr?.toString()}`);
+  }
+  return result.stdout?.toString() ?? '';
+}

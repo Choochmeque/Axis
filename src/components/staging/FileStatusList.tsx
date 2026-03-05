@@ -213,7 +213,11 @@ function FileStatusItemContent({
         />
         <StatusIcon status={status} className={cn('shrink-0', statusColorClass)} />
         <span
-          {...testId(`e2e-staging-file-${getFileName(file.path)}`)}
+          {...testId(
+            status === StatusType.Conflicted
+              ? `e2e-staging-conflicted-file-${getFileName(file.path)}`
+              : `e2e-staging-file-${getFileName(file.path)}`
+          )}
           className="flex-1 text-base whitespace-nowrap overflow-hidden text-ellipsis text-(--text-primary)"
           title={getDisplayTooltip(file, status)}
         >

@@ -1,16 +1,26 @@
 import { create } from 'zustand';
 
 import i18n from '@/i18n';
+import { buildResolvedContent, getConflictCount } from '@/lib/conflictParser';
 import { type ConventionalCommitParts, getEmptyCommitParts } from '@/lib/conventionalCommits';
 import { type DebouncedFn, debounce } from '@/lib/debounce';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { normalizePath } from '@/lib/utils';
-import { commitApi, diffApi, lfsApi, repositoryApi, stagingApi } from '@/services/api';
+import { commitApi, conflictApi, diffApi, lfsApi, repositoryApi, stagingApi } from '@/services/api';
 import { useDialogStore } from '@/store/dialogStore';
 import { operations } from '@/store/operationStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { DiffOptions, FileDiff, FileStatus, LfsCheckResult, RepositoryStatus } from '@/types';
+import type {
+  ConflictContent,
+  ConflictResolution,
+  DiffOptions,
+  FileDiff,
+  FileStatus,
+  LfsCheckResult,
+  RepositoryStatus,
+} from '@/types';
+import { StatusType } from '@/types';
 
 // Debounce delay for load operations
 const DEBOUNCE_DELAY = 150;
@@ -62,6 +72,10 @@ interface StagingState {
   isSelectedFileStaged: boolean;
   isLoadingDiff: boolean;
 
+  // Conflict resolution state
+  selectedConflictContent: ConflictContent | null;
+  hunkResolutions: Map<number, 'ours' | 'theirs'>;
+
   // Diff settings
   diffSettings: DiffSettings;
 
@@ -105,6 +119,12 @@ interface StagingState {
   clearError: () => void;
   reset: () => void;
 
+  // Conflict resolution actions
+  resolveHunk: (hunkIndex: number, resolution: 'ours' | 'theirs') => void;
+  resolveAllHunks: (resolution: 'ours' | 'theirs') => void;
+  clearHunkResolutions: () => void;
+  resolveConflict: (resolution: ConflictResolution, customContent?: string) => Promise<void>;
+
   // Per-repo cache management
   saveToCache: (repoPath: string) => void;
   restoreFromCache: (repoPath: string) => boolean;
@@ -124,6 +144,8 @@ const initialState = {
   selectedFileDiff: null,
   isSelectedFileStaged: false,
   isLoadingDiff: false,
+  selectedConflictContent: null,
+  hunkResolutions: new Map<number, 'ours' | 'theirs'>(),
   diffSettings: defaultDiffSettings,
   commitMessage: '',
   isAmending: false,
@@ -217,12 +239,52 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   selectFile: async (file: FileStatus | null, staged: boolean) => {
     if (!file) {
-      set({ selectedFile: null, selectedFileDiff: null, isSelectedFileStaged: false });
+      set({
+        selectedFile: null,
+        selectedFileDiff: null,
+        selectedConflictContent: null,
+        hunkResolutions: new Map(),
+        isSelectedFileStaged: false,
+      });
       return;
     }
 
+    // Handle conflicted files specially
+    if (file.status === StatusType.Conflicted) {
+      const opId = operations.start(i18n.t('store.staging.loadingConflict'), { category: 'file' });
+      set({
+        selectedFile: file,
+        isSelectedFileStaged: false,
+        isLoadingDiff: true,
+        selectedFileDiff: null,
+        hunkResolutions: new Map(),
+        error: null,
+      });
+      try {
+        const content = await conflictApi.getConflictContent(file.path);
+        set({ selectedConflictContent: content, isLoadingDiff: false });
+      } catch (error) {
+        set({
+          error: getErrorMessage(error),
+          selectedConflictContent: null,
+          isLoadingDiff: false,
+        });
+      } finally {
+        operations.complete(opId);
+      }
+      return;
+    }
+
+    // Clear conflict content for non-conflicted files
     const opId = operations.start(i18n.t('store.staging.loadingDiff'), { category: 'file' });
-    set({ selectedFile: file, isSelectedFileStaged: staged, isLoadingDiff: true, error: null });
+    set({
+      selectedFile: file,
+      isSelectedFileStaged: staged,
+      isLoadingDiff: true,
+      selectedConflictContent: null,
+      hunkResolutions: new Map(),
+      error: null,
+    });
     try {
       const options = toDiffOptions(get().diffSettings);
       const diff = await diffApi.getFile(file.path, staged, options);
@@ -383,7 +445,12 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await get().loadStatus();
       // Clear selected file if it was the discarded one
       if (get().selectedFile?.path === path) {
-        set({ selectedFile: null, selectedFileDiff: null });
+        set({
+          selectedFile: null,
+          selectedFileDiff: null,
+          selectedConflictContent: null,
+          hunkResolutions: new Map(),
+        });
       }
     } catch (error) {
       set({ error: getErrorMessage(error) });
@@ -394,7 +461,12 @@ export const useStagingStore = create<StagingState>((set, get) => ({
     try {
       await stagingApi.discardUnstaged();
       await get().loadStatus();
-      set({ selectedFile: null, selectedFileDiff: null });
+      set({
+        selectedFile: null,
+        selectedFileDiff: null,
+        selectedConflictContent: null,
+        hunkResolutions: new Map(),
+      });
     } catch (error) {
       set({ error: getErrorMessage(error) });
     }
@@ -405,7 +477,12 @@ export const useStagingStore = create<StagingState>((set, get) => ({
       await stagingApi.deleteFile(path);
       await get().loadStatus();
       if (get().selectedFile?.path === path) {
-        set({ selectedFile: null, selectedFileDiff: null });
+        set({
+          selectedFile: null,
+          selectedFileDiff: null,
+          selectedConflictContent: null,
+          hunkResolutions: new Map(),
+        });
       }
     } catch (error) {
       set({ error: getErrorMessage(error) });
@@ -506,6 +583,55 @@ export const useStagingStore = create<StagingState>((set, get) => ({
 
   reset: () => {
     set(initialState);
+  },
+
+  resolveHunk: (hunkIndex: number, resolution: 'ours' | 'theirs') => {
+    const newResolutions = new Map(get().hunkResolutions);
+    newResolutions.set(hunkIndex, resolution);
+    set({ hunkResolutions: newResolutions });
+  },
+
+  resolveAllHunks: (resolution: 'ours' | 'theirs') => {
+    const { selectedConflictContent } = get();
+    if (!selectedConflictContent) return;
+
+    const count = getConflictCount(selectedConflictContent.merged);
+    const newResolutions = new Map<number, 'ours' | 'theirs'>();
+    for (let i = 0; i < count; i++) {
+      newResolutions.set(i, resolution);
+    }
+    set({ hunkResolutions: newResolutions });
+  },
+
+  clearHunkResolutions: () => {
+    set({ hunkResolutions: new Map() });
+  },
+
+  resolveConflict: async (resolution: ConflictResolution, customContent?: string) => {
+    const { selectedFile, selectedConflictContent, hunkResolutions } = get();
+    if (!selectedFile) return;
+
+    const opId = operations.start(i18n.t('store.staging.resolvingConflict'), { category: 'git' });
+    try {
+      // If resolution is 'Merged', build the content from hunk resolutions
+      let contentToUse = customContent;
+      if (resolution === 'Merged' && selectedConflictContent && !customContent) {
+        contentToUse = buildResolvedContent(selectedConflictContent.merged, hunkResolutions);
+      }
+
+      await conflictApi.resolveConflict(selectedFile.path, resolution, contentToUse);
+      await get().loadStatus();
+      set({
+        selectedFile: null,
+        selectedFileDiff: null,
+        selectedConflictContent: null,
+        hunkResolutions: new Map(),
+      });
+    } catch (error) {
+      set({ error: getErrorMessage(error) });
+    } finally {
+      operations.complete(opId);
+    }
   },
 
   saveToCache: (repoPath: string) => {

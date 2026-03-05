@@ -111,21 +111,21 @@ impl Database {
     }
 
     pub async fn get_settings(&self) -> Result<AppSettings> {
-        let mut rows = self
-            .conn
-            .lock()
-            .await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query("SELECT value FROM settings WHERE key = 'app_settings'", ())
             .await?;
 
-        match rows.next().await? {
+        let result = match rows.next().await? {
             Some(row) => {
                 let json: String = row.get(0)?;
                 let settings: AppSettings = serde_json::from_str(&json).unwrap_or_default();
                 Ok(settings)
             }
             None => Ok(AppSettings::default()),
-        }
+        };
+        drop(conn);
+        result
     }
 
     pub async fn save_settings(&self, settings: &AppSettings) -> Result<()> {
@@ -166,10 +166,8 @@ impl Database {
     }
 
     pub async fn get_recent_repositories(&self) -> Result<Vec<RecentRepositoryRow>> {
-        let mut rows = self
-            .conn
-            .lock()
-            .await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT r.path, r.name, r.last_opened, (p.path IS NOT NULL) AS is_pinned
              FROM recent_repositories r
@@ -195,6 +193,7 @@ impl Database {
             });
         }
 
+        drop(conn);
         Ok(repos)
     }
 
@@ -258,14 +257,12 @@ impl Database {
     pub async fn get_secret(&self, key: &str) -> Result<Option<String>> {
         use base64::{engine::general_purpose::STANDARD, Engine};
 
-        let mut rows = self
-            .conn
-            .lock()
-            .await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query("SELECT value FROM secrets WHERE key = ?1", [key])
             .await?;
 
-        match rows.next().await? {
+        let result = match rows.next().await? {
             Some(row) => {
                 let encoded: String = row.get(0)?;
                 let decoded = STANDARD
@@ -276,18 +273,20 @@ impl Database {
                 Ok(Some(value))
             }
             None => Ok(None),
-        }
+        };
+        drop(conn);
+        result
     }
 
     pub async fn has_secret(&self, key: &str) -> Result<bool> {
-        let mut rows = self
-            .conn
-            .lock()
-            .await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query("SELECT 1 FROM secrets WHERE key = ?1", [key])
             .await?;
 
-        Ok(rows.next().await?.is_some())
+        let result = rows.next().await?.is_some();
+        drop(conn);
+        Ok(result)
     }
 
     pub async fn delete_secret(&self, key: &str) -> Result<()> {
@@ -305,20 +304,23 @@ impl Database {
         repo_path: &str,
         remote_name: &str,
     ) -> Result<Option<String>> {
-        let mut rows = self.conn.lock().await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT ssh_key_path FROM remote_ssh_keys WHERE repo_path = ?1 AND remote_name = ?2",
                 [repo_path, remote_name],
             )
             .await?;
 
-        match rows.next().await? {
+        let result = match rows.next().await? {
             Some(row) => {
                 let path: String = row.get(0)?;
                 Ok(Some(path))
             }
             None => Ok(None),
-        }
+        };
+        drop(conn);
+        result
     }
 
     pub async fn set_remote_ssh_key(
@@ -352,10 +354,8 @@ impl Database {
     }
 
     pub async fn list_remote_ssh_keys(&self, repo_path: &str) -> Result<Vec<(String, String)>> {
-        let mut rows = self
-            .conn
-            .lock()
-            .await
+        let conn = self.conn.lock().await;
+        let mut rows = conn
             .query(
                 "SELECT remote_name, ssh_key_path FROM remote_ssh_keys WHERE repo_path = ?1",
                 [repo_path],
@@ -369,6 +369,7 @@ impl Database {
             mappings.push((remote_name, ssh_key_path));
         }
 
+        drop(conn);
         Ok(mappings)
     }
 

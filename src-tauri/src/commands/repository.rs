@@ -19,6 +19,9 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
     }
 
+    // Canonicalize path to ensure consistent storage (avoids duplicates from relative vs absolute paths)
+    let path = path.canonicalize()?;
+
     // Use switch_active_repository to add to cache and set as active
     state.switch_active_repository(&path).await?;
 
@@ -48,6 +51,9 @@ pub async fn init_repository(
     // Initialize the repository first (this creates a new Git2Service internally)
     let service = Git2Service::init(&path, bare)?;
     let repo_info = service.get_repository_info()?;
+
+    // Canonicalize path after creation to ensure consistent storage
+    let path = path.canonicalize()?;
 
     // Now add to cache via switch_active_repository
     state.switch_active_repository(&path).await?;
@@ -107,6 +113,9 @@ pub async fn clone_repository(
     let service = result?;
     let repo_info = service.get_repository_info()?;
 
+    // Canonicalize path after clone to ensure consistent storage
+    let path = path.canonicalize()?;
+
     // Now add to cache via switch_active_repository
     state.switch_active_repository(&path).await?;
 
@@ -134,6 +143,9 @@ pub async fn switch_active_repository(
     if !path.exists() {
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
     }
+
+    // Canonicalize path to ensure consistent cache lookups
+    let path = path.canonicalize()?;
 
     state.switch_active_repository(&path).await
 }

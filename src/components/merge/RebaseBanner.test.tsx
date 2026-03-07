@@ -11,6 +11,7 @@ vi.mock('react-i18next', () => ({
 const mockGetState = vi.fn();
 const mockAbort = vi.fn();
 const mockSkip = vi.fn();
+const mockContinue = vi.fn();
 
 vi.mock('@/services/api', () => ({
   operationApi: {
@@ -19,6 +20,7 @@ vi.mock('@/services/api', () => ({
   rebaseApi: {
     abort: () => mockAbort(),
     skip: () => mockSkip(),
+    continue: () => mockContinue(),
   },
 }));
 
@@ -27,6 +29,27 @@ vi.mock('@/hooks', () => ({
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
+    info: vi.fn(),
+  },
+}));
+
+interface MockFileStatus {
+  path: string;
+  status: string;
+  isConflict?: boolean;
+}
+
+const mockStatus: {
+  staged: MockFileStatus[];
+  unstaged: MockFileStatus[];
+  untracked: MockFileStatus[];
+  conflicted: MockFileStatus[];
+} = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+
+vi.mock('@/store/stagingStore', () => ({
+  useStagingStore: (selector?: (state: unknown) => unknown) => {
+    const state = { status: mockStatus };
+    return selector ? selector(state) : state;
   },
 }));
 
@@ -251,6 +274,76 @@ describe('RebaseBanner', () => {
 
     await waitFor(() => {
       expect(screen.getByText('merge.rebaseBanner.inProgress')).toBeInTheDocument();
+    });
+  });
+
+  it('should have continue button', async () => {
+    mockGetState.mockResolvedValue(makeRebasingState());
+
+    render(<RebaseBanner />);
+
+    await waitFor(() => {
+      const continueButton = screen.getByTitle('merge.rebaseBanner.continue');
+      expect(continueButton).toBeInTheDocument();
+    });
+  });
+
+  it('should call continue API when continue button clicked', async () => {
+    mockGetState.mockResolvedValue(makeRebasingState());
+    mockContinue.mockResolvedValue({ success: true, message: '' });
+
+    render(<RebaseBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('merge.rebaseBanner.continue')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('merge.rebaseBanner.continue'));
+
+    await waitFor(() => {
+      expect(mockContinue).toHaveBeenCalled();
+    });
+  });
+
+  it('should show conflict hint when conflicts exist and not paused', async () => {
+    mockGetState.mockResolvedValue(makeRebasingState({ pausedAction: null }));
+    mockStatus.conflicted = [{ path: 'file1.ts', status: 'Conflicted' }];
+
+    render(<RebaseBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByText('merge.rebaseBanner.resolveHint')).toBeInTheDocument();
+    });
+  });
+
+  it('should not show conflict hint when paused for edit', async () => {
+    mockGetState.mockResolvedValue(makeRebasingState({ pausedAction: 'Edit' }));
+    mockStatus.conflicted = [{ path: 'file1.ts', status: 'Conflicted' }];
+
+    render(<RebaseBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByText('merge.rebaseBanner.pausedForEdit')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('merge.rebaseBanner.resolveHint')).not.toBeInTheDocument();
+  });
+
+  it('should call onComplete when continue succeeds', async () => {
+    mockGetState.mockResolvedValue(makeRebasingState());
+    mockContinue.mockResolvedValue({ success: true, message: '' });
+    const onComplete = vi.fn();
+
+    render(<RebaseBanner onComplete={onComplete} />);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('merge.rebaseBanner.continue')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('merge.rebaseBanner.continue'));
+
+    await waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
     });
   });
 });

@@ -250,7 +250,19 @@ impl GitCliService {
 
     /// Continue a rebase after resolving conflicts
     pub async fn rebase_continue(&self) -> Result<GitCommandResult> {
-        self.execute_checked(&["rebase", "--continue"]).await
+        let result = self.execute(&["rebase", "--continue"]).await?;
+        if !result.success {
+            // Check if failure is due to unresolved conflicts (git outputs to stdout)
+            let output = format!("{} {}", result.stdout, result.stderr);
+            if output.contains("needs merge") || output.contains("Resolve all conflicts") {
+                return Err(AxisError::RebaseConflict);
+            }
+            return Err(AxisError::GitError(format!(
+                "Git command failed: {}",
+                result.stderr.trim()
+            )));
+        }
+        Ok(result)
     }
 
     /// Skip the current commit during rebase
@@ -387,14 +399,24 @@ impl GitCliService {
             .ok()
             .map(|s| s.trim_end().to_string());
 
-        // Determine paused action
+        // Read the 'done' file to get the actual action being performed
+        // Format: "action sha message" e.g., "pick abc123 Commit message"
+        let current_action = fs::read_to_string(state_dir.join("done"))
+            .ok()
+            .and_then(|content| {
+                content
+                    .lines()
+                    .last()
+                    .and_then(|line| line.split_whitespace().next())
+                    .map(str::to_lowercase)
+            });
+
+        // Determine paused action based on the actual action from the done file
         let paused_action = if stopped_sha.is_some() {
-            if is_amend_mode {
-                Some(RebaseAction::Edit)
-            } else if commit_message.is_some() {
-                Some(RebaseAction::Reword)
-            } else {
-                None
+            match current_action.as_deref() {
+                Some("edit" | "e") => Some(RebaseAction::Edit),
+                Some("reword" | "r") => Some(RebaseAction::Reword),
+                _ => None, // pick, squash, fixup, drop, etc. - no special dialog needed
             }
         } else {
             None

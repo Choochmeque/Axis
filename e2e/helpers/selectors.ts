@@ -122,6 +122,29 @@ export const SELECTORS = {
     return byTestId('e2e-conflict-mark-resolved');
   },
 
+  // Operation Banners
+  get MERGE_BANNER() {
+    return byTestId('e2e-merge-banner');
+  },
+  get MERGE_BANNER_CONTINUE() {
+    return byTestId('e2e-merge-banner-continue');
+  },
+  get MERGE_BANNER_ABORT() {
+    return byTestId('e2e-merge-banner-abort');
+  },
+  get REBASE_BANNER() {
+    return byTestId('e2e-rebase-banner');
+  },
+  get REBASE_BANNER_CONTINUE() {
+    return byTestId('e2e-rebase-banner-continue');
+  },
+  get REBASE_BANNER_ABORT() {
+    return byTestId('e2e-rebase-banner-abort');
+  },
+  get REBASE_BANNER_SKIP() {
+    return byTestId('e2e-rebase-banner-skip');
+  },
+
   // Dynamic selectors
   stagingFile: (filename: string) => byTestId(`e2e-staging-file-${filename}`),
   conflictedFile: (filename: string) => byTestId(`e2e-staging-conflicted-file-${filename}`),

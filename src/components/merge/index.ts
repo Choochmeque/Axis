@@ -1,7 +1,10 @@
+export { BisectBanner } from './BisectBanner';
 export { CherryPickDialog } from './CherryPickDialog';
 export { EditPauseDialog } from './EditPauseDialog';
 export { InteractiveRebaseDialog } from './InteractiveRebaseDialog';
+export { MergeBanner } from './MergeBanner';
 export { MergeDialog } from './MergeDialog';
+export { OperationBanners } from './OperationBanners';
 export { RebaseBanner } from './RebaseBanner';
 export { RebaseDialog } from './RebaseDialog';
 export { RebaseOntoDialog } from './RebaseOntoDialog';

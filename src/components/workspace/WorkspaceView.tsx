@@ -1,11 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import {
   areAllSectionsResolved,
   buildResolvedContent,
   conflictToFileDiff,
 } from '@/lib/conflictParser';
+import { operationApi } from '@/services/api';
 import { ConflictResolution, StatusType } from '@/types';
+import type { OperationState } from '@/types';
+import { OperationBanners } from '../merge/OperationBanners';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import { useStagingStore } from '../../store/stagingStore';
 import { type DiffMode, DiffView } from '../diff';
@@ -25,6 +28,7 @@ export function WorkspaceView() {
       storage: localStorage,
     });
   const {
+    status,
     selectedFile,
     selectedFileDiff,
     isLoadingDiff,
@@ -32,6 +36,7 @@ export function WorkspaceView() {
     stageHunk,
     unstageHunk,
     discardHunk,
+    loadStatus,
     // Conflict resolution
     selectedConflictContent,
     hunkResolutions,
@@ -39,6 +44,27 @@ export function WorkspaceView() {
     resolveAllHunks,
     resolveConflict,
   } = useStagingStore();
+
+  // Check operation state to hide CommitForm panel during rebase/cherry-pick
+  const [operationState, setOperationState] = useState<OperationState | null>(null);
+
+  useEffect(() => {
+    const loadOperationState = async () => {
+      try {
+        const state = await operationApi.getState();
+        setOperationState(state);
+      } catch {
+        setOperationState(null);
+      }
+    };
+    loadOperationState();
+  }, [status]);
+
+  const showCommitForm = !(
+    operationState &&
+    typeof operationState === 'object' &&
+    ('Rebasing' in operationState || 'CherryPicking' in operationState)
+  );
 
   // Don't show discard for untracked files (they can only be deleted, not discarded)
   const isUntracked = selectedFile?.status === StatusType.Untracked;
@@ -95,6 +121,7 @@ export function WorkspaceView() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <OperationBanners onComplete={loadStatus} />
       <Group
         orientation="vertical"
         defaultLayout={verticalLayout}
@@ -129,10 +156,14 @@ export function WorkspaceView() {
             </Panel>
           </Group>
         </Panel>
-        <Separator className="resize-handle-vertical" />
-        <Panel defaultSize="20%" minSize="10%" maxSize="50%">
-          <CommitForm />
-        </Panel>
+        {showCommitForm && (
+          <>
+            <Separator className="resize-handle-vertical" />
+            <Panel defaultSize="20%" minSize="10%" maxSize="50%">
+              <CommitForm />
+            </Panel>
+          </>
+        )}
       </Group>
     </div>
   );

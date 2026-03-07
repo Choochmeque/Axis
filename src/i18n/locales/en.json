@@ -743,7 +743,13 @@
       "hint": "Commit or abort the merge to continue",
       "abort": "Abort",
       "aborted": "Merge aborted",
-      "abortFailed": "Failed to abort merge"
+      "abortFailed": "Failed to abort merge",
+      "continue": "Continue merge",
+      "continued": "Merge completed",
+      "continueFailed": "Failed to continue merge",
+      "hasConflicts": "Resolve conflicts before continuing",
+      "resolveHint": "Resolve {{count}} conflict(s) and stage files to continue",
+      "conflictEncountered": "Conflict encountered - please resolve"
     },
     "rebase": {
       "title": "Rebase Branch",
@@ -952,7 +958,8 @@
       "continue": "Continue rebase",
       "continued": "Rebase continued",
       "continueFailed": "Failed to continue rebase",
-      "conflictEncountered": "Conflict in next commit - please resolve"
+      "conflictEncountered": "Conflict in next commit - please resolve",
+      "resolveHint": "Resolve {{count}} conflict(s) and stage files to continue"
     },
     "reset": {
       "soft": {

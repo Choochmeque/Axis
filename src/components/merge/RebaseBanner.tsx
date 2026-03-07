@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { testId } from '@/lib/utils';
 import { operationApi, rebaseApi } from '@/services/api';
 import { useRebaseProgressStore } from '@/store/rebaseProgressStore';
+import { useStagingStore } from '@/store/stagingStore';
 import type { OperationState } from '@/types';
 
 interface RebaseBannerProps {
@@ -17,6 +19,8 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
   const [state, setState] = useState<OperationState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { loadProgress, openRewordDialog, openEditPauseDialog } = useRebaseProgressStore();
+  const status = useStagingStore((s) => s.status);
+  const conflictCount = status?.conflicted?.length ?? 0;
 
   const loadState = useCallback(async () => {
     try {
@@ -60,8 +64,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
       } else {
         // Check if rebase is still in progress (conflict on next commit)
         const newState = await operationApi.getState();
-        const stillRebasing =
-          newState && typeof newState === 'object' && 'Rebasing' in newState;
+        const stillRebasing = newState && typeof newState === 'object' && 'Rebasing' in newState;
         if (stillRebasing) {
           // Not an error - just hit another conflict
           toast.info(t('merge.rebaseBanner.conflictEncountered'));
@@ -118,7 +121,10 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
   /* eslint-enable @typescript-eslint/naming-convention */
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-warning/10 border-b border-warning/30">
+    <div
+      {...testId('e2e-rebase-banner')}
+      className="flex items-center gap-3 px-4 py-2 bg-warning/10 border-b border-warning/30"
+    >
       <GitBranch size={16} className="text-warning" />
       <span className="text-sm font-medium">
         {t('merge.rebaseBanner.inProgress')}
@@ -161,6 +167,12 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
         </span>
       )}
 
+      {conflictCount > 0 && !rebasingState.pausedAction && (
+        <span className="text-xs text-warning">
+          {t('merge.rebaseBanner.resolveHint', { count: conflictCount })}
+        </span>
+      )}
+
       <div className="flex-1" />
 
       <div className="flex items-center gap-1">
@@ -187,6 +199,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
           </Button>
         )}
         <Button
+          {...testId('e2e-rebase-banner-continue')}
           size="sm"
           variant="ghost"
           onClick={handleContinue}
@@ -196,6 +209,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
           <Play size={14} />
         </Button>
         <Button
+          {...testId('e2e-rebase-banner-skip')}
           size="sm"
           variant="ghost"
           onClick={handleSkip}
@@ -205,6 +219,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
           <SkipForward size={14} />
         </Button>
         <Button
+          {...testId('e2e-rebase-banner-abort')}
           size="sm"
           variant="ghost"
           onClick={handleAbort}

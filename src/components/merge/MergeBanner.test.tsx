@@ -10,6 +10,7 @@ vi.mock('react-i18next', () => ({
 
 const mockGetState = vi.fn();
 const mockAbort = vi.fn();
+const mockContinue = vi.fn();
 
 vi.mock('@/services/api', () => ({
   operationApi: {
@@ -17,6 +18,7 @@ vi.mock('@/services/api', () => ({
   },
   mergeApi: {
     abort: () => mockAbort(),
+    continue: () => mockContinue(),
   },
 }));
 
@@ -24,6 +26,26 @@ vi.mock('@/hooks', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
+interface MockFileStatus {
+  path: string;
+  status: string;
+}
+
+const mockStatus: {
+  staged: MockFileStatus[];
+  unstaged: MockFileStatus[];
+  untracked: MockFileStatus[];
+  conflicted: MockFileStatus[];
+} = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+
+vi.mock('@/store/stagingStore', () => ({
+  useStagingStore: (selector?: (state: unknown) => unknown) => {
+    const state = { status: mockStatus };
+    return selector ? selector(state) : state;
   },
 }));
 
@@ -153,5 +175,68 @@ describe('MergeBanner', () => {
 
     // Should not crash when branch is null
     expect(screen.queryByText('null')).not.toBeInTheDocument();
+  });
+
+  it('should have continue button', async () => {
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Matches Rust enum variant
+    mockGetState.mockResolvedValue({ Merging: { branch: 'main' } });
+
+    render(<MergeBanner />);
+
+    await waitFor(() => {
+      const continueButton = screen.getByTitle('merge.banner.continue');
+      expect(continueButton).toBeInTheDocument();
+    });
+  });
+
+  it('should call continue API when continue button clicked and no conflicts', async () => {
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Matches Rust enum variant
+    mockGetState.mockResolvedValue({ Merging: { branch: 'main' } });
+    mockContinue.mockResolvedValue({ success: true, message: '', conflicts: [] });
+    mockStatus.conflicted = [];
+
+    render(<MergeBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('merge.banner.continue')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('merge.banner.continue'));
+
+    await waitFor(() => {
+      expect(mockContinue).toHaveBeenCalled();
+    });
+  });
+
+  it('should show conflict hint when conflicts exist', async () => {
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Matches Rust enum variant
+    mockGetState.mockResolvedValue({ Merging: { branch: 'main' } });
+    mockStatus.conflicted = [{ path: 'file1.ts', status: 'Conflicted' }];
+
+    render(<MergeBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByText('merge.banner.resolveHint')).toBeInTheDocument();
+    });
+  });
+
+  it('should call onComplete when continue succeeds', async () => {
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Matches Rust enum variant
+    mockGetState.mockResolvedValue({ Merging: { branch: 'main' } });
+    mockContinue.mockResolvedValue({ success: true, message: '', conflicts: [] });
+    mockStatus.conflicted = [];
+    const onComplete = vi.fn();
+
+    render(<MergeBanner onComplete={onComplete} />);
+
+    await waitFor(() => {
+      expect(screen.getByTitle('merge.banner.continue')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTitle('merge.banner.continue'));
+
+    await waitFor(() => {
+      expect(onComplete).toHaveBeenCalled();
+    });
   });
 });

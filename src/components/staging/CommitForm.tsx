@@ -184,6 +184,20 @@ export function CommitForm() {
     };
   }, []);
 
+  // Parse message when entering amend mode in structured mode
+  useEffect(() => {
+    if (isAmending && structuredMode && commitMessage) {
+      const parsed = parseConventionalCommit(commitMessage);
+      if (parsed) {
+        setCommitParts(parsed);
+      } else {
+        // Fall back to free-form if message doesn't parse
+        setStructuredMode(false);
+        toast.info(t('staging.notConventionalFormat'));
+      }
+    }
+  }, [isAmending, structuredMode, commitMessage, setCommitParts, setStructuredMode, t]);
+
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart ?? 0;
@@ -327,20 +341,6 @@ export function CommitForm() {
       operations.complete(opId);
     }
   };
-
-  // Parse message when entering amend mode in structured mode
-  useEffect(() => {
-    if (isAmending && structuredMode && commitMessage) {
-      const parsed = parseConventionalCommit(commitMessage);
-      if (parsed) {
-        setCommitParts(parsed);
-      } else {
-        // Fall back to free-form if message doesn't parse
-        setStructuredMode(false);
-        toast.info(t('staging.notConventionalFormat'));
-      }
-    }
-  }, [isAmending, structuredMode, commitMessage, setCommitParts, setStructuredMode, t]);
 
   const stagedCount = status?.staged.length ?? 0;
   const canCommit = stagedCount > 0 && (commitMessage.trim() || isAmending);

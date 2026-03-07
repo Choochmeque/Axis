@@ -7,7 +7,7 @@ import {
   execInRepo,
 } from '../helpers/git-fixture.js';
 
-describe('Conflict Resolution', () => {
+describe('Rebase Conflict Resolution', () => {
   let tempDir: string;
 
   before(async () => {
@@ -29,8 +29,9 @@ describe('Conflict Resolution', () => {
     execInRepo(tempDir, ['add', '-A']);
     execInRepo(tempDir, ['commit', '-m', 'main changes']);
 
-    // Attempt to merge feature branch (will create conflict)
-    execInRepo(tempDir, ['merge', 'feature'], true);
+    // Checkout feature branch and attempt to rebase onto main (will create conflict)
+    execInRepo(tempDir, ['checkout', 'feature']);
+    execInRepo(tempDir, ['rebase', 'main'], true);
 
     await waitForAppReady();
   });
@@ -62,7 +63,7 @@ describe('Conflict Resolution', () => {
     await toolbar.waitForExist({ timeout: 15_000 });
   });
 
-  it('should show conflict section when merge conflict exists', async () => {
+  it('should show rebase banner in staging view during rebase', async () => {
     // Click "File Status" in the sidebar
     const fileStatusBtn = await $(SELECTORS.SIDEBAR_FILE_STATUS);
     await fileStatusBtn.waitForExist({ timeout: 5_000 });
@@ -72,31 +73,34 @@ describe('Conflict Resolution', () => {
     const stagingView = await $(SELECTORS.STAGING_VIEW);
     await stagingView.waitForExist({ timeout: 10_000 });
 
+    // Verify the rebase banner is visible
+    const rebaseBanner = await $(SELECTORS.REBASE_BANNER);
+    await rebaseBanner.waitForExist({ timeout: 5_000 });
+
+    // Verify continue, skip, and abort buttons are present
+    const continueBtn = await $(SELECTORS.REBASE_BANNER_CONTINUE);
+    await continueBtn.waitForExist({ timeout: 3_000 });
+
+    const skipBtn = await $(SELECTORS.REBASE_BANNER_SKIP);
+    await skipBtn.waitForExist({ timeout: 3_000 });
+
+    const abortBtn = await $(SELECTORS.REBASE_BANNER_ABORT);
+    await abortBtn.waitForExist({ timeout: 3_000 });
+  });
+
+  it('should hide commit form during rebase', async () => {
+    // CommitForm should NOT be visible during rebase
+    const commitForm = await $(SELECTORS.COMMIT_FORM);
+    await expect(commitForm).not.toBeExisting();
+  });
+
+  it('should show conflict section during rebase conflict', async () => {
     // Verify the conflicted header is visible
     const conflictedHeader = await $(SELECTORS.STAGING_CONFLICTED_HEADER);
     await conflictedHeader.waitForExist({ timeout: 5_000 });
   });
 
-  it('should show merge banner in staging view during merge', async () => {
-    // Verify the merge banner is visible
-    const mergeBanner = await $(SELECTORS.MERGE_BANNER);
-    await mergeBanner.waitForExist({ timeout: 5_000 });
-
-    // Verify continue and abort buttons are present
-    const continueBtn = await $(SELECTORS.MERGE_BANNER_CONTINUE);
-    await continueBtn.waitForExist({ timeout: 3_000 });
-
-    const abortBtn = await $(SELECTORS.MERGE_BANNER_ABORT);
-    await abortBtn.waitForExist({ timeout: 3_000 });
-  });
-
-  it('should show commit form during merge (for merge commit)', async () => {
-    // CommitForm should be visible during merge
-    const commitForm = await $(SELECTORS.COMMIT_FORM);
-    await commitForm.waitForExist({ timeout: 5_000 });
-  });
-
-  it('should show conflict view when selecting conflicted file', async () => {
+  it('should resolve conflict and continue rebase', async () => {
     // Click on the conflicted file
     const conflictFile = await $(SELECTORS.conflictedFile('test.txt'));
     await conflictFile.waitForExist({ timeout: 5_000 });
@@ -106,15 +110,6 @@ describe('Conflict Resolution', () => {
     const diffView = await $(SELECTORS.DIFF_VIEW);
     await diffView.waitForExist({ timeout: 5_000 });
 
-    // Verify conflict resolution buttons are visible
-    const useAllOurs = await $(SELECTORS.CONFLICT_USE_ALL_OURS);
-    await useAllOurs.waitForExist({ timeout: 5_000 });
-
-    const useAllTheirs = await $(SELECTORS.CONFLICT_USE_ALL_THEIRS);
-    await useAllTheirs.waitForExist({ timeout: 5_000 });
-  });
-
-  it('should resolve hunk with Use Ours', async () => {
     // Click "Use Ours" on the first hunk
     const useOursBtn = await $(SELECTORS.conflictHunkUseOurs(0));
     await useOursBtn.waitForExist({ timeout: 5_000 });
@@ -123,30 +118,30 @@ describe('Conflict Resolution', () => {
     // Wait for resolved indicator
     const resolvedIndicator = await $(SELECTORS.conflictHunkResolved(0));
     await resolvedIndicator.waitForExist({ timeout: 3_000 });
-  });
 
-  it('should enable Mark Resolved when all hunks resolved', async () => {
-    // If there are more hunks, resolve them too
-    // For this test, assume single hunk - mark resolved should be enabled
-    const markResolvedBtn = await $(SELECTORS.CONFLICT_MARK_RESOLVED);
-    await markResolvedBtn.waitForExist({ timeout: 3_000 });
-    await expect(markResolvedBtn).toBeEnabled();
-  });
-
-  it('should remove file from conflicts after Mark Resolved', async () => {
     // Click Mark Resolved
     const markResolvedBtn = await $(SELECTORS.CONFLICT_MARK_RESOLVED);
+    await markResolvedBtn.waitForExist({ timeout: 3_000 });
     await markResolvedBtn.click();
 
     // Wait for UI update
     await browser.pause(2_000);
 
-    // Verify the file is no longer in conflicted section
-    const conflictFile = await $(SELECTORS.conflictedFile('test.txt'));
-    await expect(conflictFile).not.toBeExisting();
+    // Click continue on rebase banner
+    const continueBtn = await $(SELECTORS.REBASE_BANNER_CONTINUE);
+    await continueBtn.click();
 
-    // Verify file is now in staged section
-    const stagedHeader = await $(SELECTORS.STAGING_STAGED_HEADER);
-    await stagedHeader.waitForExist({ timeout: 5_000 });
+    // Wait for rebase to complete (banner should disappear)
+    await browser.pause(3_000);
+
+    // Verify rebase banner is gone
+    const rebaseBanner = await $(SELECTORS.REBASE_BANNER);
+    await expect(rebaseBanner).not.toBeExisting();
+  });
+
+  it('should show commit form after rebase completes', async () => {
+    // CommitForm should be visible again after rebase
+    const commitForm = await $(SELECTORS.COMMIT_FORM);
+    await commitForm.waitForExist({ timeout: 5_000 });
   });
 });

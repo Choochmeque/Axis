@@ -22,9 +22,7 @@ import { testId } from '@/lib/utils';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import type { GraphCommit } from '@/types';
 import { RefType } from '@/types';
-import { BisectBanner } from '../merge/BisectBanner';
-import { MergeBanner } from '../merge/MergeBanner';
-import { RebaseBanner } from '../merge/RebaseBanner';
+import { OperationBanners } from '../merge/OperationBanners';
 import { CommitContextMenu } from './CommitContextMenu';
 import { CommitDetailPanel } from './CommitDetailPanel';
 import { GraphCell } from './GraphCell';
@@ -409,10 +407,8 @@ export function HistoryView() {
 
   const commitListContent = (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      <OperationBanners onComplete={handleBisectComplete} />
       <HistoryFilters />
-      <BisectBanner onComplete={handleBisectComplete} />
-      <MergeBanner onComplete={handleBisectComplete} />
-      <RebaseBanner onComplete={handleBisectComplete} />
       {isSearching && (
         <div className="flex items-center justify-between gap-2 px-4 py-2 bg-(--accent-color)/10 border-b border-(--accent-color)/30 text-sm">
           <div className="flex items-center gap-2">

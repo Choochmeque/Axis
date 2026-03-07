@@ -122,13 +122,14 @@ export default defineConfig({
 
     // BreadcrumbList schema (guide pages only, not guide index)
     if (pageData.relativePath.startsWith('guide/') && pageData.relativePath !== 'guide/index.md') {
+      const pageUrl = canonicalUrl;
       const breadcrumbSchema = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
           { '@type': 'ListItem', position: 2, name: 'Guide', item: `${SITE_URL}/guide` },
-          { '@type': 'ListItem', position: 3, name: title },
+          { '@type': 'ListItem', position: 3, name: title, item: pageUrl },
         ],
       };
       head.push(['script', { type: 'application/ld+json' }, JSON.stringify(breadcrumbSchema)]);

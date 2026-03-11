@@ -1853,7 +1853,10 @@
       "pathRequired": "Destination path is required",
       "cloning": "Cloning...",
       "cloningMessage": "Cloning repository... This may take a while for large repositories.",
-      "cloneButton": "Clone"
+      "cloneButton": "Clone",
+      "cancelConfirm": "Clone operation is in progress. Are you sure you want to cancel?",
+      "continueOperation": "Continue Cloning",
+      "cancelOperation": "Cancel Clone"
     },
     "init": {
       "title": "Initialize Repository",

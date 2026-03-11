@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
-import { useFileWatcher, useGitProgress, useHookProgress } from '../../hooks';
+import { useFileWatcher, useHookProgress } from '../../hooks';
 import { useDialogStore } from '../../store/dialogStore';
 import { useRepositoryStore } from '../../store/repositoryStore';
 import {
@@ -44,8 +44,6 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   // Start file watcher and listen for changes
   useFileWatcher();
-  // Listen for git operation progress events
-  useGitProgress();
   // Listen for hook progress events
   useHookProgress();
 

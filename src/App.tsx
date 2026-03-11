@@ -13,7 +13,7 @@ import { ContentSearch } from './components/search/ContentSearch';
 import { UpdateBanner } from './components/update';
 import { WelcomeView } from './components/WelcomeView';
 import { WorkspaceView } from './components/workspace';
-import { toast, useCustomActionShortcuts, useMenuActions } from './hooks';
+import { toast, useCustomActionShortcuts, useGitProgress, useMenuActions } from './hooks';
 import { notifyNewCommits } from './lib/actions';
 import { getErrorMessage } from './lib/errorUtils';
 import { normalizePath } from './lib/utils';
@@ -51,6 +51,9 @@ function App() {
 
   // Handle custom action keyboard shortcuts
   useCustomActionShortcuts();
+
+  // Listen for git operation progress events globally (needed for clone from WelcomeView)
+  useGitProgress();
 
   // Ensure welcome tab exists on mount (fix stale localStorage)
   useEffect(() => {

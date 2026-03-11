@@ -172,7 +172,6 @@ vi.mock('../settings/RepositorySettingsDialog', () => ({
 
 vi.mock('../../hooks', () => ({
   useFileWatcher: vi.fn(),
-  useGitProgress: vi.fn(),
   useHookProgress: vi.fn(),
 }));
 

@@ -4,7 +4,7 @@ use crate::models::{
     Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
     SshCredentials,
 };
-use crate::services::{Git2Service, ProgressContext};
+use crate::services::{GitService, ProgressContext};
 use crate::state::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
@@ -13,7 +13,8 @@ use tauri_plugin_opener::OpenerExt;
 #[tauri::command]
 #[specta::specta]
 pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result<Repository> {
-    let path = PathBuf::from(&path);
+    let expanded_path = shellexpand::tilde(&path).to_string();
+    let path = PathBuf::from(&expanded_path);
 
     if !path.exists() {
         return Err(AxisError::InvalidRepositoryPath(path.display().to_string()));
@@ -46,11 +47,12 @@ pub async fn init_repository(
     path: String,
     bare: bool,
 ) -> Result<Repository> {
-    let path = PathBuf::from(&path);
+    let expanded_path = shellexpand::tilde(&path).to_string();
+    let path = PathBuf::from(&expanded_path);
 
-    // Initialize the repository first (this creates a new Git2Service internally)
-    let service = Git2Service::init(&path, bare)?;
-    let repo_info = service.get_repository_info()?;
+    let app_handle = state.get_app_handle()?;
+    let service = GitService::init(&path, bare, app_handle)?;
+    let repo_info = service.git2().get_repository_info()?;
 
     // Canonicalize path after creation to ensure consistent storage
     let path = path.canonicalize()?;
@@ -71,7 +73,8 @@ pub async fn clone_repository(
     url: String,
     path: String,
 ) -> Result<Repository> {
-    let path = PathBuf::from(&path);
+    let expanded_path = shellexpand::tilde(&path).to_string();
+    let path = PathBuf::from(&expanded_path);
 
     // Ensure target directory doesn't exist or is empty
     if path.exists()
@@ -86,7 +89,7 @@ pub async fn clone_repository(
     }
 
     let app_handle = state.get_app_handle()?;
-    let ctx = ProgressContext::new(app_handle, state.progress_registry());
+    let ctx = ProgressContext::new(app_handle.clone(), state.progress_registry());
 
     ctx.emit(GitOperationType::Clone, ProgressStage::Connecting, None);
 
@@ -100,18 +103,13 @@ pub async fn clone_repository(
         }
     });
 
-    // Clone the repository first (this creates a new Git2Service internally)
-    let result = Git2Service::clone(
-        &url,
-        &path,
-        Some(ctx.make_receive_callback(GitOperationType::Clone)),
-        ssh_creds,
-    );
+    let callback = ctx.make_receive_callback(GitOperationType::Clone);
+    let result = GitService::clone(&url, &path, app_handle, Some(callback), ssh_creds).await;
 
     ctx.handle_result(&result, GitOperationType::Clone);
 
     let service = result?;
-    let repo_info = service.get_repository_info()?;
+    let repo_info = service.git2().get_repository_info()?;
 
     // Canonicalize path after clone to ensure consistent storage
     let path = path.canonicalize()?;

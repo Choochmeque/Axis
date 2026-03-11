@@ -14,9 +14,11 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 }));
 
 const mockLoadRecentRepositories = vi.fn();
+const mockOpenRepository = vi.fn();
 vi.mock('@/store/repositoryStore', () => ({
   useRepositoryStore: () => ({
     loadRecentRepositories: mockLoadRecentRepositories,
+    openRepository: mockOpenRepository,
   }),
 }));
 
@@ -34,11 +36,9 @@ vi.mock('@/store/tabsStore', () => ({
   }),
 }));
 
-const mockTrackOperation = vi.fn((_opts, fn) => fn());
+const mockUseOperationProgress = vi.fn();
 vi.mock('@/hooks', () => ({
-  useOperation: () => ({
-    trackOperation: mockTrackOperation,
-  }),
+  useOperationProgress: () => mockUseOperationProgress(),
 }));
 
 vi.mock('@/lib/errorUtils', () => ({
@@ -46,9 +46,13 @@ vi.mock('@/lib/errorUtils', () => ({
 }));
 
 const mockClone = vi.fn();
+const mockCancelOperation = vi.fn();
 vi.mock('@/services/api', () => ({
   repositoryApi: {
     clone: () => mockClone(),
+  },
+  shellApi: {
+    cancelOperation: (id: string) => mockCancelOperation(id),
   },
 }));
 
@@ -60,6 +64,8 @@ describe('CloneDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseOperationProgress.mockReturnValue(undefined);
+    mockOpenRepository.mockResolvedValue(undefined);
   });
 
   it('should render when open', () => {
@@ -263,6 +269,7 @@ describe('CloneDialog', () => {
     });
 
     expect(mockLoadRecentRepositories).toHaveBeenCalled();
+    expect(mockOpenRepository).toHaveBeenCalledWith('/cloned/repo');
     expect(mockAddTab).toHaveBeenCalledWith({
       type: 'repository',
       path: '/cloned/repo',
@@ -364,7 +371,6 @@ describe('CloneDialog', () => {
 
     await waitFor(() => {
       expect(screen.getByText('repository.clone.cloning')).toBeInTheDocument();
-      expect(screen.getByText('repository.clone.cloningMessage')).toBeInTheDocument();
     });
 
     // Resolve the promise
@@ -430,14 +436,209 @@ describe('CloneDialog', () => {
     });
 
     await waitFor(() => {
-      // Cancel button should be disabled
-      expect(screen.getByText('common.cancel')).toBeDisabled();
+      // Cancel button should be enabled (clicking it shows cancel confirmation)
+      expect(screen.getByText('common.cancel')).not.toBeDisabled();
       // Clone button should be disabled and show loading text
       expect(screen.getByText('repository.clone.cloning')).toBeDisabled();
     });
 
     await act(async () => {
       resolveClone!({ path: '/cloned/repo', name: 'repo' });
+    });
+  });
+
+  it('should disable inputs during clone', async () => {
+    let resolveClone: (value: unknown) => void;
+    mockClone.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveClone = resolve;
+      })
+    );
+    mockFindTabByPath.mockReturnValue(null);
+
+    render(<CloneDialog {...defaultProps} />);
+
+    const urlInput = screen.getByPlaceholderText('repository.clone.urlPlaceholder');
+    const pathInput = screen.getByPlaceholderText('repository.clone.destinationPlaceholder');
+
+    fireEvent.change(urlInput, { target: { value: 'https://github.com/user/repo.git' } });
+    fireEvent.change(pathInput, { target: { value: '/cloned/repo' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('repository.clone.cloneButton'));
+    });
+
+    await waitFor(() => {
+      expect(urlInput).toBeDisabled();
+      expect(pathInput).toBeDisabled();
+    });
+
+    await act(async () => {
+      resolveClone!({ path: '/cloned/repo', name: 'repo' });
+    });
+  });
+
+  describe('progress display', () => {
+    it('should show progress bar when clone operation has progress', () => {
+      mockUseOperationProgress.mockReturnValue({
+        id: 'clone-op-1',
+        progress: {
+          stage: 'Receiving',
+          totalObjects: 100,
+          receivedObjects: 50,
+          receivedBytes: 1024,
+        },
+      });
+
+      render(<CloneDialog {...defaultProps} />);
+
+      // Progress bar should be visible (OperationProgressBar renders the stage)
+      expect(screen.getByText(/Receiving/i)).toBeInTheDocument();
+    });
+
+    it('should not show progress bar when no operation progress', () => {
+      mockUseOperationProgress.mockReturnValue(undefined);
+
+      render(<CloneDialog {...defaultProps} />);
+
+      expect(screen.queryByText(/Receiving/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('cancellation', () => {
+    it('should show cancel confirmation when closing during operation', async () => {
+      mockUseOperationProgress.mockReturnValue({
+        id: 'clone-op-1',
+        progress: { stage: 'Receiving', receivedBytes: 0 },
+      });
+
+      let resolveClone: (value: unknown) => void;
+      mockClone.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveClone = resolve;
+        })
+      );
+
+      render(<CloneDialog {...defaultProps} />);
+
+      const urlInput = screen.getByPlaceholderText('repository.clone.urlPlaceholder');
+      const pathInput = screen.getByPlaceholderText('repository.clone.destinationPlaceholder');
+      fireEvent.change(urlInput, { target: { value: 'https://github.com/user/repo.git' } });
+      fireEvent.change(pathInput, { target: { value: '/path/to/repo' } });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('repository.clone.cloneButton'));
+      });
+
+      // Try to close during operation
+      await act(async () => {
+        fireEvent.click(screen.getByText('common.cancel'));
+      });
+
+      // Should show confirmation
+      expect(screen.getByText('repository.clone.cancelConfirm')).toBeInTheDocument();
+      expect(screen.getByText('repository.clone.continueOperation')).toBeInTheDocument();
+      expect(screen.getByText('repository.clone.cancelOperation')).toBeInTheDocument();
+
+      await act(async () => {
+        resolveClone!({ path: '/path', name: 'repo' });
+      });
+    });
+
+    it('should cancel operation when cancel button clicked', async () => {
+      mockUseOperationProgress.mockReturnValue({
+        id: 'clone-op-1',
+        progress: { stage: 'Receiving', receivedBytes: 0 },
+      });
+      mockCancelOperation.mockResolvedValue(true);
+
+      let resolveClone: (value: unknown) => void;
+      mockClone.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveClone = resolve;
+        })
+      );
+
+      render(<CloneDialog {...defaultProps} />);
+
+      const urlInput = screen.getByPlaceholderText('repository.clone.urlPlaceholder');
+      const pathInput = screen.getByPlaceholderText('repository.clone.destinationPlaceholder');
+      fireEvent.change(urlInput, { target: { value: 'https://github.com/user/repo.git' } });
+      fireEvent.change(pathInput, { target: { value: '/path/to/repo' } });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('repository.clone.cloneButton'));
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('common.cancel'));
+      });
+
+      // Confirm cancellation
+      await act(async () => {
+        fireEvent.click(screen.getByText('repository.clone.cancelOperation'));
+      });
+
+      expect(mockCancelOperation).toHaveBeenCalledWith('clone-op-1');
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+
+      await act(async () => {
+        resolveClone!({ path: '/path', name: 'repo' });
+      });
+    });
+
+    it('should continue operation when continue button clicked', async () => {
+      mockUseOperationProgress.mockReturnValue({
+        id: 'clone-op-1',
+        progress: { stage: 'Receiving', receivedBytes: 0 },
+      });
+
+      let resolveClone: (value: unknown) => void;
+      mockClone.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveClone = resolve;
+        })
+      );
+
+      render(<CloneDialog {...defaultProps} />);
+
+      const urlInput = screen.getByPlaceholderText('repository.clone.urlPlaceholder');
+      const pathInput = screen.getByPlaceholderText('repository.clone.destinationPlaceholder');
+      fireEvent.change(urlInput, { target: { value: 'https://github.com/user/repo.git' } });
+      fireEvent.change(pathInput, { target: { value: '/path/to/repo' } });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('repository.clone.cloneButton'));
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('common.cancel'));
+      });
+
+      // Continue operation
+      await act(async () => {
+        fireEvent.click(screen.getByText('repository.clone.continueOperation'));
+      });
+
+      // Should return to progress view (form should be visible again)
+      expect(screen.queryByText('repository.clone.cancelConfirm')).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText('repository.clone.urlPlaceholder')).toBeInTheDocument();
+
+      await act(async () => {
+        resolveClone!({ path: '/path', name: 'repo' });
+      });
+    });
+
+    it('should close dialog immediately when not loading', () => {
+      mockUseOperationProgress.mockReturnValue(undefined);
+
+      render(<CloneDialog {...defaultProps} />);
+
+      fireEvent.click(screen.getByText('common.cancel'));
+
+      // Should close without confirmation
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+      expect(screen.queryByText('repository.clone.cancelConfirm')).not.toBeInTheDocument();
     });
   });
 });

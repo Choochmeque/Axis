@@ -27,7 +27,7 @@ jobs:
       - name: Cache Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install Rust stable
@@ -82,7 +82,7 @@ jobs:
       - name: Cache Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install Rust stable
@@ -126,7 +126,7 @@ jobs:
       - name: Cache Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install Rust stable

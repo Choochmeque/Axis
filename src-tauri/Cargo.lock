@@ -7255,9 +7255,9 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "turso"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1326cd4c1bb82501328aadee1ca5e0f44fdb5cfe2c7cdc53d3d96aeeecece61a"
+checksum = "7adb377630e2cfc1aa10d44cff1a05edfca9dea1bcf500211a24917f37dbf492"
 dependencies = [
  "mimalloc",
  "thiserror 2.0.18",
@@ -7269,9 +7269,9 @@ dependencies = [
 
 [[package]]
 name = "turso_core"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4befbe4e162cb691a5ff92ebcafc9028574f614cb82cf711d8ed5c89ebf23337"
+checksum = "34b2f28e920d1d893fdd5bf4a9bf666dc31f3f0c99832611a6e119b93501707f"
 dependencies = [
  "aegis",
  "aes",
@@ -7334,9 +7334,9 @@ dependencies = [
 
 [[package]]
 name = "turso_ext"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d314de12a937acadc6a0150433d2f9837f7c49b643d7d6da49275c0713fb8d9"
+checksum = "07064bc2fefab2f90478d30fc8fae48d8526f590b70b303a1092081e8ee42a3f"
 dependencies = [
  "chrono",
  "getrandom 0.3.4",
@@ -7345,9 +7345,9 @@ dependencies = [
 
 [[package]]
 name = "turso_macros"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18687fe83de76951957ce1b3599af16a4627b94c9a17fd4e09c6a28f0bbe0ca7"
+checksum = "3ab0703506127013dc1fc7e115b2055aeb16ac8aed7b972a9156abd08406c74c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7356,9 +7356,9 @@ dependencies = [
 
 [[package]]
 name = "turso_parser"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c41725404271e703fc734d1b211c53541821dfa2701895ec2d89c85a10e8514d"
+checksum = "770c38bab784693915ad996c28decbddecb563388ffb5038a4dfe16f4a446a86"
 dependencies = [
  "bitflags 2.11.0",
  "memchr",
@@ -7371,9 +7371,9 @@ dependencies = [
 
 [[package]]
 name = "turso_sdk_kit"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01827272c218ba5eaa2bdca87cc33e62dbdd2d9d93571a0ea260c7651e61e139"
+checksum = "16574ba104b802e2faa7654099d4aa00e769b9baaab347d6d98e9eef2a8d1f8c"
 dependencies = [
  "bindgen",
  "env_logger",
@@ -7387,9 +7387,9 @@ dependencies = [
 
 [[package]]
 name = "turso_sdk_kit_macros"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca793575b75a8a891f0d263c1051f60ab3ed2072bdd63fe3331959bf783ad0f3"
+checksum = "1e92557fe426adaaa096bc33b7953a137020645cf43127ff81a77cea74d37cd4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7398,9 +7398,9 @@ dependencies = [
 
 [[package]]
 name = "turso_sync_engine"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e040a526375f699f162dc75a64d21b43e193c3dc3f22fcb34e190db8f8ba39a"
+checksum = "18182aacf9550e0e56cc567d2501d7b999a0eaee072f5623fb9ffd74c34a056a"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -7420,9 +7420,9 @@ dependencies = [
 
 [[package]]
 name = "turso_sync_sdk_kit"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "547f4853402531c949b5c2d343b87b1b7ea709651695ccd207e6072504486cce"
+checksum = "69cd8cceccd7b2428a3bf81a9f08cf27138a1a02c831a3599bd277c4dff2f06c"
 dependencies = [
  "bindgen",
  "env_logger",

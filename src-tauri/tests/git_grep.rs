@@ -30,7 +30,7 @@ fn git_grep_count(path: &std::path::Path, pattern: &str) -> usize {
         .lines()
         .filter_map(|line| {
             // Format is "filename:count"
-            line.split(':').last()?.parse::<usize>().ok()
+            line.split(':').next_back()?.parse::<usize>().ok()
         })
         .sum()
 }

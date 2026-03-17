@@ -38,14 +38,14 @@ fn git_submodule_cmd(path: &std::path::Path, args: &[&str]) -> String {
         .output()
         .expect("should execute git");
 
-    if !output.status.success() {
-        panic!(
-            "git submodule command failed: git {} {}: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
+    assert!(
+        output.status.success(),
+        "git submodule command failed: git {} {}: {}",
+        args.join(" "),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 

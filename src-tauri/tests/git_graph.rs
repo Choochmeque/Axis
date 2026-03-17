@@ -52,12 +52,12 @@ fn create_commits_by_author(path: &std::path::Path, author: &str, count: usize) 
             .current_dir(path)
             .output()
             .expect("should execute git");
-        if !output.status.success() {
-            panic!(
-                "git commit failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            );
-        }
+
+        assert!(
+            output.status.success(),
+            "git commit failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 

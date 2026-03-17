@@ -55,11 +55,7 @@ fn write_hook(path: &std::path::Path, hook_type: GitHookType, content: &str) {
 fn hook_is_executable(path: &std::path::Path, hook_type: GitHookType) -> bool {
     use std::os::unix::fs::PermissionsExt;
     let hook_file = hook_path(path, hook_type);
-    if let Ok(metadata) = std::fs::metadata(hook_file) {
-        metadata.permissions().mode() & 0o111 != 0
-    } else {
-        false
-    }
+    std::fs::metadata(hook_file).is_ok_and(|metadata| metadata.permissions().mode() & 0o111 != 0)
 }
 
 #[cfg(windows)]

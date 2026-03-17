@@ -87,7 +87,7 @@ jobs:
         run: echo "${{ secrets.DOT_ENV }}" > src-tauri/.env
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings -D clippy::unwrap_used
+        run: cargo clippy --all-targets --all-features --manifest-path src-tauri/Cargo.toml -- -D warnings -D clippy::unwrap_used
 
       - name: Run audit
         working-directory: src-tauri

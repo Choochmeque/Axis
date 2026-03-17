@@ -2,7 +2,7 @@
 
 mod common;
 
-use axis_lib::models::ListRemoteOptions;
+use axis_lib::models::{FetchOptions, ListRemoteOptions, PushOptions};
 use common::{git_cmd, setup_test_repo};
 
 // ==================== Helpers ====================
@@ -296,7 +296,13 @@ async fn test_fetch_from_local_remote_verified_by_cli() {
 
     // Action: RepoOperations fetches
     let result: Result<axis_lib::models::FetchResult, _> = ops
-        .fetch::<fn(&git2::Progress<'_>) -> bool>("origin", &Default::default(), None, None, None)
+        .fetch::<fn(&git2::Progress<'_>) -> bool>(
+            "origin",
+            &FetchOptions::default(),
+            None,
+            None,
+            None,
+        )
         .await;
     assert!(result.is_ok(), "Fetch should succeed");
 
@@ -341,7 +347,7 @@ async fn test_push_to_local_remote_verified_by_cli() {
         .push::<fn(usize, usize, usize) -> bool>(
             "origin",
             &[format!("refs/heads/{branch}:refs/heads/{branch}")],
-            &Default::default(),
+            &PushOptions::default(),
             None,
             None,
         )

@@ -124,7 +124,7 @@ async fn test_archive_with_prefix() {
 
     // Verify
     assert!(file_exists(&output_path));
-    assert!(result.message.len() > 0, "Should have success message");
+    assert!(!result.message.is_empty(), "Should have success message");
 }
 
 #[tokio::test]
@@ -539,10 +539,10 @@ async fn test_apply_patch_conflict() {
 
 #[tokio::test]
 async fn test_format_patch_empty_range() {
-    let (_tmp, ops) = setup_test_repo();
+    let (tmp, ops) = setup_test_repo();
 
     // The initial commit has no parent, so HEAD..HEAD is empty
-    let output_dir = _tmp.path().join("patches");
+    let output_dir = tmp.path().join("patches");
     std::fs::create_dir_all(&output_dir).expect("should create dir");
 
     // Action: format-patch for empty range

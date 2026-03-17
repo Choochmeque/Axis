@@ -1938,10 +1938,16 @@ impl Git2Service {
             .shorthand()
             .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
 
-        let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
+        let mut refspecs = vec![format!("refs/heads/{branch_name}:refs/heads/{branch_name}")];
+
+        // Add all tags if requested
+        if options.tags {
+            refspecs.push("refs/tags/*:refs/tags/*".to_string());
+        }
+
         let result = self.push(
             remote_name,
-            &[refspec],
+            &refspecs,
             options,
             progress_cb,
             ssh_credentials,

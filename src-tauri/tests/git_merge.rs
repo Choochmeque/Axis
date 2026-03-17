@@ -125,9 +125,8 @@ async fn test_merge_no_ff_creates_merge_commit() {
 
     // Verify: CLI shows merge commit (parent count > 1)
     let parent_count = git_cmd(tmp.path(), &["rev-list", "--parents", "-1", "HEAD"]);
-    let parents: Vec<&str> = parent_count.split_whitespace().collect();
     assert!(
-        parents.len() > 2,
+        parent_count.split_whitespace().count() > 2,
         "Merge commit should have multiple parents"
     );
 }

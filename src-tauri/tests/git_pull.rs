@@ -8,7 +8,7 @@ use common::{git_cmd, setup_test_repo};
 // ==================== Helpers ====================
 
 /// Setup a test scenario with a local repo, a bare "remote", and optionally a clone for pushing
-/// Returns (local_tmp, local_ops, bare_path, clone_path, branch_name)
+/// Returns (`local_tmp`, `local_ops`, `bare_path`, `clone_path`, `branch_name`)
 fn setup_pull_test_scenario() -> (
     tempfile::TempDir,
     axis_lib::services::ops::RepoOperations,

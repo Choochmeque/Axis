@@ -404,7 +404,19 @@ impl Git2Service {
             .renames_index_to_workdir(true);
 
         let repo = self.repo()?;
-        let statuses = repo.statuses(Some(&mut opts))?;
+
+        // Try with rename detection first, fall back if file not found
+        // (rename detection reads file content which fails if file deleted from workdir)
+        let statuses = match repo.statuses(Some(&mut opts)) {
+            Ok(s) => s,
+            Err(e) if e.code() == git2::ErrorCode::NotFound => {
+                log::warn!("status: file not found during rename detection, retrying without: {e}");
+                opts.renames_head_to_index(false)
+                    .renames_index_to_workdir(false);
+                repo.statuses(Some(&mut opts))?
+            }
+            Err(e) => return Err(e.into()),
+        };
 
         let mut result = RepositoryStatus::default();
 
@@ -2339,7 +2351,16 @@ impl Git2Service {
 
         // Check for uncommitted changes if requested
         if options.include_uncommitted && skip == 0 {
-            if let Ok(statuses) = repo.statuses(None) {
+            // Use explicit status options without rename detection for speed and safety
+            // (rename detection can fail with NotFound if files are deleted from workdir)
+            let mut status_opts = StatusOptions::new();
+            status_opts
+                .include_untracked(true)
+                .include_ignored(false)
+                .renames_head_to_index(false)
+                .renames_index_to_workdir(false);
+
+            if let Ok(statuses) = repo.statuses(Some(&mut status_opts)) {
                 let has_changes = statuses.iter().any(|s| {
                     let status = s.status();
                     status.intersects(
@@ -2662,6 +2683,20 @@ impl Git2Service {
     /// Get blame information for a file
     pub fn blame_file(&self, path: &str, commit_oid: Option<&str>) -> Result<BlameResult> {
         let repo = self.repo()?;
+
+        // Check if file exists in workdir when blaming without a specific commit
+        // (git2's blame_file reads from workdir and fails with cryptic error if missing)
+        if commit_oid.is_none() {
+            let workdir = repo
+                .workdir()
+                .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
+            let file_path = workdir.join(path);
+            if !file_path.exists() {
+                return Err(AxisError::FileNotFound(format!(
+                    "Cannot blame: file does not exist in working directory: {path}"
+                )));
+            }
+        }
 
         let mut blame_opts = git2::BlameOptions::new();
 

@@ -19,36 +19,50 @@ export default defineConfig(async () => ({
     chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendorReact: ['react', 'react-dom'],
-          vendorUi: [
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-context-menu',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-          ],
-          vendorSyntax: ['react-syntax-highlighter'],
-          vendorMarkdown: ['react-markdown', 'remark-gfm', 'rehype-raw'],
-          vendorTable: ['@tanstack/react-table', '@tanstack/react-virtual'],
-          vendorI18n: ['i18next', 'i18next-browser-languagedetector', 'react-i18next'],
-          vendorIcons: ['lucide-react'],
-          vendorTauri: [
-            '@tauri-apps/api',
-            '@tauri-apps/plugin-dialog',
-            '@tauri-apps/plugin-opener',
-          ],
-          vendorEditor: ['@uiw/react-textarea-code-editor'],
-          vendorMisc: [
-            'zustand',
-            'clsx',
-            'tailwind-merge',
-            'class-variance-authority',
-            'react-hotkeys-hook',
-            'react-resizable-panels',
-          ],
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('/react/')) {
+              return 'vendorReact';
+            }
+            if (id.includes('@radix-ui/')) {
+              return 'vendorUi';
+            }
+            if (id.includes('react-syntax-highlighter')) {
+              return 'vendorSyntax';
+            }
+            if (
+              id.includes('react-markdown') ||
+              id.includes('remark-gfm') ||
+              id.includes('rehype-raw')
+            ) {
+              return 'vendorMarkdown';
+            }
+            if (id.includes('@tanstack/')) {
+              return 'vendorTable';
+            }
+            if (id.includes('i18next')) {
+              return 'vendorI18n';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendorIcons';
+            }
+            if (id.includes('@tauri-apps/')) {
+              return 'vendorTauri';
+            }
+            if (id.includes('@uiw/react-textarea-code-editor')) {
+              return 'vendorEditor';
+            }
+            if (
+              id.includes('zustand') ||
+              id.includes('clsx') ||
+              id.includes('tailwind-merge') ||
+              id.includes('class-variance-authority') ||
+              id.includes('react-hotkeys-hook') ||
+              id.includes('react-resizable-panels')
+            ) {
+              return 'vendorMisc';
+            }
+          }
         },
       },
     },

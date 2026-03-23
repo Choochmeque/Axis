@@ -59,7 +59,7 @@ fn hook_is_executable(path: &std::path::Path, hook_type: GitHookType) -> bool {
 }
 
 #[cfg(windows)]
-fn hook_is_executable(_path: &std::path::Path, _hook_type: GitHookType) -> bool {
+const fn hook_is_executable(_path: &std::path::Path, _hook_type: GitHookType) -> bool {
     true // Windows doesn't have executable permission
 }
 

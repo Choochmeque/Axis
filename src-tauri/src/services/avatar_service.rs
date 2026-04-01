@@ -28,19 +28,10 @@ impl AvatarService {
         }
     }
 
-    /// Get the source prefix for cache filenames
-    const fn source_prefix(source: &AvatarSource) -> &'static str {
-        match source {
-            AvatarSource::Integration => "integration",
-            AvatarSource::Gravatar => "gravatar",
-            AvatarSource::Default => "default",
-        }
-    }
-
     /// Check cache for a specific source and key
     /// Returns the file path if found and not expired
     pub fn get_cached(&self, source: &AvatarSource, cache_key: &str) -> Option<String> {
-        let prefix = Self::source_prefix(source);
+        let prefix = source.as_ref();
         let pattern = format!("{prefix}_{cache_key}.");
 
         let entries = fs::read_dir(&self.cache_dir).ok()?;
@@ -113,7 +104,7 @@ impl AvatarService {
             .await
             .map_err(|e| AxisError::Other(format!("Failed to read avatar bytes: {e}")))?;
 
-        let prefix = Self::source_prefix(source);
+        let prefix = source.as_ref();
         let file_name = format!("{prefix}_{cache_key}.{ext}");
         let file_path = self.cache_dir.join(&file_name);
 
@@ -294,30 +285,13 @@ mod tests {
         assert_eq!(AvatarService::extension_from_content_type(""), "png");
     }
 
-    // ==================== Source Prefix Tests ====================
+    // ==================== AvatarSource AsRef Tests ====================
 
     #[test]
-    fn test_source_prefix_integration() {
-        assert_eq!(
-            AvatarService::source_prefix(&AvatarSource::Integration),
-            "integration"
-        );
-    }
-
-    #[test]
-    fn test_source_prefix_gravatar() {
-        assert_eq!(
-            AvatarService::source_prefix(&AvatarSource::Gravatar),
-            "gravatar"
-        );
-    }
-
-    #[test]
-    fn test_source_prefix_default() {
-        assert_eq!(
-            AvatarService::source_prefix(&AvatarSource::Default),
-            "default"
-        );
+    fn test_avatar_source_as_ref() {
+        assert_eq!(AvatarSource::Integration.as_ref(), "integration");
+        assert_eq!(AvatarSource::Gravatar.as_ref(), "gravatar");
+        assert_eq!(AvatarSource::Default.as_ref(), "default");
     }
 
     // ==================== AvatarService Creation Tests ====================

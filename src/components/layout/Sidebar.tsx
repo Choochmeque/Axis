@@ -11,7 +11,6 @@ import {
   FolderGit2,
   GitBranch,
   GitFork,
-  Github,
   GitMerge,
   GitPullRequest,
   HardDrive,
@@ -733,16 +732,9 @@ function getProviderName(provider: string, t: (key: string) => string) {
   }
 }
 
-function getProviderIcon(provider: string, size: number = 12) {
-  switch (provider) {
-    case 'github':
-      return <Github size={size} />;
-    case 'gitlab':
-    case 'bitbucket':
-    case 'gitea':
-    default:
-      return <Cloud size={size} />;
-  }
+function getProviderIcon(_provider: string, size: number = 12) {
+  // All providers use Cloud icon since lucide-react removed brand icons
+  return <Cloud size={size} />;
 }
 
 function IntegrationsSection() {

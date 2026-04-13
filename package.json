@@ -93,7 +93,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "jsdom": "^29.0.2",
-    "knip": "^6.3.0",
+    "knip": "^6.4.1",
     "prettier": "^3.8.2",
     "ts-node": "^10.9.2",
     "typescript": "~6.0.2",

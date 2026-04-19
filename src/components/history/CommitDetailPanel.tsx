@@ -49,13 +49,13 @@ export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitD
           defaultLayout={mainLayout}
           onLayoutChange={onMainLayoutChanged}
         >
-          <Panel defaultSize="35%" minSize="20%" maxSize="50%">
+          <Panel id="left" defaultSize="35%" minSize="20%" maxSize="50%">
             <Group
               orientation="vertical"
               defaultLayout={leftLayout}
               onLayoutChange={onLeftLayoutChanged}
             >
-              <Panel defaultSize="60%" minSize="30%">
+              <Panel id="files" defaultSize="60%" minSize="30%">
                 <CommitFileList
                   files={selectedCommitFiles}
                   selectedFile={selectedCommitFile}
@@ -65,13 +65,13 @@ export function CommitDetailPanel({ commit, onClose, onScrollToCommit }: CommitD
                 />
               </Panel>
               <Separator className="resize-handle-vertical" />
-              <Panel defaultSize="40%" minSize="20%">
+              <Panel id="info" defaultSize="40%" minSize="20%">
                 <CommitInfo commit={commit} onScrollToCommit={onScrollToCommit} />
               </Panel>
             </Group>
           </Panel>
           <Separator className="resize-handle" />
-          <Panel minSize="50%">
+          <Panel id="diff" minSize="50%">
             <DiffView
               diff={selectedCommitFile}
               isLoading={isLoadingCommitFiles}

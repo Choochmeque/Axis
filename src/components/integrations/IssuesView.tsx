@@ -149,7 +149,7 @@ export function IssuesView() {
           onLayoutChange={onLayoutChanged}
           className="flex-1"
         >
-          <Panel defaultSize="40%" minSize="25%" maxSize="60%">
+          <Panel id="list" defaultSize="40%" minSize="25%" maxSize="60%">
             <IssueList
               issues={issues}
               selectedIssue={selectedIssue}
@@ -163,7 +163,7 @@ export function IssuesView() {
 
           <Separator className="resize-handle" />
 
-          <Panel minSize="40%">
+          <Panel id="detail" minSize="40%">
             <IssueDetail issueDetail={selectedIssue} onClose={clearSelectedIssue} />
           </Panel>
         </Group>

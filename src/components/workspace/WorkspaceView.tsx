@@ -127,17 +127,17 @@ export function WorkspaceView() {
         defaultLayout={verticalLayout}
         onLayoutChange={onVerticalLayoutChanged}
       >
-        <Panel defaultSize="80%" minSize="50%">
+        <Panel id="top" defaultSize="80%" minSize="50%">
           <Group
             orientation="horizontal"
             defaultLayout={horizontalLayout}
             onLayoutChange={onHorizontalLayoutChanged}
           >
-            <Panel defaultSize="35%" minSize="25%" maxSize="50%">
+            <Panel id="staging" defaultSize="35%" minSize="25%" maxSize="50%">
               <StagingView />
             </Panel>
             <Separator className="resize-handle" />
-            <Panel minSize="50%">
+            <Panel id="diff" minSize="50%">
               <DiffView
                 diff={displayDiff}
                 isLoading={isLoadingDiff}
@@ -159,7 +159,7 @@ export function WorkspaceView() {
         {showCommitForm && (
           <>
             <Separator className="resize-handle-vertical" />
-            <Panel defaultSize="20%" minSize="10%" maxSize="50%">
+            <Panel id="commit-form" defaultSize="20%" minSize="10%" maxSize="50%">
               <CommitForm />
             </Panel>
           </>

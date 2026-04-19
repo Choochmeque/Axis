@@ -471,11 +471,11 @@ export function HistoryView() {
   return (
     <div className={viewClass} {...testId('e2e-history-view')}>
       <Group orientation="vertical" defaultLayout={defaultLayout} onLayoutChange={onLayoutChanged}>
-        <Panel defaultSize="50%" minSize="20%">
+        <Panel id="commit-list" defaultSize="50%" minSize="20%">
           {commitListContent}
         </Panel>
         <Separator className="resize-handle-vertical" />
-        <Panel defaultSize="50%" minSize="30%">
+        <Panel id="commit-detail" defaultSize="50%" minSize="30%">
           <CommitDetailPanel commit={selectedCommit} onClose={clearCommitSelection} />
         </Panel>
       </Group>

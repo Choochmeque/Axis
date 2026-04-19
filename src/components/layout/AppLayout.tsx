@@ -124,11 +124,11 @@ export function AppLayout({ children }: AppLayoutProps) {
             defaultLayout={defaultLayout}
             onLayoutChange={onLayoutChanged}
           >
-            <Panel minSize="15%" maxSize="40%">
+            <Panel id="sidebar" minSize="15%" maxSize="40%">
               <Sidebar />
             </Panel>
             <Separator className="resize-handle" />
-            <Panel minSize="50%">
+            <Panel id="main" minSize="50%">
               <main className="flex-1 h-full flex flex-col overflow-hidden bg-(--bg-secondary)">
                 {children}
               </main>

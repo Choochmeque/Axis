@@ -149,7 +149,7 @@ export function PullRequestsView() {
           onLayoutChange={onLayoutChanged}
           className="flex-1"
         >
-          <Panel defaultSize="40%" minSize="25%" maxSize="60%">
+          <Panel id="list" defaultSize="40%" minSize="25%" maxSize="60%">
             <PullRequestList
               pullRequests={pullRequests}
               selectedPr={selectedPr}
@@ -163,7 +163,7 @@ export function PullRequestsView() {
 
           <Separator className="resize-handle" />
 
-          <Panel minSize="40%">
+          <Panel id="detail" minSize="40%">
             <PullRequestDetail prDetail={selectedPr} onClose={clearSelectedPr} />
           </Panel>
         </Group>

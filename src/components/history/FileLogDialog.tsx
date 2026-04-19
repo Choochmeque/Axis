@@ -176,14 +176,14 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                   defaultLayout={mainLayout}
                   onLayoutChange={onMainLayoutChanged}
                 >
-                  <Panel defaultSize="40%" minSize="25%" maxSize="60%">
+                  <Panel id="left" defaultSize="40%" minSize="25%" maxSize="60%">
                     <div className="flex flex-col h-full">
                       <Group
                         orientation="vertical"
                         defaultLayout={leftLayout}
                         onLayoutChange={onLeftLayoutChanged}
                       >
-                        <Panel defaultSize="65%" minSize="30%">
+                        <Panel id="commits" defaultSize="65%" minSize="30%">
                           <div className="flex flex-col h-full border-r border-(--border-color)">
                             <div
                               ref={listRef}
@@ -228,7 +228,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                           </div>
                         </Panel>
                         <Separator className="resize-handle-vertical" />
-                        <Panel defaultSize="35%" minSize="20%">
+                        <Panel id="info" defaultSize="35%" minSize="20%">
                           {selectedCommit ? (
                             <CommitInfo commit={selectedCommit} />
                           ) : (
@@ -241,7 +241,7 @@ export function FileLogDialog({ isOpen, onClose, filePaths }: FileLogDialogProps
                     </div>
                   </Panel>
                   <Separator className="resize-handle" />
-                  <Panel minSize="40%">
+                  <Panel id="diff" minSize="40%">
                     <DiffView
                       diff={selectedDiff}
                       isLoading={isLoadingDiff}

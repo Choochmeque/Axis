@@ -295,7 +295,7 @@ export function StagingView() {
       className="flex-1 min-h-0"
     >
       {/* Staged changes section */}
-      <Panel defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
+      <Panel id="staged" defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">
@@ -335,7 +335,7 @@ export function StagingView() {
       {/* Conflicts section - shown between staged and unstaged when there are conflicts */}
       {hasConflicts && (
         <>
-          <Panel defaultSize="34%" minSize="15%">
+          <Panel id="conflicted" defaultSize="34%" minSize="15%">
             <div className="flex flex-col h-full min-h-0 overflow-hidden">
               <div className={cn(sectionHeaderClass, 'bg-error/10')}>
                 <div className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export function StagingView() {
       )}
 
       {/* Unstaged changes section */}
-      <Panel defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
+      <Panel id="unstaged" defaultSize={hasConflicts ? '33%' : '50%'} minSize="15%">
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className={sectionHeaderClass}>
             <div className="flex items-center gap-2">

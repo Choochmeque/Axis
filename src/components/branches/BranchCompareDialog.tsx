@@ -157,7 +157,7 @@ export function BranchCompareDialog({
                 defaultLayout={mainLayout}
                 onLayoutChange={onMainLayoutChanged}
               >
-                <Panel defaultSize="35%" minSize="20%" maxSize="50%">
+                <Panel id="left" defaultSize="35%" minSize="20%" maxSize="50%">
                   {activeTab === 'commits' ? (
                     <CommitCompareList
                       aheadCommits={compareResult.aheadCommits}
@@ -176,7 +176,7 @@ export function BranchCompareDialog({
                   )}
                 </Panel>
                 <Separator className="resize-handle" />
-                <Panel minSize="50%">
+                <Panel id="right" minSize="50%">
                   {activeTab === 'commits' && !selectedCommit ? (
                     <div className="flex flex-col h-full items-center justify-center text-(--text-secondary) text-sm">
                       {t('branches.compare.selectCommitPrompt')}
@@ -187,7 +187,7 @@ export function BranchCompareDialog({
                       defaultLayout={commitLayout}
                       onLayoutChange={onCommitLayoutChanged}
                     >
-                      <Panel defaultSize="30%" minSize="15%" maxSize="50%">
+                      <Panel id="files" defaultSize="30%" minSize="15%" maxSize="50%">
                         <CommitFileList
                           files={selectedCommitFiles}
                           selectedFile={selectedFile}
@@ -197,7 +197,7 @@ export function BranchCompareDialog({
                         />
                       </Panel>
                       <Separator className="resize-handle-vertical" />
-                      <Panel minSize="50%">
+                      <Panel id="diff" minSize="50%">
                         <DiffView
                           diff={selectedFile}
                           isLoading={isLoadingFiles}

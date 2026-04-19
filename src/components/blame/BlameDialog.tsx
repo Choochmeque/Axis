@@ -97,7 +97,7 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
             defaultLayout={defaultLayout}
             onLayoutChange={onLayoutChanged}
           >
-            <Panel defaultSize="70%" minSize="50%">
+            <Panel id="blame" defaultSize="70%" minSize="50%">
               <BlameView
                 lines={result?.lines ?? []}
                 isLoading={isLoading}
@@ -108,7 +108,7 @@ export function BlameDialog({ isOpen, onClose, filePath, commitOid }: BlameDialo
               />
             </Panel>
             <Separator className="resize-handle" />
-            <Panel defaultSize="30%" minSize="20%">
+            <Panel id="info" defaultSize="30%" minSize="20%">
               {displayedCommit ? (
                 <CommitInfo commit={displayedCommit} />
               ) : (

@@ -39,7 +39,7 @@ function git(args: string[], cwd: string): void {
 export function createTempGitRepo(options: TempRepoOptions = {}): string {
   const dir = mkdtempSync(join(tmpdir(), 'axis-e2e-'));
 
-  git(['init'], dir);
+  git(['init', '-b', 'main'], dir);
   git(['config', 'user.email', 'test@axis-e2e.com'], dir);
   git(['config', 'user.name', 'Axis E2E'], dir);
 

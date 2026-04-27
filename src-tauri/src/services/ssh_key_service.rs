@@ -212,9 +212,9 @@ impl SshKeyService {
             .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
 
         // Determine format from the generated key content
-        let format = fs::read_to_string(&key_path)
-            .map(|content| Self::detect_key_format(&content))
-            .unwrap_or(SshKeyFormat::Unknown);
+        let format = fs::read_to_string(&key_path).map_or(SshKeyFormat::Unknown, |content| {
+            Self::detect_key_format(&content)
+        });
 
         Ok(SshKeyInfo {
             path: key_path_str,

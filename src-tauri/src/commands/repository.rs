@@ -77,12 +77,7 @@ pub async fn clone_repository(
     let path = PathBuf::from(&expanded_path);
 
     // Ensure target directory doesn't exist or is empty
-    if path.exists()
-        && path
-            .read_dir()
-            .map(|mut i| i.next().is_some())
-            .unwrap_or(false)
-    {
+    if path.exists() && path.read_dir().is_ok_and(|mut i| i.next().is_some()) {
         return Err(AxisError::InvalidRepositoryPath(
             "Target directory is not empty".to_string(),
         ));

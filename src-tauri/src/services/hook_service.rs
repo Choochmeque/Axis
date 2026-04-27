@@ -409,8 +409,7 @@ impl HookService {
                 use std::os::unix::fs::PermissionsExt;
                 actual_path
                     .metadata()
-                    .map(|m| m.permissions().mode() & 0o111 != 0)
-                    .unwrap_or(false)
+                    .is_ok_and(|m| m.permissions().mode() & 0o111 != 0)
             }
             #[cfg(not(unix))]
             {

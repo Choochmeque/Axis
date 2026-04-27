@@ -386,8 +386,7 @@ pub fn run() {
             // Get auto_fetch_interval from settings before creating AppState
             let auto_fetch_interval = runtime
                 .block_on(database.get_settings())
-                .map(|s| s.auto_fetch_interval)
-                .unwrap_or(5);
+                .map_or(5, |s| s.auto_fetch_interval);
 
             let app_state = AppState::new(database);
 

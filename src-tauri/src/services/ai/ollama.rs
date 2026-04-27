@@ -84,7 +84,7 @@ impl OllamaProvider {
         let client = reqwest::Client::new();
         let response = client.get(&url).send().await;
 
-        Ok(response.is_ok() && response.map(|r| r.status().is_success()).unwrap_or(false))
+        Ok(response.is_ok() && response.is_ok_and(|r| r.status().is_success()))
     }
 }
 

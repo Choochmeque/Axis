@@ -54,8 +54,7 @@ impl BackgroundFetchService {
                         let default_ssh_key = app_state
                             .get_settings()
                             .await
-                            .map(|s| s.default_ssh_key)
-                            .unwrap_or(None);
+                            .map_or(None, |s| s.default_ssh_key);
 
                         // List remotes (read lock)
                         let remotes = match handle

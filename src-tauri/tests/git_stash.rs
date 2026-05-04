@@ -32,9 +32,7 @@ fn file_exists(path: &std::path::Path, filename: &str) -> bool {
 
 /// Check if file has specific content
 fn file_has_content(path: &std::path::Path, filename: &str, content: &str) -> bool {
-    std::fs::read_to_string(path.join(filename))
-        .map(|c| c.contains(content))
-        .unwrap_or(false)
+    std::fs::read_to_string(path.join(filename)).is_ok_and(|c| c.contains(content))
 }
 
 // ==================== Happy Path Tests ====================

@@ -307,11 +307,9 @@ impl SigningService {
             }
 
             match fields[0] {
-                "sec" => {
+                "sec" if fields.len() > 4 => {
                     // Secret key line: sec:u:4096:1:KEYID:created:expires::::
-                    if fields.len() > 4 {
-                        current_key_id = Some(fields[4].to_string());
-                    }
+                    current_key_id = Some(fields[4].to_string());
                 }
                 "uid" => {
                     // User ID line: uid:u::::created::HASH:User Name <email@example.com>:

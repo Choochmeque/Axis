@@ -35,7 +35,7 @@ export function DraggableTab({ tab, onClose }: DraggableTabProps) {
         isDragging && 'tab-dragging'
       )}
     >
-      <div {...attributes} {...listeners}>
+      <div {...attributes} {...listeners} title={tab.name}>
         <div className="relative shrink-0">
           <svg width={14} height={14}>
             <circle

@@ -86,9 +86,9 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
         Self {
             provider: ProviderType::GitHub,
             number: u32::try_from(pr.number).unwrap_or(u32::MAX),
-            title: pr.title.clone().unwrap_or_default(),
-            state: match pr.state.as_ref() {
-                Some(OctocrabIssueState::Closed) => {
+            title: pr.title.clone(),
+            state: match pr.state {
+                OctocrabIssueState::Closed => {
                     if pr.merged_at.is_some() {
                         PrState::Merged
                     } else {
@@ -97,17 +97,13 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
                 }
                 _ => PrState::Open, // Open or None defaults to Open
             },
-            author: pr.user.map(|a| (*a).into()).unwrap_or_default(),
+            author: (*pr.user).clone().into(),
             source_branch: pr.head.ref_field.clone(),
             target_branch: pr.base.ref_field.clone(),
             draft: pr.draft.unwrap_or(false),
-            created_at: pr.created_at.unwrap_or_else(Utc::now),
-            updated_at: pr.updated_at.unwrap_or_else(Utc::now),
-            url: pr
-                .html_url
-                .as_ref()
-                .map(std::string::ToString::to_string)
-                .unwrap_or_default(),
+            created_at: pr.created_at,
+            updated_at: pr.updated_at,
+            url: pr.html_url.to_string(),
         }
     }
 }
@@ -504,30 +500,15 @@ impl IntegrationProvider for GitHubProvider {
         Ok(PullRequestDetail {
             base,
             body: pr.body,
-            additions: u32::try_from(pr.additions.unwrap_or(0)).unwrap_or(u32::MAX),
-            deletions: u32::try_from(pr.deletions.unwrap_or(0)).unwrap_or(u32::MAX),
-            changed_files: u32::try_from(pr.changed_files.unwrap_or(0)).unwrap_or(u32::MAX),
-            commits_count: u32::try_from(pr.commits.unwrap_or(0)).unwrap_or(u32::MAX),
-            comments_count: u32::try_from(pr.comments.unwrap_or(0)).unwrap_or(u32::MAX),
+            additions: u32::try_from(pr.additions).unwrap_or(u32::MAX),
+            deletions: u32::try_from(pr.deletions).unwrap_or(u32::MAX),
+            changed_files: u32::try_from(pr.changed_files).unwrap_or(u32::MAX),
+            commits_count: u32::try_from(pr.commits).unwrap_or(u32::MAX),
+            comments_count: u32::try_from(pr.comments).unwrap_or(u32::MAX),
             mergeable: pr.mergeable,
-            labels: pr
-                .labels
-                .unwrap_or_default()
-                .into_iter()
-                .map(Into::into)
-                .collect(),
-            assignees: pr
-                .assignees
-                .unwrap_or_default()
-                .into_iter()
-                .map(Into::into)
-                .collect(),
-            reviewers: pr
-                .requested_reviewers
-                .unwrap_or_default()
-                .into_iter()
-                .map(Into::into)
-                .collect(),
+            labels: pr.labels.into_iter().map(Into::into).collect(),
+            assignees: pr.assignees.into_iter().map(Into::into).collect(),
+            reviewers: pr.requested_reviewers.into_iter().map(Into::into).collect(),
         })
     }
 

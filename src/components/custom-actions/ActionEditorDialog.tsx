@@ -56,20 +56,46 @@ export function ActionEditorDialog({
   action,
   defaultStorage,
 }: ActionEditorDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && (
+        <ActionEditorDialogContent
+          onOpenChange={onOpenChange}
+          action={action}
+          defaultStorage={defaultStorage}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+interface ActionEditorDialogContentProps {
+  onOpenChange: (open: boolean) => void;
+  action?: CustomAction | null;
+  defaultStorage?: ActionStorageType;
+}
+
+function ActionEditorDialogContent({
+  onOpenChange,
+  action,
+  defaultStorage,
+}: ActionEditorDialogContentProps) {
   const { t } = useTranslation();
   const saveAction = useCustomActionsStore((s) => s.saveAction);
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [command, setCommand] = useState('');
-  const [workingDir, setWorkingDir] = useState('');
-  const [contexts, setContexts] = useState<ActionContext[]>([ActionContext.Repository]);
-  const [shortcut, setShortcut] = useState('');
-  const [confirm, setConfirm] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState('');
-  const [showOutput, setShowOutput] = useState(true);
+  const [name, setName] = useState(action?.name ?? '');
+  const [description, setDescription] = useState(action?.description ?? '');
+  const [command, setCommand] = useState(action?.command ?? '');
+  const [workingDir, setWorkingDir] = useState(action?.workingDir ?? '');
+  const [contexts, setContexts] = useState<ActionContext[]>(
+    (action?.contexts as ActionContext[]) ?? [ActionContext.Repository]
+  );
+  const [shortcut, setShortcut] = useState(action?.shortcut ?? '');
+  const [confirm, setConfirm] = useState(action?.confirm ?? false);
+  const [confirmMessage, setConfirmMessage] = useState(action?.confirmMessage ?? '');
+  const [showOutput, setShowOutput] = useState(action?.showOutput ?? true);
   const [storage, setStorage] = useState<ActionStorageType>(
-    defaultStorage || ActionStorageType.Global
+    action?.storage || defaultStorage || ActionStorageType.Global
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,36 +115,6 @@ export function ActionEditorDialog({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showVariables]);
-
-  // Reset form when dialog opens/closes or action changes
-  useEffect(() => {
-    if (open) {
-      if (action) {
-        setName(action.name);
-        setDescription(action.description || '');
-        setCommand(action.command);
-        setWorkingDir(action.workingDir || '');
-        setContexts(action.contexts as ActionContext[]);
-        setShortcut(action.shortcut || '');
-        setConfirm(action.confirm);
-        setConfirmMessage(action.confirmMessage || '');
-        setShowOutput(action.showOutput ?? true);
-        setStorage(action.storage || defaultStorage || ActionStorageType.Global);
-      } else {
-        setName('');
-        setDescription('');
-        setCommand('');
-        setWorkingDir('');
-        setContexts([ActionContext.Repository]);
-        setShortcut('');
-        setConfirm(false);
-        setConfirmMessage('');
-        setShowOutput(true);
-        setStorage(defaultStorage || ActionStorageType.Global);
-      }
-      setError(null);
-    }
-  }, [open, action, defaultStorage]);
 
   const handleContextToggle = (ctx: ActionContext) => {
     setContexts((prev) => (prev.includes(ctx) ? prev.filter((c) => c !== ctx) : [...prev, ctx]));
@@ -171,214 +167,209 @@ export function ActionEditorDialog({
   const showStorageSelector = !defaultStorage;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-140">
-        <DialogTitle icon={Terminal}>
-          {action ? t('customActions.editor.editTitle') : t('customActions.editor.createTitle')}
-        </DialogTitle>
+    <DialogContent className="max-w-140">
+      <DialogTitle icon={Terminal}>
+        {action ? t('customActions.editor.editTitle') : t('customActions.editor.createTitle')}
+      </DialogTitle>
 
-        <DialogBody className="space-y-4">
-          <FormField label={t('customActions.editor.nameLabel')} htmlFor="action-name">
-            <Input
-              id="action-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('customActions.editor.namePlaceholder')}
-              autoFocus
+      <DialogBody className="space-y-4">
+        <FormField label={t('customActions.editor.nameLabel')} htmlFor="action-name">
+          <Input
+            id="action-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t('customActions.editor.namePlaceholder')}
+            autoFocus
+          />
+        </FormField>
+
+        <FormField label={t('customActions.editor.descriptionLabel')} htmlFor="action-description">
+          <Input
+            id="action-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t('customActions.editor.descriptionPlaceholder')}
+          />
+        </FormField>
+
+        <FormField label={t('customActions.editor.commandLabel')} htmlFor="action-command">
+          <div className="relative">
+            <Textarea
+              id="action-command"
+              resizable={false}
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              placeholder={t('customActions.editor.commandPlaceholder')}
+              rows={3}
+              className="rounded-md bg-(--bg-tertiary) p-2 pr-8 font-mono text-sm"
             />
-          </FormField>
+            <button
+              type="button"
+              onClick={() => setShowVariables(!showVariables)}
+              className="absolute top-2 right-2 text-(--text-muted) hover:text-(--text-secondary)"
+              title={t('customActions.editor.showVariables')}
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+            {showVariables && (
+              <div
+                ref={variablesRef}
+                className="absolute top-0 right-0 z-10 mt-8 p-3 bg-(--bg-secondary) border border-(--border-color) rounded-lg shadow-lg text-xs whitespace-pre-wrap text-(--text-secondary)"
+              >
+                {VARIABLE_HELP}
+              </div>
+            )}
+          </div>
+        </FormField>
 
+        <FormField label={t('customActions.editor.workingDirLabel')} htmlFor="action-workdir">
+          <Input
+            id="action-workdir"
+            value={workingDir}
+            onChange={(e) => setWorkingDir(e.target.value)}
+            placeholder={t('customActions.editor.workingDirPlaceholder')}
+            className="font-mono text-sm"
+          />
+        </FormField>
+
+        <FormField label={t('customActions.editor.contextsLabel')}>
+          <div className="flex flex-wrap gap-2">
+            {CONTEXT_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className={`cursor-pointer rounded border px-2 py-1 text-sm transition-colors ${
+                  contexts.includes(value)
+                    ? 'border-(--accent-color) bg-(--accent-color)/10 text-(--accent-color)'
+                    : 'border-(--border-color) hover:border-(--accent-color)/50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={contexts.includes(value)}
+                  onChange={() => handleContextToggle(value)}
+                />
+                {t(`customActions.editor.contexts.${label.toLowerCase()}`)}
+              </label>
+            ))}
+          </div>
+        </FormField>
+
+        <FormField label={t('customActions.editor.shortcutLabel')} htmlFor="action-shortcut">
+          <Input
+            id="action-shortcut"
+            value={shortcut}
+            onChange={() => {}}
+            onKeyDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              // Backspace/Delete clears the shortcut
+              if (e.key === 'Backspace' || e.key === 'Delete') {
+                setShortcut('');
+                return;
+              }
+
+              // Ignore standalone modifier keys and Escape
+              if (['Control', 'Meta', 'Alt', 'Shift', 'Escape'].includes(e.key)) {
+                return;
+              }
+
+              // Require at least one modifier
+              if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+                return;
+              }
+
+              const parts: string[] = [];
+              if (e.metaKey || e.ctrlKey) parts.push('mod');
+              if (e.shiftKey) parts.push('shift');
+              if (e.altKey) parts.push('alt');
+
+              // Normalize key name
+              let key = e.key.toLowerCase();
+              if (e.code.startsWith('Digit')) {
+                key = e.code.replace('Digit', '');
+              } else if (e.code.startsWith('Key')) {
+                key = e.code.replace('Key', '').toLowerCase();
+              }
+
+              parts.push(key);
+              setShortcut(parts.join('+'));
+            }}
+            placeholder={t('customActions.editor.shortcutPlaceholder')}
+            className="font-mono text-sm"
+            readOnly
+          />
+          <p className="text-(--text-muted) mt-1 text-xs">
+            {t('customActions.editor.shortcutHint')}
+          </p>
+        </FormField>
+
+        {showStorageSelector && (
+          <FormField label={t('customActions.editor.storageLabel')} htmlFor="action-storage">
+            <Select
+              id="action-storage"
+              value={storage}
+              onValueChange={(v) => setStorage(v as ActionStorageType)}
+              disabled={!!action}
+            >
+              <SelectItem value={ActionStorageType.Global}>
+                {t('customActions.editor.storage.global')}
+              </SelectItem>
+              <SelectItem value={ActionStorageType.Repository}>
+                {t('customActions.editor.storage.repository')}
+              </SelectItem>
+            </Select>
+          </FormField>
+        )}
+
+        <CheckboxField
+          id="action-show-output"
+          label={t('customActions.editor.showOutputLabel')}
+          checked={showOutput}
+          onCheckedChange={setShowOutput}
+        />
+
+        <CheckboxField
+          id="action-confirm"
+          label={t('customActions.editor.confirmLabel')}
+          checked={confirm}
+          onCheckedChange={setConfirm}
+        />
+
+        {confirm && (
           <FormField
-            label={t('customActions.editor.descriptionLabel')}
-            htmlFor="action-description"
+            label={t('customActions.editor.confirmMessageLabel')}
+            htmlFor="action-confirm-message"
           >
             <Input
-              id="action-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('customActions.editor.descriptionPlaceholder')}
+              id="action-confirm-message"
+              value={confirmMessage}
+              onChange={(e) => setConfirmMessage(e.target.value)}
+              placeholder={t('customActions.editor.confirmMessagePlaceholder')}
             />
           </FormField>
+        )}
 
-          <FormField label={t('customActions.editor.commandLabel')} htmlFor="action-command">
-            <div className="relative">
-              <Textarea
-                id="action-command"
-                resizable={false}
-                value={command}
-                onChange={(e) => setCommand(e.target.value)}
-                placeholder={t('customActions.editor.commandPlaceholder')}
-                rows={3}
-                className="rounded-md bg-(--bg-tertiary) p-2 pr-8 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowVariables(!showVariables)}
-                className="absolute top-2 right-2 text-(--text-muted) hover:text-(--text-secondary)"
-                title={t('customActions.editor.showVariables')}
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
-              {showVariables && (
-                <div
-                  ref={variablesRef}
-                  className="absolute top-0 right-0 z-10 mt-8 p-3 bg-(--bg-secondary) border border-(--border-color) rounded-lg shadow-lg text-xs whitespace-pre-wrap text-(--text-secondary)"
-                >
-                  {VARIABLE_HELP}
-                </div>
-              )}
-            </div>
-          </FormField>
+        {error && (
+          <Alert variant="error" inline>
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
 
-          <FormField label={t('customActions.editor.workingDirLabel')} htmlFor="action-workdir">
-            <Input
-              id="action-workdir"
-              value={workingDir}
-              onChange={(e) => setWorkingDir(e.target.value)}
-              placeholder={t('customActions.editor.workingDirPlaceholder')}
-              className="font-mono text-sm"
-            />
-          </FormField>
-
-          <FormField label={t('customActions.editor.contextsLabel')}>
-            <div className="flex flex-wrap gap-2">
-              {CONTEXT_OPTIONS.map(({ value, label }) => (
-                <label
-                  key={value}
-                  className={`cursor-pointer rounded border px-2 py-1 text-sm transition-colors ${
-                    contexts.includes(value)
-                      ? 'border-(--accent-color) bg-(--accent-color)/10 text-(--accent-color)'
-                      : 'border-(--border-color) hover:border-(--accent-color)/50'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={contexts.includes(value)}
-                    onChange={() => handleContextToggle(value)}
-                  />
-                  {t(`customActions.editor.contexts.${label.toLowerCase()}`)}
-                </label>
-              ))}
-            </div>
-          </FormField>
-
-          <FormField label={t('customActions.editor.shortcutLabel')} htmlFor="action-shortcut">
-            <Input
-              id="action-shortcut"
-              value={shortcut}
-              onChange={() => {}}
-              onKeyDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Backspace/Delete clears the shortcut
-                if (e.key === 'Backspace' || e.key === 'Delete') {
-                  setShortcut('');
-                  return;
-                }
-
-                // Ignore standalone modifier keys and Escape
-                if (['Control', 'Meta', 'Alt', 'Shift', 'Escape'].includes(e.key)) {
-                  return;
-                }
-
-                // Require at least one modifier
-                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-                  return;
-                }
-
-                const parts: string[] = [];
-                if (e.metaKey || e.ctrlKey) parts.push('mod');
-                if (e.shiftKey) parts.push('shift');
-                if (e.altKey) parts.push('alt');
-
-                // Normalize key name
-                let key = e.key.toLowerCase();
-                if (e.code.startsWith('Digit')) {
-                  key = e.code.replace('Digit', '');
-                } else if (e.code.startsWith('Key')) {
-                  key = e.code.replace('Key', '').toLowerCase();
-                }
-
-                parts.push(key);
-                setShortcut(parts.join('+'));
-              }}
-              placeholder={t('customActions.editor.shortcutPlaceholder')}
-              className="font-mono text-sm"
-              readOnly
-            />
-            <p className="text-(--text-muted) mt-1 text-xs">
-              {t('customActions.editor.shortcutHint')}
-            </p>
-          </FormField>
-
-          {showStorageSelector && (
-            <FormField label={t('customActions.editor.storageLabel')} htmlFor="action-storage">
-              <Select
-                id="action-storage"
-                value={storage}
-                onValueChange={(v) => setStorage(v as ActionStorageType)}
-                disabled={!!action}
-              >
-                <SelectItem value={ActionStorageType.Global}>
-                  {t('customActions.editor.storage.global')}
-                </SelectItem>
-                <SelectItem value={ActionStorageType.Repository}>
-                  {t('customActions.editor.storage.repository')}
-                </SelectItem>
-              </Select>
-            </FormField>
-          )}
-
-          <CheckboxField
-            id="action-show-output"
-            label={t('customActions.editor.showOutputLabel')}
-            checked={showOutput}
-            onCheckedChange={setShowOutput}
-          />
-
-          <CheckboxField
-            id="action-confirm"
-            label={t('customActions.editor.confirmLabel')}
-            checked={confirm}
-            onCheckedChange={setConfirm}
-          />
-
-          {confirm && (
-            <FormField
-              label={t('customActions.editor.confirmMessageLabel')}
-              htmlFor="action-confirm-message"
-            >
-              <Input
-                id="action-confirm-message"
-                value={confirmMessage}
-                onChange={(e) => setConfirmMessage(e.target.value)}
-                placeholder={t('customActions.editor.confirmMessagePlaceholder')}
-              />
-            </FormField>
-          )}
-
-          {error && (
-            <Alert variant="error" inline>
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleSave} disabled={isLoading}>
-            {isLoading
-              ? t('common.saving')
-              : action
-                ? t('common.save')
-                : t('customActions.editor.createButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button variant="primary" onClick={handleSave} disabled={isLoading}>
+          {isLoading
+            ? t('common.saving')
+            : action
+              ? t('common.save')
+              : t('customActions.editor.createButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

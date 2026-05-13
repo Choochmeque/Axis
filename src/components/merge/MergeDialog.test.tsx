@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithQuery as render } from '@/test/renderWithQuery';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BranchType } from '@/types';
 import { MergeDialog } from './MergeDialog';
@@ -230,7 +231,9 @@ describe('MergeDialog', () => {
     render(<MergeDialog {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('branch-select')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('branch-select').querySelector('option[value="feature-branch"]')
+      ).toBeTruthy();
     });
 
     fireEvent.change(screen.getByTestId('branch-select'), { target: { value: 'feature-branch' } });
@@ -255,7 +258,9 @@ describe('MergeDialog', () => {
     render(<MergeDialog {...defaultProps} onClose={onClose} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('branch-select')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('branch-select').querySelector('option[value="feature-branch"]')
+      ).toBeTruthy();
     });
 
     fireEvent.change(screen.getByTestId('branch-select'), { target: { value: 'feature-branch' } });
@@ -272,7 +277,9 @@ describe('MergeDialog', () => {
     render(<MergeDialog {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('branch-select')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('branch-select').querySelector('option[value="feature-branch"]')
+      ).toBeTruthy();
     });
 
     fireEvent.change(screen.getByTestId('branch-select'), { target: { value: 'feature-branch' } });
@@ -289,7 +296,9 @@ describe('MergeDialog', () => {
     render(<MergeDialog {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('branch-select')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('branch-select').querySelector('option[value="feature-branch"]')
+      ).toBeTruthy();
     });
 
     fireEvent.change(screen.getByTestId('branch-select'), { target: { value: 'feature-branch' } });

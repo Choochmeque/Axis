@@ -1,6 +1,6 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderOpen, FolderPlus } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -25,7 +25,40 @@ interface CloneDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Extract repo name from URL for default folder name
+function getRepoNameFromUrl(repoUrl: string): string {
+  const match = repoUrl.match(/\/([^/]+?)(?:\.git)?$/);
+  return match ? match[1] : '';
+}
+
 export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
+  const closeHandlerRef = useRef<(() => void) | null>(null);
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(next) => {
+        if (!next) {
+          if (closeHandlerRef.current) {
+            closeHandlerRef.current();
+          } else {
+            onOpenChange(false);
+          }
+        }
+      }}
+    >
+      {isOpen && (
+        <CloneDialogContent onOpenChange={onOpenChange} closeHandlerRef={closeHandlerRef} />
+      )}
+    </Dialog>
+  );
+}
+
+interface CloneDialogContentProps {
+  onOpenChange: (open: boolean) => void;
+  closeHandlerRef: React.RefObject<(() => void) | null>;
+}
+
+function CloneDialogContent({ onOpenChange, closeHandlerRef }: CloneDialogContentProps) {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
@@ -37,30 +70,11 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
   const { addTab, findTabByPath, setActiveTab } = useTabsStore();
   const cloneOperation = useOperationProgress('Clone');
 
-  // Extract repo name from URL for default folder name
-  const getRepoNameFromUrl = (repoUrl: string): string => {
-    const match = repoUrl.match(/\/([^/]+?)(?:\.git)?$/);
-    return match ? match[1] : '';
-  };
-
-  // Update path when URL changes
-  useEffect(() => {
-    if (url && !path) {
-      const repoName = getRepoNameFromUrl(url);
-      if (repoName) {
-        // Get default parent directory (user's home or current dir)
-        const home = import.meta.env.VITE_HOME || '~';
-        setPath(`${home}/Projects/${repoName}`);
-      }
-    }
-  }, [url, path]);
-
-  // Reset cancel confirm state when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setShowCancelConfirm(false);
-    }
-  }, [isOpen]);
+  // Derive a suggested path from URL; the user can override via the input or browse button.
+  const home = import.meta.env.VITE_HOME || '~';
+  const repoName = getRepoNameFromUrl(url);
+  const suggestedPath = repoName ? `${home}/Projects/${repoName}` : '';
+  const effectivePath = path || suggestedPath;
 
   const handleBrowse = async () => {
     const selected = await open({
@@ -70,8 +84,8 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
     });
 
     if (selected && typeof selected === 'string') {
-      const repoName = getRepoNameFromUrl(url);
-      setPath(repoName ? `${selected}/${repoName}` : selected);
+      const name = getRepoNameFromUrl(url);
+      setPath(name ? `${selected}/${name}` : selected);
     }
   };
 
@@ -80,7 +94,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
       setError(t('repository.clone.urlRequired'));
       return;
     }
-    if (!path.trim()) {
+    if (!effectivePath.trim()) {
       setError(t('repository.clone.pathRequired'));
       return;
     }
@@ -89,7 +103,7 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
     setError(null);
 
     try {
-      const repo = await repositoryApi.clone(url.trim(), path.trim());
+      const repo = await repositoryApi.clone(url.trim(), effectivePath.trim());
       await loadRecentRepositories();
 
       // Load the repository into the store
@@ -107,9 +121,6 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
         });
       }
 
-      // Reset form and close
-      setUrl('');
-      setPath('');
       onOpenChange(false);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -146,90 +157,95 @@ export function CloneDialog({ open: isOpen, onOpenChange }: CloneDialogProps) {
     onOpenChange(false);
   }, [isLoading, cloneOperation, onOpenChange]);
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-110">
-        <DialogTitle icon={FolderPlus}>{t('repository.clone.title')}</DialogTitle>
+  useEffect(() => {
+    closeHandlerRef.current = handleClose;
+    return () => {
+      closeHandlerRef.current = null;
+    };
+  }, [closeHandlerRef, handleClose]);
 
-        <DialogBody>
-          {showCancelConfirm ? (
-            <Alert variant="warning">{t('repository.clone.cancelConfirm')}</Alert>
-          ) : (
-            <>
-              <FormField
-                label={t('repository.clone.urlLabel')}
-                htmlFor="clone-url"
-                hint={t('repository.clone.urlHint')}
-              >
+  return (
+    <DialogContent className="max-w-110">
+      <DialogTitle icon={FolderPlus}>{t('repository.clone.title')}</DialogTitle>
+
+      <DialogBody>
+        {showCancelConfirm ? (
+          <Alert variant="warning">{t('repository.clone.cancelConfirm')}</Alert>
+        ) : (
+          <>
+            <FormField
+              label={t('repository.clone.urlLabel')}
+              htmlFor="clone-url"
+              hint={t('repository.clone.urlHint')}
+            >
+              <Input
+                id="clone-url"
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t('repository.clone.urlPlaceholder')}
+                autoFocus
+                disabled={isLoading}
+              />
+            </FormField>
+
+            <FormField label={t('repository.clone.destinationLabel')} htmlFor="clone-path">
+              <div className="flex gap-2">
                 <Input
-                  id="clone-url"
+                  id="clone-path"
                   type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  value={effectivePath}
+                  onChange={(e) => setPath(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={t('repository.clone.urlPlaceholder')}
-                  autoFocus
+                  placeholder={t('repository.clone.destinationPlaceholder')}
+                  className="flex-1"
                   disabled={isLoading}
                 />
-              </FormField>
+                <Button variant="secondary" onClick={handleBrowse} disabled={isLoading}>
+                  <FolderOpen size={16} />
+                </Button>
+              </div>
+            </FormField>
 
-              <FormField label={t('repository.clone.destinationLabel')} htmlFor="clone-path">
-                <div className="flex gap-2">
-                  <Input
-                    id="clone-path"
-                    type="text"
-                    value={path}
-                    onChange={(e) => setPath(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t('repository.clone.destinationPlaceholder')}
-                    className="flex-1"
-                    disabled={isLoading}
-                  />
-                  <Button variant="secondary" onClick={handleBrowse} disabled={isLoading}>
-                    <FolderOpen size={16} />
-                  </Button>
-                </div>
-              </FormField>
+            {cloneOperation?.progress && (
+              <OperationProgressBar progress={cloneOperation.progress} className="mt-3" />
+            )}
 
-              {cloneOperation?.progress && (
-                <OperationProgressBar progress={cloneOperation.progress} className="mt-3" />
-              )}
+            {error && (
+              <Alert variant="error" inline className="mt-3">
+                {error}
+              </Alert>
+            )}
+          </>
+        )}
+      </DialogBody>
 
-              {error && (
-                <Alert variant="error" inline className="mt-3">
-                  {error}
-                </Alert>
-              )}
-            </>
-          )}
-        </DialogBody>
-
-        <DialogFooter>
-          {showCancelConfirm ? (
-            <>
-              <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
-                {t('repository.clone.continueOperation')}
-              </Button>
-              <Button variant="destructive" onClick={cancelOperation}>
-                {t('repository.clone.cancelOperation')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="secondary" onClick={handleClose}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleClone}
-                disabled={isLoading || !url.trim() || !path.trim()}
-              >
-                {isLoading ? t('repository.clone.cloning') : t('repository.clone.cloneButton')}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        {showCancelConfirm ? (
+          <>
+            <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
+              {t('repository.clone.continueOperation')}
+            </Button>
+            <Button variant="destructive" onClick={cancelOperation}>
+              {t('repository.clone.cancelOperation')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={handleClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleClone}
+              disabled={isLoading || !url.trim() || !effectivePath.trim()}
+            >
+              {isLoading ? t('repository.clone.cloning') : t('repository.clone.cloneButton')}
+            </Button>
+          </>
+        )}
+      </DialogFooter>
+    </DialogContent>
   );
 }

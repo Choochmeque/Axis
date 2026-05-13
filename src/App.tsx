@@ -16,6 +16,8 @@ import { WorkspaceView } from './components/workspace';
 import { toast, useCustomActionShortcuts, useGitProgress, useMenuActions } from './hooks';
 import { notifyNewCommits } from './lib/actions';
 import { getErrorMessage } from './lib/errorUtils';
+import { queryClient } from './lib/queryClient';
+import { queryKeys } from './lib/queryKeys';
 import { normalizePath } from './lib/utils';
 import { lfsApi } from './services/api';
 import { useCustomActionsStore } from './store/customActionsStore';
@@ -89,6 +91,7 @@ function App() {
   useEffect(() => {
     const unlisten = events.repositoryDirtyEvent.listen((event) => {
       markTabDirty(event.payload.path);
+      queryClient.invalidateQueries({ queryKey: queryKeys.status(event.payload.path) });
     });
     return () => {
       unlisten.then((fn) => fn());
@@ -102,6 +105,8 @@ function App() {
 
       // Mark tab as having remote changes
       markTabDirty(path);
+      queryClient.invalidateQueries({ queryKey: queryKeys.branches(path) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.status(path) });
 
       // If this is the active repo, reload branches and notify
       const currentPath = useRepositoryStore.getState().repository?.path.toString();

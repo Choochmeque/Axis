@@ -1,5 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Archive, GitBranch, Play, Plus, RefreshCw, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui';
 import { formatTimestamp } from '@/lib/dateUtils';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '../../lib/utils';
 import { stashApi } from '../../services/api';
@@ -31,32 +33,28 @@ interface StashViewProps {
 
 export function StashView({ onRefresh }: StashViewProps) {
   const { t } = useTranslation();
-  const [stashes, setStashes] = useState<StashEntry[]>([]);
+  const queryClient = useQueryClient();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [stashMessage, setStashMessage] = useState('');
   const [includeUntracked, setIncludeUntracked] = useState(false);
   const [keepIndex, setKeepIndex] = useState(false);
 
-  const loadStashes = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const stashList = await stashApi.list();
-      setStashes(stashList);
-    } catch (err) {
-      console.error('Failed to load stashes:', err);
-      setError(t('stash.view.loadFailed'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [t]);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const {
+    data: stashes = [],
+    isLoading,
+    error: loadError,
+  } = useQuery<StashEntry[]>({
+    queryKey: queryKeys.stashes(),
+    queryFn: () => stashApi.list(),
+  });
+  const error = actionError ?? (loadError ? t('stash.view.loadFailed') : null);
+  const setError = setActionError;
 
-  useEffect(() => {
-    loadStashes();
-  }, [loadStashes]);
+  const loadStashes = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.stashes() });
+  }, [queryClient]);
 
   const handleSave = async () => {
     try {

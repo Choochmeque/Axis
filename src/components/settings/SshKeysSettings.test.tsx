@@ -1,5 +1,6 @@
 import { open } from '@tauri-apps/plugin-dialog';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithQuery as render } from '@/test/renderWithQuery';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sshKeysApi } from '@/services/api';
 import type { SshKeyInfo } from '@/types';
@@ -56,10 +57,8 @@ describe('SshKeysSettings', () => {
     render(<SshKeysSettings />);
 
     await waitFor(() => {
-      expect(sshKeysApi.list).toHaveBeenCalled();
+      expect(screen.getByText('user@example.com')).toBeInTheDocument();
     });
-
-    expect(screen.getByText('user@example.com')).toBeInTheDocument();
     expect(screen.getByText('Ed25519')).toBeInTheDocument();
     expect(screen.getByText('SHA256:abc123def456')).toBeInTheDocument();
     expect(screen.getByText('Rsa')).toBeInTheDocument();

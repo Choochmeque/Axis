@@ -1,5 +1,5 @@
 import { Cloud } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -23,6 +23,14 @@ interface AddRemoteDialogProps {
 }
 
 export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && <AddRemoteDialogContent onOpenChange={onOpenChange} />}
+    </Dialog>
+  );
+}
+
+function AddRemoteDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation();
   const [remoteName, setRemoteName] = useState('');
   const [remoteUrl, setRemoteUrl] = useState('');
@@ -30,14 +38,6 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { loadBranches } = useRepositoryStore();
-
-  useEffect(() => {
-    if (open) {
-      setRemoteName('');
-      setRemoteUrl('');
-      setError(null);
-    }
-  }, [open]);
 
   const handleAdd = async () => {
     if (!remoteName.trim()) {
@@ -71,54 +71,52 @@ export function AddRemoteDialog({ open, onOpenChange }: AddRemoteDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-120">
-        <DialogTitle icon={Cloud}>{t('remotes.add.title')}</DialogTitle>
+    <DialogContent className="max-w-120">
+      <DialogTitle icon={Cloud}>{t('remotes.add.title')}</DialogTitle>
 
-        <DialogBody>
-          <FormField label={t('remotes.add.nameLabel')} htmlFor="remote-name">
-            <Input
-              id="remote-name"
-              type="text"
-              value={remoteName}
-              onChange={(e) => setRemoteName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('remotes.add.namePlaceholder')}
-              autoFocus
-            />
-          </FormField>
+      <DialogBody>
+        <FormField label={t('remotes.add.nameLabel')} htmlFor="remote-name">
+          <Input
+            id="remote-name"
+            type="text"
+            value={remoteName}
+            onChange={(e) => setRemoteName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('remotes.add.namePlaceholder')}
+            autoFocus
+          />
+        </FormField>
 
-          <FormField label={t('remotes.add.urlLabel')} htmlFor="remote-url">
-            <Input
-              id="remote-url"
-              type="url"
-              value={remoteUrl}
-              onChange={(e) => setRemoteUrl(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('remotes.add.urlPlaceholder')}
-            />
-          </FormField>
+        <FormField label={t('remotes.add.urlLabel')} htmlFor="remote-url">
+          <Input
+            id="remote-url"
+            type="url"
+            value={remoteUrl}
+            onChange={(e) => setRemoteUrl(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('remotes.add.urlPlaceholder')}
+          />
+        </FormField>
 
-          {error && (
-            <Alert variant="error" inline className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
+        {error && (
+          <Alert variant="error" inline className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button
-            variant="primary"
-            onClick={handleAdd}
-            disabled={isLoading || !remoteName.trim() || !remoteUrl.trim()}
-          >
-            {isLoading ? t('remotes.add.adding') : t('remotes.add.addButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button
+          variant="primary"
+          onClick={handleAdd}
+          disabled={isLoading || !remoteName.trim() || !remoteUrl.trim()}
+        >
+          {isLoading ? t('remotes.add.adding') : t('remotes.add.addButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

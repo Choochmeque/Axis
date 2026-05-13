@@ -1,5 +1,5 @@
 import { CircleDot } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -25,6 +25,14 @@ interface CreateIssueDialogProps {
 }
 
 export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <CreateIssueDialogContent onCreated={onCreated} />}
+    </Dialog>
+  );
+}
+
+function CreateIssueDialogContent({ onCreated }: { onCreated: () => void }) {
   const { t } = useTranslation();
   const { createIssue } = useIntegrationStore();
 
@@ -33,16 +41,6 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
   const [labels, setLabels] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setTitle('');
-      setBody('');
-      setLabels('');
-      setError(null);
-    }
-  }, [isOpen]);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) {
@@ -75,64 +73,62 @@ export function CreateIssueDialog({ isOpen, onClose, onCreated }: CreateIssueDia
   }, [title, body, labels, createIssue, onCreated, t]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogTitle icon={CircleDot}>{t('integrations.issues.create.title')}</DialogTitle>
+    <DialogContent className="max-w-lg">
+      <DialogTitle icon={CircleDot}>{t('integrations.issues.create.title')}</DialogTitle>
 
-        <DialogBody>
-          {error && (
-            <Alert variant="error" inline className="mb-3">
-              {error}
-            </Alert>
-          )}
+      <DialogBody>
+        {error && (
+          <Alert variant="error" inline className="mb-3">
+            {error}
+          </Alert>
+        )}
 
-          <FormField label={t('integrations.issues.create.titleLabel')} htmlFor="issue-title">
-            <Input
-              id="issue-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('integrations.issues.create.titlePlaceholder')}
-              autoFocus
-            />
-          </FormField>
+        <FormField label={t('integrations.issues.create.titleLabel')} htmlFor="issue-title">
+          <Input
+            id="issue-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t('integrations.issues.create.titlePlaceholder')}
+            autoFocus
+          />
+        </FormField>
 
-          <FormField label={t('integrations.issues.create.descriptionLabel')} htmlFor="issue-body">
-            <Textarea
-              id="issue-body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder={t('integrations.issues.create.descriptionPlaceholder')}
-              rows={8}
-            />
-          </FormField>
+        <FormField label={t('integrations.issues.create.descriptionLabel')} htmlFor="issue-body">
+          <Textarea
+            id="issue-body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={t('integrations.issues.create.descriptionPlaceholder')}
+            rows={8}
+          />
+        </FormField>
 
-          <FormField
-            label={t('integrations.issues.create.labelsLabel')}
-            htmlFor="issue-labels"
-            hint={t('integrations.issues.create.labelsHint')}
-          >
-            <Input
-              id="issue-labels"
-              value={labels}
-              onChange={(e) => setLabels(e.target.value)}
-              placeholder={t('integrations.issues.create.labelsPlaceholder')}
-            />
-          </FormField>
-        </DialogBody>
+        <FormField
+          label={t('integrations.issues.create.labelsLabel')}
+          htmlFor="issue-labels"
+          hint={t('integrations.issues.create.labelsHint')}
+        >
+          <Input
+            id="issue-labels"
+            value={labels}
+            onChange={(e) => setLabels(e.target.value)}
+            placeholder={t('integrations.issues.create.labelsPlaceholder')}
+          />
+        </FormField>
+      </DialogBody>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary" disabled={isSubmitting}>
-              {t('common.cancel')}
-            </Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || !title.trim()}>
-            {isSubmitting
-              ? t('integrations.issues.create.creating')
-              : t('integrations.issues.create.createButton')}
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary" disabled={isSubmitting}>
+            {t('common.cancel')}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogClose>
+        <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || !title.trim()}>
+          {isSubmitting
+            ? t('integrations.issues.create.creating')
+            : t('integrations.issues.create.createButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

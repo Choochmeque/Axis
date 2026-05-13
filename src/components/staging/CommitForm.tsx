@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import {
   parseConventionalCommit,
 } from '@/lib/conventionalCommits';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { testId } from '@/lib/utils';
 import { aiApi, commitApi, hooksApi, remoteApi, signingApi } from '@/services/api';
 import { useIntegrationStore } from '@/store/integrationStore';
@@ -64,10 +66,14 @@ export function CommitForm() {
   const [signOff, setSignOff] = useState(false);
   const [signingAvailable, setSigningAvailable] = useState(false);
   const [signingConfig, setSigningConfig] = useState<SigningConfig | null>(null);
-  const [hasCommitHooks, setHasCommitHooks] = useState(false);
   const [author, setAuthor] = useState<{ name: string; email: string } | null>(null);
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [textareaEl, setTextareaEl] = useState<HTMLTextAreaElement | null>(null);
+  const setTextareaNode = useCallback((node: HTMLTextAreaElement | null) => {
+    textareaRef.current = node;
+    setTextareaEl(node);
+  }, []);
 
   // Integration state for reference mentions
   const {
@@ -97,11 +103,13 @@ export function CommitForm() {
   });
 
   // Sync signCommit with settings when settings change
-  useEffect(() => {
-    if (settings) {
-      setSignCommit(settings.signCommits);
-    }
-  }, [settings]);
+  const [lastSignCommitSetting, setLastSignCommitSetting] = useState(
+    settings?.signCommits ?? false
+  );
+  if (settings && settings.signCommits !== lastSignCommitSetting) {
+    setLastSignCommitSetting(settings.signCommits);
+    setSignCommit(settings.signCommits);
+  }
 
   // Uncheck push after commit if no remotes
   useEffect(() => {
@@ -142,35 +150,30 @@ export function CommitForm() {
   }, [repository]);
 
   // Check for enabled commit hooks when repository changes or hooks are modified
-  const checkCommitHooks = useCallback(async () => {
-    if (!repository) return;
-    try {
-      const hooks = await hooksApi.list();
-      // Check if any commit-related hooks exist and are enabled
-      const commitHookTypes = ['PreCommit', 'PrepareCommitMsg', 'CommitMsg', 'PostCommit'];
-      const hasEnabled = hooks.some(
-        (h) => commitHookTypes.includes(h.hookType) && h.exists && h.enabled
-      );
-      setHasCommitHooks(hasEnabled);
-    } catch {
-      setHasCommitHooks(false);
-    }
-  }, [repository]);
-
-  useEffect(() => {
-    checkCommitHooks();
-  }, [checkCommitHooks]);
+  const { data: hasCommitHooks = false, refetch: refetchCommitHooks } = useQuery({
+    queryKey: queryKeys.hooks(repository?.path.toString()),
+    queryFn: async () => {
+      try {
+        const hooks = await hooksApi.list();
+        const commitHookTypes = ['PreCommit', 'PrepareCommitMsg', 'CommitMsg', 'PostCommit'];
+        return hooks.some((h) => commitHookTypes.includes(h.hookType) && h.exists && h.enabled);
+      } catch {
+        return false;
+      }
+    },
+    enabled: !!repository,
+  });
 
   // Listen for hooks-changed event (from settings dialog)
   useEffect(() => {
     const handleHooksChanged = () => {
-      checkCommitHooks();
+      refetchCommitHooks();
     };
     document.addEventListener('hooks-changed', handleHooksChanged);
     return () => {
       document.removeEventListener('hooks-changed', handleHooksChanged);
     };
-  }, [checkCommitHooks]);
+  }, [refetchCommitHooks]);
 
   // Listen for menu focus event
   useEffect(() => {
@@ -497,7 +500,7 @@ export function CommitForm() {
         ) : (
           <div className="relative flex-1 min-h-15 overflow-visible">
             <Textarea
-              ref={textareaRef}
+              ref={setTextareaNode}
               resizable={false}
               {...testId('e2e-commit-message-input')}
               className="h-full p-2 bg-(--bg-primary) text-base placeholder:text-(--text-tertiary)"
@@ -516,7 +519,7 @@ export function CommitForm() {
               isOpen={referenceMention.isOpen}
               items={referenceMention.items}
               selectedIndex={referenceMention.selectedIndex}
-              anchorElement={textareaRef.current}
+              anchorElement={textareaEl}
               cursorPosition={referenceMention.cursorPosition}
               onSelect={(item) => {
                 const newValue = referenceMention.handleSelect(item);

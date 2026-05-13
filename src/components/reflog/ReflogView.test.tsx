@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithQuery as render } from '@/test/renderWithQuery';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReflogAction } from '@/types';
 import { ReflogView } from './ReflogView';
@@ -403,15 +404,14 @@ describe('ReflogView', () => {
     render(<ReflogView />);
 
     await waitFor(() => {
-      const select = screen.getByRole('combobox');
-      expect(select).toBeInTheDocument();
+      const options = screen.getAllByRole('option');
+      expect(options.length).toBeGreaterThanOrEqual(3);
     });
 
-    // Check that refs are displayed with proper names
     const options = screen.getAllByRole('option');
     expect(options[0]).toHaveTextContent('HEAD');
-    expect(options[1]).toHaveTextContent('main'); // refs/heads/main -> main
-    expect(options[2]).toHaveTextContent('feature'); // refs/heads/feature -> feature
+    expect(options[1]).toHaveTextContent('main');
+    expect(options[2]).toHaveTextContent('feature');
   });
 
   it('should select entry when clicked', async () => {

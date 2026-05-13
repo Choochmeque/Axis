@@ -37,26 +37,39 @@ export function CreatePullRequestDialog({
   onClose,
   onCreated,
 }: CreatePullRequestDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <CreatePullRequestDialogContent onCreated={onCreated} />}
+    </Dialog>
+  );
+}
+
+function CreatePullRequestDialogContent({ onCreated }: { onCreated: () => void }) {
   const { t } = useTranslation();
   const { branches, loadBranches } = useRepositoryStore();
   const { createPullRequest, availableLabels, loadLabels } = useIntegrationStore();
   const { settings } = useSettingsStore();
-
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [sourceBranch, setSourceBranch] = useState('');
-  const [targetBranch, setTargetBranch] = useState('');
-  const [selectedLabels, setSelectedLabels] = useState<IntegrationLabel[]>([]);
-  const [isDraft, setIsDraft] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Get local branches for selection
   const localBranches = useMemo(() => branches.filter((b) => b.branchType === 'Local'), [branches]);
 
   // Get current branch for default source
   const currentBranch = useMemo(() => localBranches.find((b) => b.isHead), [localBranches]);
+
+  // Common target branches
+  const defaultTargetBranches = useMemo(() => ['main', 'master', 'develop', 'dev'], []);
+
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [sourceBranch, setSourceBranch] = useState(currentBranch?.name ?? '');
+  const [targetBranch, setTargetBranch] = useState(
+    () => localBranches.find((b) => defaultTargetBranches.includes(b.name))?.name ?? ''
+  );
+  const [selectedLabels, setSelectedLabels] = useState<IntegrationLabel[]>([]);
+  const [isDraft, setIsDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if selected source branch has been pushed to remote
   const sourceBranchData = useMemo(
@@ -65,39 +78,21 @@ export function CreatePullRequestDialog({
   );
   const isSourceBranchPushed = !!sourceBranchData?.upstream;
 
-  // Common target branches
-  const defaultTargetBranches = useMemo(() => ['main', 'master', 'develop', 'dev'], []);
-
-  // Reload branches and labels when dialog opens
+  // Reload branches and labels on mount
   useEffect(() => {
-    if (isOpen) {
-      loadBranches();
-      loadLabels();
-    }
-  }, [isOpen, loadBranches, loadLabels]);
+    loadBranches();
+    loadLabels();
+  }, [loadBranches, loadLabels]);
 
-  // Reset form when dialog opens (separate effect to avoid loop)
-  useEffect(() => {
-    if (isOpen && localBranches.length > 0) {
-      setTitle('');
-      setBody('');
-      setSourceBranch(currentBranch?.name ?? '');
-      const defaultTarget =
-        localBranches.find((b) => defaultTargetBranches.includes(b.name))?.name ?? '';
-      setTargetBranch(defaultTarget);
-      setSelectedLabels([]);
-      setIsDraft(false);
-      setError(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  // Clear target if it matches the new source
-  useEffect(() => {
-    if (sourceBranch && targetBranch === sourceBranch) {
-      setTargetBranch('');
-    }
-  }, [sourceBranch, targetBranch]);
+  const handleSourceBranchChange = useCallback(
+    (value: string) => {
+      setSourceBranch(value);
+      if (value && targetBranch === value) {
+        setTargetBranch('');
+      }
+    },
+    [targetBranch]
+  );
 
   const handleGenerateWithAi = useCallback(async () => {
     if (!sourceBranch || !targetBranch) {
@@ -188,138 +183,133 @@ export function CreatePullRequestDialog({
   ]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogTitle icon={GitBranch}>{t('integrations.pullRequests.create.title')}</DialogTitle>
+    <DialogContent className="max-w-lg">
+      <DialogTitle icon={GitBranch}>{t('integrations.pullRequests.create.title')}</DialogTitle>
 
-        <DialogBody>
-          {error && (
-            <Alert variant="error" inline className="mb-3">
-              {error}
-            </Alert>
-          )}
+      <DialogBody>
+        {error && (
+          <Alert variant="error" inline className="mb-3">
+            {error}
+          </Alert>
+        )}
 
-          <FormField
-            label={t('integrations.pullRequests.create.fromLabel')}
-            htmlFor="pr-source"
-            error={
-              sourceBranch && !isSourceBranchPushed
-                ? t('integrations.pullRequests.create.notPushed')
-                : undefined
-            }
+        <FormField
+          label={t('integrations.pullRequests.create.fromLabel')}
+          htmlFor="pr-source"
+          error={
+            sourceBranch && !isSourceBranchPushed
+              ? t('integrations.pullRequests.create.notPushed')
+              : undefined
+          }
+        >
+          <Select
+            id="pr-source"
+            value={sourceBranch}
+            onValueChange={handleSourceBranchChange}
+            placeholder={t('integrations.pullRequests.create.selectBranch')}
           >
-            <Select
-              id="pr-source"
-              value={sourceBranch}
-              onValueChange={setSourceBranch}
-              placeholder={t('integrations.pullRequests.create.selectBranch')}
-            >
-              {localBranches.map((branch) => (
+            {localBranches.map((branch) => (
+              <SelectItem key={branch.name} value={branch.name}>
+                {branch.name}
+                {branch.isHead ? t('integrations.pullRequests.create.currentSuffix') : ''}
+              </SelectItem>
+            ))}
+          </Select>
+        </FormField>
+
+        <FormField label={t('integrations.pullRequests.create.intoLabel')} htmlFor="pr-target">
+          <Select
+            id="pr-target"
+            value={targetBranch}
+            onValueChange={setTargetBranch}
+            placeholder={t('integrations.pullRequests.create.selectBranch')}
+          >
+            {localBranches
+              .filter((branch) => branch.name !== sourceBranch)
+              .map((branch) => (
                 <SelectItem key={branch.name} value={branch.name}>
                   {branch.name}
-                  {branch.isHead ? t('integrations.pullRequests.create.currentSuffix') : ''}
                 </SelectItem>
               ))}
-            </Select>
-          </FormField>
+          </Select>
+        </FormField>
 
-          <FormField label={t('integrations.pullRequests.create.intoLabel')} htmlFor="pr-target">
-            <Select
-              id="pr-target"
-              value={targetBranch}
-              onValueChange={setTargetBranch}
-              placeholder={t('integrations.pullRequests.create.selectBranch')}
+        <div className="field">
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="pr-title" className="text-base font-medium text-(--text-secondary)">
+              {t('integrations.pullRequests.create.titleLabel')}
+            </label>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex items-center justify-center h-7 w-7 p-0"
+              onClick={handleGenerateWithAi}
+              disabled={
+                !settings?.aiEnabled ||
+                !sourceBranch ||
+                !targetBranch ||
+                isGenerating ||
+                isSubmitting
+              }
+              title={
+                isGenerating
+                  ? t('integrations.pullRequests.create.generating')
+                  : t('integrations.pullRequests.create.generateWithAi')
+              }
             >
-              {localBranches
-                .filter((branch) => branch.name !== sourceBranch)
-                .map((branch) => (
-                  <SelectItem key={branch.name} value={branch.name}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-            </Select>
-          </FormField>
-
-          <div className="field">
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="pr-title" className="text-base font-medium text-(--text-secondary)">
-                {t('integrations.pullRequests.create.titleLabel')}
-              </label>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="flex items-center justify-center h-7 w-7 p-0"
-                onClick={handleGenerateWithAi}
-                disabled={
-                  !settings?.aiEnabled ||
-                  !sourceBranch ||
-                  !targetBranch ||
-                  isGenerating ||
-                  isSubmitting
-                }
-                title={
-                  isGenerating
-                    ? t('integrations.pullRequests.create.generating')
-                    : t('integrations.pullRequests.create.generateWithAi')
-                }
-              >
-                <Sparkles size={14} className={isGenerating ? 'animate-pulse' : ''} />
-              </Button>
-            </div>
-            <Input
-              id="pr-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('integrations.pullRequests.create.titlePlaceholder')}
-              autoFocus
-            />
+              <Sparkles size={14} className={isGenerating ? 'animate-pulse' : ''} />
+            </Button>
           </div>
+          <Input
+            id="pr-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t('integrations.pullRequests.create.titlePlaceholder')}
+            autoFocus
+          />
+        </div>
 
-          <FormField
-            label={t('integrations.pullRequests.create.descriptionLabel')}
-            htmlFor="pr-body"
-          >
-            <MarkdownEditor
-              id="pr-body"
-              value={body}
-              onChange={setBody}
-              placeholder={t('integrations.pullRequests.create.descriptionPlaceholder')}
-              rows={6}
-              disabled={isSubmitting || isGenerating}
-            />
-          </FormField>
-
-          <LabelSelector
-            selectedLabels={selectedLabels}
-            onSelectionChange={setSelectedLabels}
+        <FormField label={t('integrations.pullRequests.create.descriptionLabel')} htmlFor="pr-body">
+          <MarkdownEditor
+            id="pr-body"
+            value={body}
+            onChange={setBody}
+            placeholder={t('integrations.pullRequests.create.descriptionPlaceholder')}
+            rows={6}
             disabled={isSubmitting || isGenerating}
           />
+        </FormField>
 
-          <CheckboxField
-            id="pr-draft"
-            label={t('integrations.pullRequests.create.createAsDraft')}
-            checked={isDraft}
-            onCheckedChange={setIsDraft}
-          />
-        </DialogBody>
+        <LabelSelector
+          selectedLabels={selectedLabels}
+          onSelectionChange={setSelectedLabels}
+          disabled={isSubmitting || isGenerating}
+        />
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary" disabled={isSubmitting}>
-              {t('common.cancel')}
-            </Button>
-          </DialogClose>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !title.trim() || !sourceBranch || !targetBranch}
-          >
-            {isSubmitting
-              ? t('integrations.pullRequests.create.creating')
-              : t('integrations.pullRequests.create.createButton')}
+        <CheckboxField
+          id="pr-draft"
+          label={t('integrations.pullRequests.create.createAsDraft')}
+          checked={isDraft}
+          onCheckedChange={setIsDraft}
+        />
+      </DialogBody>
+
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary" disabled={isSubmitting}>
+            {t('common.cancel')}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogClose>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          disabled={isSubmitting || !title.trim() || !sourceBranch || !targetBranch}
+        >
+          {isSubmitting
+            ? t('integrations.pullRequests.create.creating')
+            : t('integrations.pullRequests.create.createButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

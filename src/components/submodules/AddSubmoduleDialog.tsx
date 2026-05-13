@@ -1,5 +1,5 @@
 import { FolderGit2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -23,6 +23,14 @@ interface AddSubmoduleDialogProps {
 }
 
 export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && <AddSubmoduleDialogContent onOpenChange={onOpenChange} />}
+    </Dialog>
+  );
+}
+
+function AddSubmoduleDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
@@ -32,24 +40,15 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
 
   const { loadSubmodules } = useRepositoryStore();
 
-  useEffect(() => {
-    if (open) {
-      setUrl('');
-      setPath('');
-      setBranch('');
-      setError(null);
-    }
-  }, [open]);
-
-  // Auto-fill path from URL
-  useEffect(() => {
-    if (url && !path) {
-      const match = url.match(/\/([^/]+?)(\.git)?$/);
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    if (newUrl && !path) {
+      const match = newUrl.match(/\/([^/]+?)(\.git)?$/);
       if (match) {
         setPath(match[1]);
       }
     }
-  }, [url, path]);
+  };
 
   const handleAdd = async () => {
     if (!url.trim()) {
@@ -89,74 +88,69 @@ export function AddSubmoduleDialog({ open, onOpenChange }: AddSubmoduleDialogPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-120">
-        <DialogTitle icon={FolderGit2}>{t('sidebar.submodule.addDialog.title')}</DialogTitle>
+    <DialogContent className="max-w-120">
+      <DialogTitle icon={FolderGit2}>{t('sidebar.submodule.addDialog.title')}</DialogTitle>
 
-        <DialogBody>
-          <FormField label={t('sidebar.submodule.addDialog.urlLabel')} htmlFor="submodule-url">
-            <Input
-              id="submodule-url"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('sidebar.submodule.addDialog.urlPlaceholder')}
-              autoFocus
-            />
-          </FormField>
+      <DialogBody>
+        <FormField label={t('sidebar.submodule.addDialog.urlLabel')} htmlFor="submodule-url">
+          <Input
+            id="submodule-url"
+            type="url"
+            value={url}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('sidebar.submodule.addDialog.urlPlaceholder')}
+            autoFocus
+          />
+        </FormField>
 
-          <FormField
-            label={t('sidebar.submodule.addDialog.pathLabel')}
-            htmlFor="submodule-path"
-            hint={t('sidebar.submodule.addDialog.pathHint')}
-          >
-            <Input
-              id="submodule-path"
-              type="text"
-              value={path}
-              onChange={(e) => setPath(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('sidebar.submodule.addDialog.pathPlaceholder')}
-            />
-          </FormField>
+        <FormField
+          label={t('sidebar.submodule.addDialog.pathLabel')}
+          htmlFor="submodule-path"
+          hint={t('sidebar.submodule.addDialog.pathHint')}
+        >
+          <Input
+            id="submodule-path"
+            type="text"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('sidebar.submodule.addDialog.pathPlaceholder')}
+          />
+        </FormField>
 
-          <FormField
-            label={t('sidebar.submodule.addDialog.branchLabel')}
-            htmlFor="submodule-branch"
-          >
-            <Input
-              id="submodule-branch"
-              type="text"
-              value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('sidebar.submodule.addDialog.branchPlaceholder')}
-            />
-          </FormField>
+        <FormField label={t('sidebar.submodule.addDialog.branchLabel')} htmlFor="submodule-branch">
+          <Input
+            id="submodule-branch"
+            type="text"
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('sidebar.submodule.addDialog.branchPlaceholder')}
+          />
+        </FormField>
 
-          {error && (
-            <Alert variant="error" inline className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
+        {error && (
+          <Alert variant="error" inline className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button
-            variant="primary"
-            onClick={handleAdd}
-            disabled={isLoading || !url.trim() || !path.trim()}
-          >
-            {isLoading
-              ? t('sidebar.submodule.addDialog.adding')
-              : t('sidebar.submodule.addDialog.addButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button
+          variant="primary"
+          onClick={handleAdd}
+          disabled={isLoading || !url.trim() || !path.trim()}
+        >
+          {isLoading
+            ? t('sidebar.submodule.addDialog.adding')
+            : t('sidebar.submodule.addDialog.addButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

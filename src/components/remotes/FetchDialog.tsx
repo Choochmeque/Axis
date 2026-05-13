@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -18,9 +19,9 @@ import {
 import { toast, useOperationProgress, useSshKeyCheck } from '@/hooks';
 import { notifyNewCommits } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { remoteApi, shellApi } from '../../services/api';
 import { useRepositoryStore } from '../../store/repositoryStore';
-import type { Remote } from '../../types';
 
 interface FetchDialogProps {
   isOpen: boolean;
@@ -28,8 +29,32 @@ interface FetchDialogProps {
 }
 
 export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
+  const closeHandlerRef = useRef<(() => void) | null>(null);
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          if (closeHandlerRef.current) {
+            closeHandlerRef.current();
+          } else {
+            onClose();
+          }
+        }
+      }}
+    >
+      {isOpen && <FetchDialogContent onClose={onClose} closeHandlerRef={closeHandlerRef} />}
+    </Dialog>
+  );
+}
+
+interface FetchDialogContentProps {
+  onClose: () => void;
+  closeHandlerRef: React.RefObject<(() => void) | null>;
+}
+
+function FetchDialogContent({ onClose, closeHandlerRef }: FetchDialogContentProps) {
   const { t } = useTranslation();
-  const [remotes, setRemotes] = useState<Remote[]>([]);
   const [selectedRemote, setSelectedRemote] = useState('');
   const [fetchAll, setFetchAll] = useState(true);
   const [prune, setPrune] = useState(false);
@@ -41,25 +66,12 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
   const fetchOperation = useOperationProgress('Fetch');
   const { checkSshKeyForRemote } = useSshKeyCheck();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadRemotes();
-      setError(null);
-      setShowCancelConfirm(false);
-    }
-  }, [isOpen]);
+  const { data: remotes = [] } = useQuery({
+    queryKey: queryKeys.remotes(),
+    queryFn: () => remoteApi.list(),
+  });
 
-  const loadRemotes = async () => {
-    try {
-      const data = await remoteApi.list();
-      setRemotes(data);
-      if (data.length > 0) {
-        setSelectedRemote(data[0].name);
-      }
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  };
+  const effectiveRemote = selectedRemote || remotes[0]?.name || '';
 
   const doFetch = async () => {
     setIsLoading(true);
@@ -69,7 +81,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
       if (fetchAll) {
         await remoteApi.fetchAll();
       } else {
-        await remoteApi.fetch(selectedRemote, { prune, tags: false, depth: null });
+        await remoteApi.fetch(effectiveRemote, { prune, tags: false, depth: null });
       }
 
       await loadBranches();
@@ -87,7 +99,6 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
 
   const handleFetch = async () => {
     if (fetchAll) {
-      // Check SSH keys for all remotes before batch fetch
       const checkRemotesSequentially = async (index: number): Promise<void> => {
         if (index >= remotes.length) {
           doFetch();
@@ -97,7 +108,7 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
       };
       await checkRemotesSequentially(0);
     } else {
-      await checkSshKeyForRemote(selectedRemote, doFetch);
+      await checkSshKeyForRemote(effectiveRemote, doFetch);
     }
   };
 
@@ -123,88 +134,93 @@ export function FetchDialog({ isOpen, onClose }: FetchDialogProps) {
     onClose();
   }, [isLoading, fetchOperation, onClose]);
 
+  useEffect(() => {
+    closeHandlerRef.current = handleClose;
+    return () => {
+      closeHandlerRef.current = null;
+    };
+  }, [closeHandlerRef, handleClose]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-120">
-        <DialogTitle icon={RefreshCw}>{t('remotes.fetch.title')}</DialogTitle>
+    <DialogContent className="max-w-120">
+      <DialogTitle icon={RefreshCw}>{t('remotes.fetch.title')}</DialogTitle>
 
-        <DialogBody>
-          {showCancelConfirm ? (
-            <Alert variant="warning">{t('remotes.fetch.cancelConfirm')}</Alert>
-          ) : (
-            <>
-              <CheckboxField
-                id="fetch-all"
-                label={t('remotes.fetch.fetchAll')}
-                checked={fetchAll}
-                onCheckedChange={setFetchAll}
-                disabled={isLoading}
-              />
+      <DialogBody>
+        {showCancelConfirm ? (
+          <Alert variant="warning">{t('remotes.fetch.cancelConfirm')}</Alert>
+        ) : (
+          <>
+            <CheckboxField
+              id="fetch-all"
+              label={t('remotes.fetch.fetchAll')}
+              checked={fetchAll}
+              onCheckedChange={setFetchAll}
+              disabled={isLoading}
+            />
 
-              {!fetchAll && (
-                <FormField label={t('remotes.fetch.remoteLabel')} htmlFor="remote-select">
-                  <Select
-                    id="remote-select"
-                    value={selectedRemote}
-                    onValueChange={setSelectedRemote}
-                    disabled={remotes.length === 0 || isLoading}
-                  >
-                    {remotes.map((remote) => (
-                      <SelectItem key={remote.name} value={remote.name}>
-                        {remote.name} ({remote.url})
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </FormField>
-              )}
+            {!fetchAll && (
+              <FormField label={t('remotes.fetch.remoteLabel')} htmlFor="remote-select">
+                <Select
+                  id="remote-select"
+                  value={effectiveRemote}
+                  onValueChange={setSelectedRemote}
+                  disabled={remotes.length === 0 || isLoading}
+                >
+                  {remotes.map((remote) => (
+                    <SelectItem key={remote.name} value={remote.name}>
+                      {remote.name} ({remote.url})
+                    </SelectItem>
+                  ))}
+                </Select>
+              </FormField>
+            )}
 
-              <CheckboxField
-                id="prune"
-                label={t('remotes.fetch.prune')}
-                checked={prune}
-                onCheckedChange={setPrune}
-                disabled={isLoading}
-              />
+            <CheckboxField
+              id="prune"
+              label={t('remotes.fetch.prune')}
+              checked={prune}
+              onCheckedChange={setPrune}
+              disabled={isLoading}
+            />
 
-              {fetchOperation?.progress && (
-                <OperationProgressBar progress={fetchOperation.progress} className="mt-3" />
-              )}
+            {fetchOperation?.progress && (
+              <OperationProgressBar progress={fetchOperation.progress} className="mt-3" />
+            )}
 
-              {error && (
-                <Alert variant="error" inline className="mt-3">
-                  {error}
-                </Alert>
-              )}
-            </>
-          )}
-        </DialogBody>
+            {error && (
+              <Alert variant="error" inline className="mt-3">
+                {error}
+              </Alert>
+            )}
+          </>
+        )}
+      </DialogBody>
 
-        <DialogFooter>
-          {showCancelConfirm ? (
-            <>
-              <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
-                {t('remotes.fetch.continueOperation')}
-              </Button>
-              <Button variant="destructive" onClick={cancelOperation}>
-                {t('remotes.fetch.cancelOperation')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="secondary" onClick={handleClose}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleFetch}
-                disabled={isLoading || (!fetchAll && !selectedRemote)}
-              >
-                {isLoading ? t('common.fetching') : t('remotes.fetch.fetchButton')}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        {showCancelConfirm ? (
+          <>
+            <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
+              {t('remotes.fetch.continueOperation')}
+            </Button>
+            <Button variant="destructive" onClick={cancelOperation}>
+              {t('remotes.fetch.cancelOperation')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={handleClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleFetch}
+              disabled={isLoading || (!fetchAll && !effectiveRemote)}
+            >
+              {isLoading ? t('common.fetching') : t('remotes.fetch.fetchButton')}
+            </Button>
+          </>
+        )}
+      </DialogFooter>
+    </DialogContent>
   );
 }

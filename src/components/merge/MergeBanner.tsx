@@ -1,5 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GitMerge, Play, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
@@ -13,31 +14,31 @@ interface MergeBannerProps {
   onComplete?: () => void;
 }
 
+const operationStateKey = ['operation-state'] as const;
+
 export function MergeBanner({ onComplete }: MergeBannerProps) {
   const { t } = useTranslation();
-  const [state, setState] = useState<OperationState | null>(null);
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const status = useStagingStore((s) => s.status);
   const conflictCount = status?.conflicted?.length ?? 0;
 
-  const loadState = useCallback(async () => {
-    try {
-      const operationState = await operationApi.getState();
-      setState(operationState);
-    } catch {
-      setState(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadState();
-  }, [loadState]);
+  const { data: state = null, refetch: reloadState } = useQuery<OperationState | null>({
+    queryKey: operationStateKey,
+    queryFn: async () => {
+      try {
+        return await operationApi.getState();
+      } catch {
+        return null;
+      }
+    },
+  });
 
   const handleAbort = async () => {
     setIsLoading(true);
     try {
       await mergeApi.abort();
-      setState(null);
+      queryClient.setQueryData(operationStateKey, null);
       toast.success(t('merge.banner.aborted'));
       onComplete?.();
     } catch (err) {
@@ -58,7 +59,7 @@ export function MergeBanner({ onComplete }: MergeBannerProps) {
       const result = await mergeApi.continue();
       if (result.success) {
         toast.success(t('merge.banner.continued'));
-        setState(null);
+        queryClient.setQueryData(operationStateKey, null);
         onComplete?.();
       } else if (result.conflicts.length > 0) {
         toast.warning(t('merge.banner.conflictEncountered'));
@@ -66,7 +67,7 @@ export function MergeBanner({ onComplete }: MergeBannerProps) {
       } else {
         toast.error(t('merge.banner.continueFailed'), result.message);
       }
-      await loadState();
+      await reloadState();
     } catch (err) {
       toast.error(t('merge.banner.continueFailed'), getErrorMessage(err));
     } finally {

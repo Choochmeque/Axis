@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { GitMerge } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -21,7 +22,7 @@ import { getErrorMessage } from '@/lib/errorUtils';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { cn } from '../../lib/utils';
 import { branchApi, mergeApi } from '../../services/api';
-import { type Branch, BranchType, type MergeResult } from '../../types';
+import { BranchType, type MergeResult } from '../../types';
 
 interface MergeDialogProps {
   isOpen: boolean;
@@ -38,12 +39,38 @@ export function MergeDialog({
   currentBranch,
   sourceBranch,
 }: MergeDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && (
+        <MergeDialogContent
+          onClose={onClose}
+          onMergeComplete={onMergeComplete}
+          currentBranch={currentBranch}
+          sourceBranch={sourceBranch}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+interface MergeDialogContentProps {
+  onClose: () => void;
+  onMergeComplete?: (result: MergeResult) => void;
+  currentBranch: string;
+  sourceBranch?: string;
+}
+
+function MergeDialogContent({
+  onClose,
+  onMergeComplete,
+  currentBranch,
+  sourceBranch,
+}: MergeDialogContentProps) {
   const { t } = useTranslation();
   const setCurrentView = useRepositoryStore((state) => state.setCurrentView);
   const loadCommits = useRepositoryStore((state) => state.loadCommits);
   const loadStatus = useRepositoryStore((state) => state.loadStatus);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [selectedBranch, setSelectedBranch] = useState<string>(sourceBranch ?? '');
   const [noFastForward, setNoFastForward] = useState(false);
   const [squash, setSquash] = useState(false);
   const [commitImmediately, setCommitImmediately] = useState(true);
@@ -53,34 +80,18 @@ export function MergeDialog({
   const [result, setResult] = useState<MergeResult | null>(null);
   const { trackOperation } = useOperation();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadBranches();
-      setError(null);
-      setResult(null);
-      setSelectedBranch(sourceBranch ?? '');
-      setNoFastForward(false);
-      setSquash(false);
-      setCommitImmediately(true);
-      setCustomMessage('');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, sourceBranch]);
-
-  const loadBranches = async () => {
-    try {
-      const allBranches = await branchApi.list({
+  const { data: allBranches = [], error: branchesError } = useQuery({
+    queryKey: ['merge-dialog-branches'],
+    queryFn: () =>
+      branchApi.list({
         includeLocal: true,
         includeRemote: true,
         limit: null,
-      });
-      // Filter out the current branch
-      const otherBranches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
-      setBranches(otherBranches);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  };
+      }),
+  });
+
+  const branches = allBranches.filter((b) => b.name !== currentBranch && !b.isHead);
+  const effectiveError = error ?? (branchesError ? getErrorMessage(branchesError) : null);
 
   const handleMerge = async () => {
     if (!selectedBranch) {
@@ -141,145 +152,139 @@ export function MergeDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-125">
-        <DialogTitle icon={GitMerge}>{t('merge.dialog.title')}</DialogTitle>
+    <DialogContent className="max-w-125">
+      <DialogTitle icon={GitMerge}>{t('merge.dialog.title')}</DialogTitle>
 
-        <DialogBody>
-          {error && (
-            <Alert variant="error" className="mb-4">
-              {error}
-            </Alert>
-          )}
+      <DialogBody>
+        {effectiveError && (
+          <Alert variant="error" className="mb-4">
+            {effectiveError}
+          </Alert>
+        )}
 
-          {result && (
-            <Alert variant="warning" className="mb-4">
-              {result.message}
-            </Alert>
-          )}
+        {result && (
+          <Alert variant="warning" className="mb-4">
+            {result.message}
+          </Alert>
+        )}
 
-          {!result && (
-            <>
-              <FormField label={t('merge.dialog.mergeInto')}>
-                <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
-                  {currentBranch}
-                </div>
-              </FormField>
+        {!result && (
+          <>
+            <FormField label={t('merge.dialog.mergeInto')}>
+              <div className="py-2.5 px-3 text-sm font-mono text-(--accent-color) bg-(--bg-secondary) rounded-md font-medium">
+                {currentBranch}
+              </div>
+            </FormField>
 
-              <FormField label={t('merge.dialog.mergeFrom')} htmlFor="merge-branch">
-                <Select
-                  id="merge-branch"
-                  value={selectedBranch}
-                  onValueChange={setSelectedBranch}
-                  disabled={isLoading}
-                  placeholder={t('merge.dialog.selectBranch')}
-                >
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.fullName} value={branch.name}>
-                      {branch.name}
-                      {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </FormField>
-
-              <FormField label={t('merge.dialog.commitMessage')} htmlFor="merge-message">
-                <Textarea
-                  id="merge-message"
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder={`Merge branch '${selectedBranch || '...'}' into ${currentBranch}`}
-                  disabled={isLoading}
-                  rows={3}
-                  className={cn('resize-y min-h-15')}
-                />
-              </FormField>
-
-              <CheckboxField
-                id="no-ff"
-                label={t('merge.dialog.noFastForward')}
-                description={t('merge.dialog.noFastForwardDesc')}
-                checked={noFastForward}
-                disabled={isLoading || squash}
-                onCheckedChange={setNoFastForward}
-              />
-
-              <CheckboxField
-                id="squash"
-                label={t('merge.dialog.squash')}
-                description={t('merge.dialog.squashDesc')}
-                checked={squash}
+            <FormField label={t('merge.dialog.mergeFrom')} htmlFor="merge-branch">
+              <Select
+                id="merge-branch"
+                value={selectedBranch}
+                onValueChange={setSelectedBranch}
                 disabled={isLoading}
-                onCheckedChange={(checked) => {
-                  setSquash(checked);
-                  if (checked) setNoFastForward(false);
-                }}
-              />
-
-              <CheckboxField
-                id="commit-immediately"
-                label={t('merge.dialog.commitImmediately')}
-                description={t('merge.dialog.commitImmediatelyDesc')}
-                checked={commitImmediately}
-                disabled={isLoading}
-                onCheckedChange={setCommitImmediately}
-              />
-            </>
-          )}
-
-          {result && result.conflicts.length > 0 && (
-            <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
-              <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
-                {t('merge.dialog.conflictedFiles')}
-              </h4>
-              <ul className="m-0 p-0 list-none">
-                {result.conflicts.map((conflict) => (
-                  <li
-                    key={conflict.path}
-                    className="py-1.5 text-base font-mono text-warning border-b border-(--border-color) last:border-b-0"
-                  >
-                    {conflict.path}
-                  </li>
+                placeholder={t('merge.dialog.selectBranch')}
+              >
+                {branches.map((branch) => (
+                  <SelectItem key={branch.fullName} value={branch.name}>
+                    {branch.name}
+                    {branch.branchType === BranchType.Remote && ` (${branch.branchType})`}
+                  </SelectItem>
                 ))}
-              </ul>
-            </div>
-          )}
-        </DialogBody>
+              </Select>
+            </FormField>
 
-        <DialogFooter>
-          {result ? (
-            <>
-              <Button variant="secondary" onClick={handleAbort}>
-                {t('merge.dialog.abortMerge')}
+            <FormField label={t('merge.dialog.commitMessage')} htmlFor="merge-message">
+              <Textarea
+                id="merge-message"
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                placeholder={`Merge branch '${selectedBranch || '...'}' into ${currentBranch}`}
+                disabled={isLoading}
+                rows={3}
+                className={cn('resize-y min-h-15')}
+              />
+            </FormField>
+
+            <CheckboxField
+              id="no-ff"
+              label={t('merge.dialog.noFastForward')}
+              description={t('merge.dialog.noFastForwardDesc')}
+              checked={noFastForward}
+              disabled={isLoading || squash}
+              onCheckedChange={setNoFastForward}
+            />
+
+            <CheckboxField
+              id="squash"
+              label={t('merge.dialog.squash')}
+              description={t('merge.dialog.squashDesc')}
+              checked={squash}
+              disabled={isLoading}
+              onCheckedChange={(checked) => {
+                setSquash(checked);
+                if (checked) setNoFastForward(false);
+              }}
+            />
+
+            <CheckboxField
+              id="commit-immediately"
+              label={t('merge.dialog.commitImmediately')}
+              description={t('merge.dialog.commitImmediatelyDesc')}
+              checked={commitImmediately}
+              disabled={isLoading}
+              onCheckedChange={setCommitImmediately}
+            />
+          </>
+        )}
+
+        {result && result.conflicts.length > 0 && (
+          <div className="mt-4 p-3 bg-(--bg-secondary) rounded-md">
+            <h4 className="m-0 mb-2 text-base font-semibold text-(--text-primary)">
+              {t('merge.dialog.conflictedFiles')}
+            </h4>
+            <ul className="m-0 p-0 list-none">
+              {result.conflicts.map((conflict) => (
+                <li
+                  key={conflict.path}
+                  className="py-1.5 text-base font-mono text-warning border-b border-(--border-color) last:border-b-0"
+                >
+                  {conflict.path}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </DialogBody>
+
+      <DialogFooter>
+        {result ? (
+          <>
+            <Button variant="secondary" onClick={handleAbort}>
+              {t('merge.dialog.abortMerge')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setCurrentView('file-status');
+                onClose();
+              }}
+            >
+              {t('merge.dialog.resolveConflicts')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={isLoading}>
+                {t('common.cancel')}
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setCurrentView('file-status');
-                  onClose();
-                }}
-              >
-                {t('merge.dialog.resolveConflicts')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <DialogClose asChild>
-                <Button variant="secondary" disabled={isLoading}>
-                  {t('common.cancel')}
-                </Button>
-              </DialogClose>
-              <Button
-                variant="primary"
-                onClick={handleMerge}
-                disabled={isLoading || !selectedBranch}
-              >
-                {isLoading ? t('common.merging') : t('merge.dialog.mergeButton')}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            </DialogClose>
+            <Button variant="primary" onClick={handleMerge} disabled={isLoading || !selectedBranch}>
+              {isLoading ? t('common.merging') : t('merge.dialog.mergeButton')}
+            </Button>
+          </>
+        )}
+      </DialogFooter>
+    </DialogContent>
   );
 }

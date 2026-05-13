@@ -1,5 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GitBranch, MessageSquare, Pencil, Play, SkipForward, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
@@ -14,37 +15,37 @@ interface RebaseBannerProps {
   onComplete?: () => void;
 }
 
+const operationStateKey = ['operation-state'] as const;
+
 export function RebaseBanner({ onComplete }: RebaseBannerProps) {
   const { t } = useTranslation();
-  const [state, setState] = useState<OperationState | null>(null);
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const { loadProgress, openRewordDialog, openEditPauseDialog } = useRebaseProgressStore();
   const status = useStagingStore((s) => s.status);
   const conflictCount = status?.conflicted?.length ?? 0;
 
-  const loadState = useCallback(async () => {
-    try {
-      const operationState = await operationApi.getState();
-      setState(operationState);
-
-      // If rebasing, also load detailed progress
-      if (operationState && typeof operationState === 'object' && 'Rebasing' in operationState) {
-        await loadProgress();
+  const { data: state = null, refetch: reloadState } = useQuery<OperationState | null>({
+    queryKey: operationStateKey,
+    queryFn: async () => {
+      try {
+        const operationState = await operationApi.getState();
+        // If rebasing, also load detailed progress
+        if (operationState && typeof operationState === 'object' && 'Rebasing' in operationState) {
+          await loadProgress();
+        }
+        return operationState;
+      } catch {
+        return null;
       }
-    } catch {
-      setState(null);
-    }
-  }, [loadProgress]);
-
-  useEffect(() => {
-    loadState();
-  }, [loadState]);
+    },
+  });
 
   const handleAbort = async () => {
     setIsLoading(true);
     try {
       await rebaseApi.abort();
-      setState(null);
+      queryClient.setQueryData(operationStateKey, null);
       toast.success(t('merge.rebaseBanner.aborted'));
       onComplete?.();
     } catch (err) {
@@ -73,7 +74,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
           toast.error(t('merge.rebaseBanner.continueFailed'), result.message);
         }
       }
-      await loadState();
+      await reloadState();
     } catch (err) {
       toast.error(t('merge.rebaseBanner.continueFailed'), getErrorMessage(err));
     } finally {
@@ -87,7 +88,7 @@ export function RebaseBanner({ onComplete }: RebaseBannerProps) {
       const result = await rebaseApi.skip();
       if (result.success) {
         toast.success(t('merge.rebaseBanner.skipped'));
-        await loadState();
+        await reloadState();
         onComplete?.();
       } else {
         toast.error(t('merge.rebaseBanner.skipFailed'), result.message);

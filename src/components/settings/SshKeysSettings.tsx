@@ -1,6 +1,7 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Copy, Download, KeyRound, Plus, Trash2, Upload } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -20,6 +21,7 @@ import {
 import { toast } from '@/hooks';
 import { copyToClipboard } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { sshKeysApi } from '@/services/api';
 import type { SshKeyAlgorithm as SshKeyAlgorithmType, SshKeyInfo } from '@/types';
 import { SshKeyAlgorithm } from '@/types';
@@ -29,28 +31,27 @@ const sectionTitleClass =
 
 export function SshKeysSettings() {
   const { t } = useTranslation();
-  const [keys, setKeys] = useState<SshKeyInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedKey, setSelectedKey] = useState<SshKeyInfo | null>(null);
 
-  useEffect(() => {
-    loadKeys();
-  }, []);
+  const { data: keys = [], isLoading } = useQuery<SshKeyInfo[]>({
+    queryKey: queryKeys.sshKeys(),
+    queryFn: async () => {
+      try {
+        return await sshKeysApi.list();
+      } catch (err) {
+        toast.error(getErrorMessage(err));
+        return [];
+      }
+    },
+  });
 
-  const loadKeys = async () => {
-    setIsLoading(true);
-    try {
-      const loaded = await sshKeysApi.list();
-      setKeys(loaded);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
+  const loadKeys = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.sshKeys() });
   };
 
   const handleCopyPublicKey = (key: SshKeyInfo) => {
@@ -81,7 +82,7 @@ export function SshKeysSettings() {
       toast.success(t('settings.sshKeys.notifications.deleted'));
       setShowDeleteDialog(false);
       setSelectedKey(null);
-      await loadKeys();
+      loadKeys();
     } catch (err) {
       toast.error(t('settings.sshKeys.notifications.deleteFailed'), getErrorMessage(err));
     }
@@ -242,6 +243,20 @@ interface GenerateKeyDialogProps {
 }
 
 function GenerateKeyDialog({ isOpen, onClose, onSuccess }: GenerateKeyDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <GenerateKeyDialogContent onClose={onClose} onSuccess={onSuccess} />}
+    </Dialog>
+  );
+}
+
+function GenerateKeyDialogContent({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const { t } = useTranslation();
   const [algorithm, setAlgorithm] = useState<SshKeyAlgorithmType>(SshKeyAlgorithm.Ed25519);
   const [comment, setComment] = useState('');
@@ -250,17 +265,6 @@ function GenerateKeyDialog({ isOpen, onClose, onSuccess }: GenerateKeyDialogProp
   const [bits, setBits] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setAlgorithm(SshKeyAlgorithm.Ed25519);
-      setComment('');
-      setFilename('');
-      setPassphrase('');
-      setBits(null);
-      setError(null);
-    }
-  }, [isOpen]);
 
   const handleGenerate = async () => {
     if (!filename.trim()) {
@@ -291,102 +295,100 @@ function GenerateKeyDialog({ isOpen, onClose, onSuccess }: GenerateKeyDialogProp
   const showBits = algorithm === SshKeyAlgorithm.Rsa || algorithm === SshKeyAlgorithm.Ecdsa;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-110">
-        <DialogTitle>{t('settings.sshKeys.generate.title')}</DialogTitle>
-        <DialogBody>
-          <FormField
-            label={t('settings.sshKeys.generate.algorithm.label')}
-            htmlFor="ssh-algorithm"
-            hint={t('settings.sshKeys.generate.algorithm.hint')}
+    <DialogContent className="max-w-110">
+      <DialogTitle>{t('settings.sshKeys.generate.title')}</DialogTitle>
+      <DialogBody>
+        <FormField
+          label={t('settings.sshKeys.generate.algorithm.label')}
+          htmlFor="ssh-algorithm"
+          hint={t('settings.sshKeys.generate.algorithm.hint')}
+        >
+          <Select
+            id="ssh-algorithm"
+            value={algorithm}
+            onValueChange={(value) => setAlgorithm(value as SshKeyAlgorithmType)}
           >
-            <Select
-              id="ssh-algorithm"
-              value={algorithm}
-              onValueChange={(value) => setAlgorithm(value as SshKeyAlgorithmType)}
-            >
-              <SelectItem value={SshKeyAlgorithm.Ed25519}>Ed25519</SelectItem>
-              <SelectItem value={SshKeyAlgorithm.Rsa}>RSA</SelectItem>
-              <SelectItem value={SshKeyAlgorithm.Ecdsa}>ECDSA</SelectItem>
-            </Select>
-          </FormField>
+            <SelectItem value={SshKeyAlgorithm.Ed25519}>Ed25519</SelectItem>
+            <SelectItem value={SshKeyAlgorithm.Rsa}>RSA</SelectItem>
+            <SelectItem value={SshKeyAlgorithm.Ecdsa}>ECDSA</SelectItem>
+          </Select>
+        </FormField>
 
+        <FormField
+          label={t('settings.sshKeys.generate.filename.label')}
+          htmlFor="ssh-filename"
+          hint={t('settings.sshKeys.generate.filename.hint')}
+        >
+          <Input
+            id="ssh-filename"
+            value={filename}
+            onChange={(e) => setFilename(e.target.value)}
+            placeholder={t('settings.sshKeys.generate.filename.placeholder')}
+          />
+        </FormField>
+
+        <FormField
+          label={t('settings.sshKeys.generate.comment.label')}
+          htmlFor="ssh-comment"
+          hint={t('settings.sshKeys.generate.comment.hint')}
+        >
+          <Input
+            id="ssh-comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={t('settings.sshKeys.generate.comment.placeholder')}
+          />
+        </FormField>
+
+        <FormField
+          label={t('settings.sshKeys.generate.passphrase.label')}
+          htmlFor="ssh-passphrase"
+          hint={t('settings.sshKeys.generate.passphrase.hint')}
+        >
+          <Input
+            id="ssh-passphrase"
+            type="password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            placeholder={t('settings.sshKeys.generate.passphrase.placeholder')}
+          />
+        </FormField>
+
+        {showBits && (
           <FormField
-            label={t('settings.sshKeys.generate.filename.label')}
-            htmlFor="ssh-filename"
-            hint={t('settings.sshKeys.generate.filename.hint')}
+            label={t('settings.sshKeys.generate.bits.label')}
+            htmlFor="ssh-bits"
+            hint={t('settings.sshKeys.generate.bits.hint')}
           >
             <Input
-              id="ssh-filename"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              placeholder={t('settings.sshKeys.generate.filename.placeholder')}
+              id="ssh-bits"
+              type="number"
+              value={bits ?? ''}
+              onChange={(e) => setBits(e.target.value ? parseInt(e.target.value) : null)}
+              min={1024}
+              max={16384}
+              className="w-full max-w-30"
             />
           </FormField>
+        )}
 
-          <FormField
-            label={t('settings.sshKeys.generate.comment.label')}
-            htmlFor="ssh-comment"
-            hint={t('settings.sshKeys.generate.comment.hint')}
-          >
-            <Input
-              id="ssh-comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder={t('settings.sshKeys.generate.comment.placeholder')}
-            />
-          </FormField>
-
-          <FormField
-            label={t('settings.sshKeys.generate.passphrase.label')}
-            htmlFor="ssh-passphrase"
-            hint={t('settings.sshKeys.generate.passphrase.hint')}
-          >
-            <Input
-              id="ssh-passphrase"
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder={t('settings.sshKeys.generate.passphrase.placeholder')}
-            />
-          </FormField>
-
-          {showBits && (
-            <FormField
-              label={t('settings.sshKeys.generate.bits.label')}
-              htmlFor="ssh-bits"
-              hint={t('settings.sshKeys.generate.bits.hint')}
-            >
-              <Input
-                id="ssh-bits"
-                type="number"
-                value={bits ?? ''}
-                onChange={(e) => setBits(e.target.value ? parseInt(e.target.value) : null)}
-                min={1024}
-                max={16384}
-                className="w-full max-w-30"
-              />
-            </FormField>
-          )}
-
-          {error && (
-            <Alert variant="error" className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating
-              ? t('settings.sshKeys.generate.generating')
-              : t('settings.sshKeys.generate.generateButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {error && (
+          <Alert variant="error" className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button variant="primary" onClick={handleGenerate} disabled={isGenerating}>
+          {isGenerating
+            ? t('settings.sshKeys.generate.generating')
+            : t('settings.sshKeys.generate.generateButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -397,19 +399,25 @@ interface ImportKeyDialogProps {
 }
 
 function ImportKeyDialog({ isOpen, onClose, onSuccess }: ImportKeyDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <ImportKeyDialogContent onClose={onClose} onSuccess={onSuccess} />}
+    </Dialog>
+  );
+}
+
+function ImportKeyDialogContent({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const { t } = useTranslation();
   const [sourcePath, setSourcePath] = useState('');
   const [targetFilename, setTargetFilename] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setSourcePath('');
-      setTargetFilename('');
-      setError(null);
-    }
-  }, [isOpen]);
 
   const handleBrowse = async () => {
     const selected = await open({
@@ -451,57 +459,55 @@ function ImportKeyDialog({ isOpen, onClose, onSuccess }: ImportKeyDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-110">
-        <DialogTitle>{t('settings.sshKeys.import.title')}</DialogTitle>
-        <DialogBody>
-          <FormField label={t('settings.sshKeys.import.selectFile')} htmlFor="import-source">
-            <div className="flex gap-2">
-              <Input
-                id="import-source"
-                value={sourcePath}
-                onChange={(e) => setSourcePath(e.target.value)}
-                placeholder={t('settings.sshKeys.import.selectFile')}
-                className="flex-1"
-                readOnly
-              />
-              <Button variant="secondary" onClick={handleBrowse}>
-                {t('common.browse')}
-              </Button>
-            </div>
-          </FormField>
-
-          <FormField
-            label={t('settings.sshKeys.import.filename.label')}
-            htmlFor="import-target"
-            hint={t('settings.sshKeys.import.filename.hint')}
-          >
+    <DialogContent className="max-w-110">
+      <DialogTitle>{t('settings.sshKeys.import.title')}</DialogTitle>
+      <DialogBody>
+        <FormField label={t('settings.sshKeys.import.selectFile')} htmlFor="import-source">
+          <div className="flex gap-2">
             <Input
-              id="import-target"
-              value={targetFilename}
-              onChange={(e) => setTargetFilename(e.target.value)}
-              placeholder={t('settings.sshKeys.import.filename.placeholder')}
+              id="import-source"
+              value={sourcePath}
+              onChange={(e) => setSourcePath(e.target.value)}
+              placeholder={t('settings.sshKeys.import.selectFile')}
+              className="flex-1"
+              readOnly
             />
-          </FormField>
+            <Button variant="secondary" onClick={handleBrowse}>
+              {t('common.browse')}
+            </Button>
+          </div>
+        </FormField>
 
-          {error && (
-            <Alert variant="error" className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleImport} disabled={isImporting || !sourcePath}>
-            {isImporting
-              ? t('settings.sshKeys.import.importing')
-              : t('settings.sshKeys.import.importButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <FormField
+          label={t('settings.sshKeys.import.filename.label')}
+          htmlFor="import-target"
+          hint={t('settings.sshKeys.import.filename.hint')}
+        >
+          <Input
+            id="import-target"
+            value={targetFilename}
+            onChange={(e) => setTargetFilename(e.target.value)}
+            placeholder={t('settings.sshKeys.import.filename.placeholder')}
+          />
+        </FormField>
+
+        {error && (
+          <Alert variant="error" className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button variant="primary" onClick={handleImport} disabled={isImporting || !sourcePath}>
+          {isImporting
+            ? t('settings.sshKeys.import.importing')
+            : t('settings.sshKeys.import.importButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -512,19 +518,25 @@ interface ExportKeyDialogProps {
 }
 
 function ExportKeyDialog({ isOpen, onClose, keyInfo }: ExportKeyDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <ExportKeyDialogContent onClose={onClose} keyInfo={keyInfo} />}
+    </Dialog>
+  );
+}
+
+function ExportKeyDialogContent({
+  onClose,
+  keyInfo,
+}: {
+  onClose: () => void;
+  keyInfo: SshKeyInfo;
+}) {
   const { t } = useTranslation();
   const [targetDir, setTargetDir] = useState('');
   const [publicOnly, setPublicOnly] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTargetDir('');
-      setPublicOnly(true);
-      setError(null);
-    }
-  }, [isOpen]);
 
   const handleBrowse = async () => {
     const selected = await open({
@@ -556,53 +568,51 @@ function ExportKeyDialog({ isOpen, onClose, keyInfo }: ExportKeyDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-110">
-        <DialogTitle>{t('settings.sshKeys.export.title')}</DialogTitle>
-        <DialogBody>
-          <FormField label={t('settings.sshKeys.export.selectDirectory')} htmlFor="export-dir">
-            <div className="flex gap-2">
-              <Input
-                id="export-dir"
-                value={targetDir}
-                onChange={(e) => setTargetDir(e.target.value)}
-                placeholder={t('settings.sshKeys.export.selectDirectory')}
-                className="flex-1"
-                readOnly
-              />
-              <Button variant="secondary" onClick={handleBrowse}>
-                {t('common.browse')}
-              </Button>
-            </div>
-          </FormField>
-
-          <div className="mt-3">
-            <CheckboxField
-              id="export-public-only"
-              label={t('settings.sshKeys.export.publicOnly')}
-              description={t('settings.sshKeys.export.publicOnlyDesc')}
-              checked={publicOnly}
-              onCheckedChange={(checked) => setPublicOnly(checked === true)}
+    <DialogContent className="max-w-110">
+      <DialogTitle>{t('settings.sshKeys.export.title')}</DialogTitle>
+      <DialogBody>
+        <FormField label={t('settings.sshKeys.export.selectDirectory')} htmlFor="export-dir">
+          <div className="flex gap-2">
+            <Input
+              id="export-dir"
+              value={targetDir}
+              onChange={(e) => setTargetDir(e.target.value)}
+              placeholder={t('settings.sshKeys.export.selectDirectory')}
+              className="flex-1"
+              readOnly
             />
+            <Button variant="secondary" onClick={handleBrowse}>
+              {t('common.browse')}
+            </Button>
           </div>
+        </FormField>
 
-          {error && (
-            <Alert variant="error" className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleExport} disabled={isExporting || !targetDir}>
-            {isExporting
-              ? t('settings.sshKeys.export.exporting')
-              : t('settings.sshKeys.export.exportButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="mt-3">
+          <CheckboxField
+            id="export-public-only"
+            label={t('settings.sshKeys.export.publicOnly')}
+            description={t('settings.sshKeys.export.publicOnlyDesc')}
+            checked={publicOnly}
+            onCheckedChange={(checked) => setPublicOnly(checked === true)}
+          />
+        </div>
+
+        {error && (
+          <Alert variant="error" className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button variant="primary" onClick={handleExport} disabled={isExporting || !targetDir}>
+          {isExporting
+            ? t('settings.sshKeys.export.exporting')
+            : t('settings.sshKeys.export.exportButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

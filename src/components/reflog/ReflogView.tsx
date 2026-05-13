@@ -14,7 +14,8 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -125,50 +126,63 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
     [t]
   );
 
-  const [entries, setEntries] = useState<ReflogEntry[]>([]);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<ReflogEntry | null>(null);
   const selectedEntryKeys = useMemo(
     () =>
       selectedEntry ? new Set<SelectionKey>([selectedEntry.reflogRef]) : new Set<SelectionKey>(),
     [selectedEntry]
   );
-  const [availableRefs, setAvailableRefs] = useState<string[]>(['HEAD']);
+  const { data: availableRefs = ['HEAD'] } = useQuery<string[]>({
+    queryKey: ['reflog-refs'],
+    queryFn: () => reflogApi.refs(),
+  });
   const [currentRef, setCurrentRef] = useState('HEAD');
-  const [isLoading, setIsLoading] = useState(false);
+  const [paginatedExtra, setPaginatedExtra] = useState<ReflogEntry[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [paginatedHasMore, setPaginatedHasMore] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const setError = setActionError;
   const [showBranchDialog, setShowBranchDialog] = useState(false);
   const [branchName, setBranchName] = useState('');
 
   const { loadBranches, loadCommits } = useRepositoryStore();
 
-  const loadReflog = useCallback(
-    async (refname: string) => {
-      setIsLoading(true);
-      setError(null);
-      setHasMore(true);
-      try {
-        const [reflogEntries, count] = await Promise.all([
-          reflogApi.list({
-            refname,
-            limit: PAGE_SIZE,
-            skip: null,
-          }),
-          reflogApi.count(refname),
-        ]);
-        setEntries(reflogEntries);
-        setTotalCount(count);
-        setHasMore(reflogEntries.length >= PAGE_SIZE);
-      } catch (err) {
-        console.error('Failed to load reflog:', err);
-        setError(t('reflog.failedToLoad'));
-      } finally {
-        setIsLoading(false);
-      }
+  const {
+    data: reflogData,
+    isLoading,
+    error: loadError,
+    refetch: reloadReflog,
+  } = useQuery({
+    queryKey: ['reflog', currentRef],
+    queryFn: async () => {
+      const [reflogEntries, count] = await Promise.all([
+        reflogApi.list({ refname: currentRef, limit: PAGE_SIZE, skip: null }),
+        reflogApi.count(currentRef),
+      ]);
+      return { entries: reflogEntries, count };
     },
-    [t]
+  });
+
+  // Reset pagination whenever the query's underlying ref changes.
+  const [lastQueriedRef, setLastQueriedRef] = useState(currentRef);
+  if (lastQueriedRef !== currentRef) {
+    setLastQueriedRef(currentRef);
+    setPaginatedExtra([]);
+    setPaginatedHasMore(true);
+  }
+
+  const baseEntries = reflogData?.entries ?? [];
+  const totalCount = reflogData?.count ?? null;
+  const entries = useMemo(() => [...baseEntries, ...paginatedExtra], [baseEntries, paginatedExtra]);
+  const baseHasMore = baseEntries.length >= PAGE_SIZE;
+  const hasMore = paginatedExtra.length === 0 ? baseHasMore : paginatedHasMore;
+  const error = actionError ?? (loadError ? t('reflog.failedToLoad') : null);
+
+  const loadReflog = useCallback(
+    async (_refname: string) => {
+      await reloadReflog();
+    },
+    [reloadReflog]
   );
 
   const loadMoreEntries = useCallback(async () => {
@@ -182,29 +196,15 @@ export function ReflogView({ onRefresh }: ReflogViewProps) {
         skip: entries.length,
       });
       if (moreEntries.length > 0) {
-        setEntries((prev) => [...prev, ...moreEntries]);
+        setPaginatedExtra((prev) => [...prev, ...moreEntries]);
       }
-      setHasMore(moreEntries.length >= PAGE_SIZE);
+      setPaginatedHasMore(moreEntries.length >= PAGE_SIZE);
     } catch (err) {
       console.error('Failed to load more reflog entries:', err);
     } finally {
       setIsLoadingMore(false);
     }
   }, [currentRef, entries.length, hasMore, isLoadingMore]);
-
-  const loadAvailableRefs = useCallback(async () => {
-    try {
-      const refs = await reflogApi.refs();
-      setAvailableRefs(refs);
-    } catch (err) {
-      console.error('Failed to load available refs:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAvailableRefs();
-    loadReflog(currentRef);
-  }, [loadAvailableRefs, loadReflog, currentRef]);
 
   const handleRefChange = (ref: string) => {
     setCurrentRef(ref);

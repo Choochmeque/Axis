@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -28,27 +28,38 @@ export function DeleteRemoteBranchDialog({
   onOpenChange,
   branch,
 }: DeleteRemoteBranchDialogProps) {
+  if (!branch) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && <DeleteRemoteBranchDialogContent onOpenChange={onOpenChange} branch={branch} />}
+    </Dialog>
+  );
+}
+
+interface DeleteRemoteBranchDialogContentProps {
+  onOpenChange: (open: boolean) => void;
+  branch: Branch;
+}
+
+function DeleteRemoteBranchDialogContent({
+  onOpenChange,
+  branch,
+}: DeleteRemoteBranchDialogContentProps) {
   const { t } = useTranslation();
   const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      setForce(false);
-      setError(null);
-    }
-  }, [open]);
-
   const { loadBranches, refreshRepository } = useRepositoryStore();
 
   // Parse remote and branch name from full name (e.g., "origin/main")
-  const parts = branch?.name.split('/') ?? [];
+  const parts = branch.name.split('/');
   const remoteName = parts[0] ?? '';
   const branchName = parts.slice(1).join('/');
 
   const handleDelete = async () => {
-    if (!branch || !remoteName || !branchName) return;
+    if (!remoteName || !branchName) return;
 
     setIsLoading(true);
     setError(null);
@@ -64,60 +75,56 @@ export function DeleteRemoteBranchDialog({
     }
   };
 
-  if (!branch) return null;
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogTitle icon={Trash2}>{t('branches.deleteRemote.title')}</DialogTitle>
+    <DialogContent>
+      <DialogTitle icon={Trash2}>{t('branches.deleteRemote.title')}</DialogTitle>
 
-        <DialogBody>
-          <Alert variant="warning" className="mb-4">
-            {t('branches.deleteRemote.warning')}
-          </Alert>
+      <DialogBody>
+        <Alert variant="warning" className="mb-4">
+          {t('branches.deleteRemote.warning')}
+        </Alert>
 
-          <div className="dialog-info-box">
-            <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">
-                {t('branches.deleteRemote.remoteLabel')}
-              </span>
-              <span className="text-(--text-primary) font-medium">{remoteName}</span>
-            </div>
-            <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">
-                {t('branches.deleteRemote.branchLabel')}
-              </span>
-              <span className="text-(--text-primary) font-medium">{branchName}</span>
-            </div>
+        <div className="dialog-info-box">
+          <div className="flex justify-between text-base py-1">
+            <span className="text-(--text-secondary)">
+              {t('branches.deleteRemote.remoteLabel')}
+            </span>
+            <span className="text-(--text-primary) font-medium">{remoteName}</span>
           </div>
+          <div className="flex justify-between text-base py-1">
+            <span className="text-(--text-secondary)">
+              {t('branches.deleteRemote.branchLabel')}
+            </span>
+            <span className="text-(--text-primary) font-medium">{branchName}</span>
+          </div>
+        </div>
 
-          <p className="text-sm text-(--text-secondary) mb-4">
-            {t('branches.deleteRemote.confirmMessage', { branch: branchName, remote: remoteName })}
-          </p>
+        <p className="text-sm text-(--text-secondary) mb-4">
+          {t('branches.deleteRemote.confirmMessage', { branch: branchName, remote: remoteName })}
+        </p>
 
-          <CheckboxField
-            id="force-delete-remote"
-            label={t('branches.deleteRemote.forceDelete')}
-            checked={force}
-            onCheckedChange={setForce}
-          />
+        <CheckboxField
+          id="force-delete-remote"
+          label={t('branches.deleteRemote.forceDelete')}
+          checked={force}
+          onCheckedChange={setForce}
+        />
 
-          {error && (
-            <Alert variant="error" inline className="mt-3">
-              {error}
-            </Alert>
-          )}
-        </DialogBody>
+        {error && (
+          <Alert variant="error" inline className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            {isLoading ? t('common.deleting') : t('branches.deleteRemote.deleteButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
+          {isLoading ? t('common.deleting') : t('branches.deleteRemote.deleteButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

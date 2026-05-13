@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -28,28 +28,34 @@ interface RenameBranchDialogProps {
 }
 
 export function RenameBranchDialog({ isOpen, onClose, branch }: RenameBranchDialogProps) {
+  if (!branch) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <RenameBranchDialogContent onClose={onClose} branch={branch} />}
+    </Dialog>
+  );
+}
+
+interface RenameBranchDialogContentProps {
+  onClose: () => void;
+  branch: Branch;
+}
+
+function RenameBranchDialogContent({ onClose, branch }: RenameBranchDialogContentProps) {
   const { t } = useTranslation();
-  const [newName, setNewName] = useState('');
+  const [newName, setNewName] = useState(branch.name);
   const [force, setForce] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { loadBranches, refreshRepository } = useRepositoryStore();
 
-  // Reset form when dialog opens or branch changes
-  useEffect(() => {
-    if (isOpen && branch) {
-      setNewName(branch.name);
-      setForce(false);
-      setError(null);
-    }
-  }, [isOpen, branch]);
-
   const validationError = validateBranchName(newName, t);
-  const isUnchanged = newName.trim() === branch?.name;
+  const isUnchanged = newName.trim() === branch.name;
 
   const handleRename = async () => {
-    if (!branch || !newName.trim()) return;
+    if (!newName.trim()) return;
 
     // If name hasn't changed, just close
     if (isUnchanged) {
@@ -88,72 +94,68 @@ export function RenameBranchDialog({ isOpen, onClose, branch }: RenameBranchDial
     }
   };
 
-  if (!branch) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogTitle icon={Pencil}>{t('branches.rename.title')}</DialogTitle>
+    <DialogContent>
+      <DialogTitle icon={Pencil}>{t('branches.rename.title')}</DialogTitle>
 
-        <DialogBody>
-          <div className="dialog-info-box">
-            <div className="flex justify-between text-base py-1">
-              <span className="text-(--text-secondary)">{t('branches.rename.currentLabel')}</span>
-              <span className="text-(--text-primary) font-medium">{branch.name}</span>
-            </div>
-            {branch.isHead && (
-              <div className="flex justify-between text-base py-1">
-                <span className="text-(--text-secondary)">{t('branches.rename.statusLabel')}</span>
-                <span className="text-(--text-primary) font-medium">
-                  {t('branches.rename.currentBranchStatus')}
-                </span>
-              </div>
-            )}
+      <DialogBody>
+        <div className="dialog-info-box">
+          <div className="flex justify-between text-base py-1">
+            <span className="text-(--text-secondary)">{t('branches.rename.currentLabel')}</span>
+            <span className="text-(--text-primary) font-medium">{branch.name}</span>
           </div>
-
-          <FormField
-            label={t('branches.rename.newNameLabel')}
-            htmlFor="new-branch-name"
-            error={validationError ?? undefined}
-          >
-            <Input
-              id="new-branch-name"
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('branches.rename.newNamePlaceholder')}
-              autoFocus
-            />
-          </FormField>
-
-          <CheckboxField
-            id="force-rename"
-            label={t('branches.rename.forceRename')}
-            checked={force}
-            onCheckedChange={setForce}
-          />
-
-          {error && (
-            <Alert variant="error" inline className="mt-3">
-              {error}
-            </Alert>
+          {branch.isHead && (
+            <div className="flex justify-between text-base py-1">
+              <span className="text-(--text-secondary)">{t('branches.rename.statusLabel')}</span>
+              <span className="text-(--text-primary) font-medium">
+                {t('branches.rename.currentBranchStatus')}
+              </span>
+            </div>
           )}
-        </DialogBody>
+        </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.cancel')}</Button>
-          </DialogClose>
-          <Button
-            variant="primary"
-            onClick={handleRename}
-            disabled={isLoading || !newName.trim() || !!validationError || isUnchanged}
-          >
-            {isLoading ? t('common.renaming') : t('branches.rename.renameButton')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <FormField
+          label={t('branches.rename.newNameLabel')}
+          htmlFor="new-branch-name"
+          error={validationError ?? undefined}
+        >
+          <Input
+            id="new-branch-name"
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t('branches.rename.newNamePlaceholder')}
+            autoFocus
+          />
+        </FormField>
+
+        <CheckboxField
+          id="force-rename"
+          label={t('branches.rename.forceRename')}
+          checked={force}
+          onCheckedChange={setForce}
+        />
+
+        {error && (
+          <Alert variant="error" inline className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </DialogBody>
+
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.cancel')}</Button>
+        </DialogClose>
+        <Button
+          variant="primary"
+          onClick={handleRename}
+          disabled={isLoading || !newName.trim() || !!validationError || isUnchanged}
+        >
+          {isLoading ? t('common.renaming') : t('branches.rename.renameButton')}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

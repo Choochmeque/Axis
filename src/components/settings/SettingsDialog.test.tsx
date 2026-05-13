@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { settingsApi } from '@/services/api';
+import { renderWithQuery as render } from '@/test/renderWithQuery';
 import { AiProvider, SigningFormat, Theme } from '@/types';
 import { SettingsDialog } from './SettingsDialog';
 

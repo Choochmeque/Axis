@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithQuery as render } from '@/test/renderWithQuery';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IgnoreDialog } from './IgnoreDialog';
 

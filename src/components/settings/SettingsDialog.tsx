@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   FileText,
   GitBranch,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { cn } from '@/lib/utils';
 import { aiApi, avatarApi, lfsApi, settingsApi, signingApi, sshKeysApi } from '@/services/api';
 import { initIntegrationListeners, useIntegrationStore } from '@/store/integrationStore';
@@ -85,39 +87,43 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <SettingsDialogContent onClose={onClose} onSettingsChange={onSettingsChange} />}
+    </Dialog>
+  );
+}
+
+interface SettingsDialogContentProps {
+  onClose: () => void;
+  onSettingsChange?: (settings: AppSettings) => void;
+}
+
+function SettingsDialogContent({ onClose, onSettingsChange }: SettingsDialogContentProps) {
   const { t } = useTranslation();
   const updateSettingsToStore = useSettingsStore((state) => state.updateSettings);
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [originalSettings, setOriginalSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadSettings();
-    }
-  }, [isOpen]);
+  const { isLoading } = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: async () => {
+      try {
+        const loaded = await settingsApi.get();
+        setSettings(loaded);
+        setOriginalSettings(loaded);
+        return loaded;
+      } catch (err) {
+        setError(getErrorMessage(err));
+        throw err;
+      }
+    },
+  });
 
-  useEffect(() => {
-    setHasChanges(JSON.stringify(settings) !== JSON.stringify(originalSettings));
-  }, [settings, originalSettings]);
-
-  const loadSettings = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const loaded = await settingsApi.get();
-      setSettings(loaded);
-      setOriginalSettings(loaded);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(originalSettings);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -154,79 +160,77 @@ export function SettingsDialog({ isOpen, onClose, onSettingsChange }: SettingsDi
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-175 max-h-[80vh] flex flex-col overflow-hidden">
-        <DialogTitle icon={Settings}>{t('settings.title')}</DialogTitle>
+    <DialogContent className="max-w-175 max-h-[80vh] flex flex-col overflow-hidden">
+      <DialogTitle icon={Settings}>{t('settings.title')}</DialogTitle>
 
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={cn(
-                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-base cursor-pointer text-left transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-(--accent-color) text-white'
-                    : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1 py-5 px-6 overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-50 text-(--text-muted)">
-                {t('settings.loadingSettings')}
-              </div>
-            ) : (
-              <>
-                {activeTab === 'appearance' && (
-                  <AppearanceSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'git' && (
-                  <GitSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'diff' && (
-                  <DiffSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'ai' && (
-                  <AiSettings settings={settings} updateSetting={updateSetting} />
-                )}
-                {activeTab === 'integrations' && <IntegrationsSettings />}
-                {activeTab === 'actions' && <GlobalActionsSettings />}
-                {activeTab === 'ssh-keys' && <SshKeysSettings />}
-              </>
-            )}
-          </div>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-45 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={cn(
+                'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-base cursor-pointer text-left transition-colors',
+                activeTab === tab.id
+                  ? 'bg-(--accent-color) text-white'
+                  : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
+              )}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {error && (
-          <Alert variant="error" className="mx-4">
-            {error}
-          </Alert>
-        )}
+        <div className="flex-1 py-5 px-6 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-50 text-(--text-muted)">
+              {t('settings.loadingSettings')}
+            </div>
+          ) : (
+            <>
+              {activeTab === 'appearance' && (
+                <AppearanceSettings settings={settings} updateSetting={updateSetting} />
+              )}
+              {activeTab === 'git' && (
+                <GitSettings settings={settings} updateSetting={updateSetting} />
+              )}
+              {activeTab === 'diff' && (
+                <DiffSettings settings={settings} updateSetting={updateSetting} />
+              )}
+              {activeTab === 'ai' && (
+                <AiSettings settings={settings} updateSetting={updateSetting} />
+              )}
+              {activeTab === 'integrations' && <IntegrationsSettings />}
+              {activeTab === 'actions' && <GlobalActionsSettings />}
+              {activeTab === 'ssh-keys' && <SshKeysSettings />}
+            </>
+          )}
+        </div>
+      </div>
 
-        <DialogFooter className="justify-between">
-          <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
-            {t('common.reset')}
-          </Button>
-          <div className="flex gap-2">
-            <DialogClose asChild>
-              <Button variant="secondary" disabled={isSaving}>
-                {t('common.cancel')}
-              </Button>
-            </DialogClose>
-            <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
-              {isSaving ? t('common.saving') : t('common.save')}
+      {error && (
+        <Alert variant="error" className="mx-4">
+          {error}
+        </Alert>
+      )}
+
+      <DialogFooter className="justify-between">
+        <Button variant="secondary" onClick={handleReset} disabled={!hasChanges || isSaving}>
+          {t('common.reset')}
+        </Button>
+        <div className="flex gap-2">
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={isSaving}>
+              {t('common.cancel')}
             </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogClose>
+          <Button variant="primary" onClick={handleSave} disabled={!hasChanges || isSaving}>
+            {isSaving ? t('common.saving') : t('common.save')}
+          </Button>
+        </div>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -414,55 +418,29 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
 
 function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
   const { t } = useTranslation();
-  const [gpgKeys, setGpgKeys] = useState<GpgKey[]>([]);
-  const [sshKeys, setSshKeys] = useState<SshKey[]>([]);
-  const [sshKeyInfos, setSshKeyInfos] = useState<SshKeyInfo[]>([]);
-  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [gitEnv, setGitEnv] = useState<GitEnvironment | null>(null);
-  const [isLoadingEnv, setIsLoadingEnv] = useState(false);
 
-  useEffect(() => {
-    loadKeys();
-    loadGitEnvironment();
-    loadSshKeyInfos();
-  }, []);
-
-  const loadSshKeyInfos = async () => {
-    try {
-      const keys = await sshKeysApi.list();
-      setSshKeyInfos(keys);
-    } catch (err) {
-      console.error('Failed to load SSH keys:', err);
-    }
-  };
-
-  const loadGitEnvironment = async () => {
-    setIsLoadingEnv(true);
-    try {
-      const env = await lfsApi.getGitEnvironment();
-      setGitEnv(env);
-    } catch (err) {
-      console.error('Failed to load git environment:', err);
-    } finally {
-      setIsLoadingEnv(false);
-    }
-  };
-
-  const loadKeys = async () => {
-    setIsLoadingKeys(true);
-    try {
+  const { data: signingKeysData, isLoading: isLoadingKeys } = useQuery({
+    queryKey: ['signing-keys'],
+    queryFn: async () => {
       const [gpg, ssh] = await Promise.all([signingApi.listGpgKeys(), signingApi.listSshKeys()]);
-      setGpgKeys(gpg);
-      setSshKeys(ssh);
-    } catch (err) {
-      console.error('Failed to load keys:', err);
-    } finally {
-      setIsLoadingKeys(false);
-    }
-  };
+      return { gpgKeys: gpg, sshKeys: ssh };
+    },
+  });
+  const gpgKeys: GpgKey[] = signingKeysData?.gpgKeys ?? [];
+  const sshKeys: SshKey[] = signingKeysData?.sshKeys ?? [];
+
+  const { data: sshKeyInfos = [] } = useQuery<SshKeyInfo[]>({
+    queryKey: queryKeys.sshKeys(),
+    queryFn: () => sshKeysApi.list(),
+  });
+
+  const { data: gitEnv = null, isLoading: isLoadingEnv } = useQuery<GitEnvironment | null>({
+    queryKey: ['git-environment'],
+    queryFn: () => lfsApi.getGitEnvironment(),
+  });
 
   const handleDetectConfig = async () => {
     setIsDetecting(true);

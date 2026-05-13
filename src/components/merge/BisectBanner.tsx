@@ -1,5 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Search, SkipForward, X, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
 import { toast } from '@/hooks';
@@ -11,29 +12,29 @@ interface BisectBannerProps {
   onComplete?: () => void;
 }
 
+const bisectStateKey = ['bisect-state'] as const;
+
 export function BisectBanner({ onComplete }: BisectBannerProps) {
   const { t } = useTranslation();
-  const [state, setState] = useState<BisectState | null>(null);
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    loadState();
-  }, []);
-
-  const loadState = async () => {
-    try {
-      const bisectState = await bisectApi.getState();
-      setState(bisectState);
-    } catch {
-      setState(null);
-    }
-  };
+  const { data: state = null } = useQuery<BisectState | null>({
+    queryKey: bisectStateKey,
+    queryFn: async () => {
+      try {
+        return await bisectApi.getState();
+      } catch {
+        return null;
+      }
+    },
+  });
 
   const handleMark = async (mark: BisectMarkType) => {
     setIsLoading(true);
     try {
       const result = await bisectApi.mark(mark);
-      setState(result.state);
+      queryClient.setQueryData(bisectStateKey, result.state);
 
       if (result.state.firstBadCommit) {
         toast.success(
@@ -55,7 +56,7 @@ export function BisectBanner({ onComplete }: BisectBannerProps) {
     setIsLoading(true);
     try {
       await bisectApi.reset();
-      setState(null);
+      queryClient.setQueryData(bisectStateKey, null);
       toast.success(t('merge.bisect.notifications.ended'));
       onComplete?.();
     } catch (err) {

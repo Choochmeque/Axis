@@ -10,7 +10,8 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -22,6 +23,7 @@ import {
   FormField,
   Input,
 } from '@/components/ui';
+import { queryKeys } from '@/lib/queryKeys';
 import { gitflowApi } from '../../services/api';
 import type { GitFlowBranchType, GitFlowConfig, GitFlowResult } from '../../types';
 
@@ -34,15 +36,27 @@ interface GitFlowViewProps {
   onRefresh?: () => void;
 }
 
+interface GitFlowState {
+  isInitialized: boolean;
+  config: GitFlowConfig | null;
+  features: string[];
+  releases: string[];
+  hotfixes: string[];
+}
+
+const EMPTY_GIT_FLOW_STATE: GitFlowState = {
+  isInitialized: false,
+  config: null,
+  features: [],
+  releases: [],
+  hotfixes: [],
+};
+
 export function GitFlowView({ onRefresh }: GitFlowViewProps) {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [config, setConfig] = useState<GitFlowConfig | null>(null);
-  const [features, setFeatures] = useState<string[]>([]);
-  const [releases, setReleases] = useState<string[]>([]);
-  const [hotfixes, setHotfixes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Dialog state
   const [showInitDialog, setShowInitDialog] = useState(false);
@@ -54,41 +68,42 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
   const [initMaster, setInitMaster] = useState('main');
   const [initDevelop, setInitDevelop] = useState('develop');
 
-  const loadState = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  const {
+    data = EMPTY_GIT_FLOW_STATE,
+    isLoading,
+    error: loadError,
+  } = useQuery<GitFlowState>({
+    queryKey: queryKeys.gitFlow(),
+    queryFn: async () => {
       const initialized = await gitflowApi.isInitialized();
-      setIsInitialized(initialized);
-
-      if (initialized) {
-        const cfg = await gitflowApi.getConfig();
-        setConfig(cfg);
-
-        const [featureList, releaseList, hotfixList] = await Promise.all([
-          gitflowApi.feature.list(),
-          gitflowApi.release.list(),
-          gitflowApi.hotfix.list(),
-        ]);
-
-        setFeatures(featureList);
-        setReleases(releaseList);
-        setHotfixes(hotfixList);
+      if (!initialized) {
+        return { ...EMPTY_GIT_FLOW_STATE, isInitialized: false };
       }
-    } catch (err) {
-      console.error('Failed to load git-flow state:', err);
-      setError('Failed to load git-flow state');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      const cfg = await gitflowApi.getConfig();
+      const [featureList, releaseList, hotfixList] = await Promise.all([
+        gitflowApi.feature.list(),
+        gitflowApi.release.list(),
+        gitflowApi.hotfix.list(),
+      ]);
+      return {
+        isInitialized: true,
+        config: cfg,
+        features: featureList,
+        releases: releaseList,
+        hotfixes: hotfixList,
+      };
+    },
+  });
+  const { isInitialized, config, features, releases, hotfixes } = data;
+  const error = actionError ?? (loadError ? 'Failed to load git-flow state' : null);
+  const setError = setActionError;
 
-  useEffect(() => {
-    loadState();
-  }, [loadState]);
+  const loadState = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.gitFlow() });
+  }, [queryClient]);
 
   const handleInit = async () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     setError(null);
     try {
       const result = await gitflowApi.init({
@@ -108,7 +123,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       console.error('Failed to initialize git-flow:', err);
       setError('Failed to initialize git-flow');
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -118,7 +133,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       return;
     }
 
-    setIsLoading(true);
+    setIsActionLoading(true);
     setError(null);
     try {
       let result: GitFlowResult;
@@ -149,12 +164,12 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       console.error('Failed to start branch:', err);
       setError('Failed to start branch');
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
   const handleFinish = async (type: GitFlowBranchType, name: string) => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     setError(null);
     try {
       let result: GitFlowResult;
@@ -183,12 +198,12 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       console.error('Failed to finish branch:', err);
       setError('Failed to finish branch');
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
   const handlePublish = async (type: GitFlowBranchType, name: string) => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     setError(null);
     try {
       let result: GitFlowResult;
@@ -215,7 +230,7 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
       console.error('Failed to publish branch:', err);
       setError('Failed to publish branch');
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -513,12 +528,12 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary" disabled={isLoading}>
+              <Button variant="secondary" disabled={isActionLoading}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button variant="primary" onClick={handleInit} disabled={isLoading}>
-              {isLoading ? 'Initializing...' : 'Initialize'}
+            <Button variant="primary" onClick={handleInit} disabled={isActionLoading}>
+              {isActionLoading ? 'Initializing...' : 'Initialize'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -548,16 +563,16 @@ export function GitFlowView({ onRefresh }: GitFlowViewProps) {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary" disabled={isLoading}>
+              <Button variant="secondary" disabled={isActionLoading}>
                 Cancel
               </Button>
             </DialogClose>
             <Button
               variant="primary"
               onClick={handleStart}
-              disabled={isLoading || !branchName.trim()}
+              disabled={isActionLoading || !branchName.trim()}
             >
-              {isLoading ? 'Starting...' : `Start ${getTypeLabel(startType)}`}
+              {isActionLoading ? 'Starting...' : `Start ${getTypeLabel(startType)}`}
             </Button>
           </DialogFooter>
         </DialogContent>

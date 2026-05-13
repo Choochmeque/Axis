@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
@@ -10,7 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -24,6 +25,7 @@ import {
   FormField,
   Input,
 } from '@/components/ui';
+import { queryKeys } from '@/lib/queryKeys';
 import { cn } from '@/lib/utils';
 import { submoduleApi } from '@/services/api';
 import type { Submodule, SubmoduleStatus as SubmoduleStatusType } from '@/types';
@@ -40,10 +42,10 @@ interface SubmoduleViewProps {
 
 export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   const { t } = useTranslation();
-  const [submodules, setSubmodules] = useState<Submodule[]>([]);
+  const queryClient = useQueryClient();
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isActionLoading, setIsLoading] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [removeConfirmPath, setRemoveConfirmPath] = useState<string | null>(null);
 
@@ -52,23 +54,21 @@ export function SubmoduleView({ onRefresh }: SubmoduleViewProps) {
   const [addPath, setAddPath] = useState('');
   const [addBranch, setAddBranch] = useState('');
 
-  const loadSubmodules = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const submoduleList = await submoduleApi.list();
-      setSubmodules(submoduleList);
-    } catch (err) {
-      console.error('Failed to load submodules:', err);
-      setError(t('sidebar.submodule.view.loadFailed'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [t]);
+  const {
+    data: submodules = [],
+    isLoading: isQueryLoading,
+    error: loadError,
+  } = useQuery<Submodule[]>({
+    queryKey: queryKeys.submodules(),
+    queryFn: () => submoduleApi.list(),
+  });
+  const isLoading = isQueryLoading || isActionLoading;
+  const error = actionError ?? (loadError ? t('sidebar.submodule.view.loadFailed') : null);
+  const setError = setActionError;
 
-  useEffect(() => {
-    loadSubmodules();
-  }, [loadSubmodules]);
+  const loadSubmodules = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.submodules() });
+  }, [queryClient]);
 
   const handleAdd = async () => {
     if (!addUrl.trim() || !addPath.trim()) {

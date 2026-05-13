@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import CodeEditor from '@uiw/react-textarea-code-editor';
 import {
   FileCode2,
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { queryKeys } from '@/lib/queryKeys';
 import { cn } from '@/lib/utils';
 import {
   hooksApi,
@@ -62,31 +64,38 @@ interface RepositorySettingsDialogProps {
 type SettingsTab = 'identity' | 'signing' | 'remotes' | 'hooks' | 'actions';
 
 export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettingsDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {isOpen && <RepositorySettingsDialogContent />}
+    </Dialog>
+  );
+}
+
+function RepositorySettingsDialogContent() {
   const { t } = useTranslation();
   const repository = useRepositoryStore((s) => s.repository);
   const [activeTab, setActiveTab] = useState<SettingsTab>('identity');
   const [settings, setSettings] = useState<RepositorySettings | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && repository) {
-      loadSettings();
-    }
-  }, [isOpen, repository]);
-
-  const loadSettings = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  const {
+    isLoading,
+    error: loadError,
+    refetch: reloadSettings,
+  } = useQuery({
+    queryKey: ['repo-settings', repository?.path.toString()],
+    queryFn: async () => {
       const loaded = await repoSettingsApi.get();
       setSettings(loaded);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return loaded;
+    },
+    enabled: !!repository,
+  });
+
+  const error = loadError ? getErrorMessage(loadError) : null;
+
+  const loadSettings = useCallback(async () => {
+    await reloadSettings();
+  }, [reloadSettings]);
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'identity', label: t('repoSettings.tabs.identity'), icon: <User size={16} /> },
@@ -97,72 +106,70 @@ export function RepositorySettingsDialog({ isOpen, onClose }: RepositorySettings
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-150 max-h-[80vh] flex flex-col overflow-hidden">
-        <DialogTitle icon={Settings}>
-          {t('repoSettings.title')}
-          {repository && (
-            <span className="ml-2 text-sm font-normal text-(--text-secondary)">
-              {repository.name}
-            </span>
-          )}
-        </DialogTitle>
+    <DialogContent className="max-w-150 max-h-[80vh] flex flex-col overflow-hidden">
+      <DialogTitle icon={Settings}>
+        {t('repoSettings.title')}
+        {repository && (
+          <span className="ml-2 text-sm font-normal text-(--text-secondary)">
+            {repository.name}
+          </span>
+        )}
+      </DialogTitle>
 
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <div className="w-35 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={cn(
-                  'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-base cursor-pointer text-left transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-(--accent-color) text-white'
-                    : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1 py-5 px-6 overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-50 text-(--text-muted)">
-                {t('repoSettings.loading')}
-              </div>
-            ) : settings ? (
-              <>
-                {activeTab === 'identity' && (
-                  <IdentitySettings settings={settings} onSettingsChange={setSettings} />
-                )}
-                {activeTab === 'signing' && (
-                  <SigningSettings settings={settings} onSettingsChange={setSettings} />
-                )}
-                {activeTab === 'remotes' && (
-                  <RemotesSettings remotes={settings.remotes} onRemotesChange={loadSettings} />
-                )}
-                {activeTab === 'hooks' && <HooksSettings />}
-                {activeTab === 'actions' && <RepoActionsSettings />}
-              </>
-            ) : null}
-          </div>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-35 shrink-0 p-3 bg-(--bg-tertiary) border-r border-(--border-color) flex flex-col gap-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={cn(
+                'flex items-center gap-2 py-2.5 px-3 bg-transparent border-none rounded-md text-base cursor-pointer text-left transition-colors',
+                activeTab === tab.id
+                  ? 'bg-(--accent-color) text-white'
+                  : 'text-(--text-secondary) hover:bg-(--bg-hover) hover:text-(--text-primary)'
+              )}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {error && (
-          <Alert variant="error" className="mx-4">
-            {error}
-          </Alert>
-        )}
+        <div className="flex-1 py-5 px-6 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-50 text-(--text-muted)">
+              {t('repoSettings.loading')}
+            </div>
+          ) : settings ? (
+            <>
+              {activeTab === 'identity' && (
+                <IdentitySettings settings={settings} onSettingsChange={setSettings} />
+              )}
+              {activeTab === 'signing' && (
+                <SigningSettings settings={settings} onSettingsChange={setSettings} />
+              )}
+              {activeTab === 'remotes' && (
+                <RemotesSettings remotes={settings.remotes} onRemotesChange={loadSettings} />
+              )}
+              {activeTab === 'hooks' && <HooksSettings />}
+              {activeTab === 'actions' && <RepoActionsSettings />}
+            </>
+          ) : null}
+        </div>
+      </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary">{t('common.close')}</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      {error && (
+        <Alert variant="error" className="mx-4">
+          {error}
+        </Alert>
+      )}
+
+      <DialogFooter>
+        <DialogClose asChild>
+          <Button variant="secondary">{t('common.close')}</Button>
+        </DialogClose>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -175,22 +182,24 @@ interface IdentitySettingsProps {
 }
 
 function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps) {
+  return (
+    <IdentitySettingsInner
+      key={`${settings.userName ?? ''}|${settings.userEmail ?? ''}`}
+      settings={settings}
+      onSettingsChange={onSettingsChange}
+    />
+  );
+}
+
+function IdentitySettingsInner({ settings, onSettingsChange }: IdentitySettingsProps) {
   const { t } = useTranslation();
   const [userName, setUserName] = useState(settings.userName || '');
   const [userEmail, setUserEmail] = useState(settings.userEmail || '');
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    setUserName(settings.userName || '');
-    setUserEmail(settings.userEmail || '');
-  }, [settings]);
-
-  useEffect(() => {
-    const nameChanged = (userName || null) !== (settings.userName || null);
-    const emailChanged = (userEmail || null) !== (settings.userEmail || null);
-    setHasChanges(nameChanged || emailChanged);
-  }, [userName, userEmail, settings]);
+  const nameChanged = (userName || null) !== (settings.userName || null);
+  const emailChanged = (userEmail || null) !== (settings.userEmail || null);
+  const hasChanges = nameChanged || emailChanged;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -201,7 +210,6 @@ function IdentitySettings({ settings, onSettingsChange }: IdentitySettingsProps)
         userName: userName || null,
         userEmail: userEmail || null,
       });
-      setHasChanges(false);
       toast.success(t('repoSettings.identity.saved'));
     } catch (err) {
       toast.error(t('repoSettings.identity.saveFailed'), getErrorMessage(err));
@@ -276,6 +284,16 @@ interface SigningSettingsProps {
 }
 
 function SigningSettings({ settings, onSettingsChange }: SigningSettingsProps) {
+  return (
+    <SigningSettingsInner
+      key={`${settings.signingFormat ?? ''}|${settings.signingKey ?? ''}`}
+      settings={settings}
+      onSettingsChange={onSettingsChange}
+    />
+  );
+}
+
+function SigningSettingsInner({ settings, onSettingsChange }: SigningSettingsProps) {
   const { t } = useTranslation();
   const [signingFormat, setSigningFormat] = useState<SigningFormat | null>(
     settings.signingFormat ?? null
@@ -283,54 +301,26 @@ function SigningSettings({ settings, onSettingsChange }: SigningSettingsProps) {
   const [signingKey, setSigningKey] = useState(settings.signingKey || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [gpgKeys, setGpgKeys] = useState<GpgKey[]>([]);
-  const [sshKeys, setSshKeys] = useState<SshKey[]>([]);
-  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
-  const [globalConfig, setGlobalConfig] = useState<SigningConfig | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  useEffect(() => {
-    setSigningFormat(settings.signingFormat ?? null);
-    setSigningKey(settings.signingKey || '');
-  }, [settings]);
+  const formatChanged = signingFormat !== (settings.signingFormat ?? null);
+  const keyChanged = (signingKey || null) !== (settings.signingKey || null);
+  const hasChanges = formatChanged || keyChanged;
 
-  useEffect(() => {
-    const formatChanged = signingFormat !== (settings.signingFormat ?? null);
-    const keyChanged = (signingKey || null) !== (settings.signingKey || null);
-    setHasChanges(formatChanged || keyChanged);
-  }, [signingFormat, signingKey, settings]);
-
-  useEffect(() => {
-    loadKeys();
-    loadGlobalConfig();
-  }, []);
-
-  useEffect(() => {
-    loadKeys();
-  }, [signingFormat]);
-
-  const loadGlobalConfig = async () => {
-    try {
-      const config = await signingApi.getConfig();
-      setGlobalConfig(config);
-    } catch {
-      // Ignore errors loading global config
-    }
-  };
-
-  const loadKeys = async () => {
-    setIsLoadingKeys(true);
-    try {
+  const { data: signingKeysData, isLoading: isLoadingKeys } = useQuery({
+    queryKey: ['signing-keys', signingFormat],
+    queryFn: async () => {
       const [gpg, ssh] = await Promise.all([signingApi.listGpgKeys(), signingApi.listSshKeys()]);
-      setGpgKeys(gpg);
-      setSshKeys(ssh);
-    } catch {
-      // Ignore errors loading keys
-    } finally {
-      setIsLoadingKeys(false);
-    }
-  };
+      return { gpgKeys: gpg, sshKeys: ssh };
+    },
+  });
+  const gpgKeys: GpgKey[] = signingKeysData?.gpgKeys ?? [];
+  const sshKeys: SshKey[] = signingKeysData?.sshKeys ?? [];
+
+  const { data: globalConfig = null } = useQuery<SigningConfig | null>({
+    queryKey: queryKeys.signingConfig(),
+    queryFn: () => signingApi.getConfig(),
+  });
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -341,7 +331,6 @@ function SigningSettings({ settings, onSettingsChange }: SigningSettingsProps) {
         signingFormat: signingFormat,
         signingKey: signingKey || null,
       });
-      setHasChanges(false);
       toast.success(t('repoSettings.signing.saved'));
     } catch (err) {
       toast.error(t('repoSettings.signing.saveFailed'), getErrorMessage(err));
@@ -367,7 +356,6 @@ function SigningSettings({ settings, onSettingsChange }: SigningSettingsProps) {
       });
       setSigningFormat(null);
       setSigningKey('');
-      setHasChanges(false);
       setTestResult(null);
       toast.success(t('repoSettings.signing.cleared'));
     } catch (err) {
@@ -791,37 +779,30 @@ const ALL_HOOK_TYPES = Object.keys(GitHookType) as Array<keyof typeof GitHookTyp
 
 function HooksSettings() {
   const { t } = useTranslation();
-  const [hooks, setHooks] = useState<HookInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [editingHook, setEditingHook] = useState<HookInfo | null>(null);
   const [creatingHook, setCreatingHook] = useState<keyof typeof GitHookType | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const loadHooks = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const loaded = await hooksApi.list();
-      setHooks(loaded);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const {
+    data: hooks = [],
+    isLoading,
+    error: loadError,
+    refetch: reloadHooks,
+  } = useQuery<HookInfo[]>({
+    queryKey: queryKeys.hooks(),
+    queryFn: () => hooksApi.list(),
+  });
+  const error = loadError ? getErrorMessage(loadError) : null;
 
-  useEffect(() => {
-    loadHooks();
-  }, [loadHooks]);
+  const loadHooks = useCallback(async () => {
+    await reloadHooks();
+  }, [reloadHooks]);
 
   const handleToggle = async (hook: HookInfo) => {
     setIsSaving(true);
     try {
       const newEnabled = await hooksApi.toggle(hook.hookType);
-      setHooks((prev) =>
-        prev.map((h) => (h.hookType === hook.hookType ? { ...h, enabled: newEnabled } : h))
-      );
+      await reloadHooks();
       toast.success(
         newEnabled
           ? t('repoSettings.hooks.notifications.enabled')
@@ -839,11 +820,7 @@ function HooksSettings() {
     setIsSaving(true);
     try {
       await hooksApi.delete(hook.hookType);
-      setHooks((prev) =>
-        prev.map((h) =>
-          h.hookType === hook.hookType ? { ...h, exists: false, enabled: false } : h
-        )
-      );
+      await reloadHooks();
       toast.success(t('repoSettings.hooks.notifications.deleted'));
       document.dispatchEvent(new CustomEvent('hooks-changed'));
     } catch (err) {

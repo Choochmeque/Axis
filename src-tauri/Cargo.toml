@@ -37,7 +37,7 @@ git2 = "0.20"
 tokio = { version = "1", features = ["full"] }
 
 # Database
-turso = "0.5"
+turso = "0.6"
 
 # Error handling
 thiserror = "2"

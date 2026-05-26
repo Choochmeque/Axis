@@ -8,8 +8,6 @@
     "core:webview:allow-create-webview-window",
     "opener:default",
     "dialog:default",
-    "fs:default",
-    "shell:default",
     "notifications:default",
     "clipboard-manager:allow-write-text"
   ]

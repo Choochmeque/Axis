@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import Markdown from 'react-markdown';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarkdownEditor } from './markdown-editor';
+
+const mockMarkdown = vi.hoisted(() =>
+  vi.fn(({ children }: { children: string }) => (
+    <div data-testid="markdown-preview-content">{children}</div>
+  ))
+);
 
 // Mock i18n
 vi.mock('react-i18next', () => ({
@@ -23,13 +30,7 @@ vi.mock('@/services/api', () => ({
 
 // Mock react-markdown
 vi.mock('react-markdown', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  default: ({ children }: any) => <div data-testid="markdown-preview-content">{children}</div>,
-}));
-
-// Mock rehype-raw
-vi.mock('rehype-raw', () => ({
-  default: vi.fn(),
+  default: mockMarkdown,
 }));
 
 // Mock remark-gfm
@@ -162,6 +163,17 @@ describe('MarkdownEditor', () => {
     fireEvent.click(screen.getByText('common.preview'));
 
     expect(screen.getByTestId('markdown-preview-content')).toHaveTextContent('Hello markdown');
+  });
+
+  it('should enable sanitized raw HTML rendering in preview mode', () => {
+    render(<MarkdownEditor {...defaultProps} value="<img src=x onerror=alert(1)>" />);
+
+    fireEvent.click(screen.getByText('common.preview'));
+
+    const markdownCalls = vi.mocked(Markdown).mock.calls;
+    const markdownProps = markdownCalls[markdownCalls.length - 1]?.[0];
+    expect(markdownProps).toBeDefined();
+    expect(markdownProps?.rehypePlugins).toHaveLength(2);
   });
 
   it('should hide toolbar in preview mode', () => {

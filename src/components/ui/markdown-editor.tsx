@@ -11,15 +11,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Markdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 
-import { Textarea } from '@/components/ui';
+import { MarkdownContent, Textarea } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { shellApi } from '@/services/api';
 
 interface MarkdownEditorProps {
   id?: string;
@@ -259,50 +253,7 @@ export function MarkdownEditor({
           style={{ minHeight: `${rows * 1.5}rem`, maxHeight: `${rows * 1.5}rem` }}
         >
           {value.trim() ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none text-(--text-primary)">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (href) shellApi.openUrl(href);
-                      }}
-                      className="text-(--accent-color) hover:underline cursor-pointer"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  code: ({ className, children, ...props }) => {
-                    const match = /language-(\w+)/.exec(className || '');
-                    const inline = !match;
-                    return !inline ? (
-                      <SyntaxHighlighter
-                        style={oneDark}
-                        language={match[1]}
-                        PreTag="div"
-                        customStyle={{
-                          margin: 0,
-                          borderRadius: '0.375rem',
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {value}
-              </Markdown>
-            </div>
+            <MarkdownContent>{value}</MarkdownContent>
           ) : (
             <p className="text-sm text-(--text-muted) italic">{t('common.previewEmpty')}</p>
           )}

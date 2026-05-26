@@ -29,27 +29,6 @@ vi.mock('@/lib/errorUtils', () => ({
   getErrorMessage: (error: Error) => error.message,
 }));
 
-// Mock react-markdown and related
-vi.mock('react-markdown', () => ({
-  default: ({ children }: { children: string }) => <div data-testid="markdown">{children}</div>,
-}));
-
-vi.mock('rehype-raw', () => ({
-  default: () => {},
-}));
-
-vi.mock('remark-gfm', () => ({
-  default: () => {},
-}));
-
-vi.mock('react-syntax-highlighter', () => ({
-  Prism: ({ children }: { children: string }) => <pre data-testid="code-block">{children}</pre>,
-}));
-
-vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
-  oneDark: {},
-}));
-
 // Mock store
 const mockMergePullRequest = vi.fn();
 vi.mock('@/store/integrationStore', () => ({
@@ -90,6 +69,8 @@ vi.mock('@/components/ui', () => ({
   DropdownMenuRadioItem: ({ children, value }: any) => (
     <div data-testid={`radio-item-${value}`}>{children}</div>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  MarkdownContent: ({ children }: any) => <div data-testid="markdown">{children}</div>,
 }));
 
 describe('PullRequestDetail', () => {

@@ -16,27 +16,6 @@ vi.mock('@/lib/dateUtils', () => ({
   formatDateTime: (_date: string) => 'Jan 15, 2024',
 }));
 
-// Mock react-markdown and related
-vi.mock('react-markdown', () => ({
-  default: ({ children }: { children: string }) => <div data-testid="markdown">{children}</div>,
-}));
-
-vi.mock('rehype-raw', () => ({
-  default: () => {},
-}));
-
-vi.mock('remark-gfm', () => ({
-  default: () => {},
-}));
-
-vi.mock('react-syntax-highlighter', () => ({
-  Prism: ({ children }: { children: string }) => <pre data-testid="code-block">{children}</pre>,
-}));
-
-vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
-  oneDark: {},
-}));
-
 // Mock i18n
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -57,6 +36,8 @@ vi.mock('@/components/ui', () => ({
       {children}
     </button>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  MarkdownContent: ({ children }: any) => <div data-testid="markdown">{children}</div>,
 }));
 
 describe('IssueDetail', () => {

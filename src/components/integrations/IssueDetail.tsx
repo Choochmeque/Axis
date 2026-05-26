@@ -12,13 +12,8 @@ import {
 } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import Markdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import type { IssueDetail as IssueDetailType } from '@/bindings/api';
-import { Button } from '@/components/ui';
+import { Button, MarkdownContent } from '@/components/ui';
 import { formatDateTime } from '@/lib/dateUtils';
 import { cn, getLabelColors } from '@/lib/utils';
 import { shellApi } from '@/services/api';
@@ -202,50 +197,7 @@ export function IssueDetail({ issueDetail, onClose }: IssueDetailProps) {
         {/* Body */}
         {issueDetail.body && (
           <div className="p-4 bg-(--bg-primary) rounded-lg border border-(--border-color)">
-            <div className="prose prose-sm dark:prose-invert max-w-none text-(--text-primary)">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (href) shellApi.openUrl(href);
-                      }}
-                      className="text-(--accent-color) hover:underline cursor-pointer"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  code: ({ className, children, ...props }) => {
-                    const match = /language-(\w+)/.exec(className || '');
-                    const inline = !match;
-                    return !inline ? (
-                      <SyntaxHighlighter
-                        style={oneDark}
-                        language={match[1]}
-                        PreTag="div"
-                        customStyle={{
-                          margin: 0,
-                          borderRadius: '0.375rem',
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {issueDetail.body}
-              </Markdown>
-            </div>
+            <MarkdownContent>{issueDetail.body}</MarkdownContent>
           </div>
         )}
       </div>

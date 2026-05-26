@@ -68,6 +68,7 @@ export { FormField } from './form-field';
 export { Input } from './input';
 export { Label } from './label';
 export { MarkdownEditor } from './markdown-editor';
+export { MarkdownContent } from './markdown-content';
 // Progress Components
 export { OperationProgressBar } from './operation-progress-bar';
 export { OperationsIndicator } from './operations-indicator';

@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use strum::IntoEnumIterator;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::process::Command;
+use tokio::process::{Child, Command};
+use tokio::task::JoinHandle;
 
 use crate::error::{AxisError, Result};
 use crate::models::{
@@ -138,7 +139,7 @@ impl HookService {
 
                 // If emitter provided, poll with cancellation check
                 if let Some(e) = emitter {
-                    let result = self.wait_with_cancellation(&mut child, hook_type, e).await;
+                    let result = self.wait_with_cancellation(child, hook_type, e).await;
                     // Emit terminal event
                     if result.is_cancelled() {
                         e.emit_cancelled(hook_type);
@@ -179,10 +180,13 @@ impl HookService {
     /// Wait for child process with cancellation support
     async fn wait_with_cancellation(
         &self,
-        child: &mut tokio::process::Child,
+        mut child: Child,
         hook_type: GitHookType,
         emitter: &HookProgressEmitter,
     ) -> HookResult {
+        let stdout_reader = child.stdout.take().map(Self::spawn_output_reader);
+        let stderr_reader = child.stderr.take().map(Self::spawn_output_reader);
+
         loop {
             // Check for cancellation
             if emitter.is_cancelled() {
@@ -191,25 +195,10 @@ impl HookService {
                 return HookResult::cancelled(hook_type);
             }
 
-            // Poll with timeout
-            match tokio::time::timeout(Duration::from_millis(100), child.wait()).await {
-                Ok(Ok(status)) => {
-                    // Process finished - read output
-                    let stdout = if let Some(ref mut out) = child.stdout {
-                        let mut buf = Vec::new();
-                        let _ = out.read_to_end(&mut buf).await;
-                        String::from_utf8_lossy(&buf).to_string()
-                    } else {
-                        String::new()
-                    };
-
-                    let stderr = if let Some(ref mut err) = child.stderr {
-                        let mut buf = Vec::new();
-                        let _ = err.read_to_end(&mut buf).await;
-                        String::from_utf8_lossy(&buf).to_string()
-                    } else {
-                        String::new()
-                    };
+            match child.try_wait() {
+                Ok(Some(status)) => {
+                    let stdout = Self::collect_reader(stdout_reader).await;
+                    let stderr = Self::collect_reader(stderr_reader).await;
 
                     return HookResult {
                         hook_type,
@@ -221,13 +210,40 @@ impl HookService {
                         cancelled: false,
                     };
                 }
-                Ok(Err(e)) => {
+                Ok(None) => tokio::time::sleep(Duration::from_millis(100)).await,
+                Err(e) => {
                     return HookResult::error(hook_type, &format!("Failed to wait for hook: {e}"));
                 }
-                Err(_) => {
-                    // Timeout - continue polling
+            }
+        }
+    }
+
+    fn spawn_output_reader<T>(mut output: T) -> JoinHandle<String>
+    where
+        T: tokio::io::AsyncRead + Unpin + Send + 'static,
+    {
+        tokio::spawn(async move {
+            let mut buf = Vec::new();
+            match output.read_to_end(&mut buf).await {
+                Ok(_) => String::from_utf8_lossy(&buf).to_string(),
+                Err(e) => {
+                    log::warn!("Failed to read hook output: {e}");
+                    String::new()
                 }
             }
+        })
+    }
+
+    async fn collect_reader(reader: Option<JoinHandle<String>>) -> String {
+        match reader {
+            Some(handle) => match handle.await {
+                Ok(output) => output,
+                Err(e) => {
+                    log::warn!("Hook output reader task failed: {e}");
+                    String::new()
+                }
+            },
+            None => String::new(),
         }
     }
 

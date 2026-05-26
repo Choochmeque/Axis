@@ -19,65 +19,52 @@ const ACTIONS_FILE: &str = "actions.json";
 static VARIABLE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\$\{?([A-Z_]+)\}?").expect("Invalid regex pattern"));
 
+fn variable_value<'a>(name: &str, vars: &'a ActionVariables) -> Option<&'a str> {
+    match name {
+        "REPO_PATH" => Some(&vars.repo_path),
+        "BRANCH" => vars.branch.as_deref(),
+        "FILE" => vars.file.as_deref(),
+        "SELECTED_FILES" => vars.selected_files.as_deref(),
+        "COMMIT_HASH" => vars.commit_hash.as_deref(),
+        "COMMIT_SHORT" => vars.commit_short.as_deref(),
+        "COMMIT_MESSAGE" => vars.commit_message.as_deref(),
+        "REMOTE_URL" => vars.remote_url.as_deref(),
+        "TAG" => vars.tag.as_deref(),
+        "STASH_REF" => vars.stash_ref.as_deref(),
+        _ => None,
+    }
+}
+
+#[cfg(not(windows))]
+fn shell_escape_value(value: &str) -> String {
+    format!("'{}'", value.replace('\'', r"'\''"))
+}
+
+#[cfg(windows)]
+fn shell_escape_value(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len() + 2);
+    escaped.push('"');
+    for character in value.chars() {
+        match character {
+            '^' | '&' | '|' | '<' | '>' | '(' | ')' | '%' | '!' | '"' => {
+                escaped.push('^');
+                escaped.push(character);
+            }
+            '\n' | '\r' => escaped.push(' '),
+            _ => escaped.push(character),
+        }
+    }
+    escaped.push('"');
+    escaped
+}
+
 /// Service for executing custom actions
 pub struct CustomActionsService;
 
 impl CustomActionsService {
     /// Substitute variables in a command string
     pub fn substitute_variables(command: &str, vars: &ActionVariables) -> String {
-        let mut result = command.to_string();
-
-        // Replace known variables
-        result = result.replace("$REPO_PATH", &vars.repo_path);
-        result = result.replace("${REPO_PATH}", &vars.repo_path);
-
-        if let Some(branch) = &vars.branch {
-            result = result.replace("$BRANCH", branch);
-            result = result.replace("${BRANCH}", branch);
-        }
-
-        if let Some(file) = &vars.file {
-            result = result.replace("$FILE", file);
-            result = result.replace("${FILE}", file);
-        }
-
-        if let Some(selected_files) = &vars.selected_files {
-            result = result.replace("$SELECTED_FILES", selected_files);
-            result = result.replace("${SELECTED_FILES}", selected_files);
-        }
-
-        if let Some(commit_hash) = &vars.commit_hash {
-            result = result.replace("$COMMIT_HASH", commit_hash);
-            result = result.replace("${COMMIT_HASH}", commit_hash);
-        }
-
-        if let Some(commit_short) = &vars.commit_short {
-            result = result.replace("$COMMIT_SHORT", commit_short);
-            result = result.replace("${COMMIT_SHORT}", commit_short);
-        }
-
-        if let Some(commit_message) = &vars.commit_message {
-            result = result.replace("$COMMIT_MESSAGE", commit_message);
-            result = result.replace("${COMMIT_MESSAGE}", commit_message);
-        }
-
-        if let Some(remote_url) = &vars.remote_url {
-            result = result.replace("$REMOTE_URL", remote_url);
-            result = result.replace("${REMOTE_URL}", remote_url);
-        }
-
-        if let Some(tag) = &vars.tag {
-            result = result.replace("$TAG", tag);
-            result = result.replace("${TAG}", tag);
-        }
-
-        if let Some(stash_ref) = &vars.stash_ref {
-            result = result.replace("$STASH_REF", stash_ref);
-            result = result.replace("${STASH_REF}", stash_ref);
-        }
-
-        // Remove any remaining unsubstituted variables
-        VARIABLE_REGEX.replace_all(&result, "").to_string()
+        Self::substitute_variables_with(command, vars, std::string::ToString::to_string)
     }
 
     /// Execute a custom action
@@ -85,7 +72,7 @@ impl CustomActionsService {
         action: &CustomAction,
         variables: &ActionVariables,
     ) -> Result<ActionExecutionResult> {
-        let command = Self::substitute_variables(&action.command, variables);
+        let command = Self::substitute_command_variables(&action.command, variables);
 
         let working_dir = action.working_dir.as_ref().map_or_else(
             || variables.repo_path.clone(),
@@ -118,6 +105,23 @@ impl CustomActionsService {
             }
             Err(e) => Ok(ActionExecutionResult::error(e.to_string())),
         }
+    }
+
+    fn substitute_command_variables(command: &str, vars: &ActionVariables) -> String {
+        Self::substitute_variables_with(command, vars, shell_escape_value)
+    }
+
+    fn substitute_variables_with(
+        command: &str,
+        vars: &ActionVariables,
+        format_value: impl Fn(&str) -> String,
+    ) -> String {
+        VARIABLE_REGEX
+            .replace_all(command, |captures: &regex::Captures<'_>| {
+                let name = &captures[1];
+                variable_value(name, vars).map_or_else(String::new, &format_value)
+            })
+            .to_string()
     }
 
     /// Run a shell command with platform-specific shell
@@ -373,6 +377,51 @@ mod tests {
         let command = "echo $REPO_PATH $BRANCH $UNKNOWN";
         let result = CustomActionsService::substitute_variables(command, &vars);
         assert_eq!(result, "echo /path/to/repo  ");
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn test_substitute_command_variables_shell_escapes_values() {
+        let vars = ActionVariables {
+            repo_path: "/path/to/repo".to_string(),
+            branch: Some("feature'; touch injected; echo '".to_string()),
+            ..Default::default()
+        };
+
+        let command = "git checkout $BRANCH";
+        let result = CustomActionsService::substitute_command_variables(command, &vars);
+        assert_eq!(
+            result,
+            "git checkout 'feature'\\''; touch injected; echo '\\'''"
+        );
+    }
+
+    #[cfg(not(windows))]
+    #[tokio::test]
+    async fn test_execute_treats_substituted_values_as_shell_data() {
+        let temp_dir = tempfile::tempdir().expect("should create temp dir");
+        let marker_path = temp_dir.path().join("injected");
+        let payload = format!("safe; touch {}", marker_path.display());
+        let action = CustomAction::new(
+            "Echo Branch".to_string(),
+            "printf '%s' $BRANCH".to_string(),
+            vec![ActionContext::Branch],
+        );
+        let vars = ActionVariables {
+            repo_path: temp_dir.path().display().to_string(),
+            branch: Some(payload.clone()),
+            ..Default::default()
+        };
+
+        let result = CustomActionsService::execute(&action, &vars).await;
+        let result = result.expect("action execution should return a result");
+
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, payload);
+        assert!(
+            !marker_path.exists(),
+            "substituted shell metacharacters must not execute"
+        );
     }
 
     #[test]

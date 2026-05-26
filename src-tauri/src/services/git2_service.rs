@@ -298,7 +298,7 @@ impl Git2Service {
                     | git2::Status::INDEX_RENAMED
                     | git2::Status::INDEX_TYPECHANGE,
             ) {
-                if let Some(path) = entry.path() {
+                if let Ok(path) = entry.path() {
                     if files_to_update.contains(path) {
                         conflicting_files.push(path.to_string());
                     }
@@ -315,7 +315,7 @@ impl Git2Service {
         self.repo().ok().and_then(|repo| {
             repo.head()
                 .ok()
-                .and_then(|h| h.shorthand().map(std::string::ToString::to_string))
+                .and_then(|h| h.shorthand().ok().map(std::string::ToString::to_string))
         })
     }
 
@@ -384,7 +384,7 @@ impl Git2Service {
         self.repo().ok().and_then(|repo| {
             repo.head().ok().and_then(|head| {
                 if head.is_branch() {
-                    head.shorthand().map(std::string::ToString::to_string)
+                    head.shorthand().ok().map(std::string::ToString::to_string)
                 } else {
                     // Detached HEAD - return short commit hash
                     head.target().map(|oid| oid.to_string()[..7].to_string())
@@ -653,7 +653,12 @@ impl Git2Service {
                         ahead,
                         behind,
                         target_oid: oid.to_string(),
-                        last_commit_summary: commit.summary().unwrap_or("").to_string(),
+                        last_commit_summary: commit
+                            .summary()
+                            .ok()
+                            .flatten()
+                            .unwrap_or("")
+                            .to_string(),
                         last_commit_time: DateTime::from_timestamp(commit.time().seconds(), 0)
                             .unwrap_or_default()
                             .with_timezone(&Utc),
@@ -981,7 +986,7 @@ impl Git2Service {
             // For unborn HEAD, we need to create the branch reference
             // HEAD is a symbolic ref pointing to a branch that doesn't exist yet
             let head_ref = repo.find_reference("HEAD")?;
-            if let Some(target_name) = head_ref.symbolic_target() {
+            if let Ok(Some(target_name)) = head_ref.symbolic_target() {
                 repo.reference(target_name, oid, true, reflog_msg)?;
             } else {
                 // HEAD is not symbolic, create refs/heads/main
@@ -1253,7 +1258,7 @@ impl Git2Service {
         // Check if branch is checked out in any worktree
         if let Ok(worktree_names) = repo.worktrees() {
             let branch_ref = format!("refs/heads/{name}");
-            for wt_name in worktree_names.iter().flatten() {
+            for wt_name in worktree_names.iter().filter_map(|r| r.ok().flatten()) {
                 if let Ok(wt) = repo.find_worktree(wt_name) {
                     if let Some(wt_path) = wt.path().to_str() {
                         // Open the worktree's gitdir to check its HEAD
@@ -1357,7 +1362,7 @@ impl Git2Service {
         let refname = branch
             .get()
             .name()
-            .ok_or_else(|| AxisError::InvalidReference(name.to_string()))?;
+            .map_err(|_| AxisError::InvalidReference(name.to_string()))?;
 
         let obj = repo.revparse_single(refname)?;
 
@@ -1499,7 +1504,7 @@ impl Git2Service {
             ahead,
             behind,
             target_oid: oid.to_string(),
-            last_commit_summary: commit.summary().unwrap_or("").to_string(),
+            last_commit_summary: commit.summary().ok().flatten().unwrap_or("").to_string(),
             last_commit_time: DateTime::from_timestamp(commit.time().seconds(), 0)
                 .unwrap_or_default()
                 .with_timezone(&Utc),
@@ -1594,22 +1599,26 @@ impl Git2Service {
         let remote_names = repo.remotes()?;
         let mut remotes = Vec::new();
 
-        for name in remote_names.iter().flatten() {
+        for name in remote_names.iter().filter_map(|r| r.ok().flatten()) {
             if let Ok(remote) = repo.find_remote(name) {
                 remotes.push(crate::models::Remote {
                     name: name.to_string(),
-                    url: remote.url().map(std::string::ToString::to_string),
-                    push_url: remote.pushurl().map(std::string::ToString::to_string),
+                    url: remote.url().ok().map(std::string::ToString::to_string),
+                    push_url: remote
+                        .pushurl()
+                        .ok()
+                        .flatten()
+                        .map(std::string::ToString::to_string),
                     fetch_refspecs: remote
                         .fetch_refspecs()?
                         .iter()
-                        .flatten()
+                        .filter_map(|r| r.ok().flatten())
                         .map(std::string::ToString::to_string)
                         .collect(),
                     push_refspecs: remote
                         .push_refspecs()?
                         .iter()
-                        .flatten()
+                        .filter_map(|r| r.ok().flatten())
                         .map(std::string::ToString::to_string)
                         .collect(),
                 });
@@ -1640,18 +1649,22 @@ impl Git2Service {
         let remote = repo.find_remote(name)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
-            url: remote.url().map(std::string::ToString::to_string),
-            push_url: remote.pushurl().map(std::string::ToString::to_string),
+            url: remote.url().ok().map(std::string::ToString::to_string),
+            push_url: remote
+                .pushurl()
+                .ok()
+                .flatten()
+                .map(std::string::ToString::to_string),
             fetch_refspecs: remote
                 .fetch_refspecs()?
                 .iter()
-                .flatten()
+                .filter_map(|r| r.ok().flatten())
                 .map(std::string::ToString::to_string)
                 .collect(),
             push_refspecs: remote
                 .push_refspecs()?
                 .iter()
-                .flatten()
+                .filter_map(|r| r.ok().flatten())
                 .map(std::string::ToString::to_string)
                 .collect(),
         })
@@ -1663,18 +1676,22 @@ impl Git2Service {
         let remote = repo.remote(name, url)?;
         Ok(crate::models::Remote {
             name: name.to_string(),
-            url: remote.url().map(std::string::ToString::to_string),
-            push_url: remote.pushurl().map(std::string::ToString::to_string),
+            url: remote.url().ok().map(std::string::ToString::to_string),
+            push_url: remote
+                .pushurl()
+                .ok()
+                .flatten()
+                .map(std::string::ToString::to_string),
             fetch_refspecs: remote
                 .fetch_refspecs()?
                 .iter()
-                .flatten()
+                .filter_map(|r| r.ok().flatten())
                 .map(std::string::ToString::to_string)
                 .collect(),
             push_refspecs: remote
                 .push_refspecs()?
                 .iter()
-                .flatten()
+                .filter_map(|r| r.ok().flatten())
                 .map(std::string::ToString::to_string)
                 .collect(),
         })
@@ -1691,7 +1708,7 @@ impl Git2Service {
         let problems = self.repo()?.remote_rename(old_name, new_name)?;
         Ok(problems
             .iter()
-            .flatten()
+            .filter_map(|r| r.ok().flatten())
             .map(std::string::ToString::to_string)
             .collect())
     }
@@ -1716,13 +1733,13 @@ impl Git2Service {
             .get_entry("user.name")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().map(std::string::ToString::to_string));
+            .and_then(|e| e.value().ok().map(std::string::ToString::to_string));
 
         let user_email = config
             .get_entry("user.email")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().map(std::string::ToString::to_string));
+            .and_then(|e| e.value().ok().map(std::string::ToString::to_string));
 
         Ok((user_name, user_email))
     }
@@ -1769,13 +1786,13 @@ impl Git2Service {
             .get_entry("gpg.format")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().and_then(|v| v.parse().ok()));
+            .and_then(|e| e.value().ok().and_then(|v| v.parse().ok()));
 
         let signing_key = config
             .get_entry("user.signingkey")
             .ok()
             .filter(|e| e.level() == git2::ConfigLevel::Local)
-            .and_then(|e| e.value().map(std::string::ToString::to_string));
+            .and_then(|e| e.value().ok().map(std::string::ToString::to_string));
 
         Ok((format, signing_key))
     }
@@ -1948,7 +1965,7 @@ impl Git2Service {
         let head = repo.head()?;
         let branch_name = head
             .shorthand()
-            .ok_or_else(|| AxisError::BranchNotFound("HEAD".to_string()))?;
+            .map_err(|_| AxisError::BranchNotFound("HEAD".to_string()))?;
 
         let mut refspecs = vec![format!("refs/heads/{branch_name}:refs/heads/{branch_name}")];
 
@@ -2025,7 +2042,7 @@ impl Git2Service {
 
             let refname = local_ref
                 .name()
-                .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
+                .map_err(|_| AxisError::InvalidReference("HEAD".to_string()))?;
 
             repo.reference(
                 refname,
@@ -2074,7 +2091,7 @@ impl Git2Service {
 
             let refname = local_ref
                 .name()
-                .ok_or_else(|| AxisError::InvalidReference("HEAD".to_string()))?;
+                .map_err(|_| AxisError::InvalidReference("HEAD".to_string()))?;
 
             repo.reference(refname, fetch_commit.id(), true, "fast-forward merge")?;
 
@@ -2640,7 +2657,7 @@ impl Git2Service {
 
             // Search in message
             if !is_match && options.search_message {
-                if let Some(message) = commit.message() {
+                if let Ok(message) = commit.message() {
                     if message.to_lowercase().contains(&query) {
                         is_match = true;
                     }
@@ -2650,13 +2667,13 @@ impl Git2Service {
             // Search in author
             if !is_match && options.search_author {
                 let author = commit.author();
-                if let Some(name) = author.name() {
+                if let Ok(name) = author.name() {
                     if name.to_lowercase().contains(&query) {
                         is_match = true;
                     }
                 }
                 if !is_match {
-                    if let Some(email) = author.email() {
+                    if let Ok(email) = author.email() {
                         if email.to_lowercase().contains(&query) {
                             is_match = true;
                         }
@@ -2813,7 +2830,10 @@ impl Git2Service {
 
         // Get tag names with optional pattern filtering
         let tag_names = repo.tag_names(options.pattern.as_deref())?;
-        let mut names: Vec<String> = tag_names.iter().flatten().map(String::from).collect();
+        let mut names: Vec<String> = tag_names
+            .iter()
+            .filter_map(|r| r.ok().flatten().map(String::from))
+            .collect();
 
         // For date-based sorting, we need to get timestamps first
         let needs_date_sort = matches!(
@@ -2887,7 +2907,10 @@ impl Git2Service {
                     });
                     (
                         true,
-                        tag.message().map(std::string::ToString::to_string),
+                        tag.message()
+                            .ok()
+                            .flatten()
+                            .map(std::string::ToString::to_string),
                         tagger_sig,
                     )
                 })
@@ -2896,7 +2919,11 @@ impl Git2Service {
             // Get target commit info
             let (target_summary, target_time) =
                 target_obj.peel_to_commit().map_or((None, None), |commit| {
-                    let summary = commit.summary().map(std::string::ToString::to_string);
+                    let summary = commit
+                        .summary()
+                        .ok()
+                        .flatten()
+                        .map(std::string::ToString::to_string);
                     let time = DateTime::from_timestamp(commit.time().seconds(), 0)
                         .map(|dt| dt.with_timezone(&Utc));
                     (summary, time)
@@ -3036,7 +3063,12 @@ impl Git2Service {
                 name: target_name,
                 oid: target_commit.id().to_string(),
                 short_oid: target_commit.id().to_string()[..7].to_string(),
-                summary: target_commit.summary().unwrap_or("").to_string(),
+                summary: target_commit
+                    .summary()
+                    .ok()
+                    .flatten()
+                    .unwrap_or("")
+                    .to_string(),
             },
             target_commits_ahead,
         })
@@ -3241,7 +3273,7 @@ impl Git2Service {
             .skip(skip)
             .take(limit)
             .map(|(index, entry)| {
-                let message = entry.message().unwrap_or("").to_string();
+                let message = entry.message().ok().flatten().unwrap_or("").to_string();
                 let action = Self::parse_reflog_action(&message);
                 let new_oid = entry.id_new().to_string();
                 let old_oid = entry.id_old().to_string();

@@ -46,7 +46,7 @@ impl Commit {
             oid: commit.id().to_string(),
             short_oid: commit.id().to_string()[..7].to_string(),
             message: commit.message().unwrap_or("").to_string(),
-            summary: commit.summary().unwrap_or("").to_string(),
+            summary: commit.summary().ok().flatten().unwrap_or("").to_string(),
             author: Signature::from_git2_signature(&author),
             committer: Signature::from_git2_signature(&committer),
             parent_oids: commit.parent_ids().map(|id| id.to_string()).collect(),

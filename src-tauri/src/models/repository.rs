@@ -71,7 +71,7 @@ impl RecentRepository {
             git2::Repository::open(&row.path).ok().and_then(|repo| {
                 repo.head()
                     .ok()
-                    .and_then(|head| head.shorthand().map(String::from))
+                    .and_then(|head| head.shorthand().ok().map(String::from))
             })
         } else {
             None

@@ -7,6 +7,7 @@ use crate::models::{
 use crate::services::{GitService, ProgressContext};
 use crate::state::AppState;
 use std::path::PathBuf;
+use std::process::Command;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
@@ -19,6 +20,13 @@ fn validate_open_url(url: &str) -> Result<()> {
             "Unsupported URL scheme: {scheme}"
         ))),
     }
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn windows_terminal_command(path: &std::path::Path) -> Command {
+    let mut command = Command::new("cmd");
+    command.args(["/k"]).current_dir(path);
+    command
 }
 
 #[tauri::command]
@@ -283,7 +291,7 @@ pub async fn open_terminal(path: String) -> Result<()> {
 
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
+        Command::new("open")
             .args(["-a", "Terminal", path.to_str().unwrap_or(".")])
             .spawn()
             .map_err(|e| AxisError::Other(e.to_string()))?;
@@ -291,14 +299,7 @@ pub async fn open_terminal(path: String) -> Result<()> {
 
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args([
-                "/c",
-                "start",
-                "cmd",
-                "/k",
-                &format!("cd /d {}", path.display()),
-            ])
+        windows_terminal_command(&path)
             .spawn()
             .map_err(|e| AxisError::Other(e.to_string()))?;
     }
@@ -309,7 +310,7 @@ pub async fn open_terminal(path: String) -> Result<()> {
         let terminals = ["gnome-terminal", "konsole", "xterm", "x-terminal-emulator"];
         let mut launched = false;
         for term in terminals {
-            if std::process::Command::new(term)
+            if Command::new(term)
                 .arg("--working-directory")
                 .arg(&path)
                 .spawn()
@@ -361,5 +362,22 @@ mod tests {
     fn validate_open_url_rejects_invalid_urls() {
         let err = validate_open_url("not a url").expect_err("URL should be invalid");
         assert!(err.to_string().contains("Invalid URL"));
+    }
+
+    #[test]
+    fn windows_terminal_command_uses_current_dir_without_path_interpolation() {
+        let path = std::path::Path::new(r"C:\repo & calc");
+        let command = windows_terminal_command(path);
+        let args: Vec<_> = command
+            .get_args()
+            .map(|arg| arg.to_string_lossy().into_owned())
+            .collect();
+
+        assert_eq!(command.get_program(), "cmd");
+        assert_eq!(args, ["/k"]);
+        assert_eq!(command.get_current_dir(), Some(path));
+        assert!(!args.iter().any(|arg| arg.contains("cd /d")));
+        assert!(!args.iter().any(|arg| arg.contains('&')));
+        assert!(!args.iter().any(|arg| arg.contains("repo")));
     }
 }

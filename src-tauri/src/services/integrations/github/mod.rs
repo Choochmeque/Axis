@@ -71,6 +71,16 @@ impl From<octocrab::models::Author> for IntegrationUser {
     }
 }
 
+impl From<octocrab::models::SimpleUser> for IntegrationUser {
+    fn from(user: octocrab::models::SimpleUser) -> Self {
+        Self {
+            login: user.login,
+            avatar_url: user.avatar_url.to_string(),
+            url: user.html_url.to_string(),
+        }
+    }
+}
+
 impl From<octocrab::models::Label> for IntegrationLabel {
     fn from(label: octocrab::models::Label) -> Self {
         Self {
@@ -172,6 +182,48 @@ impl From<octocrab::models::workflows::Run> for CIRun {
 
 impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequestsPage {
     fn from(page: octocrab::Page<octocrab::models::pulls::PullRequest>) -> Self {
+        let items = page
+            .items
+            .into_iter()
+            .map(std::convert::Into::into)
+            .collect();
+
+        Self {
+            items,
+            has_more: page.next.is_some(),
+        }
+    }
+}
+
+impl From<octocrab::models::pulls::SimplePullRequest> for PullRequest {
+    fn from(pr: octocrab::models::pulls::SimplePullRequest) -> Self {
+        Self {
+            provider: ProviderType::GitHub,
+            number: u32::try_from(pr.number).unwrap_or(u32::MAX),
+            title: pr.title.clone(),
+            state: match pr.state {
+                OctocrabIssueState::Closed => {
+                    if pr.merged_at.is_some() {
+                        PrState::Merged
+                    } else {
+                        PrState::Closed
+                    }
+                }
+                _ => PrState::Open,
+            },
+            author: (*pr.user).clone().into(),
+            source_branch: pr.head.ref_field.clone(),
+            target_branch: pr.base.ref_field.clone(),
+            draft: pr.draft.unwrap_or(false),
+            created_at: pr.created_at,
+            updated_at: pr.updated_at,
+            url: pr.html_url.to_string(),
+        }
+    }
+}
+
+impl From<octocrab::Page<octocrab::models::pulls::SimplePullRequest>> for PullRequestsPage {
+    fn from(page: octocrab::Page<octocrab::models::pulls::SimplePullRequest>) -> Self {
         let items = page
             .items
             .into_iter()

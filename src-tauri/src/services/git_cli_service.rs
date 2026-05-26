@@ -20,7 +20,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Output, Stdio};
 
-use crate::services::create_command;
+use crate::services::{create_command, validate_repo_relative_path};
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
 
@@ -1296,6 +1296,7 @@ impl GitCliService {
 
     /// Remove a submodule completely
     pub async fn submodule_remove(&self, path: &str) -> Result<SubmoduleResult> {
+        let relative_path = validate_repo_relative_path(path)?;
         // Step 1: Deinit the submodule
         let deinit_result = self.execute(&["submodule", "deinit", "-f", path]).await?;
         if !deinit_result.success {
@@ -1307,7 +1308,11 @@ impl GitCliService {
         }
 
         // Step 2: Remove from .git/modules
-        let git_modules_path = self.repo_path.join(".git").join("modules").join(path);
+        let git_modules_path = self
+            .repo_path
+            .join(".git")
+            .join("modules")
+            .join(&relative_path);
         if git_modules_path.exists() {
             if let Err(e) = std::fs::remove_dir_all(&git_modules_path) {
                 return Ok(SubmoduleResult {

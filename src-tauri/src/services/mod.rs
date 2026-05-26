@@ -14,6 +14,7 @@ mod integrations;
 pub mod ops;
 #[cfg(not(feature = "integration"))]
 pub mod ops;
+mod path_utils;
 mod process_utils;
 mod progress_emitter;
 mod signature_cache;
@@ -31,6 +32,7 @@ pub use git_service::*;
 pub use hook_progress::*;
 pub use hook_service::*;
 pub use integrations::*;
+pub use path_utils::*;
 pub use process_utils::*;
 pub use progress_emitter::*;
 pub use signature_cache::*;

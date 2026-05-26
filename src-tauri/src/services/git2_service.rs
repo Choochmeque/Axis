@@ -9,7 +9,7 @@ use crate::models::{
     SearchResult, SignatureVerification, SigningConfig, SigningFormat, SortOrder, SshCredentials,
     Tag, TagResult, TagSignature, TagSortOrder,
 };
-use crate::services::SigningService;
+use crate::services::{resolve_repo_relative_path, validate_repo_relative_path, SigningService};
 use chrono::{DateTime, Utc};
 use git2::{
     build::RepoBuilder, cert::Cert, CertificateCheckStatus, Cred, FetchOptions, RemoteCallbacks,
@@ -721,14 +721,14 @@ impl Git2Service {
     pub fn stage_file(&self, path: &str) -> Result<()> {
         let repo = self.repo()?;
         let mut index = repo.index()?;
-        let full_path = repo
+        let workdir = repo
             .workdir()
-            .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?
-            .join(path);
+            .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
+        let (relative_path, full_path) = resolve_repo_relative_path(workdir, path)?;
         if full_path.exists() {
-            index.add_path(Path::new(path))?;
+            index.add_path(&relative_path)?;
         } else {
-            index.remove_path(Path::new(path))?;
+            index.remove_path(&relative_path)?;
         }
         index.write()?;
         Ok(())
@@ -742,11 +742,11 @@ impl Git2Service {
             .workdir()
             .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
         for path in paths {
-            let full_path = workdir.join(path);
+            let (relative_path, full_path) = resolve_repo_relative_path(workdir, path)?;
             if full_path.exists() {
-                index.add_path(Path::new(path))?;
+                index.add_path(&relative_path)?;
             } else {
-                index.remove_path(Path::new(path))?;
+                index.remove_path(&relative_path)?;
             }
         }
         index.write()?;
@@ -770,8 +770,12 @@ impl Git2Service {
         let head_tree = head_commit.tree()?;
 
         let mut index = repo.index()?;
+        let workdir = repo
+            .workdir()
+            .ok_or_else(|| AxisError::Other("bare repository has no workdir".into()))?;
+        let (relative_path, _) = resolve_repo_relative_path(workdir, path)?;
         // Check if file exists in HEAD
-        if let Ok(entry) = head_tree.get_path(Path::new(path)) {
+        if let Ok(entry) = head_tree.get_path(&relative_path) {
             // File exists in HEAD - reset to HEAD version
             let obj = entry.to_object(&repo)?;
             if let Some(blob) = obj.as_blob() {
@@ -787,12 +791,12 @@ impl Git2Service {
                     id: entry.id(),
                     flags: 0,
                     flags_extended: 0,
-                    path: path.as_bytes().to_vec(),
+                    path: relative_path.to_string_lossy().as_bytes().to_vec(),
                 })?;
             }
         } else {
             // File is new (not in HEAD) - remove from index entirely
-            index.remove_path(Path::new(path))?;
+            index.remove_path(&relative_path)?;
         }
 
         index.write()?;
@@ -843,7 +847,7 @@ impl Git2Service {
         let workdir = repo
             .workdir()
             .ok_or_else(|| AxisError::Other("Bare repository".to_string()))?;
-        let file_path = workdir.join(path);
+        let (_, file_path) = resolve_repo_relative_path(workdir, path)?;
 
         if !file_path.exists() {
             return Err(AxisError::FileNotFound(format!("File not found: {path}")));
@@ -1171,12 +1175,13 @@ impl Git2Service {
     /// If `commit_oid` is None, reads the file from the working directory
     pub fn get_file_blob(&self, path: &str, commit_oid: Option<&str>) -> Result<Vec<u8>> {
         let repo = self.repo()?;
+        let relative_path = validate_repo_relative_path(path)?;
         if let Some(oid_str) = commit_oid {
             // Resolve ref name (e.g. "HEAD") or raw OID to a commit
             let obj = repo.revparse_single(oid_str)?;
             let commit = obj.peel_to_commit()?;
             let tree = commit.tree()?;
-            let entry = tree.get_path(std::path::Path::new(path))?;
+            let entry = tree.get_path(&relative_path)?;
             let blob = entry.to_object(&repo)?.peel_to_blob()?;
             Ok(blob.content().to_vec())
         } else {
@@ -1184,7 +1189,7 @@ impl Git2Service {
             let repo_path = repo
                 .workdir()
                 .ok_or_else(|| AxisError::Other("No working directory".into()))?;
-            let file_path = repo_path.join(path);
+            let (_, file_path) = resolve_repo_relative_path(repo_path, path)?;
             Ok(std::fs::read(&file_path)?)
         }
     }
@@ -2707,7 +2712,7 @@ impl Git2Service {
             let workdir = repo
                 .workdir()
                 .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
-            let file_path = workdir.join(path);
+            let (_, file_path) = resolve_repo_relative_path(workdir, path)?;
             if !file_path.exists() {
                 return Err(AxisError::FileNotFound(format!(
                     "Cannot blame: file does not exist in working directory: {path}"
@@ -2725,7 +2730,12 @@ impl Git2Service {
             blame_opts.newest_commit(obj.id());
         }
 
-        let blame = repo.blame_file(Path::new(path), Some(&mut blame_opts))?;
+        let workdir = repo
+            .workdir()
+            .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
+        let (relative_path, file_path) = resolve_repo_relative_path(workdir, path)?;
+
+        let blame = repo.blame_file(&relative_path, Some(&mut blame_opts))?;
 
         // Read file content to get line contents
         let file_content = if let Some(oid_str) = commit_oid {
@@ -2735,15 +2745,11 @@ impl Git2Service {
                 .peel_to_commit()
                 .map_err(|_| AxisError::InvalidReference(oid_str.to_string()))?;
             let tree = commit.tree()?;
-            let entry = tree.get_path(Path::new(path))?;
+            let entry = tree.get_path(&relative_path)?;
             let blob = entry.to_object(&repo)?.peel_to_blob()?;
             String::from_utf8_lossy(blob.content()).to_string()
         } else {
-            // Read from workdir
-            let workdir = repo
-                .workdir()
-                .ok_or_else(|| AxisError::GitError("No working directory".to_string()))?;
-            std::fs::read_to_string(workdir.join(path))?
+            std::fs::read_to_string(file_path)?
         };
 
         let lines: Vec<&str> = file_content.lines().collect();
@@ -3393,7 +3399,7 @@ impl Git2Service {
             .workdir()
             .ok_or_else(|| AxisError::Other("Cannot add to gitignore in bare repository".into()))?;
 
-        let gitignore_path = workdir.join(gitignore_rel_path);
+        let (_, gitignore_path) = resolve_repo_relative_path(workdir, gitignore_rel_path)?;
 
         // Create parent directories if needed
         if let Some(parent) = gitignore_path.parent() {
@@ -3481,7 +3487,7 @@ impl Git2Service {
             AxisError::Other("Cannot get ignore options in bare repository".into())
         })?;
 
-        let file = std::path::Path::new(file_path);
+        let file = validate_repo_relative_path(file_path)?;
 
         // Find ancestor .gitignore files (only in file's path hierarchy)
         let mut gitignore_files = Vec::new();
@@ -3510,7 +3516,7 @@ impl Git2Service {
         }
 
         // Generate pattern suggestions
-        let suggestions = Self::get_ignore_suggestions(file_path);
+        let suggestions = Self::get_ignore_suggestions(&file.to_string_lossy());
 
         Ok(IgnoreOptions {
             gitignore_files,
@@ -3654,7 +3660,7 @@ impl Git2Service {
         let mut large_files = Vec::new();
 
         for path in paths {
-            let abs_path = workdir.join(path);
+            let (_, abs_path) = resolve_repo_relative_path(workdir, path)?;
 
             // Skip if file doesn't exist (e.g., deleted files)
             if !abs_path.exists() {
@@ -4893,6 +4899,19 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[test]
+    fn test_get_file_blob_rejects_parent_traversal() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+
+        let result = service.get_file_blob("../outside.txt", None);
+        assert!(result.is_err());
+        assert!(result
+            .expect_err("traversal path should fail")
+            .to_string()
+            .contains("inside repository"));
+    }
+
     // ==================== Reflog Tests ====================
 
     #[test]
@@ -5123,6 +5142,31 @@ mod tests {
         service.delete_file("to_delete.txt").expect("should delete");
 
         assert!(!tmp.path().join("to_delete.txt").exists());
+    }
+
+    #[test]
+    fn test_delete_file_rejects_parent_traversal() {
+        let (tmp, service) = setup_test_repo();
+        create_initial_commit(&service, &tmp);
+        let outside_name = format!(
+            "{}-outside-delete.txt",
+            tmp.path()
+                .file_name()
+                .expect("temp dir should have name")
+                .to_string_lossy()
+        );
+        let outside_path = tmp
+            .path()
+            .parent()
+            .expect("temp dir should have parent")
+            .join(&outside_name);
+        fs::write(&outside_path, "outside").expect("should write outside file");
+
+        let result = service.delete_file(&format!("../{outside_name}"));
+
+        assert!(result.is_err());
+        assert!(outside_path.exists(), "outside file should not be deleted");
+        fs::remove_file(outside_path).expect("should clean up outside file");
     }
 
     // ==================== Discard Unstaged Tests ====================

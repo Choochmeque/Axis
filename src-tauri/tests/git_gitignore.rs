@@ -64,6 +64,33 @@ async fn test_add_to_gitignore_verified_by_filesystem() {
 }
 
 #[tokio::test]
+async fn test_add_to_gitignore_rejects_parent_traversal() {
+    let (tmp, ops) = setup_test_repo();
+    let outside_name = format!(
+        "{}-outside-gitignore",
+        tmp.path()
+            .file_name()
+            .expect("temp dir should have name")
+            .to_string_lossy()
+    );
+    let outside_path = tmp
+        .path()
+        .parent()
+        .expect("temp dir should have parent")
+        .join(&outside_name);
+
+    let result = ops
+        .add_to_gitignore("*.log", &format!("../{outside_name}"))
+        .await;
+
+    assert!(result.is_err(), "parent traversal should be rejected");
+    assert!(
+        !outside_path.exists(),
+        "gitignore write should not create files outside the repo"
+    );
+}
+
+#[tokio::test]
 async fn test_add_to_gitignore_git_respects_pattern() {
     let (tmp, ops) = setup_test_repo();
 

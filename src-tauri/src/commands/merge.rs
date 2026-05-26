@@ -5,7 +5,7 @@ use crate::models::{
     MergeResult, MergeType, OperationState, RebaseAction, RebaseOntoOptions, RebaseOptions,
     RebasePreview, RebaseProgress, RebaseResult, ResetOptions, RevertOptions, RevertResult,
 };
-use crate::services::HookProgressEmitter;
+use crate::services::{resolve_repo_relative_path, HookProgressEmitter};
 use crate::state::AppState;
 use std::fs;
 use tauri::State;
@@ -768,7 +768,8 @@ pub async fn get_conflict_content(
     drop(guard);
 
     // Read current working tree content
-    let merged = fs::read_to_string(repo_path.join(&path))?;
+    let (_, merged_path) = resolve_repo_relative_path(&repo_path, &path)?;
+    let merged = fs::read_to_string(merged_path)?;
 
     Ok(ConflictContent {
         path,
@@ -806,7 +807,8 @@ pub async fn resolve_conflict(
         ConflictResolution::Merged => {
             // Write the custom content
             if let Some(content) = custom_content {
-                fs::write(repo_path.join(&path), content)?;
+                let (_, merged_path) = resolve_repo_relative_path(&repo_path, &path)?;
+                fs::write(merged_path, content)?;
                 guard.mark_resolved(&path).await?;
             } else {
                 return Err(AxisError::Other(

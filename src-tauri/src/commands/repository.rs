@@ -9,6 +9,17 @@ use crate::state::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
+use url::Url;
+
+fn validate_open_url(url: &str) -> Result<()> {
+    let parsed = Url::parse(url).map_err(|_| AxisError::Other("Invalid URL".to_string()))?;
+    match parsed.scheme() {
+        "http" | "https" => Ok(()),
+        scheme => Err(AxisError::Other(format!(
+            "Unsupported URL scheme: {scheme}"
+        ))),
+    }
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -254,6 +265,7 @@ pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn open_url(app_handle: AppHandle, url: String) -> Result<()> {
+    validate_open_url(&url)?;
     app_handle
         .opener()
         .open_url(&url, None::<&str>)
@@ -320,4 +332,34 @@ pub async fn open_terminal(path: String) -> Result<()> {
 #[allow(clippy::needless_pass_by_value)] // Tauri State extractor requires owned type
 pub fn cancel_operation(state: State<'_, AppState>, operation_id: String) -> bool {
     state.progress_registry().cancel(&operation_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_open_url_allows_http_and_https() {
+        validate_open_url("https://github.com/example/repo").expect("https should be allowed");
+        validate_open_url("http://localhost:1420/callback").expect("http should be allowed");
+    }
+
+    #[test]
+    fn validate_open_url_rejects_non_web_schemes() {
+        for url in [
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "mailto:user@example.com",
+            "vscode://file/tmp/example",
+        ] {
+            let err = validate_open_url(url).expect_err("scheme should be rejected");
+            assert!(err.to_string().contains("Unsupported URL scheme"));
+        }
+    }
+
+    #[test]
+    fn validate_open_url_rejects_invalid_urls() {
+        let err = validate_open_url("not a url").expect_err("URL should be invalid");
+        assert!(err.to_string().contains("Invalid URL"));
+    }
 }

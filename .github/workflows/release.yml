@@ -231,11 +231,25 @@ jobs:
       # --------------------------------------------------
       # Create GitHub release
       # --------------------------------------------------
+      - name: Compute previous stable tag
+        id: prev_stable
+        run: |
+          PREV=$(git tag --merged HEAD --list 'v*' --sort=-version:refname \
+            | grep -v '-' \
+            | grep -vFx "${GITHUB_REF_NAME}" \
+            | head -n 1)
+          echo "tag=$PREV" >> "$GITHUB_OUTPUT"
+          echo "Previous stable tag: ${PREV:-<none>}"
+
       - name: Create release
         run: |
+          NOTES_ARGS="--generate-notes"
+          if [ -n "${{ steps.prev_stable.outputs.tag }}" ]; then
+            NOTES_ARGS="$NOTES_ARGS --notes-start-tag ${{ steps.prev_stable.outputs.tag }}"
+          fi
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
-            --generate-notes
+            $NOTES_ARGS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

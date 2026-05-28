@@ -3501,7 +3501,8 @@ impl Git2Service {
         let mut current = file.parent();
         while let Some(dir) = current {
             if !dir.as_os_str().is_empty() {
-                let gitignore_rel = format!("{}/.gitignore", dir.display());
+                let dir_str = dir.to_string_lossy().replace('\\', "/");
+                let gitignore_rel = format!("{dir_str}/.gitignore");
                 let gitignore_abs = workdir.join(&gitignore_rel);
 
                 if gitignore_abs.exists() {

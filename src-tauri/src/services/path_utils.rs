@@ -1,6 +1,10 @@
 use crate::error::{AxisError, Result};
 use std::path::{Component, Path, PathBuf};
 
+pub fn to_forward_slash(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
 pub fn validate_repo_relative_path(path: &str) -> Result<PathBuf> {
     let path = Path::new(path);
 
@@ -86,6 +90,13 @@ mod tests {
     fn rejects_empty_path() {
         let err = validate_repo_relative_path("").expect_err("path should fail");
         assert!(err.to_string().contains("must not be empty"));
+    }
+
+    #[test]
+    fn forward_slash_normalizes_backslashes() {
+        assert_eq!(to_forward_slash(Path::new("a\\b\\c")), "a/b/c");
+        assert_eq!(to_forward_slash(Path::new("a/b/c")), "a/b/c");
+        assert_eq!(to_forward_slash(Path::new("")), "");
     }
 
     #[cfg(unix)]

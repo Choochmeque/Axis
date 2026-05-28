@@ -9,7 +9,9 @@ use crate::models::{
     SearchResult, SignatureVerification, SigningConfig, SigningFormat, SortOrder, SshCredentials,
     Tag, TagResult, TagSignature, TagSortOrder,
 };
-use crate::services::{resolve_repo_relative_path, validate_repo_relative_path, SigningService};
+use crate::services::{
+    resolve_repo_relative_path, to_forward_slash, validate_repo_relative_path, SigningService,
+};
 use chrono::{DateTime, Utc};
 use git2::{
     build::RepoBuilder, cert::Cert, CertificateCheckStatus, Cred, FetchOptions, RemoteCallbacks,
@@ -3501,8 +3503,7 @@ impl Git2Service {
         let mut current = file.parent();
         while let Some(dir) = current {
             if !dir.as_os_str().is_empty() {
-                let dir_str = dir.to_string_lossy().replace('\\', "/");
-                let gitignore_rel = format!("{dir_str}/.gitignore");
+                let gitignore_rel = format!("{}/.gitignore", to_forward_slash(dir));
                 let gitignore_abs = workdir.join(&gitignore_rel);
 
                 if gitignore_abs.exists() {
@@ -3551,7 +3552,7 @@ impl Git2Service {
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
                 suggestions.push(IgnoreSuggestion {
-                    pattern: format!("{}/", parent.display()),
+                    pattern: format!("{}/", to_forward_slash(parent)),
                     description: "Ignore entire directory".to_string(),
                     suggestion_type: IgnoreSuggestionType::Directory,
                 });

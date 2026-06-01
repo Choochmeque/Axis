@@ -61,6 +61,12 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
 
 #[tauri::command]
 #[specta::specta]
+pub fn get_launch_repository_path() -> Option<String> {
+    crate::repository_path_from_args(&std::env::args().collect::<Vec<_>>())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn init_repository(
     state: State<'_, AppState>,
     path: String,

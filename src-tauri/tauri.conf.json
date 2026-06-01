@@ -38,6 +38,11 @@
     ]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["axis"]
+      }
+    },
     "updater": {
       "pubkey": "",
       "windows": {

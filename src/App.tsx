@@ -1,7 +1,7 @@
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { events } from '@/bindings/api';
+import { commands, events } from '@/bindings/api';
 import { GitFlowView } from './components/gitflow';
 import { HistoryView } from './components/history';
 import { CIView, IssuesView, NotificationsView, PullRequestsView } from './components/integrations';
@@ -216,6 +216,36 @@ function App() {
     },
     [findTabByPath, setActiveTab, openRepository, addTab]
   );
+
+  // Open a repository passed on the command line, including later single-instance launches.
+  useEffect(() => {
+    let cancelled = false;
+
+    commands
+      .getLaunchRepositoryPath()
+      .then((path) => {
+        if (!path || cancelled) return;
+        return handleOpenRepository(path);
+      })
+      .catch((err) => {
+        console.error(`Failed to open repository from launch argument: ${getErrorMessage(err)}`);
+        toast.error(getErrorMessage(err));
+      });
+
+    const unlisten = events.openRepositoryRequestEvent.listen((event) => {
+      handleOpenRepository(event.payload.path).catch((err) => {
+        console.error(
+          `Failed to open repository from launch argument at ${event.payload.path}: ${getErrorMessage(err)}`
+        );
+        toast.error(getErrorMessage(err));
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      unlisten.then((fn) => fn());
+    };
+  }, [handleOpenRepository]);
 
   // Handle tab switching
   const handleTabChange = useCallback(

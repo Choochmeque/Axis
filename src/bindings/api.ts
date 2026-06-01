@@ -42,6 +42,9 @@ async getCommit(oid: string) : Promise<Commit> {
 async getRecentRepositories() : Promise<RecentRepository[]> {
     return await TAURI_INVOKE("get_recent_repositories");
 },
+async getLaunchRepositoryPath() : Promise<string | null> {
+    return await TAURI_INVOKE("get_launch_repository_path");
+},
 async removeRecentRepository(path: string) : Promise<null> {
     return await TAURI_INVOKE("remove_recent_repository", { path });
 },
@@ -1186,6 +1189,7 @@ indexChangedEvent: IndexChangedEvent,
 integrationStatusChangedEvent: IntegrationStatusChangedEvent,
 menuActionEvent: MenuActionEvent,
 oAuthCallbackEvent: OAuthCallbackEvent,
+openRepositoryRequestEvent: OpenRepositoryRequestEvent,
 refChangedEvent: RefChangedEvent,
 remoteFetchedEvent: RemoteFetchedEvent,
 repositoryDirtyEvent: RepositoryDirtyEvent,
@@ -1200,6 +1204,7 @@ indexChangedEvent: "index-changed-event",
 integrationStatusChangedEvent: "integration-status-changed-event",
 menuActionEvent: "menu-action-event",
 oAuthCallbackEvent: "o-auth-callback-event",
+openRepositoryRequestEvent: "open-repository-request-event",
 refChangedEvent: "ref-changed-event",
 remoteFetchedEvent: "remote-fetched-event",
 repositoryDirtyEvent: "repository-dirty-event",
@@ -2980,6 +2985,10 @@ export type NotificationsPage = { items: Notification[]; hasMore: boolean }
  * OAuth callback received from deep link
  */
 export type OAuthCallbackEvent = { provider: ProviderType; code: string; state: string | null }
+/**
+ * Request from a launched Axis process to open a repository path.
+ */
+export type OpenRepositoryRequestEvent = { path: string }
 /**
  * Operation currently in progress
  */

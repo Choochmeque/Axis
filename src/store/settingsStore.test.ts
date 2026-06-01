@@ -27,7 +27,7 @@ vi.mock('@/store/toastStore', () => ({
 }));
 
 import { aiApi, settingsApi } from '@/services/api';
-import { AiProvider, SigningFormat, Theme } from '@/types';
+import { AiProvider, OpenTarget, SigningFormat, Theme } from '@/types';
 
 describe('settingsStore', () => {
   const mockSettings = {
@@ -39,6 +39,7 @@ describe('settingsStore', () => {
     confirmBeforeDiscard: true,
     signCommits: false,
     bypassHooks: false,
+    defaultOpenTarget: OpenTarget.Finder,
     signingFormat: SigningFormat.Gpg,
     signingKey: null,
     gpgProgram: null,

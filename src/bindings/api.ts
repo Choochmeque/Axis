@@ -57,6 +57,9 @@ async unpinRepository(path: string) : Promise<null> {
 async showInFolder(path: string) : Promise<null> {
     return await TAURI_INVOKE("show_in_folder", { path });
 },
+async openRepositoryTarget(path: string, target: OpenTarget) : Promise<null> {
+    return await TAURI_INVOKE("open_repository_target", { path, target });
+},
 async openUrl(url: string) : Promise<null> {
     return await TAURI_INVOKE("open_url", { url });
 },
@@ -1375,7 +1378,7 @@ force: boolean;
  */
 detach: boolean }
 export type AiProvider = "OpenAi" | "Anthropic" | "Ollama"
-export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean; largeBinaryWarningEnabled: boolean; largeBinaryThreshold: number }
+export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; defaultOpenTarget?: OpenTarget; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean; largeBinaryWarningEnabled: boolean; largeBinaryThreshold: number }
 /**
  * Options for applying mailbox patches (git am)
  */
@@ -2989,6 +2992,7 @@ export type OAuthCallbackEvent = { provider: ProviderType; code: string; state: 
  * Request from a launched Axis process to open a repository path.
  */
 export type OpenRepositoryRequestEvent = { path: string }
+export type OpenTarget = "Zed" | "Finder" | "Terminal" | "Iterm2" | "Ghostty" | "Xcode" | "AndroidStudio" | "IntelliJIdea"
 /**
  * Operation currently in progress
  */

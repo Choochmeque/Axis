@@ -28,6 +28,7 @@ import {
 } from '@/components/ui';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { OPEN_TARGETS } from '@/lib/openTargets';
 import { queryKeys } from '@/lib/queryKeys';
 import { cn } from '@/lib/utils';
 import { aiApi, avatarApi, lfsApi, settingsApi, signingApi, sshKeysApi } from '@/services/api';
@@ -38,12 +39,13 @@ import type {
   AiProvider as AiProviderType,
   AppSettings,
   GpgKey,
+  OpenTarget as OpenTargetType,
   SigningFormat as SigningFormatType,
   SshKey,
   SshKeyInfo,
   Theme as ThemeType,
 } from '@/types';
-import { AiProvider, ProviderType, SigningFormat, SshKeyFormat, Theme } from '@/types';
+import { AiProvider, OpenTarget, ProviderType, SigningFormat, SshKeyFormat, Theme } from '@/types';
 import { GlobalActionsSettings } from './GlobalActionsSettings';
 import { SshKeysSettings } from './SshKeysSettings';
 
@@ -64,6 +66,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   confirmBeforeDiscard: true,
   signCommits: false,
   bypassHooks: false,
+  defaultOpenTarget: OpenTarget.Finder,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
@@ -525,6 +528,24 @@ function GitSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('confirmBeforeDiscard', checked === true)}
         />
       </div>
+
+      <FormField
+        label={t('settings.git.defaultOpenTarget.label')}
+        htmlFor="defaultOpenTarget"
+        hint={t('settings.git.defaultOpenTarget.hint')}
+      >
+        <Select
+          id="defaultOpenTarget"
+          value={settings.defaultOpenTarget ?? OpenTarget.Finder}
+          onValueChange={(value) => updateSetting('defaultOpenTarget', value as OpenTargetType)}
+        >
+          {OPEN_TARGETS.map((target) => (
+            <SelectItem key={target.value} value={target.value}>
+              {t(target.labelKey)}
+            </SelectItem>
+          ))}
+        </Select>
+      </FormField>
 
       <FormField
         label={t('settings.git.defaultSshKey.label')}

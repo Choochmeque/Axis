@@ -222,6 +222,7 @@ import type {
   MergeMethod as MergeMethodType,
   MergeType as MergeTypeType,
   NotificationReason as NotificationReasonType,
+  OpenTarget as OpenTargetType,
   // Progress types
   ProgressStage as ProgressStageType,
   ProviderType as ProviderTypeType,
@@ -417,6 +418,19 @@ export const Theme: { [K in ThemeType]: K } = {
 };
 
 export type Theme = ThemeType;
+
+export const OpenTarget: { [K in OpenTargetType]: K } = {
+  Zed: 'Zed',
+  Finder: 'Finder',
+  Terminal: 'Terminal',
+  Iterm2: 'Iterm2',
+  Ghostty: 'Ghostty',
+  Xcode: 'Xcode',
+  AndroidStudio: 'AndroidStudio',
+  IntelliJIdea: 'IntelliJIdea',
+};
+
+export type OpenTarget = OpenTargetType;
 
 export const SigningFormat: { [K in SigningFormatType]: K } = {
   Gpg: 'Gpg',

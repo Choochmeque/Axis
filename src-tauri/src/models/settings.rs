@@ -20,6 +20,8 @@ pub struct AppSettings {
     pub confirm_before_discard: bool,
     pub sign_commits: bool,
     pub bypass_hooks: bool, // Skip git hooks by default
+    #[serde(default)]
+    pub default_open_target: OpenTarget,
 
     // Signing
     pub signing_format: SigningFormat,
@@ -72,6 +74,23 @@ pub enum Theme {
     System,
 }
 
+#[derive(
+    Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Eq, Default, Type,
+)]
+#[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "PascalCase")]
+pub enum OpenTarget {
+    Zed,
+    #[default]
+    Finder,
+    Terminal,
+    Iterm2,
+    Ghostty,
+    Xcode,
+    AndroidStudio,
+    IntelliJIdea,
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -86,6 +105,7 @@ impl Default for AppSettings {
             confirm_before_discard: true,
             sign_commits: false,
             bypass_hooks: false,
+            default_open_target: OpenTarget::default(),
 
             // Signing
             signing_format: SigningFormat::default(),
@@ -214,6 +234,7 @@ mod tests {
         assert!(settings.confirm_before_discard);
         assert!(!settings.sign_commits);
         assert!(!settings.bypass_hooks);
+        assert_eq!(settings.default_open_target, OpenTarget::Finder);
 
         // Signing
         assert_eq!(settings.signing_format, SigningFormat::default());
@@ -265,6 +286,7 @@ mod tests {
             confirm_before_discard: false,
             sign_commits: true,
             bypass_hooks: true,
+            default_open_target: OpenTarget::Zed,
             signing_format: SigningFormat::Ssh,
             signing_key: Some("~/.ssh/id_ed25519".to_string()),
             gpg_program: None,

@@ -358,6 +358,10 @@
         "label": "Confirm before discarding changes",
         "description": "Show confirmation dialog before discarding changes"
       },
+      "defaultOpenTarget": {
+        "label": "Default open target",
+        "hint": "Choose which app the toolbar open button uses by default"
+      },
       "defaultSshKey": {
         "label": "Default SSH Key",
         "hint": "SSH key to use for remote operations when no per-remote key is configured",
@@ -1076,8 +1080,20 @@
     "branch": "Branch",
     "checkout": "Checkout",
     "showInFinder": "Show in Finder",
+    "openWith": "Open with {{target}}",
+    "openWithMenu": "Choose app to open repository",
     "terminal": "Terminal",
     "settings": "Settings"
+  },
+  "openTargets": {
+    "zed": "Zed",
+    "finder": "Finder",
+    "terminal": "Terminal",
+    "iterm2": "iTerm2",
+    "ghostty": "Ghostty",
+    "xcode": "Xcode",
+    "androidStudio": "Android Studio",
+    "intellijIdea": "IntelliJ IDEA"
   },
   "layout": {
     "statusBar": {

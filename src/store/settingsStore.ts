@@ -4,7 +4,7 @@ import i18n from '@/i18n';
 import { aiApi, settingsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
 import type { AppSettings, Theme as ThemeType } from '@/types';
-import { AiProvider, SigningFormat, Theme } from '@/types';
+import { AiProvider, OpenTarget, SigningFormat, Theme } from '@/types';
 
 interface AiModelsCache {
   models: string[];
@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   confirmBeforeDiscard: true,
   signCommits: false,
   bypassHooks: false,
+  defaultOpenTarget: OpenTarget.Finder,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,

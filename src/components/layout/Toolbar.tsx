@@ -2,32 +2,47 @@ import {
   Archive,
   ArrowDownToLine,
   ArrowUpFromLine,
-  FolderOpen,
+  ChevronDown,
   GitBranch,
   GitCommit,
   GitMerge,
   RefreshCw,
   Settings,
-  Terminal,
 } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui';
 import { toast } from '@/hooks';
-import { showInFinder } from '@/lib/actions';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { getOpenTargetOption, OPEN_TARGETS } from '@/lib/openTargets';
 import { testId } from '@/lib/utils';
 import { shellApi } from '@/services/api';
 import { useDialogStore } from '@/store/dialogStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { OpenTarget } from '@/types';
+import type { OpenTarget as OpenTargetType } from '@/types';
 import { useKeyboardShortcuts } from '../../hooks';
 
 const toolbarButtonClass =
   'flex flex-col items-center gap-0.5 px-3 py-1.5 bg-transparent border-none rounded text-(--text-primary) cursor-pointer text-sm transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
+const toolbarSplitButtonClass =
+  'flex flex-col items-center gap-0.5 px-2 py-1.5 bg-transparent border-none rounded-l text-(--text-primary) cursor-pointer text-sm transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
+const toolbarSplitTriggerClass =
+  'self-stretch px-1 bg-transparent border-none rounded-r text-(--text-primary) cursor-pointer transition-colors hover:not-disabled:bg-(--bg-hover) active:not-disabled:bg-(--bg-active) disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function Toolbar() {
   const { t } = useTranslation();
   const { repository, status, branches, remotes, setCurrentView, refreshRepository } =
     useRepositoryStore();
+  const defaultOpenTarget = useSettingsStore(
+    (state) => state.settings?.defaultOpenTarget ?? OpenTarget.Finder
+  );
 
   // Get current branch for ahead/behind counts
   const currentBranch = branches.find((b) => b.isHead);
@@ -56,15 +71,23 @@ export function Toolbar() {
     refreshRepository?.();
   }, [refreshRepository]);
 
-  const handleOpenTerminal = useCallback(async () => {
-    if (repository?.path) {
+  const handleOpenRepositoryTarget = useCallback(
+    async (target: OpenTargetType) => {
+      if (!repository?.path) {
+        return;
+      }
+
       try {
-        await shellApi.openTerminal(repository.path);
+        await shellApi.openRepositoryTarget(repository.path, target);
       } catch (err) {
         toast.error(t('notifications.error.operationFailed'), getErrorMessage(err));
       }
-    }
-  }, [repository, t]);
+    },
+    [repository, t]
+  );
+
+  const defaultOpenTargetOption = getOpenTargetOption(defaultOpenTarget);
+  const DefaultOpenIcon = defaultOpenTargetOption.icon;
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -183,22 +206,34 @@ export function Toolbar() {
 
       {repository && (
         <div className="flex items-center gap-0.5">
-          <button
-            className={toolbarButtonClass}
-            onClick={() => repository?.path && showInFinder(repository.path)}
-            title={t('toolbar.showInFinder')}
-          >
-            <FolderOpen size={18} />
-            <span>{t('toolbar.showInFinder')}</span>
-          </button>
-          <button
-            className={toolbarButtonClass}
-            onClick={handleOpenTerminal}
-            title={t('toolbar.terminal')}
-          >
-            <Terminal size={18} />
-            <span>{t('toolbar.terminal')}</span>
-          </button>
+          <DropdownMenu>
+            <div className="flex items-stretch rounded">
+              <button
+                className={toolbarSplitButtonClass}
+                onClick={() => handleOpenRepositoryTarget(defaultOpenTarget)}
+                title={t('toolbar.openWith', { target: t(defaultOpenTargetOption.labelKey) })}
+              >
+                <DefaultOpenIcon size={18} />
+                <span>{t(defaultOpenTargetOption.labelKey)}</span>
+              </button>
+              <DropdownMenuTrigger asChild>
+                <button className={toolbarSplitTriggerClass} title={t('toolbar.openWithMenu')}>
+                  <ChevronDown size={14} />
+                </button>
+              </DropdownMenuTrigger>
+            </div>
+            <DropdownMenuContent align="end" className="min-w-44">
+              {OPEN_TARGETS.map((target) => (
+                <DropdownMenuItem
+                  key={target.value}
+                  icon={target.icon}
+                  onSelect={() => handleOpenRepositoryTarget(target.value)}
+                >
+                  {t(target.labelKey)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             className={toolbarButtonClass}
             onClick={openRepositorySettingsDialog}

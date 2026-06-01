@@ -58,7 +58,7 @@ vi.mock('@/store/dialogStore', () => ({
 
 vi.mock('@/services/api', () => ({
   shellApi: {
-    openTerminal: vi.fn().mockResolvedValue(undefined),
+    openRepositoryTarget: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -66,8 +66,9 @@ vi.mock('@/lib/errorUtils', () => ({
   getErrorMessage: (err: unknown) => String(err),
 }));
 
-vi.mock('@/lib/actions', () => ({
-  showInFinder: vi.fn(),
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: (selector: (state: { settings: { defaultOpenTarget: string } }) => unknown) =>
+    selector({ settings: { defaultOpenTarget: 'Finder' } }),
 }));
 
 vi.mock('@/hooks', async (importOriginal) => {
@@ -85,6 +86,8 @@ vi.mock('../../hooks', () => ({
 }));
 
 import { Toolbar } from './Toolbar';
+import { shellApi } from '@/services/api';
+import { OpenTarget } from '@/types';
 
 describe('Toolbar', () => {
   beforeEach(() => {
@@ -265,5 +268,15 @@ describe('Toolbar', () => {
 
     fireEvent.click(screen.getByTitle('toolbar.settings'));
     expect(mockOpenRepositorySettingsDialog).toHaveBeenCalled();
+  });
+
+  it('should open repository with default target when open button is clicked', () => {
+    mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
+    mockStatus.current = { staged: [] };
+
+    render(<Toolbar />);
+
+    fireEvent.click(screen.getByTitle('toolbar.openWith'));
+    expect(shellApi.openRepositoryTarget).toHaveBeenCalledWith('/test', OpenTarget.Finder);
   });
 });

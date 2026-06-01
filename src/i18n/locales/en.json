@@ -105,6 +105,10 @@
         "label": "Show line numbers",
         "description": "Display line numbers in diff and file views"
       },
+      "defaultOpenTarget": {
+        "label": "Default open app",
+        "hint": "Choose which installed app the toolbar open button uses by default"
+      },
       "autoUpdate": {
         "label": "Check for updates automatically",
         "description": "Automatically check for new versions on startup",
@@ -357,10 +361,6 @@
       "confirmBeforeDiscard": {
         "label": "Confirm before discarding changes",
         "description": "Show confirmation dialog before discarding changes"
-      },
-      "defaultOpenTarget": {
-        "label": "Default open target",
-        "hint": "Choose which app the toolbar open button uses by default"
       },
       "defaultSshKey": {
         "label": "Default SSH Key",
@@ -1084,16 +1084,6 @@
     "openWithMenu": "Choose app to open repository",
     "terminal": "Terminal",
     "settings": "Settings"
-  },
-  "openTargets": {
-    "zed": "Zed",
-    "finder": "Finder",
-    "terminal": "Terminal",
-    "iterm2": "iTerm2",
-    "ghostty": "Ghostty",
-    "xcode": "Xcode",
-    "androidStudio": "Android Studio",
-    "intellijIdea": "IntelliJ IDEA"
   },
   "layout": {
     "statusBar": {

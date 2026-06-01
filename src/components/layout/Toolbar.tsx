@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   Archive,
   ArrowDownToLine,
@@ -17,15 +18,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
+import { OpenTargetIcon } from '@/components/open-target';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { getOpenTargetOption, OPEN_TARGETS } from '@/lib/openTargets';
+import {
+  FALLBACK_OPEN_TARGET,
+  FALLBACK_OPEN_TARGET_OPTIONS,
+  getOpenTargetOption,
+  openTargetKey,
+} from '@/lib/openTargets';
 import { testId } from '@/lib/utils';
 import { shellApi } from '@/services/api';
 import { useDialogStore } from '@/store/dialogStore';
 import { useRepositoryStore } from '@/store/repositoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { OpenTarget } from '@/types';
 import type { OpenTarget as OpenTargetType } from '@/types';
 import { useKeyboardShortcuts } from '../../hooks';
 
@@ -41,8 +47,12 @@ export function Toolbar() {
   const { repository, status, branches, remotes, setCurrentView, refreshRepository } =
     useRepositoryStore();
   const defaultOpenTarget = useSettingsStore(
-    (state) => state.settings?.defaultOpenTarget ?? OpenTarget.Finder
+    (state) => state.settings?.defaultOpenTarget ?? FALLBACK_OPEN_TARGET
   );
+  const { data: openTargetOptions = FALLBACK_OPEN_TARGET_OPTIONS } = useQuery({
+    queryKey: ['open-target-options'],
+    queryFn: shellApi.getOpenTargetOptions,
+  });
 
   // Get current branch for ahead/behind counts
   const currentBranch = branches.find((b) => b.isHead);
@@ -86,8 +96,7 @@ export function Toolbar() {
     [repository, t]
   );
 
-  const defaultOpenTargetOption = getOpenTargetOption(defaultOpenTarget);
-  const DefaultOpenIcon = defaultOpenTargetOption.icon;
+  const defaultOpenTargetOption = getOpenTargetOption(openTargetOptions, defaultOpenTarget);
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
@@ -211,10 +220,10 @@ export function Toolbar() {
               <button
                 className={toolbarSplitButtonClass}
                 onClick={() => handleOpenRepositoryTarget(defaultOpenTarget)}
-                title={t('toolbar.openWith', { target: t(defaultOpenTargetOption.labelKey) })}
+                title={t('toolbar.openWith', { target: defaultOpenTargetOption.name })}
               >
-                <DefaultOpenIcon size={18} />
-                <span>{t(defaultOpenTargetOption.labelKey)}</span>
+                <OpenTargetIcon option={defaultOpenTargetOption} />
+                <span>{defaultOpenTargetOption.name}</span>
               </button>
               <DropdownMenuTrigger asChild>
                 <button className={toolbarSplitTriggerClass} title={t('toolbar.openWithMenu')}>
@@ -223,13 +232,15 @@ export function Toolbar() {
               </DropdownMenuTrigger>
             </div>
             <DropdownMenuContent align="end" className="min-w-44">
-              {OPEN_TARGETS.map((target) => (
+              {openTargetOptions.map((target) => (
                 <DropdownMenuItem
-                  key={target.value}
-                  icon={target.icon}
-                  onSelect={() => handleOpenRepositoryTarget(target.value)}
+                  key={openTargetKey(target.target)}
+                  onSelect={() => handleOpenRepositoryTarget(target.target)}
                 >
-                  {t(target.labelKey)}
+                  <span className="flex items-center gap-2">
+                    <OpenTargetIcon option={target} size={16} />
+                    {target.name}
+                  </span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

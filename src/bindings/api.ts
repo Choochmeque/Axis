@@ -60,6 +60,9 @@ async showInFolder(path: string) : Promise<null> {
 async openRepositoryTarget(path: string, target: OpenTarget) : Promise<null> {
     return await TAURI_INVOKE("open_repository_target", { path, target });
 },
+async getOpenTargetOptions() : Promise<OpenTargetOption[]> {
+    return await TAURI_INVOKE("get_open_target_options");
+},
 async openUrl(url: string) : Promise<null> {
     return await TAURI_INVOKE("open_url", { url });
 },
@@ -2992,7 +2995,9 @@ export type OAuthCallbackEvent = { provider: ProviderType; code: string; state: 
  * Request from a launched Axis process to open a repository path.
  */
 export type OpenRepositoryRequestEvent = { path: string }
-export type OpenTarget = "Zed" | "Finder" | "Terminal" | "Iterm2" | "Ghostty" | "Xcode" | "AndroidStudio" | "IntelliJIdea"
+export type OpenTarget = { kind: OpenTargetKind; id: string }
+export type OpenTargetKind = "Finder" | "App" | "Terminal"
+export type OpenTargetOption = { target: OpenTarget; name: string; iconDataUrl: string | null; installed: boolean }
 /**
  * Operation currently in progress
  */

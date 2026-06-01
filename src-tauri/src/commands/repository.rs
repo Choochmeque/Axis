@@ -1,3 +1,4 @@
+use crate::commands::open_target_with_system;
 use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{
@@ -27,20 +28,6 @@ fn windows_terminal_command(path: &std::path::Path) -> Command {
     let mut command = Command::new("cmd");
     command.args(["/k"]).current_dir(path);
     command
-}
-
-#[cfg(target_os = "macos")]
-const fn target_app_name(target: &OpenTarget) -> Option<&'static str> {
-    match target {
-        OpenTarget::Zed => Some("Zed"),
-        OpenTarget::Finder => None,
-        OpenTarget::Terminal => Some("Terminal"),
-        OpenTarget::Iterm2 => Some("iTerm"),
-        OpenTarget::Ghostty => Some("Ghostty"),
-        OpenTarget::Xcode => Some("Xcode"),
-        OpenTarget::AndroidStudio => Some("Android Studio"),
-        OpenTarget::IntelliJIdea => Some("IntelliJ IDEA"),
-    }
 }
 
 #[tauri::command]
@@ -303,33 +290,14 @@ pub async fn open_repository_target(
         return Err(AxisError::FileNotFound(path.display().to_string()));
     }
 
-    if target == OpenTarget::Finder {
+    if target.kind == crate::models::OpenTargetKind::Finder {
         return app_handle
             .opener()
             .reveal_item_in_dir(path)
             .map_err(|e| AxisError::Other(e.to_string()));
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        let app_name = target_app_name(&target)
-            .ok_or_else(|| AxisError::Other("Unsupported open target".to_string()))?;
-        Command::new("open")
-            .args(["-a", app_name])
-            .arg(&path)
-            .spawn()
-            .map_err(|e| AxisError::Other(e.to_string()))?;
-        Ok(())
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        let _ = app_handle;
-        let _ = target;
-        Err(AxisError::Other(
-            "Open target selection is currently only supported on macOS".to_string(),
-        ))
-    }
+    open_target_with_system(&path, &target)
 }
 
 #[tauri::command]

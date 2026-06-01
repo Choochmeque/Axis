@@ -41,6 +41,7 @@ import type {
   InteractiveRebaseOptions,
   IssueState,
   OpenTarget,
+  OpenTargetOption,
   LfsFetchOptions,
   LfsMigrateOptions,
   LfsPruneOptions,
@@ -508,6 +509,8 @@ export const shellApi = {
 
   openRepositoryTarget: (path: string, target: OpenTarget) =>
     commands.openRepositoryTarget(path, target),
+
+  getOpenTargetOptions: (): Promise<OpenTargetOption[]> => commands.getOpenTargetOptions(),
 
   openTerminal: (path: string) => commands.openTerminal(path),
 

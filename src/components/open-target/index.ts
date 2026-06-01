@@ -1,0 +1,1 @@
+export { OpenTargetIcon } from './OpenTargetIcon';

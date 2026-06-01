@@ -81,6 +81,7 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::unpin_repository,
             crate::commands::show_in_folder,
             crate::commands::open_repository_target,
+            crate::commands::get_open_target_options,
             crate::commands::open_url,
             crate::commands::open_terminal,
             crate::commands::cancel_operation,
@@ -482,6 +483,8 @@ mod specta_export {
         crate::get_specta_builder()
             .typ::<crate::menu::MenuAction>()
             .typ::<crate::models::OpenTarget>()
+            .typ::<crate::models::OpenTargetKind>()
+            .typ::<crate::models::OpenTargetOption>()
             .error_handling(ErrorHandlingMode::Throw)
             .export(
                 specta_typescript::Typescript::default()

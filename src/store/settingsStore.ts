@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import i18n from '@/i18n';
 
+import { FALLBACK_OPEN_TARGET } from '@/lib/openTargets';
 import { aiApi, settingsApi } from '@/services/api';
 import { useToastStore } from '@/store/toastStore';
 import type { AppSettings, Theme as ThemeType } from '@/types';
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   confirmBeforeDiscard: true,
   signCommits: false,
   bypassHooks: false,
+  defaultOpenTarget: FALLBACK_OPEN_TARGET,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,

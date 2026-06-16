@@ -27,6 +27,7 @@ vi.mock('@/store/toastStore', () => ({
 }));
 
 import { aiApi, settingsApi } from '@/services/api';
+import { FALLBACK_OPEN_TARGET } from '@/lib/openTargets';
 import { AiProvider, SigningFormat, Theme } from '@/types';
 
 describe('settingsStore', () => {
@@ -39,6 +40,7 @@ describe('settingsStore', () => {
     confirmBeforeDiscard: true,
     signCommits: false,
     bypassHooks: false,
+    defaultOpenTarget: FALLBACK_OPEN_TARGET,
     signingFormat: SigningFormat.Gpg,
     signingKey: null,
     gpgProgram: null,

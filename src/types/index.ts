@@ -222,6 +222,9 @@ import type {
   MergeMethod as MergeMethodType,
   MergeType as MergeTypeType,
   NotificationReason as NotificationReasonType,
+  OpenTarget as OpenTargetType,
+  OpenTargetKind as OpenTargetKindType,
+  OpenTargetOption,
   // Progress types
   ProgressStage as ProgressStageType,
   ProviderType as ProviderTypeType,
@@ -417,6 +420,16 @@ export const Theme: { [K in ThemeType]: K } = {
 };
 
 export type Theme = ThemeType;
+
+export const OpenTargetKind: { [K in OpenTargetKindType]: K } = {
+  Finder: 'Finder',
+  App: 'App',
+  Terminal: 'Terminal',
+};
+
+export type OpenTarget = OpenTargetType;
+export type OpenTargetKind = OpenTargetKindType;
+export type { OpenTargetOption };
 
 export const SigningFormat: { [K in SigningFormatType]: K } = {
   Gpg: 'Gpg',

@@ -1,8 +1,9 @@
+use crate::commands::open_target_with_system;
 use crate::error::{AxisError, Result};
 use crate::events::{GitOperationType, ProgressStage};
 use crate::models::{
-    Branch, BranchFilter, Commit, LogOptions, RecentRepository, Repository, RepositoryStatus,
-    SshCredentials,
+    Branch, BranchFilter, Commit, LogOptions, OpenTarget, RecentRepository, Repository,
+    RepositoryStatus, SshCredentials,
 };
 use crate::services::{GitService, ProgressContext};
 use crate::state::AppState;
@@ -57,6 +58,12 @@ pub async fn open_repository(state: State<'_, AppState>, path: String) -> Result
     state.add_recent_repository(&path, &repo_info.name).await?;
 
     Ok(repo_info)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_launch_repository_path() -> Option<String> {
+    crate::repository_path_from_args(&std::env::args().collect::<Vec<_>>())
 }
 
 #[tauri::command]
@@ -268,6 +275,29 @@ pub async fn show_in_folder(app_handle: AppHandle, path: String) -> Result<()> {
         .opener()
         .reveal_item_in_dir(path)
         .map_err(|e| AxisError::Other(e.to_string()))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn open_repository_target(
+    app_handle: AppHandle,
+    path: String,
+    target: OpenTarget,
+) -> Result<()> {
+    let path = PathBuf::from(&path);
+
+    if !path.exists() {
+        return Err(AxisError::FileNotFound(path.display().to_string()));
+    }
+
+    if target.kind == crate::models::OpenTargetKind::Finder {
+        return app_handle
+            .opener()
+            .reveal_item_in_dir(path)
+            .map_err(|e| AxisError::Other(e.to_string()));
+    }
+
+    open_target_with_system(&path, &target)
 }
 
 #[tauri::command]

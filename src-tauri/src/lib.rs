@@ -19,9 +19,42 @@ mod storage;
 
 use state::AppState;
 use storage::Database;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+use tauri_plugin_deep_link::DeepLinkExt;
 
 use tauri_specta::{collect_commands, collect_events};
+
+fn repository_path_from_url(url: &url::Url) -> Option<String> {
+    if url.scheme() != "axis" || url.host_str() != Some("open") {
+        return None;
+    }
+
+    url.query_pairs()
+        .find(|(key, _)| key == "repo")
+        .map(|(_, value)| value.into_owned())
+        .filter(|path| std::path::Path::new(path).exists())
+}
+
+pub(crate) fn repository_path_from_args(args: &[String]) -> Option<String> {
+    args.iter().skip(1).find_map(|arg| {
+        if let Ok(url) = arg.parse::<url::Url>() {
+            if let Some(path) = repository_path_from_url(&url) {
+                return Some(path);
+            }
+        }
+
+        if arg.starts_with('-') {
+            return None;
+        }
+
+        let path = std::path::Path::new(arg);
+        if path.exists() {
+            Some(arg.clone())
+        } else {
+            None
+        }
+    })
+}
 
 // Allow many lines: this function registers all Tauri commands and events.
 // It's a configuration function that should stay together for maintainability.
@@ -42,10 +75,13 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::commands::get_branches,
             crate::commands::get_commit,
             crate::commands::get_recent_repositories,
+            crate::commands::get_launch_repository_path,
             crate::commands::remove_recent_repository,
             crate::commands::pin_repository,
             crate::commands::unpin_repository,
             crate::commands::show_in_folder,
+            crate::commands::open_repository_target,
+            crate::commands::get_open_target_options,
             crate::commands::open_url,
             crate::commands::open_terminal,
             crate::commands::cancel_operation,
@@ -326,7 +362,8 @@ fn get_specta_builder() -> tauri_specta::Builder {
             crate::events::IntegrationStatusChangedEvent,
             crate::events::GitOperationProgressEvent,
             crate::events::HookProgressEvent,
-            crate::events::UpdateDownloadProgressEvent
+            crate::events::UpdateDownloadProgressEvent,
+            crate::events::OpenRepositoryRequestEvent
         ])
 }
 
@@ -349,13 +386,23 @@ pub fn run() {
     let extra_handler: Box<tauri::ipc::InvokeHandler<tauri::Wry>> =
         Box::new(tauri::generate_handler![crate::commands::get_file_blob]);
 
-    let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}));
+    let builder =
+        tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if let Some(path) = repository_path_from_args(&args) {
+                if let Err(e) = app.emit(
+                    "open-repository-request-event",
+                    crate::events::OpenRepositoryRequestEvent { path },
+                ) {
+                    log::warn!("Failed to emit open repository request event: {e}");
+                }
+            }
+        }));
 
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_webdriver::init());
 
     builder
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
@@ -370,6 +417,20 @@ pub fn run() {
         })
         .setup(move |app| {
             specta_builder.mount_events(app);
+
+            let app_handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                for url in event.urls() {
+                    if let Some(path) = repository_path_from_url(&url) {
+                        if let Err(e) = app_handle.emit(
+                            "open-repository-request-event",
+                            crate::events::OpenRepositoryRequestEvent { path },
+                        ) {
+                            log::warn!("Failed to emit deep link repository request event: {e}");
+                        }
+                    }
+                }
+            });
 
             // Initialize database in app data directory
             let app_data_dir = app
@@ -421,6 +482,9 @@ mod specta_export {
     fn export_typescript_bindings() {
         crate::get_specta_builder()
             .typ::<crate::menu::MenuAction>()
+            .typ::<crate::models::OpenTarget>()
+            .typ::<crate::models::OpenTargetKind>()
+            .typ::<crate::models::OpenTargetOption>()
             .error_handling(ErrorHandlingMode::Throw)
             .export(
                 specta_typescript::Typescript::default()

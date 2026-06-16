@@ -42,6 +42,9 @@ async getCommit(oid: string) : Promise<Commit> {
 async getRecentRepositories() : Promise<RecentRepository[]> {
     return await TAURI_INVOKE("get_recent_repositories");
 },
+async getLaunchRepositoryPath() : Promise<string | null> {
+    return await TAURI_INVOKE("get_launch_repository_path");
+},
 async removeRecentRepository(path: string) : Promise<null> {
     return await TAURI_INVOKE("remove_recent_repository", { path });
 },
@@ -53,6 +56,12 @@ async unpinRepository(path: string) : Promise<null> {
 },
 async showInFolder(path: string) : Promise<null> {
     return await TAURI_INVOKE("show_in_folder", { path });
+},
+async openRepositoryTarget(path: string, target: OpenTarget) : Promise<null> {
+    return await TAURI_INVOKE("open_repository_target", { path, target });
+},
+async getOpenTargetOptions() : Promise<OpenTargetOption[]> {
+    return await TAURI_INVOKE("get_open_target_options");
 },
 async openUrl(url: string) : Promise<null> {
     return await TAURI_INVOKE("open_url", { url });
@@ -1186,6 +1195,7 @@ indexChangedEvent: IndexChangedEvent,
 integrationStatusChangedEvent: IntegrationStatusChangedEvent,
 menuActionEvent: MenuActionEvent,
 oAuthCallbackEvent: OAuthCallbackEvent,
+openRepositoryRequestEvent: OpenRepositoryRequestEvent,
 refChangedEvent: RefChangedEvent,
 remoteFetchedEvent: RemoteFetchedEvent,
 repositoryDirtyEvent: RepositoryDirtyEvent,
@@ -1200,6 +1210,7 @@ indexChangedEvent: "index-changed-event",
 integrationStatusChangedEvent: "integration-status-changed-event",
 menuActionEvent: "menu-action-event",
 oAuthCallbackEvent: "o-auth-callback-event",
+openRepositoryRequestEvent: "open-repository-request-event",
 refChangedEvent: "ref-changed-event",
 remoteFetchedEvent: "remote-fetched-event",
 repositoryDirtyEvent: "repository-dirty-event",
@@ -1370,7 +1381,7 @@ force: boolean;
  */
 detach: boolean }
 export type AiProvider = "OpenAi" | "Anthropic" | "Ollama"
-export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean; largeBinaryWarningEnabled: boolean; largeBinaryThreshold: number }
+export type AppSettings = { theme: Theme; language: string; fontSize: number; showLineNumbers: boolean; autoFetchInterval: number; confirmBeforeDiscard: boolean; signCommits: boolean; bypassHooks: boolean; defaultOpenTarget?: OpenTarget; signingFormat: SigningFormat; signingKey: string | null; gpgProgram: string | null; sshProgram: string | null; diffContextLines: number; diffWordWrap: boolean; diffSideBySide: boolean; spellCheckCommitMessages: boolean; conventionalCommitsEnabled: boolean; conventionalCommitsScopes: string[] | null; aiEnabled: boolean; aiProvider: AiProvider; aiModel: string | null; aiOllamaUrl: string | null; defaultSshKey: string | null; notificationHistoryCapacity: number; gravatarEnabled: boolean; autoUpdateEnabled: boolean; largeBinaryWarningEnabled: boolean; largeBinaryThreshold: number }
 /**
  * Options for applying mailbox patches (git am)
  */
@@ -2980,6 +2991,13 @@ export type NotificationsPage = { items: Notification[]; hasMore: boolean }
  * OAuth callback received from deep link
  */
 export type OAuthCallbackEvent = { provider: ProviderType; code: string; state: string | null }
+/**
+ * Request from a launched Axis process to open a repository path.
+ */
+export type OpenRepositoryRequestEvent = { path: string }
+export type OpenTarget = { kind: OpenTargetKind; id: string }
+export type OpenTargetKind = "Finder" | "App" | "Terminal"
+export type OpenTargetOption = { target: OpenTarget; name: string; iconDataUrl: string | null; installed: boolean }
 /**
  * Operation currently in progress
  */

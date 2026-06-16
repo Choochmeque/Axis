@@ -105,6 +105,10 @@
         "label": "Show line numbers",
         "description": "Display line numbers in diff and file views"
       },
+      "defaultOpenTarget": {
+        "label": "Default open app",
+        "hint": "Choose which installed app the toolbar open button uses by default"
+      },
       "autoUpdate": {
         "label": "Check for updates automatically",
         "description": "Automatically check for new versions on startup",
@@ -1076,6 +1080,8 @@
     "branch": "Branch",
     "checkout": "Checkout",
     "showInFinder": "Show in Finder",
+    "openWith": "Open with {{target}}",
+    "openWithMenu": "Choose app to open repository",
     "terminal": "Terminal",
     "settings": "Settings"
   },

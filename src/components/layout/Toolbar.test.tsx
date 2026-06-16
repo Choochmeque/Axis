@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderWithQuery } from '@/test/renderWithQuery';
 
 // Mock modules
 vi.mock('react-i18next', () => ({
@@ -58,7 +59,15 @@ vi.mock('@/store/dialogStore', () => ({
 
 vi.mock('@/services/api', () => ({
   shellApi: {
-    openTerminal: vi.fn().mockResolvedValue(undefined),
+    openRepositoryTarget: vi.fn().mockResolvedValue(undefined),
+    getOpenTargetOptions: vi.fn().mockResolvedValue([
+      {
+        target: { kind: 'Finder', id: 'finder' },
+        name: 'Finder',
+        iconDataUrl: null,
+        installed: true,
+      },
+    ]),
   },
 }));
 
@@ -66,8 +75,9 @@ vi.mock('@/lib/errorUtils', () => ({
   getErrorMessage: (err: unknown) => String(err),
 }));
 
-vi.mock('@/lib/actions', () => ({
-  showInFinder: vi.fn(),
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: (selector: (state: { settings: { defaultOpenTarget: unknown } }) => unknown) =>
+    selector({ settings: { defaultOpenTarget: { kind: 'Finder', id: 'finder' } } }),
 }));
 
 vi.mock('@/hooks', async (importOriginal) => {
@@ -85,6 +95,7 @@ vi.mock('../../hooks', () => ({
 }));
 
 import { Toolbar } from './Toolbar';
+import { shellApi } from '@/services/api';
 
 describe('Toolbar', () => {
   beforeEach(() => {
@@ -96,7 +107,7 @@ describe('Toolbar', () => {
   });
 
   it('should render empty toolbar when no repository', () => {
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     // Should not show any buttons except the container
     expect(screen.queryByTitle('toolbar.commit')).not.toBeInTheDocument();
@@ -107,7 +118,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByTitle('toolbar.commit')).toBeInTheDocument();
     expect(screen.getByTitle('toolbar.pull')).toBeInTheDocument();
@@ -122,7 +133,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: ['file1.ts', 'file2.ts', 'file3.ts'] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -131,7 +142,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: Array(100).fill('file.ts') };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByText('99+')).toBeInTheDocument();
   });
@@ -142,7 +153,7 @@ describe('Toolbar', () => {
     mockBranches.current = [{ isHead: true, ahead: 5, behind: 0 }];
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByText('5')).toBeInTheDocument();
   });
@@ -153,7 +164,7 @@ describe('Toolbar', () => {
     mockBranches.current = [{ isHead: true, ahead: 0, behind: 3 }];
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -163,7 +174,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByTitle('toolbar.pull')).toBeDisabled();
     expect(screen.getByTitle('toolbar.push')).toBeDisabled();
@@ -175,7 +186,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     expect(screen.getByTitle('toolbar.pull')).toBeDisabled();
     expect(screen.getByTitle('toolbar.push')).toBeDisabled();
@@ -188,7 +199,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: [] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.commit'));
     expect(mockSetCurrentView).toHaveBeenCalledWith('file-status');
@@ -199,7 +210,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.pull'));
     expect(mockOpenPullDialog).toHaveBeenCalled();
@@ -210,7 +221,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.push'));
     expect(mockOpenPushDialog).toHaveBeenCalled();
@@ -221,7 +232,7 @@ describe('Toolbar', () => {
     mockStatus.current = { staged: [] };
     mockRemotes.current = [{ name: 'origin' }];
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.fetch'));
     expect(mockOpenFetchDialog).toHaveBeenCalled();
@@ -231,7 +242,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: [] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.branch'));
     expect(mockOpenCreateBranchDialog).toHaveBeenCalled();
@@ -241,7 +252,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: [] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.checkout'));
     expect(mockOpenCheckoutBranchDialog).toHaveBeenCalled();
@@ -251,7 +262,7 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: [] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.stash'));
     expect(mockOpenStashDialog).toHaveBeenCalled();
@@ -261,9 +272,22 @@ describe('Toolbar', () => {
     mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
     mockStatus.current = { staged: [] };
 
-    render(<Toolbar />);
+    renderWithQuery(<Toolbar />);
 
     fireEvent.click(screen.getByTitle('toolbar.settings'));
     expect(mockOpenRepositorySettingsDialog).toHaveBeenCalled();
+  });
+
+  it('should open repository with default target when open button is clicked', () => {
+    mockRepository.current = { path: '/test', currentBranch: 'main', isUnborn: false };
+    mockStatus.current = { staged: [] };
+
+    renderWithQuery(<Toolbar />);
+
+    fireEvent.click(screen.getByTitle('toolbar.openWith'));
+    expect(shellApi.openRepositoryTarget).toHaveBeenCalledWith('/test', {
+      kind: 'Finder',
+      id: 'finder',
+    });
   });
 });

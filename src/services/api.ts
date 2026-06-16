@@ -40,6 +40,8 @@ import type {
   ImportSshKeyOptions,
   InteractiveRebaseOptions,
   IssueState,
+  OpenTarget,
+  OpenTargetOption,
   LfsFetchOptions,
   LfsMigrateOptions,
   LfsPruneOptions,
@@ -504,6 +506,11 @@ export const signingApi = {
 
 export const shellApi = {
   showInFolder: (path: string) => commands.showInFolder(path),
+
+  openRepositoryTarget: (path: string, target: OpenTarget) =>
+    commands.openRepositoryTarget(path, target),
+
+  getOpenTargetOptions: (): Promise<OpenTargetOption[]> => commands.getOpenTargetOptions(),
 
   openTerminal: (path: string) => commands.openTerminal(path),
 

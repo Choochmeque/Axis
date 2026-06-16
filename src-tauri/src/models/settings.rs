@@ -1,5 +1,6 @@
 use crate::models::{AiProvider, SigningFormat};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 use specta::Type;
 use strum::{Display, EnumString};
 
@@ -20,6 +21,8 @@ pub struct AppSettings {
     pub confirm_before_discard: bool,
     pub sign_commits: bool,
     pub bypass_hooks: bool, // Skip git hooks by default
+    #[serde(default, deserialize_with = "deserialize_default_open_target")]
+    pub default_open_target: OpenTarget,
 
     // Signing
     pub signing_format: SigningFormat,
@@ -72,6 +75,82 @@ pub enum Theme {
     System,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenTarget {
+    pub kind: OpenTargetKind,
+    pub id: String,
+}
+
+#[derive(
+    Debug, Clone, Display, EnumString, Serialize, Deserialize, PartialEq, Eq, Default, Type,
+)]
+#[serde(rename_all = "PascalCase")]
+#[strum(serialize_all = "PascalCase")]
+pub enum OpenTargetKind {
+    #[default]
+    Finder,
+    App,
+    Terminal,
+}
+
+impl Default for OpenTarget {
+    fn default() -> Self {
+        Self {
+            kind: OpenTargetKind::Finder,
+            id: String::from("finder"),
+        }
+    }
+}
+
+fn legacy_open_target(value: &str) -> OpenTarget {
+    match value {
+        "Terminal" => OpenTarget {
+            kind: OpenTargetKind::Terminal,
+            id: String::from("com.apple.Terminal"),
+        },
+        "Iterm2" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("com.googlecode.iterm2"),
+        },
+        "Zed" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("dev.zed.Zed"),
+        },
+        "Ghostty" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("com.mitchellh.ghostty"),
+        },
+        "Xcode" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("com.apple.dt.Xcode"),
+        },
+        "AndroidStudio" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("com.google.android.studio"),
+        },
+        "IntelliJIdea" => OpenTarget {
+            kind: OpenTargetKind::App,
+            id: String::from("com.jetbrains.intellij"),
+        },
+        _ => OpenTarget::default(),
+    }
+}
+
+fn deserialize_default_open_target<'de, D>(
+    deserializer: D,
+) -> std::result::Result<OpenTarget, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<Value>::deserialize(deserializer)?;
+    match value {
+        Some(Value::String(target)) => Ok(legacy_open_target(&target)),
+        Some(value) => OpenTarget::deserialize(value).map_err(serde::de::Error::custom),
+        None => Ok(OpenTarget::default()),
+    }
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -86,6 +165,7 @@ impl Default for AppSettings {
             confirm_before_discard: true,
             sign_commits: false,
             bypass_hooks: false,
+            default_open_target: OpenTarget::default(),
 
             // Signing
             signing_format: SigningFormat::default(),
@@ -214,6 +294,7 @@ mod tests {
         assert!(settings.confirm_before_discard);
         assert!(!settings.sign_commits);
         assert!(!settings.bypass_hooks);
+        assert_eq!(settings.default_open_target, OpenTarget::default());
 
         // Signing
         assert_eq!(settings.signing_format, SigningFormat::default());
@@ -265,6 +346,10 @@ mod tests {
             confirm_before_discard: false,
             sign_commits: true,
             bypass_hooks: true,
+            default_open_target: OpenTarget {
+                kind: OpenTargetKind::App,
+                id: String::from("dev.zed.Zed"),
+            },
             signing_format: SigningFormat::Ssh,
             signing_key: Some("~/.ssh/id_ed25519".to_string()),
             gpg_program: None,

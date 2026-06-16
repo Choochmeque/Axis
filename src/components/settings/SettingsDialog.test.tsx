@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { settingsApi } from '@/services/api';
 import { renderWithQuery as render } from '@/test/renderWithQuery';
+import type { AppSettings } from '@/types';
 import { AiProvider, SigningFormat, Theme } from '@/types';
 import { SettingsDialog } from './SettingsDialog';
 
@@ -35,6 +36,16 @@ vi.mock('@/services/api', () => ({
   aiApi: {
     hasApiKey: vi.fn().mockResolvedValue(false),
     listModels: vi.fn().mockResolvedValue([]),
+  },
+  shellApi: {
+    getOpenTargetOptions: vi.fn().mockResolvedValue([
+      {
+        target: { kind: 'Finder', id: 'finder' },
+        name: 'Finder',
+        iconDataUrl: null,
+        installed: true,
+      },
+    ]),
   },
 }));
 
@@ -78,7 +89,7 @@ vi.mock('@/store/updateStore', () => ({
   ),
 }));
 
-const mockSettings = {
+const mockSettings: AppSettings = {
   theme: Theme.Dark,
   language: 'system',
   fontSize: 12,
@@ -87,6 +98,7 @@ const mockSettings = {
   confirmBeforeDiscard: true,
   signCommits: false,
   bypassHooks: false,
+  defaultOpenTarget: { kind: 'Finder', id: 'finder' },
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,

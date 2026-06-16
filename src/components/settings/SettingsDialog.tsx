@@ -26,11 +26,25 @@ import {
   Select,
   SelectItem,
 } from '@/components/ui';
+import { OpenTargetIcon } from '@/components/open-target';
 import { toast } from '@/hooks';
 import { getErrorMessage } from '@/lib/errorUtils';
+import {
+  FALLBACK_OPEN_TARGET,
+  FALLBACK_OPEN_TARGET_OPTIONS,
+  openTargetKey,
+} from '@/lib/openTargets';
 import { queryKeys } from '@/lib/queryKeys';
 import { cn } from '@/lib/utils';
-import { aiApi, avatarApi, lfsApi, settingsApi, signingApi, sshKeysApi } from '@/services/api';
+import {
+  aiApi,
+  avatarApi,
+  lfsApi,
+  settingsApi,
+  shellApi,
+  signingApi,
+  sshKeysApi,
+} from '@/services/api';
 import { initIntegrationListeners, useIntegrationStore } from '@/store/integrationStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUpdateStore } from '@/store/updateStore';
@@ -64,6 +78,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   confirmBeforeDiscard: true,
   signCommits: false,
   bypassHooks: false,
+  defaultOpenTarget: FALLBACK_OPEN_TARGET,
   signingFormat: SigningFormat.Gpg,
   signingKey: null,
   gpgProgram: null,
@@ -256,6 +271,11 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
   const [updateCheckResult, setUpdateCheckResult] = useState<string | null>(null);
   const isChecking = useUpdateStore((s) => s.isChecking);
   const checkForUpdate = useUpdateStore((s) => s.checkForUpdate);
+  const { data: openTargetOptions = FALLBACK_OPEN_TARGET_OPTIONS } = useQuery({
+    queryKey: ['open-target-options'],
+    queryFn: shellApi.getOpenTargetOptions,
+  });
+  const defaultOpenTargetKey = openTargetKey(settings.defaultOpenTarget ?? FALLBACK_OPEN_TARGET);
 
   const handleCheckForUpdate = async () => {
     setUpdateCheckResult(null);
@@ -349,6 +369,32 @@ function AppearanceSettings({ settings, updateSetting }: SettingsPanelProps) {
           onCheckedChange={(checked) => updateSetting('showLineNumbers', checked === true)}
         />
       </div>
+
+      <FormField
+        label={t('settings.appearance.defaultOpenTarget.label')}
+        htmlFor="defaultOpenTarget"
+        hint={t('settings.appearance.defaultOpenTarget.hint')}
+      >
+        <Select
+          id="defaultOpenTarget"
+          value={defaultOpenTargetKey}
+          onValueChange={(value) => {
+            const option = openTargetOptions.find(
+              (target) => openTargetKey(target.target) === value
+            );
+            updateSetting('defaultOpenTarget', option?.target ?? FALLBACK_OPEN_TARGET);
+          }}
+        >
+          {openTargetOptions.map((option) => (
+            <SelectItem key={openTargetKey(option.target)} value={openTargetKey(option.target)}>
+              <span className="flex items-center gap-2">
+                <OpenTargetIcon option={option} size={16} />
+                {option.name}
+              </span>
+            </SelectItem>
+          ))}
+        </Select>
+      </FormField>
 
       <div className={groupClass}>
         <CheckboxField

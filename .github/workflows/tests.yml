@@ -23,7 +23,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'javascript')
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
         name: Install pnpm
@@ -68,7 +68,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'rust')
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable

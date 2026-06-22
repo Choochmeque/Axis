@@ -95,10 +95,10 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
     fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
         Self {
             provider: ProviderType::GitHub,
-            number: u32::try_from(pr.number).unwrap_or(u32::MAX),
-            title: pr.title.clone(),
+            number: u32::try_from(pr.number.unwrap_or(0)).unwrap_or(u32::MAX),
+            title: pr.title.clone().unwrap_or_default(),
             state: match pr.state {
-                OctocrabIssueState::Closed => {
+                Some(OctocrabIssueState::Closed) => {
                     if pr.merged_at.is_some() {
                         PrState::Merged
                     } else {
@@ -107,13 +107,21 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
                 }
                 _ => PrState::Open, // Open or None defaults to Open
             },
-            author: (*pr.user).clone().into(),
-            source_branch: pr.head.ref_field.clone(),
-            target_branch: pr.base.ref_field.clone(),
+            author: pr.user.map(|u| (*u).into()).unwrap_or_default(),
+            source_branch: pr
+                .head
+                .as_deref()
+                .map(|h| h.ref_field.clone())
+                .unwrap_or_default(),
+            target_branch: pr
+                .base
+                .as_deref()
+                .map(|b| b.ref_field.clone())
+                .unwrap_or_default(),
             draft: pr.draft.unwrap_or(false),
-            created_at: pr.created_at,
-            updated_at: pr.updated_at,
-            url: pr.html_url.to_string(),
+            created_at: pr.created_at.unwrap_or_else(Utc::now),
+            updated_at: pr.updated_at.unwrap_or_else(Utc::now),
+            url: pr.html_url.map(|u| u.to_string()).unwrap_or_default(),
         }
     }
 }
@@ -182,48 +190,6 @@ impl From<octocrab::models::workflows::Run> for CIRun {
 
 impl From<octocrab::Page<octocrab::models::pulls::PullRequest>> for PullRequestsPage {
     fn from(page: octocrab::Page<octocrab::models::pulls::PullRequest>) -> Self {
-        let items = page
-            .items
-            .into_iter()
-            .map(std::convert::Into::into)
-            .collect();
-
-        Self {
-            items,
-            has_more: page.next.is_some(),
-        }
-    }
-}
-
-impl From<octocrab::models::pulls::SimplePullRequest> for PullRequest {
-    fn from(pr: octocrab::models::pulls::SimplePullRequest) -> Self {
-        Self {
-            provider: ProviderType::GitHub,
-            number: u32::try_from(pr.number).unwrap_or(u32::MAX),
-            title: pr.title.clone(),
-            state: match pr.state {
-                OctocrabIssueState::Closed => {
-                    if pr.merged_at.is_some() {
-                        PrState::Merged
-                    } else {
-                        PrState::Closed
-                    }
-                }
-                _ => PrState::Open,
-            },
-            author: (*pr.user).clone().into(),
-            source_branch: pr.head.ref_field.clone(),
-            target_branch: pr.base.ref_field.clone(),
-            draft: pr.draft.unwrap_or(false),
-            created_at: pr.created_at,
-            updated_at: pr.updated_at,
-            url: pr.html_url.to_string(),
-        }
-    }
-}
-
-impl From<octocrab::Page<octocrab::models::pulls::SimplePullRequest>> for PullRequestsPage {
-    fn from(page: octocrab::Page<octocrab::models::pulls::SimplePullRequest>) -> Self {
         let items = page
             .items
             .into_iter()
@@ -552,15 +518,30 @@ impl IntegrationProvider for GitHubProvider {
         Ok(PullRequestDetail {
             base,
             body: pr.body,
-            additions: u32::try_from(pr.additions).unwrap_or(u32::MAX),
-            deletions: u32::try_from(pr.deletions).unwrap_or(u32::MAX),
-            changed_files: u32::try_from(pr.changed_files).unwrap_or(u32::MAX),
-            commits_count: u32::try_from(pr.commits).unwrap_or(u32::MAX),
-            comments_count: u32::try_from(pr.comments).unwrap_or(u32::MAX),
+            additions: u32::try_from(pr.additions.unwrap_or(0)).unwrap_or(u32::MAX),
+            deletions: u32::try_from(pr.deletions.unwrap_or(0)).unwrap_or(u32::MAX),
+            changed_files: u32::try_from(pr.changed_files.unwrap_or(0)).unwrap_or(u32::MAX),
+            commits_count: u32::try_from(pr.commits.unwrap_or(0)).unwrap_or(u32::MAX),
+            comments_count: u32::try_from(pr.comments.unwrap_or(0)).unwrap_or(u32::MAX),
             mergeable: pr.mergeable,
-            labels: pr.labels.into_iter().map(Into::into).collect(),
-            assignees: pr.assignees.into_iter().map(Into::into).collect(),
-            reviewers: pr.requested_reviewers.into_iter().map(Into::into).collect(),
+            labels: pr
+                .labels
+                .unwrap_or_default()
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+            assignees: pr
+                .assignees
+                .unwrap_or_default()
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+            reviewers: pr
+                .requested_reviewers
+                .unwrap_or_default()
+                .into_iter()
+                .map(Into::into)
+                .collect(),
         })
     }
 
@@ -587,16 +568,19 @@ impl IntegrationProvider for GitHubProvider {
         }
 
         let pr = request.send().await?;
-        let pr_number = pr.number;
 
         // Apply labels after PR creation (GitHub PR API doesn't support labels directly)
         if !labels.is_empty() {
-            if let Err(e) = client
-                .issues(owner, repo)
-                .add_labels(pr_number, &labels)
-                .await
-            {
-                log::warn!("PR created but failed to apply labels: {e:?}");
+            if let Some(pr_number) = pr.number {
+                if let Err(e) = client
+                    .issues(owner, repo)
+                    .add_labels(pr_number, &labels)
+                    .await
+                {
+                    log::warn!("PR created but failed to apply labels: {e:?}");
+                }
+            } else {
+                log::warn!("PR created but number missing; skipping label application");
             }
         }
 
@@ -704,7 +688,7 @@ impl IntegrationProvider for GitHubProvider {
             request = request.assignees(options.assignees.clone());
         }
 
-        let issue = request.send().await?;
+        let issue = Box::pin(request.send()).await?;
 
         self.invalidate_issue_cache(owner, repo);
 

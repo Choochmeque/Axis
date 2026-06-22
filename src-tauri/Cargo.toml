@@ -24,7 +24,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
-tauri-plugin-notifications = "0.4"
+tauri-plugin-notifications = "0.5.0-rc.8"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
@@ -73,7 +73,7 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 notify = "8"
 
 # GitHub/GitLab integrations
-octocrab = "0.51"
+octocrab = "0.53"
 url = "2"
 urlencoding = "2"
 http-body-util = "0.1"

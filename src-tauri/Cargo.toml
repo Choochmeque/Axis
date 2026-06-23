@@ -24,7 +24,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
-tauri-plugin-notifications = "0.5.0-rc.8"
+tauri-plugin-notifications = "0.5.0-rc.9"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }

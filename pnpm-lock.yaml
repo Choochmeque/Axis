@@ -187,8 +187,8 @@ importers:
         specifier: ^9.29.0
         version: 9.29.0
       '@wdio/spec-reporter':
-        specifier: ^9.29.0
-        version: 9.29.0
+        specifier: ^9.29.1
+        version: 9.29.1
       eslint:
         specifier: ^10.5.0
         version: 10.5.0(jiti@2.7.0)
@@ -2714,6 +2714,10 @@ packages:
     resolution: {integrity: sha512-HdzDrRs+ywAqbXGKqe1i/bLtCv47plz4TvsHFH3j729OooT5VH38ctFn5aLXgECmiAKDkmH/A6kOq2Zh5DIxww==}
     engines: {node: '>=18.20.0'}
 
+  '@wdio/logger@9.29.1':
+    resolution: {integrity: sha512-0ZAEIo6PNyMIJPlOGkIgyOJUjcd0pC8/QHlVAAe1c91/IcjZ1X+k0yidXHaboJdN7dq1XPUacmhRdtua0U5EZg==}
+    engines: {node: '>=18.20.0'}
+
   '@wdio/mocha-framework@9.29.0':
     resolution: {integrity: sha512-n3EmIFLGV2jtuKquvb/sVdGgbbkdrQj2YEbLh1hC3AZHHNdmfSfBZiSEokpGedvJG6wRqWdUDKxBluuHM08KBA==}
     engines: {node: '>=18.20.0'}
@@ -2729,6 +2733,10 @@ packages:
     resolution: {integrity: sha512-PNND8kZy5om+AvPN3facbwz27lL95Uc/NTUaQSm9PVUp7R0suju/D9/2I/f1VTCMnfkQ67jHEfphmxje1CaRcA==}
     engines: {node: '>=18.20.0'}
 
+  '@wdio/reporter@9.29.1':
+    resolution: {integrity: sha512-CKAcVy9BGwvufokMcl3H+yNcvD11Klku/1BPz8bKSRv7/KzueXR06s1cPbJH3tv9r9zxPErxgdVMpulN8I0qAg==}
+    engines: {node: '>=18.20.0'}
+
   '@wdio/runner@9.29.0':
     resolution: {integrity: sha512-yl1wejn/R8lFcHOORidQltjAum+O2NRLri5xn4Mag1bwCHEiI4OxEalLykACnt8UROOxwJLU/+PIoh001DpZJA==}
     engines: {node: '>=18.20.0'}
@@ -2736,12 +2744,16 @@ packages:
       expect-webdriverio: ^5.6.5
       webdriverio: ^9.0.0
 
-  '@wdio/spec-reporter@9.29.0':
-    resolution: {integrity: sha512-fXrRnZaPeiqjW6pMWzU27r7H7aouhZ8zo9xBHT9CIyE6y9+cAA98nTF3FxyB/2YASUtrjTmnfQUWzLXFG/Hzyg==}
+  '@wdio/spec-reporter@9.29.1':
+    resolution: {integrity: sha512-iqlHW/qGDRGmxQKN7XyCHxfKphTbPNnniV3yxNXZRSGHCCQok5KFKOnj4fpUCKEyD5jtPAmP6Y0qc1UyR3Dc3Q==}
     engines: {node: '>=18.20.0'}
 
   '@wdio/types@9.29.0':
     resolution: {integrity: sha512-hofXuWlSVTiQoqRLTHtutp4G8qvrx3bdktH9VEJuNP+hPX7eoGa/d52tCrjw06iLKuQGBjx+/+NhJG180TOidw==}
+    engines: {node: '>=18.20.0'}
+
+  '@wdio/types@9.29.1':
+    resolution: {integrity: sha512-jp8jgMv6TS35G96YzHZxw3PVN0Dz6xQ6tnMAicndAJ8Jt9AIXb0ywIse4TjaFywakO3dLoEhlyA3ZtR26vmt+w==}
     engines: {node: '>=18.20.0'}
 
   '@wdio/utils@9.29.0':
@@ -7780,6 +7792,14 @@ snapshots:
       safe-regex2: 5.1.1
       strip-ansi: 7.2.0
 
+  '@wdio/logger@9.29.1':
+    dependencies:
+      chalk: 5.6.2
+      loglevel: 1.9.2
+      loglevel-plugin-prefix: 0.8.4
+      safe-regex2: 5.1.1
+      strip-ansi: 7.2.0
+
   '@wdio/mocha-framework@9.29.0':
     dependencies:
       '@types/mocha': 10.0.10
@@ -7808,6 +7828,14 @@ snapshots:
       diff: 8.0.4
       object-inspect: 1.13.4
 
+  '@wdio/reporter@9.29.1':
+    dependencies:
+      '@types/node': 20.19.43
+      '@wdio/logger': 9.29.1
+      '@wdio/types': 9.29.1
+      diff: 8.0.4
+      object-inspect: 1.13.4
+
   '@wdio/runner@9.29.0(expect-webdriverio@5.6.8)(webdriverio@9.29.0)':
     dependencies:
       '@types/node': 20.19.43
@@ -7829,15 +7857,19 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@wdio/spec-reporter@9.29.0':
+  '@wdio/spec-reporter@9.29.1':
     dependencies:
-      '@wdio/reporter': 9.29.0
-      '@wdio/types': 9.29.0
+      '@wdio/reporter': 9.29.1
+      '@wdio/types': 9.29.1
       chalk: 5.6.2
       easy-table: 1.2.0
       pretty-ms: 9.3.0
 
   '@wdio/types@9.29.0':
+    dependencies:
+      '@types/node': 20.19.43
+
+  '@wdio/types@9.29.1':
     dependencies:
       '@types/node': 20.19.43
 
@@ -8350,7 +8382,7 @@ snapshots:
 
   edgedriver@6.3.0:
     dependencies:
-      '@wdio/logger': 9.18.0
+      '@wdio/logger': 9.29.1
       '@zip.js/zip.js': 2.8.26
       decamelize: 6.0.1
       edge-paths: 3.0.5
@@ -8719,7 +8751,7 @@ snapshots:
 
   geckodriver@6.1.0:
     dependencies:
-      '@wdio/logger': 9.18.0
+      '@wdio/logger': 9.29.1
       '@zip.js/zip.js': 2.8.26
       decamelize: 6.0.1
       http-proxy-agent: 7.0.2

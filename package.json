@@ -54,7 +54,7 @@
     "@uiw/react-textarea-code-editor": "^3.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
-    "i18next": "^26.3.3",
+    "i18next": "^26.3.4",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",

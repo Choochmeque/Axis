@@ -73,7 +73,7 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 notify = "8"
 
 # GitHub/GitLab integrations
-octocrab = "0.53"
+octocrab = "0.54"
 url = "2"
 urlencoding = "2"
 http-body-util = "0.1"

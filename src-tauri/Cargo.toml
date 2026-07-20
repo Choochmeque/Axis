@@ -37,7 +37,7 @@ git2 = { version = "0.21", features = ["https", "ssh", "cred"] }
 tokio = { version = "1", features = ["full"] }
 
 # Database
-turso = "0.6"
+turso = "0.7"
 
 # Error handling
 thiserror = "2"

@@ -95,7 +95,7 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
     fn from(pr: octocrab::models::pulls::PullRequest) -> Self {
         Self {
             provider: ProviderType::GitHub,
-            number: u32::try_from(pr.number.unwrap_or(0)).unwrap_or(u32::MAX),
+            number: u32::try_from(pr.number).unwrap_or(u32::MAX),
             title: pr.title.clone().unwrap_or_default(),
             state: match pr.state {
                 Some(OctocrabIssueState::Closed) => {
@@ -108,16 +108,8 @@ impl From<octocrab::models::pulls::PullRequest> for PullRequest {
                 _ => PrState::Open, // Open or None defaults to Open
             },
             author: pr.user.map(|u| (*u).into()).unwrap_or_default(),
-            source_branch: pr
-                .head
-                .as_deref()
-                .map(|h| h.ref_field.clone())
-                .unwrap_or_default(),
-            target_branch: pr
-                .base
-                .as_deref()
-                .map(|b| b.ref_field.clone())
-                .unwrap_or_default(),
+            source_branch: pr.head.ref_field.clone(),
+            target_branch: pr.base.ref_field.clone(),
             draft: pr.draft.unwrap_or(false),
             created_at: pr.created_at.unwrap_or_else(Utc::now),
             updated_at: pr.updated_at.unwrap_or_else(Utc::now),
@@ -571,16 +563,12 @@ impl IntegrationProvider for GitHubProvider {
 
         // Apply labels after PR creation (GitHub PR API doesn't support labels directly)
         if !labels.is_empty() {
-            if let Some(pr_number) = pr.number {
-                if let Err(e) = client
-                    .issues(owner, repo)
-                    .add_labels(pr_number, &labels)
-                    .await
-                {
-                    log::warn!("PR created but failed to apply labels: {e:?}");
-                }
-            } else {
-                log::warn!("PR created but number missing; skipping label application");
+            if let Err(e) = client
+                .issues(owner, repo)
+                .add_labels(pr.number, &labels)
+                .await
+            {
+                log::warn!("PR created but failed to apply labels: {e:?}");
             }
         }
 

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SelectionKey } from '@/hooks';
-import { type ColumnDef, DataTable } from './data-table';
+import { type ColumnDef, createColumnHelper, DataTable } from './data-table';
 
 vi.mock('@/lib/utils', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -255,5 +255,23 @@ describe('DataTable', () => {
 
     expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
     expect(screen.getByText('Item 1')).toBeInTheDocument();
+  });
+});
+
+describe('createColumnHelper', () => {
+  it('should build column defs bound to the DataTable feature set', () => {
+    const columnHelper = createColumnHelper<TestData>();
+
+    const columns = columnHelper.columns([
+      columnHelper.accessor('name', { id: 'name', header: 'Name', size: 150 }),
+      columnHelper.display({ id: 'actions', header: 'Actions', cell: () => 'edit' }),
+    ]);
+
+    render(<DataTable data={mockData} columns={columns} />);
+
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Actions')).toBeInTheDocument();
+    expect(screen.getByText('Item 1')).toBeInTheDocument();
+    expect(screen.getAllByText('edit')).toHaveLength(mockData.length);
   });
 });

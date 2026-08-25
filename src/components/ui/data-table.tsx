@@ -1,10 +1,19 @@
 import {
-  type ColumnDef,
+  type CellContext as TanstackCellContext,
+  type CellData,
+  type ColumnDef as TanstackColumnDef,
   type ColumnResizeMode,
+  columnResizingFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
+  createColumnHelper as createTanstackColumnHelper,
   flexRender,
-  getCoreRowModel,
-  type Row,
-  useReactTable,
+  type HeaderContext as TanstackHeaderContext,
+  type Row as TanstackRow,
+  type RowData,
+  type Table as TanstackTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, type Ref, useCallback, useImperativeHandle, useRef } from 'react';
@@ -12,12 +21,31 @@ import type { SelectionKey, SelectionMode } from '@/hooks';
 import { useListSelection } from '@/hooks';
 import { cn } from '@/lib/utils';
 
+/**
+ * Feature set every DataTable is built with. TanStack Table v9 no longer bundles
+ * features automatically, so each API the component relies on must be registered:
+ * - `columnVisibilityFeature` backs `row.getVisibleCells()`
+ * - `columnSizingFeature` backs `size` / `minSize` / `maxSize` and `getSize()`
+ * - `columnResizingFeature` backs the drag-to-resize handles
+ */
+const dataTableFeatures = tableFeatures({
+  columnVisibilityFeature,
+  columnSizingFeature,
+  columnResizingFeature,
+  // Type-only slot: replaces the `meta` casts the component used to need.
+  columnMeta: {} as { autoSize?: boolean },
+});
+
+export type DataTableFeatures = typeof dataTableFeatures;
+
 export interface DataTableRef {
   scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
 }
 
-interface DataTableProps<TData> {
+interface DataTableProps<TData extends RowData> {
   data: TData[];
+  // Build heterogeneous column arrays with `columnHelper.columns([...])`, which
+  // preserves each column's own TValue (invariant in v9) while staying assignable here.
   columns: ColumnDef<TData, unknown>[];
   onRowContextMenu?: (row: TData, event: React.MouseEvent) => void;
   getRowId?: (row: TData) => string;
@@ -39,7 +67,7 @@ interface DataTableProps<TData> {
   onSelectionChange?: (keys: Set<SelectionKey>) => void;
 }
 
-function DataTableInner<TData>(
+function DataTableInner<TData extends RowData>(
   {
     data,
     columns,
@@ -77,10 +105,11 @@ function DataTableInner<TData>(
     onSelectionChange,
   });
 
-  const table = useReactTable({
+  // v9 builds the core row model automatically; features are registered instead.
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
     columnResizeMode: resizable ? columnResizeMode : undefined,
     getRowId,
   });
@@ -154,12 +183,10 @@ function DataTableInner<TData>(
               key={header.id}
               className={cn(
                 'relative',
-                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
-                  ? 'flex-1 min-w-0'
-                  : 'shrink-0'
+                header.column.columnDef.meta?.autoSize ? 'flex-1 min-w-0' : 'shrink-0'
               )}
               style={
-                (header.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                header.column.columnDef.meta?.autoSize
                   ? { minWidth: header.column.columnDef.minSize }
                   : {
                       width: header.getSize(),
@@ -211,13 +238,9 @@ function DataTableInner<TData>(
                 {row.getVisibleCells().map((cell) => (
                   <div
                     key={cell.id}
-                    className={
-                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
-                        ? 'flex-1 min-w-0'
-                        : 'shrink-0'
-                    }
+                    className={cell.column.columnDef.meta?.autoSize ? 'flex-1 min-w-0' : 'shrink-0'}
                     style={
-                      (cell.column.columnDef.meta as { autoSize?: boolean })?.autoSize
+                      cell.column.columnDef.meta?.autoSize
                         ? { minWidth: cell.column.columnDef.minSize }
                         : {
                             width: cell.column.getSize(),
@@ -240,16 +263,36 @@ function DataTableInner<TData>(
 }
 
 // Wrap with forwardRef to expose scrollToIndex
-export const DataTable = forwardRef(DataTableInner) as <TData>(
+export const DataTable = forwardRef(DataTableInner) as <TData extends RowData>(
   props: DataTableProps<TData> & { ref?: Ref<DataTableRef> }
 ) => ReturnType<typeof DataTableInner>;
 
-// Re-export useful types and utilities from @tanstack/react-table
-export {
-  type CellContext,
-  type ColumnDef,
-  createColumnHelper,
-  type HeaderContext,
-  type Row,
-  type Table,
-} from '@tanstack/react-table';
+/**
+ * TanStack Table v9 threads a `TFeatures` generic through every public type.
+ * DataTable owns its feature set, so these aliases bind it once and keep the
+ * feature-agnostic `ColumnDef<TData>` / `Row<TData>` shape consumers already use.
+ */
+export type ColumnDef<
+  TData extends RowData,
+  TValue extends CellData = CellData,
+> = TanstackColumnDef<DataTableFeatures, TData, TValue>;
+
+export type Row<TData extends RowData> = TanstackRow<DataTableFeatures, TData>;
+
+export type Table<TData extends RowData> = TanstackTable<DataTableFeatures, TData>;
+
+export type CellContext<
+  TData extends RowData,
+  TValue extends CellData = CellData,
+> = TanstackCellContext<DataTableFeatures, TData, TValue>;
+
+export type HeaderContext<
+  TData extends RowData,
+  TValue extends CellData = CellData,
+> = TanstackHeaderContext<DataTableFeatures, TData, TValue>;
+
+/** Column helper pre-bound to DataTable's feature set. */
+export const createColumnHelper = <TData extends RowData>() =>
+  createTanstackColumnHelper<DataTableFeatures, TData>();
+
+export type { CellData, ColumnResizeMode, RowData } from '@tanstack/react-table';

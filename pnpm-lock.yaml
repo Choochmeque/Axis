@@ -126,8 +126,8 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
       tailwindcss:
-        specifier: ^4.3.1
-        version: 4.3.1
+        specifier: ^4.3.3
+        version: 4.3.3
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.17)(immer@10.2.0)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
@@ -140,7 +140,7 @@ importers:
         version: 10.0.1(eslint@10.5.0(jiti@2.7.0))
       '@tailwindcss/typography':
         specifier: ^0.5.20
-        version: 0.5.20(tailwindcss@4.3.1)
+        version: 0.5.20(tailwindcss@4.3.3)
       '@tanstack/react-query-devtools':
         specifier: ^5.101.4
         version: 5.101.4(@tanstack/react-query@5.101.4(react@19.2.7))(react@19.2.7)
@@ -5064,9 +5064,6 @@ packages:
   tailwind-merge@3.6.0:
     resolution: {integrity: sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w==}
 
-  tailwindcss@4.3.1:
-    resolution: {integrity: sha512-hk+TB1m+K8CYNrP6rjQaq/Y+4Zylwpa87mLYBKCunwnnQ9p+fHb7kmSfGqyEJoxF/O6CDyABWVFEafNSYKll+Q==}
-
   tailwindcss@4.3.3:
     resolution: {integrity: sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==}
 
@@ -7241,10 +7238,10 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.3
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.3
 
-  '@tailwindcss/typography@0.5.20(tailwindcss@4.3.1)':
+  '@tailwindcss/typography@0.5.20(tailwindcss@4.3.3)':
     dependencies:
       postcss-selector-parser: 6.0.10
-      tailwindcss: 4.3.1
+      tailwindcss: 4.3.3
 
   '@tailwindcss/vite@4.3.3(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
@@ -10780,8 +10777,6 @@ snapshots:
   tabbable@6.4.0: {}
 
   tailwind-merge@3.6.0: {}
-
-  tailwindcss@4.3.1: {}
 
   tailwindcss@4.3.3: {}
 

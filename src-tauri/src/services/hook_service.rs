@@ -587,8 +587,7 @@ mod tests {
         assert!(
             actual_path
                 .canonicalize()
-                .ok()
-                .is_some_and(|p| expected_path.canonicalize().ok().is_some_and(|e| p == e))
+                .is_ok_and(|p| expected_path.canonicalize().is_ok_and(|e| p == e))
                 || actual_path == expected_path
         );
         assert!(service.hooks_path.ends_with("hooks"));

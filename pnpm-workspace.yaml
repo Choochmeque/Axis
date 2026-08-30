@@ -1,0 +1,5 @@
+overrides:
+  "brace-expansion": ">=5.0.7"
+  "esbuild": ">=0.25.0"
+  "serialize-javascript": ">=7.0.5"
+  "vite": ">=6.4.3"

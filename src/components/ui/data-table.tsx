@@ -1,11 +1,13 @@
+import { type ColumnResizeMode, flexRender, type RowData } from '@tanstack/react-table';
 import {
-  type ColumnDef,
-  type ColumnResizeMode,
-  flexRender,
   getCoreRowModel,
-  type Row,
-  useReactTable,
-} from '@tanstack/react-table';
+  type LegacyColumnDef,
+  type LegacyRow,
+  useLegacyTable,
+} from '@tanstack/react-table/legacy';
+
+type ColumnDef<TData extends RowData, TValue = unknown> = LegacyColumnDef<TData, TValue>;
+type Row<TData extends RowData> = LegacyRow<TData>;
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, type Ref, useCallback, useImperativeHandle, useRef } from 'react';
 import type { SelectionKey, SelectionMode } from '@/hooks';
@@ -16,7 +18,7 @@ export interface DataTableRef {
   scrollToIndex: (index: number, options?: { align?: 'start' | 'center' | 'end' }) => void;
 }
 
-interface DataTableProps<TData> {
+interface DataTableProps<TData extends RowData> {
   data: TData[];
   columns: ColumnDef<TData, unknown>[];
   onRowContextMenu?: (row: TData, event: React.MouseEvent) => void;
@@ -39,7 +41,7 @@ interface DataTableProps<TData> {
   onSelectionChange?: (keys: Set<SelectionKey>) => void;
 }
 
-function DataTableInner<TData>(
+function DataTableInner<TData extends RowData>(
   {
     data,
     columns,
@@ -77,7 +79,7 @@ function DataTableInner<TData>(
     onSelectionChange,
   });
 
-  const table = useReactTable({
+  const table = useLegacyTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -240,16 +242,17 @@ function DataTableInner<TData>(
 }
 
 // Wrap with forwardRef to expose scrollToIndex
-export const DataTable = forwardRef(DataTableInner) as <TData>(
+export const DataTable = forwardRef(DataTableInner) as <TData extends RowData>(
   props: DataTableProps<TData> & { ref?: Ref<DataTableRef> }
 ) => ReturnType<typeof DataTableInner>;
 
-// Re-export useful types and utilities from @tanstack/react-table
+// Re-export useful types and utilities from @tanstack/react-table.
+// Uses the v9 `/legacy` bridge (LegacyFeatures = StockFeatures) so the old
+// 2-arg generic shape (ColumnDef<TData, TValue>) keeps working for consumers.
 export {
-  type CellContext,
-  type ColumnDef,
-  createColumnHelper,
-  type HeaderContext,
-  type Row,
-  type Table,
-} from '@tanstack/react-table';
+  legacyCreateColumnHelper as createColumnHelper,
+  type LegacyColumnDef as ColumnDef,
+  type LegacyRow as Row,
+  type LegacyTable as Table,
+} from '@tanstack/react-table/legacy';
+export type { CellContext, HeaderContext } from '@tanstack/react-table';

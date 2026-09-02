@@ -10,6 +10,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Superseded runs cancel per workflow+ref (PR merge refs and branch pushes
+  # alike); main is pinned to a unique group (run_id) so every commit on main
+  # gets its own uncancellable verification run.
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   integration-tests:
     strategy:
@@ -32,16 +39,10 @@ jobs:
           workspaces: src-tauri
           shared-key: rust-${{ runner.os }}-debug
 
-      - name: Refresh APT package index
+      - uses: Choochmeque/reusable-actions/actions/setup-linux-deps@v1
         if: runner.os == 'Linux'
-        run: sudo apt-get update
-
-      - name: Cache and install APT packages
-        if: runner.os == 'Linux'
-        uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: libglib2.0 libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf cmake libwayland-dev libfuse2
-          version: '1.4'
 
       - name: Create .env file
         shell: bash

@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@choochmeque/tauri-plugin-notifications-api':
-        specifier: 0.5.0-rc.11
-        version: 0.5.0-rc.11
+        specifier: 0.5.0-rc.14
+        version: 0.5.0-rc.14
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -497,8 +497,8 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@choochmeque/tauri-plugin-notifications-api@0.5.0-rc.11':
-    resolution: {integrity: sha512-TSuf8HQ4Ayp9IKKB5v2yTdgKMa/I0bqbcACj0IZ46CSpzn/HKner/BKG7rM8tGOarEcyBd/VXnDhK5cJA/YMtw==}
+  '@choochmeque/tauri-plugin-notifications-api@0.5.0-rc.14':
+    resolution: {integrity: sha512-kst+PhQ+vawT9rs6oRJoQZ5A/ljtIEN/A0/j/z1joCOPFRCR6X5l7LBRg3ChaZEk7FPk0TT+v7Z3FX1N2Wm+6g==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -6023,7 +6023,7 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@choochmeque/tauri-plugin-notifications-api@0.5.0-rc.11':
+  '@choochmeque/tauri-plugin-notifications-api@0.5.0-rc.14':
     dependencies:
       '@tauri-apps/api': 2.11.1
 

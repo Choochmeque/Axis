@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(config.release_prefix, "release/");
         assert_eq!(config.hotfix_prefix, "hotfix/");
         assert_eq!(config.support_prefix, "support/");
-        assert!(config.version_tag_prefix.is_empty());
+        assert_eq!(config.version_tag_prefix, "");
     }
 
     #[test]
@@ -360,8 +360,8 @@ mod tests {
     fn test_grep_options_default() {
         let opts = GrepOptions::default();
 
-        assert!(opts.pattern.is_empty());
-        assert!(opts.paths.is_empty());
+        assert_eq!(opts.pattern, "");
+        assert_eq!(opts.paths, [] as [std::string::String; 0]);
         assert!(!opts.ignore_case);
         assert!(!opts.word_regexp);
         assert!(!opts.extended_regexp);

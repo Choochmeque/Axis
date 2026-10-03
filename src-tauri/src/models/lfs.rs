@@ -381,7 +381,7 @@ mod tests {
         assert!(!opts.all);
         assert!(!opts.recent);
         assert!(opts.remote.is_none());
-        assert!(opts.refs.is_empty());
+        assert_eq!(opts.refs, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
         };
 
         assert!(!result.success);
-        assert!(result.affected_files.is_empty());
+        assert_eq!(result.affected_files, [] as [std::string::String; 0]);
     }
 
     #[test]

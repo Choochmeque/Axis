@@ -760,7 +760,7 @@ mod tests {
             .expect("should create database");
 
         let keys = db.list_remote_ssh_keys("/repo").await.expect("should list");
-        assert!(keys.is_empty());
+        assert_eq!(keys, [] as [(std::string::String, std::string::String); 0]);
     }
 
     #[tokio::test]

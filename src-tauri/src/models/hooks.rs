@@ -418,8 +418,8 @@ mod tests {
         assert_eq!(result.hook_type, GitHookType::PreCommit);
         assert!(result.success);
         assert_eq!(result.exit_code, 0);
-        assert!(result.stdout.is_empty());
-        assert!(result.stderr.is_empty());
+        assert_eq!(result.stdout, "");
+        assert_eq!(result.stderr, "");
         assert!(result.skipped);
     }
 

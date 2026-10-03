@@ -190,7 +190,7 @@ mod tests {
     fn test_build_prompt_empty_diff() {
         let (system, user) = build_prompt("", false);
 
-        assert!(!system.is_empty());
+        assert_ne!(system, "");
         assert!(user.contains("```diff\n\n```"));
     }
 
@@ -208,7 +208,7 @@ mod tests {
 
         assert!(user.contains("diff --git"));
         assert!(user.contains("println!"));
-        assert!(!system.is_empty());
+        assert_ne!(system, "");
     }
 
     #[test]
@@ -301,7 +301,7 @@ mod tests {
         let commits: Vec<(String, String)> = vec![];
         let (system, user) = build_pr_prompt(&commits, None, None);
 
-        assert!(!system.is_empty());
+        assert_ne!(system, "");
         assert!(user.contains("Generate a PR title"));
     }
 
@@ -361,7 +361,7 @@ mod tests {
         assert_eq!(title, "Add user authentication");
         assert!(body.contains("Summary"));
         assert!(body.contains("OAuth2"));
-        assert!(labels.is_empty());
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -381,7 +381,7 @@ mod tests {
 
         assert_eq!(title, "Simple fix");
         assert!(body.contains("Some changes"));
-        assert!(labels.is_empty());
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -393,7 +393,7 @@ mod tests {
         assert!(body.contains("Fixed null check"));
         assert!(body.contains("Added tests"));
         assert!(body.contains("Updated docs"));
-        assert!(labels.is_empty());
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -403,7 +403,7 @@ mod tests {
 
         assert_eq!(title, "Add new feature");
         assert!(body.contains("This is the description"));
-        assert!(labels.is_empty());
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -412,8 +412,8 @@ mod tests {
         let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Simple change");
-        assert!(body.is_empty());
-        assert!(labels.is_empty());
+        assert_eq!(body, "");
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -422,8 +422,8 @@ mod tests {
         let (title, body, labels) = parse_pr_response(response);
 
         assert_eq!(title, "Pull Request");
-        assert!(body.is_empty());
-        assert!(labels.is_empty());
+        assert_eq!(body, "");
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -433,7 +433,7 @@ mod tests {
 
         assert_eq!(title, "Add feature");
         assert_eq!(body, "Some description");
-        assert!(labels.is_empty());
+        assert_eq!(labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -458,7 +458,7 @@ mod tests {
 
     #[test]
     fn test_parse_labels_empty() {
-        assert!(parse_labels("").is_empty());
+        assert_eq!(parse_labels(""), [] as [std::string::String; 0]);
     }
 
     #[test]

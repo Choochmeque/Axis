@@ -286,7 +286,7 @@ async fn test_get_bisect_state_inactive() {
     // Verify
     assert!(!state.is_active, "Should not be active");
     assert!(state.current_commit.is_none());
-    assert!(state.good_commits.is_empty());
+    assert_eq!(state.good_commits, [] as [std::string::String; 0]);
 }
 
 #[tokio::test]

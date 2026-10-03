@@ -213,7 +213,7 @@ mod tests {
 
         assert_eq!(result.message, "Stash created successfully");
         assert_eq!(result.files_affected, 5);
-        assert!(result.conflicts.is_empty());
+        assert_eq!(result.conflicts, [] as [std::string::String; 0]);
     }
 
     #[test]

@@ -180,7 +180,7 @@ mod tests {
     fn test_add_worktree_options_default() {
         let opts = AddWorktreeOptions::default();
 
-        assert!(opts.path.is_empty());
+        assert_eq!(opts.path, "");
         assert!(opts.branch.is_none());
         assert!(!opts.create_branch);
         assert!(opts.base.is_none());
@@ -241,7 +241,7 @@ mod tests {
     fn test_remove_worktree_options_default() {
         let opts = RemoveWorktreeOptions::default();
 
-        assert!(opts.path.is_empty());
+        assert_eq!(opts.path, "");
         assert!(!opts.force);
     }
 

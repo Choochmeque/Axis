@@ -381,14 +381,20 @@ mod tests {
     #[test]
     fn test_lane_state_new() {
         let state = LaneState::new();
-        assert!(state.active_lanes.is_empty());
+        assert_eq!(
+            state.active_lanes,
+            [] as [std::option::Option<std::string::String>; 0]
+        );
         assert!(state.commit_lanes.is_empty());
     }
 
     #[test]
     fn test_lane_state_default() {
         let state = LaneState::default();
-        assert!(state.active_lanes.is_empty());
+        assert_eq!(
+            state.active_lanes,
+            [] as [std::option::Option<std::string::String>; 0]
+        );
         assert!(state.commit_lanes.is_empty());
     }
 
@@ -637,7 +643,7 @@ mod tests {
     #[test]
     fn test_file_log_options_default() {
         let opts = FileLogOptions::default();
-        assert!(opts.paths.is_empty());
+        assert_eq!(opts.paths, [] as [std::string::String; 0]);
         assert_eq!(opts.limit, Some(50));
         assert_eq!(opts.skip, None);
         assert!(!opts.follow_renames);

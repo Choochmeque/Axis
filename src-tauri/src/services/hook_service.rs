@@ -907,8 +907,8 @@ mod tests {
 
         // Each template should have required fields
         for template in &templates {
-            assert!(!template.name.is_empty());
-            assert!(!template.content.is_empty());
+            assert_ne!(template.name, "");
+            assert_ne!(template.content, "");
         }
     }
 

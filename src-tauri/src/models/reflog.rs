@@ -194,7 +194,7 @@ mod tests {
 
         for action in actions {
             let json = serde_json::to_string(&action).expect("should serialize");
-            assert!(!json.is_empty());
+            assert_ne!(json, "");
         }
     }
 

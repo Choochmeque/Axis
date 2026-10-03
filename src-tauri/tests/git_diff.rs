@@ -149,7 +149,7 @@ async fn test_diff_staged_empty_when_nothing_staged() {
 
     // Verify: CLI shows no staged diff
     let cli_diff = git_diff_staged(tmp.path());
-    assert!(cli_diff.is_empty());
+    assert_eq!(cli_diff, "");
 
     // Action: RepoOperations gets staged diff
     let diff = ops

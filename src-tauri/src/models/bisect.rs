@@ -101,7 +101,7 @@ mod tests {
     fn test_bisect_start_options_default() {
         let opts = BisectStartOptions::default();
         assert!(opts.bad_commit.is_none());
-        assert!(opts.good_commit.is_empty());
+        assert_eq!(opts.good_commit, "");
     }
 
     #[test]
@@ -137,8 +137,8 @@ mod tests {
         assert!(state.steps_remaining.is_none());
         assert!(state.total_commits.is_none());
         assert!(state.bad_commit.is_none());
-        assert!(state.good_commits.is_empty());
-        assert!(state.skipped_commits.is_empty());
+        assert_eq!(state.good_commits, [] as [std::string::String; 0]);
+        assert_eq!(state.skipped_commits, [] as [std::string::String; 0]);
         assert!(state.first_bad_commit.is_none());
     }
 

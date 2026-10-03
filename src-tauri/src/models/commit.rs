@@ -352,7 +352,7 @@ mod tests {
         assert_eq!(commit.short_oid, "abc123d");
         assert_eq!(commit.summary, "Initial commit");
         assert!(!commit.is_merge);
-        assert!(commit.parent_oids.is_empty());
+        assert_eq!(commit.parent_oids, [] as [std::string::String; 0]);
     }
 
     #[test]

@@ -419,7 +419,7 @@ mod tests {
     #[test]
     fn test_merge_options_default() {
         let opts = MergeOptions::default();
-        assert!(opts.branch.is_empty());
+        assert_eq!(opts.branch, "");
         assert!(opts.message.is_none());
         assert!(!opts.no_ff);
         assert!(!opts.squash);
@@ -541,7 +541,7 @@ mod tests {
     #[test]
     fn test_rebase_options_default() {
         let opts = RebaseOptions::default();
-        assert!(opts.onto.is_empty());
+        assert_eq!(opts.onto, "");
         assert!(!opts.interactive);
         assert!(!opts.preserve_merges);
         assert!(!opts.autosquash);
@@ -564,8 +564,8 @@ mod tests {
     #[test]
     fn test_rebase_onto_options_default() {
         let opts = RebaseOntoOptions::default();
-        assert!(opts.new_base.is_empty());
-        assert!(opts.old_base.is_empty());
+        assert_eq!(opts.new_base, "");
+        assert_eq!(opts.old_base, "");
         assert!(opts.branch.is_none());
     }
 
@@ -643,7 +643,7 @@ mod tests {
     #[test]
     fn test_cherry_pick_options_default() {
         let opts = CherryPickOptions::default();
-        assert!(opts.commits.is_empty());
+        assert_eq!(opts.commits, [] as [std::string::String; 0]);
         assert!(!opts.no_commit);
         assert!(!opts.allow_empty);
     }
@@ -664,7 +664,7 @@ mod tests {
     #[test]
     fn test_revert_options_default() {
         let opts = RevertOptions::default();
-        assert!(opts.commits.is_empty());
+        assert_eq!(opts.commits, [] as [std::string::String; 0]);
         assert!(!opts.no_commit);
     }
 
@@ -875,7 +875,7 @@ mod tests {
     #[test]
     fn test_reset_options_default() {
         let opts = ResetOptions::default();
-        assert!(opts.target.is_empty());
+        assert_eq!(opts.target, "");
         assert_eq!(opts.mode, ResetMode::Mixed);
     }
 

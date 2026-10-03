@@ -542,7 +542,7 @@ mod tests {
     fn test_repository_cache_list_paths_empty() {
         let cache = RepositoryCache::new();
         let paths = cache.list_paths();
-        assert!(paths.is_empty());
+        assert_eq!(paths, [] as [std::path::PathBuf; 0]);
     }
 
     #[test]

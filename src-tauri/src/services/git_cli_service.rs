@@ -3830,7 +3830,7 @@ mod tests {
             .submodule_summary()
             .await
             .expect("should get submodule summary");
-        assert!(summary.is_empty());
+        assert_eq!(summary, "");
     }
 
     // ==================== Git-flow Tests ====================
@@ -3945,7 +3945,7 @@ mod tests {
             .gitflow_list(GitFlowBranchType::Feature)
             .await
             .expect("should list features");
-        assert!(features.is_empty());
+        assert_eq!(features, [] as [std::string::String; 0]);
     }
 
     // ==================== Grep Tests ====================
@@ -4210,7 +4210,7 @@ mod tests {
             .expect("should list worktrees");
         // Main worktree is always present
         assert!(!worktrees.is_empty());
-        assert!(!worktrees[0].path.is_empty());
+        assert_ne!(worktrees[0].path, "");
     }
 
     #[tokio::test]
@@ -4357,7 +4357,7 @@ mod tests {
             .await
             .expect("should create archive");
 
-        assert!(!result.message.is_empty());
+        assert_ne!(result.message, "");
         assert!(output_path.exists());
     }
 
@@ -4374,7 +4374,7 @@ mod tests {
             .await
             .expect("should create tar archive");
 
-        assert!(!result.message.is_empty());
+        assert_ne!(result.message, "");
         assert!(output_path.exists());
     }
 
@@ -4391,7 +4391,7 @@ mod tests {
             .await
             .expect("should create tar.gz archive");
 
-        assert!(!result.message.is_empty());
+        assert_ne!(result.message, "");
         assert!(output_path.exists());
     }
 
@@ -4407,7 +4407,7 @@ mod tests {
             .await
             .expect("should create archive with prefix");
 
-        assert!(!result.message.is_empty());
+        assert_ne!(result.message, "");
     }
 
     // ==================== Format Patch Tests ====================
@@ -4427,8 +4427,8 @@ mod tests {
             .await
             .expect("should format patches");
 
-        assert!(!result.message.is_empty());
-        assert!(!result.patches.is_empty());
+        assert_ne!(result.message, "");
+        assert_ne!(result.patches, [] as [std::string::String; 0]);
     }
 
     // ==================== Cherry-pick Abort/Continue Tests ====================
@@ -4472,7 +4472,7 @@ mod tests {
             .get_conflicted_files()
             .await
             .expect("should get conflicted files");
-        assert!(conflicts.is_empty());
+        assert_eq!(conflicts, [] as [std::string::String; 0]);
     }
 
     // ==================== Reset Mode Tests ====================
@@ -4617,7 +4617,7 @@ mod tests {
             .stash_show(None, false)
             .await
             .expect("should show stash");
-        assert!(!show.is_empty());
+        assert_ne!(show, "");
     }
 
     #[tokio::test]
@@ -4642,7 +4642,7 @@ mod tests {
             .stash_show(None, true)
             .await
             .expect("should show stash stat");
-        assert!(!show.is_empty());
+        assert_ne!(show, "");
     }
 
     // ==================== Git Environment Tests ====================
@@ -4653,7 +4653,7 @@ mod tests {
             .await
             .expect("should get git environment");
         assert!(env.git_version.is_some());
-        assert!(!env.git_version.expect("should have git version").is_empty());
+        assert_ne!(env.git_version.expect("should have git version"), "");
     }
 
     #[tokio::test]
@@ -4704,7 +4704,7 @@ mod tests {
         let result = GitCommandResult::from(output);
         assert!(result.success);
         assert_eq!(result.stdout, "success output");
-        assert!(result.stderr.is_empty());
+        assert_eq!(result.stderr, "");
     }
 
     // ==================== create_askpass_script Tests ====================

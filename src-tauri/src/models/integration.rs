@@ -452,8 +452,8 @@ mod tests {
     fn test_integration_user_default() {
         let user = IntegrationUser::default();
         assert_eq!(user.login, "unknown");
-        assert!(user.avatar_url.is_empty());
-        assert!(user.url.is_empty());
+        assert_eq!(user.avatar_url, "");
+        assert_eq!(user.url, "");
     }
 
     #[test]
@@ -715,7 +715,7 @@ mod tests {
 
         assert!(opts.draft);
         assert!(opts.body.is_none());
-        assert!(opts.labels.is_empty());
+        assert_eq!(opts.labels, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -783,7 +783,7 @@ mod tests {
             assignees: vec![],
         };
 
-        assert!(opts.labels.is_empty());
+        assert_eq!(opts.labels, [] as [std::string::String; 0]);
         assert!(opts.body.is_none());
     }
 }

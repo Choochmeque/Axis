@@ -226,7 +226,7 @@ async fn test_format_patch_verified_by_cli() {
         .map(|e| e.path())
         .collect();
 
-    assert!(!patch_files.is_empty());
+    assert_ne!(patch_files, [] as [std::path::PathBuf; 0]);
 
     // Check patch content contains expected parts
     let content = read_file(&patch_files[0]);

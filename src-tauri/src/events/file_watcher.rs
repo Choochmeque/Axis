@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn test_files_changed_event_empty() {
         let event = FilesChangedEvent { paths: vec![] };
-        assert!(event.paths.is_empty());
+        assert_eq!(event.paths, [] as [std::string::String; 0]);
     }
 
     #[test]

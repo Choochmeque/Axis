@@ -4084,7 +4084,7 @@ mod tests {
             )
             .expect("should create commit");
 
-        assert!(!oid.is_empty());
+        assert_ne!(oid, "");
 
         // Verify commit is in history
         let commits = service
@@ -4103,7 +4103,7 @@ mod tests {
         let oid = service
             .amend_commit(Some("Amended initial commit"))
             .expect("should amend commit");
-        assert!(!oid.is_empty());
+        assert_ne!(oid, "");
 
         // Verify commit message was updated
         let commits = service
@@ -4867,7 +4867,7 @@ mod tests {
         let content = service
             .get_file_blob("README.md", None)
             .expect("should get file blob");
-        assert!(!content.is_empty());
+        assert_ne!(content, [] as [u8; 0]);
         assert_eq!(content, b"# Test Repository");
     }
 
@@ -4933,7 +4933,7 @@ mod tests {
         create_initial_commit(&service, &tmp);
 
         let reflogs = service.list_reflogs().expect("should list reflogs");
-        assert!(!reflogs.is_empty());
+        assert_ne!(reflogs, [] as [std::string::String; 0]);
         assert!(reflogs.contains(&"HEAD".to_string()));
     }
 
@@ -4970,7 +4970,7 @@ mod tests {
 
         let oid = service.get_head_oid_opt();
         assert!(oid.is_some());
-        assert!(!oid.expect("should have oid").is_empty());
+        assert_ne!(oid.expect("should have oid"), "");
     }
 
     // ==================== User Config Tests ====================
@@ -5114,7 +5114,7 @@ mod tests {
         let commit = service.get_commit(&oid).expect("should get commit");
 
         assert_eq!(commit.oid, oid);
-        assert!(!commit.message.is_empty());
+        assert_ne!(commit.message, "");
     }
 
     #[test]

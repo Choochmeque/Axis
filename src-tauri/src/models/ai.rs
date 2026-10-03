@@ -165,7 +165,7 @@ mod tests {
             model_used: "gpt-4o-mini".to_string(),
         };
 
-        assert!(response.labels.is_empty());
+        assert_eq!(response.labels, [] as [std::string::String; 0]);
     }
 
     #[test]

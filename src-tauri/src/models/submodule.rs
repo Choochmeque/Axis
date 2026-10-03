@@ -398,7 +398,7 @@ mod tests {
     fn test_update_submodule_options_default() {
         let opts = UpdateSubmoduleOptions::default();
 
-        assert!(opts.paths.is_empty());
+        assert_eq!(opts.paths, [] as [std::string::String; 0]);
         assert!(!opts.init);
         assert!(!opts.recursive);
         assert!(!opts.force);
@@ -462,7 +462,7 @@ mod tests {
     fn test_sync_submodule_options_default() {
         let opts = SyncSubmoduleOptions::default();
 
-        assert!(opts.paths.is_empty());
+        assert_eq!(opts.paths, [] as [std::string::String; 0]);
         assert!(!opts.recursive);
     }
 
@@ -511,7 +511,7 @@ mod tests {
         };
 
         assert!(!result.success);
-        assert!(result.submodules.is_empty());
+        assert_eq!(result.submodules, [] as [std::string::String; 0]);
     }
 
     #[test]

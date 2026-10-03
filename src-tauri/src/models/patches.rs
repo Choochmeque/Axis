@@ -125,9 +125,9 @@ mod tests {
     fn test_archive_options_default() {
         let opts = ArchiveOptions::default();
 
-        assert!(opts.reference.is_empty());
-        assert!(opts.format.is_empty());
-        assert!(opts.output_path.is_empty());
+        assert_eq!(opts.reference, "");
+        assert_eq!(opts.format, "");
+        assert_eq!(opts.output_path, "");
         assert!(opts.prefix.is_none());
     }
 
@@ -194,7 +194,7 @@ mod tests {
             patches: vec![],
         };
 
-        assert!(result.patches.is_empty());
+        assert_eq!(result.patches, [] as [std::string::String; 0]);
     }
 
     #[test]
@@ -215,7 +215,7 @@ mod tests {
         let opts = CreatePatchOptions::default();
 
         assert!(opts.commit_oid.is_none());
-        assert!(opts.output_dir.is_empty());
+        assert_eq!(opts.output_dir, "");
     }
 
     #[test]
@@ -245,8 +245,8 @@ mod tests {
     fn test_format_patch_options_default() {
         let opts = FormatPatchOptions::default();
 
-        assert!(opts.range.is_empty());
-        assert!(opts.output_dir.is_empty());
+        assert_eq!(opts.range, "");
+        assert_eq!(opts.output_dir, "");
     }
 
     #[test]
@@ -275,7 +275,7 @@ mod tests {
     fn test_apply_patch_options_default() {
         let opts = ApplyPatchOptions::default();
 
-        assert!(opts.patch_path.is_empty());
+        assert_eq!(opts.patch_path, "");
         assert!(!opts.check_only);
         assert!(!opts.three_way);
     }
@@ -323,7 +323,7 @@ mod tests {
     fn test_apply_mailbox_options_default() {
         let opts = ApplyMailboxOptions::default();
 
-        assert!(opts.patch_paths.is_empty());
+        assert_eq!(opts.patch_paths, [] as [std::string::String; 0]);
         assert!(!opts.three_way);
     }
 

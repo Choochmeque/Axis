@@ -248,8 +248,8 @@ async fn test_reflog_entry_fields_verified_by_cli() {
         entry.short_new_oid, cli_short,
         "short_new_oid should match CLI short"
     );
-    assert!(!entry.committer_name.is_empty());
-    assert!(!entry.committer_email.is_empty());
+    assert_ne!(entry.committer_name, "");
+    assert_ne!(entry.committer_email, "");
 }
 
 #[tokio::test]
